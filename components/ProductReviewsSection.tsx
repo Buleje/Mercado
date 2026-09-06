@@ -299,7 +299,7 @@ export default function ProductReviewsSection({ productId, productName }: Produc
           {total > 6 && !showAll && (
             <button
               onClick={() => setShowAll(true)}
-              className="w-full py-3 text-sm font-semibold text-primary hover:bg-primary/5 rounded-xl transition-colors border border-primary/20"
+              className="w-full py-3 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 rounded-xl transition-colors border border-primary/20"
             >
               Ver todas las reseñas ({total})
             </button>

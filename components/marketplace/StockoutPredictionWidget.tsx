@@ -130,7 +130,7 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
           aria-label="Recalcular predicciones"
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
-            "bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
           )}
         >
           <RefreshCw className={cn("h-3.5 w-3.5", recalculating && "animate-spin")} />

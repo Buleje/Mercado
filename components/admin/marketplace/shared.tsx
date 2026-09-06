@@ -73,22 +73,22 @@ export interface StoreData {
 // ── Status badge configs ──
 export const ORDER_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   pendiente:   { label: "Pendiente",  className: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]" },
-  confirmado:  { label: "Confirmado", className: "bg-[var(--accent-soft)] text-[var(--accent)]" },
+  confirmado:  { label: "Confirmado", className: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
   preparando:  { label: "Preparando", className: "bg-[#a78bfa]/15 text-[#7c3aed]" },
-  en_camino:   { label: "En camino",  className: "bg-[#fbbf24]/15 text-[#d97706]" },
+  en_camino:   { label: "En camino",  className: "bg-[#ff8676]/15 text-[#f0503f]" },
   entregado:   { label: "Entregado",  className: "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]" },
   cancelado:   { label: "Cancelado",  className: "bg-[var(--data-error-500)]/15 text-[var(--data-error-500)]" },
 };
 
 export const COMMISSION_STATUS_CONFIG: Record<string, { label: string; className: string; icon: React.ElementType }> = {
   pendiente:  { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",     icon: Clock },
-  liquidado:  { label: "Liquidado",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]",         icon: CheckCircle },
-  pagado:     { label: "Pagado",     className: "bg-[var(--accent-soft)] text-[var(--data-success)]", icon: CheckCircle },
+  liquidado:  { label: "Liquidado",  className: "bg-primary/10 text-[var(--data-success)]",         icon: CheckCircle },
+  pagado:     { label: "Pagado",     className: "bg-primary/10 text-[var(--data-success)]", icon: CheckCircle },
 };
 
 export const REVIEW_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   pending:  { label: "Pendiente", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]" },
-  approved: { label: "Aprobada",  className: "bg-[var(--accent-soft)] text-[var(--data-success)]" },
+  approved: { label: "Aprobada",  className: "bg-primary/10 text-[var(--data-success)]" },
   rejected: { label: "Rechazada", className: "bg-[var(--data-error-100)] text-[var(--data-error)]" },
 };
 

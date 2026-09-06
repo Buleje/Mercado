@@ -50,7 +50,7 @@ export function ThreadsList({
   return (
     <div className="flex h-full flex-col">
       {/* Filter pills */}
-      <div className="flex gap-1 border-b border-slate-200 p-2 dark:border-slate-700">
+      <div className="flex gap-1 border-b border-[var(--rule-base)] p-2">
         {(["all", "open", "closed"] as const).map((s) => (
           <button
             key={s}
@@ -58,10 +58,10 @@ export function ThreadsList({
             onClick={() => onStatusFilterChange(s)}
             aria-pressed={statusFilter === s}
             className={cn(
-              "rounded-lg px-3 py-1.5 min-h-11 sm:min-h-0 sm:py-1 text-xs font-medium transition",
+ "rounded-lg px-3 py-1.5 min-h-11 sm:min-h-0 sm:py-1 text-xs font-medium transition",
               statusFilter === s
                 ? "bg-primary text-white"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700",
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]  dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]",
             )}
           >
             {s === "all" ? "Todos" : STATUS_LABELS[s as ThreadStatus]}
@@ -71,16 +71,16 @@ export function ThreadsList({
 
       {/* Filtro por etiqueta (Tanda 3) — solo si hay etiquetas en uso */}
       {availableLabels.length > 0 && (
-        <div className="flex flex-wrap gap-1 border-b border-slate-200 px-2 py-1.5 dark:border-slate-700">
+        <div className="flex flex-wrap gap-1 border-b border-[var(--rule-base)] px-2 py-1.5">
           <button
             type="button"
             onClick={() => setLabelFilter(null)}
             aria-pressed={labelFilter === null}
             className={cn(
-              "rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition",
+ "rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition",
               labelFilter === null
-                ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900"
-                : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400",
+                ? "bg-[var(--surface-sunken)] text-white dark:bg-[var(--surface-sunken)] dark:text-[var(--text-primary)]"
+                : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] ",
             )}
           >
             Todas
@@ -92,7 +92,7 @@ export function ThreadsList({
               onClick={() => setLabelFilter((cur) => (cur === l ? null : l))}
               aria-pressed={labelFilter === l}
               className={cn(
-                "rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition",
+ "rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition",
                 labelChipClass(l),
                 labelFilter === l ? "ring-2 ring-primary/50" : "opacity-80 hover:opacity-100",
               )}
@@ -106,11 +106,11 @@ export function ThreadsList({
       {/* List */}
       <div className="flex-1 overflow-y-auto">
         {loading && threads.length === 0 ? (
-          <div className="p-4 text-sm text-slate-500">Cargando conversaciones…</div>
+          <div className="p-4 text-sm text-[var(--text-tertiary)]">Cargando conversaciones…</div>
         ) : visibleThreads.length === 0 ? (
           <div className="p-6 text-center">
-            <MessageCircle className="mx-auto h-12 w-12 text-slate-300" />
-            <p className="mt-2 text-sm text-slate-500">
+            <MessageCircle className="mx-auto h-12 w-12 text-[var(--text-tertiary)]" />
+            <p className="mt-2 text-sm text-[var(--text-tertiary)]">
               {labelFilter ? (
                 <>No hay conversaciones con la etiqueta <strong>{labelFilter}</strong>.</>
               ) : (
@@ -122,7 +122,7 @@ export function ThreadsList({
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-slate-100 dark:divide-slate-800" role="list">
+          <ul className="divide-y divide-[var(--rule-soft)] dark:divide-[var(--rule-base)]" role="list">
             {visibleThreads.map((thread) => {
               const isSelected = thread.id === selectedThreadId;
               const unread = thread.unreadForSeller;
@@ -140,8 +140,8 @@ export function ThreadsList({
                     onClick={() => onSelectThread(isSelected ? null : thread.id)}
                     aria-pressed={isSelected}
                     className={cn(
-                      "w-full border-l-4 p-3 min-h-11 text-left transition",
-                      "hover:bg-slate-50 focus:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)] dark:hover:bg-slate-800/60 dark:focus:bg-slate-800/60",
+ "w-full border-l-4 p-3 min-h-11 text-left transition",
+ "hover:bg-[var(--surface-sunken)] focus:bg-[var(--surface-sunken)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)] dark:hover:bg-[var(--surface-sunken)]/60 dark:focus:bg-[var(--surface-sunken)]/60",
                       isSelected
                         ? "border-primary bg-primary/10 dark:bg-primary/10"
                         : "border-transparent",
@@ -151,17 +151,17 @@ export function ThreadsList({
                       <div className="flex min-w-0 items-center gap-2">
                         <span
                           className={cn(
-                            "inline-flex h-2 w-2 rounded-full",
+ "inline-flex h-2 w-2 rounded-full",
                             STATUS_COLORS[thread.status],
                           )}
                           aria-hidden
                         />
-                        <span className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                        <span className="truncate text-sm font-semibold text-[var(--text-primary)]">
                           {thread.customerName}
                         </span>
                       </div>
                       {lastMsg && (
-                        <span className="flex-shrink-0 text-[length:var(--ts-2xs)] text-slate-500">
+                        <span className="flex-shrink-0 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                           {lastMsg}
                         </span>
                       )}
@@ -173,7 +173,7 @@ export function ThreadsList({
                           <span
                             key={l}
                             className={cn(
-                              "inline-flex items-center rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold",
+ "inline-flex items-center rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold",
                               labelChipClass(l),
                             )}
                           >
@@ -184,14 +184,14 @@ export function ThreadsList({
                     )}
 
                     {thread.subject && (
-                      <div className="mt-0.5 truncate text-[length:var(--ts-xs)] text-slate-500 dark:text-slate-400">
+                      <div className="mt-0.5 truncate text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
                         {thread.subject}
                       </div>
                     )}
 
                     {thread.lastMessageText && (
                       <div className="mt-1 flex items-start gap-1">
-                        <span className="flex-1 truncate text-xs text-slate-600 dark:text-slate-400">
+                        <span className="flex-1 truncate text-xs text-[var(--text-secondary)]">
                           {thread.lastSenderType === "seller" && (
                             <span className="text-primary">Vos: </span>
                           )}
@@ -209,7 +209,7 @@ export function ThreadsList({
                     )}
 
                     {thread.customerPhone && (
-                      <div className="mt-1 text-[length:var(--ts-2xs)] text-slate-400">
+                      <div className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                         {thread.customerPhone}
                       </div>
                     )}

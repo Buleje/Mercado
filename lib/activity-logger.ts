@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/prisma";
 import { withRlsTx } from "@/lib/prisma-rls";
 import { logger } from "@/lib/logger";
 import { enqueueActivityLog, type ActivityLogJobData } from "@/lib/queue/queues";

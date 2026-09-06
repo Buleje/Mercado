@@ -25,7 +25,7 @@ const iconBadge = tv({
       ],
       ghost: "bg-transparent text-[var(--text-tertiary)]",
       accent: [
-        "bg-primary/10 text-primary",
+        "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
       ],
     },
     size: {

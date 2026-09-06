@@ -40,7 +40,7 @@ export function DeliveryZonesConfig() {
             <span className={cn(
               "text-xs font-bold px-2 py-0.5 rounded-full",
               z.tarifa === 0
-                ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                 : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
             )}>
               {z.tarifa === 0 ? "GRATIS" : `S/${Number(z.tarifa).toFixed(0)}`}

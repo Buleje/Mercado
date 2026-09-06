@@ -39,10 +39,10 @@ Responder con: una llamada a search.mjs + presentar resultados en tabla.
 ## Workflow
 
 ```bash
-# 1. Verificar Qdrant up
-curl -s http://127.0.0.1:6333/healthz
-# Si no, arrancarlo:
-cd ~/.local/qdrant && nohup ./qdrant --uri http://127.0.0.1:6333 > qdrant.log 2>&1 &
+# 1. Qdrant está APAGADO por default (2026-09-03: 337 MB de RAM por 1 uso al mes).
+#    Se prende a demanda con el unit de systemd (sudo sin password en esta WSL):
+curl -s http://127.0.0.1:6333/healthz || sudo systemctl start qdrant
+#    Al terminar la ronda de búsquedas, apagarlo de nuevo: sudo systemctl stop qdrant
 
 # 2. Búsqueda
 node ~/.local/qdrant/rag/search.mjs "query semantic" 10

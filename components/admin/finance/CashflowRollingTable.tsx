@@ -1,10 +1,9 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   RefreshCw,
-  Loader2,
   AlertTriangle,
   TrendingUp,
   TrendingDown,
@@ -141,7 +140,7 @@ export default function CashflowRollingTable() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-[var(--accent-soft)] text-white flex items-center justify-center  shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-primary/10 text-white flex items-center justify-center  shrink-0">
             <TrendingUp className="h-5 w-5" />
           </div>
           <div>
@@ -158,7 +157,7 @@ export default function CashflowRollingTable() {
           type="button"
           onClick={() => void fetchData()}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50  transition-colors shrink-0 min-h-[44px]"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50  transition-colors shrink-0 min-h-[44px]"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar
@@ -236,7 +235,7 @@ export default function CashflowRollingTable() {
       {/* Data table: 1 columna fija "Concepto" + 13 columnas semana */}
       {data && data.weeks.length > 0 && (
         <div className="overflow-x-auto -mx-1 px-1 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)]">
-          <table className="w-full min-w-[1100px] text-sm border-collapse">
+          <DataTable className="w-full min-w-[1100px] text-sm border-collapse">
             <thead>
               <tr className="border-b border-[var(--rule-base)] dark:border-white/10">
                 <th
@@ -329,7 +328,7 @@ export default function CashflowRollingTable() {
                 );
               })}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       )}
 

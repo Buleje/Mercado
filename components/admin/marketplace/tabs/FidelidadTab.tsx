@@ -135,7 +135,7 @@ export function MarketplaceFidelidadTab() {
       {/* ── Buscador ── */}
       <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-5">
         <header className="flex items-center gap-2 mb-3">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Gift className="h-4 w-4" />
           </span>
           <div>
@@ -307,7 +307,7 @@ export function MarketplaceFidelidadTab() {
       {!data && !loading && (
         <div className="bg-white border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-8 sm:p-10">
           <div className="text-center max-w-md mx-auto">
-            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-4">
+            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
               <Gift className="h-6 w-6" />
             </div>
             <p className="text-base font-extrabold text-[var(--text-primary)]">Programa de fidelidad</p>

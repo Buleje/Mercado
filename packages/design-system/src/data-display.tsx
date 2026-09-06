@@ -181,7 +181,10 @@ export function StatCard({
       className={cn(
         // Rediseño minimalista (Brandon 2026-06-10): rectangular (sin rounded),
         // fondo blanco (surface-raised), hairline border, sin sombra.
-        "w-full text-left border bg-[var(--surface-raised)] border-[var(--rule-base)]",
+        // `h-full`: en una grilla, la card con subValue estiraba a sus vecinas y
+        // las dejaba flotando a media altura (fila despareja). Fuera de grilla,
+        // 100% de un padre auto sigue siendo auto — no cambia nada.
+        "h-full w-full text-left border bg-[var(--surface-raised)] border-[var(--rule-base)]",
         DENSITY_PADDING[density],
         "transition-colors",
         onClick && "hover:border-[var(--rule-strong)] cursor-pointer",
@@ -192,7 +195,10 @@ export function StatCard({
         <div className="flex-1 min-w-0">
           <Kicker>{label}</Kicker>
           <div
-            className="mt-2 text-[length:var(--ts-2xl)] font-extrabold tabular-nums leading-[var(--lh-tight)]"
+            // En 390px una grilla de 2 columnas deja ~165px por card: "S/ 1520.00"
+            // a --ts-2xl no entra y se cortaba a "S/". Un escalón menos en móvil
+            // lo mete completo; de `sm` para arriba nada cambia.
+            className="mt-2 text-[length:var(--ts-xl)] font-extrabold tabular-nums leading-[var(--lh-tight)] sm:text-[length:var(--ts-2xl)]"
             style={{ color: EMPHASIS_ACCENT[emphasis] }}
           >
             {value}
@@ -290,7 +296,7 @@ export function useChartTokens() {
     stroke: "#0F172A",
     fill: "#0F172A",
     success: "#10B981",
-    warning: "#F59E0B",
+    warning: "#ff6b5b",
     error: "#EF4444",
     info: "#3B82F6",
   });
@@ -306,7 +312,7 @@ export function useChartTokens() {
       stroke: read("--text-primary", "#0F172A"),
       fill: read("--text-primary", "#0F172A"),
       success: read("--data-success", "#10B981"),
-      warning: read("--data-warning", "#F59E0B"),
+      warning: read("--data-warning", "#ff6b5b"),
       error: read("--data-error", "#EF4444"),
       info: read("--data-info", "#3B82F6"),
     });

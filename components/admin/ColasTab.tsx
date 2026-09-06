@@ -110,13 +110,13 @@ function QueueCard({ queue }: { queue: QueueStats }) {
         <StatBadge
           label="Activos"
           value={queue.active}
-          colorClasses="bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+          colorClasses="bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
           icon={<Loader2 className="h-4 w-4" />}
         />
         <StatBadge
           label="Completados"
           value={queue.completed}
-          colorClasses="bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+          colorClasses="bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
           icon={<CheckCircle className="h-4 w-4" />}
         />
         <StatBadge
@@ -308,7 +308,7 @@ export default function ColasTab() {
             <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">En espera (total)</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-xl border bg-[var(--accent-soft)] p-4 dark:border-[var(--data-success-500)]/30 dark:bg-[var(--accent-muted)]">
+        <div className="flex items-center gap-3 rounded-xl border bg-primary/10 p-4 dark:border-[var(--data-success-500)]/30 dark:bg-primary/15">
           <Activity className="h-8 w-8 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
           <div>
             <p className="text-2xl font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">

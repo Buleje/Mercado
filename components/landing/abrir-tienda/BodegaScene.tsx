@@ -35,9 +35,9 @@ const TRUST_PILLS = [
 
 const SHELF_PRODUCTS = [
   // Row 1
-  ["#fbbf24", "#f97316", "#ef4444", "#a855f7"],
+  ["#ff8676", "#ff6b5b", "#ef4444", "#a855f7"],
   // Row 2
-  ["#0ea5e9", "#22c55e", "#84cc16", "#f59e0b"],
+  ["#0ea5e9", "#22c55e", "#84cc16", "#ff6b5b"],
   // Row 3 (just 2 + a price tag visual)
   ["#06b6d4", "#84cc16"],
 ];
@@ -108,7 +108,7 @@ export default function BodegaScene() {
         {/* Cartel "BULEJE BODEGA" + ABIERTA */}
         <div className="px-5 pt-3 pb-4 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
           <div className="inline-flex items-center gap-2.5 min-w-0">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <Store className="h-4 w-4" strokeWidth={2.5} />
             </span>
             <div className="min-w-0">

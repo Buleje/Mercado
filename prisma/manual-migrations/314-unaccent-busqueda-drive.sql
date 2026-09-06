@@ -1,0 +1,12 @@
+-- 314 — Búsqueda del drive que ignora tildes.
+--
+-- `ILIKE` de Postgres NO ignora acentos: buscar "descripcion" no encontraba
+-- "descripción", y en un drive escrito en castellano eso es la mitad de las
+-- consultas. `unaccent()` pliega las tildes de los dos lados de la comparación.
+--
+-- Aditivo e idempotente: no toca datos ni tablas. Supabase instala las
+-- extensiones en el schema `extensions`, por eso el WITH SCHEMA explícito
+-- (la búsqueda la llama como `extensions.unaccent(...)`).
+--
+-- Aplicado en el proyecto Mercado el 2026-07-27.
+CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA extensions;

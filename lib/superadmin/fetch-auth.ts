@@ -11,6 +11,8 @@
  * También normaliza:
  *   - cache: "no-store" (datos siempre frescos en admin)
  *   - credentials: "include" (cookie platform session)
+ *   - header `x-csrf-token` desde la cookie (los endpoints superadmin con
+ *     assertCsrf devuelven 403 sin él — y este helper redirigía a login)
  *
  * Uso:
  *   const res = await fetchSuperadmin("/api/superadmin/roadmap/items");
@@ -19,6 +21,7 @@
  *
  * Si 401/403, este helper NUNCA retorna — redirige la página.
  */
+import { csrfHeaders } from "@/lib/csrf-client";
 
 export async function fetchSuperadmin(
   input: string,
@@ -26,6 +29,7 @@ export async function fetchSuperadmin(
 ): Promise<Response> {
   const res = await fetch(input, {
     ...init,
+    headers: csrfHeaders(init?.headers ?? {}),
     credentials: "include",
     cache: "no-store",
   });

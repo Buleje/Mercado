@@ -192,11 +192,9 @@ export default function AnalyticsKPIBarV2() {
       },
     ];
   } else {
-    // V1 fallback: generate synthetic sparkline
-    const sparkline = Array.from({ length: 7 }, (_, i) => ({
-      v: Math.max(0, data.ingresosHoy.valor * (0.3 + Math.sin(i / 2) * 0.3 + (i / 7) * 0.4)),
-    }));
-
+    // V1 fallback: KPIs v1 no trae sparkline real (a diferencia de v2) — se
+    // omite en vez de fabricar una serie sintética; el render ya soporta
+    // `sparkline` undefined (ver `card.sparkline && card.sparkline.length > 0`).
     const getColor = (cambio?: number): "green" | "yellow" | "red" => {
       if (cambio === undefined) return "green";
       return cambio >= 0 ? "green" : cambio > -10 ? "yellow" : "red";
@@ -210,7 +208,6 @@ export default function AnalyticsKPIBarV2() {
         cambio: data.ingresosHoy.cambio,
         icon: DollarSign,
         color: getColor(data.ingresosHoy.cambio),
-        sparkline,
       },
       {
         key: "ticketPromedio",
@@ -289,7 +286,7 @@ export default function AnalyticsKPIBarV2() {
                     className={cn(
                       "text-[length:var(--ts-2xs)] font-mono px-2 py-0.5 rounded-full font-medium inline-block mt-0.5",
                       card.cambio >= 0
-                        ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                        ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                         : "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
                     )}
                   >

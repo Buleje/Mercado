@@ -27,6 +27,8 @@ export default function TwoFactorPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
+  // ADR-304: confiar en este dispositivo → salta el 2FA los próximos 30 días.
+  const [trustDevice, setTrustDevice] = useState(false);
 
   // Auto-focus al montar
   useEffect(() => {
@@ -64,7 +66,8 @@ export default function TwoFactorPage() {
           "Content-Type": "application/json",
           ...(csrfHeaders() as Record<string, string>),
         },
-        body: JSON.stringify({ code }),
+        // El backend valida `token` (6 dígitos). `trustDevice` = ADR-304.
+        body: JSON.stringify({ token: code, trustDevice }),
       });
 
       if (!res.ok) {
@@ -133,6 +136,22 @@ export default function TwoFactorPage() {
 
         {/* Form */}
         <form onSubmit={submit} className="space-y-4" noValidate>
+          {/* ADR-304: confiar en este dispositivo. Va ARRIBA del input porque el
+              form auto-submitea al 6º dígito — así se puede marcar antes. */}
+          <label className="flex items-start gap-2.5 cursor-pointer select-none rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
+            <input
+              type="checkbox"
+              checked={trustDevice}
+              onChange={(e) => setTrustDevice(e.target.checked)}
+              disabled={loading}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--rule-base)] text-[var(--accent)] focus:ring-[var(--accent)]/30 cursor-pointer"
+            />
+            <span className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              <span className="font-bold text-[var(--text-primary)]">Confiar en este dispositivo 30 días</span>
+              {" "}— no me pidas el código en este navegador. La contraseña se sigue pidiendo siempre.
+            </span>
+          </label>
+
           {/* Input OTP */}
           <div className="relative">
             <KeyRound

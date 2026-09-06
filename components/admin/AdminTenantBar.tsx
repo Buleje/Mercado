@@ -55,7 +55,7 @@ export function AdminTenantBar({ tenantSlug, tenantName }: AdminTenantBarProps) 
           href={homePath}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
           title="Abrir el inicio del negocio en una nueva pestaña"
         >
           <Home className="h-3.5 w-3.5" />

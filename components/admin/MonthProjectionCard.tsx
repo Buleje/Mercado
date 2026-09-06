@@ -2,7 +2,7 @@
 
 import { LoadingState, PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { TrendingUp, TrendingDown, Minus, Loader2, RefreshCw } from "@buleje/design-system/icons";
+import { TrendingUp, TrendingDown, Minus, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -203,7 +203,7 @@ export default function MonthProjectionCard() {
                           "w-full rounded-t-sm min-h-[2px] transition-all",
                           isToday
                             ? "bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]"
-                            : "bg-primary dark:bg-[var(--accent-soft)]"
+                            : "bg-primary dark:bg-primary/10"
                         )}
                         style={{ height: `${Math.max(h, 2)}%` }}
                         title={`Dia ${d.label}: ${fmt(d.total)}`}

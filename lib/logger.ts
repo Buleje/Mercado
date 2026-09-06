@@ -72,7 +72,7 @@ function emit(level: LogLevel, message: string, context?: Record<string, unknown
       const rawErr = context?.error ?? context?.err;
       const errObj = rawErr instanceof Error ? rawErr : new Error(`${message}${rawErr ? ` — ${String(rawErr)}` : ""}`);
       try {
-        sentry.captureException(errObj, { extra: { message, ...(context ?? {}) } });
+        sentry.captureException(errObj, { extra: { message, ...context } });
       } catch {
         // Never let Sentry failure break logging
       }

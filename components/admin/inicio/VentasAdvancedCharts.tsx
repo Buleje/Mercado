@@ -236,7 +236,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
      
     const now = Date.now();
     const DAYS_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-    const buckets = Array.from({ length: 7 }).map((_, i) => ({
+    const buckets = Array.from({ length: 7 }).map((_, _i) => ({
       day: "",
       current: 0,
       previous: 0,

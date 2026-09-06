@@ -304,7 +304,7 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
                     className="relative rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 overflow-hidden"
                   >
                     <div
-                      className="absolute inset-y-0 left-0 bg-[var(--accent-soft)] transition-all"
+                      className="absolute inset-y-0 left-0 bg-primary/10 transition-all"
                       style={{ width: `${width}%` }}
                     />
                     <div className="relative flex items-center gap-3">

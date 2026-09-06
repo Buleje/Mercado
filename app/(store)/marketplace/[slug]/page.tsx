@@ -63,13 +63,41 @@ interface Props {
 // (getOrSet + Date.now). Para matar el warning de verdad habría que volver
 // prerender-safe toda la capa DB (mover Date.now dentro de "use cache"),
 // trabajo mayor fuera de alcance. Ver [[project_storefront_blocking_route]].
+//
+// ACTUALIZACIÓN 2026-09-05: vuelve `generateStaticParams`, pero SIN prerenderar
+// ninguna tienda real. Lo que rompió en mayo fue prerenderar páginas de verdad:
+// su render ejecutaba la capa DB (`Date.now()` en el proxy Prisma) en build y
+// lanzaba. Devolver SÓLO el placeholder habilita el shell estático —que es lo
+// único que el warning pedía— y deja que cada tienda siga rendeando on-demand
+// vía `dynamicParams` (default true), con todo el fetch dentro del <Suspense>
+// de abajo. Es el mismo diagnóstico que ya dejó escrito la ruta hermana
+// `producto/[productId]`: sin esta función el segmento dinámico no puede
+// prerenderar shell, y Next atribuye el "Uncached data" al RootLayout — que es
+// exactamente el stack que aparecía en el log.
+
+export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
+  // cacheComponents exige ≥1 entry. `__validate__` no existe como tienda: su
+  // render cae en `notFound()`. No se listan slugs reales A PROPÓSITO — ver la
+  // nota de arriba.
+  return [{ slug: "__validate__" }];
+}
 
 // ── generateMetadata ───────────────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  // `params` NO se puede awaitear DENTRO de `"use cache"` (no soportado en
+  // Next 16). Mientras se hacía, la directiva NO surtía efecto y este
+  // generateMetadata quedaba haciendo IO sin cachear — y como generateMetadata
+  // corre FUERA de todo <Suspense> por definición, eso es exactamente el
+  // blocking-route que la ruta venía reportando. El slug se resuelve acá
+  // afuera y entra como argumento plano a la función cacheada.
+  const { slug } = await params;
+  return buildStoreMetadata(slug);
+}
+
+async function buildStoreMetadata(slug: string): Promise<Metadata> {
   "use cache";
   cacheLife("minutes");
-  const { slug } = await params;
   cacheTag("marketplace-store", `marketplace-store:${slug}`);
   const store = await getStoreBySlug(slug);
 

@@ -37,10 +37,12 @@ import { CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 import { calculateCreditScore } from "@/lib/credit/scoring-engine";
 import { getAvailableCredit } from "@/lib/credit/installment-manager";
 import { FiadosDB } from "@/lib/db/fiados.db";
+import { MeCreditScoreDB } from "@/lib/db/me-credit-score.db";
 import { isFiadoDigitalPhase1Enabled } from "@/lib/feature-flags/fiado-digital";
-import { prisma } from "@/lib/prisma";
 import { CreditScoreCard } from "@/components/credit/CreditScoreCard";
 import { CreditTransparencyBanner } from "@/components/credit/CreditTransparencyBanner";
+import { RequestCreditIncreaseButton } from "@/components/credit/RequestCreditIncreaseButton";
+import { CreditRequestsDB } from "@/lib/db/credit-requests.db";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -71,22 +73,22 @@ const RISK_CONFIG: Record<
 > = {
   none: {
     label: "Sin riesgo",
-    cls: "bg-emerald-50 text-[var(--data-success-700)] border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800",
+    cls: "bg-[var(--data-success-50,var(--surface-sunken))] text-[var(--data-success-700)] border-[var(--data-success-200,var(--rule-base))]",
     icon: CheckCircle2,
   },
   low: {
     label: "Riesgo bajo",
-    cls: "bg-emerald-50 text-[var(--data-success-700)] border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800",
+    cls: "bg-[var(--data-success-50,var(--surface-sunken))] text-[var(--data-success-700)] border-[var(--data-success-200,var(--rule-base))]",
     icon: CheckCircle2,
   },
   medium: {
     label: "Riesgo medio",
-    cls: "bg-amber-50 text-[var(--data-warning-700)] border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800",
+    cls: "bg-[var(--data-warning-50,var(--surface-sunken))] text-[var(--data-warning-700)] border-[var(--data-warning-200,var(--rule-base))]",
     icon: Clock,
   },
   high: {
     label: "Riesgo alto",
-    cls: "bg-red-50 text-[var(--data-error-700)] border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800",
+    cls: "bg-[var(--data-error-50,var(--surface-sunken))] text-[var(--data-error-700)] border-[var(--data-error-200,var(--rule-base))]",
     icon: AlertCircle,
   },
 };
@@ -97,23 +99,23 @@ const FIADO_STATUS_CONFIG: Record<
 > = {
   ACTIVO: {
     label: "Activo",
-    cls: "bg-emerald-50 text-[var(--data-success-700)] dark:bg-emerald-900/20 dark:text-emerald-300",
-    dot: "bg-emerald-400",
+    cls: "bg-[var(--data-success-50,var(--surface-sunken))] text-[var(--data-success-700)]",
+    dot: "bg-[var(--data-success-500)]",
   },
   PAGADO: {
     label: "Pagado",
-    cls: "bg-emerald-50 text-[var(--data-success-700)] dark:bg-emerald-900/20 dark:text-emerald-300",
-    dot: "bg-emerald-400",
+    cls: "bg-[var(--data-success-50,var(--surface-sunken))] text-[var(--data-success-700)]",
+    dot: "bg-[var(--data-success-500)]",
   },
   VENCIDO: {
     label: "Vencido",
-    cls: "bg-red-50 text-[var(--data-error-700)] dark:bg-red-900/20 dark:text-red-300",
-    dot: "bg-red-400",
+    cls: "bg-[var(--data-error-50,var(--surface-sunken))] text-[var(--data-error-700)]",
+    dot: "bg-[var(--data-error-500)]",
   },
   CANCELADO: {
     label: "Cancelado",
-    cls: "bg-slate-50 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-    dot: "bg-slate-300",
+    cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+    dot: "bg-[var(--text-tertiary)]",
   },
 };
 
@@ -133,8 +135,8 @@ function ScoreBreakdown({
   breakdown: Record<string, number>;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <p className="text-sm font-semibold text-[var(--text-secondary)]">
         Desglose de tu score
       </p>
       <div className="mt-3 space-y-3">
@@ -145,15 +147,15 @@ function ScoreBreakdown({
             value >= 700
               ? "bg-[var(--data-success-500)]"
               : value >= 400
-                ? "bg-amber-400"
-                : "bg-red-400";
+                ? "bg-[var(--data-warning-500)]"
+                : "bg-[var(--data-error-500)]";
           return (
             <div key={key}>
-              <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+              <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
                 <span>{label}</span>
                 <span className="font-medium tabular-nums">{value}/1000</span>
               </div>
-              <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+              <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${color}`}
                   style={{ width: `${pct}%` }}
@@ -183,8 +185,8 @@ function ScoreHistory({
   if (history.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-      <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
         <History className="h-4 w-4 shrink-0" aria-hidden />
         Historial de score
       </div>
@@ -200,18 +202,18 @@ function ScoreHistory({
                 : TrendingDown;
           const deltaColor =
             delta === null || delta === 0
-              ? "text-slate-400"
+              ? "text-[var(--text-tertiary)]"
               : delta > 0
-                ? "text-[var(--data-success-600)] dark:text-emerald-400"
-                : "text-[var(--data-error-500)] dark:text-red-400";
+                ? "text-[var(--data-success-600)]"
+                : "text-[var(--data-error-500)]";
 
           return (
             <div
               key={i}
-              className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-700/50"
+              className="flex items-center justify-between rounded-xl bg-[var(--surface-sunken)] px-3 py-2.5"
             >
               <div className="flex items-center gap-2">
-                <span className="text-base font-bold text-slate-800 tabular-nums dark:text-slate-100">
+                <span className="text-base font-bold text-[var(--text-primary)] tabular-nums">
                   {h.score}
                 </span>
                 {delta !== null && (
@@ -226,7 +228,7 @@ function ScoreHistory({
                   </span>
                 )}
               </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
+              <span className="text-xs text-[var(--text-tertiary)]">
                 {formatDateShort(h.date)}
               </span>
             </div>
@@ -257,12 +259,12 @@ function FiadosActivos({
 
   if (activos.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
           <BadgeAlert className="h-4 w-4 shrink-0" aria-hidden />
           Mis Fiados
         </div>
-        <p className="mt-3 text-center text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-3 text-center text-sm text-[var(--text-tertiary)]">
           No tienes fiados activos. Buena señal!
         </p>
       </div>
@@ -270,13 +272,13 @@ function FiadosActivos({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
           <BadgeAlert className="h-4 w-4 shrink-0" aria-hidden />
           Mis Fiados
         </div>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+        <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
           {activos.length}
         </span>
       </div>
@@ -289,15 +291,15 @@ function FiadosActivos({
           return (
             <div
               key={f.id}
-              className="rounded-xl border border-slate-100 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-700/50"
+              className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
+                  <p className="truncate text-sm font-medium text-[var(--text-primary)]">
                     {f.descripcion ?? "Fiado"}
                   </p>
                   {f.fechaVence && (
-                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
                       Vence: {formatDateShort(f.fechaVence)}
                     </p>
                   )}
@@ -312,11 +314,11 @@ function FiadosActivos({
 
               {/* Barra de progreso del pago */}
               <div className="mt-2">
-                <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                <div className="flex justify-between text-xs text-[var(--text-tertiary)]">
                   <span>Pagado: {formatPEN(pagado)}</span>
                   <span>Total: {formatPEN(f.total)}</span>
                 </div>
-                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-600">
+                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
                   <div
                     className="h-full rounded-full bg-[var(--data-success-500)] transition-all"
                     style={{ width: `${pct}%` }}
@@ -325,7 +327,7 @@ function FiadosActivos({
                 </div>
               </div>
 
-              <p className="mt-1.5 text-right text-sm font-bold text-slate-800 dark:text-slate-100">
+              <p className="mt-1.5 text-right text-sm font-bold text-[var(--text-primary)]">
                 Saldo: {formatPEN(f.saldo)}
               </p>
             </div>
@@ -342,8 +344,8 @@ function TipsSection({ tips }: { tips: string[] }) {
   if (tips.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/40 dark:bg-amber-950/20">
-      <div className="flex items-center gap-2 text-sm font-semibold text-amber-800 dark:text-amber-300">
+    <div className="rounded-2xl border border-[var(--data-warning-200,var(--rule-base))] bg-[var(--data-warning-50,var(--surface-sunken))] p-4">
+      <div className="flex items-center gap-2 text-sm font-semibold text-[var(--data-warning-700)]">
         <Lightbulb className="h-4 w-4 shrink-0" aria-hidden />
         Cómo mejorar tu score
       </div>
@@ -351,9 +353,9 @@ function TipsSection({ tips }: { tips: string[] }) {
         {tips.map((tip, i) => (
           <li
             key={i}
-            className="flex items-start gap-1.5 text-sm text-[var(--data-warning-700)] dark:text-amber-400"
+            className="flex items-start gap-1.5 text-sm text-[var(--data-warning-700)]"
           >
-            <span className="mt-0.5 shrink-0 text-amber-400 dark:text-[var(--data-warning-600)]">
+            <span className="mt-0.5 shrink-0 text-[var(--data-warning-600)]">
               •
             </span>
             {tip}
@@ -387,18 +389,18 @@ export default async function MiCreditoPage() {
   if (!isFiadoDigitalPhase1Enabled()) {
     return (
       <div className="mx-auto max-w-md px-4 py-16 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-          <Clock className="h-8 w-8 text-slate-400" aria-hidden />
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)]">
+          <Clock className="h-8 w-8 text-[var(--text-tertiary)]" aria-hidden />
         </div>
-        <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+        <h1 className="text-xl font-bold text-[var(--text-primary)]">
           Próximamente
         </h1>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-2 text-sm text-[var(--text-tertiary)]">
           El portal de crédito digital estará disponible muy pronto.
         </p>
         <Link
           href="/"
-          className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[#2d6a4f] px-6 text-sm font-medium text-white hover:bg-[#245a42] dark:bg-[#2d6a4f] dark:hover:bg-[#245a42]"
+          className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[var(--accent)] px-6 text-sm font-medium text-white hover:bg-[var(--accent-dark,var(--accent))]"
         >
           Volver a la tienda
         </Link>
@@ -420,16 +422,16 @@ export default async function MiCreditoPage() {
   if (!customerPhone) {
     return (
       <div className="mx-auto max-w-md px-4 py-12 text-center">
-        <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+        <h1 className="text-xl font-bold text-[var(--text-primary)]">
           Cuenta no vinculada
         </h1>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-2 text-sm text-[var(--text-tertiary)]">
           Tu cuenta de correo aún no está vinculada a un perfil de cliente.
           Completa tu registro para ver tu crédito.
         </p>
         <Link
           href="/cuenta"
-          className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[#2d6a4f] px-6 text-sm font-medium text-white hover:bg-[#245a42]"
+          className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[var(--accent)] px-6 text-sm font-medium text-white hover:bg-[var(--accent-dark,var(--accent))]"
         >
           Ir a mi cuenta
         </Link>
@@ -438,42 +440,36 @@ export default async function MiCreditoPage() {
   }
 
   // Fetch en paralelo — scoring + crédito disponible + fiados + historial
-  const [scoreResult, creditInfo, fiados, history] = await Promise.all([
+  const [scoreResult, creditInfo, fiados, history, creditRequests] = await Promise.all([
     calculateCreditScore(tenantId, customerPhone).catch(() => null),
     getAvailableCredit(tenantId, customerPhone).catch(() => null),
     FiadosDB.list(tenantId, { customerId: customerPhone }).catch(() => []),
-    prisma.creditScoreHistory
-      .findMany({
-        where: { tenantId, customerId: customerPhone },
-        orderBy: { createdAt: "asc" },
-        take: 12,
-        select: {
-          score: true,
-          riskLevel: true,
-          trigger: true,
-          createdAt: true,
-        },
-      })
-      .catch(() => []),
+    // Acceso canónico vía DB class (regla #1): MeCreditScoreDB cachea + scopea
+    // por tenant. Devuelve DESC; acá el chart/deltas esperan ASC → reverse.
+    MeCreditScoreDB.getHistory(tenantId, customerPhone, 12).then((h) => [...h].reverse()),
+    // Frente 3 — solicitudes de línea del cliente (para mostrar "en revisión").
+    CreditRequestsDB.listByCustomer(tenantId, customerPhone, 3).catch(() => []),
   ]);
+
+  const hasPendingRequest = creditRequests.some((r) => r.status === "PENDING");
 
   // Si el scoring engine falla completamente (sin historial en DB aún)
   if (!scoreResult || !creditInfo) {
     return (
       <div className="mx-auto max-w-md px-4 py-12 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-900/20">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--data-warning-50,var(--surface-sunken))]">
           <AlertCircle className="h-8 w-8 text-[var(--data-warning-500)]" aria-hidden />
         </div>
-        <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+        <h1 className="text-xl font-bold text-[var(--text-primary)]">
           Sin datos aún
         </h1>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-2 text-sm text-[var(--text-tertiary)]">
           Todavía no tenemos suficiente historial para calcular tu score.
           Sigue comprando y vuelve pronto.
         </p>
         <Link
           href="/tienda"
-          className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[#2d6a4f] px-6 text-sm font-medium text-white hover:bg-[#245a42]"
+          className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[var(--accent)] px-6 text-sm font-medium text-white hover:bg-[var(--accent-dark,var(--accent))]"
         >
           Ir a la tienda
         </Link>
@@ -527,17 +523,17 @@ export default async function MiCreditoPage() {
       <div className="mb-6 flex items-center gap-3">
         <Link
           href="/cuenta"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)]"
           aria-label="Volver a mi cuenta"
         >
-          <ArrowLeft className="h-4 w-4 text-slate-600 dark:text-slate-300" aria-hidden />
+          <ArrowLeft className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
         </Link>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-bold text-slate-800 dark:text-slate-100">
+          <h1 className="truncate text-xl font-bold text-[var(--text-primary)]">
             Mi Crédito
           </h1>
           {customerName && (
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-[var(--text-tertiary)]">
               {customerName}
             </p>
           )}
@@ -562,6 +558,19 @@ export default async function MiCreditoPage() {
         />
       </div>
 
+      {/* Solicitud de línea de fiado (Frente 3). Si ya hay una PENDING, mostramos
+          "en revisión" en vez del botón; si no, el botón para pedir. */}
+      <div className="mt-4">
+        {hasPendingRequest ? (
+          <div className="flex items-center gap-2 rounded-2xl border border-[var(--data-warning-200,var(--rule-base))] bg-[var(--data-warning-50,var(--surface-sunken))] px-4 py-3 text-sm font-medium text-[var(--data-warning-700)]">
+            <Clock className="h-5 w-5 shrink-0" aria-hidden />
+            Tu solicitud de línea está en revisión. La bodega te avisará.
+          </div>
+        ) : (
+          <RequestCreditIncreaseButton />
+        )}
+      </div>
+
       {/* Fiados activos */}
       <div className="mt-4">
         <FiadosActivos fiados={fiadosForUI} />
@@ -583,13 +592,13 @@ export default async function MiCreditoPage() {
       </div>
 
       {/* CTA footer */}
-      <div className="mt-6 rounded-2xl border border-[#2d6a4f]/20 bg-[#2d6a4f]/5 p-4 text-center dark:border-[#2d6a4f]/30 dark:bg-[#2d6a4f]/10">
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+      <div className="mt-6 rounded-2xl border border-[var(--accent)]/20 bg-[var(--accent)]/5 p-4 text-center">
+        <p className="text-sm text-[var(--text-secondary)]">
           Cada compra y pago puntual mejora tu score.
         </p>
         <Link
           href="/tienda"
-          className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#2d6a4f] text-sm font-semibold text-white hover:bg-[#245a42] dark:bg-[#2d6a4f] dark:hover:bg-[#245a42]"
+          className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[var(--accent)] text-sm font-semibold text-white hover:bg-[var(--accent-dark,var(--accent))]"
         >
           Ir a comprar
         </Link>

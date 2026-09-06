@@ -22,6 +22,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, Keyboard } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 
 interface Shortcut {
@@ -87,7 +88,7 @@ export function KeyboardShortcutsHelp({ open, onClose, sections = DEFAULT_SECTIO
           className={cn(
             "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50",
             "max-w-2xl w-[calc(100vw-2rem)] max-h-[85vh]",
-            "bg-[var(--surface-canvas)] rounded-xl shadow-2xl border border-[var(--rule-base)] flex flex-col outline-none",
+            "bg-[var(--surface-canvas)] rounded-xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] flex flex-col outline-none",
           )}
         >
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
@@ -117,9 +118,9 @@ export function KeyboardShortcutsHelp({ open, onClose, sections = DEFAULT_SECTIO
           <div className="flex-1 overflow-y-auto p-5 space-y-6">
             {sections.map((section) => (
               <section key={section.title}>
-                <h3 className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
+                <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
                   {section.title}
-                </h3>
+                </CardTitle>
                 <dl className="divide-y divide-[var(--rule-soft)]">
                   {section.items.map((item, i) => (
                     <div key={i} className="flex items-center justify-between gap-4 py-2">

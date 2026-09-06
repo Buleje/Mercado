@@ -13,7 +13,14 @@ interface CreateData {
   proveedorNombre: string;
   motivo: string;
   notas?: string;
-  items: Array<{ nombre: string; cantidad: number; unidad: string }>;
+  items: Array<{
+    nombre: string;
+    cantidad: number;
+    unidad: string;
+    // ADR-379. `productId` ausente = ítem escrito a mano: no mueve stock.
+    productId?: number;
+    precioUnitario?: number;
+  }>;
 }
 
 export const SupplierReturnsDB = {
@@ -39,6 +46,8 @@ export const SupplierReturnsDB = {
             nombre: i.nombre,
             cantidad: i.cantidad,
             unidad: i.unidad,
+            productId: i.productId ?? null,
+            precioUnitario: i.precioUnitario ?? null,
           })),
         },
       },

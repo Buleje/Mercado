@@ -2,10 +2,17 @@
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { RotateCcw, Plus, X, ChevronDown, ChevronUp, Package, Truck, AlertCircle, Loader2, RefreshCw, BarChart2, Download, Clock, CheckCircle2 } from "@buleje/design-system/icons";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+import ProductCombobox, { type ProductOption } from "@/components/admin/shared/ProductCombobox";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { Field } from "@/components/admin/shared/Field";
+
+const DevolucionesChart = dynamic(() => import("./DevolucionesChart"), {
+  ssr: false,
+  loading: () => <div className="h-64 animate-pulse bg-[var(--color-muted)] rounded-xl" />,
+});
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -15,16 +22,43 @@ interface ItemDevuelto {
   nombre:   string;
   cantidad: number;
   unidad:   string;
+  // ADR-379. Sin `productId` el ítem no puede salir del stock: es un texto
+  // escrito a mano. Con él, la devolución mueve inventario al marcarse enviada.
+  productId?:     number;
+  precioUnitario?: number;
 }
+
+/** Lo que el proveedor debe por un ítem. Sin precio no se puede afirmar nada. */
+function valorItem(item: ItemDevuelto): number | null {
+  if (item.precioUnitario == null) return null;
+  return item.precioUnitario * item.cantidad;
+}
+
+/** Total de la devolución y cuántos ítems quedaron sin precio (que se avisa). */
+function valorDevolucion(items: ItemDevuelto[]): { total: number; sinPrecio: number } {
+  let total = 0;
+  let sinPrecio = 0;
+  for (const i of items) {
+    const v = valorItem(i);
+    if (v == null) sinPrecio++;
+    else total += v;
+  }
+  return { total, sinPrecio };
+}
+
+const soles = (n: number) => `S/${n.toFixed(2)}`;
 
 interface Devolucion {
   id:              string;
   createdAt:       string;
+  updatedAt?:      string;
   proveedorNombre: string;
   items:           ItemDevuelto[];
   motivo:          string;
   estado:          DevolucionEstado;
   notas?:          string | null;
+  /** Cuándo salió la mercadería del stock (ADR-379). Null = todavía no salió. */
+  stockAplicadoAt?: string | null;
 }
 
 interface Proveedor {
@@ -46,9 +80,29 @@ const MOTIVOS = [
 
 const ESTADO_STYLES: Record<DevolucionEstado, string> = {
   PENDIENTE: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
-  ENVIADA:   "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
-  RESUELTA:  "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  ENVIADA:   "bg-[var(--data-info-100)] text-[var(--data-info-500)]",
+  RESUELTA:  "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
 };
+
+// Etiquetas legibles (reporte QA Compras: "ENVIADA" = esperando respuesta del
+// proveedor). El valor persistido sigue siendo ENVIADA; solo cambia el display.
+const ESTADO_LABEL: Record<DevolucionEstado, string> = {
+  PENDIENTE: "Pendiente",
+  ENVIADA:   "Esperando respuesta",
+  RESUELTA:  "Resuelta",
+};
+
+// Días desde el envío tras los cuales una devolución "esperando respuesta" se
+// considera vencida (sin respuesta del proveedor) y se resalta para no perderla.
+const DIAS_LIMITE_RESPUESTA = 7;
+
+/** Días que una devolución lleva esperando respuesta (0 si no aplica). */
+function diasEsperando(dev: Devolucion): number {
+  if (dev.estado !== "ENVIADA") return 0;
+  const desde = new Date(dev.updatedAt ?? dev.createdAt).getTime();
+  if (Number.isNaN(desde)) return 0;
+  return Math.max(0, Math.floor((Date.now() - desde) / 86_400_000));
+}
 
 const ESTADO_SIGUIENTE: Record<DevolucionEstado, DevolucionEstado | null> = {
   PENDIENTE: "ENVIADA",
@@ -61,6 +115,39 @@ const ESTADO_LABEL_SIGUIENTE: Record<DevolucionEstado, string> = {
   ENVIADA:   "Marcar resuelta",
   RESUELTA:  "",
 };
+
+const CACHE_KEY = "admin-devoluciones-cache";
+const CACHE_TTL = 60 * 1000;
+
+/**
+ * Traduce una respuesta fallida a algo accionable para el encargado.
+ *
+ * Reporte QA Compras 2026-08-12: «"Marcar enviada" no cambió el estado ni tras
+ * refrescar». Las tres mutaciones hacían `if (res.ok) { … }` y nada en el else,
+ * con `catch {}` vacío al lado: un 404 (la fila vivía en otro tenant), un 403 de
+ * CSRF y un click sin efecto se veían exactamente igual — nada.
+ */
+async function mensajeDeError(res: Response, accion: string): Promise<string> {
+  // Un cuerpo ilegible no debe tapar el status, que es la parte útil.
+  const body = (await res.json().catch((err: unknown) => {
+    console.warn("[DevolucionesProveedorModule] respuesta de error sin JSON:", String(err));
+    return null;
+  })) as { error?: unknown; detail?: unknown } | null;
+  const detalle =
+    typeof body?.detail === "string" ? body.detail
+    : typeof body?.error === "string" ? body.error
+    : null;
+
+  switch (res.status) {
+    case 400: return detalle ?? "Faltan datos o son inválidos. Revisá el formulario.";
+    case 401:
+    case 403: return "Tu sesión venció. Recargá la página e intentá de nuevo.";
+    case 402: return detalle ?? "El plan de esta tienda no permite registrar cambios.";
+    case 404: return "Esa devolución ya no está disponible. Recargá la lista.";
+    case 429: return "Demasiados intentos seguidos. Esperá unos segundos.";
+    default:  return detalle ?? `No se pudo ${accion} (error ${res.status}).`;
+  }
+}
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
@@ -81,33 +168,64 @@ export default function DevolucionesProveedorModule() {
   const [items, setItems] = useState<ItemDevuelto[]>([{ nombre: "", cantidad: 1, unidad: "und" }]);
   const [guardando, setGuardando] = useState(false);
   const [showReportes, setShowReportes] = useState(false);
+  // Productos reales del inventario → combobox de búsqueda (reporte QA: el
+  // producto era texto libre, propenso a typos y descuadres).
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  // Aviso al operador: la causa real de un guardado que no entró.
+  const [aviso, setAviso] = useState<{ tipo: "error" | "ok"; texto: string } | null>(null);
 
-  // Cargar devoluciones con cache localStorage SWR (TTL 60s)
-  const fetchDevoluciones = useCallback(async () => {
-    const KEY = "admin-devoluciones-cache";
-    const TTL = 60 * 1000;
+  /**
+   * Deja el estado y el cache de localStorage en la misma página.
+   *
+   * Sin esto, una mutación exitosa vivía sólo en memoria: al volver al tab
+   * dentro del TTL, `fetchDevoluciones` rehidrataba el cache viejo y revertía
+   * en pantalla lo que ya estaba guardado en la DB.
+   */
+  // Toma un updater (no una lista ya calculada) para que dos acciones seguidas
+  // sobre filas distintas no se pisen: la segunda parte SIEMPRE del estado más
+  // reciente, no del que capturó su closure.
+  const persistir = useCallback((actualizar: (prev: Devolucion[]) => Devolucion[]) => {
+    setDevoluciones(prev => {
+      const next = actualizar(prev);
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: next, ts: Date.now() }));
+      } catch { /* quota */ }
+      return next;
+    });
+  }, []);
+
+  // Cargar devoluciones con cache localStorage SWR (TTL 60s).
+  // `forzar` = ignorar el TTL: lo usa el botón de recargar, que existe
+  // justamente para desconfiar de lo que hay en pantalla.
+  const fetchDevoluciones = useCallback(async (forzar = false) => {
     // Hidratar de cache primero
-    try {
-      const cached = localStorage.getItem(KEY);
-      if (cached) {
-        const { data, ts } = JSON.parse(cached) as { data: Devolucion[]; ts: number };
-        if (Array.isArray(data)) {
-          setDevoluciones(data);
-          setLoading(false);
-          if (Date.now() - ts < TTL) return;
+    if (!forzar) {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached) as { data: Devolucion[]; ts: number };
+          if (Array.isArray(data)) {
+            setDevoluciones(data);
+            setLoading(false);
+            if (Date.now() - ts < CACHE_TTL) return;
+          }
         }
-      }
-    } catch { /* ignore */ }
+      } catch { /* ignore */ }
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/supplier-returns");
       if (res.ok) {
         const data = await res.json();
         setDevoluciones(data);
-        try { localStorage.setItem(KEY, JSON.stringify({ data, ts: Date.now() })); } catch { /* quota */ }
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+        } catch { /* quota */ }
+      } else {
+        setAviso({ tipo: "error", texto: await mensajeDeError(res, "cargar las devoluciones") });
       }
     } catch {
-      // silencioso
+      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. Revisá tu internet." });
     } finally {
       setLoading(false);
     }
@@ -129,6 +247,25 @@ export default function DevolucionesProveedorModule() {
   useEffect(() => { fetchDevoluciones(); }, [fetchDevoluciones]);
   useEffect(() => { fetchProveedores(); }, [fetchProveedores]);
 
+  // Cargar productos del inventario para el combobox (una vez).
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/products")
+      .then(r => (r.ok ? r.json() : []))
+      .then((data: unknown) => {
+        if (cancelled) return;
+        const arr = Array.isArray(data) ? data : (data as { products?: unknown[] })?.products ?? [];
+        const list = (arr as Array<{ id?: number | string; name?: string; stock?: number | null; unit?: string; barcode?: string; costPrice?: number | null }>)
+          .filter(p => !!p.name)
+          // `costPrice` se conserva (ADR-379): es lo que se le reclama al
+          // proveedor, y hasta ahora se descartaba junto con el resto.
+          .map(p => ({ id: p.id ?? p.name!, name: p.name!, stock: p.stock ?? null, unit: p.unit, barcode: p.barcode, costPrice: p.costPrice ?? null }));
+        setProducts(list);
+      })
+      .catch(err => console.warn("[DevolucionesProveedorModule] products load failed:", err));
+    return () => { cancelled = true; };
+  }, []);
+
   // ── Acciones ─────────────────────────────────────────────────────────────
 
   function agregarItem() {
@@ -141,6 +278,36 @@ export default function DevolucionesProveedorModule() {
 
   function actualizarItem(index: number, campo: keyof ItemDevuelto, valor: string | number) {
     setItems(prev => prev.map((item, i) => i === index ? { ...item, [campo]: valor } : item));
+  }
+
+  /**
+   * Al elegir del inventario se guarda TODO lo que el buscador ya sabía: hasta
+   * ahora se quedaba sólo con el nombre y tiraba el id, que es justo lo que
+   * hace falta para mover stock y para saber cuánto vale lo devuelto (ADR-379).
+   */
+  function seleccionarProducto(index: number, p: ProductOption) {
+    setItems(prev => prev.map((item, i) => i === index ? {
+      ...item,
+      nombre: p.name,
+      productId: typeof p.id === "number" ? p.id : undefined,
+      precioUnitario: p.costPrice ?? undefined,
+      unidad: p.unit || item.unidad,
+    } : item));
+  }
+
+  /**
+   * Si el texto deja de coincidir con el producto elegido, el vínculo se corta.
+   * Mantenerlo sería peor que no tenerlo: descontaría stock de un producto que
+   * ya no es el que dice la pantalla.
+   */
+  function escribirNombreItem(index: number, texto: string) {
+    setItems(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      if (item.productId != null && texto !== item.nombre) {
+        return { ...item, nombre: texto, productId: undefined, precioUnitario: undefined };
+      }
+      return { ...item, nombre: texto };
+    }));
   }
 
   function resetFormulario() {
@@ -206,6 +373,7 @@ export default function DevolucionesProveedorModule() {
     if (!proveedorId || itemsValidos.length === 0) return;
 
     setGuardando(true);
+    setAviso(null);
     try {
       const proveedor = proveedores.find(p => p.id === proveedorId);
       const res = await fetch("/api/supplier-returns", {
@@ -222,12 +390,15 @@ export default function DevolucionesProveedorModule() {
 
       if (res.ok) {
         const nueva = await res.json();
-        setDevoluciones(prev => [nueva, ...prev]);
+        persistir(prev => [nueva, ...prev]);
         resetFormulario();
         setMostrarFormulario(false);
+        setAviso({ tipo: "ok", texto: `Devolución registrada para ${proveedor?.name ?? "el proveedor"}.` });
+      } else {
+        setAviso({ tipo: "error", texto: await mensajeDeError(res, "registrar la devolución") });
       }
     } catch {
-      // silencioso
+      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. La devolución no se guardó." });
     } finally {
       setGuardando(false);
     }
@@ -240,6 +411,7 @@ export default function DevolucionesProveedorModule() {
     if (!siguiente) return;
 
     setActionId(id);
+    setAviso(null);
     try {
       const res = await fetch(`/api/supplier-returns/${id}`, {
         method: "PATCH",
@@ -247,25 +419,52 @@ export default function DevolucionesProveedorModule() {
         body: JSON.stringify({ estado: siguiente }),
       });
       if (res.ok) {
-        const updated = await res.json();
-        setDevoluciones(prev => prev.map(d => d.id === id ? updated : d));
+        const updated = await res.json() as Devolucion & { avisos?: string[] };
+        persistir(prev => prev.map(d => d.id === id ? updated : d));
+
+        // Al marcar enviada la mercadería sale del stock (ADR-379). Decirlo es
+        // parte del cambio: un descuento de inventario silencioso es
+        // exactamente lo que no queremos que vuelva a pasar en este módulo.
+        const salioDelStock = siguiente === "ENVIADA" && !!updated.stockAplicadoAt;
+        const pendientes = updated.avisos ?? [];
+        setAviso({
+          tipo: pendientes.length > 0 ? "error" : "ok",
+          texto: [
+            `${dev.proveedorNombre}: ${ESTADO_LABEL[siguiente].toLowerCase()}.`,
+            salioDelStock ? "La mercadería salió del inventario." : "",
+            ...pendientes,
+          ].filter(Boolean).join(" "),
+        });
+      } else {
+        setAviso({ tipo: "error", texto: await mensajeDeError(res, "cambiar el estado") });
       }
     } catch {
-      // silencioso
+      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. El estado no cambió." });
     } finally {
       setActionId(null);
     }
   }
 
   async function eliminar(id: string) {
+    // El borrado es definitivo y no había ninguna pregunta de por medio: un
+    // click en el ícono equivocado se llevaba el registro de una devolución
+    // que quizá ya se le reclamó al proveedor.
+    const dev = devoluciones.find(d => d.id === id);
+    const detalle = dev ? `la devolución a ${dev.proveedorNombre} (${dev.items.length} item${dev.items.length === 1 ? "" : "s"})` : "esta devolución";
+    if (!window.confirm(`¿Eliminar ${detalle}?\n\nEs definitivo: no queda en la papelera ni se puede deshacer.`)) return;
+
     setActionId(id);
+    setAviso(null);
     try {
       const res = await fetch(`/api/supplier-returns/${id}`, { method: "DELETE", headers: csrfHeaders() });
       if (res.ok) {
-        setDevoluciones(prev => prev.filter(d => d.id !== id));
+        persistir(prev => prev.filter(d => d.id !== id));
+        setAviso({ tipo: "ok", texto: "Devolución eliminada." });
+      } else {
+        setAviso({ tipo: "error", texto: await mensajeDeError(res, "eliminar la devolución") });
       }
     } catch {
-      // silencioso
+      setAviso({ tipo: "error", texto: "Sin conexión con el servidor. No se eliminó nada." });
     } finally {
       setActionId(null);
     }
@@ -282,6 +481,9 @@ export default function DevolucionesProveedorModule() {
     ENVIADA:   devoluciones.filter(d => d.estado === "ENVIADA").length,
     RESUELTA:  devoluciones.filter(d => d.estado === "RESUELTA").length,
   };
+  // Devoluciones enviadas SIN respuesta pasado el límite — las que hay que
+  // reclamar al proveedor (reporte QA: "no perder de vista las pendientes").
+  const vencidas = devoluciones.filter(d => diasEsperando(d) > DIAS_LIMITE_RESPUESTA).length;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -293,7 +495,7 @@ export default function DevolucionesProveedorModule() {
       >
         <div className="flex items-center gap-2">
           <button
-            onClick={fetchDevoluciones}
+            onClick={() => fetchDevoluciones(true)}
             disabled={loading}
             aria-label="Recargar devoluciones"
             className="h-9 w-9 flex items-center justify-center rounded-lg border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
@@ -309,6 +511,40 @@ export default function DevolucionesProveedorModule() {
           </button>
         </div>
       </AdminModuleHeader>
+
+      {/* Resultado de la última acción. Antes no había ninguno: una devolución
+          que no se guardaba y una que sí se veían igual (reporte QA Compras). */}
+      {aviso && (
+        <div
+          role={aviso.tipo === "error" ? "alert" : "status"}
+          className={cn(
+            "flex items-start gap-2 rounded-xl border px-3 py-2.5",
+            aviso.tipo === "error"
+              ? "border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10"
+              : "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10",
+          )}
+        >
+          {aviso.tipo === "error"
+            ? <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-error-500)]" />
+            : <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-success-500)]" />}
+          <p className={cn(
+            "text-sm font-medium flex-1",
+            aviso.tipo === "error"
+              ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+              : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+          )}>
+            {aviso.texto}
+          </p>
+          <button
+            type="button"
+            onClick={() => setAviso(null)}
+            aria-label="Cerrar aviso"
+            className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* KPI summary 4 cards minimalistas */}
       {!loading && devoluciones.length > 0 && (() => {
@@ -329,7 +565,12 @@ export default function DevolucionesProveedorModule() {
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pendientes</p>
                 <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", conteos.PENDIENTE > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{conteos.PENDIENTE}</p>
-                <p className="text-xs text-[var(--text-tertiary)] mt-1">{conteos.ENVIADA} enviadas</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                  {conteos.ENVIADA} esperando respuesta
+                  {vencidas > 0 && (
+                    <span className="text-[var(--data-error-500)] font-bold"> · {vencidas} vencida{vencidas === 1 ? "" : "s"}</span>
+                  )}
+                </p>
               </div>
               <Clock className={cn("h-5 w-5 shrink-0", conteos.PENDIENTE > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]")} />
             </div>
@@ -397,25 +638,26 @@ export default function DevolucionesProveedorModule() {
 
           {/* Proveedor */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Proveedor *</label>
-              {loadingProveedores ? (
-                <div className="h-10 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
-              ) : (
-                <select
-                  value={proveedorId}
-                  onChange={e => setProveedorId(e.target.value)}
-                  className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
-                >
-                  <option value="">Seleccionar proveedor...</option>
-                  {proveedores.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+            <Field label="Proveedor *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
+              {(id) => (
+                loadingProveedores ? (
+                  <div className="h-10 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
+                ) : (
+                  <select
+                    id={id}
+                    value={proveedorId}
+                    onChange={e => setProveedorId(e.target.value)}
+                    className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  >
+                    <option value="">Seleccionar proveedor...</option>
+                    {proveedores.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                )
               )}
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Motivo *</label>
+            </Field>
+            <Field label="Motivo *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
               <select
                 value={motivo}
                 onChange={e => setMotivo(e.target.value)}
@@ -423,13 +665,13 @@ export default function DevolucionesProveedorModule() {
               >
                 {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
-            </div>
+            </Field>
           </div>
 
           {/* Items */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Items a devolver *</label>
+              <span className="text-xs font-medium text-[var(--text-secondary)]">Items a devolver *</span>
               <button
                 onClick={agregarItem}
                 className="flex items-center gap-1 text-xs text-primary hover:text-primary-dark font-medium"
@@ -439,12 +681,14 @@ export default function DevolucionesProveedorModule() {
             </div>
             {items.map((item, index) => (
               <div key={index} className="flex gap-2 items-center">
-                <input
-                  type="text"
-                  placeholder="Nombre del producto"
+                <ProductCombobox
+                  id={`devol-prod-${index}`}
+                  products={products}
                   value={item.nombre}
-                  onChange={e => actualizarItem(index, "nombre", e.target.value)}
-                  className="flex-1 px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  placeholder="Nombre del producto"
+                  inputClassName="py-2 text-sm"
+                  onChange={(text) => escribirNombreItem(index, text)}
+                  onSelect={(p) => seleccionarProducto(index, p)}
                 />
                 <input
                   type="number"
@@ -464,6 +708,15 @@ export default function DevolucionesProveedorModule() {
                   <option value="paq">paq</option>
                   <option value="bot">bot</option>
                 </select>
+                {/* Lo que vale este renglón. Sin producto elegido no hay costo
+                    que mostrar, y decirlo evita que el total parezca completo
+                    cuando no lo es. */}
+                <span className={cn(
+                  "w-24 shrink-0 text-right text-sm tabular-nums",
+                  valorItem(item) != null ? "font-semibold text-[var(--text-primary)]" : "text-[var(--text-tertiary)]",
+                )}>
+                  {valorItem(item) != null ? soles(valorItem(item)!) : "sin costo"}
+                </span>
                 {items.length > 1 && (
                   <button
                     onClick={() => quitarItem(index)}
@@ -474,11 +727,33 @@ export default function DevolucionesProveedorModule() {
                 )}
               </div>
             ))}
+
+            {/* El número con el que se le reclama al proveedor. */}
+            {(() => {
+              const { total, sinPrecio } = valorDevolucion(items.filter(i => i.nombre.trim() !== ""));
+              if (total === 0 && sinPrecio === 0) return null;
+              return (
+                <div className="flex items-baseline justify-between gap-3 rounded-xl bg-[var(--surface-sunken)] px-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">El proveedor te debe</p>
+                    {sinPrecio > 0 && (
+                      <p className="text-xs text-[var(--text-tertiary)]">
+                        {sinPrecio === 1
+                          ? "Falta el costo de 1 ítem: elegilo del inventario para contarlo."
+                          : `Faltan los costos de ${sinPrecio} ítems: elegilos del inventario para contarlos.`}
+                      </p>
+                    )}
+                  </div>
+                  <span className="shrink-0 text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
+                    {soles(total)}
+                  </span>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Notas */}
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-[var(--text-secondary)]">Notas adicionales</label>
+          <Field label="Notas adicionales" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
             <textarea
               value={notas}
               onChange={e => setNotas(e.target.value)}
@@ -486,7 +761,7 @@ export default function DevolucionesProveedorModule() {
               placeholder="Información adicional sobre la devolución..."
               className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] resize-none focus:outline-none focus:ring-2 focus:ring-secondary/40"
             />
-          </div>
+          </Field>
 
           {/* Botones */}
           <div className="flex justify-end gap-2 pt-1">
@@ -545,8 +820,25 @@ export default function DevolucionesProveedorModule() {
                         {dev.proveedorNombre}
                       </span>
                       <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full shrink-0", ESTADO_STYLES[dev.estado])}>
-                        {dev.estado}
+                        {ESTADO_LABEL[dev.estado]}
                       </span>
+                      {/* Días esperando respuesta — resalta las vencidas
+                          (>{DIAS_LIMITE_RESPUESTA}d) para no perderlas de vista. */}
+                      {dev.estado === "ENVIADA" && (() => {
+                        const dias = diasEsperando(dev);
+                        const vencida = dias > DIAS_LIMITE_RESPUESTA;
+                        return (
+                          <span className={cn(
+                            "text-xs font-bold px-2 py-0.5 rounded-full shrink-0 inline-flex items-center gap-1",
+                            vencida
+                              ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
+                              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                          )}>
+                            {vencida && <AlertCircle className="h-3 w-3" />}
+                            {dias === 0 ? "enviada hoy" : `esperando hace ${dias} ${dias === 1 ? "día" : "días"}`}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
                       <span className="text-xs text-[var(--text-tertiary)]">
@@ -556,6 +848,17 @@ export default function DevolucionesProveedorModule() {
                         <Package className="h-3 w-3" />
                         {dev.items.length} {dev.items.length === 1 ? "item" : "items"}
                       </span>
+                      {/* Cuánto debe el proveedor por esta devolución. Es el
+                          dato con el que se le reclama, y antes no existía. */}
+                      {(() => {
+                        const { total } = valorDevolucion(dev.items);
+                        if (total <= 0) return null;
+                        return (
+                          <span className="text-xs font-bold tabular-nums text-[var(--text-secondary)]">
+                            {soles(total)}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -563,7 +866,7 @@ export default function DevolucionesProveedorModule() {
                       <button
                         onClick={() => avanzarEstado(dev.id)}
                         disabled={actionId === dev.id}
-                        className="text-xs px-2.5 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 flex items-center gap-1"
+                        className="text-xs px-2.5 py-1.5 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] rounded-lg hover:bg-primary/20 transition-colors font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 flex items-center gap-1"
                       >
                         {actionId === dev.id && <Loader2 className="h-3 w-3 animate-spin" />}
                         {ESTADO_LABEL_SIGUIENTE[dev.estado]}
@@ -648,7 +951,7 @@ export default function DevolucionesProveedorModule() {
             <span className="text-sm font-semibold text-[var(--text-primary)]">
               Reportes de Devoluciones
             </span>
-            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-2 py-0.5 rounded-full">
               {devoluciones.length} registros
             </span>
           </div>
@@ -683,25 +986,7 @@ export default function DevolucionesProveedorModule() {
             </div>
 
             {/* Gráfico mensual */}
-            {reportesPorMes.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-[var(--text-secondary)] mb-3">
-                  Devoluciones por mes
-                </p>
-                <ResponsiveContainer minWidth={0} width="100%" height={180}>
-                  <BarChart data={reportesPorMes} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                    <Tooltip
-                      formatter={(val) => { const n = Number(val); return [`${n} devoluci${n === 1 ? "ón" : "ones"}`, ""] as [string, string]; }}
-                      contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                    />
-                    <Bar dataKey="total" fill="var(--accent)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+            <DevolucionesChart data={reportesPorMes} />
 
             {/* Top motivos + proveedores */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { USAGE_TIERS, type TierName } from "@/lib/billing/wire-up/usage-tiers";
+import type { NotifyLog } from "@/lib/superadmin/automation-cooldown";
 
 /**
  * Automatizaciones del superadmin (Brandon 2026-06-14). Reglas PRESET que
@@ -108,5 +109,21 @@ export async function setAutomationState(state: AutomationState, updatedBy: stri
     where: { key: "automations" },
     create: { key: "automations", value: state, updatedBy },
     update: { value: state, updatedBy },
+  });
+}
+
+const NOTIFY_LOG_KEY = "automation-notify-log";
+
+/** Log de dedup: a quien se aviso y cuando, por regla. */
+export async function getNotifyLog(): Promise<NotifyLog> {
+  const row = await prisma.platformSetting.findUnique({ where: { key: NOTIFY_LOG_KEY } });
+  return (row?.value as NotifyLog) ?? {};
+}
+
+export async function setNotifyLog(log: NotifyLog, updatedBy: string): Promise<void> {
+  await prisma.platformSetting.upsert({
+    where: { key: NOTIFY_LOG_KEY },
+    create: { key: NOTIFY_LOG_KEY, value: log, updatedBy },
+    update: { value: log, updatedBy },
   });
 }

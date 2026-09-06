@@ -16,7 +16,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Construction, Plus, X, Loader2, TrendingUp, Fuel,
-  Wrench, Truck, Pencil, Receipt, AlertTriangle, Download, FileText,
+  Wrench, Truck, Pencil, Receipt, Download, FileText,
   ClipboardCheck, CheckCircle, Calendar, CreditCard, Clock,
   Upload, BarChart3, Trophy, Store,
 } from "@buleje/design-system/icons";
@@ -24,6 +24,9 @@ import { cn } from "@/lib/utils";
 import { exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { CardTitle, DataTable } from "@buleje/design-system";
+import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
+import { Field } from "@/components/admin/shared/Field";
 import { generateContractPDF } from "@/lib/assets-contract";
 
 interface AssetStats {
@@ -57,7 +60,7 @@ const RATE_UNITS = [
 ];
 const unitNoun = (u: string) => RATE_UNITS.find(r => r.v === u)?.noun ?? u;
 const STATUS_META: Record<string, { label: string; chip: string }> = {
-  operativo:     { label: "Operativo",     chip: "bg-[var(--accent-soft)] text-[var(--accent)]" },
+  operativo:     { label: "Operativo",     chip: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
   mantenimiento: { label: "Mantenimiento", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" },
   parado:        { label: "Parado",        chip: "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" },
 };
@@ -71,6 +74,12 @@ const FIELD = "w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--su
 const LABEL = "block text-[length:var(--ts-2xs,0.6875rem)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5";
 
 type View = "flota" | "cobrar" | "calendario" | "ranking";
+
+// Sub-tabs top-level: coherencia con el resto del admin (AdminTabBar da
+// reorden por drag + registro en sidebar). Los badges son dinámicos (alertas
+// de mantto./combustible y pendientes por cobrar), así que el array se arma
+// en el render, no acá arriba.
+const ACTIVOS_MODULE_ID = "activos";
 
 export default function ActivosModule() {
   const [assets, setAssets] = useState<AssetStats[]>([]);
@@ -99,6 +108,13 @@ export default function ActivosModule() {
   const alerts = assets.reduce((n, a) => n + a.maintenanceDue + (a.fuelAlert ? 1 : 0), 0);
   // Categorías = defaults + las que ya usan las máquinas del tenant (custom persisten).
   const knownTypes = Array.from(new Set([...TYPES.map(t => t.v), ...assets.map(a => a.type)]));
+
+  const ACTIVOS_TAB_ITEMS: AdminTab[] = [
+    { id: "flota", label: "Flota", icon: Construction, badge: alerts > 0 ? alerts : undefined },
+    { id: "cobrar", label: "Por cobrar", icon: CreditCard, badge: totals.pending > 0 ? "!" : undefined },
+    { id: "calendario", label: "Calendario", icon: Calendar },
+    { id: "ranking", label: "Ranking", icon: BarChart3 },
+  ];
 
   const exportReport = () => {
     if (assets.length === 0) { toast.error("No hay máquinas para exportar"); return; }
@@ -130,6 +146,7 @@ export default function ActivosModule() {
   return (
     <div className="space-y-5">
       <AdminModuleHeader
+        as="h2"
         eyebrow="Finanzas · Maquinaria"
         title="Activos & Maquinaria"
         description="Alquila tus equipos y mira la ganancia real de cada máquina."
@@ -157,18 +174,14 @@ export default function ActivosModule() {
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
-        {([["flota", "Flota", Construction], ["cobrar", "Por cobrar", CreditCard], ["calendario", "Calendario", Calendar], ["ranking", "Ranking", BarChart3]] as const).map(([v, label, Icon]) => (
-          <button key={v} type="button" onClick={() => setView(v)}
-            className={cn("inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors sm:flex-none sm:px-4",
-              view === v ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>
-            <Icon className="h-3.5 w-3.5" /> {label}
-            {v === "cobrar" && totals.pending > 0 && <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--data-warning-500)] px-1 text-[length:var(--ts-2xs)] font-black text-white">!</span>}
-            {v === "flota" && alerts > 0 && <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--data-error-500)] px-1 text-[length:var(--ts-2xs)] font-black text-white">{alerts}</span>}
-          </button>
-        ))}
-      </div>
+      {/* Sub-tabs top-level: AdminTabBar da coherencia con el resto del admin
+          (reorden por drag, registro en sidebar). Vistas quedan como hermanas. */}
+      <AdminTabBar
+        moduleId={ACTIVOS_MODULE_ID}
+        tabs={ACTIVOS_TAB_ITEMS}
+        activeTab={view}
+        onTabChange={(id) => setView(id as View)}
+      />
 
       {/* Vistas */}
       {loading ? (
@@ -210,7 +223,7 @@ export default function ActivosModule() {
 function EmptyFleet({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-16 text-center">
-      <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Construction className="h-7 w-7" strokeWidth={2} /></span>
+      <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Construction className="h-7 w-7" strokeWidth={2} /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Aún no tienes máquinas</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">Agrega tu cargador, oruga o camión y empieza a registrar alquileres.</p>
       <button type="button" onClick={onAdd} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90"><Plus className="h-4 w-4" strokeWidth={2.5} /> Agregar primera máquina</button>
@@ -256,7 +269,7 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onC
   return (
     <div className="flex flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 transition-all hover:border-[var(--accent)]/40 hover:shadow-[var(--shadow-md)]">
       <div className="flex items-start gap-3">
-        <button type="button" onClick={onDetail} className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2} /></button>
+        <button type="button" onClick={onDetail} className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2} /></button>
         <div className="min-w-0 flex-1">
           <button type="button" onClick={onDetail} className="block truncate text-base font-extrabold text-[var(--text-primary)] hover:text-[var(--accent)]">{asset.name}</button>
           <p className="text-xs font-medium text-[var(--text-tertiary)]">{typeLabel(asset.type)}{asset.plate ? ` · ${asset.plate}` : ""}</p>
@@ -271,7 +284,7 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onC
           onClick={onPublish}
           title={asset.publishedProductId ? "Publicado como servicio de alquiler — tocá para quitarlo de la tienda" : "Publicar como servicio de alquiler en tu tienda/marketplace"}
           className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold transition-colors",
-            asset.publishedProductId ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
+            asset.publishedProductId ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
         >
           <Store className="h-3 w-3" /> {asset.publishedProductId ? "En tienda" : "Publicar en tienda"}
         </button>
@@ -388,7 +401,7 @@ function AssetFormModal({ asset, knownTypes, onClose, onSaved, onPublishChanged 
       <div className="space-y-5">
         {/* Resumen vivo */}
         <div className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
-          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Preview className="h-6 w-6" strokeWidth={2} /></span>
+          <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Preview className="h-6 w-6" strokeWidth={2} /></span>
           <div className="min-w-0">
             <p className="truncate text-sm font-extrabold text-[var(--text-primary)]">{form.name.trim() || "Nueva máquina"}</p>
             <p className="text-xs font-medium text-[var(--text-tertiary)]">{(form.type === "__new__" ? (form.newType.trim() || "Categoría nueva") : typeLabel(form.type))}{form.hourlyRate ? ` · ${fmt(Number(form.hourlyRate))}/${unitNoun(form.rateUnit).replace(/s$/, "")}` : ""}</p>
@@ -396,30 +409,29 @@ function AssetFormModal({ asset, knownTypes, onClose, onSaved, onPublishChanged 
         </div>
 
         <FormSection title="Identificación">
-          <div className="sm:col-span-2"><label className={LABEL}>Nombre *</label><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Cargador frontal CAT 938" className={FIELD} autoFocus /></div>
-          <div className="sm:col-span-2">
-            <label className={LABEL}>Categoría</label>
-            <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className={FIELD}>
+          <Field label="Nombre *" labelClassName={LABEL} className="sm:col-span-2"><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Cargador frontal CAT 938" className={FIELD} autoFocus /></Field>
+          <Field label="Categoría" labelClassName={LABEL} className="sm:col-span-2">{(id) => (<>
+            <select id={id} value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} className={FIELD}>
               {knownTypes.map(v => <option key={v} value={v}>{typeLabel(v)}</option>)}
               <option value="__new__">+ Nueva categoría…</option>
             </select>
             {form.type === "__new__" && <input value={form.newType} onChange={e => setForm(f => ({ ...f, newType: e.target.value }))} placeholder="Nombre de la categoría (ej. Motoniveladora)" className={cn(FIELD, "mt-2")} autoFocus />}
-          </div>
-          <div><label className={LABEL}>Placa / serie</label><input value={form.plate} onChange={e => setForm(f => ({ ...f, plate: e.target.value }))} placeholder="ABC-123" className={FIELD} /></div>
-          <div><label className={LABEL}>Estado</label><select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className={FIELD}>{Object.entries(STATUS_META).map(([v, m]) => <option key={v} value={v}>{m.label}</option>)}</select></div>
+          </>)}</Field>
+          <Field label="Placa / serie" labelClassName={LABEL}><input value={form.plate} onChange={e => setForm(f => ({ ...f, plate: e.target.value }))} placeholder="ABC-123" className={FIELD} /></Field>
+          <Field label="Estado" labelClassName={LABEL}><select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className={FIELD}>{Object.entries(STATUS_META).map(([v, m]) => <option key={v} value={v}>{m.label}</option>)}</select></Field>
         </FormSection>
 
         <FormSection title="Tarifa de alquiler">
-          <div><label className={LABEL}>Tarifa (S/)</label><input type="number" min="0" value={form.hourlyRate} onChange={e => setForm(f => ({ ...f, hourlyRate: e.target.value }))} placeholder="180" className={FIELD} /></div>
-          <div><label className={LABEL}>Cobro por</label><select value={form.rateUnit} onChange={e => setForm(f => ({ ...f, rateUnit: e.target.value }))} className={FIELD}>{RATE_UNITS.map(u => <option key={u.v} value={u.v}>{u.label}</option>)}</select></div>
-          <div><label className={LABEL} title="Horas/unidades disponibles por día — base de la utilización">Capacidad por día</label><input type="number" min="1" max="24" value={form.capacityPerDay} onChange={e => setForm(f => ({ ...f, capacityPerDay: e.target.value }))} placeholder="8" className={FIELD} /></div>
-          <div><label className={LABEL}>Valor de compra (S/)</label><input type="number" min="0" value={form.purchaseValue} onChange={e => setForm(f => ({ ...f, purchaseValue: e.target.value }))} placeholder="250000" className={FIELD} /></div>
+          <Field label="Tarifa (S/)" labelClassName={LABEL}><input type="number" min="0" value={form.hourlyRate} onChange={e => setForm(f => ({ ...f, hourlyRate: e.target.value }))} placeholder="180" className={FIELD} /></Field>
+          <Field label="Cobro por" labelClassName={LABEL}><select value={form.rateUnit} onChange={e => setForm(f => ({ ...f, rateUnit: e.target.value }))} className={FIELD}>{RATE_UNITS.map(u => <option key={u.v} value={u.v}>{u.label}</option>)}</select></Field>
+          <Field label={<span title="Horas/unidades disponibles por día — base de la utilización">Capacidad por día</span>} labelClassName={LABEL}><input type="number" min="1" max="24" value={form.capacityPerDay} onChange={e => setForm(f => ({ ...f, capacityPerDay: e.target.value }))} placeholder="8" className={FIELD} /></Field>
+          <Field label="Valor de compra (S/)" labelClassName={LABEL}><input type="number" min="0" value={form.purchaseValue} onChange={e => setForm(f => ({ ...f, purchaseValue: e.target.value }))} placeholder="250000" className={FIELD} /></Field>
         </FormSection>
 
         <FormSection title="Control del equipo">
-          <div><label className={LABEL} title="Lectura actual del horómetro (horas de motor)">Horómetro actual</label><input type="number" min="0" value={form.currentHours} onChange={e => setForm(f => ({ ...f, currentHours: e.target.value }))} placeholder="0" className={FIELD} /></div>
-          <div><label className={LABEL} title="Galones esperados por unidad — si consume más, salta la alerta">Meta combustible (gal/{unitNoun(form.rateUnit).replace(/s$/, "")})</label><input type="number" min="0" step="0.01" value={form.fuelTargetPerUnit} onChange={e => setForm(f => ({ ...f, fuelTargetPerUnit: e.target.value }))} placeholder="ej. 3.5" className={FIELD} /></div>
-          <div className="sm:col-span-2"><label className={LABEL}>Notas</label><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} placeholder="Año, marca, observaciones…" /></div>
+          <Field label={<span title="Lectura actual del horómetro (horas de motor)">Horómetro actual</span>} labelClassName={LABEL}><input type="number" min="0" value={form.currentHours} onChange={e => setForm(f => ({ ...f, currentHours: e.target.value }))} placeholder="0" className={FIELD} /></Field>
+          <Field label={<span title="Galones esperados por unidad — si consume más, salta la alerta">Meta combustible (gal/{unitNoun(form.rateUnit).replace(/s$/, "")})</span>} labelClassName={LABEL}><input type="number" min="0" step="0.01" value={form.fuelTargetPerUnit} onChange={e => setForm(f => ({ ...f, fuelTargetPerUnit: e.target.value }))} placeholder="ej. 3.5" className={FIELD} /></Field>
+          <Field label="Notas" labelClassName={LABEL} className="sm:col-span-2"><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} placeholder="Año, marca, observaciones…" /></Field>
         </FormSection>
 
         {/* Tienda — publicar como servicio de alquiler (solo al editar una máquina ya guardada) */}
@@ -431,7 +443,7 @@ function AssetFormModal({ asset, knownTypes, onClose, onSaved, onPublishChanged 
               onClick={togglePublish}
               disabled={publishing}
               className={cn("flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors disabled:opacity-60",
-                published ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]")}
+                published ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]")}
             >
               <span className={cn("inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", published ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
                 {publishing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Store className="h-5 w-5" />}
@@ -489,24 +501,23 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
     <ModalShell title={isIncome ? `Alquiler — ${asset.name}` : `Gasto — ${asset.name}`} subtitle={isIncome ? "Renta generada por la máquina" : "Combustible, mantenimiento u otro costo"} onClose={onClose} icon={isIncome ? TrendingUp : Fuel}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {isIncome ? (<>
-          <div className="sm:col-span-2"><label className={LABEL}>Cliente</label><input value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} placeholder="Maderera del Sur" className={FIELD} /></div>
-          <div><label className={LABEL}>Inicio (periodo)</label><input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={FIELD} /></div>
-          <div><label className={LABEL}>Fin (periodo)</label><input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className={FIELD} /></div>
-          <div><label className={LABEL}>Horómetro inicio</label><input type="number" min="0" value={form.hourStart} onChange={e => setForm(f => ({ ...f, hourStart: e.target.value }))} placeholder={asset.currentHours != null ? String(asset.currentHours) : "0"} className={FIELD} /></div>
-          <div><label className={LABEL}>Horómetro fin</label><input type="number" min="0" value={form.hourEnd} onChange={e => setForm(f => ({ ...f, hourEnd: e.target.value }))} placeholder="—" className={FIELD} /></div>
-          <div><label className={LABEL}>Cantidad ({unitNoun(form.unit)}) {hoursQty > 0 && form.quantity === "" && <span className="text-[var(--accent)] normal-case">· auto {hoursQty}</span>}</label><input type="number" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} placeholder={hoursQty > 0 ? String(hoursQty) : "8"} className={FIELD} /></div>
-          <div><label className={LABEL}>Tarifa (S/)</label><input type="number" min="0" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} placeholder="180" className={FIELD} /></div>
+          <Field label="Cliente" labelClassName={LABEL} className="sm:col-span-2"><input value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} placeholder="Maderera del Sur" className={FIELD} /></Field>
+          <Field label="Inicio (periodo)" labelClassName={LABEL}><input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={FIELD} /></Field>
+          <Field label="Fin (periodo)" labelClassName={LABEL}><input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className={FIELD} /></Field>
+          <Field label="Horómetro inicio" labelClassName={LABEL}><input type="number" min="0" value={form.hourStart} onChange={e => setForm(f => ({ ...f, hourStart: e.target.value }))} placeholder={asset.currentHours != null ? String(asset.currentHours) : "0"} className={FIELD} /></Field>
+          <Field label="Horómetro fin" labelClassName={LABEL}><input type="number" min="0" value={form.hourEnd} onChange={e => setForm(f => ({ ...f, hourEnd: e.target.value }))} placeholder="—" className={FIELD} /></Field>
+          <Field label={<>Cantidad ({unitNoun(form.unit)}) {hoursQty > 0 && form.quantity === "" && <span className="text-[var(--accent)] normal-case">· auto {hoursQty}</span>}</>} labelClassName={LABEL}><input type="number" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} placeholder={hoursQty > 0 ? String(hoursQty) : "8"} className={FIELD} /></Field>
+          <Field label="Tarifa (S/)" labelClassName={LABEL}><input type="number" min="0" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} placeholder="180" className={FIELD} /></Field>
         </>) : (<>
-          <div><label className={LABEL}>Categoría</label><select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className={FIELD}>{EXPENSE_CATS.map(c => <option key={c.v} value={c.v}>{c.label}</option>)}</select></div>
+          <Field label="Categoría" labelClassName={LABEL}><select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className={FIELD}>{EXPENSE_CATS.map(c => <option key={c.v} value={c.v}>{c.label}</option>)}</select></Field>
           {form.category === "combustible" && (<>
-            <div><label className={LABEL}>Galones</label><input type="number" min="0" value={form.gallons} onChange={e => setForm(f => ({ ...f, gallons: e.target.value }))} placeholder="20" className={FIELD} /></div>
-            <div><label className={LABEL}>Precio / galón (S/)</label><input type="number" min="0" value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} placeholder="16.50" className={FIELD} /></div>
+            <Field label="Galones" labelClassName={LABEL}><input type="number" min="0" value={form.gallons} onChange={e => setForm(f => ({ ...f, gallons: e.target.value }))} placeholder="20" className={FIELD} /></Field>
+            <Field label="Precio / galón (S/)" labelClassName={LABEL}><input type="number" min="0" value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} placeholder="16.50" className={FIELD} /></Field>
           </>)}
         </>)}
-        <div className="sm:col-span-2">
-          <label className={LABEL}>Monto total (S/) {autoAmount > 0 && form.amount === "" && <span className="text-[var(--accent)] normal-case">· auto {fmt(autoAmount)}</span>}</label>
+        <Field label={<>Monto total (S/) {autoAmount > 0 && form.amount === "" && <span className="text-[var(--accent)] normal-case">· auto {fmt(autoAmount)}</span>}</>} labelClassName={LABEL} className="sm:col-span-2">
           <input type="number" min="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder={autoAmount > 0 ? String(autoAmount) : "0.00"} className={cn(FIELD, "text-lg font-black")} />
-        </div>
+        </Field>
         {isIncome && (
           <div className="sm:col-span-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             <div className="flex gap-1 rounded-lg bg-[var(--surface-raised)] p-1">
@@ -514,12 +525,12 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
                 <button key={String(v)} type="button" onClick={() => setForm(f => ({ ...f, paid: v }))} className={cn("flex-1 rounded-md px-3 py-2 text-sm font-bold transition-colors", form.paid === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>
               ))}
             </div>
-            {!form.paid && <div className="mt-2"><label className={LABEL}>Vence el</label><input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className={FIELD} /></div>}
+            {!form.paid && <div className="mt-2"><Field label="Vence el" labelClassName={LABEL}><input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className={FIELD} /></Field></div>}
           </div>
         )}
-        <div className="sm:col-span-2"><label className={LABEL}>Notas</label><input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className={FIELD} /></div>
+        <Field label="Notas" labelClassName={LABEL} className="sm:col-span-2"><input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className={FIELD} /></Field>
       </div>
-      <div className={cn("mt-3 flex items-center justify-between rounded-xl px-4 py-3", isIncome ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-100)] dark:bg-amber-950/20")}>
+      <div className={cn("mt-3 flex items-center justify-between rounded-xl px-4 py-3", isIncome ? "bg-primary/10" : "bg-[var(--data-warning-100)] dark:bg-amber-950/20")}>
         <span className="text-sm font-bold text-[var(--text-secondary)]">{isIncome ? (form.paid ? "Ingreso a registrar" : "Por cobrar a registrar") : "Gasto a registrar"}</span>
         <span className={cn("font-mono text-xl font-bold tabular-nums", isIncome ? "text-primary" : "text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]")}>{fmt(effectiveAmount)}</span>
       </div>
@@ -541,9 +552,9 @@ function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: A
   return (
     <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex justify-end">
       <button type="button" aria-label="Cerrar" onClick={onClose} className="absolute inset-0 bg-[var(--text-primary)]/50 backdrop-blur-sm" />
-      <div className="relative flex h-full w-full max-w-md flex-col bg-[var(--surface-canvas)] shadow-2xl motion-safe:animate-[slideInRight_0.25s_ease-out]">
+      <div className="relative flex h-full w-full max-w-md flex-col bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] motion-safe:animate-[slideInRight_0.25s_ease-out]">
         <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 py-3.5">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Receipt className="h-5 w-5" /></span>
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Receipt className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-extrabold text-[var(--text-primary)]">{asset.name}</p>
             <p className="text-xs font-bold text-[var(--text-tertiary)]">Ganancia: <span className={cn("font-mono", asset.profit >= 0 ? "text-primary" : "text-[var(--data-error-600)]")}>{fmt(asset.profit)}</span>{asset.currentHours != null && <span> · {asset.currentHours} h</span>}</p>
@@ -564,7 +575,7 @@ function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: A
                 const inc = m.t === "income";
                 return (
                   <li key={m.id} className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-                    <span className={cn("inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", inc ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/20 dark:text-[var(--data-warning-500)]")}>{inc ? <TrendingUp className="h-4 w-4" /> : (m as ExpenseMov).category === "combustible" ? <Fuel className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}</span>
+                    <span className={cn("inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", inc ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/20 dark:text-[var(--data-warning-500)]")}>{inc ? <TrendingUp className="h-4 w-4" /> : (m as ExpenseMov).category === "combustible" ? <Fuel className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}</span>
                     <div className="min-w-0 flex-1 leading-tight">
                       <p className="truncate text-sm font-bold text-[var(--text-primary)]">{inc ? ((m as IncomeMov).client ?? "Alquiler") : EXPENSE_CATS.find(c => c.v === (m as ExpenseMov).category)?.label}{inc && !(m as IncomeMov).paid && <span className="ml-1 rounded bg-[var(--data-warning-100)] px-1 text-[length:var(--ts-2xs)] font-black text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">PENDIENTE</span>}</p>
                       <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{dStr(m.date)}{m.notes ? ` · ${m.notes}` : ""}</p>
@@ -613,7 +624,7 @@ function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged
     if (res.ok) { load(); onChanged(); }
   };
 
-  const stChip = (s: Maintenance["state"]) => s === "due" ? "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : s === "soon" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] text-[var(--accent)]";
+  const stChip = (s: Maintenance["state"]) => s === "due" ? "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : s === "soon" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
 
   return (
     <div className="space-y-2">
@@ -628,7 +639,7 @@ function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged
                 <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold", stChip(m.state))}>{m.detail}</span>
               </div>
               <div className="mt-2 flex gap-1.5">
-                <button type="button" onClick={() => complete(m)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-[var(--accent-soft)] px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:brightness-95"><CheckCircle className="h-3.5 w-3.5" /> Marcar hecho</button>
+                <button type="button" onClick={() => complete(m)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary/10 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:brightness-95"><CheckCircle className="h-3.5 w-3.5" /> Marcar hecho</button>
                 <button type="button" onClick={() => del(m)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--data-error-600)]"><X className="h-3.5 w-3.5" /></button>
               </div>
             </li>
@@ -673,7 +684,7 @@ function ReceivablesView({ onChanged }: { onChanged: () => void }) {
   if (rows == null) return <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</Center>;
   if (rows.length === 0) return (
     <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
-      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><CheckCircle className="h-6 w-6" /></span>
+      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><CheckCircle className="h-6 w-6" /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Todo cobrado</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">No tienes alquileres pendientes de pago.</p>
     </div>
@@ -712,7 +723,7 @@ function CalendarView({ assets }: { assets: AssetStats[] }) {
   if (items == null) return <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando agenda…</Center>;
   if (items.length === 0) return (
     <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
-      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Calendar className="h-6 w-6" /></span>
+      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Calendar className="h-6 w-6" /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Sin alquileres aún</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">Registra alquileres con fecha de inicio/fin y aparecerán acá en orden.</p>
     </div>
@@ -730,7 +741,7 @@ function CalendarView({ assets }: { assets: AssetStats[] }) {
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase leading-none">{new Date(start).toLocaleDateString("es-PE", { month: "short" })}</span>
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-[var(--text-primary)]">{i.assetName} {active && <span className="rounded bg-[var(--accent-soft)] px-1 text-[length:var(--ts-2xs)] font-black text-[var(--accent)]">EN USO</span>}</p>
+              <p className="truncate text-sm font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">{i.assetName} {active && <span className="rounded bg-primary/10 px-1 text-[length:var(--ts-2xs)] font-black text-[var(--accent)]">EN USO</span>}</p>
               <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{i.client ?? "Alquiler"}{i.startDate && i.endDate ? ` · ${dStr(i.startDate)} → ${dStr(i.endDate)}` : ` · ${dStr(i.date)}`}{!i.paid && " · pendiente"}</p>
             </div>
             <span className="font-mono text-sm font-bold tabular-nums text-primary">{fmt(i.amount)}</span>
@@ -746,7 +757,7 @@ function RankingView({ assets }: { assets: AssetStats[] }) {
   const [metric, setMetric] = useState<"profit" | "roi" | "util" | "cost">("profit");
   if (assets.length === 0) return (
     <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
-      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><BarChart3 className="h-6 w-6" /></span>
+      <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><BarChart3 className="h-6 w-6" /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Sin máquinas para comparar</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">Agrega máquinas y registra alquileres para ver cuál rinde más.</p>
     </div>
@@ -790,7 +801,7 @@ function RankingView({ assets }: { assets: AssetStats[] }) {
 
 // ── Importar flota (CSV/Excel) ──────────────────────────────────────────────
 const UNIT_ALIASES: Record<string, string> = { hora: "hora", horas: "hora", dia: "dia", día: "dia", dias: "dia", días: "dia", m3: "m3", "m³": "m3", viaje: "viaje", viajes: "viaje" };
-function ImportModal({ knownTypes, onClose, onDone }: { knownTypes: string[]; onClose: () => void; onDone: () => void }) {
+function ImportModal({ onClose, onDone }: { knownTypes: string[]; onClose: () => void; onDone: () => void }) {
   const [text, setText] = useState("");
   const [rows, setRows] = useState<{ name: string; type: string; plate: string | null; hourlyRate: number | null; rateUnit: string; capacityPerDay: number | null }[] | null>(null);
   const [importing, setImporting] = useState(false);
@@ -834,7 +845,7 @@ function ImportModal({ knownTypes, onClose, onDone }: { knownTypes: string[]; on
     <ModalShell title="Importar flota" subtitle="Pega o sube un Excel/CSV y crea varias máquinas de una" onClose={onClose} icon={Upload}>
       {result ? (
         <div className="py-6 text-center">
-          <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><CheckCircle className="h-7 w-7" /></span>
+          <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><CheckCircle className="h-7 w-7" /></span>
           <p className="text-base font-extrabold text-[var(--text-primary)]">{result.ok} importadas{result.fail > 0 ? ` · ${result.fail} con error` : ""}</p>
           <button type="button" onClick={onDone} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90">Listo</button>
         </div>
@@ -843,19 +854,20 @@ function ImportModal({ knownTypes, onClose, onDone }: { knownTypes: string[]; on
           Columnas (en este orden, separadas por coma): <span className="font-bold text-[var(--text-secondary)]">Nombre, Categoría, Placa, Tarifa, Cobro (hora/día/m³/viaje), Capacidad/día</span>. Una máquina por línea.
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3.5 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
-            <FileText className="h-4 w-4" /> Subir archivo
-            <input type="file" accept=".csv,.tsv,.txt,text/csv" className="hidden" onChange={e => onFile(e.target.files?.[0])} />
-          </label>
+          <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3.5 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+            <FileText className="h-4 w-4" />
+            <label htmlFor="activos-import-file" className="cursor-pointer">Subir archivo</label>
+            <input id="activos-import-file" type="file" accept=".csv,.tsv,.txt,text/csv" className="hidden" onChange={e => onFile(e.target.files?.[0])} />
+          </span>
           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">o pega abajo ↓</span>
         </div>
         <textarea value={text} onChange={e => { setText(e.target.value); parse(e.target.value); }} rows={6} className={cn(FIELD, "mt-2 font-mono")} placeholder={"Oruga D6, oruga, PUC-123, 180, hora, 8\nCamión Volquete, camion, ABC-456, 90, viaje, 6"} />
         {rows && rows.length > 0 && (
           <div className="mt-3 max-h-48 overflow-y-auto rounded-xl border border-[var(--rule-base)]">
-            <table className="w-full text-xs">
+            <DataTable className="w-full text-xs">
               <thead className="sticky top-0 bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"><tr><th className="px-2 py-1.5 text-left font-bold">Nombre</th><th className="px-2 py-1.5 text-left font-bold">Categoría</th><th className="px-2 py-1.5 text-right font-bold">Tarifa</th></tr></thead>
               <tbody>{rows.map((r, i) => <tr key={i} className="border-t border-[var(--rule-soft)]"><td className="px-2 py-1.5 font-bold text-[var(--text-primary)]">{r.name}</td><td className="px-2 py-1.5 text-[var(--text-secondary)]">{typeLabel(r.type)}</td><td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.hourlyRate != null ? fmt(r.hourlyRate) : "—"}</td></tr>)}</tbody>
-            </table>
+            </DataTable>
           </div>
         )}
         <div className="mt-6 flex items-center gap-3">
@@ -891,14 +903,14 @@ function ContractModal({ asset, onClose }: { asset: AssetStats; onClose: () => v
         <div className="sm:col-span-2 flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
           {([["contrato", "Contrato"], ["cotizacion", "Cotización"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setForm(f => ({ ...f, mode: v }))} className={cn("flex-1 rounded-lg px-3 py-2 text-sm font-bold transition-colors", form.mode === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
         </div>
-        <div className="sm:col-span-2"><label className={LABEL}>Cliente *</label><input value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} placeholder="Maderera del Sur S.A.C." className={FIELD} /></div>
-        <div><label className={LABEL}>Inicio</label><input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={FIELD} /></div>
-        <div><label className={LABEL}>Fin</label><input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className={FIELD} /></div>
-        <div><label className={LABEL}>Cantidad ({unitNoun(asset.rateUnit)})</label><input type="number" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} placeholder="8" className={FIELD} /></div>
-        <div><label className={LABEL}>Tarifa (S/)</label><input type="number" min="0" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} placeholder="180" className={FIELD} /></div>
-        <div className="sm:col-span-2"><label className={LABEL}>Condiciones / notas</label><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} placeholder="Incluye operador. Combustible por cuenta del cliente." /></div>
+        <Field label="Cliente *" labelClassName={LABEL} className="sm:col-span-2"><input value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} placeholder="Maderera del Sur S.A.C." className={FIELD} /></Field>
+        <Field label="Inicio" labelClassName={LABEL}><input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={FIELD} /></Field>
+        <Field label="Fin" labelClassName={LABEL}><input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className={FIELD} /></Field>
+        <Field label={`Cantidad (${unitNoun(asset.rateUnit)})`} labelClassName={LABEL}><input type="number" min="0" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} placeholder="8" className={FIELD} /></Field>
+        <Field label="Tarifa (S/)" labelClassName={LABEL}><input type="number" min="0" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} placeholder="180" className={FIELD} /></Field>
+        <Field label="Condiciones / notas" labelClassName={LABEL} className="sm:col-span-2"><textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} className={cn(FIELD, "resize-none")} placeholder="Incluye operador. Combustible por cuenta del cliente." /></Field>
       </div>
-      <div className="mt-3 flex items-center justify-between rounded-xl bg-[var(--accent-soft)] px-4 py-3"><span className="text-sm font-bold text-[var(--text-secondary)]">Total</span><span className="font-mono text-xl font-bold tabular-nums text-primary">{fmt(amount)}</span></div>
+      <div className="mt-3 flex items-center justify-between rounded-xl bg-primary/10 px-4 py-3"><span className="text-sm font-bold text-[var(--text-secondary)]">Total</span><span className="font-mono text-xl font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">{fmt(amount)}</span></div>
       <div className="mt-6 flex items-center gap-3">
         <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
         <button type="button" onClick={gen} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-extrabold text-white hover:bg-primary/90"><Download className="h-4 w-4" /> Generar PDF</button>
@@ -930,8 +942,8 @@ function ChecklistModal({ asset, onClose, onSaved }: { asset: AssetStats; onClos
         {([["salida", "Salida (entrega)"], ["retorno", "Retorno (recibo)"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setKind(v)} className={cn("flex-1 rounded-lg px-3 py-2 text-sm font-bold transition-colors", kind === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <div><label className={LABEL}>Cliente</label><input value={client} onChange={e => setClient(e.target.value)} className={FIELD} /></div>
-        <div><label className={LABEL}>Horómetro</label><input type="number" min="0" value={hours} onChange={e => setHours(e.target.value)} className={FIELD} /></div>
+        <Field label="Cliente" labelClassName={LABEL}><input value={client} onChange={e => setClient(e.target.value)} className={FIELD} /></Field>
+        <Field label="Horómetro" labelClassName={LABEL}><input type="number" min="0" value={hours} onChange={e => setHours(e.target.value)} className={FIELD} /></Field>
       </div>
       <div className="mt-3 space-y-1.5">
         {CHECKLIST_DEFAULT.map(l => (
@@ -942,7 +954,7 @@ function ChecklistModal({ asset, onClose, onSaved }: { asset: AssetStats; onClos
           </button>
         ))}
       </div>
-      <div className="mt-3"><label className={LABEL}>Observaciones</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={cn(FIELD, "resize-none")} placeholder="Rayón en la puerta, falta 1/4 de combustible…" /></div>
+      <div className="mt-3"><Field label="Observaciones" labelClassName={LABEL}><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={cn(FIELD, "resize-none")} placeholder="Rayón en la puerta, falta 1/4 de combustible…" /></Field></div>
       <ModalFooter onClose={onClose} onSave={save} saving={saving} saveLabel="Guardar checklist" />
     </ModalShell>
   );
@@ -952,12 +964,12 @@ function ChecklistModal({ asset, onClose, onSaved }: { asset: AssetStats; onClos
 function ModalShell({ title, subtitle, onClose, children, icon: Icon = Construction }: { title: string; subtitle: string; onClose: () => void; children: React.ReactNode; icon?: React.ComponentType<{ className?: string; strokeWidth?: number }> }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-2xl sm:max-w-2xl sm:rounded-2xl">
+      <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] sm:max-w-2xl sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-start gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-5">
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2.1} /></span>
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2.1} /></span>
           <div className="min-w-0 flex-1">
             <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Activos & Maquinaria</p>
-            <h2 className="text-xl font-extrabold leading-tight text-[var(--text-primary)]">{title}</h2>
+            <CardTitle as="h2" className="text-xl leading-tight">{title}</CardTitle>
             <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitle}</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-5 w-5" /></button>

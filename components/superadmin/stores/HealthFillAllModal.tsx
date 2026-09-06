@@ -601,7 +601,7 @@ export default function HealthFillAllModal({
                   className={`rounded-lg border p-3 text-sm ${
                     saveResult.failed.length === 0
                       ? "bg-emerald-50 border-emerald-200 text-[var(--data-success-700)]"
-                      : "bg-amber-50 border-amber-200 text-amber-800"
+                      : "bg-teal-50 border-teal-200 text-teal-800"
                   }`}
                 >
                   {saveResult.failed.length === 0 ? (
@@ -625,7 +625,7 @@ export default function HealthFillAllModal({
 
         {/* Progress bar mientras saving — feedback live */}
         {saving && (
-          <div className="px-5 py-2 border-t border-[var(--rule-base)] bg-[var(--accent-soft)]/30">
+          <div className="px-5 py-2 border-t border-[var(--rule-base)] bg-primary/10">
             <div className="flex items-center justify-between text-[length:var(--ts-xs)] font-bold text-[var(--accent)] mb-1">
               <span>Guardando...</span>
               <span className="tabular-nums">{saveProgress}/13</span>
@@ -713,7 +713,7 @@ function Section({
                   isComplete
                     ? "bg-emerald-100 text-[var(--data-success-700)]"
                     : scorePct >= 50
-                      ? "bg-amber-100 text-[var(--data-warning-700)]"
+                      ? "bg-teal-100 text-teal-700"
                       : "bg-rose-100 text-[var(--data-error-500)]"
                 }`}
               >

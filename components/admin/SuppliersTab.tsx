@@ -1,17 +1,19 @@
-﻿﻿"use client";
+"use client";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
-import { Trash2, Pencil, Check, X, Plus, Phone, Mail, MapPin, AlertTriangle, Clock, DollarSign, ChevronDown, ChevronUp, Award, Users, Building2, CreditCard } from "@buleje/design-system/icons";
+import { Trash2, Pencil, Check, X, Plus, Phone, Mail, MapPin, AlertTriangle, Clock, DollarSign, ChevronDown, ChevronUp, Award, Users, Building2, CreditCard, History } from "@buleje/design-system/icons";
 import type { DbSupplier } from "@/lib/jsondb";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
+import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import WhatsAppButton from "./WhatsAppButton";
 import SupplierScorecard from "./compras/SupplierScorecard";
+import SupplierTimeline from "./compras/SupplierTimeline";
 import ProveedorFormModal from "./proveedores/ProveedorFormModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -40,7 +42,10 @@ export default function SuppliersTab() {
   const [addForm, setAddForm] = useState({ name: "", ruc: "", phone: "", email: "", address: "", notes: "" });
   const [deleteTarget, setDeleteTarget] = useState<DbSupplier | null>(null);
   const [deleting, setDeleting] = useState(false);
+  /** Lo que dijo el servidor cuando no se pudo borrar. Antes se perdía. */
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [expandedScorecard, setExpandedScorecard] = useState<string | null>(null);
+  const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null);
   const [showProveedorModal, setShowProveedorModal] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<DbSupplier | null>(null);
   const [search, setSearch] = useState("");
@@ -86,10 +91,32 @@ export default function SuppliersTab() {
   const deleteSupplier = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    await fetch(`/api/suppliers/${deleteTarget.id}`, { method: "DELETE" });
-    setDeleting(false);
-    setDeleteTarget(null);
-    load();
+    setDeleteError(null);
+    try {
+      // Sin `csrfHeaders` esto devolvía 403 SIEMPRE, y como nadie miraba la
+      // respuesta el modal se cerraba igual: parecía borrado hasta que la lista
+      // se recargaba con el proveedor todavía ahí.
+      const res = await fetch(`/api/suppliers/${deleteTarget.id}`, {
+        method: "DELETE",
+        headers: csrfHeaders(),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setDeleteError(
+          typeof body?.error === "string"
+            ? body.error
+            : "No se pudo eliminar el proveedor. Intentá de nuevo.",
+        );
+        return;
+      }
+      setDeleteTarget(null);
+      load();
+    } catch (err) {
+      console.warn("[SuppliersTab] eliminar proveedor falló", err);
+      setDeleteError("No se pudo eliminar el proveedor. Revisá la conexión.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const addSupplier = async (e: FormEvent) => {
@@ -457,7 +484,7 @@ export default function SuppliersTab() {
                     <input value={editForm.address ?? ""} onChange={(e) => setEditForm(f => ({ ...f, address: e.target.value }))} placeholder="Dirección" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm sm:col-span-2" />
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={saveEdit} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] text-sm font-bold transition-colors">
+                    <button onClick={saveEdit} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10 text-sm font-bold transition-colors">
                       <Check className="h-4 w-4 inline mr-1" /> Guardar
                     </button>
                     <button onClick={cancelEdit} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-gray-50 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent text-sm font-semibold transition-colors">
@@ -531,6 +558,19 @@ export default function SuppliersTab() {
                       })()}
                     </div>
                     {s.notes && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1 italic">{s.notes}</p>}
+                    {/* Nudge de perfil incompleto (reporte QA): un proveedor
+                        creado rápido desde Punto de Compra queda solo con nombre
+                        (+RUC) y sin contacto/dirección. Aviso suave + acceso a
+                        completar la ficha. */}
+                    {!s.phone && !s.email && !s.address && (
+                      <div className="mt-2 flex items-center gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 px-3 py-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" aria-hidden />
+                        <span className="text-xs text-[var(--text-secondary)] dark:text-muted flex-1">Perfil incompleto — falta contacto y dirección.</span>
+                        <button type="button" onClick={() => { setEditingSupplier(s); setShowProveedorModal(true); }} className="text-xs font-bold text-primary hover:underline shrink-0">
+                          Completar
+                        </button>
+                      </div>
+                    )}
                     {/* Purchase history mini chart */}
                     {(() => {
                       const history = getMonthlyHistory(s.id);
@@ -569,6 +609,25 @@ export default function SuppliersTab() {
                       {expandedScorecard === s.id && (
                         <div className="mt-3">
                           <SupplierScorecard supplierId={s.id} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Timeline toggle: historial combinado OC + devoluciones
+                        (reporte QA Compras: no saltar entre pestañas). */}
+                    <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                      <button
+                        onClick={() => setExpandedTimeline(expandedTimeline === s.id ? null : s.id)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+                        title="Historial combinado de órdenes de compra y devoluciones"
+                      >
+                        <History className="h-3.5 w-3.5" />
+                        {expandedTimeline === s.id ? "Ocultar historial" : "Ver historial"}
+                        {expandedTimeline === s.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </button>
+                      {expandedTimeline === s.id && (
+                        <div className="mt-3">
+                          <SupplierTimeline supplierId={s.id} supplierName={s.name} />
                         </div>
                       )}
                     </div>
@@ -612,10 +671,16 @@ export default function SuppliersTab() {
       {/* ── Add supplier modal ── */}
       <ConfirmDeleteDialog
         open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        onClose={() => { setDeleteTarget(null); setDeleteError(null); }}
         onConfirm={deleteSupplier}
         title="¿Eliminar proveedor?"
-        description={deleteTarget ? `"${deleteTarget.name}" será eliminado permanentemente. Esta acción no se puede deshacer.` : "Esta acción no se puede deshacer"}
+        description={
+          deleteError
+            ? `No se eliminó: ${deleteError}`
+            : deleteTarget
+              ? `"${deleteTarget.name}" será eliminado permanentemente. Esta acción no se puede deshacer.`
+              : "Esta acción no se puede deshacer"
+        }
         confirmText="Sí, eliminar"
         loading={deleting}
       />
@@ -629,30 +694,24 @@ export default function SuppliersTab() {
             </div>
             <form onSubmit={addSupplier} className="p-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Nombre / Razon social *</label>
+                <Field label="Nombre / Razon social *" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                   <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Distribuidora Lima S.A.C." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">RUC</label>
+                </Field>
+                <Field label="RUC" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                   <input value={addForm.ruc} onChange={(e) => setAddForm(f => ({ ...f, ruc: e.target.value }))} placeholder="20xxxxxxxxx" maxLength={11} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm font-mono" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Teléfono</label>
+                </Field>
+                <Field label="Teléfono" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                   <input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="999 999 999" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Email</label>
+                </Field>
+                <Field label="Email" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
                   <input type="email" value={addForm.email} onChange={(e) => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="ventas@empresa.com" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Direccion</label>
+                </Field>
+                <Field label="Direccion" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1" className="sm:col-span-2">
                   <input value={addForm.address} onChange={(e) => setAddForm(f => ({ ...f, address: e.target.value }))} placeholder="Av. Colonial 1234, Lima" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">Notas</label>
+                </Field>
+                <Field label="Notas" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1" className="sm:col-span-2">
                   <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informacion adicional..." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm resize-none" />
-                </div>
+                </Field>
               </div>
               <div className="flex flex-wrap gap-3">
                 <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>

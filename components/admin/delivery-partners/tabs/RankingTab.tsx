@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { CheckCircle, Clock, DollarSign, Star, Trophy, Users } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
@@ -94,7 +94,7 @@ export function RankingTab() {
             </div>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                   <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
                 </span>
               </div>
@@ -108,7 +108,7 @@ export function RankingTab() {
             </div>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                   <DollarSign className="h-5 w-5 text-[var(--data-success-500)]" />
                 </span>
               </div>
@@ -171,7 +171,7 @@ export function RankingTab() {
             </p>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                   <th className="px-6 py-4 w-16">#</th>
@@ -213,7 +213,7 @@ export function RankingTab() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-11 w-11 rounded-2xl flex items-center justify-center text-base font-extrabold text-primary bg-primary/10 shrink-0">
+                          <div className="h-11 w-11 rounded-2xl flex items-center justify-center text-base font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 shrink-0">
                             {entry.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
@@ -262,7 +262,7 @@ export function RankingTab() {
                         <span className={cn(
                           "inline-flex items-center justify-center h-9 px-3 rounded-full text-sm font-extrabold tabular-nums",
                           entry.completionRate >= 0.85
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                             : entry.completionRate >= 0.5
                               ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                               : "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
@@ -274,7 +274,7 @@ export function RankingTab() {
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}

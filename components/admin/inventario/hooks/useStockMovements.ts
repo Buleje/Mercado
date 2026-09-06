@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
-import type { DbProduct } from "@/lib/jsondb";
 import type { FormEvent } from "react";
 
 type AddFormShape = {

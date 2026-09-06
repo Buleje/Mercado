@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { AlertCircle, Check, CheckCircle, ExternalLink, Eye, EyeOff, ImageOff, Megaphone, Minus, Package, PackageX, Pencil, RefreshCw, Search, Sparkles, TrendingDown, TrendingUp, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceProducts, type MarketplaceProduct } from "@/components/admin/marketplace/hooks/use-marketplace-products";
@@ -15,7 +15,7 @@ type SortKey = "name" | "retailPrice" | "wholesalePrice" | "stock";
 export function MarketplaceProductosTab() {
   const {
     products, loading, error, toggling, syncing, syncResult, bulkBusy, pricingId,
-    load, handleSync, toggleActive, bulkSetActive, updatePrice, createBoost, stopBoost,
+    load, handleSync, toggleActive, bulkSetActive, updatePrice, updateOferta, createBoost, stopBoost,
   } = useMarketplaceProducts();
   const { store } = useMarketplaceTienda();
   const storeSlug = store.slug;
@@ -32,7 +32,7 @@ export function MarketplaceProductosTab() {
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [editingPrice, setEditingPrice] = useState<{ id: string; field: "retailPrice" | "wholesalePrice"; value: string } | null>(null);
+  const [editingPrice, setEditingPrice] = useState<{ id: string; field: "retailPrice" | "wholesalePrice" | "discountPrice"; value: string } | null>(null);
   // Brandon mayo 2026 v7 (Nivel C): modal para destacar producto en marketplace.
   const [boostingProduct, setBoostingProduct] = useState<MarketplaceProduct | null>(null);
 
@@ -129,19 +129,38 @@ export function MarketplaceProductosTab() {
     }
   }
 
-  function startEditPrice(id: string, field: "retailPrice" | "wholesalePrice", current: number) {
-    setEditingPrice({ id, field, value: current.toFixed(2) });
+  function startEditPrice(
+    id: string,
+    field: "retailPrice" | "wholesalePrice" | "discountPrice",
+    current: number | null,
+  ) {
+    setEditingPrice({ id, field, value: current != null ? current.toFixed(2) : "" });
   }
 
   async function commitEditPrice() {
     if (!editingPrice) return;
     const num = Number(editingPrice.value);
+    /* La oferta admite vacío: significa "sin rebaja" y se manda como `null`.
+       Los precios no — un retail vacío no es un precio, es un descarte. */
+    if (editingPrice.field === "discountPrice") {
+      const vacio = editingPrice.value.trim() === "";
+      if (!vacio && (!Number.isFinite(num) || num <= 0)) { setEditingPrice(null); return; }
+      const result = await updateOferta(editingPrice.id, { discountPrice: vacio ? null : num });
+      // Si el backend rechazó (la oferta no baja el precio), se deja el valor
+      // tipeado en pantalla: el error ya se muestra arriba y así se corrige.
+      if (result.ok) setEditingPrice(null);
+      return;
+    }
     if (!Number.isFinite(num) || num < 0) {
       setEditingPrice(null);
       return;
     }
     const result = await updatePrice(editingPrice.id, { [editingPrice.field]: num });
     if (result.ok) setEditingPrice(null);
+  }
+
+  async function quitarOferta(id: string) {
+    await updateOferta(id, { discountPrice: null });
   }
 
   return (
@@ -237,7 +256,7 @@ export function MarketplaceProductosTab() {
 
       {/* ── Bulk action bar — aparece cuando hay selección ─────────── */}
       {selectedCount > 0 && (
-        <div className="flex items-center gap-2 flex-wrap p-3 rounded-xl border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)]">
+        <div className="flex items-center gap-2 flex-wrap p-3 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10">
           <span className="inline-flex items-center gap-1.5 text-sm font-extrabold text-[var(--accent)]">
             <Check className="h-4 w-4" strokeWidth={3} />
             {selectedCount} seleccionado{selectedCount !== 1 ? "s" : ""}
@@ -315,7 +334,7 @@ export function MarketplaceProductosTab() {
       ) : (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto max-h-[calc(100vh-22rem)]">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] sticky top-0 z-10 border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="w-10 px-3 py-3">
@@ -347,6 +366,9 @@ export function MarketplaceProductosTab() {
                     >
                       Precio retail <SortIcon k="retailPrice" currentKey={sortKey} currentDir={sortDir} />
                     </button>
+                  </th>
+                  <th className="text-right px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                    Oferta
                   </th>
                   <th className="text-right px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] hidden md:table-cell">
                     <button
@@ -382,7 +404,7 @@ export function MarketplaceProductosTab() {
                   return (
                     <tr key={p.id} className={cn(
                       "transition-colors",
-                      isSel ? "bg-[var(--accent-soft)]/50" : "hover:bg-[var(--surface-sunken)]/50",
+                      isSel ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]/50",
                     )}>
                       <td className="w-10 px-3 py-2.5">
                         <input
@@ -439,6 +461,23 @@ export function MarketplaceProductosTab() {
                             count={p.competitionStoreCount ?? 0}
                           />
                         </div>
+                      </td>
+                      {/* Oferta — editable inline. El precio que se cobra sale
+                          de `precioVigente()`: una vencida NO se aplica. */}
+                      <td className="px-3 py-2.5 text-right">
+                        <OfertaCell
+                          lista={p.retailPrice}
+                          oferta={p.discountPrice ?? null}
+                          hasta={p.discountUntil ?? null}
+                          isEditing={editingPrice?.id === p.id && editingPrice.field === "discountPrice"}
+                          editValue={editingPrice?.id === p.id && editingPrice.field === "discountPrice" ? editingPrice.value : ""}
+                          busy={pricingId === p.id}
+                          onStartEdit={() => startEditPrice(p.id, "discountPrice", p.discountPrice ?? null)}
+                          onChange={(v) => setEditingPrice((prev) => prev ? { ...prev, value: v } : prev)}
+                          onCommit={commitEditPrice}
+                          onCancel={() => setEditingPrice(null)}
+                          onQuitar={() => void quitarOferta(p.id)}
+                        />
                       </td>
                       {/* Mayorista — editable inline */}
                       <td className="px-3 py-2.5 text-right hidden md:table-cell">
@@ -529,7 +568,7 @@ export function MarketplaceProductosTab() {
                             target="_blank"
                             rel="noopener noreferrer"
                             title="Ver en marketplace público"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] transition-colors"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-primary/10 hover:text-[var(--accent)] transition-colors"
                           >
                             <ExternalLink className="h-3.5 w-3.5" aria-hidden />
                           </a>
@@ -541,7 +580,7 @@ export function MarketplaceProductosTab() {
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
           {filtered.length < products.length && (
             <div className="border-t border-[var(--rule-base)] px-4 py-2 bg-[var(--surface-sunken)] text-xs font-bold text-[var(--text-secondary)] flex items-center justify-between">
@@ -694,7 +733,7 @@ function BoostModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-2xl overflow-hidden"
+        className="w-full max-w-lg rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
       >
         <header className="flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)]">
           <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-secondary)]/15 text-[var(--brand-secondary)] shrink-0">
@@ -746,7 +785,7 @@ function BoostModal({
               <NumberField label="Duración" suffix="días" value={days} onChange={setDays} hint="Máx 90" />
               <NumberField label="Tope total" prefix="S/" value={maxBudget} onChange={setMaxBudget} hint="Corta al llegar" />
             </div>
-            <div className="rounded-xl bg-[var(--accent-soft)] border-2 border-[var(--accent)]/30 p-3 flex items-center justify-between">
+            <div className="rounded-xl bg-primary/10 border-2 border-[var(--accent)]/30 p-3 flex items-center justify-between">
               <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                 Gasto estimado
               </span>
@@ -847,6 +886,127 @@ function NumberField({
 }
 
 // ── Celda de precio editable inline ──────────────────────────────────────
+/**
+ * OfertaCell — poner, cambiar o sacar la rebaja de un producto.
+ *
+ * Hasta ahora `discountPrice` no se podía cargar desde ninguna pantalla, así que
+ * la vidriera tenía el tachado y el chip «-30%» listos para nada (148 productos,
+ * 0 ofertas). Acá se carga.
+ *
+ * Muestra el % calculado mientras se tipea —igual que el S//m³ del libro
+ * forestal— porque un 19.90 sobre 24.90 no dice nada y un «-20%» sí. Y distingue
+ * la oferta VENCIDA de la vigente: el precio que se cobra sale de
+ * `precioVigente()`, no de que el campo esté lleno.
+ */
+function OfertaCell({
+  lista,
+  oferta,
+  hasta,
+  isEditing,
+  editValue,
+  busy,
+  onStartEdit,
+  onChange,
+  onCommit,
+  onCancel,
+  onQuitar,
+}: {
+  lista: number;
+  oferta: number | null;
+  hasta: string | null;
+  isEditing: boolean;
+  editValue: string;
+  busy: boolean;
+  onStartEdit: () => void;
+  onChange: (v: string) => void;
+  onCommit: () => void;
+  onCancel: () => void;
+  onQuitar: () => void;
+}) {
+  if (isEditing) {
+    const n = Number(editValue);
+    // El % en vivo delata el dedazo: 199 en vez de 19.90 salta como "-699%".
+    const pct = Number.isFinite(n) && n > 0 && lista > 0 ? Math.round(((lista - n) / lista) * 100) : null;
+    return (
+      <div className="inline-flex items-center gap-1 justify-end">
+        <span className="text-xs font-bold text-[var(--text-tertiary)]">S/</span>
+        <input
+          type="number"
+          autoFocus
+          min={0}
+          step={0.5}
+          value={editValue}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); onCommit(); }
+            if (e.key === "Escape") onCancel();
+          }}
+          onBlur={onCommit}
+          disabled={busy}
+          aria-label="Precio de oferta"
+          className="w-20 h-7 px-2 rounded-md border-2 border-[var(--accent)] bg-[var(--surface-raised)] text-sm font-extrabold text-right tabular-nums outline-none"
+        />
+        {pct != null && (
+          <span className={cn(
+            "text-[length:var(--ts-2xs)] font-bold tabular-nums",
+            pct > 0 && pct < 100 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
+          )}>
+            {pct > 0 ? `-${pct}%` : "no baja"}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  if (oferta == null) {
+    return (
+      <button
+        type="button"
+        onClick={onStartEdit}
+        title="Poner este producto en oferta"
+        className="inline-flex items-center gap-1 text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
+      >
+        <Pencil className="h-3 w-3 opacity-60" aria-hidden /> —
+      </button>
+    );
+  }
+
+  const vencida = hasta != null && new Date(hasta).getTime() <= Date.now();
+  const pct = lista > 0 ? Math.round(((lista - oferta) / lista) * 100) : 0;
+  return (
+    <div className="inline-flex flex-col items-end gap-0.5">
+      <div className="inline-flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={onStartEdit}
+          title="Click para editar la oferta"
+          className="group inline-flex items-center gap-1.5 tabular-nums font-extrabold text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors"
+        >
+          <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" aria-hidden />
+          S/ {oferta.toFixed(2)}
+        </button>
+        <button
+          type="button"
+          onClick={onQuitar}
+          disabled={busy}
+          title="Quitar la oferta"
+          aria-label="Quitar la oferta"
+          className="rounded p-0.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors disabled:opacity-40"
+        >
+          <X className="h-3.5 w-3.5" aria-hidden />
+        </button>
+      </div>
+      {/* Vencida ≠ cargada: el cliente paga el precio de lista igual. */}
+      <span className={cn(
+        "text-[length:var(--ts-2xs)] font-bold tabular-nums",
+        vencida ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]",
+      )}>
+        {vencida ? "vencida · no se aplica" : `-${pct}%`}
+      </span>
+    </div>
+  );
+}
+
 function PriceCell({
   value,
   isEditing,

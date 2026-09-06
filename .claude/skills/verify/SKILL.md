@@ -1,6 +1,6 @@
 ---
 name: verify
-description: Gate obligatorio antes de reportar "listo". Corre tsc + lint + tests del área + curl de endpoints tocados. Si alguno falla, bloquea el reporte con una tabla de qué arreglar. Usar al cerrar una tarea, antes de decir "consolidado", "integrado", "terminado". Complementa a /deploy-check (que es pre-deploy full).
+description: Gate obligatorio antes de reportar "listo". Corre tsc + lint + tests del área + curl de endpoints tocados. Si alguno falla, bloquea el reporte con una tabla de qué arreglar. Usar al cerrar una tarea, antes de decir "consolidado", "integrado", "terminado". Complementa a /deploy check (que es pre-deploy full).
 user-invocable: true
 model: haiku
 allowed-tools: Bash, Read, Grep, Glob
@@ -46,6 +46,29 @@ Como `full` + además:
 Como `quick` + además:
 - Arranca dev server si no está vivo (`curl http://localhost:3000 || npm run dev &`)
 - MCP Playwright screenshot de la ruta donde aparece el componente
+- **Si el diff agrega un `fetch` con `method: POST|PUT|PATCH|DELETE`**:
+  `node scripts/audit-csrf-cliente.mjs` (~2s). El proxy exige `x-csrf-token` en
+  toda mutación de `/api/**` y una llamada sin token compila, testea y pasa lint
+  en verde — pero devuelve **403 en runtime** (lección 2026-08-03: el Directorio
+  forestal entero no podía guardar). Exit 1 = hay mutaciones sin token, con
+  archivo:línea.
+
+### `/verify build` — SI toqué páginas server, layouts, sitemap, lib usada en prerender
+
+**`tsc --noEmit` NO atrapa errores de prerender** (ej. `Date.now()` en server bajo
+Cache Components, cache `.next/dev` corrupto) — lección 2026-07-02: dos "listo"
+bloqueados por el Stop hook por saltarse esto. Un solo comando hace TODA la danza
+(mata dev → limpia .next → build → veredicto → re-levanta dev):
+
+```bash
+node scripts/build-gate.mjs            # gate completo, exit 0 = apto para "listo"
+node scripts/build-gate.mjs --no-restart   # sin re-levantar dev
+```
+
+Pegar el bloque "VEREDICTO BUILD-GATE" como evidencia. Log: `/tmp/build-gate.log`.
+Cuándo es OBLIGATORIO: cambios en `app/**/page.tsx` server, `app/**/layout.tsx`,
+`app/sitemap.ts`, o libs llamadas desde páginas prerenderizadas. Cambios client-only
+(`"use client"`) no lo requieren (tsc + curl + screenshot bastan).
 
 ## Algoritmo
 
@@ -92,13 +115,13 @@ NO reportar "listo" hasta que queden 0 fails.
 
 **NUNCA decir "listo" / "consolidado" / "integrado" sin haber corrido `/verify`.**
 
-Si un check falla, leer el error, arreglar, y re-correr `/verify`. Si después de 3 intentos sigue fallando, escalar con `/self-heal`.
+Si un check falla, leer el error, arreglar, y re-correr `/verify`. Si después de 3 intentos sigue fallando, escalar al agente `healer`.
 
 ## Complemento
 
-- `/deploy-check` — más exhaustivo, para PRE-DEPLOY real (incluye build + SLO gates)
+- `/deploy check` — más exhaustivo, para PRE-DEPLOY real (build-gate + SLO gates, sin push)
 - `/verify` — intra-sesión, barato, constante, antes de cada "listo"
-- `/self-heal` — cuando `/verify` falla repetido y hay que depurar
+- agente `healer` — cuando `/verify` falla repetido y hay que depurar
 
 ## Ejemplo de invocación
 

@@ -16,6 +16,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import AdminTabShell from "@/app/admin/_components/_shared/AdminTabShell";
 import AdminEmptyState from "@/app/admin/_components/_shared/AdminEmptyState";
 import { ADMIN_TOKENS } from "@/app/admin/_components/_shared/admin-tokens";
+import { DataTable } from "@buleje/design-system";
 
 interface QueueItem {
   id: string;
@@ -39,7 +40,7 @@ function fmt(dateStr: string | null) {
 function StatusBadge({ item }: { item: QueueItem }) {
   if (item.processedAt) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--data-success-500)]">
+      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-[var(--data-success-500)]">
         <CheckCircle2 size={12} /> Procesado
       </span>
     );
@@ -112,7 +113,14 @@ export default function WebhookQueuePage() {
   const dismissItem = async (id: string) => {
     setDeletingId(id);
     try {
-      await fetch(`/api/billing/webhook-queue?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      // El replay de arriba manda CSRF y este DELETE no: devolvía 403 y la
+      // fila desaparecía de la pantalla igual, así que el evento seguía en la
+      // cola y volvía a aparecer al recargar.
+      const res = await fetch(`/api/billing/webhook-queue?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: csrfHeaders(),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setItems((prev) => prev.filter((i) => i.id !== id));
     } catch {
       setError("Error al eliminar el evento");
@@ -208,7 +216,7 @@ export default function WebhookQueuePage() {
         ) : (
           <div className={`overflow-hidden ${ADMIN_TOKENS.card}`}>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <DataTable className="w-full text-sm">
                 <thead className="bg-[var(--surface-sunken)]/60">
                   <tr>
                     {["Estado", "Tipo de evento", "Intentos", "Próximo retry", "Creado", "Último error", ""].map(
@@ -268,7 +276,7 @@ export default function WebhookQueuePage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           </div>
         )}

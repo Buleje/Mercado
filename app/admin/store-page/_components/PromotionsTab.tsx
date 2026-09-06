@@ -112,7 +112,7 @@ export default function PromotionsTab() {
 
   async function remove(id: string) {
     if (!confirm("¿Eliminar esta promoción?")) return;
-    await fetch(`/api/store-page/promotions/${id}`, { method: "DELETE" });
+    await fetch(`/api/store-page/promotions/${id}`, { method: "DELETE", headers: csrfHeaders() });
     await load();
   }
 
@@ -256,7 +256,7 @@ export default function PromotionsTab() {
                 <div className="flex items-center gap-2">
                   <p className="font-bold">{p.title}</p>
                   {p.active ? (
-                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                       Activa
                     </span>
                   ) : (
@@ -285,7 +285,7 @@ export default function PromotionsTab() {
                 title={p.active ? "Pausar" : "Activar"}
                 className={`p-2 rounded-lg ${
                   p.active
-                    ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                    ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                     : "bg-gray-100 text-[var(--text-secondary)]"
                 }`}
               >

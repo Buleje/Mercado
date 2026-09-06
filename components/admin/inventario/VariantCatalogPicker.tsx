@@ -12,8 +12,9 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { CardTitle } from "@buleje/design-system";
 import {
-  BookOpen, Loader2, Check, Image as ImageIcon, ChevronDown, ChevronRight,
+  Loader2, Check, Image as ImageIcon, ChevronDown, ChevronRight,
   CheckSquare, Square, Plus,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -311,12 +312,12 @@ function TemplateRow({
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-bold text-[var(--text-primary)]">{template.name}</h3>
+              <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{template.name}</CardTitle>
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
                 {template.category}
               </span>
               {template.required && (
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   Obligatorio
                 </span>
               )}

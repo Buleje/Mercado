@@ -52,7 +52,7 @@ export function LoyaltyBanner({
         className="pointer-events-none absolute inset-0 opacity-10"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 80% 50%, #f97316 0%, transparent 60%)",
+            "radial-gradient(circle at 80% 50%, #ff6b5b 0%, transparent 60%)",
         }}
       />
 
@@ -70,7 +70,7 @@ export function LoyaltyBanner({
                 ? "Tienes un premio disponible"
                 : `Te faltan ${remaining} puntos para ${rewardValue} de descuento`}
             </p>
-            <span className="flex-shrink-0 rounded-full bg-[#f97316] px-2 py-0.5 text-xs font-bold text-white">
+            <span className="flex-shrink-0 rounded-full bg-[#ff6b5b] px-2 py-0.5 text-xs font-bold text-white">
               {points} pts
             </span>
           </div>
@@ -98,7 +98,7 @@ export function LoyaltyBanner({
               className={cn(
                 "h-full rounded-full",
                 completed
-                  ? "bg-[#f97316]"
+                  ? "bg-[#ff6b5b]"
                   : "bg-white"
               )}
               style={{ width: "0%" }}

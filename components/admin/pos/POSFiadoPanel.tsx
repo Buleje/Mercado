@@ -117,7 +117,7 @@ export default function POSFiadoPanel({
   // No data or no fiados
   if (!data || data.cantidadFiados === 0) {
     return (
-      <div className="flex items-center gap-2 p-2 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+      <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
         <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
         <span className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
           Sin deudas pendientes
@@ -144,7 +144,7 @@ export default function POSFiadoPanel({
         <div className="flex gap-1.5 shrink-0">
           <button
             onClick={() => setShowCobrar(!showCobrar)}
-            className="text-[length:var(--ts-xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] px-2 py-1 rounded-lg transition-colors"
+            className="text-[length:var(--ts-xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 hover:bg-primary/10 px-2 py-1 rounded-lg transition-colors"
           >
             <HandCoins className="h-3 w-3 inline mr-0.5" />
             Cobrar
@@ -211,7 +211,7 @@ export default function POSFiadoPanel({
             </div>
           )}
           {cobroResult && cobroResult.remaining <= 0.01 && (
-            <div role="status" className="flex items-center gap-1.5 p-2 rounded-md bg-[var(--accent-soft)] border border-[var(--data-success-500)]/40">
+            <div role="status" className="flex items-center gap-1.5 p-2 rounded-md bg-primary/10 border border-[var(--data-success-500)]/40">
               <CheckCircle className="h-3.5 w-3.5 text-[var(--data-success-500)] shrink-0" />
               <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-success-500)]">
                 Cobrado {fmt(cobroResult.cobrado)} ✓

@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 /**
  * MemberProfileDrawer — Drawer lateral con perfil de miembro Socio Buleje.
  *
@@ -101,7 +102,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-[var(--color-card)] w-full max-w-md h-full shadow-2xl overflow-y-auto"
+        className="bg-white dark:bg-[var(--color-card)] w-full max-w-md h-full shadow-[var(--shadow-xl)] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -212,7 +213,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
           {/* Extend form */}
           {extending && (
             <div className="space-y-2 p-3 bg-[var(--data-success-50)] border border-[var(--data-success-500)] rounded-xl">
-              <label className="text-xs font-bold text-[var(--text-primary)]">Extender membresía gratis</label>
+              <Field label="Extender membresía gratis" labelClassName="text-xs font-bold text-[var(--text-primary)]">
               <select
                 value={months}
                 onChange={(e) => setMonths(parseInt(e.target.value))}
@@ -223,6 +224,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
                 <option value={6}>6 meses adicionales</option>
                 <option value={12}>12 meses adicionales</option>
               </select>
+              </Field>
               <div className="flex gap-2">
                 <button
                   onClick={() => setExtending(false)}
@@ -247,7 +249,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <p>La cancelación es definitiva. El cliente pierde acceso a precios Socio inmediatamente.</p>
               </div>
-              <label className="text-xs font-bold text-[var(--text-primary)]">Motivo de cancelación</label>
+              <Field label="Motivo de cancelación" labelClassName="text-xs font-bold text-[var(--text-primary)]">
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
@@ -255,6 +257,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
                 placeholder="Ej: Solicitud del cliente, impago..."
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm resize-none"
               />
+              </Field>
               <div className="flex gap-2">
                 <button
                   onClick={() => setCancelling(false)}

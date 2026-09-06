@@ -49,6 +49,7 @@ import {
   TrendIcon,
   StarBadge,
 } from "@/components/delivery/icons";
+import RepartidoresOverview from "./RepartidoresOverview";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -371,6 +372,9 @@ export default function RepartidoresModule() {
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-5">
 
+      {/* ── Panorama ejecutivo de la flota (funciones de alto nivel) ── */}
+      <RepartidoresOverview />
+
       {/* ── KPIs ──────────────────────────────────── */}
       <section className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Kpi
@@ -614,7 +618,7 @@ function PartnerRow({
         <button
           type="button"
           onClick={onView}
-          className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
+          className="h-10 w-10 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0 hover:scale-105 transition-transform"
           aria-label="Ver detalle"
         >
           <MotoIcon className="h-5 w-5" />
@@ -694,7 +698,7 @@ function PartnerRow({
               type="button"
               onClick={onImpersonate}
               title="Acceder a su cuenta"
-              className="flex-1 sm:flex-none h-10 sm:h-9 px-3 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent-soft)] text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors inline-flex items-center justify-center gap-1.5"
+              className="flex-1 sm:flex-none h-10 sm:h-9 px-3 rounded-lg border border-[var(--accent)]/30 bg-primary/10 text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors inline-flex items-center justify-center gap-1.5"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Acceder
@@ -751,7 +755,7 @@ function StatusPill({ partner }: { partner: PartnerRow }) {
 function KycPill({ kycOk, missing }: { kycOk: boolean; missing: string[] }) {
   if (kycOk) {
     return (
-      <span className="inline-flex items-center gap-1 h-6 px-2 rounded-md bg-[var(--accent-soft)] text-[var(--accent)] text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider">
+      <span className="inline-flex items-center gap-1 h-6 px-2 rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider">
         <ShieldBadge className="h-3 w-3" />
         KYC OK
       </span>
@@ -811,7 +815,7 @@ function DetailDrawer({
         <header className="sticky top-0 z-10 px-6 py-5 bg-[var(--surface-canvas)]/95 backdrop-blur border-b border-[var(--rule-base)]">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0">
                 <MotoIcon className="h-6 w-6" />
               </div>
               <div className="min-w-0">
@@ -1033,7 +1037,7 @@ function DocumentosTab({ partner }: { partner: PartnerRow }) {
         />
       )}
       {!isMotor && (
-        <div className="rounded-xl bg-[var(--accent-soft)] border border-[var(--accent)]/30 px-4 py-3 text-sm text-[var(--text-primary)]">
+        <div className="rounded-xl bg-primary/10 border border-[var(--accent)]/30 px-4 py-3 text-sm text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">
           <p className="font-bold">No requiere documentos vehiculares</p>
           <p className="mt-0.5 text-[var(--text-secondary)]">
             Para {partner.vehicleType === "bicicleta" ? "bicicleta" : "reparto a pie"} no se exige licencia ni SOAT.
@@ -1401,7 +1405,7 @@ function ImpersonateModal({
     >
       <div className="px-5 py-4 space-y-3">
         <div className="rounded-lg bg-[var(--surface-sunken)] p-3 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0">
             <MotoIcon className="h-5 w-5" />
           </div>
           <div className="min-w-0">

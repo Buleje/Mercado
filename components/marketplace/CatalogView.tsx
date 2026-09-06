@@ -3,15 +3,10 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { m as motion, AnimatePresence } from "framer-motion";
 import {
-  Star,
   Package,
   Loader2,
   ArrowUp,
-  Flame,
-  Sparkles,
-  TrendingUp,
 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 import UnifiedProductCard from "@/components/marketplace/UnifiedProductCard";
 import SponsoredBadge from "@/components/marketplace/SponsoredBadge";
 import { useCatalogFilter } from "@/components/marketplace/catalog-filter-context";
@@ -95,8 +90,8 @@ export default function CatalogView({
   // Categoría + orden vienen del rail IZQUIERDO (layout 3-col del marketplace)
   // vía contexto. Sin provider → estado local (otros usos / standalone).
   const filterCtx = useCatalogFilter();
-  const [localSort, setLocalSort] = useState<SortOption>("popular");
-  const [localCategory, setLocalCategory] = useState("todos");
+  const [localSort] = useState<SortOption>("popular");
+  const [localCategory] = useState("todos");
   const sort = (filterCtx?.sort ?? localSort) as SortOption;
   const productCategory = filterCtx?.category ?? localCategory;
   // Vertical (tipo de tienda): viene del contexto en la HOME. "" = sin filtro.

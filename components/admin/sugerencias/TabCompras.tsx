@@ -11,6 +11,12 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import ProductImage from "./ProductImage";
+import {
+  normalizeProducts,
+  aggregateSalesByProduct,
+  aggregatePurchasesByProduct,
+  isoDaysAgo,
+} from "./normalize";
 
 interface Product {
   id: string | number;
@@ -63,15 +69,15 @@ const URGENCY = {
     text: "text-[var(--data-warning-500)]",
     bar: "bg-[var(--data-warning-500)]",
     border: "border-[var(--data-warning-500)]",
-    barTrack: "bg-[var(--data-warning-100,#fef3c7)]",
+    barTrack: "bg-[var(--data-warning-100,#fff1ef)]",
   },
   medium: {
     label: "Esta semana",
-    bg: "bg-[var(--accent-soft)]",
+    bg: "bg-primary/10",
     text: "text-[var(--data-success-500)]",
     bar: "bg-[var(--data-success-500)]",
     border: "border-[var(--data-success-500)]",
-    barTrack: "bg-[var(--accent-soft)]",
+    barTrack: "bg-primary/10",
   },
 } as const;
 
@@ -115,13 +121,13 @@ export default function TabCompras() {
     try {
       const [pr, sr, hr] = await Promise.all([
         fetch("/api/products?active=true&limit=200", { cache: "no-store" }),
-        fetch("/api/sales?days=7&groupBy=product", { cache: "no-store" }),
+        fetch(`/api/sales?from=${isoDaysAgo(7)}`, { cache: "no-store" }),
         fetch("/api/purchases?limit=200", { cache: "no-store" }),
       ]);
       let failed = false;
-      if (pr.ok) setProducts((await pr.json()).products ?? []); else failed = true;
-      if (sr.ok) setSales((await sr.json()).items ?? []); else failed = true;
-      if (hr.ok) setPurchases((await hr.json()).purchases ?? []); else failed = true;
+      if (pr.ok) setProducts(normalizeProducts(await pr.json())); else failed = true;
+      if (sr.ok) setSales(aggregateSalesByProduct(await sr.json())); else failed = true;
+      if (hr.ok) setPurchases(aggregatePurchasesByProduct(await hr.json())); else failed = true;
       if (failed) throw new Error("partial");
     } catch {
       setProducts(getMockProducts());

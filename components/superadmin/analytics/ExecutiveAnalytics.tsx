@@ -35,7 +35,6 @@ import {
   Phone,
   Loader2,
   AlertTriangle,
-  Truck,
   Users,
   Repeat,
   Zap,
@@ -78,7 +77,7 @@ const fmtSoles = (n: number) =>
 const CHANNEL_LABELS: Record<string, { label: string; color: string }> = {
   direct: { label: "Tienda directa", color: "#00A0A0" },
   marketplace: { label: "Marketplace", color: "#8B5CF6" },
-  wholesale: { label: "Mayorista", color: "#F59E0B" },
+  wholesale: { label: "Mayorista", color: "#0d9488" },
 };
 
 const DAYS_ES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
@@ -92,7 +91,7 @@ function InsightBadge({ tone, text }: { tone: "positive" | "negative" | "neutral
   const styles = {
     positive: "bg-emerald-50 text-[var(--data-success-700)] border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40",
     negative: "bg-rose-50 text-[var(--data-error-500)] border-rose-200 dark:bg-rose-950/30 dark:text-[var(--data-error-500)] dark:border-rose-800/40",
-    neutral: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/30",
+    neutral: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-[var(--accent)]/30",
   };
   return (
     <div className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-bold ${styles[tone]}`}>
@@ -204,7 +203,7 @@ export default function ExecutiveAnalytics({
           }
         >
           <ul className="space-y-2.5">
-            {data.orderFunnel.map((step, i) => {
+            {data.orderFunnel.map((step) => {
               const total = data.orderFunnel.reduce((s, x) => s + x.count, 0) || 1;
               const pct = (step.count / total) * 100;
               const isOK = step.status === "entregado";
@@ -377,7 +376,7 @@ export default function ExecutiveAnalytics({
                 con teléfono identificado
               </p>
             </div>
-            <div className="rounded-xl bg-[var(--accent-soft)] p-4">
+            <div className="rounded-xl bg-primary/10 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Repeat className="h-4 w-4 text-[var(--accent)]" />
                 <span className="text-sm font-bold uppercase tracking-wider text-[var(--accent)]">
@@ -402,6 +401,50 @@ export default function ExecutiveAnalytics({
           </div>
         </SuperadminChartCard>
       </div>
+
+      {/* ─── ROW: Cohortes de conversión (retención por mes de alta) ──────── */}
+      {data.cohorts.length > 0 && (
+        <div className="grid grid-cols-1 gap-6">
+          <SuperadminChartCard
+            kicker="RETENCIÓN · COHORTES"
+            title="Conversión por cohorte de alta"
+            description="De cada grupo de tiendas dadas de alta en un mes, cuántas pagan hoy."
+            actions={(() => {
+              const best = data.cohorts.reduce((a, b) => (b.conversionPct > a.conversionPct ? b : a));
+              return <InsightBadge tone={best.conversionPct >= 30 ? "positive" : "neutral"} text={`Mejor ${best.conversionPct}%`} />;
+            })()}
+          >
+            <ul className="space-y-3">
+              {data.cohorts.map((c) => {
+                const label = (() => {
+                  const d = new Date(`${c.month}-01T00:00:00`);
+                  return isNaN(d.getTime()) ? c.month : d.toLocaleDateString("es-PE", { month: "short", year: "numeric" });
+                })();
+                const bar =
+                  c.conversionPct >= 50
+                    ? "bg-[var(--data-success-500)]"
+                    : c.conversionPct >= 25
+                      ? "bg-[var(--accent)]"
+                      : "bg-[var(--data-warning-500)]";
+                return (
+                  <li key={c.month}>
+                    <div className="mb-1 flex items-center justify-between gap-3">
+                      <span className="text-base font-bold capitalize text-[var(--text-primary)]">{label}</span>
+                      <span className="text-sm text-[var(--text-secondary)] tabular-nums">
+                        {c.payingNow}/{c.signups} pagan ·{" "}
+                        <strong className="text-[var(--text-primary)]">{c.conversionPct}%</strong>
+                      </span>
+                    </div>
+                    <div className="h-3 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+                      <div className={`h-full rounded-full transition-all ${bar}`} style={{ width: `${Math.min(100, c.conversionPct)}%` }} />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </SuperadminChartCard>
+        </div>
+      )}
 
       {/* ─── ROW 3: MRR + AOV ────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-6">
@@ -530,11 +573,11 @@ export default function ExecutiveAnalytics({
                       "flex items-center gap-3 rounded-xl border px-4 py-3",
                       critical
                         ? "border-rose-300 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-900/40"
-                        : "border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900/40",
+                        : "border-teal-200 bg-teal-50 dark:bg-teal-950/20 dark:border-teal-900/40",
                     ].join(" ")}
                   >
                     <AlertTriangle
-                      className={`h-5 w-5 shrink-0 ${critical ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-600)]"}`}
+                      className={`h-5 w-5 shrink-0 ${critical ? "text-[var(--data-error-500)]" : "text-teal-600"}`}
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-base font-bold text-[var(--text-primary)] truncate">
@@ -545,7 +588,7 @@ export default function ExecutiveAnalytics({
                       </p>
                     </div>
                     <p
-                      className={`text-2xl font-extrabold tabular-nums shrink-0 ${critical ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-warning-700)] dark:text-amber-300"}`}
+                      className={`text-2xl font-extrabold tabular-nums shrink-0 ${critical ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-teal-700 dark:text-teal-300"}`}
                     >
                       {alert.stock === 0 ? "Agotado" : alert.stock}
                     </p>
@@ -568,7 +611,7 @@ export default function ExecutiveAnalytics({
           ) : (
             <div className="space-y-3">
               {data.paymentMethods.map((p, i) => {
-                const palette = ["#00A0A0", "#10B981", "#0EA5E9", "#8B5CF6", "#F59E0B", "#F43F5E"];
+                const palette = ["#00A0A0", "#10B981", "#0EA5E9", "#8B5CF6", "#0d9488", "#F43F5E"];
                 const totalRev = data.paymentMethods.reduce((s, x) => s + x.revenue, 0);
                 const pct = totalRev > 0 ? (p.revenue / totalRev) * 100 : 0;
                 return (

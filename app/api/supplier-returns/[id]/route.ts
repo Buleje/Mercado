@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
+import { revalidateTenantTag } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import {
@@ -15,6 +17,7 @@ import {
 
 /** Fire-and-forget WhatsApp al proveedor cuando se marca ENVIADA */
 function notifySupplierWhatsApp(
+  tenantId: string,
   proveedorId: string | null,
   proveedorNombre: string,
   returnId: string,
@@ -25,7 +28,7 @@ function notifySupplierWhatsApp(
   const apiToken = process.env.WHATSAPP_API_TOKEN;
   if (!apiUrl || !apiToken) return;
 
-  getSupplierPhone(proveedorId)
+  getSupplierPhone(tenantId, proveedorId)
     .then((phone) => {
       if (!phone) return;
       const digits = phone.replace(/\D/g, "");
@@ -50,6 +53,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   try {
     const auth = await requireAdmin(req, ["admin", "almacenero"]);
     if (auth instanceof NextResponse) return auth;
+    const blocked = await requireActiveSubscription(auth.tenantId);
+    if (blocked) return blocked;
 
     const { id } = await params;
     const body = await req.json();
@@ -65,12 +70,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Estado requerido" }, { status: 400 });
     }
 
-    const updated = await updateSupplierReturnEstado(auth.tenantId, id, body.estado);
-    if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const resultado = await updateSupplierReturnEstado(auth.tenantId, id, body.estado);
+    if (!resultado) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const { devolucion, avisos } = resultado;
+
+    // ADR-379: al marcar ENVIADA la mercadería salió del stock, y ese write va
+    // por `tx.product.update` fuera de ProductsDB — la invalidación corre por
+    // cuenta del endpoint o el Inventario sigue mostrando lo que ya no está.
+    if (devolucion.stockAplicadoAt) {
+      revalidateTenantTag(auth.tenantId, "products");
+    }
 
     // Notificar al proveedor por WhatsApp cuando se marca como ENVIADA
     if (body.estado === "ENVIADA" && record.estado !== "ENVIADA") {
       notifySupplierWhatsApp(
+        auth.tenantId,
         record.proveedorId,
         record.proveedorNombre,
         id,
@@ -78,7 +92,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       );
     }
 
-    return NextResponse.json(updated);
+    // `avisos` viaja al cliente para que la pantalla pueda decir qué NO se
+    // descontó (ítems a mano, productos sin control de stock, saldos negativos).
+    return NextResponse.json({ ...devolucion, avisos });
   } catch (e) {
     logger.error("[supplier-returns] PATCH error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
@@ -90,12 +106,18 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   try {
     const auth = await requireAdmin(req, ["admin"]);
     if (auth instanceof NextResponse) return auth;
+    const blocked = await requireActiveSubscription(auth.tenantId);
+    if (blocked) return blocked;
 
     const { id } = await params;
     const deleted = await deleteSupplierReturn(auth.tenantId, id);
     if (!deleted) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
+    // Borrar una devolución ya enviada devuelve stock: sin invalidar, el
+    // Inventario sigue mostrando el número de antes (mismo motivo que en el
+    // PATCH de arriba).
+    revalidateTenantTag(auth.tenantId, "products");
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[supplier-returns] DELETE error", { err: e instanceof Error ? e.message : String(e) });

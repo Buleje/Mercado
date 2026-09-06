@@ -1,4 +1,5 @@
 import React from "react";
+import { DataTable } from "@buleje/design-system";
 import { ChevronUp, ChevronDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +45,7 @@ function AdminTable({
 
   return (
     <div className={cn("overflow-x-auto", className)}>
-      <table className="w-full">
+      <DataTable className="w-full">
         <thead>
           <tr
             className={cn(
@@ -114,7 +115,7 @@ function AdminTable({
             children
           )}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }

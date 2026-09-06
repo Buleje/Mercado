@@ -36,14 +36,62 @@ interface BenefitDef {
 }
 
 const BENEFITS: BenefitDef[] = [
-  { key: "verified", label: "Verificada", desc: "Sello de confianza en la card y la tienda", Icon: ShieldCheck, group: "Visibilidad & Marketing" },
-  { key: "searchBoost", label: "Boost en búsqueda", desc: "Prioridad de orden por encima de las demás", Icon: TrendingUp, group: "Visibilidad & Marketing" },
-  { key: "featuredHome", label: "Destacar en Home", desc: "Aparece en la home del marketplace, no solo /tiendas", Icon: Sparkles, group: "Visibilidad & Marketing" },
-  { key: "ownBanner", label: "Banner propio", desc: "Slot de banner promocional en /tiendas", Icon: ImageIcon, group: "Visibilidad & Marketing" },
-  { key: "reducedCommission", label: "Comisión reducida", desc: "Override de comisión (ej. 0% por 90 días)", Icon: Percent, group: "Comercial & Operativo" },
-  { key: "featuredProducts", label: "Productos destacados", desc: "Fijar productos arriba en su tienda", Icon: Star, group: "Comercial & Operativo" },
-  { key: "prioritySupport", label: "Soporte prioritario", desc: "Cola VIP de soporte por WhatsApp", Icon: HeartHandshake, group: "Comercial & Operativo" },
-  { key: "advancedAnalytics", label: "Analytics avanzado", desc: "Métricas pro en el panel de la tienda", Icon: BarChart3, group: "Comercial & Operativo" },
+  {
+    key: "verified",
+    label: "Verificada",
+    desc: "Sello de confianza en la card y la tienda",
+    Icon: ShieldCheck,
+    group: "Visibilidad & Marketing",
+  },
+  {
+    key: "searchBoost",
+    label: "Boost en búsqueda",
+    desc: "Prioridad de orden por encima de las demás",
+    Icon: TrendingUp,
+    group: "Visibilidad & Marketing",
+  },
+  {
+    key: "featuredHome",
+    label: "Destacar en Home",
+    desc: "Aparece en la home del marketplace, no solo /tiendas",
+    Icon: Sparkles,
+    group: "Visibilidad & Marketing",
+  },
+  {
+    key: "ownBanner",
+    label: "Banner propio",
+    desc: "Slot de banner promocional en /tiendas",
+    Icon: ImageIcon,
+    group: "Visibilidad & Marketing",
+  },
+  {
+    key: "reducedCommission",
+    label: "Comisión reducida",
+    desc: "Override de comisión (ej. 0% por 90 días)",
+    Icon: Percent,
+    group: "Comercial & Operativo",
+  },
+  {
+    key: "featuredProducts",
+    label: "Productos destacados",
+    desc: "Fijar productos arriba en su tienda",
+    Icon: Star,
+    group: "Comercial & Operativo",
+  },
+  {
+    key: "prioritySupport",
+    label: "Soporte prioritario",
+    desc: "Cola VIP de soporte por WhatsApp",
+    Icon: HeartHandshake,
+    group: "Comercial & Operativo",
+  },
+  {
+    key: "advancedAnalytics",
+    label: "Analytics avanzado",
+    desc: "Métricas pro en el panel de la tienda",
+    Icon: BarChart3,
+    group: "Comercial & Operativo",
+  },
 ];
 
 const GROUPS = ["Visibilidad & Marketing", "Comercial & Operativo"] as const;
@@ -74,7 +122,7 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
           ...prev,
           [storeId]: {
             displayTier: body.displayTier ?? cur.displayTier,
-            benefits: { ...(cur.benefits ?? {}), ...(body.benefits ?? {}) },
+            benefits: { ...cur.benefits, ...body.benefits },
           },
         };
       });
@@ -119,7 +167,10 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
 
       {/* Buscador */}
       <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
+        <Search
+          className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]"
+          aria-hidden
+        />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -137,7 +188,7 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
           {filtered.map((store) => {
             const ov = overrides[store.id];
             const tier = (ov?.displayTier ?? store.displayTier ?? "standard") as DisplayTier;
-            const benefits = { ...(store.benefits ?? {}), ...(ov?.benefits ?? {}) };
+            const benefits = { ...store.benefits, ...ov?.benefits };
             const busy = busyId === store.id;
             const activeCount = BENEFITS.filter((b) => benefits[b.key]).length;
             return (
@@ -162,14 +213,18 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
                         <span className="text-sm font-extrabold text-[var(--text-primary)] truncate">
                           {store.name}
                         </span>
-                        <PlanBadge plan={store.tenant.plan as "free" | "pro" | "business" | "enterprise"} />
+                        <PlanBadge
+                          plan={store.tenant.plan as "free" | "pro" | "business" | "enterprise"}
+                        />
                         {activeCount > 0 && (
-                          <span className="rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-black text-white">
+                          <span className="rounded-full bg-[var(--accent)] px-2 py-0.5 text-xs font-black text-white">
                             {activeCount} activo{activeCount === 1 ? "" : "s"}
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-[var(--text-tertiary)] font-mono">{store.slug}</span>
+                      <span className="text-xs text-[var(--text-tertiary)] font-mono">
+                        {store.slug}
+                      </span>
                     </div>
                   </div>
                   <TierSelector
@@ -184,7 +239,7 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
                 <div className="grid gap-4 p-4 sm:grid-cols-2">
                   {GROUPS.map((group) => (
                     <div key={group}>
-                      <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-[var(--text-tertiary)]">
+                      <p className="mb-2 text-xs font-black uppercase tracking-wider text-[var(--text-tertiary)]">
                         {group}
                       </p>
                       <div className="space-y-1.5">
@@ -195,26 +250,30 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
                               key={b.key}
                               type="button"
                               disabled={busy}
-                              onClick={() =>
-                                patchStore(store.id, { benefits: { [b.key]: !on } })
-                              }
+                              onClick={() => patchStore(store.id, { benefits: { [b.key]: !on } })}
                               title={b.desc}
                               className={`group flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition-colors disabled:opacity-50 ${
                                 on
-                                  ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                                  ? "border-[var(--accent)] bg-primary/10"
                                   : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/40"
                               }`}
                             >
                               <span
                                 className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                                  on ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+                                  on
+                                    ? "bg-[var(--accent)] text-white"
+                                    : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                                 }`}
                               >
                                 <b.Icon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
                               </span>
                               <span className="min-w-0 flex-1">
-                                <span className="block text-xs font-bold text-[var(--text-primary)]">{b.label}</span>
-                                <span className="block text-[10px] leading-tight text-[var(--text-tertiary)] truncate">{b.desc}</span>
+                                <span className="block text-xs font-bold text-[var(--text-primary)]">
+                                  {b.label}
+                                </span>
+                                <span className="block text-xs leading-tight text-[var(--text-tertiary)] truncate">
+                                  {b.desc}
+                                </span>
                               </span>
                               {/* Switch visual */}
                               <span

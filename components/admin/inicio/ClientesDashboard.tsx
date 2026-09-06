@@ -6,7 +6,6 @@ import {
   Users, UserPlus, UserCheck, Star,
   AlertTriangle, TrendingUp, Heart, Crown,
 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
@@ -63,7 +62,6 @@ export interface ClientesData {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
 function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
 function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
 
@@ -223,7 +221,7 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
     const freqRanges = [
       { label: "1 compra", min: 1, max: 1, color: "#94a3b8" },
       { label: "2-3 compras", min: 2, max: 3, color: "#3b82f6" },
-      { label: "4-7 compras", min: 4, max: 7, color: "#f59e0b" },
+      { label: "4-7 compras", min: 4, max: 7, color: "#ff6b5b" },
       { label: "8+ compras", min: 8, max: Infinity, color: "var(--accent)" },
     ];
     const frecuenciaCompra = freqRanges.map(r => ({
@@ -330,25 +328,6 @@ export default function ClientesDashboard({ dateRange, onChangeRange }: Clientes
 
       {/* ── Charts especializados (cohort, RFM, rating, comparativa, heatmap, churn) ── */}
       <ClientesAdvancedCharts />
-    </div>
-  );
-}
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-5 animate-pulse">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28" />)}
-      </div>
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-[380px]" />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />)}
-      </div>
     </div>
   );
 }

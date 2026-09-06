@@ -58,6 +58,37 @@
 }
 
 @theme inline {
+  /* ───────────────────────────────────────────────────────────────────────────
+     Brandon 2026-06-17: "quita TODO el naranja del proyecto". Remapeo la paleta
+     default de Tailwind a colores de marca — afecta TODAS las clases
+     bg/text/border/from/to-amber-* y -orange-* (~300 archivos) SIN tocar
+     componentes (single source, reversible aquí mismo).
+       amber-*  → CORAL #FF6B5B (--brand-secondary) — warnings/alertas cálidas
+       orange-* → TEAL  #00A0A0 (--brand-primary)   — decorativo de marca
+     ─────────────────────────────────────────────────────────────────────────── */
+  --color-amber-50:  #fff1ef;
+  --color-amber-100: #ffe1dd;
+  --color-amber-200: #ffc8c1;
+  --color-amber-300: #ffa89d;
+  --color-amber-400: #ff8676;
+  --color-amber-500: #ff6b5b;
+  --color-amber-600: #f0503f;
+  --color-amber-700: #c93b2c;
+  --color-amber-800: #a23226;
+  --color-amber-900: #842e25;
+  --color-amber-950: #481310;
+  --color-orange-50:  #e6f7f7;
+  --color-orange-100: #c2ebeb;
+  --color-orange-200: #8fdada;
+  --color-orange-300: #4fc5c5;
+  --color-orange-400: #1aafaf;
+  --color-orange-500: #00a0a0;
+  --color-orange-600: #008787;
+  --color-orange-700: #006d6d;
+  --color-orange-800: #005757;
+  --color-orange-900: #004848;
+  --color-orange-950: #00292a;
+
   --color-background: #ffffff;
   --color-foreground: #111827;
   --color-primary: #00A0A0;        /* Turquesa del logo — fills/CTAs (paleta B) */
@@ -65,10 +96,12 @@
   --color-primary-light: #00BDBD;  /* Lighter turquoise variant */
   --color-secondary: #FF6B5B;      /* Coral - Brand Secondary (ofertas/hot) */
   --color-secondary-dark: #E8503F; /* Coral oscuro - hover */
+  --color-whatsapp: #25D366;       /* Verde WhatsApp (brand externo) - CTAs WA */
+  --color-whatsapp-dark: #1da851;  /* Verde WhatsApp hover */
   --color-accent: #00D4D4;         /* Bright aqua - Interactive */
   --color-danger: #ef4444;          /* Red 500 - Errors & alerts */
   --color-success: #10b981;         /* Emerald 500 - Confirmations */
-  --color-warning: #f59e0b;         /* Amber 500 - Warnings */
+  --color-warning: #ff6b5b;         /* Coral - Warnings (Brandon 2026-06-17, sin ámbar) */
   --color-surface: #f8fafa;
   --color-muted: #6b7280;
   --color-card: #ffffff;
@@ -223,7 +256,7 @@
   --color-accent: #14C2C2;
   --color-danger: #f87171;
   --color-success: #14C2C2;
-  --color-warning: #fbbf24;
+  --color-warning: #ff8676;
   --color-popover: #1c2230;
   --color-popover-foreground: #f0f3f7;
   --color-border: #2e3645;
@@ -351,6 +384,61 @@ body {
   [data-admin-shell="true"] form .grid {
     grid-template-columns: 1fr !important;
   }
+}
+
+/* ── Tienda individual: bordes rectos (Brandon 2026-06-21) ──────────────────
+   El comerciante pidió esquinas rectas en sus páginas (inicio + catálogo).
+   Scoped a [data-store-chrome="tenant"] (lo setea TenantStoreChrome en el
+   catálogo y el <main> en la landing) → NO afecta el marketplace de Buleje.
+   Se preservan los pills/círculos (rounded-full). */
+[data-store-chrome="tenant"] [class*="rounded"]:not([class*="rounded-full"]) {
+  border-radius: 0 !important;
+}
+
+/* ── Tienda individual: color de marca real en el catálogo (Brandon 2026-06-22) ──
+   PROBLEMA: globals.css declara `--color-primary` en `@theme inline`, así que
+   Tailwind HORNEA el teal Buleje (#00A0A0) literal en cada utility `*-primary`
+   (`bg-primary`, `text-primary`…). El catálogo (ProductCatalog/ProductCard/
+   CategoryBubbles) usa esas utilities → una tienda naranja (CompraFácil) salía
+   en teal, ignorando el `--color-primary` del tenant que el ThemeInjector sí
+   pone en :root.
+   FIX: dentro de la tienda individual (`[data-store-chrome="tenant"]`)
+   re-apuntamos ese set finito de utilities a `var(--color-primary)` /
+   `var(--color-primary-dark)`. Gana por especificidad + capa (regla sin @layer
+   > utilities). NO toca el marketplace (no lleva ese atributo). Lista derivada
+   por grep del árbol del catálogo — sincronizar si crecen las variantes. */
+[data-store-chrome="tenant"] {
+  .bg-primary { background-color: var(--color-primary); }
+  .bg-primary-dark { background-color: var(--color-primary-dark); }
+  .text-primary { color: var(--color-primary); }
+  .text-primary-dark { color: var(--color-primary-dark); }
+  .border-primary { border-color: var(--color-primary); }
+  .ring-primary { --tw-ring-color: var(--color-primary); }
+  .bg-primary\/5 { background-color: color-mix(in oklab, var(--color-primary) 5%, transparent); }
+  .bg-primary\/8 { background-color: color-mix(in oklab, var(--color-primary) 8%, transparent); }
+  .bg-primary\/10 { background-color: color-mix(in oklab, var(--color-primary) 10%, transparent); }
+  .bg-primary\/15 { background-color: color-mix(in oklab, var(--color-primary) 15%, transparent); }
+  .text-primary\/70 { color: color-mix(in oklab, var(--color-primary) 70%, transparent); }
+  .border-primary\/20 { border-color: color-mix(in oklab, var(--color-primary) 20%, transparent); }
+  .border-primary\/30 { border-color: color-mix(in oklab, var(--color-primary) 30%, transparent); }
+  .border-l-primary\/40 { border-left-color: color-mix(in oklab, var(--color-primary) 40%, transparent); }
+  .ring-primary\/30 { --tw-ring-color: color-mix(in oklab, var(--color-primary) 30%, transparent); }
+  .shadow-primary\/10 { --tw-shadow-color: color-mix(in oklab, var(--color-primary) 10%, transparent); }
+  .shadow-primary\/20 { --tw-shadow-color: color-mix(in oklab, var(--color-primary) 20%, transparent); }
+  .shadow-primary\/25 { --tw-shadow-color: color-mix(in oklab, var(--color-primary) 25%, transparent); }
+  .hover\:bg-primary:hover { background-color: var(--color-primary); }
+  .hover\:bg-primary-dark:hover { background-color: var(--color-primary-dark); }
+  .hover\:bg-primary\/8:hover { background-color: color-mix(in oklab, var(--color-primary) 8%, transparent); }
+  .hover\:bg-primary\/10:hover { background-color: color-mix(in oklab, var(--color-primary) 10%, transparent); }
+  .hover\:text-primary:hover { color: var(--color-primary); }
+  .hover\:border-primary:hover { border-color: var(--color-primary); }
+  .focus\:ring-primary\/30:focus { --tw-ring-color: color-mix(in oklab, var(--color-primary) 30%, transparent); }
+  .focus\:border-primary:focus { border-color: var(--color-primary); }
+
+  /* El placeholder "Falta agregar imagen" es copy interno para el dueño; al
+     cliente final de la tienda individual NO se lo mostramos. Se conserva el
+     ícono neutro de imagen. (En admin/marketplace la pista al dueño queda.) */
+  [data-img-placeholder] span { display: none; }
 }
 
 /* CSS entrance animations (used for above-fold LCP elements) */
@@ -671,12 +759,18 @@ body {
     display: none;
   }
 
-  .admin-mobile-cards tbody {
+  /* `tfoot` va con `tbody`: dejarlo como table-footer-group mantenía vivo el
+     algoritmo de columnas de la tabla y las "cards" salían angostas (medido:
+     354px sin tfoot → 270px con tfoot). La fila de totales pasa a ser una card
+     más, que es como se lee en un teléfono. */
+  .admin-mobile-cards tbody,
+  .admin-mobile-cards tfoot {
     display: grid;
     gap: 0.75rem;
   }
 
-  .admin-mobile-cards tbody tr {
+  .admin-mobile-cards tbody tr,
+  .admin-mobile-cards tfoot tr {
     display: block;
     border: 1px solid var(--color-card-border);
     border-radius: 1rem;
@@ -688,7 +782,9 @@ body {
   }
 
   .admin-mobile-cards tbody td,
-  .admin-mobile-cards tbody th {
+  .admin-mobile-cards tbody th,
+  .admin-mobile-cards tfoot td,
+  .admin-mobile-cards tfoot th {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -700,7 +796,9 @@ body {
   }
 
   .admin-mobile-cards tbody td::before,
-  .admin-mobile-cards tbody th::before {
+  .admin-mobile-cards tbody th::before,
+  .admin-mobile-cards tfoot td::before,
+  .admin-mobile-cards tfoot th::before {
     content: attr(data-label);
     flex: 0 0 42%;
     text-align: left;
@@ -750,7 +848,55 @@ body {
   .admin-mobile-cards .overflow-x-auto table tbody tr {
     margin-inline: 0;
   }
+
+  /* Una PLANILLA no puede volverse cards.
+     Una tabla de datos apilada en un teléfono se lee mejor; una hoja de cálculo
+     NO: es una grilla de dos ejes (A1, B2…) y apilar las filas pierde la
+     coordenada — en la vista previa del drive quedaban las celdas de 17 px una
+     encima de otra y no se leía nada. Acá vuelve a ser tabla y se lee como en
+     Excel: scroll horizontal dentro de su propio marco. */
+  .admin-mobile-cards .hoja-grilla thead {
+    display: table-header-group;
+  }
+
+  .admin-mobile-cards .hoja-grilla tbody {
+    display: table-row-group;
+    gap: 0;
+  }
+
+  .admin-mobile-cards .hoja-grilla tbody tr {
+    display: table-row;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+    content-visibility: visible;
+  }
+
+  .admin-mobile-cards .hoja-grilla tbody td,
+  .admin-mobile-cards .hoja-grilla tbody th {
+    display: table-cell;
+    width: auto;
+    text-align: inherit;
+    border: 1px solid var(--rule-soft) !important;
+    padding: 0 3px !important;
+  }
+
+  .admin-mobile-cards .hoja-grilla tbody td::before,
+  .admin-mobile-cards .hoja-grilla tbody th::before {
+    display: none;
+  }
 }
+
+/* `.tabla-min-w-1000` (usada sólo por TablaAdelantos) murió el 2026-08-28: era
+   un `min-width` sobre una tabla `table-layout: auto`, que NO limita nada — el
+   navegador igual calcula el ancho real desde el contenido, así que el "piso"
+   nunca evitó el scroll horizontal que decía evitar (medido: piso de 780px,
+   ancho real 998px). El reemplazo es `table-layout: fixed` + `<colgroup>` con
+   anchos explícitos por columna, directo en el componente. Si otra tabla
+   ancha necesita evitar el scroll horizontal, ese es el patrón a copiar —
+   no un `min-width` nuevo. */
 
 @keyframes cartBounce {
   0% { transform: scale(1); }
@@ -1291,7 +1437,25 @@ body {
  *
  * Uso: `className="modal-backdrop"` en el overlay fijo del modal.
  * Colores via tokens CSS para adaptarse a dark mode automaticamente.
- */
+ *
+ * [FIX 2026-08-31] Va DENTRO de `@layer components` a propósito — sin esto,
+ * esta regla queda SIN capa (fuera de cualquier @layer) y en cascade layers
+ * lo sin-capa gana SIEMPRE a lo que está en `@layer utilities`, sin importar
+ * el orden ni la especificidad. El comentario de abajo ("si el consumer
+ * agrega flex-X, se sobreescribe") era el INTENTO, pero de hecho un
+ * `items-start`/`bg-black/50` del consumer nunca ganaba: quedaba pintado,
+ * simplemente no hacía nada. Encontrado en Anexo04Modal — con el contenido
+ * más alto que el viewport, `align-items:center` (nunca reemplazado por el
+ * `items-start` que el modal SÍ tenía en su className) centraba la hoja y
+ * la cortaba por igual arriba y abajo — el header y los botones de acción
+ * quedaban tapados por el borde de la pantalla. Mismo bug, silencioso,
+ * también en CtpBuscarGtf y AdminCommandPalette (grep `modal-backdrop.*
+ * items-start`). Dentro de `@layer components` (prioridad MENOR a
+ * `@layer utilities`), un `items-start`/`bg-black/50` del consumer vuelve a
+ * ganar como siempre se esperó — los ~55 modales que no agregan overrides
+ * no cambian en nada, porque no hay ninguna utility peleando esas
+ * propiedades. */
+@layer components {
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1312,6 +1476,7 @@ body {
 .dark .modal-backdrop {
   background: rgb(15 23 42 / 0.72); /* slate-900 72% para dark mode */
 }
+}
 /* Admin shell: mantiene el whiteout blanco (override explicito del usuario). */
 /* NOTE: algunos modales ya aplican su propio `flex items-center` al
  * lado de .modal-backdrop. El display:flex default no rompe porque
@@ -1322,6 +1487,80 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .modal-backdrop { animation: none; }
+}
+
+/* ── Leaflet stacking (fix modal detrás del mapa) ──
+ * Leaflet asigna z-index altos a sus panes/controles (controles 800, popup 700,
+ * tooltip 650, marker 600…) pero `.leaflet-container` no crea stacking context
+ * propio, así que esos elementos ESCAPAN por encima de los modales (backdrop z-50)
+ * y el modal se ve "detrás del mapa". `isolation: isolate` fuerza un stacking
+ * context en cada mapa → sus z-index internos quedan contenidos y todos los
+ * modales quedan siempre por encima. Aplica a TODOS los mapas Leaflet del app. */
+.leaflet-container {
+  isolation: isolate;
+}
+
+/* ── Rótulos cartográficos del mapa forestal (LO-TH / CTP) ──
+ * Etiquetas de vértice (C.001…) y de cuadrícula UTM: tipografía de plano —
+ * chica, monoespaciada, sin la "cajita" default del tooltip de Leaflet. */
+.leaflet-tooltip.loth-vertex-label {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.35);
+  border-radius: 4px;
+  box-shadow: none;
+  color: #0f172a;
+  font: 700 10px/1.2 ui-monospace, "SFMono-Regular", Menlo, monospace;
+  padding: 1px 4px;
+  white-space: nowrap;
+}
+.leaflet-tooltip.loth-vertex-label::before {
+  display: none;
+}
+/* Manija de vértice del borrador: cuadrado teal arrastrable (estilo CAD). */
+.loth-vertex-handle {
+  background: #0d9488;
+  border: 2px solid #fff;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.5);
+  cursor: grab;
+}
+.loth-vertex-handle:active {
+  cursor: grabbing;
+}
+.loth-midpoint {
+  cursor: copy;
+}
+/* Referencia del plano (centro poblado, campamento, ingreso…): pin circular. */
+.loth-ref-pin span {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.55);
+}
+.leaflet-tooltip.loth-ref-label {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.3);
+  border-radius: 4px;
+  box-shadow: none;
+  color: #0f172a;
+  font: 700 11px/1.25 system-ui, sans-serif;
+  padding: 1px 5px;
+}
+.leaflet-tooltip.loth-ref-label::before {
+  display: none;
+}
+.loth-grid-label {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 3px;
+  color: #0f172a;
+  font: 700 9px/1.2 ui-monospace, "SFMono-Regular", Menlo, monospace;
+  padding: 0 3px;
+  white-space: nowrap;
+  width: max-content !important;
+  height: auto !important;
+  pointer-events: none;
 }
 
 /* ── Mejora 18: Button loading indicator for admin panel ───────────────── */
@@ -1903,6 +2142,10 @@ button,
      pressed/énfasis (AA sobre blanco), -glow=sombra de realce. */
   --accent-600: #008787;
   --accent-dark: #007575;
+  /* Teal de TINTA — para texto sobre un tinte claro (`bg-primary/10`), donde
+     --accent-dark se queda en 3.9:1. Sobre ese tinte da ~5.7:1 y sobre blanco
+     ~6.3:1, así que sirve en ambos fondos sin cambiar la identidad. */
+  --accent-ink: #006B6B;
   --accent-glow: rgba(0, 160, 160, 0.28);
 
   /* Data viz monochrome + 1 accent */
@@ -1912,8 +2155,25 @@ button,
   --data-4: #d4d4d4;
   --data-5: #00A0A0;
   --data-6: #0ea5e9;
-  --data-7: #d97706;
+  --data-7: #ff6b5b;
   --data-8: #8b5cf6;
+
+  /* ── Identidad de bloque (forestal · reparto de rolliza) ────────────────
+     Seis colores para DISTINGUIR bloques entre sí, no para juzgarlos: van en
+     franjas y puntos de 3-6 px, nunca en texto ni en áreas grandes.
+     Deliberadamente separados de la familia `--data-{warning,error}`: en el
+     reparto el ámbar y el rojo ya significan «esto no cuadra», y reusarlos
+     como color de identidad haría que el bloque 3 pareciera un problema.
+     El teal de marca va ÚLTIMO a propósito: como primer color, el bloque 1
+     se confundía con los acentos generales del panel (botones, totales) y
+     dejaba de leerse como identidad de fila.
+     Valores para superficie CLARA; el bloque dark de más abajo los sube. */
+  --bloque-1: #1d4ed8;
+  --bloque-2: #d9480f;
+  --bloque-3: #6d28d9;
+  --bloque-4: #15803d;
+  --bloque-5: #be185d;
+  --bloque-6: #0d8f8f;
 
   /* ── Data state scale (Sprint C1 — ADR-075 addendum) ─────────────────────
      Escalas {50, 100, 500, 600, 700} por estado semántico.
@@ -1927,12 +2187,12 @@ button,
   --data-success-600: #00998d;     /* hover */
   --data-success-700: #007f74;     /* pressed */
 
-  /* Warning (amber) */
-  --data-warning-50: #fef3c7;
-  --data-warning-100: #fde68a;
-  --data-warning-500: #f59e0b;
-  --data-warning-600: #d97706;
-  --data-warning-700: #b45309;
+  /* Warning (coral — Brandon 2026-06-17, sin ámbar) */
+  --data-warning-50: #fff1ef;
+  --data-warning-100: #ffe1dd;
+  --data-warning-500: #ff6b5b;
+  --data-warning-600: #f0503f;
+  --data-warning-700: #c93b2c;
 
   /* Error (red) */
   --data-error-50: #fee2e2;
@@ -1948,12 +2208,43 @@ button,
   --data-info-600: #0284c7;
   --data-info-700: #0369a1;
 
+  /* ─── Categorías del menú lateral (decorativo, ADR-075) ────────────────────
+     Estos NO son colores de estado —para eso están --data-*—: sólo distinguen
+     una categoría de otra en el sidebar. Existen porque la paleta semántica
+     tiene 4 familias y el menú tiene 12 categorías: forzarlas a --data-*
+     dejaba varias del mismo color y se perdía la señal.
+     Sólo se usan en el sidebar de fondo CLARO (el oscuro tiene su propio mapa
+     con tonos -300), por eso no se redefinen en el bloque dark.
+     "Ventas" no está acá: sky-600 es idéntico a --data-info-600 y usa ese. */
+  --nav-cat-compras: #ea580c;
+  --nav-cat-analytics: #0891b2;
+  --nav-cat-metas: #ca8a04;
+
   /* Aliases backward compatibility — ahora apuntan al -500.
      Light mode adopta el -500 default (antes usaba -700 más oscuro, ADR-075 unifica). */
   --data-success: var(--data-success-500);
   --data-warning: var(--data-warning-700);
   --data-error: var(--data-error-700);
   --data-info: var(--data-info-700);
+
+  /* ─── TINTA semántica: el color para TEXTO ─────────────────────────────────
+     Ningún `-500` sirve como color de texto, ni el de acá ni el que inyecta el
+     preset del tenant. Medido con axe sobre el panel admin: el warning del
+     preset (#ecaa0b, ámbar) da 1.92:1 sobre blanco, y su success (#00ac4e)
+     2.99:1 — WCAG AA pide 4.5:1 para texto normal. Los `-500` están pensados
+     para íconos, bordes y fondos, donde el umbral es 3:1.
+
+     Se derivan del `-500` VIGENTE con `color-mix`, no de un valor fijo: como
+     `var()` se resuelve en el contexto de quien lo usa, dentro del wrapper del
+     preset la tinta se recalcula sobre el color de ESE tenant. Un tenant que
+     cambie su paleta no se queda sin contraste.
+
+     Mismo criterio que `--accent-ink` (#006B6B), que ya existía para el teal.
+     Para íconos, bordes y fondos seguir usando `-500`. */
+  --data-success-ink: color-mix(in oklab, var(--data-success-500) 55%, black);
+  --data-warning-ink: color-mix(in oklab, var(--data-warning-500) 45%, black);
+  --data-error-ink:   color-mix(in oklab, var(--data-error-500) 65%, black);
+  --data-info-ink:    color-mix(in oklab, var(--data-info-500) 60%, black);
 
   /* ─── Badges semánticos para contraste visual ───────────────────────────────
      Tokens centralizados para badges/chips de descuento, novedad, urgencia,
@@ -1964,8 +2255,8 @@ button,
   --badge-new-text: #1e40af;
   --badge-shipping-bg: #d1fae5;       /* verde suave para "Envío gratis" */
   --badge-shipping-text: #065f46;
-  --badge-urgency-bg: #fef3c7;        /* amarillo suave para "Últimas unidades" */
-  --badge-urgency-text: #92400e;
+  --badge-urgency-bg: #fff1ef;        /* coral suave para "Últimas unidades" (sin ámbar) */
+  --badge-urgency-text: #c93b2c;
   --badge-trending-bg: #fce7f3;       /* rosa suave para "Tendencia" */
   --badge-trending-text: #9d174d;
 
@@ -2107,6 +2398,8 @@ button,
      --accent para dar feedback de hover sin perder contraste sobre canvas. */
   --accent-600: #0FAFAF;
   --accent-dark: #0C9C9C;
+  /* En dark el texto sobre tinte usa el accent brillante (ver :root). */
+  --accent-ink: #14C2C2;
   --accent-glow: rgba(20, 194, 194, 0.24);
 
   /* ── Brand bridge (mantiene cohesión con --color-* tokens del bloque legacy) ── */
@@ -2126,10 +2419,28 @@ button,
   --data-2: #b8c0cc;
   --data-3: #8590a3;
   --data-4: #4c5566;
-  --data-5: #14C2C2;
-  --data-6: #38bdf8;
-  --data-7: #fbbf24;
-  --data-8: #c4b5fd;
+  /* Steps DARK elegidos, no volteados del modo claro (2026-08-02). Los
+     anteriores (#14C2C2 #38bdf8 #ff8676 #c4b5fd) quedaban en L 0.74-0.81 contra
+     un techo utilizable de 0.67 sobre `--surface-raised` (#1c2230): brillaban
+     más que el texto y las áreas grandes flotaban sobre la tarjeta. Estos
+     mantienen el MISMO slot semántico —para que una serie no cambie de color al
+     cambiar de modo— dentro de la banda, con contraste ≥3:1.
+     Pendiente conocido: azul(6) junto a teal(5) o violeta(8) es confundible con
+     daltonismo, en light igual que en dark; arreglarlo exige reordenar los slots
+     en AMBOS modos, que es cambiar la identidad visual del panel. */
+  --data-5: #0d9488;
+  --data-6: #4f7fe8;
+  --data-7: #e05a45;
+  --data-8: #8b5cf6;
+
+  /* Identidad de bloque sobre superficie OSCURA (`--surface-raised` = #1c2230):
+     los mismos seis hues, subidos de luminosidad para que la franja se vea. */
+  --bloque-1: #60a5fa;
+  --bloque-2: #fb923c;
+  --bloque-3: #a78bfa;
+  --bloque-4: #4ade80;
+  --bloque-5: #f472b6;
+  --bloque-6: #14C2C2;
 
   /* ── Data state scale — dark overrides (Sprint C1) ───────────────────────
      Light -500 no sirve en dark — usamos -400/300 para contraste AA sobre
@@ -2143,12 +2454,12 @@ button,
   --data-success-600: #0FAFAF;
   --data-success-700: #0C9C9C;
 
-  /* Warning dark (amber-400) */
-  --data-warning-50: rgba(251, 191, 36, 0.12);
-  --data-warning-100: rgba(251, 191, 36, 0.20);
-  --data-warning-500: #fbbf24;
-  --data-warning-600: #f59e0b;
-  --data-warning-700: #d97706;
+  /* Warning dark (coral — Brandon 2026-06-17, sin ámbar) */
+  --data-warning-50: rgba(255, 107, 91, 0.14);
+  --data-warning-100: rgba(255, 107, 91, 0.22);
+  --data-warning-500: #ff8676;
+  --data-warning-600: #ff6b5b;
+  --data-warning-700: #f0503f;
 
   /* Error dark (red-400) */
   --data-error-50: rgba(248, 113, 113, 0.12);
@@ -2170,6 +2481,13 @@ button,
   --data-error: var(--data-error-500);
   --data-info: var(--data-info-500);
 
+  /* Tinta semántica en oscuro: la mezcla va hacia el BLANCO. El mismo token,
+     la dirección opuesta — sobre fondo oscuro el texto tiene que aclararse. */
+  --data-success-ink: color-mix(in oklab, var(--data-success-500) 80%, white);
+  --data-warning-ink: color-mix(in oklab, var(--data-warning-500) 80%, white);
+  --data-error-ink:   color-mix(in oklab, var(--data-error-500) 80%, white);
+  --data-info-ink:    color-mix(in oklab, var(--data-info-500) 80%, white);
+
   /* ── Badges semánticos dark — soft bg + bright text (legibilidad AA) ── */
   --badge-discount-bg: rgba(248, 113, 113, 0.16);
   --badge-discount-text: #fca5a5;       /* red-300 — ~7:1 sobre canvas */
@@ -2177,8 +2495,8 @@ button,
   --badge-new-text: #93c5fd;            /* blue-300 — ~8:1 */
   --badge-shipping-bg: rgba(20, 194, 194, 0.16);
   --badge-shipping-text: #5EE0DB;       /* teal-300 — ~10:1 */
-  --badge-urgency-bg: rgba(251, 191, 36, 0.16);
-  --badge-urgency-text: #fcd34d;        /* amber-300 — ~10:1 */
+  --badge-urgency-bg: rgba(255, 134, 118, 0.16);
+  --badge-urgency-text: #ff8676;        /* coral claro — sin ámbar */
   --badge-trending-bg: rgba(244, 114, 182, 0.16);
   --badge-trending-text: #f9a8d4;       /* pink-300 — ~7.5:1 */
 
@@ -2868,7 +3186,9 @@ body[data-marketplace-explorar] .tabular-nums {
 [data-chart-presentation="true"] div[style*="height: 300px"],
 [data-chart-presentation="true"] div[style*="height:300px"],
 [data-chart-presentation="true"] div[style*="height: 260px"],
-[data-chart-presentation="true"] div[style*="height:260px"] {
+[data-chart-presentation="true"] div[style*="height:260px"],
+[data-chart-presentation="true"] div[style*="height: 240px"],
+[data-chart-presentation="true"] div[style*="height:240px"] {
   height: 65vh !important;
   min-height: 480px !important;
 }
@@ -2968,6 +3288,19 @@ body[data-marketplace-explorar] .tabular-nums {
    romperlos. Aplica a clases rounded-* (incluye -t/-l/-[arbitrarias]).
    ───────────────────────────────────────────────────────────────────────── */
 [data-area="superadmin"] [class*="rounded"]:not([class*="rounded-full"]) {
+  border-radius: 0 !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   BORDES RECTOS — ADMIN (Brandon 2026-06-18): misma estética "boxy" que el
+   superadmin, ahora en todo el panel admin. Cuadra cards, botones, inputs,
+   tabs y contenedores con un solo override scopeado a `[data-admin-shell]`
+   (root en app/admin/page.tsx) en vez de tocar cientos de componentes.
+   Mantiene `rounded-full` circular (avatares, dots de estado, badges, toggles).
+   Nota: los modales en portal cuelgan de <body> (fuera del shell) y conservan
+   su radio — la regla aplica al chrome visible de la página, como en superadmin.
+   ───────────────────────────────────────────────────────────────────────── */
+[data-admin-shell] [class*="rounded"]:not([class*="rounded-full"]) {
   border-radius: 0 !important;
 }
 
@@ -3081,4 +3414,60 @@ body.tenant-storefront > nav[aria-label="Breadcrumb"] {
    rompiendo el pareo. Soporte: Chrome 111+, Safari 9+, Firefox 113+. */
 .draggable-section:nth-child(2n+1 of .draggable-section:not([data-fullspan="true"]):not(:has([data-chart-hidden]))):nth-last-child(1 of .draggable-section:not([data-fullspan="true"]):not(:has([data-chart-hidden]))) {
   grid-column: 1 / -1;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   CHARTS DEL LIBRO FORESTAL — steps categóricos validados por modo
+   Brandon (2026-08-02): los gráficos del Libro CTP (Control/Existencias)
+   comparan 2-3 series a la vez (ingreso vs. consumo, stock vs. despachado,
+   tramos de antigüedad). Los tokens generales `--data-5/6/7` sirven en light,
+   pero sobre la superficie dark REAL (`--surface-raised` = #1c2230) quedan
+   fuera de la banda de luminosidad utilizable (L≈0.74-0.75 contra un techo de
+   0.67): brillan más que el texto y "flotan" sobre la tarjeta.
+
+   Estos tres steps se eligieron por modo —no volteando el color del otro— y
+   ambos tríos pasan las seis comprobaciones (banda de luminosidad, croma,
+   separación para daltonismo protan/deutan/tritan, piso de visión normal y
+   contraste ≥3:1) medidas contra la superficie de cada modo.
+
+   El mecanismo es el que ya provee el design system: CHART_PALETTE lee
+   `var(--section-*, …)` antes que el token global, así que basta envolver la
+   sección. No se tocan los tokens globales.
+   ──────────────────────────────────────────────────────────────────────── */
+.charts-forestal {
+  /* Neutro de los totales (apertura / existencia de la cascada). El token
+     general `--data-1` es tinta pura: 19.8:1 en light y 14.3:1 en dark, o sea
+     una placa negra —o blanca— del alto del gráfico que pesa más que la serie
+     que importa. Estos dos anclan igual (5.9:1 y 4.6:1) sin deslumbrar. */
+  --section-primary: #5b6577;
+  --section-accent: #00918f;    /* teal marca — serie principal */
+  --section-amber: #e0503f;     /* coral — serie de contraste */
+  --section-info: #0284c7;      /* azul — tercera serie */
+
+  /* Rampa de UN solo hue para la composición del patio: ahí las rebanadas no
+     son identidades distintas, son tajadas de la misma magnitud ordenadas de
+     mayor a menor — un arcoíris fingiría categorías que no existen. Paso 1 = la
+     rebanada más grande. Monótona, con salto visible entre pasos y el extremo
+     claro despegado del fondo. */
+  --forestal-slice-1: #00423f;
+  --forestal-slice-2: #005b58;
+  --forestal-slice-3: #007471;
+  --forestal-slice-4: #008d8a;
+  --forestal-slice-5: #00a6a2;
+  --forestal-slice-6: #2bbdb8;
+}
+
+.dark .charts-forestal {
+  --section-primary: #7e8b9e;
+  --section-accent: #0d9488;
+  --section-amber: #dc5a1e;
+  --section-info: #4f7fe8;
+
+  /* En dark la rampa corre al revés: sobre fondo oscuro, "más" es más CLARO. */
+  --forestal-slice-1: #9bd8d5;
+  --forestal-slice-2: #6dc6c2;
+  --forestal-slice-3: #3fb3ae;
+  --forestal-slice-4: #14a09c;
+  --forestal-slice-5: #0d7f7c;
+  --forestal-slice-6: #0a5f5d;
 }

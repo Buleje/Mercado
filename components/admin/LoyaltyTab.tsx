@@ -156,7 +156,7 @@ export default function LoyaltyTab() {
   };
 
   const getExpirationColor = (daysRemaining: number) => {
-    if (daysRemaining > 60) return 'bg-[var(--accent-soft)]';
+    if (daysRemaining > 60) return 'bg-primary/10';
     if (daysRemaining > 30) return 'bg-[var(--data-warning-500)]';
     return 'bg-[var(--data-error-500)]';
   };
@@ -296,7 +296,7 @@ export default function LoyaltyTab() {
             <button
               onClick={loadMore}
               disabled={loadingMore}
-              className="w-full py-2 text-xs font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition disabled:opacity-50"
+              className="w-full py-2 text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary/30 rounded-lg hover:bg-primary/5 transition disabled:opacity-50"
             >
               {loadingMore ? "Cargando…" : "Cargar más clientes"}
             </button>
@@ -434,7 +434,7 @@ export default function LoyaltyTab() {
                   </h4>
                   <button
                     onClick={notifyAll}
-                    className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-primary hover:bg-primary/10 rounded-lg transition"
+                    className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 rounded-lg transition"
                   >
                     {copiedMessage === 'bulk-notify' ? (
                       <>Copiado</>
@@ -455,7 +455,7 @@ export default function LoyaltyTab() {
                       </div>
                       <button
                         onClick={() => c.phone && openWhatsApp(c.phone, generateWhatsAppMessage(c))}
-                        className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] rounded-lg transition shrink-0"
+                        className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-white bg-primary/10 hover:bg-primary/10 rounded-lg transition shrink-0"
                       >
                         <MessageSquare className="h-3 w-3" />
                         Enviar

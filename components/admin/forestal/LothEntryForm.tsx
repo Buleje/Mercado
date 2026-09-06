@@ -12,27 +12,40 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   TreePine,
   AlertTriangle,
+  AlertCircle,
   Loader2,
   X,
   Sparkles,
   Search,
   Check,
   ShieldAlert,
-  MapPin,
   Camera,
-  ExternalLink,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { listSpecies, findSpeciesByCommonName } from "@/data/forestry-species";
-import { LOTH_SECTIONS, type LothSection } from "@/lib/forestal/loth-constants";
+import { claveEspecie, LOTH_SECTIONS, type LothEntryDTO, type LothSection } from "@/lib/forestal/loth-constants";
+import { estadoVencimiento, permisoParaEspecie, type LothCitesPermiso } from "@/lib/forestal/loth-cites-types";
+import { fromUtm, parseUtmZone } from "@/lib/forestal/loth-utm";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import LothGpsField from "./LothGpsField";
 
 interface Props {
   section: LothSection;
   caratulaId?: string | null;
   onClose: () => void;
   onSaved: (opts?: { keepOpen?: boolean }) => void;
+  /**
+   * Línea de la que se parte. Sirve para dos cosas distintas:
+   *  · **duplicar** (registrar la troza siguiente del mismo árbol sin volver a
+   *    tipear seis campos), y
+   *  · **corregir** (subsanación SERFOR: se asienta una línea nueva que enmienda
+   *    a otra; la vieja nunca se borra).
+   */
+  plantilla?: LothEntryDTO | null;
+  /** N° de línea que esta nueva corrige. Presente = modo subsanación. */
+  corrigeLineNo?: number | null;
 }
 
 export const SECTION_META: Record<
@@ -68,7 +81,7 @@ const FIELDS: Record<LothSection, Set<string>> = {
   trozado: new Set(["treeCode", "trozaCode", "isRama", "species", "diams", "volume", "discarded", "obs"]),
   despacho_troza: new Set(["trozaCode", "despachoCode", "gtf", "obs"]),
   consumo_troza: new Set(["trozaCode", "species", "volumeManual", "consumoInterno", "obs"]),
-  producto_terminado: new Set(["productType", "species", "quantity", "unit", "obs"]),
+  producto_terminado: new Set(["trozaCode", "productType", "species", "quantity", "unit", "obs"]),
   despacho_producto: new Set(["gtf", "productType", "species", "pieces", "quantity", "unit", "obs"]),
 };
 
@@ -78,33 +91,41 @@ function smalian(dMayor: number, dMenor: number, len: number): number {
   return Math.round(0.7854 * dProm * dProm * len * 10000) / 10000;
 }
 
-export default function LothEntryForm({ section, caratulaId, onClose, onSaved }: Props) {
+export default function LothEntryForm({ section, caratulaId, onClose, onSaved, plantilla, corrigeLineNo }: Props) {
   const speciesOptions = useMemo(() => listSpecies(), []);
+  /** Slug de la especie de la plantilla; «otro» si no está en el catálogo. */
+  const slugDePlantilla = useMemo(() => {
+    if (!plantilla?.speciesCommon) return null;
+    const hit = listSpecies().find((s) => s.commonName.toLowerCase() === plantilla.speciesCommon!.toLowerCase());
+    return hit?.slug ?? "otro";
+  }, [plantilla]);
   const fields = FIELDS[section];
   const meta = SECTION_META[section];
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
-  const [treeCode, setTreeCode] = useState("");
-  const [trozaCode, setTrozaCode] = useState("");
-  const [despachoCode, setDespachoCode] = useState("");
-  const [isRama, setIsRama] = useState(false);
-  const [speciesSlug, setSpeciesSlug] = useState("tornillo");
-  const [customSpecies, setCustomSpecies] = useState("");
-  const [diamMayor, setDiamMayor] = useState("");
-  const [diamMenor, setDiamMenor] = useState("");
-  const [lengthM, setLengthM] = useState("");
-  const [volumeM3, setVolumeM3] = useState("");
-  const [productType, setProductType] = useState(PRODUCT_TYPES[0]);
-  const [quantity, setQuantity] = useState("");
-  const [unit, setUnit] = useState<"m3" | "kg" | "unidad">("m3");
-  const [pieces, setPieces] = useState("");
-  const [gtfNumber, setGtfNumber] = useState("");
+  const [entryDate, setEntryDate] = useState(plantilla?.entryDate?.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
+  const [treeCode, setTreeCode] = useState(plantilla?.treeCode ?? "");
+  const [trozaCode, setTrozaCode] = useState(plantilla?.trozaCode ?? "");
+  const [despachoCode, setDespachoCode] = useState(plantilla?.despachoCode ?? "");
+  const [isRama, setIsRama] = useState(plantilla?.isRama ?? false);
+  const [speciesSlug, setSpeciesSlug] = useState(slugDePlantilla ?? "tornillo");
+  const [customSpecies, setCustomSpecies] = useState(slugDePlantilla === "otro" ? (plantilla?.speciesCommon ?? "") : "");
+  const [diamMayor, setDiamMayor] = useState(plantilla?.diamMayorM ?? "");
+  const [diamMenor, setDiamMenor] = useState(plantilla?.diamMenorM ?? "");
+  const [lengthM, setLengthM] = useState(plantilla?.lengthM ?? "");
+  const [volumeM3, setVolumeM3] = useState(plantilla?.volumeM3 ?? "");
+  const [productType, setProductType] = useState(plantilla?.productType ?? PRODUCT_TYPES[0]);
+  const [quantity, setQuantity] = useState(plantilla?.quantity ?? "");
+  const [unit, setUnit] = useState<"m3" | "kg" | "unidad">((plantilla?.unit as "m3" | "kg" | "unidad") ?? "m3");
+  const [pieces, setPieces] = useState(plantilla?.pieces != null ? String(plantilla.pieces) : "");
+  const [gtfNumber, setGtfNumber] = useState(plantilla?.gtfNumber ?? "");
   const [discarded, setDiscarded] = useState(false);
   const [consumoInterno, setConsumoInterno] = useState(false);
-  const [observations, setObservations] = useState("");
+  const [observations, setObservations] = useState(plantilla && !corrigeLineNo ? (plantilla.observations ?? "") : "");
+  /** Por qué se corrige. SERFOR pide que la enmienda diga su motivo. */
+  const [correctionNote, setCorrectionNote] = useState("");
 
   const [speciesQuery, setSpeciesQuery] = useState("");
   const [showPicker, setShowPicker] = useState(false);
@@ -112,8 +133,6 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
   // ── GPS + foto de evidencia ───────────────────────────────────────────
   const [gpsLat, setGpsLat] = useState<number | null>(null);
   const [gpsLng, setGpsLng] = useState<number | null>(null);
-  const [gpsLoading, setGpsLoading] = useState(false);
-  const [gpsError, setGpsError] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -124,13 +143,32 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
   interface SourceItem {
     kind: string; code: string | null; species: string | null; scientific: string | null; cites?: boolean;
     dapM?: number | null; hcM?: number | null; vol?: number | null; productType?: string | null;
-    quantity?: number | null; unit?: string | null; meta?: string | null;
+    quantity?: number | null; unit?: string | null; meta?: string | null; trozaCode?: string | null;
+    utmZona?: string | null; utmX?: number | null; utmY?: number | null;
   }
   const [plans, setPlans] = useState<PlanOpt[]>([]);
   const [planId, setPlanId] = useState<string | null>(null);
+  // Especies autorizadas del plan (normalizadas) — para avisar en vivo si la
+  // especie elegida cae fuera del POA antes de que T7 rechace el despacho/GTF.
+  const [authorizedSpecies, setAuthorizedSpecies] = useState<Set<string>>(new Set());
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [loadingSrc, setLoadingSrc] = useState(false);
   const [srcQuery, setSrcQuery] = useState("");
+
+  // Catálogo de permisos CITES de la carátula — para acreditar la especie protegida.
+  const [citesPermisos, setCitesPermisos] = useState<LothCitesPermiso[]>([]);
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/admin/forestal/loth/cites", { credentials: "include" });
+        if (!r.ok || cancel) return;
+        const cat = (await r.json()).catalogo;
+        if (!cancel) setCitesPermisos(cat?.permisos ?? []);
+      } catch { /* best-effort: sin catálogo, se muestra el aviso genérico */ }
+    })();
+    return () => { cancel = true; };
+  }, []);
 
   useEffect(() => {
     let cancel = false;
@@ -162,6 +200,24 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
   }, [section]);
   useEffect(() => { loadSources(planId); }, [planId, loadSources]);
 
+  // Cargar las especies autorizadas del plan seleccionado (para el aviso en vivo).
+  useEffect(() => {
+    if (!planId) { setAuthorizedSpecies(new Set()); return; }
+    let cancel = false;
+    fetch(`/api/admin/forestal/plan?planId=${planId}`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancel) return;
+        const rows = (j?.species ?? []) as Array<{ speciesCommon: string }>;
+        // Misma clave canónica que usa el motor: el plan escribe «Tornillo
+        // (Cedrelinga catenaeformis)» y acá se elige «Tornillo». Comparar los
+        // strings crudos avisaba «no autorizada» sobre una especie que sí lo está.
+        setAuthorizedSpecies(new Set(rows.map((s) => claveEspecie(s.speciesCommon))));
+      })
+      .catch(() => { /* best-effort: sin lista, no se muestra el aviso */ });
+    return () => { cancel = true; };
+  }, [planId]);
+
   function applySpecies(common: string | null) {
     if (!common) return;
     const slug = speciesOptions.find((s) => s.commonName.toLowerCase() === common.toLowerCase());
@@ -174,15 +230,26 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
       if (it.code) setTreeCode(it.code);
       if (it.dapM) { setDiamMayor(String(it.dapM)); setDiamMenor(String(it.dapM)); }
       if (it.hcM) setLengthM(String(it.hcM));
+      aplicarCoordCenso(it.code, it.utmZona ?? null, it.utmX ?? null, it.utmY ?? null);
     } else if (section === "trozado") {
-      if (it.code) { setTreeCode(it.code); setTrozaCode((c) => c || `${it.code}-`); }
+      // Prefill un código de troza COMPLETO y válido (árbol + "-A"); el operador lo
+      // ajusta a B/C… para las siguientes trozas del mismo árbol. Antes quedaba
+      // "002-TOR-" con el guión colgando y parecía roto.
+      if (it.code) { setTreeCode(it.code); setTrozaCode((c) => c || `${it.code}-A`); }
     } else if (section === "despacho_troza" || section === "consumo_troza") {
       if (it.code) setTrozaCode(it.code);
       if (section === "consumo_troza" && it.vol) setVolumeM3(String(it.vol));
+    } else if (section === "producto_terminado") {
+      // La materia prima del aserrío = la troza consumida. Guardar su código liga
+      // el producto a su árbol de origen (trazabilidad individual, no por especie).
+      if (it.code) setTrozaCode(it.code);
+      if (it.vol) setQuantity(String(it.vol));
     } else if (section === "despacho_producto") {
       if (it.productType) setProductType(it.productType);
       if (it.quantity) setQuantity(String(it.quantity));
       if (it.unit === "m3" || it.unit === "kg" || it.unit === "unidad") setUnit(it.unit);
+      // Hereda la troza de origen del producto que se despacha (para trazar por árbol).
+      if (it.trozaCode) setTrozaCode(it.trozaCode);
     }
   }
   const SOURCE_TITLE: Record<LothSection, string> = {
@@ -206,9 +273,34 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
     treeCode: string; speciesCommon: string | null; speciesScientific: string | null;
     cites: boolean; dapM: string | null; alturaComercialM: string | null;
     volumenEstimadoM3: string | null; estado: string;
+    utmZona: string | null; utmX: string | null; utmY: string | null;
   }
   const [censusTree, setCensusTree] = useState<CensusTree | null>(null);
+  /** Coordenada UTM del árbol elegido (del picker o del lookup por código). */
+  const [censoUtm, setCensoUtm] = useState<{ code: string; zona: string | null; x: number; y: number } | null>(null);
+  /** T8: el backend rechazó la tala por estar bajo el DMC; hay que justificar. */
+  const [dmcBloqueo, setDmcBloqueo] = useState<string | null>(null);
+  const [justificacionDmc, setJustificacionDmc] = useState("");
   const [censusChecked, setCensusChecked] = useState(false);
+
+  /**
+   * El censo ya trae la coordenada del árbol: la operación la hereda como GPS
+   * si todavía no tiene una (el GPS del teléfono, más preciso, siempre gana).
+   */
+  function aplicarCoordCenso(code: string | null, zona: string | null, x: number | null, y: number | null) {
+    if (x == null || y == null || x <= 0 || y <= 0) {
+      setCensoUtm(null);
+      return;
+    }
+    setCensoUtm({ code: code ?? "", zona, x, y });
+    if (gpsLat != null || gpsLng != null) return;
+    const { zone, south } = parseUtmZone(zona);
+    const [la, ln] = fromUtm(x, y, zone, south);
+    if (Number.isFinite(la) && Number.isFinite(ln) && Math.abs(la) <= 90 && Math.abs(ln) <= 180) {
+      setGpsLat(la);
+      setGpsLng(ln);
+    }
+  }
 
   async function lookupCensus(code: string) {
     const c = code.trim();
@@ -227,6 +319,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
       const slugMatch = speciesOptions.find((s) => s.commonName.toLowerCase() === common);
       if (slugMatch) setSpeciesSlug(slugMatch.slug);
       else if (tree.speciesCommon) { setSpeciesSlug("otro"); setCustomSpecies(tree.speciesCommon); }
+      aplicarCoordCenso(tree.treeCode, tree.utmZona, tree.utmX ? Number(tree.utmX) : null, tree.utmY ? Number(tree.utmY) : null);
       // Prefill de medidas estimadas (solo en Tala; el usuario ajusta a lo real)
       if (section === "tala") {
         if (tree.dapM && !diamMayor) setDiamMayor(String(Number(tree.dapM)));
@@ -242,6 +335,12 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
   const selected = speciesOptions.find((s) => s.slug === speciesSlug);
   const isCustom = speciesSlug === "otro";
   const speciesName = isCustom ? customSpecies.trim() : selected?.commonName ?? "";
+  // La especie elegida no figura entre las autorizadas del plan → aviso proactivo
+  // (T7 la rechazaría al despachar / al emitir la GTF).
+  const speciesFueraDelPlan =
+    speciesName.trim().length > 0 &&
+    authorizedSpecies.size > 0 &&
+    !authorizedSpecies.has(claveEspecie(speciesName));
   const matched = isCustom ? findSpeciesByCommonName(customSpecies) : null;
   const scientific = isCustom ? matched?.scientificName ?? null : selected?.scientificName ?? null;
   const cites = isCustom ? matched?.cites ?? false : selected?.cites ?? false;
@@ -272,33 +371,34 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
     if (fields.has("species") && section !== "consumo_troza" && section !== "despacho_producto" && speciesName.length === 0) m.push("Especie");
     if (fields.has("gtf") && !gtfNumber.trim()) m.push("N° de GTF");
     if (fields.has("volumeManual") && !(Number(volumeM3) > 0)) m.push("Volumen (m³)");
+    // Tala/Trozado: exigir volumen > 0 (manual o calculado por Smalian) — antes se
+    // podía registrar con Ø/longitud vacíos y quedaba una línea con volumen 0.
+    if (fields.has("volume") && !(Number(volumeM3) > 0) && !(autoVolume > 0)) m.push("Volumen — completá Ø mayor, Ø menor y longitud");
     if (fields.has("quantity") && !(Number(quantity) > 0)) m.push("Cantidad");
     if (fields.has("productType") && !productType.trim()) m.push("Tipo de producto");
+    if (corrigeLineNo && correctionNote.trim().length < 3) m.push("Motivo de la corrección");
     return m;
-  }, [fields, section, treeCode, trozaCode, speciesName, gtfNumber, volumeM3, quantity, productType]);
+  }, [fields, section, treeCode, trozaCode, speciesName, gtfNumber, volumeM3, quantity, autoVolume, productType, corrigeLineNo, correctionNote]);
 
   const isValid = missing.length === 0;
 
-  function captureGps() {
-    if (!navigator.geolocation) {
-      setGpsError("Geolocalización no disponible en este dispositivo.");
-      return;
+  // Vista previa: qué código encabeza la tarjeta y qué número se destaca, según sección.
+  const previewEntity = fields.has("productType")
+    ? productType
+    : trozaCode.trim() || treeCode.trim() || despachoCode.trim() || meta.short;
+  const highlight = useMemo(() => {
+    if (fields.has("volume")) {
+      const vol = Number(volumeM3) > 0 ? Number(volumeM3) : autoVolume;
+      return { label: "Volumen (Smalian)", value: vol > 0 ? vol.toLocaleString("es-PE", { maximumFractionDigits: 4 }) : "0", unit: "m³" };
     }
-    setGpsLoading(true);
-    setGpsError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setGpsLat(pos.coords.latitude);
-        setGpsLng(pos.coords.longitude);
-        setGpsLoading(false);
-      },
-      (err) => {
-        setGpsError(`No se pudo obtener la ubicación: ${err.message}`);
-        setGpsLoading(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  }
+    if (fields.has("volumeManual")) {
+      return { label: "Volumen consumido", value: volumeM3 ? Number(volumeM3).toLocaleString("es-PE", { maximumFractionDigits: 4 }) : "0", unit: "m³" };
+    }
+    if (fields.has("quantity")) {
+      return { label: section === "despacho_producto" ? "A despachar" : "Producido", value: quantity ? Number(quantity).toLocaleString("es-PE", { maximumFractionDigits: 4 }) : "0", unit: unit === "m3" ? "m³" : unit === "kg" ? "Kg" : "Unidad" };
+    }
+    return { label: "N° de GTF", value: gtfNumber.trim() || "—", unit: "" };
+  }, [fields, volumeM3, autoVolume, quantity, unit, section, gtfNumber]);
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -333,7 +433,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
     setDiamMayor(""); setDiamMenor(""); setLengthM(""); setVolumeM3("");
     setQuantity(""); setPieces(""); setGtfNumber(""); setDiscarded(false);
     setConsumoInterno(false); setObservations("");
-    setGpsLat(null); setGpsLng(null); setGpsError(null);
+    setGpsLat(null); setGpsLng(null); setCensoUtm(null);
+    setDmcBloqueo(null); setJustificacionDmc("");
     setPhotoUrl(null); setPhotoError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -360,10 +461,17 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
         caratulaId: caratulaId ?? null,
         planId: planId ?? null,
         entryDate: new Date(entryDate).toISOString(),
+        // Subsanación SERFOR: la línea nueva declara a cuál enmienda y por qué.
+        // La vieja NO se toca — el libro corrige asentando, no borrando.
+        ...(corrigeLineNo ? { correctsLineNo: corrigeLineNo, correctionNote: correctionNote.trim() || null } : {}),
         observations: observations.trim() || null,
       };
       if (fields.has("treeCode")) payload.treeCode = treeCode.trim() || null;
-      if (fields.has("trozaCode")) payload.trozaCode = trozaCode.trim() || null;
+      // despacho_producto no muestra input de troza pero SÍ hereda la del producto
+      // (link de trazabilidad por árbol), así que se manda aunque no esté en FIELDS.
+      if (fields.has("trozaCode") || (section === "despacho_producto" && trozaCode.trim())) {
+        payload.trozaCode = trozaCode.trim() || null;
+      }
       if (fields.has("despachoCode")) payload.despachoCode = despachoCode.trim() || null;
       if (fields.has("isRama")) payload.isRama = isRama;
       if (fields.has("species")) {
@@ -385,6 +493,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
       if (fields.has("discarded")) payload.discarded = discarded;
       if (fields.has("consumoInterno")) payload.consumoInterno = consumoInterno;
 
+      if (justificacionDmc.trim()) payload.justificacionDmc = justificacionDmc.trim();
       payload.gpsLat = gpsLat ?? null;
       payload.gpsLng = gpsLng ?? null;
       payload.photoUrl = photoUrl ?? null;
@@ -397,6 +506,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
       });
       if (!res.ok) {
         const r = await res.json().catch(() => ({}));
+        // T8 (bajo DMC): no es un error a secas — se puede seguir con una
+        // justificación, que queda escrita en el libro.
+        if (r.error === "T8_BAJO_DMC") {
+          setDmcBloqueo(r.message ?? "El árbol está por debajo del diámetro mínimo de corta.");
+          setSubmitting(false);
+          return;
+        }
         throw new Error(r.message ?? (r.issues && r.issues[0]?.message) ?? r.error ?? `HTTP ${res.status}`);
       }
       if (keepOpen) {
@@ -413,8 +529,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
   }
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[640px]">
-      <div className="flex h-full max-h-[86vh] flex-col bg-[var(--surface-raised)]">
+    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="sm:max-w-[1200px]">
+      <div className="flex h-full max-h-[92vh] flex-col bg-[var(--surface-raised)]">
         {/* Header */}
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
@@ -440,12 +556,41 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           </button>
         </header>
 
-        {/* Body */}
-        <form id="loth-entry-form" onSubmit={handleSubmit} className="flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+        <form id="loth-entry-form" onSubmit={handleSubmit} className="min-w-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:grid sm:grid-cols-2 sm:gap-x-5 sm:gap-y-4 sm:content-start [&>*]:min-w-0 max-sm:space-y-4">
           {error && (
-            <div className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">
+            <div className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] sm:col-span-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>{error}</div>
+            </div>
+          )}
+
+          {dmcBloqueo && (
+            <div className="space-y-2 rounded-xl border-2 border-[var(--data-error-500)]/60 bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)] sm:col-span-2">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div><b>Bajo el diámetro mínimo de corta.</b> {dmcBloqueo}</div>
+              </div>
+              <input
+                value={justificacionDmc}
+                onChange={(e) => setJustificacionDmc(e.target.value)}
+                placeholder="Motivo (ej. árbol caído por viento, autorización especial N°…)"
+                aria-label="Justificación de la tala bajo DMC"
+                className="h-12 w-full rounded-lg border-2 border-[var(--data-error-500)]/50 bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]"
+              />
+              <p className="text-xs font-semibold opacity-80">
+                Con el motivo escrito la línea se registra y queda anotada en el libro y en la auditoría.
+              </p>
+            </div>
+          )}
+
+          {speciesFueraDelPlan && (
+            <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-warning-500)]/60 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 px-4 py-3 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)] sm:col-span-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <b>&ldquo;{speciesName}&rdquo; no está autorizada en el plan de manejo.</b> No vas a poder
+                despacharla ni emitir la GTF hasta agregarla en <b>Plan de Manejo · Especies autorizadas</b>.
+              </div>
             </div>
           )}
 
@@ -454,9 +599,9 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           </Field>
 
           {/* Picker data-driven: elegí del plan lo disponible para esta sección */}
-          <div className="space-y-2 rounded-xl border border-[var(--data-success-200)] bg-[var(--data-success-50)] p-3">
+          <div className="space-y-2 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 sm:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-900)]">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-700)]">
                 {SOURCE_TITLE[section]}
               </span>
               <select
@@ -502,13 +647,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
                     </span>
                     <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
                       {it.dapM ? `Ø ${it.dapM.toFixed(2)}m ` : ""}
-                      {it.vol != null ? `${it.vol.toFixed(4)} m³` : it.quantity != null ? `${it.quantity.toFixed(2)} ${it.unit ?? ""}` : ""}
+                      {it.vol != null ? `${fmtM3(it.vol)} m³` : it.quantity != null ? `${it.quantity.toFixed(2)} ${it.unit ?? ""}` : ""}
                     </span>
                   </button>
                 ))
               )}
             </div>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-800)]">
+            <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-700)]">
               Seleccioná de la lista para autocompletar, o cargá manualmente abajo.
             </p>
           </div>
@@ -528,23 +673,23 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
 
           {/* Banner: datos jalados del censo (data-driven) */}
           {fields.has("treeCode") && censusTree && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-success-200)] bg-[var(--data-success-50)] px-3 py-2.5 text-xs text-[var(--data-success-900)]">
+            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 py-2.5 text-xs text-[var(--data-success-700)] sm:col-span-2">
               <Check className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
                 <span className="font-bold">Jalado del censo:</span>{" "}
                 {censusTree.speciesCommon}
                 {censusTree.dapM ? ` · DAP ${Number(censusTree.dapM).toFixed(2)} m` : ""}
                 {censusTree.alturaComercialM ? ` · Hc ${Number(censusTree.alturaComercialM).toFixed(2)} m` : ""}
-                {censusTree.volumenEstimadoM3 ? ` · vol. est. ${Number(censusTree.volumenEstimadoM3).toFixed(4)} m³` : ""}
+                {censusTree.volumenEstimadoM3 ? ` · vol. est. ${fmtM3(Number(censusTree.volumenEstimadoM3))} m³` : ""}
                 {censusTree.estado === "talado" && (
                   <span className="ml-1 font-bold text-[var(--data-warning-700)]">· ya marcado como talado</span>
                 )}
-                <div className="mt-0.5 text-[var(--data-success-800)] opacity-80">Especie y medidas precargadas — ajustá los Ø y el largo a lo medido en campo.</div>
+                <div className="mt-0.5 text-[var(--data-success-700)] opacity-80">Especie y medidas precargadas — ajustá los Ø y el largo a lo medido en campo.</div>
               </div>
             </div>
           )}
           {fields.has("treeCode") && censusChecked && !censusTree && treeCode.trim() && (
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-xs text-[var(--text-tertiary)] sm:col-span-2">
               Este código no está en el censo del plan — se registra como código libre.
             </div>
           )}
@@ -553,6 +698,36 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
             <Field label="Código de troza" required hint="Código del árbol + letra/número por nivel de trozado (ej. 1-MIS-A)">
               <input type="text" value={trozaCode} onChange={(e) => setTrozaCode(e.target.value)} placeholder="1-MIS-A" className={cls.input} />
             </Field>
+          )}
+
+          {corrigeLineNo != null && (
+            <div className="rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-500)]/10 p-3 sm:col-span-2">
+              <p className="text-sm font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
+                Subsanación de la línea N° {corrigeLineNo}
+              </p>
+              <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                La línea N° {corrigeLineNo} <b>no se borra</b>: queda en el libro marcada como corregida por esta. Así lo pide SERFOR —
+                la enmienda tiene que poder leerse.
+              </p>
+              <input
+                type="text"
+                value={correctionNote}
+                onChange={(e) => setCorrectionNote(e.target.value)}
+                placeholder="Motivo de la corrección (ej.: el Ø mayor se anotó en cm, no en m)"
+                className="mt-2 h-11 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]"
+              />
+            </div>
+          )}
+
+          {/* Despacho de PT sin troza de origen: se guarda igual (el libro admite
+              huecos), pero la trazabilidad de esa línea deja de llegar al árbol
+              y su volumen se reparte por especie. Decirlo acá es mucho más
+              barato que descubrirlo en la vista «Por árbol». */}
+          {section === "despacho_producto" && !trozaCode.trim() && (
+            <div className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-3 py-2 text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)] sm:col-span-2">
+              Sin troza de origen esta salida no se puede atribuir a un árbol: su volumen se reparte por especie entre todos los de{" "}
+              {speciesName || "esa especie"}. Elegí el producto desde la lista de arriba para que herede su troza.
+            </div>
           )}
 
           {fields.has("despachoCode") && (
@@ -581,7 +756,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           )}
 
           {fields.has("species") && showPicker && (
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 sm:col-span-2">
               <input
                 type="text"
                 value={speciesQuery}
@@ -602,7 +777,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
                         onClick={() => { setSpeciesSlug(slug); setShowPicker(false); setSpeciesQuery(""); }}
                         className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
                           active
-                            ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-900)]"
+                            ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"
                             : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
                         }`}
                       >
@@ -651,16 +826,34 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
             </Field>
           )}
 
-          {fields.has("species") && cites && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-3 py-2.5 text-xs text-[var(--data-error-700)]">
-              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-              <div><span className="font-bold">Especie CITES.</span> Requiere permiso de exportación. Verificá el sello en la GTF.</div>
-            </div>
-          )}
+          {fields.has("species") && cites && (() => {
+            const permiso = permisoParaEspecie({ permisos: citesPermisos }, speciesName);
+            const est = permiso ? estadoVencimiento(permiso.vencimiento) : null;
+            const ok = permiso && est !== "vencido";
+            return (
+              <div className={`flex items-start gap-2.5 rounded-xl border px-3 py-2.5 text-xs sm:col-span-2 ${ok ? "border-[var(--data-success-100)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--data-error-100)] bg-[var(--data-error-50)] text-[var(--data-error-700)]"}`}>
+                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <span className="font-bold">Especie CITES.</span>{" "}
+                  {permiso ? (
+                    <>
+                      Permiso <span className="font-mono font-bold">{permiso.numero || "(sin N°)"}</span>
+                      {permiso.vencimiento && (
+                        <> · vence {permiso.vencimiento}{est === "vencido" ? " — VENCIDO" : est === "por_vencer" ? " — por vencer" : ""}</>
+                      )}
+                      {est === "vencido" && ". Renová el permiso en la carátula antes de movilizar."}
+                    </>
+                  ) : (
+                    <>Sin permiso CITES cargado para esta especie. Cargalo en <span className="font-bold">Configurar carátula → Permisos CITES</span> para acreditar el origen.</>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {fields.has("diams") && (
             <>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-3 sm:col-span-2">
                 <Field label="Ø mayor (m)" hint="Promedio 2 medidas">
                   <input type="number" step="0.001" min="0" value={diamMayor} onChange={(e) => setDiamMayor(e.target.value)} placeholder="0.96" className={cls.input} />
                 </Field>
@@ -685,7 +878,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
                       type="button"
                       onClick={() => setVolumeM3(autoVolume.toFixed(4))}
                       title="Aplicar fórmula Smalian"
-                      className="absolute right-1.5 top-1/2 inline-flex h-8 -translate-y-1/2 items-center gap-1 rounded-lg bg-[var(--data-success-100)] px-2.5 text-xs font-bold text-[var(--data-success-900)] transition-colors hover:bg-[var(--data-success-200)]"
+                      className="absolute right-1.5 top-1/2 inline-flex h-8 -translate-y-1/2 items-center gap-1 rounded-lg bg-[var(--data-success-100)] px-2.5 text-xs font-bold text-[var(--data-success-700)] transition-colors hover:bg-[var(--data-success-100)]"
                     >
                       <Sparkles className="h-3 w-3" />
                       {autoVolume.toFixed(4)}
@@ -711,7 +904,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           )}
 
           {(fields.has("quantity") || fields.has("unit") || fields.has("pieces")) && (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3 sm:col-span-2">
               {fields.has("pieces") && (
                 <Field label="N° piezas">
                   <input type="number" min="0" value={pieces} onChange={(e) => setPieces(e.target.value)} placeholder="25" className={cls.input} />
@@ -755,45 +948,21 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
           )}
 
           {/* Evidencia de campo (GPS + foto) */}
-          <div className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+          <div className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 sm:col-span-2">
             <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
               Evidencia de campo <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span>
             </CardTitle>
 
-            {/* GPS */}
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={captureGps}
-                disabled={gpsLoading}
-                className="inline-flex h-12 items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {gpsLoading
-                  ? <Loader2 className="h-4 w-4 animate-spin" />
-                  : <MapPin className="h-4 w-4 text-[var(--data-success-600)]" />
-                }
-                {gpsLoading ? "Obteniendo GPS…" : gpsLat != null ? "Actualizar ubicación GPS" : "Capturar ubicación GPS"}
-              </button>
-              {gpsError && (
-                <p className="flex items-center gap-1.5 text-xs text-[var(--data-error-700)]">
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />{gpsError}
-                </p>
-              )}
-              {gpsLat != null && gpsLng != null && (
-                <p className="flex items-center gap-1.5 text-xs text-[var(--data-success-800)]">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
-                  <span className="font-mono tabular-nums">{gpsLat.toFixed(6)}, {gpsLng.toFixed(6)}</span>
-                  <a
-                    href={`https://www.openstreetmap.org/?mlat=${gpsLat}&mlon=${gpsLng}#map=17/${gpsLat}/${gpsLng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-0.5 underline underline-offset-2"
-                  >
-                    Ver en mapa <ExternalLink className="h-3 w-3" />
-                  </a>
-                </p>
-              )}
-            </div>
+            {/* GPS — teléfono, censo o UTM tecleada */}
+            <LothGpsField
+              lat={gpsLat}
+              lng={gpsLng}
+              onChange={(la, ln) => {
+                setGpsLat(la);
+                setGpsLng(ln);
+              }}
+              censo={censoUtm}
+            />
 
             {/* Foto */}
             <div className="space-y-2">
@@ -835,10 +1004,48 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
             </div>
           </div>
 
-          <Field label="Observaciones">
-            <textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={2} placeholder="Información adicional relevante..." className={`${cls.input} h-auto resize-none py-2.5`} />
-          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Observaciones">
+              <textarea value={observations} onChange={(e) => setObservations(e.target.value)} rows={2} placeholder="Información adicional relevante..." className={`${cls.input} h-auto resize-none py-2.5`} />
+            </Field>
+          </div>
         </form>
+
+        {/* Panel derecho: vista previa en vivo (lg+) */}
+        <aside className="hidden w-[300px] shrink-0 flex-col border-l border-[var(--rule-base)] bg-[var(--surface-canvas)] lg:flex">
+          <div className="border-b border-[var(--rule-soft)] px-5 py-3.5">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Vista previa del registro</span>
+          </div>
+          <div className="flex-1 overflow-y-auto px-5 py-5">
+            <div className="mb-5">
+              <CardTitle className="text-lg font-bold leading-tight text-[var(--text-primary)]">{previewEntity}</CardTitle>
+              <p className="mt-0.5 text-xs italic text-[var(--text-tertiary)]">{meta.label}</p>
+            </div>
+            <div className="mb-5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{highlight.label}</div>
+              <div className="mt-1 font-mono text-2xl font-bold tabular-nums text-[var(--text-primary)]">{highlight.value}{highlight.unit && <span className="ml-1 text-sm font-medium text-[var(--text-tertiary)]">{highlight.unit}</span>}</div>
+            </div>
+            <dl className="space-y-2.5">
+              <PreviewRow label="Fecha" value={entryDate || "—"} />
+              {fields.has("treeCode") && <PreviewRow label="Árbol" value={treeCode.trim() || "—"} mono />}
+              {fields.has("trozaCode") && <PreviewRow label="Troza" value={trozaCode.trim() || "—"} mono />}
+              {fields.has("despachoCode") && <PreviewRow label="Despacho" value={despachoCode.trim() || "—"} mono />}
+              {fields.has("species") && <PreviewRow label="Especie" value={speciesName || "—"} />}
+              {fields.has("gtf") && <PreviewRow label="GTF" value={gtfNumber.trim() || "—"} mono />}
+              {fields.has("pieces") && <PreviewRow label="Piezas" value={pieces ? Number(pieces).toLocaleString("es-PE") : "—"} />}
+              {fields.has("discarded") && <PreviewRow label="Estado" value={discarded ? "Descartado" : "Aprovechable"} />}
+              {fields.has("consumoInterno") && <PreviewRow label="Consumo interno" value={consumoInterno ? "Sí" : "No"} />}
+            </dl>
+          </div>
+          <div className="border-t border-[var(--rule-soft)] px-5 py-4">
+            {isValid ? (
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-success-50)] px-3 py-2 text-sm font-medium text-[var(--data-success-700)]"><Check className="h-4 w-4 shrink-0" /> Listo para registrar</div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--data-warning-50)] px-3 py-2 text-sm font-medium text-[var(--data-warning-700)]"><AlertCircle className="h-4 w-4 shrink-0" /> Faltan {missing.length} {missing.length === 1 ? "campo" : "campos"}</div>
+            )}
+          </div>
+        </aside>
+        </div>
 
         {/* Footer */}
         <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3.5 sm:px-6">
@@ -856,7 +1063,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved }:
             <button type="button" onClick={(e) => handleSubmit(e, true)} disabled={!isValid || submitting} className="inline-flex h-10 items-center rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50">
               Guardar y otro
             </button>
-            <button type="submit" form="loth-entry-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white transition-colors hover:bg-[var(--data-success-800)] disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="submit" form="loth-entry-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
               {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" />Guardando</>) : "Registrar línea"}
             </button>
           </div>
@@ -886,6 +1093,15 @@ function CitesPill() {
     <span className="inline-flex shrink-0 items-center rounded bg-[var(--data-error-100)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-error-700)]">
       CITES
     </span>
+  );
+}
+
+function PreviewRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="shrink-0 text-xs text-[var(--text-tertiary)]">{label}</dt>
+      <dd className={`min-w-0 truncate text-right text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums" : ""}`}>{value}</dd>
+    </div>
   );
 }
 

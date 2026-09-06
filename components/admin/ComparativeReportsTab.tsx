@@ -118,7 +118,7 @@ function TrendBadge({ change, higherIsBetter }: { change: number; higherIsBetter
     <span className={cn(
       "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
       isGood
-        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+        ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
         : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
     )}>
       {change > 0
@@ -176,6 +176,11 @@ export default function ComparativeReportsTab() {
       };
     });
   }, [dataA, dataB, periods]);
+
+  // Gráfico sin datos NO se muestra (se oculta) — la tabla de métricas queda visible.
+  const hasChartData = chartData.some(
+    (row) => (Number(row[periods.labelA]) || 0) > 0 || (Number(row[periods.labelB]) || 0) > 0,
+  );
 
   // ── Loading ──
   if (loading) {
@@ -288,7 +293,8 @@ export default function ComparativeReportsTab() {
             </div>
           </div>
 
-          {/* Chart */}
+          {/* Chart — se oculta si no hay datos */}
+          {hasChartData && (
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
             <p className="text-sm font-bold text-[var(--text-secondary)] mb-4">Top 5 métricas — comparación</p>
             <div className="h-64">
@@ -322,6 +328,7 @@ export default function ComparativeReportsTab() {
               </ResponsiveContainer>
             </div>
           </div>
+          )}
         </>
       )}
     </div>

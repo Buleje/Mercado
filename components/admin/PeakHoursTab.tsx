@@ -2,7 +2,7 @@
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { Clock, Loader2, AlertCircle, BarChart3 } from "@buleje/design-system/icons";
+import { Clock, AlertCircle, BarChart3 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { AnalyticsPeriod } from "@/components/admin/unified/AnalyticsBIModule";
 

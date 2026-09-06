@@ -3,6 +3,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { ScopeBadge } from "@/components/admin/layout/ScopeBadge";
+import { preloadTab } from "@/app/admin/_lib/tab-preload";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export type FlyoutTheme = "light" | "dark" | "cristal";
@@ -74,7 +75,7 @@ export function SidebarFlyout({
       bg: "bg-[var(--surface-raised)]",
       arrow: "bg-[var(--surface-raised)] border-[var(--rule-soft)]",
       border: "border-[var(--rule-soft)] shadow-lg",
-      activeBg: "bg-[var(--accent-soft)] text-primary font-semibold",
+      activeBg: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold",
       inactiveText: "text-[var(--text-secondary)]",
       hoverBg: "hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800/40 hover:text-[var(--text-primary)]",
       indicator: "bg-primary",
@@ -115,6 +116,9 @@ export function SidebarFlyout({
               onNavigate(id);
               onClose();
             }}
+            // Precarga el chunk del tab al pasar el mouse / enfocar → el clic abre al instante.
+            onMouseEnter={() => preloadTab(id)}
+            onFocus={() => preloadTab(id)}
             className={cn(
               "relative w-full flex items-center gap-2.5 px-4 py-2.5 text-[length:var(--ts-sm)] font-medium transition-all",
               isActive

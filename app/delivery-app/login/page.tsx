@@ -23,6 +23,7 @@ import {
 } from "@buleje/design-system/icons";
 import { MotoIcon } from "@/components/delivery/icons";
 import { cn } from "@/lib/utils";
+import { useLoginSecurity } from "@/hooks/useLoginSecurity";
 
 export default function DeliveryLoginPage() {
   const router = useRouter();
@@ -33,6 +34,10 @@ export default function DeliveryLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
+  const {
+    capsLock, retryAfter, onPasswordKey, startRetryFromResponse,
+    messageForStatus, networkErrorMessage, mmss,
+  } = useLoginSecurity();
 
   useEffect(() => {
     phoneRef.current?.focus();
@@ -63,12 +68,17 @@ export default function DeliveryLoginPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "No pudimos iniciar sesión");
+        if (res.status === 429) {
+          // Rate limit / lockout: recargar no ayuda → countdown.
+          startRetryFromResponse(res);
+        } else {
+          setError(messageForStatus(res.status, { attemptsLeft: data?.attemptsLeft }) ?? data.error ?? "No pudimos iniciar sesión");
+        }
         return;
       }
       router.push("/delivery-app");
     } catch {
-      setError("Error de red. Intenta de nuevo.");
+      setError(networkErrorMessage());
     } finally {
       setLoading(false);
     }
@@ -203,6 +213,8 @@ export default function DeliveryLoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={onPasswordKey}
+                  onKeyUp={onPasswordKey}
                   placeholder="Tu contraseña"
                   autoComplete="current-password"
                   className="w-full h-14 pl-12 pr-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all dv-input"
@@ -216,10 +228,23 @@ export default function DeliveryLoginPage() {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+              {capsLock && (
+                <p role="status" className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  Bloq Mayús está activado
+                </p>
+              )}
               <p className="text-xs text-[var(--text-tertiary)]">
                 Si es tu primera vez, contactá a tu admin para obtener acceso.
               </p>
             </div>
+
+            {retryAfter > 0 && (
+              <div role="alert" className="flex items-start gap-3 p-4 rounded-2xl bg-[var(--data-warning-500)]/10 border-2 border-[var(--data-warning-500)]/25 text-sm font-bold text-[var(--data-warning-700)]">
+                <Clock className="h-5 w-5 shrink-0 mt-0.5" aria-hidden />
+                <span>Demasiados intentos. Esperá <span className="tabular-nums">{mmss(retryAfter)}</span> — recargar no ayuda.</span>
+              </div>
+            )}
 
             {error && (
               <div
@@ -233,7 +258,7 @@ export default function DeliveryLoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || retryAfter > 0}
               className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl text-white text-base font-extrabold tracking-tight active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: "var(--brand-secondary)",
@@ -244,6 +269,11 @@ export default function DeliveryLoginPage() {
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2.5} />
                   Verificando…
+                </>
+              ) : retryAfter > 0 ? (
+                <>
+                  <Clock className="h-5 w-5" strokeWidth={2.5} />
+                  Esperá {mmss(retryAfter)}
                 </>
               ) : (
                 <>

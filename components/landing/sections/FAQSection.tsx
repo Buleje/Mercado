@@ -101,7 +101,7 @@ export default function FAQSection() {
                     onClick={() => setActiveCategory(cat.id)}
                     className={`group flex items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left transition-all ${
                       active
-                        ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                        ? "border-[var(--accent)] bg-primary/10"
                         : "border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/40"
                     }`}
                   >

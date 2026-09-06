@@ -72,7 +72,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
                 )}
               >
                 {/* Badge */}
-                <span className="shrink-0 h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                <span className="shrink-0 h-8 w-8 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center text-xs font-bold">
                   {lot.icon}
                 </span>
 

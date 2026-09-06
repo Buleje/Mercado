@@ -18,12 +18,11 @@
  * Extraído de app/admin/page.tsx (Paso 5 del refactor — JSX components).
  */
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Menu, Search, Store as StoreIcon, ExternalLink } from "@buleje/design-system/icons";
 import Link from "next/link";
 import NotificationBell from "@/components/notifications/NotificationBell";
-import AdminChatNavButton from "@/components/admin/AdminChatNavButton";
-import AdminPlatformInboxButton from "@/components/admin/AdminPlatformInboxButton";
+import AdminMensajesMenu from "@/components/admin/AdminMensajesMenu";
 import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
 import AdminOptionsDropdown from "@/components/admin/AdminOptionsDropdown";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
@@ -64,8 +63,6 @@ export interface AdminTopHeaderProps {
   userName: string;
   userRole: string;
   tenantSlug?: string | null;
-  tenantName?: string | null;
-  tenantLogoUrl?: string | null;
   onOpenMobileNav: () => void;
   onOpenSearch: () => void;
   onOpenCierreDiario: () => void;
@@ -77,23 +74,21 @@ export interface AdminTopHeaderProps {
   onLogout: () => void | Promise<void>;
 }
 
-export function AdminTopHeader({
+// Memoizado — es chrome siempre visible (header sticky); mismo motivo que
+// AdminSidebar. Sólo sirve si AdminPage le pasa callbacks estables.
+export const AdminTopHeader = memo(function AdminTopHeader({
   presentationMode,
-  isSuperAdminImpersonating,
   focusMode,
   resolvedTheme,
   themeMode,
   userName,
   userRole,
   tenantSlug,
-  tenantName,
-  tenantLogoUrl,
   onOpenMobileNav,
   onOpenSearch,
   onOpenCierreDiario,
   onToggleFocus,
   onTogglePresentation,
-  onToggleTheme,
   onSetTheme,
   onNavigate,
   onLogout,
@@ -132,6 +127,9 @@ export function AdminTopHeader({
 
   return (
     <header
+      // Marca de anclaje: GlobalSearch se posiciona justo debajo del borde real
+      // de este header en vez de asumir una altura fija (ver GlobalSearch.tsx).
+      data-admin-header=""
       className={cn(
         // Brandon 2026-05-28: en MOBILE forzamos fondo CLARO (surface-raised)
         // y texto primary — los temas "Buleje" / "Ejecutivo" dejaban el header
@@ -139,7 +137,7 @@ export function AdminTopHeader({
         // en cel. Anulamos también el bg-image (bg-none) para que no quede el
         // gradient encima. En sm+ se respeta el theme configurado.
         "max-sm:bg-[var(--surface-raised)]! max-sm:bg-none! max-sm:text-[var(--text-primary)]! max-sm:border-[var(--rule-base)]!",
-        "border-b px-4 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-40 transition-colors duration-[var(--dur-base)]",
+        "@container border-b px-4 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-40 transition-colors duration-[var(--dur-base)]",
         headerThemeClasses,
         presentationMode && "hidden!"
       )}
@@ -153,7 +151,7 @@ export function AdminTopHeader({
             // accent (mismo lenguaje visual que el resto del DS de Buleje).
             className={cn(
               "sm:hidden inline-flex items-center justify-center h-11 w-11 rounded-xl transition-colors shrink-0 ring-1",
-              "bg-[var(--accent-soft)] text-[var(--accent)] ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
+              "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
               "hover:bg-[color-mix(in_oklab,var(--accent)_12%,var(--surface-raised))]"
             )}
             aria-label="Menú"
@@ -166,73 +164,47 @@ export function AdminTopHeader({
           onClick={onOpenSearch}
           aria-label="Búsqueda global (atajo Ctrl+K)"
           className={cn(
-            // Brandon 2026-05-28: en MOBILE = botón lupa cuadrado branded
-            // (teal-soft + accent), igual que la hamburguesa. En sm+ vuelve a
-            // ser el pill ancho con placeholder y atajo ⌘K (theme-aware).
-            "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-xl sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer transition-all shrink-0 sm:shrink",
-            "max-sm:bg-[var(--accent-soft)]! max-sm:text-[var(--accent)]! max-sm:ring-1 max-sm:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]! max-sm:border-0!",
-            "sm:border",
-            isAutoDarkTheme
-              ? "sm:bg-white/[0.04] sm:border-[color-mix(in oklab, var(--accent) 15%, transparent)] sm:hover:border-[color-mix(in oklab, var(--accent) 40%, transparent)] sm:hover:bg-white/[0.07]"
-              : "sm:bg-[var(--surface-sunken)] sm:dark:bg-surface sm:border-[var(--rule-base)] sm:dark:border-[var(--rule-base)] sm:hover:border-primary/40 sm:hover:bg-white sm:dark:hover:bg-[var(--surface-raised)] sm:hover:shadow-[var(--shadow-sm)]"
+            // MOBILE = botón lupa cuadrado branded (teal-soft + accent), igual
+            // que la hamburguesa. En sm+ = pill de búsqueda con placeholder y
+            // atajo ⌘K.
+            //
+            // El ancho va en rem explícito: `sm:max-w-xl` valía 1440px acá
+            // (globals.css overridea `--container-xl`), así que el pill se
+            // estiraba hasta comerse el espacio de los botones de la derecha.
+            "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-[30rem] sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer shrink-0 sm:shrink sm:min-w-11",
+            "transition-[background-color,border-color,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-editorial)]",
+            "max-sm:bg-primary/10! max-sm:text-[var(--accent)]! max-sm:ring-1 max-sm:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]! max-sm:border-0!",
+            // Un solo juego de clases para los dos temas: la superficie y la
+            // regla ya son tokens que cambian con `.dark`. Antes había dos
+            // ramas por `isAutoDarkTheme` con `white/[0.04]` hardcodeado, y la
+            // rama oscura escribía `color-mix(in oklab, …)` CON ESPACIOS —
+            // Tailwind corta la clase en el primer espacio, así que ese borde
+            // nunca se aplicó.
+            "sm:border sm:bg-[var(--surface-sunken)] sm:border-[var(--rule-base)]",
+            "sm:hover:bg-[var(--surface-raised)] sm:hover:border-[color-mix(in_oklab,var(--accent)_45%,var(--rule-base))] sm:hover:shadow-[var(--shadow-sm)]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-muted)] focus-visible:border-[var(--accent)]"
           )}
         >
-          <Search className={cn(
-            "h-5 w-5 sm:h-4 sm:w-4 shrink-0 transition-colors",
-            "max-sm:text-[var(--accent)]!",
-            isAutoDarkTheme ? "sm:text-white/50 sm:group-hover:text-[color-mix(in oklab, var(--accent) 60%, white)]" : "sm:text-[var(--text-tertiary)] sm:dark:text-muted sm:group-hover:text-primary"
-          )} strokeWidth={2.25} />
-          <span className={cn(
-            "hidden sm:block flex-1 text-left text-sm font-medium truncate transition-colors",
-            isAutoDarkTheme ? "text-white/55 group-hover:text-white/80" : "text-[var(--text-tertiary)] dark:text-muted group-hover:text-[var(--text-secondary)]"
-          )}>
-            Buscar módulos, productos, clientes...
+          <Search
+            className="h-5 w-5 sm:h-4 sm:w-4 shrink-0 transition-colors max-sm:text-[var(--accent)]! sm:text-[var(--text-tertiary)] sm:group-hover:text-[var(--accent)]"
+            strokeWidth={2.25}
+          />
+          {/* `--text-secondary`, no `--text-tertiary`: medido con getComputedStyle
+              + conversión oklch→rgb, terciario sobre `--surface-sunken` daba
+              3.51:1 en tema claro (AA pide 4.5:1 para texto normal). El kbd
+              tenía el mismo problema (3.94:1). */}
+          <span className="hidden sm:block flex-1 text-left text-sm font-medium truncate text-[var(--text-secondary)] transition-colors group-hover:text-[var(--text-primary)]">
+            Buscar módulos, productos, clientes…
           </span>
-          <kbd className={cn(
-            "hidden sm:inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border",
-            isAutoDarkTheme
-              ? "text-white/55 bg-white/[0.06] border-white/[0.1]"
-              : "text-[var(--text-tertiary)] dark:text-muted bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]"
-          )}>
+          <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold font-mono px-1.5 py-0.5 rounded-md tabular-nums border text-[var(--text-secondary)] bg-[var(--surface-raised)] border-[var(--rule-base)] transition-colors group-hover:border-[color-mix(in_oklab,var(--accent)_35%,var(--rule-base))]">
             <span className="text-base leading-none">⌘</span>K
           </kbd>
         </button>
 
-        {/* Chip de tenant activo — reemplaza la barra superior gruesa.
-            Dark mode: usa bg-white/5 + border-white/20 para contraste.
-            Texto en claro (primary) en light, en claro (gray-100) en dark. */}
-        {tenantSlug && (
-          <Link
-            href={`/t/${tenantSlug}/tienda`}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Abrir tienda en nueva pestaña"
-            className={cn(
-              "hidden md:inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border text-xs font-semibold transition-colors shrink-0",
-              isAutoDarkTheme
-                ? "border-[color-mix(in oklab, var(--accent) 30%, transparent)] bg-[color-mix(in oklab, var(--accent) 10%, transparent)] text-[color-mix(in oklab, var(--accent) 60%, white)] hover:bg-[color-mix(in oklab, var(--accent) 18%, transparent)]"
-                : "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 dark:border-white/20 dark:bg-white/[0.06] dark:text-gray-100 dark:hover:bg-white/[0.1]"
-            )}
-          >
-            {tenantLogoUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={tenantLogoUrl}
-                alt=""
-                className="h-5 w-5 rounded-md object-cover bg-white/30 shrink-0"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-              />
-            ) : (
-              <StoreIcon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-            )}
-            <span className="truncate max-w-[120px]">{tenantName || tenantSlug}</span>
-            <ExternalLink className="h-3 w-3 opacity-70" strokeWidth={1.75} aria-hidden />
-          </Link>
-        )}
       </div>
 
       {/* Right: actions */}
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex min-w-0 items-center gap-1">
         {/* Ver mi tienda — CTA explícito que abre el storefront público en pestaña
             nueva (Brandon 2026-06-07). El dueño salta de administrar a ver lo que
             ve el cliente. Siempre visible (ícono en mobile, +label en sm+). */}
@@ -250,20 +222,20 @@ export function AdminTopHeader({
               "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-2.5 text-sm font-bold transition-colors sm:px-3",
               isAutoDarkTheme
                 ? "border-[color-mix(in_oklab,var(--accent)_30%,transparent)] bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] text-[color-mix(in_oklab,var(--accent)_65%,white)] hover:bg-[color-mix(in_oklab,var(--accent)_20%,transparent)]"
-                : "border-[color-mix(in_oklab,var(--accent)_25%,transparent)] bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[color-mix(in_oklab,var(--accent)_14%,var(--surface-raised))]"
+                : "border-[color-mix(in_oklab,var(--accent)_25%,transparent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[color-mix(in_oklab,var(--accent)_14%,var(--surface-raised))]"
             )}
           >
             <StoreIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
-            <span className="hidden sm:inline">Ver mi tienda</span>
+            <span className="hidden @min-[56rem]:inline">Ver mi tienda</span>
             <ExternalLink className="h-3 w-3 opacity-70" strokeWidth={1.75} aria-hidden />
           </Link>
         )}
-        {/* Chat con clientes — bandeja Messenger (Brandon 2026-06-06) */}
-        <AdminChatNavButton />
-        {/* Mensajes de la plataforma (Buleje → dueño) — Messenger ADR-132 */}
-        <AdminPlatformInboxButton />
-        <div className="hidden sm:block">
-          <NotificationBell />
+        {/* Chat con clientes + mensajes de la plataforma en UN botón con el
+            total sin leer. Eran dos íconos sueltos con badges que competían
+            entre sí y llenaban la barra (ADR-132 + Messenger 2026-06-06). */}
+        <AdminMensajesMenu onDarkHeader={isAutoDarkTheme} />
+        <div className="hidden @min-[44rem]:block">
+          <NotificationBell onDarkHeader={isAutoDarkTheme} />
         </div>
 
         <AdminOptionsDropdown
@@ -274,6 +246,7 @@ export function AdminTopHeader({
           onToggleFocus={onToggleFocus}
           onTogglePresentation={onTogglePresentation}
           onSetTheme={onSetTheme}
+          onDarkHeader={isAutoDarkTheme}
         />
 
         <AdminUserDropdown
@@ -285,4 +258,4 @@ export function AdminTopHeader({
       </div>
     </header>
   );
-}
+});

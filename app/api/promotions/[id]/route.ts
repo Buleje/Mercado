@@ -1,10 +1,28 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { z } from "zod";
 import { OrdersDB, CustomersDB } from "@/lib/jsondb";
+import { PromotionsDB } from "@/lib/db/promotions.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { callLLM } from "@/lib/llm-router";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+
+type RouteParams = { params: Promise<{ id: string }> };
+
+// Patch parcial: mismos campos que el schema de creación, todos opcionales.
+const PromotionUpdateSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(1000).optional(),
+  discountPercent: z.number().min(0).max(100).optional(),
+  minPurchase: z.number().nonnegative().optional(),
+  imageUrl: z.string().max(500).optional(),
+  message: z.string().max(500).optional(),
+  targetType: z.string().max(30).optional(),
+  targetPhones: z.string().max(2000).optional(),
+  active: z.boolean().optional(),
+  expiresAt: z.string().max(50).optional(),
+});
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "promotions-X"); if (_rl) return _rl;
@@ -96,5 +114,49 @@ Genera al menos 5 promociones diferentes clasificadas por tipo de audiencia.`;
     return NextResponse.json({ suggestions });
   } catch {
     return NextResponse.json({ error: "Error al conectar con la IA" }, { status: 502 });
+  }
+}
+
+// ── Editar / activar-desactivar / eliminar una promoción ──────────────────────
+// Faltaban estos handlers: la tab Ofertas llamaba PUT/PATCH/DELETE a esta ruta
+// (que sólo tenía POST de IA) → editar, activar y borrar fallaban en silencio.
+
+async function applyUpdate(req: NextRequest, { params }: RouteParams) {
+  const _rl = await applyRateLimit(req, "MODERATE", "promotions-update"); if (_rl) return _rl;
+  const auth = await requireAdmin(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+
+  const { id } = await params;
+  const raw = await req.json().catch(() => null);
+  const parsed = PromotionUpdateSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
+  }
+
+  try {
+    const updated = await PromotionsDB.update(auth.tenantId, id, parsed.data);
+    if (!updated) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json(updated);
+  } catch (e) {
+    logger.error("[promotions-id] update error", { id, error: String(e) });
+    return NextResponse.json({ error: "Error actualizando la promoción" }, { status: 500 });
+  }
+}
+
+export const PUT = applyUpdate;
+export const PATCH = applyUpdate;
+
+export async function DELETE(req: NextRequest, { params }: RouteParams) {
+  const _rl = await applyRateLimit(req, "MODERATE", "promotions-delete"); if (_rl) return _rl;
+  const auth = await requireAdmin(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+
+  const { id } = await params;
+  try {
+    await PromotionsDB.delete(auth.tenantId, id);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    logger.error("[promotions-id] delete error", { id, error: String(e) });
+    return NextResponse.json({ error: "Error eliminando la promoción" }, { status: 500 });
   }
 }

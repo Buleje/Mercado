@@ -503,7 +503,7 @@ function NewTemplateModal({
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       {p.required && (
-                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                        <span className="text-[length:var(--ts-2xs)] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           Obligatorio
                         </span>
                       )}
@@ -523,7 +523,7 @@ function NewTemplateModal({
 
               <button
                 onClick={startBlank}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-[var(--text-primary)] border-2 border-dashed border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] border-2 border-dashed border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all"
               >
                 <Plus className="h-4 w-4" />
                 Crear plantilla en blanco
@@ -684,7 +684,7 @@ function TemplateCard({
                 {template.options.length} {template.options.length === 1 ? "opción" : "opciones"}
               </span>
               {template.required && (
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   Obligatorio
                 </span>
               )}
@@ -730,7 +730,7 @@ function TemplateCard({
 
             <button
               onClick={() => setOptionModal({ mode: "new" })}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary border border-dashed border-primary/40 hover:bg-primary/5 transition-colors"
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] border border-dashed border-primary/40 hover:bg-primary/5 transition-colors"
             >
               <Plus className="h-4 w-4" />
               Añadir opción

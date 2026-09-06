@@ -23,13 +23,13 @@ interface MiniFeature {
   cat: Cat; border: string;
 }
 
-const C_BORDER: Record<Cat, string> = { Ventas: "var(--accent)", IA: "#2563eb", Stock: "#d97706" };
+const C_BORDER: Record<Cat, string> = { Ventas: "var(--accent)", IA: "#2563eb", Stock: "#f0503f" };
 const C_BG:     Record<Cat, string> = { Ventas: "rgba(0, 160, 160,0.12)", IA: "rgba(37,99,235,0.12)", Stock: "rgba(217,119,6,0.12)" };
-const C_TEXT:   Record<Cat, string> = { Ventas: "#14C2C2", IA: "#60a5fa", Stock: "#fbbf24" };
+const C_TEXT:   Record<Cat, string> = { Ventas: "#14C2C2", IA: "#60a5fa", Stock: "#ff8676" };
 const C_ICON:   Record<Cat, string> = {
   Ventas: "linear-gradient(135deg,var(--accent),#14C2C2)",
   IA:     "linear-gradient(135deg,#1d4ed8,#3b82f6)",
-  Stock:  "linear-gradient(135deg,#b45309,#f59e0b)",
+  Stock:  "linear-gradient(135deg,#c93b2c,#ff6b5b)",
 };
 
 const STARS: StarFeature[] = [

@@ -15,7 +15,12 @@ const BodySchema = z.object({
   banner:      z.string().url().optional(),
   category:    z.string().max(50).optional(),
   zone:        z.string().max(80).optional(),
-  commission:  z.number().min(0).max(30).optional(),
+  // SECURITY 2026-06-29 (commission-integrity): el `commission` NO se acepta del
+  // cliente. Antes un vendor (rol owner) podía auto-registrar su tienda con
+  // commission=0 → como Store.commission gana de override sobre el tier dinámico
+  // (computeVendorTier), pagaba 0% de comisión a la plataforma para siempre.
+  // El default queda en 5% y SOLO el superadmin puede cambiarlo
+  // (app/api/superadmin/stores). Regla danger-zone: el vendor NO fija su comisión.
 });
 
 // ── POST /api/marketplace/stores/register — registrar nueva tienda ─────────────
@@ -60,7 +65,8 @@ export async function POST(req: NextRequest) {
       banner:      parsed.data.banner,
       category:    parsed.data.category,
       zone:        parsed.data.zone,
-      commission:  parsed.data.commission,
+      // commission omitido a propósito → registerForExistingTenant aplica el
+      // default 5% (ver SECURITY note en BodySchema).
     });
 
     logActivity(

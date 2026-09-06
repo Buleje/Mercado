@@ -4,12 +4,14 @@ import { useState } from "react";
 import {
   DollarSign, Calendar, AlertTriangle,
   CheckCircle2, TrendingUp, Shield, MessageCircle,
-  ChevronLeft, ChevronRight, Search, Plus, Clock, XCircle, Ban,
+  ChevronLeft, ChevronRight,
   UtensilsCrossed, Home, Package, User,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { waLink } from "@/lib/whatsapp-link";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
+import { activateProps } from "@/components/admin/shared/a11y";
 
 type FiadoStatus = "ACTIVO" | "PAGADO" | "VENCIDO" | "CANCELADO";
 
@@ -78,8 +80,9 @@ type MejorPagadorMes = {
  *  - "resumen"  → KPI + progreso + proyección + banners (pagaron, mejor pagador, más antiguo).
  *  - "analisis" → gráfica tendencia 12m + ranking riesgo + calendario + tags por zona.
  *  - "deudores" → ninguna sección de FiadoStats (la tabla la pinta FiadosModule).
+ *  - "cobranza" → ninguna sección de FiadoStats (CobranzaView pinta la suya).
  */
-export type FiadoStatsView = "all" | "resumen" | "analisis" | "deudores";
+export type FiadoStatsView = "all" | "resumen" | "analisis" | "deudores" | "cobranza";
 
 type FiadoStatsProps = {
   fiados: Fiado[];
@@ -102,21 +105,9 @@ type FiadoStatsProps = {
   view?: FiadoStatsView;
 };
 
-/**
- * STATUS_META — mapeo estado -> variante semantica StatusBadge.
- * ADR-074 Phase 2: eliminamos los bg-amber-100/emerald-100/red-100/gray-100
- * hardcoded. La variante es lo único que importa; el color cae via tokens.
- */
-const STATUS_META: Record<FiadoStatus, { label: string; variant: "warning" | "success" | "error" | "neutral"; icon: typeof CheckCircle2 }> = {
-  ACTIVO: { label: "Activo", variant: "warning", icon: Clock },
-  PAGADO: { label: "Pagado", variant: "success", icon: CheckCircle2 },
-  VENCIDO: { label: "Vencido", variant: "error", icon: XCircle },
-  CANCELADO: { label: "Cancelado", variant: "neutral", icon: Ban },
-};
-
 function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
 
-export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMorosidad, proyeccionCobro, fiadoMasAntiguo, pagosEstaSemana, mejorPagadorMes, openDetail, search, setSearch, setSelected, setShowQuickClient, statusFilter, setStatusFilter, FiadoTendenciaCobro, view = "all" }: FiadoStatsProps) {
+export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMorosidad, proyeccionCobro, fiadoMasAntiguo, pagosEstaSemana, mejorPagadorMes, openDetail, setSearch, setSelected, FiadoTendenciaCobro, view = "all" }: FiadoStatsProps) {
   const [calMes, setCalMes] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [calDiaSeleccionado, setCalDiaSeleccionado] = useState<string | null>(null);
 
@@ -125,6 +116,12 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
   const showHeaderKpi = view === "all" || view === "resumen" || view === "analisis";
   const showResumen = view === "all" || view === "resumen";
   const showAnalisis = view === "all" || view === "analisis";
+  const waAntiguo = fiadoMasAntiguo
+    ? waLink(
+        fiadoMasAntiguo.customerId,
+        `Hola ${fiadoMasAntiguo.customerName || ""}! Le recuerdo que tiene un saldo pendiente de ${formatCurrency(fiadoMasAntiguo.saldo)} en Buleje. Gracias!`,
+      )
+    : null;
 
   return (
     <>
@@ -352,9 +349,9 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
             </p>
           </div>
           <div className="flex gap-2 shrink-0">
-            {fiadoMasAntiguo.customerId && (
+            {waAntiguo && (
               <a
-                href={`https://wa.me/51${fiadoMasAntiguo.customerId.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${fiadoMasAntiguo.customerName || ""}! Le recuerdo que tiene un saldo pendiente de ${formatCurrency(fiadoMasAntiguo.saldo)} en Buleje. Gracias!`)}`}
+                href={waAntiguo}
                 target="_blank" rel="noopener noreferrer"
                 // WhatsApp brand color (#25D366) — no token equivalent, se mantiene como excepcion documentada
                 className="text-xs font-bold text-white bg-[#25D366] hover:opacity-90 px-3 py-1.5 rounded-lg transition-opacity"
@@ -459,7 +456,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         if (activos.length === 0) {
           return (
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-xl p-6 flex flex-col items-center gap-2 text-center">
-              <div className="h-10 w-10 rounded-full bg-[var(--accent-soft)] flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Shield className="h-5 w-5 text-[var(--data-success-500)]" strokeWidth={2} />
               </div>
               <p className="text-sm font-bold text-[var(--text-primary)]">Sin deudores pendientes</p>
@@ -512,8 +509,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 return (
                   <div
                     key={f.id}
+                    {...activateProps(() => openDetail(f))}
                     className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:shadow-[var(--shadow-sm)] transition-shadow cursor-pointer overflow-hidden"
-                    onClick={() => openDetail(f)}
                   >
                     <div className="flex items-center gap-3 p-3">
                       {/* Avatar circular numerado por riesgo */}
@@ -566,8 +563,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                                 e.stopPropagation();
                                 const nombre = f.customerName || f.customerId;
                                 const msg = `Hola ${nombre}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje. Cuando puedas pasa a regularizarlo!`;
-                                const cleanPhone = f.customerId.replace(/\D/g, "");
-                                window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+                                const wa = waLink(f.customerId, msg);
+                                if (wa) window.open(wa, "_blank");
                               }}
                               aria-label="Enviar recordatorio por WhatsApp"
                               className="text-xs font-bold p-1.5 rounded-lg bg-[#25D366]/12 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
@@ -747,9 +744,9 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                     </div>
                     <button
                       onClick={() => {
-                        const cleanPhone = f.customerId.replace(/\D/g, "");
                         const msg = `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje.`;
-                        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+                        const wa = waLink(f.customerId, msg);
+                        if (wa) window.open(wa, "_blank");
                       }}
                       // WhatsApp brand color (#25D366) — excepcion documentada (no token equivalent)
                       className="shrink-0 px-2 py-1 rounded-lg text-xs font-bold bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"

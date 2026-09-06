@@ -78,7 +78,7 @@ export default function OfferCountdown({
           "inline-flex items-center gap-3 rounded-2xl px-5 py-3 border",
           isUrgent
             ? "bg-[var(--data-error,_#e11d48)]/10 border-[var(--data-error,_#e11d48)]/30 text-[var(--data-error,_#e11d48)]"
-            : "bg-[var(--accent-soft)] border-[var(--accent)]/30 text-[var(--accent)]",
+            : "bg-primary/10 border-[var(--accent)]/30 text-[var(--accent)]",
           className,
         )}
         aria-live="polite"
@@ -103,7 +103,7 @@ export default function OfferCountdown({
         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums",
         isUrgent
           ? "bg-[var(--data-error,_#e11d48)]/10 text-[var(--data-error,_#e11d48)]"
-          : "bg-[var(--accent-soft)] text-[var(--accent)]",
+          : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
         className,
       )}
       aria-live="polite"

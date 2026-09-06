@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Field } from "@/components/admin/shared/Field";
+import { SectionTitle } from "@buleje/design-system";
 import {
   AlertTriangle, CheckCircle, Clock, Download, Loader2,
-  Package, Search, ShieldCheck, Plus, X, Trash2, TrendingDown,
+  Search, ShieldCheck, Plus, X, Trash2, TrendingDown,
 } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -37,7 +39,7 @@ const URGENCY_CFG: Record<Urgency, { label: string; chip: string; Icon: typeof A
   vencido: { label: "Vencido", chip: "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]", Icon: AlertTriangle },
   critico: { label: "Vence esta semana", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]", Icon: AlertTriangle },
   pronto:  { label: "Vence pronto", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]", Icon: Clock },
-  bien:    { label: "Vigente", chip: "bg-[var(--accent-soft)] text-[var(--accent)]", Icon: CheckCircle },
+  bien:    { label: "Vigente", chip: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]", Icon: CheckCircle },
 };
 
 const FIELD = "w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-sm font-medium text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]";
@@ -156,7 +158,7 @@ export default function SimpleExpiryTab() {
       {/* Lista */}
       {filtered.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-16 text-center">
-          <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><CheckCircle className="h-6 w-6" /></span>
+          <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><CheckCircle className="h-6 w-6" /></span>
           <p className="text-base font-extrabold text-[var(--text-primary)]">{filter !== "todos" ? "Sin lotes en esta categoría" : "Sin lotes con vencimiento"}</p>
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">Registra lotes con fecha de vencimiento para no perder mercadería.</p>
           <button onClick={() => setShowRegister(true)} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90"><Plus className="h-4 w-4" strokeWidth={2.5} /> Registrar lote</button>
@@ -176,7 +178,7 @@ export default function SimpleExpiryTab() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="truncate font-bold text-[var(--text-primary)]">{b.productName}</span>
                     <span className={cn("rounded-full px-2 py-0.5 text-xs font-bold", cfg.chip)}>{b.days < 0 ? `Venció hace ${Math.abs(b.days)}d` : b.days === 0 ? "Vence hoy" : `Vence en ${b.days}d`}</span>
-                    {isReviewed && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-bold text-[var(--accent)]"><ShieldCheck className="h-3 w-3" /> Revisado</span>}
+                    {isReviewed && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent)]"><ShieldCheck className="h-3 w-3" /> Revisado</span>}
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[var(--text-tertiary)]">
                     <span>Lote <strong className="text-[var(--text-secondary)]">{b.lote}</strong></span>
@@ -199,7 +201,7 @@ export default function SimpleExpiryTab() {
                           <Trash2 className="h-3.5 w-3.5" /> Dar de baja
                         </button>
                       )}
-                      <button onClick={() => markReviewed(b.id)} className={cn("inline-flex h-9 items-center gap-1 rounded-lg border px-2.5 text-xs font-bold transition-colors", isReviewed ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]" : "border-[var(--accent)]/30 bg-[var(--accent-soft)] text-[var(--accent)] hover:brightness-95")}>
+                      <button onClick={() => markReviewed(b.id)} className={cn("inline-flex h-9 items-center gap-1 rounded-lg border px-2.5 text-xs font-bold transition-colors", isReviewed ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]" : "border-[var(--accent)]/30 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:brightness-95")}>
                         <ShieldCheck className="h-3.5 w-3.5" /> {isReviewed ? "Desmarcar" : "Revisado"}
                       </button>
                     </>
@@ -265,14 +267,14 @@ function RegisterBatchModal({ products, onClose, onSaved }: { products: Product[
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
-          <div><h2 className="text-lg font-bold leading-tight text-[var(--text-primary)]">Registrar lote</h2><p className="text-xs text-[var(--text-tertiary)]">Mercadería con fecha de vencimiento</p></div>
+          <div><SectionTitle as="h2" className="text-lg font-bold leading-tight text-[var(--text-primary)]">Registrar lote</SectionTitle><p className="text-xs text-[var(--text-tertiary)]">Mercadería con fecha de vencimiento</p></div>
           <button onClick={onClose} aria-label="Cerrar" className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-5 w-5" /></button>
         </div>
         <div className="space-y-4 p-6">
           <div>
-            <label className={LABEL}>Producto</label>
+            <span className={LABEL}>Producto</span>
             {selected ? (
-              <button type="button" onClick={() => { setProductId(""); setPsearch(""); }} className="flex w-full items-center justify-between rounded-lg border border-[var(--accent)] bg-[var(--accent-soft)] px-3.5 py-2.5 text-left">
+              <button type="button" onClick={() => { setProductId(""); setPsearch(""); }} className="flex w-full items-center justify-between rounded-lg border border-[var(--accent)] bg-primary/10 px-3.5 py-2.5 text-left">
                 <span className="text-sm font-bold text-[var(--text-primary)]">{selected.name}</span>
                 <span className="text-xs font-bold text-[var(--text-tertiary)]">cambiar</span>
               </button>
@@ -286,11 +288,11 @@ function RegisterBatchModal({ products, onClose, onSaved }: { products: Product[
             </>)}
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className={LABEL}>N° de lote</label><input value={lote} onChange={e => setLote(e.target.value)} placeholder="auto" className={FIELD} /></div>
-            <div><label className={LABEL}>Cantidad</label><input type="number" min="0" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" className={FIELD} /></div>
-            <div><label className={LABEL}>Vence el *</label><input type="date" value={expiry} onChange={e => setExpiry(e.target.value)} className={FIELD} /></div>
-            <div><label className={LABEL}>Costo unitario (S/)</label><input type="number" min="0" step="0.01" value={cost} onChange={e => setCost(e.target.value)} placeholder="0.00" className={FIELD} /></div>
-            <div className="col-span-2"><label className={LABEL}>Proveedor (opcional)</label><input value={supplier} onChange={e => setSupplier(e.target.value)} placeholder="Distribuidora…" className={FIELD} /></div>
+            <Field label="N° de lote" labelClassName={LABEL}><input value={lote} onChange={e => setLote(e.target.value)} placeholder="auto" className={FIELD} /></Field>
+            <Field label="Cantidad" labelClassName={LABEL}><input type="number" min="0" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" className={FIELD} /></Field>
+            <Field label="Vence el *" labelClassName={LABEL}><input type="date" value={expiry} onChange={e => setExpiry(e.target.value)} className={FIELD} /></Field>
+            <Field label="Costo unitario (S/)" labelClassName={LABEL}><input type="number" min="0" step="0.01" value={cost} onChange={e => setCost(e.target.value)} placeholder="0.00" className={FIELD} /></Field>
+            <Field label="Proveedor (opcional)" labelClassName={LABEL} className="col-span-2"><input value={supplier} onChange={e => setSupplier(e.target.value)} placeholder="Distribuidora…" className={FIELD} /></Field>
           </div>
           <div className="flex items-center gap-3 pt-1">
             <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>

@@ -22,13 +22,41 @@ import { cn } from "@buleje/design-system";
 export type SAStatTone = "teal" | "violet" | "amber" | "sky" | "rose" | "emerald" | "slate";
 
 const SA_STAT_TONES: Record<SAStatTone, { bg: string; text: string; border: string }> = {
-  teal:    { bg: "bg-teal-500/10 dark:bg-teal-500/15",       text: "text-teal-700 dark:text-teal-300",       border: "border-teal-500/30" },
-  violet:  { bg: "bg-violet-500/10 dark:bg-violet-500/15",   text: "text-violet-700 dark:text-violet-300",   border: "border-violet-500/30" },
-  amber:   { bg: "bg-amber-500/10 dark:bg-amber-500/15",     text: "text-amber-700 dark:text-amber-300",     border: "border-amber-500/30" },
-  sky:     { bg: "bg-sky-500/10 dark:bg-sky-500/15",         text: "text-sky-700 dark:text-sky-300",         border: "border-sky-500/30" },
-  rose:    { bg: "bg-rose-500/10 dark:bg-rose-500/15",       text: "text-rose-700 dark:text-rose-300",       border: "border-rose-500/30" },
-  emerald: { bg: "bg-emerald-500/10 dark:bg-emerald-500/15", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-500/30" },
-  slate:   { bg: "bg-slate-500/10 dark:bg-slate-500/15",     text: "text-slate-700 dark:text-slate-300",     border: "border-slate-500/30" },
+  teal: {
+    bg: "bg-teal-500/10 dark:bg-teal-500/15",
+    text: "text-teal-700 dark:text-teal-300",
+    border: "border-teal-500/30",
+  },
+  violet: {
+    bg: "bg-violet-500/10 dark:bg-violet-500/15",
+    text: "text-violet-700 dark:text-violet-300",
+    border: "border-violet-500/30",
+  },
+  amber: {
+    bg: "bg-teal-500/10 dark:bg-teal-500/15",
+    text: "text-teal-700 dark:text-teal-300",
+    border: "border-teal-500/30",
+  },
+  sky: {
+    bg: "bg-sky-500/10 dark:bg-sky-500/15",
+    text: "text-sky-700 dark:text-sky-300",
+    border: "border-sky-500/30",
+  },
+  rose: {
+    bg: "bg-rose-500/10 dark:bg-rose-500/15",
+    text: "text-rose-700 dark:text-rose-300",
+    border: "border-rose-500/30",
+  },
+  emerald: {
+    bg: "bg-emerald-500/10 dark:bg-emerald-500/15",
+    text: "text-emerald-700 dark:text-emerald-300",
+    border: "border-emerald-500/30",
+  },
+  slate: {
+    bg: "bg-slate-500/10 dark:bg-slate-500/15",
+    text: "text-slate-700 dark:text-slate-300",
+    border: "border-slate-500/30",
+  },
 };
 
 export interface SAStatChipProps {
@@ -68,15 +96,13 @@ export function SAStatChip({
         <Icon className="h-5 w-5" strokeWidth={2.25} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
           {label}
         </p>
         <p className="mt-0.5 text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tabular-nums leading-tight truncate">
           {value}
         </p>
-        {hint && (
-          <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)] truncate">{hint}</p>
-        )}
+        {hint && <p className="mt-0.5 text-xs text-[var(--text-tertiary)] truncate">{hint}</p>}
       </div>
     </div>
   );

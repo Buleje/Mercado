@@ -11,8 +11,8 @@ const DeliveryTrackingMap = dynamic(
     ssr: false,
     loading: () => (
       <div className="animate-pulse space-y-4">
-        <div className="h-20 rounded-xl bg-gray-200 dark:bg-gray-800" />
-        <div className="h-72 rounded-xl bg-gray-200 dark:bg-gray-800" />
+        <div className="h-20 bg-gray-200 dark:bg-gray-800" />
+        <div className="h-72 bg-gray-200 dark:bg-gray-800" />
       </div>
     ),
   }
@@ -29,6 +29,7 @@ interface Props {
 interface TrackingMeta {
   status: string;
   partnerName: string;
+  tipToken: string | null;
 }
 
 export default function TrackingClient({ orderId }: Props) {
@@ -42,7 +43,11 @@ export default function TrackingClient({ orderId }: Props) {
         if (!res.ok) return;
         const data = await res.json();
         if (!cancelled) {
-          setMeta({ status: data.status, partnerName: data.partnerName });
+          setMeta({
+            status: data.status,
+            partnerName: data.partnerName,
+            tipToken: data.tipToken ?? null,
+          });
         }
       } catch {
         /* poll silencioso */
@@ -61,12 +66,16 @@ export default function TrackingClient({ orderId }: Props) {
       <DeliveryTrackingMap orderId={orderId} />
 
       {meta?.status === "delivered" && (
-        <TipWidget orderId={orderId} partnerName={meta.partnerName} />
+        <TipWidget
+          orderId={orderId}
+          partnerName={meta.partnerName}
+          tipToken={meta.tipToken}
+        />
       )}
 
       {/* Footer informativo */}
-      <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white p-4 text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
-        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
+      <div className="flex items-start gap-2 border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-sm text-[var(--text-secondary)]">
+        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent)]" />
         <p>
           El mapa se actualiza automáticamente cada 15 segundos mientras el repartidor esté
           en camino. Puedes contactarlo directamente usando el número de teléfono mostrado.

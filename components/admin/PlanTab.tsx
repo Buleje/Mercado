@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useState } from "react";
 import {
@@ -59,14 +60,14 @@ function formatLimit(max: number) {
 
 const PLAN_COLORS: Record<string, string> = {
   free: "bg-gray-200 dark:bg-gray-700 text-[var(--text-primary)]",
-  pro: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+  pro: "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
   business: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
   enterprise: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
 };
 
 const PLAN_BAR_COLOR: Record<string, string> = {
   free: "bg-gray-400",
-  pro: "bg-[var(--accent-soft)]",
+  pro: "bg-primary/10",
   business: "bg-[var(--text-primary)]",
   enterprise: "bg-[var(--data-warning-500)]",
 };
@@ -331,7 +332,7 @@ export default function PlanTab() {
   const handleRemoveDomain = async () => {
     setDomainRemoving(true);
     try {
-      const res = await fetch("/api/tenant/custom-domain", { method: "DELETE" });
+      const res = await fetch("/api/tenant/custom-domain", { method: "DELETE", headers: csrfHeaders() });
       if (!res.ok) { showToast("Error al eliminar dominio", false); return; }
       setStatus((prev) => prev ? { ...prev, tenant: { ...prev.tenant, customDomain: null } } : prev);
       setDomainInput("");
@@ -445,11 +446,18 @@ export default function PlanTab() {
 
   return (
     <div className="space-y-8 max-w-4xl">
+      <AdminModuleHeader
+        eyebrow="Cuenta · Suscripción"
+        title="Mi Plan"
+        description="Tu plan actual, el uso del mes y las opciones para mejorar tu tienda."
+        icon={Zap}
+      />
+
       {/* Toast */}
       {toast && (
         <div
           className={`fixed top-4 right-4 z-50 px-2 sm:px-4 py-2 sm:py-3 rounded-lg text-white text-sm font-medium ${
-            toast.ok ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]"
+            toast.ok ? "bg-primary/10" : "bg-[var(--data-error-500)]"
           }`}
         >
           {toast.msg}

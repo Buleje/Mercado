@@ -41,6 +41,7 @@ import {
   Edit3,
   Trash2,
 } from "@buleje/design-system/icons";
+import { SectionTitle, CardTitle } from "@buleje/design-system";
 import { getCategoryIcon } from "@/lib/expense-icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -231,16 +232,16 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
       onClick={(e) => { if (e.target === e.currentTarget && !submitting) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape" && !submitting) onClose(); }}
     >
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-3xl my-8 overflow-hidden border border-[var(--rule-base)]">
+      <div className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-3xl my-8 overflow-hidden border border-[var(--rule-base)]">
         {/* ── Header ── */}
         <header className={cn("px-5 sm:px-6 py-4 border-b border-[var(--rule-base)] flex items-center gap-3", colorCls.bg)}>
           <span className={cn("inline-flex items-center justify-center h-12 w-12 rounded-xl ring-1", colorCls.iconBg, colorCls.border)}>
             <SelectedIcon className={cn("h-6 w-6", colorCls.text)} strokeWidth={2} />
           </span>
           <div className="flex-1 min-w-0">
-            <h2 id="recurring-expense-title" className="text-lg font-extrabold text-[var(--text-primary)]">
+            <SectionTitle as="h2" id="recurring-expense-title" className="text-lg font-extrabold text-[var(--text-primary)]">
               Nuevo gasto recurrente
-            </h2>
+            </SectionTitle>
             <p className="text-sm text-[var(--text-secondary)] truncate">
               Configurá un pago fijo (alquiler, internet, etc.) para registrarlo en 1 click cuando llegue la fecha.
             </p>
@@ -299,7 +300,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                 <button
                   type="button"
                   onClick={() => setShowNewCategoryForm(true)}
-                  className="inline-flex items-center gap-2 h-11 px-3.5 rounded-2xl border-2 border-dashed border-[var(--text-tertiary)]/40 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary hover:bg-primary/5 transition-all"
+                  className="inline-flex items-center gap-2 h-11 px-3.5 rounded-2xl border-2 border-dashed border-[var(--text-tertiary)]/40 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-all"
                 >
                   <Plus className="h-4 w-4" />
                   Nueva categoría
@@ -449,7 +450,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                       className={cn(
                         "h-11 px-2 rounded-2xl border-2 text-sm font-semibold transition-all",
                         active
-                          ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/30"
+                          ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-2 ring-primary/30"
                           : "border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]",
                       )}
                     >
@@ -512,7 +513,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                     className={cn(
                       "inline-flex items-center justify-center gap-2 h-11 px-3 rounded-2xl border-2 text-sm font-semibold transition-all",
                       active
-                        ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/30"
+                        ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-2 ring-primary/30"
                         : "border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]",
                     )}
                   >
@@ -592,10 +593,10 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
 function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
     <section className="space-y-3">
-      <h3 className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+      <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
         <span className="text-[var(--text-tertiary)]">{icon}</span>
         {title}
-      </h3>
+      </CardTitle>
       <div className="space-y-3">{children}</div>
     </section>
   );

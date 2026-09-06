@@ -20,15 +20,45 @@ import { SectionTitle } from "@buleje/design-system";
 import {
   Loader2, Lock, ShieldCheck, KeyRound, ArrowLeft, Eye, EyeOff, User,
   AlertTriangle, ArrowRight, Crown, Bike, Store, ChevronDown,
-  TrendingUp, Building2, Activity, Server, DollarSign,
+  TrendingUp, Building2, Activity, Server, DollarSign, Clock,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useLoginSecurity } from "@/hooks/useLoginSecurity";
+import { getKeepAlive } from "@/lib/session-keepalive";
 
 export default function SuperAdminLoginPage() {
   const searchParams = useSearchParams();
   const usernameRef = useRef<HTMLInputElement>(null);
   const codeRef = useRef<HTMLInputElement>(null);
   const sessionExpired = searchParams.get("reason") === "expired";
+
+  // Resumen silencioso (Brandon 2026-08-30): reusa el mismo flag "confiar en
+  // este equipo" del login admin (localStorage compartido) — si ya estaba
+  // marcado y el platform-token (12h, se renueva solo pasada la mitad de su
+  // vida) sigue vivo, entra directo sin mostrar el form. A diferencia del
+  // admin (refresh de 7 días), acá el techo real es 12h: un corte MÁS largo
+  // que eso (ej. toda una noche) sigue pidiendo 2FA de nuevo — deliberado,
+  // es la cuenta de mayor privilegio de toda la plataforma.
+  const [resuming, setResuming] = useState(!sessionExpired);
+  useEffect(() => {
+    if (sessionExpired) return; // ya se sabe inválida, no perder tiempo probando
+    let cancelado = false;
+    (async () => {
+      if (!getKeepAlive()) { setResuming(false); return; }
+      try {
+        const res = await fetch("/api/superadmin/auth", { method: "GET", credentials: "include" });
+        if (!cancelado && res.ok) {
+          window.location.assign("/superadmin/dashboard");
+          return;
+        }
+      } catch {
+        /* sin red — mostrar el form */
+      }
+      if (!cancelado) setResuming(false);
+    })();
+    return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -37,6 +67,10 @@ export default function SuperAdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | false>(false);
   const [shaking, setShaking] = useState(false);
+  const {
+    capsLock, retryAfter, onPasswordKey, startRetryFromResponse,
+    messageForStatus, networkErrorMessage, mmss,
+  } = useLoginSecurity();
 
   const [challengeId, setChallengeId] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -89,12 +123,16 @@ export default function SuperAdminLoginPage() {
         setTimeout(() => codeRef.current?.focus(), 100);
       } else if (res.ok) {
         window.location.assign("/superadmin/dashboard");
+      } else if (res.status === 429) {
+        // Rate limit / lockout: recargar no ayuda → countdown.
+        startRetryFromResponse(res);
+        setError(false);
       } else {
-        setError(data.error || "Credenciales inválidas");
-        setTimeout(() => setError(false), 2500);
+        setError(messageForStatus(res.status, { attemptsLeft: data?.attemptsLeft }) ?? data.error ?? "Credenciales inválidas");
+        setTimeout(() => setError(false), 3500);
       }
     } catch {
-      setError("Error de conexión");
+      setError(networkErrorMessage());
     } finally {
       setLoading(false);
     }
@@ -128,6 +166,17 @@ export default function SuperAdminLoginPage() {
     setCode("");
     setError(false);
   };
+
+  if (resuming) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--surface-canvas)]">
+        <div className="flex flex-col items-center gap-3 text-[var(--text-tertiary)]">
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--brand-purple)" }} />
+          <p className="text-sm font-medium">Entrando…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">
@@ -311,6 +360,8 @@ export default function SuperAdminLoginPage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={onPasswordKey}
+                    onKeyUp={onPasswordKey}
                     className="w-full h-14 pl-12 pr-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all su-input"
                     placeholder="••••••••"
                     autoComplete="current-password"
@@ -325,7 +376,20 @@ export default function SuperAdminLoginPage() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                {capsLock && (
+                  <p role="status" className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    Bloq Mayús está activado
+                  </p>
+                )}
               </div>
+
+              {retryAfter > 0 && (
+                <div role="alert" className="flex items-start gap-3 p-4 rounded-2xl bg-[var(--data-warning-500)]/10 border-2 border-[var(--data-warning-500)]/25 text-sm font-bold text-[var(--data-warning-700)]">
+                  <Clock className="h-5 w-5 shrink-0 mt-0.5" aria-hidden />
+                  <span>Demasiados intentos. Esperá <span className="tabular-nums">{mmss(retryAfter)}</span> — recargar no ayuda.</span>
+                </div>
+              )}
 
               {error && (
                 <div
@@ -339,7 +403,7 @@ export default function SuperAdminLoginPage() {
 
               <button
                 type="submit"
-                disabled={loading || !username || !password}
+                disabled={loading || !username || !password || retryAfter > 0}
                 className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl text-white text-base font-extrabold tracking-tight active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   background: "var(--brand-purple)",
@@ -350,6 +414,11 @@ export default function SuperAdminLoginPage() {
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
                     Verificando…
+                  </>
+                ) : retryAfter > 0 ? (
+                  <>
+                    <Clock className="h-5 w-5" strokeWidth={2.25} />
+                    Esperá {mmss(retryAfter)}
                   </>
                 ) : (
                   <>
@@ -552,7 +621,7 @@ function PlatformConsolePreview() {
             <div className="flex items-center gap-2">
               <span className="flex gap-1.5">
                 <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-500)]/60" />
-                <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]/60" />
+                <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[#0d9488]/60" />
                 <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]/60" />
               </span>
               <p className="ml-2 text-xs font-bold text-[var(--text-tertiary)] tabular-nums">

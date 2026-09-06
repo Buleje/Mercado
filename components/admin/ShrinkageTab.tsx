@@ -18,10 +18,56 @@ import {
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
-type ShrinkageCause = "vencimiento" | "rotura" | "robo" | "deterioro" | "error-inventario" | "daño-transporte";
+// La API (/api/mermas) soporta 4 lossType. Mantenemos 4 causas con mapeo 1:1.
+type ShrinkageCause = "vencimiento" | "rotura" | "robo" | "deterioro";
 type ShrinkageStatus = "registrado" | "revisado";
+type MermaLossType = "damages" | "theft" | "expiry" | "obsolescence";
+
+const CAUSE_TO_LOSSTYPE: Record<ShrinkageCause, MermaLossType> = {
+  vencimiento: "expiry",
+  rotura: "damages",
+  robo: "theft",
+  deterioro: "obsolescence",
+};
+const LOSSTYPE_TO_CAUSE: Record<MermaLossType, ShrinkageCause> = {
+  expiry: "vencimiento",
+  damages: "rotura",
+  theft: "robo",
+  obsolescence: "deterioro",
+};
 
 type ProductOption = { id: number; name: string; category: string; costPrice?: number; stock?: number; unit?: string };
+
+// Forma que devuelve /api/mermas (DbMerma) — distinta del modelo de la UI.
+type ApiMerma = {
+  id: string;
+  productId: number;
+  productName?: string;
+  quantity: number;
+  lossType: MermaLossType;
+  notes?: string;
+  registeredBy?: string;
+  createdAt: string;
+};
+
+function normalizeMerma(m: ApiMerma, products: ProductOption[]): ShrinkageRecord {
+  const p = products.find((pp) => pp.id === m.productId);
+  const unitCost = p?.costPrice ?? 0;
+  return {
+    id: m.id,
+    date: m.createdAt,
+    productId: m.productId,
+    product: m.productName ?? p?.name ?? `#${m.productId}`,
+    category: p?.category ?? "—",
+    quantity: m.quantity,
+    unitCost,
+    totalLoss: unitCost * m.quantity,
+    cause: LOSSTYPE_TO_CAUSE[m.lossType] ?? "deterioro",
+    status: "registrado",
+    notes: m.notes ?? "",
+    reportedBy: m.registeredBy ?? "—",
+  };
+}
 
 type ShrinkageRecord = {
   id: string;
@@ -43,10 +89,8 @@ const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigi
 const CAUSE_META: Record<ShrinkageCause, { label: string; color: string; bg: string }> = {
   vencimiento: { label: "Vencimiento", color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
   rotura: { label: "Rotura", color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
-  robo: { label: "Robo/perdida", color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
+  robo: { label: "Robo/pérdida", color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
   deterioro: { label: "Deterioro", color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  "error-inventario": { label: "Error inventario", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  "daño-transporte": { label: "Daño transporte", color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]/30" },
 };
 
 function ModuleTooltip() {
@@ -83,10 +127,17 @@ export default function ShrinkageTab() {
       setLoading(true);
       try {
         const [mermasRes, productsRes] = await Promise.all([fetch("/api/mermas"), fetch("/api/products")]);
-        const [mermasData, productsData] = await Promise.all([mermasRes.json(), productsRes.json()]);
+        const [mermasJson, productsData] = await Promise.all([mermasRes.json(), productsRes.json()]);
         if (cancelled) return;
-        setRecords(Array.isArray(mermasData) ? mermasData : []);
-        setProducts(Array.isArray(productsData) ? productsData : []);
+        const productList: ProductOption[] = Array.isArray(productsData) ? productsData : [];
+        // /api/mermas devuelve { data, total, page, ... } (paginado), no un array plano.
+        const rawMermas: ApiMerma[] = Array.isArray(mermasJson?.data)
+          ? mermasJson.data
+          : Array.isArray(mermasJson)
+            ? mermasJson
+            : [];
+        setProducts(productList);
+        setRecords(rawMermas.map((m) => normalizeMerma(m, productList)));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -126,11 +177,17 @@ export default function ShrinkageTab() {
       const res = await fetch("/api/mermas", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ productId: Number(form.productId), quantity: Number(form.quantity), cause: form.cause, notes: form.notes, reportedBy: form.reportedBy }),
+        body: JSON.stringify({
+          productId: Number(form.productId),
+          quantity: Number(form.quantity),
+          lossType: CAUSE_TO_LOSSTYPE[form.cause],
+          notes: form.notes,
+          registeredBy: form.reportedBy,
+        }),
       });
       const created = await res.json();
       if (!res.ok) throw new Error(created?.error || "No se pudo registrar la merma");
-      setRecords((prev) => [created, ...prev]);
+      setRecords((prev) => [normalizeMerma(created, products), ...prev]);
       setForm({ productId: "", quantity: "", cause: "vencimiento", notes: "", reportedBy: "Almacenero" });
     } finally {
       setSaving(false);

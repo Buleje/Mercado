@@ -3,6 +3,7 @@
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useRef, useCallback } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import {
   Barcode,
   Search,
@@ -247,42 +248,42 @@ export default function QuickStockCounter() {
             </div>
 
             <div className="flex items-center gap-3">
-              <label className="text-xs font-medium text-[var(--text-secondary)] whitespace-nowrap">
-                Stock físico contado:
-              </label>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() =>
-                    setPhysicalStock((v) => Math.max(0, (Number(v) || 0) - 1))
-                  }
-                  className="rounded-md p-1 text-[var(--text-secondary)] hover:text-primary dark:hover:text-[var(--data-success-500)]"
-                >
-                  <MinusCircle className="h-5 w-5" />
-                </button>
-                <input
-                  ref={physInputRef}
-                  type="number"
-                  min="0"
-                  value={physicalStock}
-                  onChange={(e) =>
-                    setPhysicalStock(e.target.value === "" ? "" : Number(e.target.value))
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") addToCount();
-                  }}
-                  className={cn(
-                    "w-20 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 py-1 text-center text-sm",
-                    "text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
-                    "dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
-                  )}
-                />
-                <button
-                  onClick={() => setPhysicalStock((v) => (Number(v) || 0) + 1)}
-                  className="rounded-md p-1 text-[var(--text-secondary)] hover:text-primary dark:hover:text-[var(--data-success-500)]"
-                >
-                  <PlusCircle className="h-5 w-5" />
-                </button>
-              </div>
+              <Field label="Stock físico contado:" labelClassName="text-xs font-medium text-[var(--text-secondary)] whitespace-nowrap">{(id) => (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() =>
+                      setPhysicalStock((v) => Math.max(0, (Number(v) || 0) - 1))
+                    }
+                    className="rounded-md p-1 text-[var(--text-secondary)] hover:text-primary dark:hover:text-[var(--data-success-500)]"
+                  >
+                    <MinusCircle className="h-5 w-5" />
+                  </button>
+                  <input
+                    id={id}
+                    ref={physInputRef}
+                    type="number"
+                    min="0"
+                    value={physicalStock}
+                    onChange={(e) =>
+                      setPhysicalStock(e.target.value === "" ? "" : Number(e.target.value))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") addToCount();
+                    }}
+                    className={cn(
+                      "w-20 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 py-1 text-center text-sm",
+                      "text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
+                      "dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                    )}
+                  />
+                  <button
+                    onClick={() => setPhysicalStock((v) => (Number(v) || 0) + 1)}
+                    className="rounded-md p-1 text-[var(--text-secondary)] hover:text-primary dark:hover:text-[var(--data-success-500)]"
+                  >
+                    <PlusCircle className="h-5 w-5" />
+                  </button>
+                </div>
+              )}</Field>
 
               {physicalStock !== "" && (
                 <span
@@ -412,7 +413,7 @@ export default function QuickStockCounter() {
               className={cn(
                 "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition",
                 saveState === "saved"
-                  ? "bg-[var(--accent-soft)]"
+                  ? "bg-primary/10"
                   : saveState === "error"
                   ? "bg-[var(--data-error-500)]"
                   : "bg-primary hover:bg-[#245a40]",

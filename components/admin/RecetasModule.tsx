@@ -1,8 +1,10 @@
 "use client";
 
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -11,13 +13,14 @@ import {
   BookOpen, BarChart3, ChefHat,
 } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
+import { Field } from "@/components/admin/shared/Field";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
 import type { RecetaCostBreakdown } from "@/lib/types/recetas";
 
 // ── Recetas Dashboard ─────────────────────────────────────────────────────────
 
-const RECETAS_DASH_COLORS = ["#2563EB", "#f97316", "#457b9d", "#9b5de5", "#e63946", "#14C2C2"];
+const RECETAS_DASH_COLORS = ["#2563EB", "#ff6b5b", "#457b9d", "#9b5de5", "#e63946", "#14C2C2"];
 
 function RecetasDashboard() {
   const [data, setData] = useState<{ recetas: Array<Record<string, unknown>>; lotes: Array<Record<string, unknown>> } | null>(null);
@@ -103,7 +106,7 @@ function RecetasDashboard() {
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 * 0.1 }}>
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Recetas activas", value: String(recetasActivas), border: "border-b-4 border-[#2563EB]" },
@@ -187,7 +190,7 @@ const RecetarioAdminTab = React.lazy(() => import("@/components/admin/recetas/Re
 function EmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><ChefHat className="h-6 w-6 text-primary" /></div>
+      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3"><ChefHat className="h-6 w-6 text-[var(--accent-ink)] dark:text-[var(--accent)]" /></div>
       <p className="text-sm font-medium text-[var(--text-secondary)]">{message}</p>
       <p className="text-xs text-[var(--text-tertiary)] mt-1">Los datos aparecerán cuando registres actividad</p>
     </div>
@@ -246,16 +249,25 @@ const PER_PAGE = 10;
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+/** Las vistas del módulo, estables: el hook las usa como dependencia. */
+const RECETAS_VISTAS = ["dashboard", "recetas", "produccion", "recetario"] as const;
+
 const RECETAS_MODULE_ID = "recetas";
+const RECETAS_TAB_ITEMS = [
+  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+  { id: "recetas", label: "Recetas" },
+  { id: "produccion", label: "Producción" },
+  { id: "recetario", label: "Recetario Web", icon: BookOpen },
+];
 
 export default function RecetasModule() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "recetas" | "produccion" | "recetario">(() => {
-    if (typeof window === "undefined") return "dashboard";
-    const stored = localStorage.getItem(`admin-last-tab-${RECETAS_MODULE_ID}`);
-    if (stored === "dashboard" || stored === "recetas" || stored === "produccion" || stored === "recetario") return stored;
-    return "dashboard";
-  });
-  useEffect(() => { localStorage.setItem(`admin-last-tab-${RECETAS_MODULE_ID}`, activeTab); }, [activeTab]);
+  // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
+  // destino del buscador global.
+  const { vista: activeTab, irA: setActiveTab } = useVistaModulo(
+    RECETAS_MODULE_ID,
+    RECETAS_VISTAS,
+    RECETAS_VISTAS[0],
+  );
 
   // Recetas list
   const [recetas, setRecetas] = useState<Receta[]>([]);
@@ -504,23 +516,12 @@ export default function RecetasModule() {
         )}
       </AdminModuleHeader>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-[var(--rule-base)] -mx-1 px-1 overflow-x-auto scrollbar-none">
-        {(["dashboard", "recetas", "produccion", "recetario"] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => setActiveTab(t)}
-            className={cn(
-              "shrink-0 px-4 py-2.5 text-sm font-bold whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5",
-              activeTab === t
-                ? "border-[#2563EB] text-[#2563EB]"
-                : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            {t === "dashboard" ? <><BarChart3 className="h-3.5 w-3.5" /> Dashboard</> : t === "recetas" ? "Recetas" : t === "produccion" ? "Producción" : <><BookOpen className="h-3.5 w-3.5" /> Recetario Web</>}
-          </button>
-        ))}
-      </div>
+      <AdminTabBar
+        moduleId={RECETAS_MODULE_ID}
+        tabs={RECETAS_TAB_ITEMS}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as typeof activeTab)}
+      />
 
       {/* ── Tab: Dashboard ─────────────────────────────────────────────────────── */}
       {activeTab === "dashboard" && <RecetasDashboard />}
@@ -669,7 +670,7 @@ export default function RecetasModule() {
                               <div className="mt-2 text-center">
                                 <span className={cn(
                                   "inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full",
-                                  faltan === 0 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                                  faltan === 0 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                                     : faltan < total ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                                     : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                                 )}>
@@ -755,13 +756,13 @@ export default function RecetasModule() {
                   </div>
                 )}
                 {costData && (
-                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-4 space-y-3">
+                  <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <p className="text-xs uppercase font-bold text-[var(--data-success-500)]">Análisis de costo</p>
                       <span className={cn(
                         "text-xs font-bold px-2 py-0.5 rounded-lg",
                         costData.margenPorcentaje >= 30
-                          ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                          ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                           : costData.margenPorcentaje >= 10
                             ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                             : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
@@ -855,7 +856,7 @@ export default function RecetasModule() {
                                   <span className={cn(
                                     "text-xs font-bold px-2 py-0.5 rounded-lg",
                                     margen >= 30
-                                      ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                                      ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                                       : margen >= 10
                                         ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                                         : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
@@ -887,7 +888,7 @@ export default function RecetasModule() {
                               const costoLinea = costoUnit * ing.cantidad;
                               return (
                                 <div key={ing.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                  <div className="h-8 w-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                                     <Package className="h-4 w-4 text-[var(--data-success-500)]" />
                                   </div>
                                   <div className="flex-1 min-w-0">
@@ -973,8 +974,7 @@ export default function RecetasModule() {
                 {/* Step 1: Nombre */}
                 {step === 1 && (
                   <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nombre de la receta</label>
+                    <Field label="Nombre de la receta" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input
                         type="text"
                         value={newName}
@@ -982,9 +982,8 @@ export default function RecetasModule() {
                         placeholder="Ej: Pan de yuca"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Descripción (opcional)</label>
+                    </Field>
+                    <Field label="Descripción (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <textarea
                         value={newDesc}
                         onChange={e => setNewDesc(e.target.value)}
@@ -992,9 +991,8 @@ export default function RecetasModule() {
                         rows={2}
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">ID Producto final (opcional)</label>
+                    </Field>
+                    <Field label="ID Producto final (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input
                         type="number"
                         value={newProductoId}
@@ -1002,7 +1000,7 @@ export default function RecetasModule() {
                         placeholder="ID del producto resultante"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                       />
-                    </div>
+                    </Field>
                   </div>
                 )}
 
@@ -1023,8 +1021,7 @@ export default function RecetasModule() {
                     )}
                     {newIngredientes.map((ing, i) => (
                       <div key={i} className="flex gap-2 items-end bg-gray-50 rounded-xl p-3">
-                        <div className="flex-1">
-                          <label className="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">ID Producto</label>
+                        <Field className="flex-1" label="ID Producto" labelClassName="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">
                           <input
                             type="number"
                             value={ing.productoId}
@@ -1032,9 +1029,8 @@ export default function RecetasModule() {
                             placeholder="ID"
                             className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
                           />
-                        </div>
-                        <div className="w-20">
-                          <label className="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">Cantidad</label>
+                        </Field>
+                        <Field className="w-20" label="Cantidad" labelClassName="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">
                           <input
                             type="number"
                             step="0.01"
@@ -1043,9 +1039,8 @@ export default function RecetasModule() {
                             placeholder="0"
                             className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
                           />
-                        </div>
-                        <div className="w-20">
-                          <label className="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">Unidad</label>
+                        </Field>
+                        <Field className="w-20" label="Unidad" labelClassName="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">
                           <input
                             type="text"
                             value={ing.unidad}
@@ -1053,7 +1048,7 @@ export default function RecetasModule() {
                             placeholder="kg"
                             className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
                           />
-                        </div>
+                        </Field>
                         <button
                           onClick={() => removeIngrediente(i)}
                           className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
@@ -1148,8 +1143,7 @@ export default function RecetasModule() {
                 </p>
 
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Cantidad a producir</label>
+                  <Field label="Cantidad a producir" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="number"
                       min="1"
@@ -1158,7 +1152,7 @@ export default function RecetasModule() {
                       placeholder="Ej: 10"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
-                  </div>
+                  </Field>
 
                   {/* Cost estimate card */}
                   {(() => {
@@ -1222,7 +1216,7 @@ export default function RecetasModule() {
 
                     if (todosDisponibles) {
                       return (
-                        <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
+                        <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-3 text-center">
                           <p className="text-xs font-bold text-[var(--data-success-500)]">Todos los ingredientes disponibles</p>
                         </div>
                       );
@@ -1242,8 +1236,7 @@ export default function RecetasModule() {
                     );
                   })()}
 
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
+                  <Field label="Notas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="text"
                       value={producirNotas}
@@ -1251,7 +1244,7 @@ export default function RecetasModule() {
                       placeholder="Observaciones..."
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
                     />
-                  </div>
+                  </Field>
                 </div>
 
                 {producirError && (

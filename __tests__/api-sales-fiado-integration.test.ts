@@ -47,6 +47,7 @@ vi.mock("@/lib/rate-limit", () => ({
 }));
 vi.mock("@/lib/db-retry", () => ({ withDbRetry: <T,>(fn: () => Promise<T>) => fn() }));
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   // Firma real: getOrSet(key, ttl, fn)
   getOrSet: <T,>(_k: string, _ttl: number, fn: () => Promise<T>) => fn(),
   invalidate: vi.fn(),

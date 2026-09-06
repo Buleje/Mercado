@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { StorePageDB } from "@/lib/db/store-page.db";
+import { SettingsDB } from "@/lib/db/settings.db";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -78,6 +79,21 @@ export async function PUT(req: NextRequest) {
     });
     await withDbRetry(() =>
       StorePageDB.upsertCustomization(auth.tenantId, { footerHtml: serialized }),
+    );
+    // Write-through al storeTheme (fuente de verdad del storefront): sin esto
+    // los colores del tab "Diseño" quedaban pisados por settings.storeTheme y
+    // NO se veían en /t/[slug]. Fire-and-forget — no rompe el guardado del diseño.
+    await withDbRetry(() =>
+      SettingsDB.patchStoreThemeJson(auth.tenantId, {
+        primaryColor: parsed.data.primaryColor,
+        secondaryColor: parsed.data.secondaryColor,
+        accentColor: parsed.data.accentColor,
+      }),
+    ).catch((err) =>
+      logger.warn("[store-page/design] write-through storeTheme falló", {
+        err: err instanceof Error ? err.message : String(err),
+        tenantId: auth.tenantId,
+      }),
     );
     return NextResponse.json({ ok: true });
   } catch (e) {

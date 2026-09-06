@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import {
   Target, Trophy, Flame, TrendingUp, TrendingDown, Pencil, Check, X, Calendar,
   Award, Rocket, Zap, Coins, Users, Star, Landmark, Sunrise, Smile,
-  Lock, Sparkles, ShoppingCart, BarChart3, RefreshCw, AlertTriangle,
+  Lock, Sparkles, ShoppingCart, RefreshCw, AlertTriangle,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -162,7 +162,7 @@ function getStreakKey(): string {
 // ─── Confetti ─────────────────────────────────────────────────────────────────
 
 function Confetti() {
-  const colors = ["var(--color-primary)", "#f97316", "#14C2C2", "#f4d03f", "#e76f51"];
+  const colors = ["var(--color-primary)", "#ff6b5b", "#14C2C2", "#f4d03f", "#e76f51"];
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl z-10">
       {Array.from({ length: 24 }).map((_, i) => (
@@ -223,7 +223,14 @@ function SemaMesTab() {
     const ctrl = new AbortController();
     fetchAbortRef.current = ctrl;
     try {
-      const res = await fetch("/api/sales?limit=1000", {
+      // Las stats solo usan ventas del mes actual + mes anterior. Acotamos el
+      // fetch a "desde el 1° del mes anterior" (server-side, hora Lima) en vez
+      // de limit=1000 all-time: trae solo la ventana necesaria y, en bodegas de
+      // alto volumen, NO se pierde data (limit=1000 capaba las más recientes).
+      const _now = new Date();
+      const _lm = new Date(_now.getFullYear(), _now.getMonth() - 1, 1);
+      const _from = `${_lm.getFullYear()}-${String(_lm.getMonth() + 1).padStart(2, "0")}-01`;
+      const res = await fetch(`/api/sales?from=${_from}&all=1`, {
         credentials: "include",
         cache: "no-store",
         signal: ctrl.signal,
@@ -398,7 +405,7 @@ function SemaMesTab() {
           disabled={loading}
           aria-label="Refrescar datos"
           className={cn(
-            "inline-flex items-center justify-center h-7 w-7 rounded-lg text-primary hover:bg-[var(--accent-soft)] transition-colors",
+            "inline-flex items-center justify-center h-7 w-7 rounded-lg text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors",
             loading && "opacity-50 cursor-not-allowed",
           )}
         >
@@ -465,7 +472,7 @@ function SemaMesTab() {
                     editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] focus:border-primary",
                   )}
                 />
-                <button onClick={handleSave} aria-label="Guardar" className="inline-flex items-center justify-center min-h-9 min-w-9 p-2 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                <button onClick={handleSave} aria-label="Guardar" className="inline-flex items-center justify-center min-h-9 min-w-9 p-2 rounded-lg hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                   <Check className="w-4 h-4" />
                 </button>
                 <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="inline-flex items-center justify-center min-h-9 min-w-9 p-2 rounded-lg hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
@@ -492,7 +499,7 @@ function SemaMesTab() {
             </span>
           </span>
           {pct >= 100 && (
-            <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] px-2 py-1 rounded-full">
+            <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 px-2 py-1 rounded-full">
               <Trophy className="w-3.5 h-3.5" /> Meta alcanzada!
             </span>
           )}
@@ -503,7 +510,7 @@ function SemaMesTab() {
           <div className={cn(
             "rounded-lg p-3 flex items-start gap-2 border",
             stats.forecast >= monthlyGoal
-              ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]"
+              ? "border-[var(--data-success-500)]/30 bg-primary/10"
               : "border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)]"
           )}>
             <Sparkles className={cn(
@@ -544,7 +551,7 @@ function SemaMesTab() {
                   className={cn(
                     "aspect-square rounded flex items-center justify-center text-xs font-semibold border transition-colors",
                     isToday          ? "ring-2 ring-primary ring-offset-1 border-transparent" : "border-transparent",
-                    hit              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] border-[var(--data-success-500)]/30" :
+                    hit              ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border-[var(--data-success-500)]/30" :
                     isPast && day > 0 ? "bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]" :
                     "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                   )}
@@ -556,7 +563,7 @@ function SemaMesTab() {
           </div>
           <div className="flex flex-wrap gap-3 mt-3 text-xs">
             <span className="flex items-center gap-1 text-[var(--text-secondary)]">
-              <span className="inline-block w-3 h-3 rounded bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30" /> Cumplió
+              <span className="inline-block w-3 h-3 rounded bg-primary/10 border border-[var(--data-success-500)]/30" /> Cumplió
             </span>
             <span className="flex items-center gap-1 text-[var(--text-secondary)]">
               <span className="inline-block w-3 h-3 rounded bg-[var(--data-error-500)]/10" /> No cumplió
@@ -861,7 +868,7 @@ function LogrosTab() {
           disabled={loading}
           aria-label="Refrescar logros"
           className={cn(
-            "inline-flex items-center justify-center h-7 w-7 rounded-lg text-primary hover:bg-[var(--accent-soft)] transition-colors",
+            "inline-flex items-center justify-center h-7 w-7 rounded-lg text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors",
             loading && "opacity-50 cursor-not-allowed",
           )}
         >
@@ -960,7 +967,7 @@ function LogrosTab() {
           className={cn(
             "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
             activeCategory === "all"
-              ? "bg-primary/10 text-primary border-primary/30"
+              ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-primary/30"
               : "bg-white dark:bg-[var(--color-card)] text-[var(--text-tertiary)] border-[var(--rule-base)] hover:text-[var(--text-primary)]"
           )}
         >
@@ -973,7 +980,7 @@ function LogrosTab() {
             className={cn(
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
               activeCategory === cat
-                ? "bg-primary/10 text-primary border-primary/30"
+                ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-primary/30"
                 : "bg-white dark:bg-[var(--color-card)] text-[var(--text-tertiary)] border-[var(--rule-base)] hover:text-[var(--text-primary)]"
             )}
           >

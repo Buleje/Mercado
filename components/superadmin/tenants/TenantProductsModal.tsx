@@ -4,7 +4,7 @@ import { LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
-  X, Package, Loader2, Search, AlertTriangle,
+  X, Package, Search, AlertTriangle,
   CheckCircle2, XCircle, ImageIcon,
 } from "@buleje/design-system/icons";
 import { m as motion, AnimatePresence } from "framer-motion";
@@ -166,7 +166,7 @@ export function TenantProductsModal({
                   <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Inactivos</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-bold text-[var(--data-warning-500)] tabular-nums">{lowStockCount}</div>
+                  <div className="text-sm font-bold text-[#0d9488] tabular-nums">{lowStockCount}</div>
                   <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Stock bajo</div>
                 </div>
                 <div className="text-center">
@@ -300,7 +300,7 @@ export function TenantProductsModal({
                             p.stock <= 0
                               ? "text-[var(--data-error-500)]"
                               : p.stock <= 5
-                              ? "text-[var(--data-warning-500)]"
+                              ? "text-[#0d9488]"
                               : "text-[var(--data-success-500)]"
                           }`}
                         >

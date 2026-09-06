@@ -1,7 +1,9 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { waLink } from "@/lib/whatsapp-link";
 import React from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -132,8 +134,7 @@ export default function FiadoModals({
                 </p>
 
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto del pago (S/)</label>
+                  <Field label="Monto del pago (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="number"
                       step="0.01"
@@ -144,9 +145,8 @@ export default function FiadoModals({
                       placeholder="0.00"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
+                  </Field>
+                  <Field label="Notas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="text"
                       value={pagoNotas}
@@ -154,7 +154,7 @@ export default function FiadoModals({
                       placeholder="Ej: Pagó con Yape"
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
-                  </div>
+                  </Field>
                 </div>
 
                 {pagoError && (
@@ -183,9 +183,12 @@ export default function FiadoModals({
         )}
       </AnimatePresence>
 
-      {/* Mejora 3: Cobro masivo sticky bar */}
+      {/* Mejora 3: Cobro masivo sticky bar.
+          Audit 2026-08-26: en mobile quedaba pintada encima del bottom-nav del
+          admin (AdminMobileBottomBar, mismo fixed bottom-0 z-30) — mismo
+          offset que ya usa ctp-barra-seleccion.tsx para el mismo choque. */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[var(--color-card)] border-t border-[var(--rule-base)] px-4 py-3">
+        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] sm:bottom-0 z-40 bg-white dark:bg-[var(--color-card)] border-t border-[var(--rule-base)] px-4 py-3">
           <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <span className="text-sm font-bold text-[var(--text-primary)]">
@@ -257,8 +260,7 @@ export default function FiadoModals({
                 </div>
 
                 {/* Amount input */}
-                <div>
-                  <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto a abonar (S/)</label>
+                <Field label="Monto a abonar (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                   <input
                     type="number"
                     step="0.01"
@@ -268,7 +270,7 @@ export default function FiadoModals({
                     placeholder="0.00"
                     className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
-                </div>
+                </Field>
 
                 {/* Distribution preview */}
                 {cobroMonto && parseFloat(cobroMonto) > 0 && (
@@ -336,7 +338,7 @@ export default function FiadoModals({
               <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 print:shadow-none print:border-0">
                 {/* Mejora 18 (ronda 3): Recibo imprimible mejorado */}
                 <div className="text-center print:mb-2">
-                  <div className="h-12 w-12 rounded-full bg-[var(--accent-soft)] flex items-center justify-center mx-auto mb-2 print:hidden">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2 print:hidden">
                     <CheckCircle2 className="h-6 w-6 text-[var(--data-success-500)]" />
                   </div>
                   <CardTitle className="text-base font-extrabold text-[var(--text-primary)] print:text-lg">RECIBO DE PAGO</CardTitle>
@@ -364,7 +366,12 @@ export default function FiadoModals({
                   <div className="border-t border-[var(--rule-base)] print:border-gray-400" />
                   <div className="flex justify-between">
                     <span className="text-[var(--text-secondary)] print:text-black">Deuda original:</span>
-                    <span className="font-bold text-[var(--text-secondary)]">{formatCurrency(reciboData.saldoAnterior + reciboData.montoPagado > reciboData.saldoAnterior ? reciboData.saldoAnterior + reciboData.montoPagado : selected?.total ?? 0)}</span>
+                    {/* Fix 2026-07-08 (reporte fiado bug 5): "Deuda original" = el
+                        total original del fiado (Fiado.total), igual que la línea de
+                        detalle (~571). El ternario previo sumaba saldoAnterior +
+                        montoPagado (siempre > saldoAnterior) → mostraba S/70 sobre una
+                        deuda de S/50 con abono de S/20. */}
+                    <span className="font-bold text-[var(--text-secondary)]">{formatCurrency(selected?.total ?? reciboData.saldoAnterior)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[var(--text-secondary)] print:text-black">Monto pagado:</span>
@@ -396,12 +403,13 @@ export default function FiadoModals({
                     Imprimir
                   </button>
                   <a
-                    href={`https://wa.me/${reciboData.clientePhone.replace(/\D/g, "").startsWith("51") ? reciboData.clientePhone.replace(/\D/g, "") : "51" + reciboData.clientePhone.replace(/\D/g, "")}?text=${encodeURIComponent(
-                      `*RECIBO DE PAGO*\n${"=".repeat(25)}\nBuleje\nFecha: ${reciboData.fecha}\n${"─".repeat(25)}\nCliente: ${reciboData.clienteNombre}\nMonto pagado: S/${Number(reciboData.montoPagado).toFixed(2)}\nSaldo anterior: S/${Number(reciboData.saldoAnterior).toFixed(2)}\n*Saldo actual: S/${Number(reciboData.saldoActual).toFixed(2)}*\n${"─".repeat(25)}\nGracias por tu pago. Vuelve pronto!`
-                    )}`}
+                    href={waLink(
+                      reciboData.clientePhone,
+                      `*RECIBO DE PAGO*\n${"=".repeat(25)}\nBuleje\nFecha: ${reciboData.fecha}\n${"─".repeat(25)}\nCliente: ${reciboData.clienteNombre}\nMonto pagado: S/${Number(reciboData.montoPagado).toFixed(2)}\nSaldo anterior: S/${Number(reciboData.saldoAnterior).toFixed(2)}\n*Saldo actual: S/${Number(reciboData.saldoActual).toFixed(2)}*\n${"─".repeat(25)}\nGracias por tu pago. Vuelve pronto!`,
+                    ) ?? "#"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp-dark)] transition-colors"
                   >
                     <MessageCircle className="h-4 w-4" />
                     WhatsApp
@@ -452,8 +460,7 @@ export default function FiadoModals({
 
                 {/* Form fields (hidden in print) */}
                 <div className="space-y-3 print:hidden">
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto a pagar (S/)</label>
+                  <Field label="Monto a pagar (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="number"
                       step="0.01"
@@ -461,18 +468,17 @@ export default function FiadoModals({
                       onChange={e => setCompromisoMonto(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Fecha prometida</label>
+                  </Field>
+                  <Field label="Fecha prometida" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                     <input
                       type="date"
                       value={compromisoFecha}
                       onChange={e => setCompromisoFecha(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
-                  </div>
+                  </Field>
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Firma del cliente</label>
+                    <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Firma del cliente</span>
                     <canvas
                       ref={firmaCanvasRef}
                       width={300}
@@ -500,7 +506,7 @@ export default function FiadoModals({
                         const rect = canvas.getBoundingClientRect();
                         ctx.lineWidth = 2;
                         ctx.lineCap = "round";
-                        ctx.strokeStyle = "#1a1a1a";
+                        ctx.strokeStyle = getComputedStyle(canvas).getPropertyValue("--text-primary").trim() || "rgb(26,26,26)";
                         ctx.lineTo(
                           (e.clientX - rect.left) * (canvas.width / rect.width),
                           (e.clientY - rect.top) * (canvas.height / rect.height)
@@ -535,7 +541,7 @@ export default function FiadoModals({
                         const touch = e.touches[0];
                         ctx.lineWidth = 2;
                         ctx.lineCap = "round";
-                        ctx.strokeStyle = "#1a1a1a";
+                        ctx.strokeStyle = getComputedStyle(canvas).getPropertyValue("--text-primary").trim() || "rgb(26,26,26)";
                         ctx.lineTo(
                           (touch.clientX - rect.left) * (canvas.width / rect.width),
                           (touch.clientY - rect.top) * (canvas.height / rect.height)
@@ -594,16 +600,49 @@ export default function FiadoModals({
                   </button>
                   <button
                     onClick={async () => {
-                      // Save promise date in fiado notes
+                      // Brandon 2026-06-17: persistir la FIRMA del compromiso. Antes
+                      // el canvas se dibujaba pero NUNCA se exportaba (toDataURL) — la
+                      // firma se perdía. Ahora exporta → sube a /api/upload → guarda
+                      // [FIRMA:url] en descripcion. Best-effort (no bloquea el guardado).
+                      let firmaNote = "";
+                      const canvas = firmaCanvasRef.current;
+                      if (canvas) {
+                        try {
+                          const dataUrl = canvas.toDataURL("image/png");
+                          const blob = await (await fetch(dataUrl)).blob();
+                          const file = new File([blob], `firma-${selected.id}.png`, { type: "image/png" });
+                          const fd = new FormData();
+                          fd.append("file", file);
+                          fd.append("folder", "general");
+                          const upRes = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
+                          if (upRes.ok) {
+                            const up = (await upRes.json()) as { url?: string };
+                            if (up.url) firmaNote = ` [FIRMA:${up.url}]`;
+                          }
+                        } catch {
+                          /* firma best-effort: el compromiso se guarda sin la imagen */
+                        }
+                      }
+                      // Audit 2026-08-26: antes NO se revisaba res.ok — el PATCH podía
+                      // fallar (400 porque el schema exigía `status`) y el cajero veía
+                      // "guardado" porque igual se imprimía. Ahora sólo imprime si el
+                      // compromiso realmente quedó en la base.
                       try {
-                        await fetch(`/api/fiados/${selected.id}`, {
+                        const res = await fetch(`/api/fiados/${selected.id}`, {
                           method: "PATCH",
                           headers: csrfHeaders({ "Content-Type": "application/json" }),
                           body: JSON.stringify({
-                            descripcion: `${selected.descripcion ?? ""} [COMPROMISO: S/${compromisoMonto} hasta ${compromisoFecha}]`.trim(),
+                            descripcion: `${selected.descripcion ?? ""} [COMPROMISO: S/${compromisoMonto} hasta ${compromisoFecha}]${firmaNote}`.trim(),
                           }),
                         });
-                      } catch { /* ignore */ }
+                        if (!res.ok) {
+                          alert("No se pudo guardar el compromiso de pago. Intenta de nuevo antes de imprimir.");
+                          return;
+                        }
+                      } catch {
+                        alert("No se pudo guardar el compromiso de pago. Revisa tu conexión e intenta de nuevo.");
+                        return;
+                      }
                       window.print();
                     }}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
@@ -747,7 +786,6 @@ export default function FiadoModals({
                               </div>
                               <div className="space-y-1.5 pl-6">
                                 {items.map(f => {
-                                  const cleanPhone = f.customerId.replace(/\D/g, "");
                                   const hasAddr = f.descripcion && f.descripcion.length > 5 && !f.descripcion.startsWith("[");
                                   return (
                                     <div key={f.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
@@ -757,9 +795,9 @@ export default function FiadoModals({
                                       </div>
                                       <div className="flex gap-1 shrink-0">
                                         <a
-                                          href={`https://wa.me/${cleanPhone.startsWith("51") ? cleanPhone : "51" + cleanPhone}?text=${encodeURIComponent(`Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje.`)}`}
+                                          href={waLink(f.customerId, `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje.`) ?? "#"}
                                           target="_blank" rel="noopener noreferrer"
-                                          className="p-1.5 rounded-lg bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
+                                          className="p-1.5 rounded-lg bg-[var(--color-whatsapp)]/10 text-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp)]/20 transition-colors"
                                           title="WhatsApp"
                                         >
                                           <Phone className="h-3 w-3" />
@@ -768,7 +806,7 @@ export default function FiadoModals({
                                           <a
                                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(f.descripcion! + " Pucallpa")}`}
                                             target="_blank" rel="noopener noreferrer"
-                                            className="p-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                                            className="p-1.5 rounded-lg bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
                                             title="Google Maps"
                                           >
                                             <Navigation className="h-3 w-3" />

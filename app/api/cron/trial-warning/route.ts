@@ -28,7 +28,6 @@ export async function GET(req: NextRequest) {
 
   const now = Date.now();
   const in1Day = new Date(now + 24 * 60 * 60 * 1000);
-  const in3Days = new Date(now + 3 * 24 * 60 * 60 * 1000);
   const in4Days = new Date(now + 4 * 24 * 60 * 60 * 1000);
 
   // Tenants en plan free con trial entre +1d y +4d (cubre la ventana

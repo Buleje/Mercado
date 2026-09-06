@@ -22,6 +22,7 @@ vi.mock("@buleje/design-system/icons", () => ({
   Smartphone: () => <span data-testid="icon-smartphone" />,
   Sun:        () => <span data-testid="icon-sun" />,
   Coins:      () => <span data-testid="icon-coins" />,
+  Wallet:     () => <span data-testid="icon-wallet" />,
 }));
 
 vi.mock("@/lib/utils", () => ({
@@ -50,7 +51,7 @@ beforeEach(() => {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("QuickFilterChips", () => {
-  it("renderiza los 8 chips predefinidos", () => {
+  it("renderiza los 9 chips predefinidos", () => {
     renderChips();
 
     // 5 chips originales:
@@ -60,13 +61,14 @@ describe("QuickFilterChips", () => {
     expect(screen.getByRole("button", { name: "4.5 o más" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Nuevos" })).toBeInTheDocument();
 
-    // 3 chips agregados (Acepta Yape, Sin mínimo, Abre 24 h):
+    // 4 chips agregados (Acepta Yape, Sin mínimo, Abre 24 h, Acepta fiado):
     expect(screen.getByRole("button", { name: "Acepta Yape" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sin mínimo" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Abre 24 h" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Acepta fiado" })).toBeInTheDocument();
 
     const chips = screen.getAllByRole("button");
-    expect(chips).toHaveLength(8);
+    expect(chips).toHaveLength(9);
   });
 
   it("chip inactivo: click llama onToggle con su id y aria-pressed es false antes del click", () => {

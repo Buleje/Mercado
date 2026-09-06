@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import {
-  Loader2, ArrowRight, AlertTriangle, ArrowLeft, Check,
+  Loader2, ArrowRight, AlertTriangle, ArrowLeft, Check, Camera,
 } from "@buleje/design-system/icons";
 import {
   PackageIcon,
@@ -14,6 +15,15 @@ import {
   MotoIcon,
   RouteIcon,
 } from "@/components/delivery/icons";
+import { parseGpsCoords } from "@/lib/geo-utils";
+
+// Mapa con ruta + ETA — solo en el cliente (Leaflet no corre en SSR).
+const DeliveryMap = dynamic(() => import("@/components/delivery/DeliveryMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-56 w-full animate-pulse border border-[var(--rule-base)] bg-[var(--surface-sunken)]" />
+  ),
+});
 
 interface Assignment {
   id: string;
@@ -62,8 +72,8 @@ const STATUS_INDEX: Record<Assignment["status"], number> = {
 };
 
 const NEXT_ACTION: Record<Assignment["status"], { label: string; nextStatus: Assignment["status"] } | null> = {
-  assigned: { label: "Marcar como recogido", nextStatus: "picked_up" },
-  picked_up: { label: "Salí en camino", nextStatus: "in_transit" },
+  assigned: { label: "Marcar recogido", nextStatus: "picked_up" },
+  picked_up: { label: "Voy en camino", nextStatus: "in_transit" },
   in_transit: { label: "Marcar entregado", nextStatus: "delivered" },
   delivered: null,
   cancelled: null,
@@ -171,7 +181,7 @@ export default function PedidoPage() {
           <button
             type="button"
             onClick={() => router.push("/delivery-app")}
-            className="mt-5 inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-[var(--accent)] font-extrabold text-white"
+            className="mt-5 inline-flex items-center gap-2 h-12 px-6 bg-[var(--accent)] font-extrabold text-white"
           >
             Volver al panel
           </button>
@@ -191,6 +201,13 @@ export default function PedidoPage() {
     assignment.status === "in_transit" || assignment.status === "picked_up";
   const needsProofToDeliver = action?.nextStatus === "delivered" && !proofUrl;
 
+  // Coordenadas del destino para el mapa con ruta + ETA (solo si hay GPS real).
+  // parseGpsCoords devuelve null si el texto no trae coords bien formadas, así
+  // no pintamos un pin falso en la bodega cuando el "GPS:" está mal escrito.
+  const destCoords = assignment.order.customerLocation
+    ? parseGpsCoords(assignment.order.customerLocation)
+    : null;
+
   return (
     <main className="min-h-screen bg-[var(--surface-canvas)]">
       <header
@@ -202,7 +219,7 @@ export default function PedidoPage() {
             type="button"
             onClick={() => router.push("/delivery-app")}
             aria-label="Volver"
-            className="h-10 w-10 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] inline-flex items-center justify-center hover:bg-[var(--surface-canvas)]"
+            className="h-10 w-10 bg-[var(--surface-sunken)] text-[var(--text-secondary)] inline-flex items-center justify-center hover:bg-[var(--surface-canvas)]"
           >
             <ArrowLeft className="h-5 w-5" strokeWidth={2.25} />
           </button>
@@ -234,7 +251,7 @@ export default function PedidoPage() {
               <div className="mt-3 flex flex-wrap gap-2">
                 <a
                   href={`tel:${assignment.order.customerPhone}`}
-                  className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-[var(--surface-sunken)] text-base font-extrabold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)]"
+                  className="inline-flex items-center gap-2 h-11 px-4 bg-[var(--surface-sunken)] text-base font-extrabold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)]"
                 >
                   <PhoneRing className="h-5 w-5" />
                   Llamar
@@ -243,7 +260,7 @@ export default function PedidoPage() {
                   href={`https://wa.me/51${assignment.order.customerPhone.replace(/\D/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-[var(--data-success-500)] text-base font-extrabold text-white"
+                  className="inline-flex items-center gap-2 h-11 px-4 bg-[var(--data-success-500)] text-base font-extrabold text-white"
                 >
                   <WhatsAppIcon className="h-5 w-5" />
                   WhatsApp
@@ -262,16 +279,24 @@ export default function PedidoPage() {
                 Referencia: {assignment.order.customerReference}
               </p>
             )}
-            {assignment.order.customerLocation && (
+
+            {/* Mapa con ruta real + ETA (incluye sus botones Maps/Waze) */}
+            {destCoords ? (
+              <div className="mt-4">
+                <DeliveryMap
+                  destLat={destCoords.lat}
+                  destLng={destCoords.lon}
+                  destLabel={assignment.order.customerName}
+                />
+              </div>
+            ) : assignment.order.customerLocation ? (
+              // Sin GPS: navegación por texto de dirección.
               <div className="mt-3 flex flex-wrap gap-2">
-                {/* "Iniciar ruta" — turn-by-turn navigation. En Android/iOS
-                    abre la app de Google Maps en modo navegación; en
-                    desktop abre el sitio web en mismo modo. */}
                 <a
                   href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(assignment.order.customerLocation)}&travelmode=driving`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl hover:shadow-[var(--accent)]/40 active:scale-[0.98] transition-all"
+                  className="inline-flex items-center gap-2 h-12 px-5 bg-[var(--accent)] text-base font-extrabold text-white shadow-lg shadow-[var(--accent)]/30 hover:shadow-xl hover:shadow-[var(--accent)]/40 active:scale-[0.98] transition-all"
                 >
                   <RouteIcon className="h-5 w-5" />
                   Iniciar ruta
@@ -281,12 +306,12 @@ export default function PedidoPage() {
                   href={`https://maps.google.com/?q=${encodeURIComponent(assignment.order.customerLocation)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)]"
+                  className="inline-flex items-center gap-2 h-12 px-4 border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--accent)]"
                 >
                   Ver punto
                 </a>
               </div>
-            )}
+            ) : null}
           </Card>
         </div>
 
@@ -325,7 +350,7 @@ export default function PedidoPage() {
         </Card>
 
         {assignment.order.notes && (
-          <div className="rounded-2xl border-2 border-[var(--brand-secondary)]/30 bg-[var(--brand-secondary)]/5 px-5 py-4">
+          <div className="border-2 border-[var(--brand-secondary)]/30 bg-[var(--brand-secondary)]/5 px-5 py-4">
             <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--brand-secondary)]">
               Nota del cliente
             </p>
@@ -343,14 +368,14 @@ export default function PedidoPage() {
           >
             {proofUrl ? (
               <div className="space-y-3">
-                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border-2 border-[var(--data-success-500)]">
+                <div className="relative w-full aspect-[4/3] overflow-hidden border-2 border-[var(--data-success-500)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={proofUrl}
                     alt="Foto de entrega"
                     className="absolute inset-0 h-full w-full object-cover"
                   />
-                  <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-[var(--data-success-500)] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-md">
+                  <span className="absolute top-2 right-2 inline-flex items-center gap-1 bg-[var(--data-success-500)] px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white shadow-md">
                     <Check className="h-3.5 w-3.5" strokeWidth={3} />
                     Lista
                   </span>
@@ -377,13 +402,13 @@ export default function PedidoPage() {
             ) : (
               <>
                 <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-3">
-                  Tomá una foto del pedido en la puerta del cliente.
+                  Toma una foto del pedido en la puerta del cliente.
                   <strong className="text-[var(--text-primary)]"> Es obligatoria</strong> para
                   marcar como entregado.
                 </p>
                 <label
                   htmlFor="proof-input"
-                  className={`inline-flex items-center justify-center gap-2 h-14 px-6 rounded-2xl bg-[var(--accent)] text-base font-extrabold text-white shadow-lg shadow-[var(--accent)]/30 cursor-pointer hover:shadow-xl active:scale-[0.98] transition-all ${uploadingProof ? "opacity-60 pointer-events-none" : ""}`}
+                  className={`inline-flex items-center justify-center gap-2 h-14 px-6 bg-[var(--accent)] text-base font-extrabold text-white shadow-lg shadow-[var(--accent)]/30 cursor-pointer hover:shadow-xl active:scale-[0.98] transition-all ${uploadingProof ? "opacity-60 pointer-events-none" : ""}`}
                 >
                   {uploadingProof ? (
                     <>
@@ -392,7 +417,8 @@ export default function PedidoPage() {
                     </>
                   ) : (
                     <>
-                      📸 Tomar foto de entrega
+                      <Camera className="h-5 w-5" strokeWidth={2.25} />
+                      Tomar foto de entrega
                     </>
                   )}
                 </label>
@@ -414,14 +440,14 @@ export default function PedidoPage() {
         )}
 
         {error && (
-          <div role="alert" className="rounded-2xl bg-[var(--brand-danger)]/10 border-2 border-[var(--brand-danger)]/30 px-4 py-3 text-base font-bold text-[var(--brand-danger)]">
+          <div role="alert" className="bg-[var(--brand-danger)]/10 border-2 border-[var(--brand-danger)]/30 px-4 py-3 text-base font-bold text-[var(--brand-danger)]">
             {error}
           </div>
         )}
 
         {isDone && (
-          <div className="rounded-3xl bg-[var(--data-success-500)]/10 border-2 border-[var(--data-success-500)] p-6 text-center">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--data-success-500)] text-white">
+          <div className="bg-[var(--data-success-500)]/10 border-2 border-[var(--data-success-500)] p-6 text-center">
+            <div className="inline-flex h-16 w-16 items-center justify-center bg-[var(--data-success-500)] text-white">
               <CheckBadge className="h-10 w-10" />
             </div>
             <p className="mt-3 text-xl font-extrabold text-[var(--text-primary)]">
@@ -445,21 +471,21 @@ export default function PedidoPage() {
               type="button"
               onClick={() => {
                 if (needsProofToDeliver) {
-                  setError("Tomá la foto de entrega antes de marcar como entregado.");
+                  setError("Toma la foto de entrega antes de marcar como entregado.");
                   document.getElementById("proof-input")?.scrollIntoView({ behavior: "smooth", block: "center" });
                   return;
                 }
                 advance(action.nextStatus);
               }}
               disabled={submitting}
-              className={`w-full h-14 inline-flex items-center justify-center gap-2 rounded-2xl text-base lg:text-lg font-extrabold text-white shadow-lg disabled:opacity-50 transition-all ${
+              className={`w-full h-14 inline-flex items-center justify-center gap-2 text-base lg:text-lg font-extrabold text-white shadow-lg disabled:opacity-50 transition-all ${
                 needsProofToDeliver
                   ? "bg-[var(--text-tertiary)] cursor-not-allowed"
                   : "bg-[var(--data-success-500)] shadow-[var(--data-success)]/30"
               }`}
             >
               {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" strokeWidth={2.5} />}
-              {needsProofToDeliver ? "Tomá la foto primero" : action.label}
+              {needsProofToDeliver ? "Toma la foto primero" : action.label}
             </button>
             {assignment.status !== "delivered" && (
               <button
@@ -482,7 +508,7 @@ export default function PedidoPage() {
           aria-labelledby="cancel-modal-title"
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-4 pb-6 sm:pb-0"
         >
-          <div className="w-full max-w-sm rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] p-6 space-y-4 shadow-2xl">
+          <div className="w-full max-w-sm bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] p-6 space-y-4 shadow-2xl">
             <h2
               id="cancel-modal-title"
               className="text-lg font-extrabold text-[var(--text-primary)]"
@@ -500,14 +526,14 @@ export default function PedidoPage() {
                   advance("cancelled");
                 }}
                 disabled={submitting}
-                className="w-full h-12 rounded-2xl bg-[var(--brand-danger)] text-base font-extrabold text-white disabled:opacity-50"
+                className="w-full h-12 bg-[var(--brand-danger)] text-base font-extrabold text-white disabled:opacity-50"
               >
-                {submitting ? "Cancelando…" : "Si, cancelar"}
+                {submitting ? "Cancelando…" : "Sí, cancelar"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowCancelModal(false)}
-                className="w-full h-11 rounded-2xl border-2 border-[var(--rule-base)] text-sm font-extrabold text-[var(--text-primary)]"
+                className="w-full h-11 border-2 border-[var(--rule-base)] text-sm font-extrabold text-[var(--text-primary)]"
               >
                 Volver
               </button>
@@ -529,7 +555,7 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 lg:p-6">
+    <section className="border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 lg:p-6">
       <div className="flex items-center gap-2 mb-3">
         {icon}
         <h2 className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
@@ -544,13 +570,13 @@ function Card({
 function Stepper({ currentIndex, cancelled }: { currentIndex: number; cancelled: boolean }) {
   if (cancelled) {
     return (
-      <div className="rounded-2xl bg-[var(--surface-sunken)] border-2 border-[var(--rule-base)] px-5 py-4 text-center">
+      <div className="bg-[var(--surface-sunken)] border-2 border-[var(--rule-base)] px-5 py-4 text-center">
         <p className="text-base font-extrabold text-[var(--brand-danger)]">Pedido cancelado</p>
       </div>
     );
   }
   return (
-    <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 lg:p-6">
+    <div className="border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 lg:p-6">
       <div className="flex items-center gap-2 lg:gap-3">
         {STEPS.map((step, i) => {
           const Icon = step.icon;
@@ -561,7 +587,7 @@ function Stepper({ currentIndex, cancelled }: { currentIndex: number; cancelled:
             <div key={step.key} className="flex-1 flex items-center gap-2 lg:gap-3 min-w-0">
               <div className="flex flex-col items-center min-w-0">
                 <div
-                  className={`h-10 w-10 lg:h-12 lg:w-12 rounded-2xl flex items-center justify-center transition-colors ${
+                  className={`h-10 w-10 lg:h-12 lg:w-12 flex items-center justify-center transition-colors ${
                     done
                       ? "bg-[var(--data-success-500)] text-white"
                       : active
@@ -572,7 +598,7 @@ function Stepper({ currentIndex, cancelled }: { currentIndex: number; cancelled:
                   {done ? <Check className="h-5 w-5" strokeWidth={3} /> : <Icon className="h-5 w-5 lg:h-6 lg:w-6" />}
                 </div>
                 <span
-                  className={`mt-1.5 text-[11px] lg:text-xs font-extrabold uppercase tracking-wider truncate max-w-[70px] lg:max-w-full ${
+                  className={`mt-1.5 text-xs font-extrabold uppercase tracking-wider truncate max-w-[70px] lg:max-w-full ${
                     reached ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"
                   }`}
                 >
@@ -581,7 +607,7 @@ function Stepper({ currentIndex, cancelled }: { currentIndex: number; cancelled:
               </div>
               {i < STEPS.length - 1 && (
                 <div
-                  className={`flex-1 h-1 rounded-full ${
+                  className={`flex-1 h-1 ${
                     done ? "bg-[var(--data-success-500)]" : "bg-[var(--surface-sunken)]"
                   }`}
                 />

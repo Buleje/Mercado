@@ -185,7 +185,7 @@ export default function CompetitorPriceTracker() {
       {/* Insights */}
       {insights.totalCompared > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
+          <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
             <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">
               <TrendingUp className="inline h-3.5 w-3.5 mr-1" />
               Eres más barato en {insights.cheaperCount} de {insights.totalCompared} comparaciones

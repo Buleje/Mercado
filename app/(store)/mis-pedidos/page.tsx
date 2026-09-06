@@ -15,8 +15,6 @@ import {
 import { useCustomer } from "@/contexts/customer-context";
 import { useCart } from "@/contexts/cart-context";
 import { cn } from "@/lib/utils";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import {
   CanastaVacia,
@@ -25,7 +23,6 @@ import {
 } from "@/components/ui-system/illustrations";
 import type { MockOrderItem } from "@/lib/customer-orders.mock";
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 const QuickReorderModal = dynamic(() => import("@/components/QuickReorderModal"));
 
 // ── Types (mantiene compatibilidad con API real) ────────────────────
@@ -501,7 +498,7 @@ function OrderTimeline({ status }: { status: Order["status"] }) {
                   isCurrent
                     ? "bg-primary text-white shadow-md shadow-primary/30 scale-110"
                     : isCompleted
-                      ? "bg-primary/20 text-primary"
+                      ? "bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)]",
                 )}
               >

@@ -91,12 +91,12 @@ export default function OnboardingStep4POSDemo({ onNext }: Props) {
             className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 transition-all duration-200 hover:border-[var(--accent)]/40 hover:shadow-[0_8px_24px_-12px_var(--accent-glow)]"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 {card.icon}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-soft)] text-xs font-bold text-[var(--accent)]">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-[var(--accent)]">
                     {i + 1}
                   </span>
                   <h3 className="font-bold text-[var(--text-primary)]">{card.title}</h3>

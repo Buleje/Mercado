@@ -26,6 +26,7 @@ import {
   AdminButton,
 } from "../_components/_shared";
 import SidebarConfigPanel from "@/components/superadmin/SidebarConfigPanel";
+import { SuperAdminModuleTabs, SETTINGS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 // Items canónicos del sidebar — debe matchear lo que renderiza
 // SuperAdminShell.tsx (NAV_ITEMS). Refresh 2026-05-19 — sincronía con los
@@ -219,7 +220,14 @@ export default function SettingsPage() {
   };
 
   return (
+    <>
+      <SuperAdminModuleTabs tabs={SETTINGS_TABS} />
     <AdminTabShell
+      info={{
+        what: "Controla los precios de planes (S//mes), límites por plan (productos, usuarios, pedidos), comisión default y controles globales como modo mantenimiento.",
+        affects: "Los precios se usan para calcular el MRR real del dashboard. Los límites se aplican a cada tienda según su plan. El modo mantenimiento afecta a todos los usuarios.",
+        example: "Si subes el precio del plan Pro de S/100 a S/120, el MRR del dashboard se recalcula automáticamente con el nuevo valor.",
+      }}
       title="Configuración de plataforma"
       kicker="Control global"
       description="Ajusta precios, comisiones, límites y controles de toda la plataforma. Los precios alimentan el MRR del dashboard en tiempo real."
@@ -266,7 +274,7 @@ export default function SettingsPage() {
         </div>
       )}
       {dirty && !saving && !saved && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 px-4 py-3">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--accent)]/30 bg-primary/10 px-4 py-3">
           <div className="flex items-center gap-2 text-sm">
             <Sparkles className="h-4 w-4 text-[var(--accent)]" aria-hidden />
             <span className="font-semibold text-[var(--text-primary)]">
@@ -277,10 +285,15 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <SidebarConfigPanel items={SIDEBAR_ITEMS} />
+      <JumpNav />
+
+      <div id="set-sidebar" className="scroll-mt-28">
+        <SidebarConfigPanel items={SIDEBAR_ITEMS} />
+      </div>
 
       {/* ─── Precios de planes ─────────────────────────────────────── */}
       <SectionHeader
+        id="set-precios"
         eyebrow="Monetización"
         icon={DollarSign}
         title="Precios de planes"
@@ -304,6 +317,7 @@ export default function SettingsPage() {
         icon={Percent}
         title="Comisión por defecto"
         subtitle="Porcentaje que la plataforma retiene de cada venta cross-vendor. Puede sobreescribirse por categoría o por vendor."
+        id="set-comision"
       />
       <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -347,6 +361,7 @@ export default function SettingsPage() {
 
       {/* ─── Límites por plan ────────────────────────────────────────── */}
       <SectionHeader
+        id="set-limites"
         eyebrow="Cuotas"
         icon={BarChart3}
         title="Límites por plan"
@@ -393,6 +408,7 @@ export default function SettingsPage() {
 
       {/* ─── Controles ───────────────────────────────────────────────── */}
       <SectionHeader
+        id="set-controles"
         eyebrow="Operativa"
         icon={Settings}
         title="Controles de plataforma"
@@ -419,6 +435,7 @@ export default function SettingsPage() {
         />
       </div>
     </AdminTabShell>
+    </>
   );
 }
 
@@ -437,7 +454,7 @@ function StatPill({
     tone === "primary"
       ? "border-[var(--accent)]/30 bg-[var(--accent-soft,var(--accent))]/10 text-[var(--accent)]"
       : tone === "warning"
-        ? "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300"
+        ? "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300"
         : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)]";
   return (
     <div className={`rounded-xl border px-3.5 py-2 min-w-[88px] ${cls}`}>
@@ -452,19 +469,21 @@ function StatPill({
 }
 
 function SectionHeader({
+  id,
   eyebrow,
   icon: Icon,
   title,
   subtitle,
 }: {
+  id?: string;
   eyebrow: string;
   icon: LucideIcon;
   title: string;
   subtitle: string;
 }) {
   return (
-    <div className="flex items-start gap-3 border-b border-[var(--rule-soft)] pb-3 pt-2">
-      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+    <div id={id} className="scroll-mt-28 flex items-start gap-3 border-b border-[var(--rule-soft)] pb-3 pt-2">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
         <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
@@ -477,6 +496,63 @@ function SectionHeader({
         <p className="mt-1 text-sm text-[var(--text-secondary)]">{subtitle}</p>
       </div>
     </div>
+  );
+}
+
+// ── Barra de salto entre secciones (sticky) — página muy larga (~4000px) ─────
+function useActiveSection(ids: string[]): string {
+  const [active, setActive] = useState(ids[0] ?? "");
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const vis = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (vis[0]) setActive(vis[0].target.id);
+      },
+      { rootMargin: "-112px 0px -60% 0px", threshold: [0.05, 0.4] },
+    );
+    ids.forEach((id) => { const el = document.getElementById(id); if (el) obs.observe(el); });
+    return () => obs.disconnect();
+  }, [ids]);
+  return active;
+}
+
+const JUMP_SECTIONS = [
+  { id: "set-sidebar", label: "Barra lateral" },
+  { id: "set-precios", label: "Precios" },
+  { id: "set-comision", label: "Comisión" },
+  { id: "set-limites", label: "Límites" },
+  { id: "set-controles", label: "Controles" },
+];
+
+function JumpNav() {
+  const ids = useMemo(() => JUMP_SECTIONS.map((s) => s.id), []);
+  const active = useActiveSection(ids);
+  return (
+    <nav
+      aria-label="Ir a sección"
+      className="sticky top-2 z-20 -mx-1 overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-2 py-1.5 backdrop-blur"
+    >
+      <ul className="flex min-w-full items-center gap-1">
+        {JUMP_SECTIONS.map((s) => {
+          const isActive = active === s.id;
+          return (
+            <li key={s.id}>
+              <a
+                href={`#${s.id}`}
+                aria-current={isActive ? "true" : undefined}
+                className={`inline-flex whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-bold transition-colors ${
+                  isActive
+                    ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                }`}
+              >
+                {s.label}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }
 
@@ -499,7 +575,7 @@ function PlanPriceCard({
     },
     primary: {
       border: "border-[var(--accent)]/30",
-      badge: "bg-[var(--accent-soft)] text-[var(--accent)]",
+      badge: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
       ring: "focus-within:ring-[var(--accent)]/40",
     },
     violet: {
@@ -573,11 +649,11 @@ function PlanLimitsCard({
   ];
   const accent =
     tone === "primary"
-      ? "border-[var(--accent)]/30 bg-[var(--accent-soft)]/30"
+      ? "border-[var(--accent)]/30 bg-primary/10"
       : "border-[var(--rule-soft)] bg-[var(--surface-canvas)]";
   const badge =
     tone === "primary"
-      ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
       : "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-secondary)]";
 
   return (
@@ -636,21 +712,21 @@ function ToggleCard({
 }) {
   const activeBorder =
     tone === "warning"
-      ? "border-amber-400/50 dark:border-amber-600/50"
+      ? "border-teal-400/50 dark:border-teal-600/50"
       : "border-[var(--accent)]/40";
   const inactiveBorder = "border-[var(--rule-soft)]";
   const iconBg =
     tone === "warning"
       ? active
-        ? "bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
+        ? "bg-teal-100 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400"
         : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
       : active
-        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+        ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]";
   const switchBg =
     tone === "warning"
       ? active
-        ? "bg-amber-500"
+        ? "bg-teal-500"
         : "bg-[var(--surface-sunken)]"
       : active
         ? "bg-[var(--accent)]"
@@ -690,7 +766,7 @@ function ToggleCard({
         </div>
         <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">{desc}</p>
         {active && tone === "warning" && (
-          <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+          <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-teal-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-teal-700 dark:bg-teal-950/50 dark:text-teal-400">
             <AlertTriangle className="h-3 w-3" aria-hidden />
             Activo · público bloqueado
           </p>

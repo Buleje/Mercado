@@ -7,9 +7,9 @@ import {
   Palette, Store, Layout, Phone, Settings2, Image as ImageIcon,
   Save, Loader2, Check, Eye, EyeOff,
   Megaphone, Grid3x3, ShoppingBag, Tag, Package, BookOpen,
-  MessageSquare, HelpCircle, Map, ToggleLeft, ToggleRight, Sun, Moon, Type, Sliders,
-  Paintbrush, FileText, Sparkles, Square, LayoutGrid, WandSparkles, RefreshCw,
-  Smartphone, Monitor, Zap, Truck, Star, Heart, Clock, ExternalLink } from "@buleje/design-system/icons";
+  MessageSquare, HelpCircle, Map, Sun, Moon, Type, Sliders,
+  Paintbrush, FileText, Sparkles, Square, LayoutGrid,
+  Smartphone, Monitor, Zap, Truck, Star, Clock, ExternalLink, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { LoadingState, PageTitle, PrimaryButton, SectionTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -23,8 +23,11 @@ const StoreCreativeMode = dynamic(() => import("./StoreCreativeMode"), { ssr: fa
 const CatalogoTiendaTab = dynamic(() => import("./store-page/CatalogoTiendaTab"), { ssr: false });
 const BrandConceptTab = dynamic(() => import("./BrandConceptTab"), { ssr: false });
 const CategoryBannersTab = dynamic(() => import("./CategoryBannersTab"), { ssr: false });
+// Métricas del storefront — absorbidas de "Mi tienda pública" (ADR-299 fase 2).
+const AnalyticsTab = dynamic(() => import("@/app/admin/store-page/_components/AnalyticsTab"), { ssr: false });
 import type { SectionKey } from "./StorefrontEditor";
 import ImageUpload from "./ImageUpload";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -43,15 +46,33 @@ export interface StoreTheme {
   heroSubtitle: string;
   heroCTA: string;
   heroLink: string;
+  heroCtaUrl: string;
   heroBadge: string;
   // FIX 2026-05-07 (audit storefront-admin): badge debajo del avatar circular.
   // Antes "Hecho en Pucallpa" era texto fijo en el código.
   heroOriginBadge: string;
   heroImage: string;
+  // Variantes de diseño del hero (Brandon 2026-06-26, page builder Fase 4):
+  // editorial (default) | centered | split | immersive. Controles "editar potencia".
+  heroVariant: "minimal" | "editorial" | "centered" | "split" | "immersive";
+  heroOverlay: number; // 0-100 oscurecimiento de la foto
+  heroAlign: "left" | "center";
+  heroHeight: "compact" | "normal" | "tall";
+  heroShowBadges: boolean;
+  // Banner de anuncio (Brandon 2026-06-25): imagen full-width arriba de la página
+  // de la tienda. Vacío = sin banner. Editable desde Modo Creativo > Secciones.
+  announcementImage: string;
+  // Imagen por sección (Brandon 2026-06-25): map clave-de-sección → URL de imagen.
+  // Cada sección de la página puede tener su propia imagen. Se renderiza como
+  // banda full-width en la tienda. Editable desde Modo Creativo > Secciones.
+  sectionImages: Record<string, string>;
   // FIX 2026-05-07 (audit storefront-admin): chips de confianza configurables
   // de la TrustBar (la barra que scrollea con beneficios). Antes 6 chips fijas.
   trustChips: string[];
   fontFamily: string;
+  // Par de fuentes (Brandon 2026-06-27 · Lote A): fontFamily = TÍTULOS,
+  // bodyFontFamily = CUERPO. Vacío = usa la de títulos (comportamiento previo).
+  bodyFontFamily: string;
   borderRadius: number;
   spacing: "compact" | "normal" | "spacious";
   whatsapp: string;
@@ -64,6 +85,9 @@ export interface StoreTheme {
   pixelId: string;
   favicon: string;
   sections: SectionKey[];
+  // Orden del cuerpo de la landing /t (page builder Fase 2): keys reordenables
+  // del landing = trust|promos|featured|info. Default = orden histórico.
+  bodyOrder: string[];
   // Estilos avanzados
   cardStyle: "minimal" | "shadow" | "border" | "glass";
   cartStyle: "sidebar" | "modal" | "drawer";
@@ -72,12 +96,110 @@ export interface StoreTheme {
   shadowLevel: "none" | "soft" | "deep";
   animations: "none" | "subtle" | "dynamic";
   backgroundPattern: "none" | "dots" | "waves" | "gradient";
+  // Mejoras Modo Creativo (Brandon 2026-06-26): escala tipográfica global,
+  // botón flotante de WhatsApp, animaciones de entrada al scrollear.
+  fontScale: "small" | "normal" | "large";
+  whatsappFloatEnabled: boolean;
+  animateOnScroll: boolean;
+  // Lote B (Brandon 2026-06-27): gradiente del hero (vacío = sólido), swatches de
+  // marca reutilizables, y grid configurable de productos destacados.
+  heroGradientFrom: string;
+  heroGradientTo: string;
+  heroGradientAngle: number;
+  brandSwatches: string[];
+  featuredCols: 2 | 3 | 4;
+  featuredCount: number;
+  // Lote D (Brandon 2026-06-27): video de fondo + 2º CTA en hero, velocidad de
+  // anuncios, color de fondo global de la página.
+  heroVideoUrl: string;
+  heroCta2Label: string;
+  heroCta2Url: string;
+  announcementInterval: number; // segundos entre anuncios; 0 = sin rotación
+  pageBgColor: string; // vacío = canvas por defecto
+  // Lote E (Brandon 2026-06-27): color de navbar + layout de destacados.
+  navbarBgColor: string; // vacío = superficie por defecto
+  navbarTextColor: string; // vacío = tokens por defecto
+  featuredLayout: "grid" | "list" | "carousel"; // grid (default), lista o carrusel
+  // Lote F (Brandon 2026-06-27): fuente propia por URL (.woff2/.ttf hosteado) +
+  // a qué la aplica. Vacío = usa las fuentes del tema.
+  customFontUrl: string;
+  customFontName: string;
+  customFontTarget: "none" | "headings" | "body" | "all";
+  // Lote H (Brandon 2026-06-27): tamaño base del texto (px) + interlineado.
+  baseFontSize: number; // px; 0/16 = default
+  lineHeight: number; // 0 = auto (usa el del tema); 1.2-2.0 = override
+  // Lote I (Brandon 2026-06-27): menú de navegación editable.
+  navCatalogLabel: string; // vacío = "Catálogo"
+  navExtraLinks: Array<{ label: string; url: string }>;
+  // Lote J (Brandon 2026-06-27): peso de fuente de los títulos. 0 = default del tema.
+  headingWeight: number;
+  // Lote P (Brandon 2026-06-28): A/B test del hero (variante B de título/subtítulo).
+  abTestEnabled: boolean;
+  heroVariantB: { heroTitle?: string; heroSubtitle?: string };
+  // Lote Q (Brandon 2026-06-28): opt-in de notificaciones push en el storefront.
+  pushOptInEnabled: boolean;
+  pushOptInMessage: string;
+  // Lote U (Brandon 2026-06-28): SEO schema, transición de página, cursor.
+  schemaLocalBusiness: boolean;
+  pageTransition: "none" | "fade" | "slide" | "blur";
+  customCursor: "none" | "dot" | "ring";
+  // Lote W (Brandon 2026-06-28): meta del catálogo (SEO por página).
+  catalogMetaTitle: string;
+  catalogMetaDescription: string;
+  // Estilos por texto (Brandon 2026-06-26): la barra de texto flotante guarda
+  // tamaño/negrita/color/alineación por campo data-live (heroTitle, heroSubtitle…).
+  textStyles: Record<string, { size?: number; bold?: boolean; color?: string; align?: "left" | "center" | "right"; italic?: boolean; underline?: boolean; upper?: boolean; track?: number; tshadow?: boolean }>;
+  // Contador de oferta (Brandon 2026-06-26): banda con cuenta regresiva.
+  countdownEnabled: boolean;
+  countdownTitle: string;
+  countdownEndsAt: string; // ISO datetime
+  // Testimonios (Brandon 2026-06-26): reseñas que el dueño carga.
+  testimonials: Array<{ name: string; stars: number; comment: string }>;
+  // Estilos POR SECCIÓN (Brandon 2026-06-26): editar un componente individual —
+  // fondo/texto/espaciado aplicados SOLO a esa sección (data-pb). Edición libre.
+  sectionStyles: Record<string, { bg?: string; text?: string; pad?: "sm" | "md" | "lg"; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; font?: string; width?: "narrow" | "normal" | "full"; padY?: number; divider?: "none" | "line" | "space"; anim?: "none" | "fade" | "up" | "zoom" }>;
+  // Texto POR SECCIÓN (Brandon 2026-06-27): etiqueta + título + alineación
+  // personalizados de cada sección del cuerpo (featured/info…). Editable inline
+  // (doble-click en el preview) o desde el panel. Vacío = texto por defecto.
+  sectionText: Record<string, { eyebrow?: string; title?: string; align?: "left" | "center" | "right" }>;
+  // Texto inline GENÉRICO (Brandon 2026-06-27): cualquier nodo de texto del
+  // storefront etiquetado con data-live="inlineText:<key>" (botones, CTAs,
+  // headings, labels…). Vacío = texto por defecto. Editable con doble-click.
+  inlineText: Record<string, string>;
+  // Diseño de las TARJETAS de producto (Brandon 2026-06-27): seleccionás una card
+  // en el preview y cambiás fondo/forma/borde/sombra + color de nombre y precio.
+  // Aplica a todas las tarjetas de producto de la vitrina (data-pb-card).
+  cardDesign: { bg?: string; radius?: number; border?: string; borderW?: number; shadow?: "none" | "soft" | "deep"; nameColor?: string; priceColor?: string };
+  // Secciones del cuerpo ocultas (Brandon 2026-06-27): keys de bodyOrder que el
+  // dueño apagó (trust/promos/featured/testimonials/info). No se renderizan en /t.
+  bodyHidden: string[];
   // Contenido
   footerText: string;
   welcomePopupEnabled: boolean;
   welcomePopupTitle: string;
   welcomePopupMessage: string;
   welcomePopupCoupon: string;
+  // Conversión (Brandon 2026-06-26, Modo Creativo): barra de envío gratis,
+  // prueba social en vivo, estado abierto/cerrado, tema estacional 1-clic.
+  freeShipEnabled: boolean;
+  freeShipThreshold: number; // S/ — meta para envío gratis
+  freeShipText: string; // texto opcional; "{falta}" se reemplaza por el monto
+  socialProofEnabled: boolean;
+  openStatusEnabled: boolean;
+  seasonalTheme: "none" | "navidad" | "fiestas_patrias" | "halloween";
+  // Lote C (Brandon 2026-06-27): conversión avanzada.
+  // Anuncios rotativos (barra superior); vacío = sin barra.
+  announcements: string[];
+  // Exit-intent popup: aparece al intentar cerrar la pestaña.
+  exitIntentEnabled: boolean;
+  exitIntentTitle: string;
+  exitIntentMessage: string;
+  exitIntentCoupon: string;
+  // Excepciones de horario (feriados): fecha YYYY-MM-DD + etiqueta + cerrado.
+  scheduleExceptions: Array<{ date: string; label: string; closed: boolean }>;
+  // Widget de chat flotante: posición + texto de la burbuja.
+  chatPosition: "right" | "left";
+  chatBubbleText: string;
   customCSS: string;
   // Banners promocionales por categoría — controla "Oferta de Temporada".
   // El admin sube una imagen + textos; al click va a la categoría o producto vinculado.
@@ -106,9 +228,17 @@ const DEFAULT_THEME: StoreTheme = {
   heroSubtitle: "Delivery rápido en Pucallpa. Paga con Yape o efectivo.",
   heroCTA: "Ver productos",
   heroLink: "tienda",
+  heroCtaUrl: "",
   heroBadge: "Delivery gratis +S/50",
   heroOriginBadge: "Hecho en Pucallpa",
   heroImage: "",
+  heroVariant: "editorial",
+  heroOverlay: 0,
+  heroAlign: "left",
+  heroHeight: "normal",
+  heroShowBadges: true,
+  announcementImage: "",
+  sectionImages: {},
   trustChips: [
     "Delivery gratis desde S/50",
     "Entrega en menos de 45 min",
@@ -118,6 +248,7 @@ const DEFAULT_THEME: StoreTheme = {
     "Atención personalizada",
   ],
   fontFamily: "sistema",
+  bodyFontFamily: "",
   borderRadius: 12,
   spacing: "normal",
   whatsapp: "",
@@ -138,6 +269,7 @@ const DEFAULT_THEME: StoreTheme = {
   pixelId: "",
   favicon: "",
   sections: ["announcement", "hero", "categories", "popular", "deals", "combos", "recipes", "testimonials", "faq", "contact", "delivery_map"],
+  bodyOrder: ["trust", "promos", "featured", "info"],
   cardStyle: "shadow",
   cartStyle: "sidebar",
   buttonStyle: "rounded",
@@ -145,11 +277,69 @@ const DEFAULT_THEME: StoreTheme = {
   shadowLevel: "soft",
   animations: "subtle",
   backgroundPattern: "none",
+  fontScale: "normal",
+  whatsappFloatEnabled: false,
+  animateOnScroll: false,
+  heroGradientFrom: "",
+  heroGradientTo: "",
+  heroGradientAngle: 135,
+  brandSwatches: [],
+  featuredCols: 4,
+  featuredCount: 8,
+  heroVideoUrl: "",
+  heroCta2Label: "",
+  heroCta2Url: "",
+  announcementInterval: 4,
+  pageBgColor: "",
+  navbarBgColor: "",
+  navbarTextColor: "",
+  featuredLayout: "grid",
+  customFontUrl: "",
+  customFontName: "",
+  customFontTarget: "none",
+  baseFontSize: 16,
+  lineHeight: 0,
+  navCatalogLabel: "",
+  navExtraLinks: [],
+  headingWeight: 0,
+  abTestEnabled: false,
+  heroVariantB: {},
+  pushOptInEnabled: false,
+  pushOptInMessage: "Recibí nuestras ofertas y novedades",
+  schemaLocalBusiness: false,
+  pageTransition: "none",
+  customCursor: "none",
+  catalogMetaTitle: "",
+  catalogMetaDescription: "",
+  textStyles: {},
+  countdownEnabled: false,
+  countdownTitle: "¡Oferta por tiempo limitado!",
+  countdownEndsAt: "",
+  testimonials: [],
+  sectionStyles: {},
+  sectionText: {},
+  inlineText: {},
+  cardDesign: {},
+  bodyHidden: [],
   footerText: "",
   welcomePopupEnabled: false,
   welcomePopupTitle: "Bienvenido a nuestra tienda!",
   welcomePopupMessage: "Usa este cupon en tu primera compra",
   welcomePopupCoupon: "BIENVENIDO10",
+  freeShipEnabled: false,
+  freeShipThreshold: 50,
+  freeShipText: "",
+  socialProofEnabled: false,
+  openStatusEnabled: false,
+  seasonalTheme: "none",
+  announcements: [],
+  exitIntentEnabled: false,
+  exitIntentTitle: "¡Esperá! No te vayas sin tu descuento",
+  exitIntentMessage: "Llevate un cupón para tu primera compra.",
+  exitIntentCoupon: "VUELVE10",
+  scheduleExceptions: [],
+  chatPosition: "right",
+  chatBubbleText: "¿Necesitas ayuda? Escribenos por WhatsApp",
   customCSS: "",
 };
 
@@ -161,9 +351,9 @@ const COLOR_PRESETS = [
   { label: "Azul",    value: "#2563eb" },
   { label: "Emerald", value: "#059669" },
   { label: "Rosa",    value: "#e11d48" },
-  { label: "Amber",   value: "#d97706" },
+  { label: "Amber",   value: "#f59e0b" },
   { label: "Gris",    value: "#475569" },
-  { label: "Naranja", value: "#ea580c" },
+  { label: "Naranja", value: "#f0503f" },
 ];
 
 const FONT_OPTIONS = [
@@ -218,7 +408,7 @@ const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "clasico",
     name: "Clásico",
     description: "Verde bodega + naranja. El look original.",
-    colors: { primaryColor: "var(--color-primary)", secondaryColor: "#f97316", accentColor: "var(--color-primary)" },
+    colors: { primaryColor: "var(--color-primary)", secondaryColor: "#ff6b5b", accentColor: "var(--color-primary)" },
     fontFamily: "geist",
     darkModeDefault: false,
   },
@@ -234,7 +424,7 @@ const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "elegante",
     name: "Elegante",
     description: "Gris oscuro + dorado. Estilo premium.",
-    colors: { primaryColor: "#1e293b", secondaryColor: "#d97706", accentColor: "#334155" },
+    colors: { primaryColor: "#1e293b", secondaryColor: "#f0503f", accentColor: "#334155" },
     fontFamily: "montserrat",
     darkModeDefault: true,
   },
@@ -293,11 +483,11 @@ function ColorPicker({
 }) {
   return (
     <div className="space-y-3">
-      <label className="text-sm font-semibold text-[var(--text-primary)]">{label}</label>
+      <span className="text-sm font-semibold text-[var(--text-primary)]">{label}</span>
       <div className="flex flex-wrap gap-2.5 items-center">
         {COLOR_PRESETS.map((c) => (
           <button
-            key={c.value}
+            key={c.label}
             type="button"
             onClick={() => onChange(c.value)}
             title={c.label}
@@ -354,7 +544,7 @@ function StyleSection({
 }
 
 const inputCls =
-  "w-full px-4 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all";
+  "w-full px-4 h-12 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all";
 
 // ── Sugerencias rápidas para Hero (chips para auto-completar) ───────────────
 
@@ -400,7 +590,7 @@ function HeroTab({
   update: <K extends keyof StoreTheme>(key: K, value: StoreTheme[K]) => void;
   inputCls: string;
 }) {
-  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("mobile");
 
   const storefrontUrl = (() => {
     if (typeof window === "undefined") return "/tienda";
@@ -413,7 +603,7 @@ function HeroTab({
   const accent = theme.accentColor || theme.primaryColor;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Banner explicativo */}
       <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
         <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -428,6 +618,12 @@ function HeroTab({
         </div>
       </div>
 
+      {/* ── Layout 2-col (Brandon 2026-06-24): preview STICKY a la derecha
+          (siempre visible mientras editás), form a la izquierda. Mismo patrón
+          que el tab Identidad. En mobile apila: preview arriba, form abajo. ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
+      {/* ── Columna preview ── */}
+      <aside className="min-w-0 space-y-3 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-4">
       {/* ── LIVE PREVIEW (fiel al hero real) ────────────────── */}
       <StyleSection
         icon={<Eye className="h-5 w-5 text-primary" />}
@@ -437,7 +633,7 @@ function HeroTab({
         <div className="space-y-3">
           {/* Device toggle + abrir tienda */}
           <div className="flex items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-gray-100 dark:bg-surface border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               {[
                 { value: "desktop" as const, label: "Desktop", icon: Monitor },
                 { value: "mobile" as const, label: "Mobile", icon: Smartphone },
@@ -467,7 +663,7 @@ function HeroTab({
               href={storefrontUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface"
+              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface"
             >
               <ExternalLink className="h-4 w-4" />
               Ver en tienda
@@ -596,7 +792,7 @@ function HeroTab({
                           boxShadow: `0 10px 25px ${accent}50`,
                         }}
                       >
-                        Hecho en Pucallpa
+                        {theme.heroOriginBadge || "Hecho en Pucallpa"}
                       </div>
                     </div>
                   </div>
@@ -606,7 +802,10 @@ function HeroTab({
           </div>
         </div>
       </StyleSection>
+      </aside>
 
+      {/* ── Columna form (izquierda) ── */}
+      <div className="min-w-0 space-y-8 lg:col-start-1 lg:row-start-1">
       {/* ── 1. TÍTULO PRINCIPAL ─────────────────────────────── */}
       <StyleSection
         icon={<Type className="h-5 w-5 text-primary" />}
@@ -644,8 +843,8 @@ function HeroTab({
                   className={cn(
                     "px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
                     theme.heroTitle === s
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/40 hover:bg-primary/5"
                   )}
                 >
                   {s}
@@ -692,8 +891,8 @@ function HeroTab({
                   className={cn(
                     "px-3 py-2 rounded-xl text-sm font-semibold border-2 text-left transition-all max-w-md",
                     theme.heroSubtitle === s
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/40 hover:bg-primary/5"
                   )}
                 >
                   {s}
@@ -735,8 +934,8 @@ function HeroTab({
                   className={cn(
                     "px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
                     theme.heroBadge === s
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/40 hover:bg-primary/5"
                   )}
                 >
                   {s}
@@ -782,8 +981,8 @@ function HeroTab({
                 className={cn(
                   "px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
                   theme.heroOriginBadge === s
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
+                    ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                    : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/40 hover:bg-primary/5"
                 )}
               >
                 {s}
@@ -831,15 +1030,16 @@ function HeroTab({
         <div className="space-y-5">
           {/* Texto del CTA */}
           <div className="space-y-3">
-            <label className="text-sm font-semibold text-[var(--text-primary)]">Texto del botón</label>
-            <input
-              type="text"
-              value={theme.heroCTA}
-              onChange={(e) => update("heroCTA", e.target.value)}
-              placeholder="Ver productos"
-              className={inputClassName}
-              maxLength={30}
-            />
+            <Field label="Texto del botón" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+              <input
+                type="text"
+                value={theme.heroCTA}
+                onChange={(e) => update("heroCTA", e.target.value)}
+                placeholder="Ver productos"
+                className={inputClassName}
+                maxLength={30}
+              />
+            </Field>
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted">Verbo en infinitivo — qué hace el cliente cuando hace click.</p>
               <span className="text-xs font-mono text-muted shrink-0">{(theme.heroCTA || "").length}/30</span>
@@ -858,8 +1058,8 @@ function HeroTab({
                     className={cn(
                       "inline-flex items-center gap-2 px-3 h-9 rounded-xl text-sm font-semibold border-2 transition-all",
                       active
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40 hover:bg-primary/5"
+                        ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                        : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/40 hover:bg-primary/5"
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -872,7 +1072,7 @@ function HeroTab({
 
           {/* Destino del botón */}
           <div className="space-y-3">
-            <label className="text-sm font-semibold text-[var(--text-primary)]">Destino del botón</label>
+            <span className="text-sm font-semibold text-[var(--text-primary)]">Destino del botón</span>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {([
                 { value: "tienda",     label: "Tienda",     desc: "Lleva al catálogo de productos",  icon: <ShoppingBag className="h-5 w-5" /> },
@@ -896,7 +1096,7 @@ function HeroTab({
                   >
                     <div className={cn(
                       "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
-                      active ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-primary)]"
+                      active ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)]"
                     )}>
                       {s.icon}
                     </div>
@@ -908,6 +1108,25 @@ function HeroTab({
                 );
               })}
             </div>
+            {theme.heroLink === "custom" && (
+              <div className="space-y-1.5">
+                <label htmlFor="hero-cta-url" className="text-sm font-semibold text-[var(--text-primary)]">
+                  URL del botón
+                </label>
+                <input
+                  id="hero-cta-url"
+                  type="url"
+                  value={theme.heroCtaUrl}
+                  onChange={(e) => update("heroCtaUrl", e.target.value)}
+                  placeholder="https://… o /ruta-interna"
+                  maxLength={500}
+                  className={inputCls}
+                />
+                <p className="text-xs text-muted">
+                  Link externo (https://…) o interno (/recetas). Solo se usa cuando el destino es URL custom.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </StyleSection>
@@ -927,6 +1146,114 @@ function HeroTab({
           aspectRatio="banner"
           hint="Recomendado 1200×400 px. La imagen se oscurece automáticamente para que el texto blanco se lea."
         />
+      </StyleSection>
+
+      {/* ── 6. DISEÑO DEL HERO (Brandon 2026-06-26): variante, alineación,
+          altura, overlay, badges — antes solo en Modo Creativo. ── */}
+      <StyleSection
+        icon={<LayoutGrid className="h-5 w-5 text-primary" />}
+        title="Diseño del hero"
+        description="Cómo se arma el banner: variante de layout, alineación, altura, oscurecido y badges."
+      >
+        <div className="space-y-5">
+          {/* Variante */}
+          <div className="space-y-2">
+            <span className="text-sm font-semibold text-[var(--text-primary)]">Variante de layout</span>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { value: "minimal", label: "Minimalista", desc: "Claro y aireado, sin bloque de color (base)" },
+                { value: "editorial", label: "Editorial", desc: "Texto a la izquierda, oscuro" },
+                { value: "centered", label: "Centrado", desc: "Todo al centro" },
+                { value: "split", label: "Split", desc: "Texto + imagen lado a lado" },
+                { value: "immersive", label: "Inmersivo", desc: "Imagen a pantalla completa" },
+              ] as const).map((v) => {
+                const active = (theme.heroVariant ?? "minimal") === v.value;
+                return (
+                  <button
+                    key={v.value}
+                    type="button"
+                    onClick={() => update("heroVariant", v.value)}
+                    aria-pressed={active}
+                    className={cn(
+                      "flex flex-col items-start gap-0.5 rounded-xl border-2 px-3 py-2.5 text-left transition-all",
+                      active ? "border-primary bg-primary/10" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40",
+                    )}
+                  >
+                    <span className="text-sm font-bold text-[var(--text-primary)]">{v.label}</span>
+                    <span className="text-xs text-muted">{v.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Alineación + Altura */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">Alineación del texto</span>
+              <div className="grid grid-cols-2 gap-2">
+                {([["left", "Izquierda"], ["center", "Centro"]] as const).map(([val, label]) => {
+                  const active = (theme.heroAlign ?? "left") === val;
+                  return (
+                    <button key={val} type="button" onClick={() => update("heroAlign", val)} aria-pressed={active}
+                      className={cn("h-10 rounded-xl border-2 text-sm font-bold transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">Altura</span>
+              <div className="grid grid-cols-3 gap-2">
+                {([["compact", "Compacto"], ["normal", "Normal"], ["tall", "Alto"]] as const).map(([val, label]) => {
+                  const active = (theme.heroHeight ?? "normal") === val;
+                  return (
+                    <button key={val} type="button" onClick={() => update("heroHeight", val)} aria-pressed={active}
+                      className={cn("h-10 rounded-xl border-2 text-sm font-bold transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Oscurecer foto — solo si hay imagen de fondo */}
+          {theme.heroImage?.trim() && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Oscurecer la foto</span>
+                <span className="text-xs font-mono text-muted shrink-0">{theme.heroOverlay ?? 0}%</span>
+              </div>
+              <input
+                type="range" min={0} max={100} step={5}
+                value={theme.heroOverlay ?? 0}
+                onChange={(e) => update("heroOverlay", Number(e.target.value))}
+                className="w-full accent-[var(--accent)]"
+                aria-label="Oscurecer la foto del hero"
+              />
+              <p className="text-xs text-muted">Más oscuro = el texto blanco se lee mejor sobre la imagen.</p>
+            </div>
+          )}
+
+          {/* Mostrar badges */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">Mostrar badges</span>
+              <p className="text-xs text-muted">El badge superior y el de origen (&ldquo;Hecho en…&rdquo;).</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => update("heroShowBadges", !(theme.heroShowBadges ?? true))}
+              aria-pressed={theme.heroShowBadges ?? true}
+              aria-label="Mostrar badges del hero"
+              className={cn("relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors", (theme.heroShowBadges ?? true) ? "bg-primary" : "bg-[var(--surface-sunken)] dark:bg-surface")}
+            >
+              <span className={cn("inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transform transition-transform", (theme.heroShowBadges ?? true) ? "translate-x-6" : "translate-x-1")} />
+            </button>
+          </div>
+        </div>
       </StyleSection>
 
       {/* Tips finales */}
@@ -958,6 +1285,8 @@ function HeroTab({
           </div>
         </div>
       </div>
+      </div>
+      </div>
     </div>
   );
 }
@@ -966,19 +1295,63 @@ function HeroTab({
 
 const MODULE_ID = "store-customizer";
 
+// Fusión ADR-299 fase 2: 11 → 6 tabs. Marca→Colores; Promos/Secciones/Catálogo
+// + Contacto → "Página"; Textos → Avanzado. Se consolidan por condición de
+// render (sin mover bloques) — los ids viejos quedan en el type pero sin botón.
 const TABS = [
   { id: "identidad" as Tab, label: "Identidad", shortLabel: "Identidad", icon: Store },
-  { id: "marca" as Tab, label: "Marca", shortLabel: "Marca", icon: WandSparkles },
-  { id: "colores" as Tab, label: "Colores", icon: Palette },
-  { id: "estilos" as Tab, label: "Estilos", icon: Paintbrush },
   { id: "hero" as Tab, label: "Hero", icon: ImageIcon },
-  { id: "promos" as Tab, label: "Promos por categoría", shortLabel: "Promos", icon: Tag },
-  { id: "secciones" as Tab, label: "Secciones", shortLabel: "Sec.", icon: Layout },
-  { id: "catalogo" as Tab, label: "Catálogo", shortLabel: "Cat.", icon: Package },
-  { id: "contenido" as Tab, label: "Textos y popup", shortLabel: "Textos", icon: FileText },
-  { id: "contacto" as Tab, label: "Contacto", icon: Phone },
+  { id: "colores" as Tab, label: "Colores & Tipografía", shortLabel: "Colores", icon: Palette },
+  { id: "estilos" as Tab, label: "Estilos", icon: Paintbrush },
+  { id: "contacto" as Tab, label: "Página", shortLabel: "Página", icon: Layout },
   { id: "avanzado" as Tab, label: "Avanzado", icon: Settings2 },
 ] as const;
+
+// ── Salud de la marca (Brandon 2026-06-26): completitud por tab + avisos ──────
+type HealthTab = "identidad" | "hero" | "colores" | "contacto" | "avanzado";
+const HEALTH_TABS: { id: HealthTab; label: string; keys: (keyof StoreTheme)[] }[] = [
+  { id: "identidad", label: "Identidad", keys: ["logo", "storeName", "slogan", "description"] },
+  { id: "hero", label: "Hero", keys: ["heroTitle", "heroSubtitle", "heroImage"] },
+  { id: "colores", label: "Colores", keys: ["primaryColor", "secondaryColor", "accentColor"] },
+  { id: "contacto", label: "Página", keys: ["whatsapp", "email", "phone", "address"] },
+  { id: "avanzado", label: "Avanzado", keys: ["analyticsId", "favicon"] },
+];
+function fieldFilled(v: unknown): boolean {
+  if (typeof v === "string") return v.trim() !== "" && v !== "var(--color-primary)";
+  return Boolean(v);
+}
+/** Contraste WCAG del color (hex) contra texto blanco. null si no es hex. */
+function contrastWithWhite(hex: string): number | null {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec((hex ?? "").trim());
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  const lum = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+    .map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); });
+  const L = 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
+  return Math.round((1.05 / (L + 0.05)) * 10) / 10;
+}
+interface StoreHealth {
+  pct: number;
+  perTab: { id: HealthTab; label: string; filled: number; total: number }[];
+  issues: { label: string; tab: HealthTab }[];
+}
+function computeStoreHealth(theme: StoreTheme): StoreHealth {
+  const perTab = HEALTH_TABS.map((t) => ({
+    id: t.id,
+    label: t.label,
+    filled: t.keys.filter((k) => fieldFilled(theme[k])).length,
+    total: t.keys.length,
+  }));
+  const filled = perTab.reduce((a, t) => a + t.filled, 0);
+  const total = perTab.reduce((a, t) => a + t.total, 0);
+  const issues: { label: string; tab: HealthTab }[] = [];
+  if (!fieldFilled(theme.logo)) issues.push({ label: "Falta el logo de tu tienda", tab: "identidad" });
+  if (!fieldFilled(theme.whatsapp)) issues.push({ label: "Sin número de WhatsApp para pedidos", tab: "contacto" });
+  if (!fieldFilled(theme.heroImage)) issues.push({ label: "El Hero no tiene imagen de fondo", tab: "hero" });
+  const c = contrastWithWhite(theme.primaryColor);
+  if (c != null && c < 3) issues.push({ label: `Color principal con contraste bajo (${c}:1) sobre texto blanco`, tab: "colores" });
+  return { pct: total ? Math.round((filled / total) * 100) : 0, perTab, issues };
+}
 
 // ── Preview en vivo ───────────────────────────────────────────────────────────
 
@@ -993,10 +1366,15 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
   const spacingPad = theme.spacing === "compact" ? "8px" : theme.spacing === "spacious" ? "24px" : "16px";
 
   return (
+    // OJO: de acá para adentro es la PREVIEW de la tienda del comerciante, no
+    // chrome del admin. Sus colores literales son a propósito: conmutan con
+    // `theme.darkModeDefault` (el ajuste del TENANT) y no deben seguir el tema
+    // del panel. Si acá se meten tokens del admin, la preview en modo oscuro se
+    // ve clara mientras el admin está en claro.
     <div
       className={cn(
         "w-full h-full rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col text-sm shadow-inner",
-        theme.darkModeDefault ? "bg-gray-900 text-white" : "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)]"
+        theme.darkModeDefault ? "bg-neutral-900 text-white" : "bg-white text-neutral-900"
       )}
       style={{ fontFamily: fontMap[theme.fontFamily] ?? fontMap.sistema }}
     >
@@ -1103,8 +1481,8 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
                 className={cn(
                   "rounded-xl p-2 border",
                   theme.darkModeDefault
-                    ? "bg-gray-800 border-gray-700"
-                    : "bg-gray-50 border-[var(--rule-soft)]"
+                    ? "bg-[var(--surface-sunken)] border-[var(--rule-base)]"
+                    : "bg-[var(--surface-sunken)] border-[var(--rule-soft)]"
                 )}
                 style={{ borderRadius: `${Math.min(theme.borderRadius, 16)}px` }}
               >
@@ -1129,7 +1507,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
       <div
         className="shrink-0 px-3 py-2 text-xs text-center"
         style={{
-          color: theme.darkModeDefault ? "#6b7280" : "#9ca3af",
+          color: theme.darkModeDefault ? "#d1d5db" : "#374151",
           borderTop: `1px solid ${theme.darkModeDefault ? "#374151" : "#f3f4f6"}`,
         }}
       >
@@ -1163,6 +1541,25 @@ export default function StoreCustomizer() {
     return m ? m[1] : "main";
   });
 
+  // Campos que viven en TenantStorePage (no en storeTheme) — absorbidos al
+  // editor unificado (ADR-299 fase 2): SEO + publicado + about. Carga/guardado
+  // vía /api/store-page/customization (store distinto → save cross-store).
+  const [pageFields, setPageFields] = useState({
+    metaTitle: "",
+    metaDescription: "",
+    ogImageUrl: "",
+    published: true,
+    aboutTitle: "",
+    aboutBody: "",
+  });
+  const updatePage = useCallback(
+    (patch: Partial<typeof pageFields>) => {
+      setPageFields((prev) => ({ ...prev, ...patch }));
+      setSaved(false);
+    },
+    [],
+  );
+
   // Detecta si hay cambios pendientes comparando con la última versión guardada
   const hasUnsavedChanges = JSON.stringify(theme) !== JSON.stringify(savedTheme);
 
@@ -1174,6 +1571,32 @@ export default function StoreCustomizer() {
 
   useEffect(() => {
     void load();
+  }, []);
+
+  // Carga SEO/publicado/about desde TenantStorePage (store distinto a storeTheme).
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/store-page/customization");
+        if (!res.ok || cancelled) return;
+        const p = (await res.json()) as Record<string, unknown>;
+        if (cancelled) return;
+        setPageFields({
+          metaTitle: typeof p.metaTitle === "string" ? p.metaTitle : "",
+          metaDescription: typeof p.metaDescription === "string" ? p.metaDescription : "",
+          ogImageUrl: typeof p.ogImageUrl === "string" ? p.ogImageUrl : "",
+          published: p.published !== false,
+          aboutTitle: typeof p.aboutTitle === "string" ? p.aboutTitle : "",
+          aboutBody: typeof p.aboutBody === "string" ? p.aboutBody : "",
+        });
+      } catch {
+        /* fallback: campos vacíos */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function load() {
@@ -1249,6 +1672,17 @@ export default function StoreCustomizer() {
         body: JSON.stringify({ storeTheme: themeToSave }),
       });
       if (!res.ok) throw new Error("Error al guardar");
+      // Cross-store: guardar también SEO/publicado/about en TenantStorePage
+      // (ADR-299 fase 2). Secundario — si falla, el theme ya quedó guardado.
+      try {
+        await fetch("/api/store-page/customization", {
+          method: "PUT",
+          headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }),
+          body: JSON.stringify(pageFields),
+        });
+      } catch {
+        /* el theme ya se guardó; estos campos son secundarios */
+      }
       setSaved(true);
       setSavedTheme(themeToSave);
       if (!options?.silent) {
@@ -1265,7 +1699,7 @@ export default function StoreCustomizer() {
     } finally {
       setSaving(false);
     }
-  }, [activeTenantSlug]);
+  }, [activeTenantSlug, pageFields]);
 
   const handleSave = useCallback(async () => {
     await saveTheme(theme);
@@ -1327,6 +1761,7 @@ export default function StoreCustomizer() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const activeTabMeta = TABS.find((t) => t.id === activeTab);
+  const health = computeStoreHealth(theme);
 
   return (
     <div className="flex flex-col h-full">
@@ -1366,7 +1801,7 @@ export default function StoreCustomizer() {
             href={`/t/${activeTenantSlug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"
           >
             <Store className="h-4 w-4" />
             Ver tienda
@@ -1374,7 +1809,7 @@ export default function StoreCustomizer() {
           <button
             type="button"
             onClick={() => setShowPreview(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/20 transition-colors"
           >
             <Eye className="h-4 w-4" />
             Vista previa
@@ -1389,6 +1824,48 @@ export default function StoreCustomizer() {
           </PrimaryButton>
         </div>
       </AdminModuleHeader>
+
+      {/* ── Salud de la marca: completitud + indicadores por-tab + avisos (Brandon 2026-06-26) ── */}
+      <div className="mb-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="shrink-0 text-sm font-bold text-[var(--text-primary)]">Tu tienda: {health.pct}% configurada</span>
+          <div className="h-2 min-w-[120px] flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${health.pct}%` }} />
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {health.perTab.map((t) => {
+            const done = t.filled === t.total;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(t.id as Tab)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] hover:border-primary hover:text-[var(--text-primary)] transition-colors"
+              >
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: done ? "var(--data-success-500)" : "var(--text-tertiary)" }} />
+                {t.label}<span className="text-[var(--text-tertiary)]">{t.filled}/{t.total}</span>
+              </button>
+            );
+          })}
+        </div>
+        {health.issues.length > 0 ? (
+          <ul className="mt-3 space-y-1.5 border-t border-[var(--rule-soft)] pt-3">
+            {health.issues.map((i, idx) => (
+              <li key={idx} className="flex items-center justify-between gap-2 text-xs">
+                <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-[var(--data-warning-500)]" /> {i.label}
+                </span>
+                <button type="button" onClick={() => setActiveTab(i.tab as Tab)} className="shrink-0 font-bold text-[var(--accent)] hover:underline">Arreglar →</button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-3 text-xs font-bold text-[var(--data-success-500)]">
+            <Check className="h-3.5 w-3.5" /> Tu tienda está lista — sin pendientes.
+          </p>
+        )}
+      </div>
 
       {/* ── AdminTabBar (horizontal arriba, draggable, mismo patrón que POSCajaModule/Compras) ── */}
       <AdminTabBar
@@ -1422,6 +1899,7 @@ export default function StoreCustomizer() {
                 exactamente dónde aparece cada campo (cabecera de su
                 tienda + resultado de Google) mientras tipea. */}
             {activeTab === "identidad" && (
+              <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
                 {/* ── Columna form ── */}
                 <div className="space-y-6 min-w-0">
@@ -1454,7 +1932,7 @@ export default function StoreCustomizer() {
                           />
                         )}
                       </div>
-                      <span className="block text-[11px] text-muted text-center leading-tight">
+                      <span className="block text-xs text-muted text-center leading-tight">
                         cuadrado · 5 MB
                       </span>
                     </div>
@@ -1529,7 +2007,7 @@ export default function StoreCustomizer() {
                 <aside className="space-y-4 lg:sticky lg:top-4">
                   {/* Mockup: cabecera de la tienda */}
                   <div>
-                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">
                       Así se ve en tu tienda
                     </p>
                     <div className="rounded-2xl border-2 border-[var(--rule-base)] overflow-hidden shadow-[var(--shadow-sm)]">
@@ -1538,7 +2016,7 @@ export default function StoreCustomizer() {
                         <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-500)]/60" aria-hidden />
                         <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500)]/60" aria-hidden />
                         <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]/60" aria-hidden />
-                        <span className="ml-2 flex-1 truncate rounded-md bg-[var(--surface-raised)] px-2 py-0.5 text-[10px] text-muted font-mono">
+                        <span className="ml-2 flex-1 truncate rounded-md bg-[var(--surface-raised)] px-2 py-0.5 text-[length:var(--ts-2xs)] text-muted font-mono">
                           {typeof window !== "undefined" ? window.location.host : "buleje.com"}/t/{activeTenantSlug}
                         </span>
                       </div>
@@ -1560,7 +2038,7 @@ export default function StoreCustomizer() {
                           </p>
                         </div>
                         <span
-                          className="shrink-0 rounded-lg px-2.5 py-1.5 text-[10px] font-bold text-white"
+                          className="shrink-0 rounded-lg px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-bold text-white"
                           style={{ background: theme.primaryColor || "#00A0A0" }}
                           aria-hidden
                         >
@@ -1572,7 +2050,7 @@ export default function StoreCustomizer() {
 
                   {/* Mockup: resultado de Google (SERP) */}
                   <div>
-                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-muted">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">
                       Así se ve en Google
                     </p>
                     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3.5 shadow-[var(--shadow-sm)]">
@@ -1588,7 +2066,7 @@ export default function StoreCustomizer() {
                           <p className="truncate text-xs font-medium text-[var(--text-secondary)]">
                             {theme.storeName || "Mi Bodega"}
                           </p>
-                          <p className="truncate text-[11px] text-[var(--data-success-700,#047857)] dark:text-emerald-400">
+                          <p className="truncate text-xs text-[var(--data-success-700,#047857)] dark:text-emerald-400">
                             buleje.com › t › {activeTenantSlug}
                           </p>
                         </div>
@@ -1608,10 +2086,51 @@ export default function StoreCustomizer() {
                   </p>
                 </aside>
               </div>
+
+              {/* SEO, visibilidad y "Acerca de" — absorbidos de "Mi tienda
+                  pública" (ADR-299 fase 2). Guardan en TenantStorePage. */}
+              <StyleSection
+                icon={<Settings2 className="h-5 w-5 text-primary" />}
+                title="SEO y visibilidad"
+                description="Cómo aparece tu tienda en Google y si está publicada (antes vivía en 'Mi tienda pública')."
+              >
+                <div className="space-y-4">
+                  <Field label="Título SEO (meta title)" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                    <input type="text" value={pageFields.metaTitle} onChange={(e) => updatePage({ metaTitle: e.target.value })} placeholder={theme.storeName || "Mi tienda"} maxLength={200} className={inputCls} />
+                  </Field>
+                  <Field label="Descripción SEO (meta description)" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                    <textarea rows={2} value={pageFields.metaDescription} onChange={(e) => updatePage({ metaDescription: e.target.value })} placeholder="Lo que se lee bajo el título en Google." maxLength={400} className={inputCls} />
+                  </Field>
+                  <Field label="Imagen para compartir (OG image · URL)" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                    <input type="url" value={pageFields.ogImageUrl} onChange={(e) => updatePage({ ogImageUrl: e.target.value })} placeholder="https://..." maxLength={500} className={inputCls} />
+                  </Field>
+                  <label className="flex items-center gap-3 cursor-pointer pt-1">
+                    <input type="checkbox" checked={pageFields.published} onChange={(e) => updatePage({ published: e.target.checked })} className="h-5 w-5 rounded accent-[var(--accent)]" />
+                    <span className="text-sm font-semibold text-[var(--text-primary)]">Tienda publicada (visible al público)</span>
+                  </label>
+                </div>
+              </StyleSection>
+
+              <StyleSection
+                icon={<FileText className="h-5 w-5 text-primary" />}
+                title="Acerca de tu tienda"
+                description="Sección 'sobre nosotros' del storefront. Opcional."
+              >
+                <div className="space-y-4">
+                  <Field label="Título" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                    <input type="text" value={pageFields.aboutTitle} onChange={(e) => updatePage({ aboutTitle: e.target.value })} placeholder="Sobre nosotros" maxLength={200} className={inputCls} />
+                  </Field>
+                  <Field label="Texto" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                    <textarea rows={4} value={pageFields.aboutBody} onChange={(e) => updatePage({ aboutBody: e.target.value })} placeholder="Contá la historia de tu negocio…" maxLength={4000} className={inputCls} />
+                  </Field>
+                </div>
+              </StyleSection>
+              </div>
             )}
 
             {/* ── TAB: MARCA — análisis de logo + conceptos ─────────── */}
-            {activeTab === "marca" && (
+            {/* Marca → fusionado en "Colores & Tipografía" (ADR-299) */}
+            {activeTab === "colores" && (
               <BrandConceptTab
                 theme={theme}
                 onApplyConcept={(patches) => {
@@ -1626,13 +2145,14 @@ export default function StoreCustomizer() {
             )}
 
             {/* ── TAB: PROMOS POR CATEGORÍA ─────────────────────────── */}
-            {activeTab === "promos" && (
+            {/* Promos → fusionado en "Página" (ADR-299) */}
+            {activeTab === "contacto" && (
               <CategoryBannersTab theme={theme} update={update} inputCls={inputCls} />
             )}
 
             {/* ── TAB: COLORES ───────────────────────────────────────── */}
             {activeTab === "colores" && (
-              <div className="space-y-8">
+              <div className="space-y-6">
                 {/* Banner explicativo */}
                 <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
                   <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -1646,6 +2166,12 @@ export default function StoreCustomizer() {
                   </div>
                 </div>
 
+                {/* ── Layout 2-col (Brandon 2026-06-24): preview STICKY a la
+                    derecha (siempre visible mientras elegís colores), form a la
+                    izquierda. Mismo patrón que Hero/Identidad. ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
+                {/* ── Columna form (izquierda) ── */}
+                <div className="min-w-0 space-y-8 lg:col-start-1 lg:row-start-1">
                 {/* ── 1. PLANTILLAS LISTAS ──────────────────────────── */}
                 <StyleSection
                   icon={<Sparkles className="h-5 w-5 text-primary" />}
@@ -1687,7 +2213,7 @@ export default function StoreCustomizer() {
                               <div className="h-3 w-10 rounded-md ml-auto" style={{ backgroundColor: t.colors.secondaryColor }} />
                             </div>
                             {active && (
-                              <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-white dark:bg-[var(--color-card)] flex items-center justify-center shadow">
+                              <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-[var(--surface-raised)] flex items-center justify-center shadow">
                                 <Check className="h-3 w-3 text-primary" />
                               </div>
                             )}
@@ -1788,7 +2314,7 @@ export default function StoreCustomizer() {
                   </div>
 
                   {/* Pista de contraste WCAG */}
-                  <div className="mt-4 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 flex items-start gap-2.5">
+                  <div className="mt-4 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 flex items-start gap-2.5">
                     <div className="shrink-0 mt-0.5">
                       <Sliders className="h-4 w-4 text-muted" />
                     </div>
@@ -1798,7 +2324,71 @@ export default function StoreCustomizer() {
                   </div>
                 </StyleSection>
 
-                {/* ── 3. VISTA PREVIA EN VIVO ─────────────────────── */}
+                {/* ── 3. MODO OSCURO ─────────────────────────────────── */}
+                <StyleSection
+                  icon={<Moon className="h-5 w-5 text-primary" />}
+                  title="Modo oscuro por defecto"
+                  description="Cuando un cliente nuevo entra a tu tienda, ¿en qué modo abre? Igual cada usuario puede cambiar después."
+                >
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Light mode card */}
+                    <button
+                      type="button"
+                      onClick={() => update("darkModeDefault", false)}
+                      aria-pressed={!theme.darkModeDefault}
+                      className={cn(
+                        "p-4 rounded-2xl border-2 transition-all",
+                        !theme.darkModeDefault
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
+                      )}
+                    >
+                      <div className="aspect-[4/3] mb-3 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] overflow-hidden flex flex-col">
+                        <div className="h-3 w-full" style={{ backgroundColor: theme.primaryColor }} />
+                        <div className="flex-1 p-2 space-y-1">
+                          <div className="h-1.5 rounded-full bg-[var(--surface-sunken)] w-3/4" />
+                          <div className="h-1 rounded-full bg-[var(--surface-sunken)] w-1/2" />
+                          <div className="h-2 w-10 rounded mt-1" style={{ backgroundColor: theme.primaryColor }} />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center gap-2">
+                        <Sun className="h-4 w-4 text-[var(--data-warning-500)]" />
+                        <p className="text-sm font-bold text-[var(--text-primary)]">Modo claro</p>
+                      </div>
+                    </button>
+
+                    {/* Dark mode card */}
+                    <button
+                      type="button"
+                      onClick={() => update("darkModeDefault", true)}
+                      aria-pressed={theme.darkModeDefault}
+                      className={cn(
+                        "p-4 rounded-2xl border-2 transition-all",
+                        theme.darkModeDefault
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
+                      )}
+                    >
+                      <div className="aspect-[4/3] mb-3 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] overflow-hidden flex flex-col">
+                        <div className="h-3 w-full" style={{ backgroundColor: theme.primaryColor }} />
+                        <div className="flex-1 p-2 space-y-1">
+                          <div className="h-1.5 rounded-full bg-[var(--surface-sunken)] w-3/4" />
+                          <div className="h-1 rounded-full bg-[var(--surface-sunken)] w-1/2" />
+                          <div className="h-2 w-10 rounded mt-1" style={{ backgroundColor: theme.primaryColor }} />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center gap-2">
+                        <Moon className="h-4 w-4 text-[var(--data-success-500)]" />
+                        <p className="text-sm font-bold text-[var(--text-primary)]">Modo oscuro</p>
+                      </div>
+                    </button>
+                  </div>
+                </StyleSection>
+                </div>
+
+                {/* ── Columna preview (sticky derecha) ── */}
+                <aside className="min-w-0 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-4">
+                {/* ── VISTA PREVIA EN VIVO ─────────────────────── */}
                 <StyleSection
                   icon={<Eye className="h-5 w-5 text-primary" />}
                   title="Vista previa en vivo"
@@ -1870,14 +2460,12 @@ export default function StoreCustomizer() {
 
                       {/* Link + badge inline */}
                       <div className="flex items-center gap-3 text-xs">
-                        <a
-                          href="#"
-                          onClick={(e) => e.preventDefault()}
+                        <span
                           className="font-bold underline-offset-2 hover:underline"
                           style={{ color: theme.primaryColor }}
                         >
                           Link primary
-                        </a>
+                        </span>
                         <span
                           className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold text-white"
                           style={{ backgroundColor: theme.secondaryColor }}
@@ -1894,72 +2482,14 @@ export default function StoreCustomizer() {
                     </div>
                   </div>
                 </StyleSection>
-
-                {/* ── 4. MODO OSCURO ─────────────────────────────────── */}
-                <StyleSection
-                  icon={<Moon className="h-5 w-5 text-primary" />}
-                  title="Modo oscuro por defecto"
-                  description="Cuando un cliente nuevo entra a tu tienda, ¿en qué modo abre? Igual cada usuario puede cambiar después."
-                >
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Light mode card */}
-                    <button
-                      type="button"
-                      onClick={() => update("darkModeDefault", false)}
-                      aria-pressed={!theme.darkModeDefault}
-                      className={cn(
-                        "p-4 rounded-2xl border-2 transition-all",
-                        !theme.darkModeDefault
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
-                      )}
-                    >
-                      <div className="aspect-[4/3] mb-3 rounded-xl bg-white dark:bg-[var(--color-card)] border border-gray-200 overflow-hidden flex flex-col">
-                        <div className="h-3 w-full" style={{ backgroundColor: theme.primaryColor }} />
-                        <div className="flex-1 p-2 space-y-1">
-                          <div className="h-1.5 rounded-full bg-gray-300 w-3/4" />
-                          <div className="h-1 rounded-full bg-gray-200 w-1/2" />
-                          <div className="h-2 w-10 rounded mt-1" style={{ backgroundColor: theme.primaryColor }} />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-center gap-2">
-                        <Sun className="h-4 w-4 text-[var(--data-warning-500)]" />
-                        <p className="text-sm font-bold text-[var(--text-primary)]">Modo claro</p>
-                      </div>
-                    </button>
-
-                    {/* Dark mode card */}
-                    <button
-                      type="button"
-                      onClick={() => update("darkModeDefault", true)}
-                      aria-pressed={theme.darkModeDefault}
-                      className={cn(
-                        "p-4 rounded-2xl border-2 transition-all",
-                        theme.darkModeDefault
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
-                      )}
-                    >
-                      <div className="aspect-[4/3] mb-3 rounded-xl bg-gray-950 border border-gray-800 overflow-hidden flex flex-col">
-                        <div className="h-3 w-full" style={{ backgroundColor: theme.primaryColor }} />
-                        <div className="flex-1 p-2 space-y-1">
-                          <div className="h-1.5 rounded-full bg-gray-700 w-3/4" />
-                          <div className="h-1 rounded-full bg-gray-800 w-1/2" />
-                          <div className="h-2 w-10 rounded mt-1" style={{ backgroundColor: theme.primaryColor }} />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-center gap-2">
-                        <Moon className="h-4 w-4 text-[var(--data-success-500)]" />
-                        <p className="text-sm font-bold text-[var(--text-primary)]">Modo oscuro</p>
-                      </div>
-                    </button>
-                  </div>
-                </StyleSection>
+                </aside>
+                </div>
               </div>
             )}
 
             {/* ── TAB: SECCIONES — delegado a StorefrontEditor ──────── */}
-            {activeTab === "secciones" && (
+            {/* Secciones → fusionado en "Página" (ADR-299) */}
+            {activeTab === "contacto" && (
               <div className="space-y-8">
                 {/* Banner explicativo coherente con Estilos / Hero */}
                 <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
@@ -2011,56 +2541,59 @@ export default function StoreCustomizer() {
                 >
                   <div className="space-y-5">
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-[var(--data-success-500)]" />
-                        WhatsApp
-                        <span className="text-xs font-normal text-muted ml-1">recomendado</span>
-                      </label>
-                      <input
-                        type="tel"
-                        value={theme.whatsapp}
-                        onChange={(e) => update("whatsapp", e.target.value)}
-                        placeholder="+51 900 000 000"
-                        className={inputCls}
-                      />
+                      <Field
+                        label={<><Phone className="h-4 w-4 text-[var(--data-success-500)]" /> WhatsApp <span className="text-xs font-normal text-muted ml-1">recomendado</span></>}
+                        labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2"
+                      >
+                        <input
+                          type="tel"
+                          value={theme.whatsapp}
+                          onChange={(e) => update("whatsapp", e.target.value)}
+                          placeholder="+51 900 000 000"
+                          className={inputCls}
+                        />
+                      </Field>
                       <p className="text-xs text-muted">Con código de país. Aparece en el footer y como botón flotante.</p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold text-[var(--text-primary)]">Email</label>
-                        <input
-                          type="email"
-                          value={theme.email}
-                          onChange={(e) => update("email", e.target.value)}
-                          placeholder="contacto@tibodega.pe"
-                          className={inputCls}
-                        />
+                        <Field label="Email" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                          <input
+                            type="email"
+                            value={theme.email}
+                            onChange={(e) => update("email", e.target.value)}
+                            placeholder="contacto@tibodega.pe"
+                            className={inputCls}
+                          />
+                        </Field>
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold text-[var(--text-primary)]">Teléfono fijo</label>
-                        <input
-                          type="tel"
-                          value={theme.phone}
-                          onChange={(e) => update("phone", e.target.value)}
-                          placeholder="+51 061 000 000"
-                          className={inputCls}
-                        />
+                        <Field label="Teléfono fijo" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                          <input
+                            type="tel"
+                            value={theme.phone}
+                            onChange={(e) => update("phone", e.target.value)}
+                            placeholder="+51 061 000 000"
+                            className={inputCls}
+                          />
+                        </Field>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                        <Map className="h-4 w-4 text-primary" />
-                        Dirección física
-                      </label>
-                      <textarea
-                        value={theme.address}
-                        onChange={(e) => update("address", e.target.value)}
-                        placeholder="Jr. Ucayali 123, Pucallpa, Perú"
-                        className={cn(inputCls, "resize-none min-h-[72px] py-3")}
-                        maxLength={200}
-                      />
+                      <Field
+                        label={<><Map className="h-4 w-4 text-primary" /> Dirección física</>}
+                        labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2"
+                      >
+                        <textarea
+                          value={theme.address}
+                          onChange={(e) => update("address", e.target.value)}
+                          placeholder="Jr. Ucayali 123, Pucallpa, Perú"
+                          className={cn(inputCls, "resize-none min-h-[72px] py-3")}
+                          maxLength={200}
+                        />
+                      </Field>
                       <p className="text-xs text-muted">Si tenés local físico — se muestra en el mapa de delivery y JSON-LD para Google Maps.</p>
                     </div>
                   </div>
@@ -2092,7 +2625,7 @@ export default function StoreCustomizer() {
                                 [key]: { ...theme.schedules[key], open: e.target.value },
                               })
                             }
-                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             aria-label={`Apertura ${label}`}
                           />
                           <input
@@ -2104,7 +2637,7 @@ export default function StoreCustomizer() {
                                 [key]: { ...theme.schedules[key], close: e.target.value },
                               })
                             }
-                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            className="px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                             aria-label={`Cierre ${label}`}
                           />
                         </div>
@@ -2163,7 +2696,7 @@ export default function StoreCustomizer() {
                         >
                           {/* Mini-card preview */}
                           <div className={cn(
-                            "aspect-[4/3] mb-3 rounded-xl overflow-hidden flex flex-col bg-white dark:bg-surface relative",
+                            "aspect-[4/3] mb-3 rounded-xl overflow-hidden flex flex-col bg-[var(--surface-raised)] relative",
                             s.value === "minimal" && "border-0",
                             s.value === "shadow"  && "shadow-[var(--shadow-md)]",
                             s.value === "border"  && "border-2",
@@ -2172,11 +2705,11 @@ export default function StoreCustomizer() {
                           style={s.value === "border" ? { borderColor: theme.primaryColor } : undefined}>
                             {/* Imagen placeholder */}
                             <div className="flex-1 bg-linear-to-br from-[var(--surface-sunken)] to-[var(--rule-soft)] dark:from-[var(--surface-sunken)] dark:to-[var(--surface-canvas)] flex items-center justify-center">
-                              <ShoppingBag className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                              <ShoppingBag className="h-5 w-5 text-[var(--text-tertiary)]" />
                             </div>
                             {/* Texto + precio */}
                             <div className="px-2 py-1.5 space-y-0.5">
-                              <div className="h-1.5 w-3/4 rounded-full bg-gray-300 dark:bg-gray-600" />
+                              <div className="h-1.5 w-3/4 rounded-full bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)]" />
                               <div className="h-2 w-1/3 rounded-full" style={{ backgroundColor: theme.primaryColor }} />
                             </div>
                           </div>
@@ -2264,7 +2797,7 @@ export default function StoreCustomizer() {
                               className={cn(
                                 "absolute top-0 inset-x-0 h-7 flex items-center px-2 gap-1.5",
                                 s.value === "solid"       && "shadow-[var(--shadow-sm)]",
-                                s.value === "transparent" && "border-b border-gray-300 dark:border-gray-700",
+                                s.value === "transparent" && "border-b border-[var(--rule-base)]",
                                 s.value === "blur"        && "backdrop-blur-md border-b border-white/30",
                                 s.value === "minimal"     && "border-b-2"
                               )}
@@ -2283,13 +2816,13 @@ export default function StoreCustomizer() {
                               <div className="flex-1 h-2 rounded-full bg-white/30 dark:bg-white/10" />
                               <div className={cn(
                                 "h-2 w-2 rounded-full",
-                                s.value === "solid" || s.value === "blur" ? "bg-white/80" : "bg-gray-400"
+                                s.value === "solid" || s.value === "blur" ? "bg-white/80" : "bg-[var(--surface-sunken)]"
                               )} />
                             </div>
                             {/* Body placeholder */}
                             <div className="absolute inset-x-2 bottom-2 space-y-1">
-                              <div className="h-1.5 w-1/2 rounded-full bg-gray-300 dark:bg-gray-700" />
-                              <div className="h-1.5 w-3/4 rounded-full bg-gray-200 dark:bg-gray-700" />
+                              <div className="h-1.5 w-1/2 rounded-full bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)]" />
+                              <div className="h-1.5 w-3/4 rounded-full bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)]" />
                             </div>
                           </div>
                           <p className="text-sm font-bold text-[var(--text-primary)]">{s.label}</p>
@@ -2330,7 +2863,7 @@ export default function StoreCustomizer() {
                                   : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                               )}
                             >
-                              <div className={cn("w-10 h-10 rounded-xl bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)]", s.cls)} />
+                              <div className={cn("w-10 h-10 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)]", s.cls)} />
                               <p className="text-sm font-bold text-[var(--text-primary)]">{s.label}</p>
                             </button>
                           );
@@ -2364,7 +2897,7 @@ export default function StoreCustomizer() {
                               <Sparkles
                                 className={cn(
                                   "h-6 w-6 mx-auto mb-1.5 transition-transform",
-                                  s.value === "none"    && "text-gray-400",
+                                  s.value === "none"    && "text-[var(--text-tertiary)]",
                                   s.value === "subtle"  && "text-primary",
                                   s.value === "dynamic" && "text-primary animate-pulse"
                                 )}
@@ -2404,7 +2937,7 @@ export default function StoreCustomizer() {
                               <div
                                 className={cn(
                                   "aspect-[5/3] rounded-xl mb-2 overflow-hidden",
-                                  s.value === "none" && "bg-gray-50 dark:bg-surface",
+                                  s.value === "none" && "bg-[var(--surface-sunken)] dark:bg-surface",
                                 )}
                                 style={
                                   s.value === "dots"
@@ -2428,7 +2961,8 @@ export default function StoreCustomizer() {
             )}
 
             {/* ── TAB: CONTENIDO ────────────────────────────────────── */}
-            {activeTab === "contenido" && (
+            {/* Textos y popup → fusionado en "Avanzado" (ADR-299) */}
+            {activeTab === "avanzado" && (
               <div className="space-y-8">
                 {/* Banner explicativo */}
                 <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
@@ -2452,15 +2986,16 @@ export default function StoreCustomizer() {
                   <div className="space-y-5">
                     {/* WhatsApp */}
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[var(--text-primary)]">Saludo de WhatsApp</label>
-                      <input
-                        type="text"
-                        value={theme.whatsappMessage}
-                        onChange={(e) => update("whatsappMessage", e.target.value)}
-                        placeholder="Hola! Quiero hacer un pedido"
-                        className={inputCls}
-                        maxLength={200}
-                      />
+                      <Field label="Saludo de WhatsApp" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                        <input
+                          type="text"
+                          value={theme.whatsappMessage}
+                          onChange={(e) => update("whatsappMessage", e.target.value)}
+                          placeholder="Hola! Quiero hacer un pedido"
+                          className={inputCls}
+                          maxLength={200}
+                        />
+                      </Field>
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-muted">Pre-llena el chat cuando el cliente toca el botón de WhatsApp.</p>
                         <span className="text-xs font-mono text-muted shrink-0">{(theme.whatsappMessage || "").length}/200</span>
@@ -2469,14 +3004,15 @@ export default function StoreCustomizer() {
 
                     {/* Footer text */}
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[var(--text-primary)]">Texto del footer</label>
-                      <textarea
-                        value={theme.footerText}
-                        onChange={(e) => update("footerText", e.target.value)}
-                        placeholder="Tu bodega de confianza desde 2020..."
-                        className={cn(inputCls, "resize-none min-h-[88px] py-3")}
-                        maxLength={300}
-                      />
+                      <Field label="Texto del footer" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
+                        <textarea
+                          value={theme.footerText}
+                          onChange={(e) => update("footerText", e.target.value)}
+                          placeholder="Tu bodega de confianza desde 2020..."
+                          className={cn(inputCls, "resize-none min-h-[88px] py-3")}
+                          maxLength={300}
+                        />
+                      </Field>
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-muted">Aparece al pie de cada página. Buen lugar para tu historia, valores o años de servicio.</p>
                         <span className="text-xs font-mono text-muted shrink-0">{(theme.footerText || "").length}/300</span>
@@ -2495,7 +3031,7 @@ export default function StoreCustomizer() {
                     "rounded-2xl border-2 p-5 transition-colors",
                     theme.welcomePopupEnabled
                       ? "bg-primary/5 dark:bg-primary/10 border-primary/30"
-                      : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)]"
+                      : "bg-[var(--surface-sunken)] dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                   )}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -2515,13 +3051,13 @@ export default function StoreCustomizer() {
                           "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)]",
                           theme.welcomePopupEnabled
                             ? "bg-primary border-primary"
-                            : "bg-gray-200 dark:bg-gray-700 border-transparent"
+                            : "bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] border-transparent"
                         )}
                         aria-label="Toggle popup"
                         aria-pressed={theme.welcomePopupEnabled}
                       >
                         <span className={cn(
-                          "inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform duration-[var(--dur-base)]",
+                          "inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transition-transform duration-[var(--dur-base)]",
                           theme.welcomePopupEnabled ? "translate-x-6" : "translate-x-1"
                         )} />
                       </button>
@@ -2529,37 +3065,40 @@ export default function StoreCustomizer() {
                     {theme.welcomePopupEnabled && (
                       <div className="space-y-3 mt-5 pt-5 border-t-2 border-primary/20">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Título</label>
-                          <input
-                            type="text"
-                            value={theme.welcomePopupTitle}
-                            onChange={(e) => update("welcomePopupTitle", e.target.value)}
-                            placeholder="Bienvenido!"
-                            className={inputCls}
-                            maxLength={50}
-                          />
+                          <Field label="Título" labelClassName="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                            <input
+                              type="text"
+                              value={theme.welcomePopupTitle}
+                              onChange={(e) => update("welcomePopupTitle", e.target.value)}
+                              placeholder="Bienvenido!"
+                              className={inputCls}
+                              maxLength={50}
+                            />
+                          </Field>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Mensaje</label>
-                          <input
-                            type="text"
-                            value={theme.welcomePopupMessage}
-                            onChange={(e) => update("welcomePopupMessage", e.target.value)}
-                            placeholder="Usa este cupón en tu primera compra"
-                            className={inputCls}
-                            maxLength={120}
-                          />
+                          <Field label="Mensaje" labelClassName="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                            <input
+                              type="text"
+                              value={theme.welcomePopupMessage}
+                              onChange={(e) => update("welcomePopupMessage", e.target.value)}
+                              placeholder="Usa este cupón en tu primera compra"
+                              className={inputCls}
+                              maxLength={120}
+                            />
+                          </Field>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Código del cupón</label>
-                          <input
-                            type="text"
-                            value={theme.welcomePopupCoupon}
-                            onChange={(e) => update("welcomePopupCoupon", e.target.value)}
-                            placeholder="BIENVENIDO10"
-                            className={cn(inputCls, "font-mono uppercase tracking-wider")}
-                            maxLength={20}
-                          />
+                          <Field label="Código del cupón" labelClassName="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                            <input
+                              type="text"
+                              value={theme.welcomePopupCoupon}
+                              onChange={(e) => update("welcomePopupCoupon", e.target.value)}
+                              placeholder="BIENVENIDO10"
+                              className={cn(inputCls, "font-mono uppercase tracking-wider")}
+                              maxLength={20}
+                            />
+                          </Field>
                           <p className="text-xs text-muted">Asegurate de que este código exista en la sección de cupones.</p>
                         </div>
                       </div>
@@ -2573,8 +3112,8 @@ export default function StoreCustomizer() {
                   title="QR de tu tienda"
                   description="Imprímelo y pégalo en tu local físico. Los clientes lo escanean y entran a tu tienda online."
                 >
-                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface p-5 flex flex-col sm:flex-row items-center sm:items-stretch gap-5">
-                    <div className="bg-white dark:bg-[var(--color-card)] p-3 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
+                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface p-5 flex flex-col sm:flex-row items-center sm:items-stretch gap-5">
+                    <div className="bg-[var(--surface-raised)] p-3 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
                       <Image
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/t/${activeTenantSlug}` : "https://tu-tienda.buleje.pe")}`}
                         alt="QR de la tienda"
@@ -2604,7 +3143,8 @@ export default function StoreCustomizer() {
             )}
 
             {/* ── TAB: CATÁLOGO (visibilidad de productos) ─────────── */}
-            {activeTab === "catalogo" && (
+            {/* Catálogo → fusionado en "Página" (ADR-299) */}
+            {activeTab === "contacto" && (
               <div className="space-y-8">
                 <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
                   <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -2637,6 +3177,10 @@ export default function StoreCustomizer() {
                   </div>
                 </div>
 
+                {/* Métricas del storefront — absorbidas de "Mi tienda pública"
+                    (ADR-299 fase 2). Read-only, componente self-contained. */}
+                <AnalyticsTab />
+
                 {/* ── 1. TIPOGRAFÍA — visual font picker ─────────────── */}
                 <StyleSection
                   icon={<Type className="h-5 w-5 text-primary" />}
@@ -2660,7 +3204,7 @@ export default function StoreCustomizer() {
                           )}
                         >
                           <div
-                            className="h-12 mb-2 rounded-xl bg-gray-50 dark:bg-surface flex items-center justify-center text-2xl font-extrabold text-[var(--text-primary)]"
+                            className="h-12 mb-2 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface flex items-center justify-center text-2xl font-extrabold text-[var(--text-primary)]"
                             style={{ fontFamily: f.stack }}
                           >
                             Aa
@@ -2684,20 +3228,21 @@ export default function StoreCustomizer() {
                   <div className="space-y-6">
                     {/* Border radius slider */}
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <label className="text-sm font-semibold text-[var(--text-primary)]">Bordes redondeados</label>
-                        <span className="text-base font-bold text-primary bg-primary/10 px-3 py-1 rounded-full tabular-nums">{theme.borderRadius}px</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={24}
-                        value={theme.borderRadius}
-                        onChange={(e) => update("borderRadius", Number(e.target.value))}
-                        className="w-full accent-teal-600 h-2 rounded-full cursor-pointer"
-                      />
+                      <Field
+                        label={<><span>Bordes redondeados</span><span className="text-base font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 px-3 py-1 rounded-full tabular-nums ml-auto">{theme.borderRadius}px</span></>}
+                        labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center justify-between"
+                      >
+                        <input
+                          type="range"
+                          min={0}
+                          max={24}
+                          value={theme.borderRadius}
+                          onChange={(e) => update("borderRadius", Number(e.target.value))}
+                          className="w-full accent-teal-600 h-2 rounded-full cursor-pointer"
+                        />
+                      </Field>
                       {/* Preview multi-elemento: input, badge, card, botón */}
-                      <div className="rounded-2xl bg-gray-50 dark:bg-surface p-4 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                      <div className="rounded-2xl bg-[var(--surface-sunken)] dark:bg-surface p-4 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-3">Vista previa en vivo</p>
                         <div className="flex items-center gap-3 flex-wrap">
                           <div
@@ -2729,7 +3274,7 @@ export default function StoreCustomizer() {
 
                     {/* Espaciado — cards con mockup más rico */}
                     <div className="space-y-3">
-                      <label className="text-sm font-semibold text-[var(--text-primary)]">Densidad de espaciado</label>
+                      <span className="text-sm font-semibold text-[var(--text-primary)]">Densidad de espaciado</span>
                       <div className="grid grid-cols-3 gap-3">
                         {([
                           { value: "compact",  label: "Compacto",  desc: "Más en menos espacio", pad: "py-1.5", gap: "gap-1" },
@@ -2750,10 +3295,10 @@ export default function StoreCustomizer() {
                                   : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                               )}
                             >
-                              <div className={cn("rounded-xl bg-gray-50 dark:bg-surface mb-2 flex flex-col justify-center px-2", s.pad, s.gap)}>
+                              <div className={cn("rounded-xl bg-[var(--surface-sunken)] dark:bg-surface mb-2 flex flex-col justify-center px-2", s.pad, s.gap)}>
                                 <div className="h-1.5 rounded-full bg-primary/30 w-1/2 mx-auto" />
-                                <div className="h-0.5 rounded-full bg-gray-300 dark:bg-gray-600 w-3/4" />
-                                <div className="h-0.5 rounded-full bg-gray-300 dark:bg-gray-600 w-2/3" />
+                                <div className="h-0.5 rounded-full bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] w-3/4" />
+                                <div className="h-0.5 rounded-full bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] w-2/3" />
                                 <div className="h-2 rounded-md mt-1 mx-auto w-12" style={{ backgroundColor: theme.primaryColor }} />
                               </div>
                               <p className="text-sm font-bold text-[var(--text-primary)]">{s.label}</p>
@@ -2776,7 +3321,7 @@ export default function StoreCustomizer() {
                     {/* Browser tab preview */}
                     <div>
                       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-2">Cómo se verá la pestaña del navegador</p>
-                      <div className="rounded-t-xl bg-gray-200 dark:bg-gray-800 px-2 pt-2 border border-b-0 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                      <div className="rounded-t-xl bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] px-2 pt-2 border border-b-0 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                         <div className="inline-flex items-center gap-2 max-w-[260px] bg-[var(--surface-raised)] rounded-t-lg border-t border-x border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-3 py-2">
                           {theme.favicon ? (
                             <Image src={theme.favicon} alt="favicon" width={16} height={16} className="h-4 w-4 rounded shrink-0 object-cover" />
@@ -2788,7 +3333,7 @@ export default function StoreCustomizer() {
                           <span className="text-xs text-[var(--text-primary)] truncate">{theme.storeName || "Tu tienda"}</span>
                         </div>
                       </div>
-                      <div className="rounded-b-xl bg-gray-100 dark:bg-surface px-3 py-2 border border-t-0 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                      <div className="rounded-b-xl bg-[var(--surface-sunken)] dark:bg-surface px-3 py-2 border border-t-0 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                         <span className="text-xs font-mono text-muted">localhost:3000/t/{activeTenantSlug}</span>
                       </div>
                     </div>
@@ -2850,27 +3395,33 @@ export default function StoreCustomizer() {
                   <div className="space-y-5">
                     {/* Google Analytics */}
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <label className="text-sm font-semibold text-[var(--text-primary)]">Google Analytics (GA4)</label>
-                        {theme.analyticsId?.trim().startsWith("G-") ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
-                            <Check className="h-3 w-3" /> Configurado
-                          </span>
-                        ) : theme.analyticsId?.trim() ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
-                            ⚠ Formato inválido
-                          </span>
-                        ) : (
-                          <span className="text-xs font-medium text-muted">Sin configurar</span>
-                        )}
-                      </div>
-                      <input
-                        type="text"
-                        value={theme.analyticsId}
-                        onChange={(e) => update("analyticsId", e.target.value)}
-                        placeholder="G-XXXXXXXXXX"
-                        className={cn(inputCls, "font-mono")}
-                      />
+                      <Field
+                        label={
+                          <>
+                            <span>Google Analytics (GA4)</span>
+                            {theme.analyticsId?.trim().startsWith("G-") ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
+                                <Check className="h-3 w-3" /> Configurado
+                              </span>
+                            ) : theme.analyticsId?.trim() ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
+                                ⚠ Formato inválido
+                              </span>
+                            ) : (
+                              <span className="text-xs font-medium text-muted">Sin configurar</span>
+                            )}
+                          </>
+                        }
+                        labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center justify-between gap-2"
+                      >
+                        <input
+                          type="text"
+                          value={theme.analyticsId}
+                          onChange={(e) => update("analyticsId", e.target.value)}
+                          placeholder="G-XXXXXXXXXX"
+                          className={cn(inputCls, "font-mono")}
+                        />
+                      </Field>
                       <p className="text-xs text-muted">
                         Empieza con <span className="font-mono">G-</span>. Lo obtenés en{" "}
                         <a href="https://analytics.google.com/analytics/web/#/p/admin/streams" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
@@ -2881,27 +3432,33 @@ export default function StoreCustomizer() {
 
                     {/* Meta Pixel */}
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <label className="text-sm font-semibold text-[var(--text-primary)]">Meta Pixel (Facebook / Instagram)</label>
-                        {theme.pixelId && /^\d{14,17}$/.test(theme.pixelId.trim()) ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
-                            <Check className="h-3 w-3" /> Configurado
-                          </span>
-                        ) : theme.pixelId?.trim() ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
-                            ⚠ Formato inválido
-                          </span>
-                        ) : (
-                          <span className="text-xs font-medium text-muted">Sin configurar</span>
-                        )}
-                      </div>
-                      <input
-                        type="text"
-                        value={theme.pixelId}
-                        onChange={(e) => update("pixelId", e.target.value)}
-                        placeholder="1234567890123456"
-                        className={cn(inputCls, "font-mono")}
-                      />
+                      <Field
+                        label={
+                          <>
+                            <span>Meta Pixel (Facebook / Instagram)</span>
+                            {theme.pixelId && /^\d{14,17}$/.test(theme.pixelId.trim()) ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
+                                <Check className="h-3 w-3" /> Configurado
+                              </span>
+                            ) : theme.pixelId?.trim() ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
+                                ⚠ Formato inválido
+                              </span>
+                            ) : (
+                              <span className="text-xs font-medium text-muted">Sin configurar</span>
+                            )}
+                          </>
+                        }
+                        labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center justify-between gap-2"
+                      >
+                        <input
+                          type="text"
+                          value={theme.pixelId}
+                          onChange={(e) => update("pixelId", e.target.value)}
+                          placeholder="1234567890123456"
+                          className={cn(inputCls, "font-mono")}
+                        />
+                      </Field>
                       <p className="text-xs text-muted">
                         14-17 dígitos. Lo encontrás en{" "}
                         <a href="https://business.facebook.com/events_manager2/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
@@ -2939,25 +3496,26 @@ export default function StoreCustomizer() {
 
                     {/* Editor */}
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <label className="text-sm font-semibold text-[var(--text-primary)]">Editor CSS</label>
-                        <span className="text-xs font-mono text-muted">{(theme.customCSS || "").length} chars</span>
-                      </div>
-                      <textarea
-                        value={theme.customCSS}
-                        onChange={(e) => update("customCSS", e.target.value)}
-                        placeholder=".product-card { border: 2px solid gold; }
+                      <Field
+                        label={<><span>Editor CSS</span><span className="text-xs font-mono text-muted">{(theme.customCSS || "").length} chars</span></>}
+                        labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center justify-between gap-2"
+                      >
+                        <textarea
+                          value={theme.customCSS}
+                          onChange={(e) => update("customCSS", e.target.value)}
+                          placeholder=".product-card { border: 2px solid gold; }
 .store-header { backdrop-filter: blur(20px); }"
-                        rows={8}
-                        spellCheck={false}
-                        className={cn(inputCls, "font-mono text-sm resize-y min-h-[180px] py-3")}
-                      />
+                          rows={8}
+                          spellCheck={false}
+                          className={cn(inputCls, "font-mono text-sm resize-y min-h-[180px] py-3")}
+                        />
+                      </Field>
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <p className="text-xs text-muted">
                           Selectores útiles:
-                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-surface">.product-card</span>
-                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-surface">.store-card</span>
-                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-surface">.store-header</span>
+                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] dark:bg-surface">.product-card</span>
+                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] dark:bg-surface">.store-card</span>
+                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] dark:bg-surface">.store-header</span>
                         </p>
                         {theme.customCSS && (
                           <button
@@ -3033,11 +3591,11 @@ export default function StoreCustomizer() {
       {showPreview && (
         <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
           {/* Header del modal */}
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-900 shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-neutral-900 shrink-0">
             <div className="flex items-center gap-3">
               <p className="text-sm font-bold text-white">Vista previa en vivo</p>
               {/* Toggle responsive */}
-              <div className="flex gap-0.5 bg-gray-800 rounded-lg p-0.5">
+              <div className="flex gap-0.5 bg-neutral-800 rounded-lg p-0.5">
                 {([
                   { label: "Móvil", w: 375 },
                   { label: "Tablet", w: 768 },
@@ -3045,7 +3603,7 @@ export default function StoreCustomizer() {
                 ]).map((v) => (
                   <button key={v.label} type="button" onClick={() => setPreviewWidth(v.w)}
                     className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all",
-                      previewWidth === v.w ? "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] shadow" : "text-[var(--text-tertiary)] hover:text-white")}>
+                      previewWidth === v.w ? "bg-white text-neutral-900 shadow" : "text-neutral-400 hover:text-white")}>
                     {v.label}
                   </button>
                 ))}
@@ -3059,7 +3617,7 @@ export default function StoreCustomizer() {
                 Abrir en nueva pestaña
               </a>
               <button type="button" onClick={() => setShowPreview(false)}
-                className="h-8 w-8 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-white transition-colors">
+                className="h-8 w-8 rounded-lg bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-white transition-colors">
                 <EyeOff className="h-4 w-4" />
               </button>
             </div>
@@ -3067,7 +3625,7 @@ export default function StoreCustomizer() {
           {/* Iframe */}
           <div className="flex-1 flex justify-center items-start p-4 overflow-auto bg-[var(--surface-sunken)]">
             <div
-              className="bg-white dark:bg-[var(--color-card)] rounded-xl overflow-hidden transition-all duration-[var(--dur-base)]"
+              className="bg-[var(--surface-raised)] rounded-xl overflow-hidden transition-all duration-[var(--dur-base)]"
               style={{ width: previewWidth > 0 ? `${previewWidth}px` : "100%", maxWidth: "100%", height: "calc(100vh - 80px)" }}
             >
               <iframe key={previewKey} src={`/t/${activeTenantSlug}?preview=true`} title="Vista previa" className="w-full h-full border-0" />

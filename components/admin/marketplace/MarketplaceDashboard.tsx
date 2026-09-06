@@ -21,6 +21,7 @@
 
 import { useEffect, useState } from "react";
 import { StatCard } from "@buleje/design-system";
+import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 import {
   ShoppingCart,
   DollarSign,
@@ -102,22 +103,13 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
       data.topProducts.length === 0);
 
   if (noActivity) {
+    // Gráficos sin datos → empty-state unificado (regla Brandon 2026-06-21)
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-20 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]">
-        <div className="h-16 w-16 rounded-2xl bg-[var(--accent-soft)] flex items-center justify-center">
-          <Store className="h-8 w-8 text-[color:var(--accent,var(--text-primary))]" />
-        </div>
-        <div className="text-center max-w-lg px-6">
-          <h3 className="text-xl font-extrabold text-[var(--text-primary)] mb-2">
-            Tu tienda todavía no registra ventas en el marketplace
-          </h3>
-          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-            Cuando entren pedidos vas a ver acá tus números reales: ventas de los
-            últimos 30 días, ticket promedio, ventas diarias y tus productos más
-            vendidos. No mostramos números inventados.
-          </p>
-        </div>
-      </div>
+      <ChartsEmptyState
+        icon={Store}
+        title="Tu tienda todavía no registra ventas en el marketplace"
+        description="Cuando entren pedidos vas a ver acá tus números reales: ventas de los últimos 30 días, ticket promedio, ventas diarias y tus productos más vendidos. No mostramos números inventados."
+      />
     );
   }
 
@@ -210,7 +202,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
             </span>
           )}
           {data.pendingReviews > 0 && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-semibold">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-semibold">
               <MessageSquare className="h-3.5 w-3.5" />
               {data.pendingReviews} reseña{data.pendingReviews === 1 ? "" : "s"} por moderar
             </span>
@@ -315,7 +307,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
               href={`/marketplace/${data.store.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 inline-flex items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] transition-colors group"
+              className="mt-3 inline-flex items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm font-semibold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:text-[var(--accent)] transition-colors group"
             >
               <span className="inline-flex items-center gap-2">
                 <ExternalLink className="h-4 w-4" />

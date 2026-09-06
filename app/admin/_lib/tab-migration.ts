@@ -3,6 +3,14 @@ import type { Tab } from "./tabs.types";
 // Old tab IDs → consolidated module IDs for localStorage migration
 // Maps all legacy tab IDs from previous 14-module and 28-module layouts to new 8-module layout
 export const TAB_MIGRATION: Record<string, Tab> = {
+  // Alias NATURALES — lo que una persona escribe o lo que un link viejo trae.
+  // Sin estos, `?tab=inicio` no resolvía y el panel caía en silencio al último
+  // tab guardado en localStorage: un link a "Inicio" te abría Inventario.
+  inicio: "vendor-dashboard", home: "vendor-dashboard",
+  ventas: "ventas-caja",
+  whatsapp: "whatsapp-inbox",
+  "canales-venta": "canales",
+  documentacion: "documentos",
   // → Asistente IA (absorbe dashboard, agentes, changelog)
   dashboard: "asistente-ia", "dashboard-ejecutivo": "asistente-ia", "panel-principal": "asistente-ia",
   agentes: "asistente-ia", changelog: "asistente-ia",
@@ -68,7 +76,8 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   rrhh: "config", nomina: "config", sucursales: "config",
   comunicaciones: "config", "hub-comunicaciones": "config",
   chat: "config", "plantillas-mensaje": "config", notificaciones: "config",
-  proyectos: "config", tareas: "config", kanban: "config",
+  // "tareas" ya NO migra a config: ahora es tab real del hub Equipo (TasksTab montado).
+  proyectos: "config", kanban: "config",
   "tablero-metas": "config", "proyectos-tareas": "config",
   "alertas-automatizacion": "config", "alertas-automaticas": "config",
   recordatorios: "config", flujos: "config", "reglas-negocio": "config",

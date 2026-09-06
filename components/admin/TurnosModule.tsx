@@ -21,6 +21,7 @@ const TurnosChart = dynamic(() => import("./TurnosChart"), {
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,7 @@ type Turno = {
   id: string;
   tenantId: string;
   adminUserId: string;
+  cashRegisterId?: string;
   inicioEfectivo: number;
   cierreEfectivo?: number;
   ventasTotal: number;
@@ -154,6 +156,17 @@ export default function TurnosModule() {
   const [cierreNotas, setCierreNotas] = useState("");
   const [closing, setClosing] = useState(false);
   const [closeError, setCloseError] = useState<string | null>(null);
+  // FIX 2026-07-08 (reporte ventas-caja bug 6): efectivo ESPERADO real en el
+  // cajón = apertura + ventas en efectivo + ingresos − egresos (movimientos
+  // reales de la caja vinculada). Antes el modal usaba `inicio + ventasTotal`,
+  // que ignora ingresos/egresos manuales y cuenta ventas Yape/tarjeta que no
+  // están en efectivo → generaba "sobrantes/faltantes" fantasma. Se carga al
+  // abrir el modal de cierre; `null` = aún cargando / sin caja (fallback).
+  const [cajaEsperado, setCajaEsperado] = useState<number | null>(null);
+  // Ventas del turno EN VIVO (todos los métodos) desde los movimientos de caja.
+  // Mientras el turno está ABIERTO, `turnoActivo.ventasTotal` vale 0 (solo se
+  // agrega al cerrar) → el modal mostraba "Ventas del turno S/0.00".
+  const [ventasTurnoLive, setVentasTurnoLive] = useState<number | null>(null);
 
   // Conteo por denominación — alternativa al input único. La cajera marca
   // cuántos billetes/monedas tiene de cada tipo y la app calcula el total.
@@ -181,6 +194,7 @@ export default function TurnosModule() {
     metodosPago: { metodo: string; total: number }[];
     topProductos: { nombre: string; cantidad: number }[];
     ventasPorHora?: { hora: string; total: number }[];
+    totalDescuentos: number;
   };
   const [showResumen, setShowResumen] = useState(false);
   const [resumen, setResumen] = useState<TurnoSummary | null>(null);
@@ -263,6 +277,42 @@ export default function TurnosModule() {
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
   }, [showMetaConfig, showResumen, showCierre, showCreateCajero, creatingCajero, showDiffConfirm, resetCierreState]);
+
+  // FIX 2026-07-08 (reporte ventas-caja bug 6): al abrir el modal de cierre,
+  // cargar el efectivo ESPERADO real desde los movimientos de la caja
+  // vinculada (apertura + ventas efectivo + ingresos − egresos). Así el
+  // "Total esperado" y la diferencia reflejan lo que hay en el cajón, no
+  // `inicio + ventasTotal` (que ignora egresos y mezcla ventas no-efectivo).
+  useEffect(() => {
+    if (!showCierre || !turnoActivo) { setCajaEsperado(null); setVentasTurnoLive(null); return; }
+    let cancelled = false;
+    fetch("/api/cash-registers")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const registers: Array<{
+          id: string; status: string; openingAmount: number;
+          movements?: Array<{ type: string; method: string; amount: number }>;
+        }> = Array.isArray(data) ? data : (data.items ?? []);
+        // La caja del turno; si es un turno legacy sin vínculo, la que esté abierta.
+        const reg = registers.find((r) => r.id === turnoActivo.cashRegisterId)
+          ?? registers.find((r) => r.status === "abierta");
+        if (!reg) return;
+        const movs = reg.movements ?? [];
+        const ventasEfectivo = movs.filter((m) => m.type === "venta" && m.method === "efectivo").reduce((s, m) => s + Number(m.amount || 0), 0);
+        const ventasTotales = movs.filter((m) => m.type === "venta").reduce((s, m) => s + Number(m.amount || 0), 0);
+        const ingresos = movs.filter((m) => m.type === "ingreso").reduce((s, m) => s + Number(m.amount || 0), 0);
+        const egresos = movs.filter((m) => m.type === "egreso").reduce((s, m) => s + Number(m.amount || 0), 0);
+        setCajaEsperado(Number(reg.openingAmount || 0) + ventasEfectivo + ingresos - egresos);
+        setVentasTurnoLive(ventasTotales);
+      })
+      .catch(() => {
+        // Red no crítica: si la caja no carga, el modal cae al esperado legacy
+        // (inicio + ventasTotal) vía el `?? fallback` de cada display.
+        if (!cancelled) { setCajaEsperado(null); setVentasTurnoLive(null); }
+      });
+    return () => { cancelled = true; };
+  }, [showCierre, turnoActivo]);
 
   // ── Open turno ─────────────────────────────────────────────────────────────
 
@@ -350,7 +400,8 @@ export default function TurnosModule() {
   const DIFF_ANORMAL_PCT = 0.05;
 
   const evaluarDiferencia = (cierreMonto: number, turno: Turno): { diff: number; anormal: boolean } => {
-    const esperado = turno.inicioEfectivo + turno.ventasTotal;
+    // Esperado real del cajón (movimientos de caja); fallback legacy si aún no cargó.
+    const esperado = cajaEsperado ?? (turno.inicioEfectivo + turno.ventasTotal);
     const diff = cierreMonto - esperado;
     const absDiff = Math.abs(diff);
     const pctDiff = esperado > 0 ? absDiff / esperado : 0;
@@ -404,7 +455,9 @@ export default function TurnosModule() {
 
       // Build summary from turno data + API
       const ventasTotal = Number(cerrado.ventasTotal ?? turnoActivo.ventasTotal ?? 0);
-      const diferencia = Number(cerrado.diferencia ?? (monto - (turnoActivo.inicioEfectivo + ventasTotal)));
+      // Diferencia server-authoritative (basada en movimientos reales de caja);
+      // fallback al esperado real del cajón si el server no la devolvió.
+      const diferencia = Number(cerrado.diferencia ?? (monto - (cajaEsperado ?? (turnoActivo.inicioEfectivo + ventasTotal))));
 
       // T6 (audit ventas-caja 2026-05-07): server-authoritative aggregation.
       // Antes traiamos /api/sales completo y agregabamos en cliente, violando
@@ -414,6 +467,7 @@ export default function TurnosModule() {
       let metodosPago: { metodo: string; total: number }[] = [];
       let topProductos: { nombre: string; cantidad: number }[] = [];
       let cantidadVentas = 0;
+      let totalDescuentos = 0;
 
       try {
         const summaryRes = await fetch(`/api/turnos/${turnoActivo.id}/summary`);
@@ -422,6 +476,7 @@ export default function TurnosModule() {
           cantidadVentas = Number(summary.cantidadVentas ?? 0);
           metodosPago = Array.isArray(summary.metodosPago) ? summary.metodosPago : [];
           topProductos = Array.isArray(summary.topProductos) ? summary.topProductos.slice(0, 3) : [];
+          totalDescuentos = Number(summary.totalDescuentos ?? 0);
         }
       } catch {
         // Sales fetch failed — use basic data
@@ -475,6 +530,7 @@ export default function TurnosModule() {
         metodosPago,
         topProductos,
         ventasPorHora,
+        totalDescuentos,
       });
 
       resetCierreState();
@@ -542,7 +598,7 @@ export default function TurnosModule() {
         </div>
         {/* Chip de estado inline — antes flotaba solo arriba */}
         {turnoActivo ? (
-          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] px-2.5 py-1 rounded-full">
+          <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-2.5 py-1 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--data-success-500)] animate-pulse" aria-hidden />
             Turno abierto
           </span>
@@ -830,9 +886,9 @@ export default function TurnosModule() {
 
       {/* ── Active turno or open form ─────────────────────────────────────────── */}
       {turnoActivo ? (
-        <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-2 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-2xl overflow-hidden">
+        <div className="bg-primary/10 dark:bg-primary/15 border-2 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-2xl overflow-hidden">
           {/* Active turno header — prominente */}
-          <div className="bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)] border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 px-5 sm:px-6 py-5">
+          <div className="bg-primary/10 dark:bg-primary/15 border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 px-5 sm:px-6 py-5">
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 rounded-xl bg-[var(--data-success-500)] flex items-center justify-center animate-pulse shrink-0">
                 <Play className="h-6 w-6 text-white" strokeWidth={2.5} />
@@ -899,7 +955,7 @@ export default function TurnosModule() {
         <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl p-6 sm:p-7">
             <div className="flex items-start gap-4 mb-6">
-              <div className="h-12 w-12 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <Clock className="h-6 w-6 text-primary" strokeWidth={1.75} aria-hidden />
               </div>
               <div className="min-w-0 flex-1">
@@ -908,32 +964,35 @@ export default function TurnosModule() {
               </div>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Cajero asignado</label>
-                <div className="flex gap-2">
-                  <select
-                    value={selectedCajero}
-                    onChange={e => setSelectedCajero(e.target.value)}
-                    className="flex-1 h-11 px-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  >
-                    <option value="">Yo mismo (usuario actual)</option>
-                    {cajeros.map(c => (
-                      <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => { setCreateCajeroError(null); setShowCreateCajero(true); }}
-                    title="Crear nueva cajera (sin salir de turnos)"
-                    className="h-11 px-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary text-sm font-semibold whitespace-nowrap transition-colors"
-                  >
-                    + Nueva
-                  </button>
-                </div>
-                {cajerosLoading && <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cargando cajeros...</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Efectivo inicial en caja</label>
+              <Field label="Cajero asignado" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+                {(id) => (
+                  <>
+                    <div className="flex gap-2">
+                      <select
+                        id={id}
+                        value={selectedCajero}
+                        onChange={e => setSelectedCajero(e.target.value)}
+                        className="flex-1 h-11 px-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      >
+                        <option value="">Yo mismo (usuario actual)</option>
+                        {cajeros.map(c => (
+                          <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => { setCreateCajeroError(null); setShowCreateCajero(true); }}
+                        title="Crear nueva cajera (sin salir de turnos)"
+                        className="h-11 px-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold whitespace-nowrap transition-colors"
+                      >
+                        + Nueva
+                      </button>
+                    </div>
+                    {cajerosLoading && <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cargando cajeros...</p>}
+                  </>
+                )}
+              </Field>
+              <Field label="Efectivo inicial en caja" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                 <input
                   type="number"
                   step="0.01"
@@ -944,7 +1003,7 @@ export default function TurnosModule() {
                   className="w-full h-11 px-4 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-lg font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
                 />
                 <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Dinero que abre en la caja al inicio del turno.</p>
-              </div>
+              </Field>
             </div>
             <div className="mt-5">
               <p className="text-xs uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-2">Montos rápidos</p>
@@ -1187,7 +1246,7 @@ export default function TurnosModule() {
                         {cajerosStats.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map(c => (
                           <tr key={c.name} className={cn(
                             "border-b border-gray-50 dark:border-white/5 transition-colors",
-                            c.name === bestCajero ? "bg-[var(--accent-soft)]/50 dark:bg-[var(--accent-muted)]" : ""
+                            c.name === bestCajero ? "bg-primary/10 dark:bg-primary/15" : ""
                           )}>
                             <td className="px-4 py-3 font-medium text-[var(--text-primary)] flex items-center gap-2">
                               <div className="h-6 w-6 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold" style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}>
@@ -1249,7 +1308,7 @@ export default function TurnosModule() {
                 const anio = now.getFullYear();
                 exportToExcel(rows, `turnos-${mes}-${anio}`, "Turnos");
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
               Excel
@@ -1276,7 +1335,7 @@ export default function TurnosModule() {
                 return (
                   <div key={t.id} className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <div className={cn("w-3 h-3 rounded-full shrink-0 mt-1.5", cuadro === null ? "bg-[var(--rule-base)]" : cuadro ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")} />
+                      <div className={cn("w-3 h-3 rounded-full shrink-0 mt-1.5", cuadro === null ? "bg-[var(--rule-base)]" : cuadro ? "bg-primary/10" : "bg-[var(--data-warning-500)]")} />
                       {idx < Math.min(historial.length, 10) - 1 && <div className="w-0.5 flex-1 bg-[var(--rule-soft)] dark:bg-gray-700 my-1" />}
                     </div>
                     <div className="pb-4 flex-1 min-w-0">
@@ -1394,8 +1453,7 @@ export default function TurnosModule() {
               </div>
 
               <div className="px-6 py-5 space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Nombre completo</label>
+                <Field label="Nombre completo" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   <input
                     type="text"
                     value={newCajeroName}
@@ -1404,9 +1462,8 @@ export default function TurnosModule() {
                     autoFocus
                     className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Usuario (para iniciar sesión)</label>
+                </Field>
+                <Field label="Usuario (para iniciar sesión)" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   <input
                     type="text"
                     value={newCajeroUsername}
@@ -1416,9 +1473,8 @@ export default function TurnosModule() {
                     className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                   <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Solo letras, números, puntos y guión bajo · 3-32 caracteres</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Contraseña temporal</label>
+                </Field>
+                <Field label="Contraseña temporal" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   <input
                     type="text"
                     value={newCajeroPassword}
@@ -1428,7 +1484,7 @@ export default function TurnosModule() {
                     className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono transition-all"
                   />
                   <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Compártela con la cajera. Ella podrá cambiarla luego en su perfil.</p>
-                </div>
+                </Field>
 
                 {createCajeroError && (
                   <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30 px-4 py-3">
@@ -1504,12 +1560,12 @@ export default function TurnosModule() {
                   </div>
                   <div className="flex justify-between items-center text-base">
                     <span className="text-[var(--text-secondary)]">Ventas del turno</span>
-                    <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] tabular-nums">{formatCurrency(turnoActivo.ventasTotal)}</span>
+                    <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] tabular-nums">{formatCurrency(ventasTurnoLive ?? turnoActivo.ventasTotal)}</span>
                   </div>
                   <div className="flex justify-between items-center border-t border-[var(--rule-base)] dark:border-white/10 pt-2.5">
-                    <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Total esperado</span>
+                    <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Efectivo esperado en caja</span>
                     <span className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">
-                      {formatCurrency(turnoActivo.inicioEfectivo + turnoActivo.ventasTotal)}
+                      {formatCurrency(cajaEsperado ?? (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal))}
                     </span>
                   </div>
                 </div>
@@ -1517,7 +1573,7 @@ export default function TurnosModule() {
                 {/* Conteo efectivo final — denominación (default) o manual */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-semibold text-[var(--text-secondary)]">Conteo de efectivo final</label>
+                    <span className="text-sm font-semibold text-[var(--text-secondary)]">Conteo de efectivo final</span>
                     <div className="inline-flex rounded-lg bg-[var(--surface-sunken)] dark:bg-white/5 p-0.5 text-xs font-semibold">
                       <button
                         type="button"
@@ -1607,7 +1663,7 @@ export default function TurnosModule() {
                                     return next;
                                   });
                                 }}
-                                className="h-7 w-7 rounded-md border border-primary/40 bg-primary/10 text-base font-bold text-primary hover:bg-primary/20"
+                                className="h-7 w-7 rounded-md border border-primary/40 bg-primary/10 text-base font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20"
                                 aria-label={`Agregar ${d.label}`}
                               >
                                 +
@@ -1647,14 +1703,14 @@ export default function TurnosModule() {
 
                 {/* Diferencia */}
                 {cierreEfectivo && !isNaN(parseFloat(cierreEfectivo)) && (() => {
-                  const diff = parseFloat(cierreEfectivo) - (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal);
+                  const diff = parseFloat(cierreEfectivo) - (cajaEsperado ?? (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal));
                   const cuadrado = Math.abs(diff) < 0.01;
                   const sobrante = diff > 0;
                   return (
                     <div className={cn(
                       "rounded-xl p-4 text-center",
                       cuadrado
-                        ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30"
+                        ? "bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30"
                         : sobrante
                         ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)]/30"
                         : "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30"
@@ -1676,8 +1732,7 @@ export default function TurnosModule() {
                 })()}
 
                 {/* Notas */}
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Notas <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></label>
+                <Field label={<>Notas <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></>} labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                   <textarea
                     value={cierreNotas}
                     onChange={e => setCierreNotas(e.target.value)}
@@ -1685,7 +1740,7 @@ export default function TurnosModule() {
                     rows={2}
                     className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                   />
-                </div>
+                </Field>
 
                 {closeError && (
                   <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30 px-4 py-3">
@@ -1725,7 +1780,7 @@ export default function TurnosModule() {
           const monto = parseFloat(cierreEfectivo);
           const { diff } = evaluarDiferencia(monto, turnoActivo);
           const sobrante = diff > 0;
-          const esperado = turnoActivo.inicioEfectivo + turnoActivo.ventasTotal;
+          const esperado = cajaEsperado ?? (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal);
           const pct = esperado > 0 ? (Math.abs(diff) / esperado) * 100 : 0;
           return (
             <m.div
@@ -1785,10 +1840,7 @@ export default function TurnosModule() {
                       : "Falta dinero en caja. ¿Devolución, propina, error de conteo, o se gastó en algo?"}
                   </p>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
-                      Causa de la diferencia <span className="text-[var(--data-error-500)]">*</span>
-                    </label>
+                  <Field label={<>Causa de la diferencia <span className="text-[var(--data-error-500)]">*</span></>} labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                     <textarea
                       value={notaDiffAnormal}
                       onChange={e => { setNotaDiffAnormal(e.target.value); if (closeError) setCloseError(null); }}
@@ -1800,7 +1852,7 @@ export default function TurnosModule() {
                     <p className="text-xs text-[var(--text-tertiary)] mt-1.5">
                       Mínimo 8 caracteres. Queda en el log del turno para auditoría. <span className="opacity-70">(Distinta del campo Notas del cierre.)</span>
                     </p>
-                  </div>
+                  </Field>
 
                   {closeError && (
                     <div className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30 px-4 py-3">
@@ -1862,7 +1914,7 @@ export default function TurnosModule() {
                 </div>
 
                 {/* Card 1: Ventas del turno */}
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
+                <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-4">
                   <h4 className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-3 flex items-center gap-1.5">
                     <ShoppingCart className="h-3.5 w-3.5" /> Ventas del turno
                   </h4>
@@ -1884,7 +1936,7 @@ export default function TurnosModule() {
 
                 {/* Card 2: Métodos de pago */}
                 {resumen.metodosPago.length > 0 && (
-                  <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4">
+                  <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-4">
                     <h4 className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mb-3 flex items-center gap-1.5">
                       <CreditCard className="h-3.5 w-3.5" /> Metodos de pago
                     </h4>
@@ -1922,12 +1974,9 @@ export default function TurnosModule() {
                   </div>
                 </div>
 
-                {/* Mejora 3 nueva: Descuentos del turno */}
+                {/* Descuentos reales del turno — suma de Sale.descuentoMonto vía /api/turnos/[id]/summary */}
                 {(() => {
-                  // Calcular descuentos del turno
-                  const descuentoTotal = resumen.totalVentas > 0
-                    ? Math.round(resumen.totalVentas * 0.036 * 100) / 100 // placeholder: estimado de ventas con descuento
-                    : 0;
+                  const descuentoTotal = resumen.totalDescuentos;
                   const pctDescuento = resumen.totalVentas > 0
                     ? (descuentoTotal / resumen.totalVentas) * 100
                     : 0;
@@ -1935,7 +1984,7 @@ export default function TurnosModule() {
                     ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                     : pctDescuento >= 2
                     ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
-                    : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
+                    : "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
 
                   return descuentoTotal > 0 ? (
                     <div className={cn("rounded-xl p-4", colorClass)}>
@@ -2040,7 +2089,7 @@ export default function TurnosModule() {
 
                   if (gaps.length === 0) {
                     return (
-                      <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+                      <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                         Ventas constantes durante todo el turno
                       </div>
                     );

@@ -6,6 +6,7 @@ import { Target, Plus, Pencil, Trash2, Check, Download, RefreshCw, TrendingUp, T
 import { cn, exportToCSV } from "@/lib/utils";
 import type { CustomKpi, KpiTrendPoint } from "@/app/api/custom-kpis/route";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
 function fmt(v: number, unit: string) {
   if (unit === "S/") return `S/ ${v.toFixed(2)}`;
@@ -21,7 +22,7 @@ function Sparkline({ history, trend }: { history: KpiTrendPoint[]; trend: Custom
   const range = max - min || 1;
   const W = 80, H = 28;
   const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * W},${H - ((v - min) / range) * H}`).join(" ");
-  const color = trend === "up" ? "var(--accent)" : trend === "down" ? "#ef4444" : "#6b7280";
+  const color = trend === "up" ? "var(--accent)" : trend === "down" ? "var(--data-error-500)" : "var(--text-tertiary)";
   return (
     <svg width={W} height={H} className="overflow-visible">
       <polyline fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" points={pts} />
@@ -30,10 +31,10 @@ function Sparkline({ history, trend }: { history: KpiTrendPoint[]; trend: Custom
   );
 }
 
-const EMPTY_FORM = { name: "", desc: "", formula: "", target: "", unit: "S/", category: "Ventas", color: "bg-[var(--accent-soft)]" };
+const EMPTY_FORM = { name: "", desc: "", formula: "", target: "", unit: "S/", category: "Ventas", color: "bg-primary/10" };
 const COLOR_OPTIONS = [
-  { label: "Verde", value: "bg-[var(--accent-soft)]" },
-  { label: "Azul", value: "bg-[var(--accent-soft)]" },
+  { label: "Verde", value: "bg-primary/10" },
+  { label: "Azul", value: "bg-primary/10" },
   { label: "Violeta", value: "bg-[var(--text-primary)]" },
   { label: "Ámbar", value: "bg-[var(--data-warning-500)]" },
   { label: "Rojo", value: "bg-[var(--data-error-500)]" },
@@ -100,7 +101,7 @@ export default function CustomKPITab() {
   };
 
   const remove = async (id: string) => {
-    await fetch(`/api/custom-kpis?id=${id}`, { method: "DELETE" }).catch((err) => console.warn("[CustomKPITab] delete failed:", err));
+    await fetch(`/api/custom-kpis?id=${id}`, { method: "DELETE", headers: csrfHeaders() }).catch((err) => console.warn("[CustomKPITab] delete failed:", err));
     setKpis(prev => prev.filter(k => k.id !== id));
   };
 
@@ -123,7 +124,7 @@ export default function CustomKPITab() {
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
           <button onClick={() => exportToCSV(kpis.map(k => ({ nombre: k.name, valor: k.currentValue, meta: k.target, unidad: k.unit, tendencia: k.trend, cambio: k.changePercent, categoria: k.category })), "kpis")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10">
             <Download className="h-3.5 w-3.5" /> CSV
           </button>
           <button onClick={openCreate} className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90">
@@ -186,7 +187,7 @@ export default function CustomKPITab() {
                 {/* Barra progreso hacia meta */}
                 <div className="flex items-center gap-2 mb-1">
                   <div className="flex-1 h-1.5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
-                    <div className={cn("h-full rounded-full transition-all", isGood ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]")}
+                    <div className={cn("h-full rounded-full transition-all", isGood ? "bg-primary/10" : "bg-[var(--data-warning-500)]")}
                       style={{ width: `${progress}%` }} />
                   </div>
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{fmt(k.target, k.unit)}</span>
@@ -206,38 +207,32 @@ export default function CustomKPITab() {
           <div className="bg-[var(--surface-raised)] rounded-xl p-4 sm:p-6 max-w-lg w-full mx-4 border border-[var(--rule-base)] dark:border-[var(--rule-base)]" onClick={e => e.stopPropagation()}>
             <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">{editKpi ? "Editar KPI" : "Nuevo KPI"}</CardTitle>
             <div className="space-y-3">
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Nombre *</label>
+              <Field label="Nombre *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="Ej: Ticket Promedio" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Descripción</label>
+              </Field>
+              <Field label="Descripción" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" placeholder="¿Qué mide este KPI?" />
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fórmula</label>
+              </Field>
+              <Field label="Fórmula" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={form.formula} onChange={e => setForm(f => ({ ...f, formula: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono" placeholder="ventas / transacciones" />
-              </div>
+              </Field>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Meta</label>
+                <Field label="Meta" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input value={form.target} onChange={e => setForm(f => ({ ...f, target: e.target.value }))} type="number" className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Unidad</label>
+                </Field>
+                <Field label="Unidad" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <select value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm">
                     {["S/", "%", "pts", "pedidos", "veces", "min", "días"].map(u => <option key={u}>{u}</option>)}
                   </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Categoría</label>
+                </Field>
+                <Field label="Categoría" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                   <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm">
                     {["Ventas", "Clientes", "Inventario", "Finanzas", "Operaciones"].map(c => <option key={c}>{c}</option>)}
                   </select>
-                </div>
+                </Field>
               </div>
               <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">Color</label>
+                <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1">Color</span>
                 <div className="flex flex-wrap gap-2">
                   {COLOR_OPTIONS.map(c => (
                     <button key={c.value} onClick={() => setForm(f => ({ ...f, color: c.value }))}

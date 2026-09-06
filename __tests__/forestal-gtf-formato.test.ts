@@ -1,0 +1,267 @@
+import { describe, expect, it } from "vitest";
+import {
+  casillasOrigen,
+  cuerpoGtfOficial,
+  fechaGtf,
+  tablaProductos,
+} from "@/lib/forestal/ctp-gtf-formato";
+import { gtfDatosVacio } from "@/lib/forestal/ctp-gtf-datos";
+import { emptyCtpFicha } from "@/lib/forestal/ctp-ficha-types";
+
+describe("fechaGtf", () => {
+  it("imprime DD.MM.YYYY, como el talonario", () => {
+    expect(fechaGtf("2024-12-18")).toBe("18.12.2024");
+  });
+
+  it("acepta la fecha como la publica SERFOR (DD/MM/YYYY)", () => {
+    // La ficha del SNIFFS guarda "17/12/2024". Mientras esto sólo aceptó ISO,
+    // los casilleros (3) y (4) se imprimían vacíos teniendo el dato.
+    expect(fechaGtf("17/12/2024")).toBe("17.12.2024");
+    expect(fechaGtf("5/3/2024")).toBe("05.03.2024");
+    expect(fechaGtf("24-12-2024")).toBe("24.12.2024");
+    expect(fechaGtf("24.12.2024")).toBe("24.12.2024");
+  });
+
+  it("una fecha imposible NO se imprime: mejor el casillero en blanco", () => {
+    expect(fechaGtf("32/12/2024")).toBe("");
+    expect(fechaGtf("17/13/2024")).toBe("");
+    expect(fechaGtf("17/12/24")).toBe("");
+  });
+
+  it("una fecha ausente o rota queda EN BLANCO, no como texto raro", () => {
+    // El casillero vacío se llena a mano; un "Invalid Date" impreso invalida
+    // la guía por enmendadura cuando alguien lo tacha.
+    expect(fechaGtf("")).toBe("");
+    expect(fechaGtf(null)).toBe("");
+    expect(fechaGtf("ayer")).toBe("");
+  });
+});
+
+describe("casillasOrigen — el (5) es un juego de casillas, no un texto", () => {
+  it("dibuja TODAS las opciones para que se vea cuáles NO son", () => {
+    const html = casillasOrigen("concesion");
+    for (const label of ["Concesión", "Permiso", "Autorización", "Bosque Local", "Desbosque", "Plantación"]) {
+      expect(html).toContain(label);
+    }
+  });
+
+  it("cruza sólo la que corresponde", () => {
+    const html = casillasOrigen("permiso");
+    // Una sola X en todo el bloque.
+    expect(html.match(/>X</g) ?? []).toHaveLength(1);
+  });
+
+  it("sin origen declarado no cruza ninguna", () => {
+    expect(casillasOrigen("").match(/>X</g)).toBeNull();
+    expect(casillasOrigen(undefined).match(/>X</g)).toBeNull();
+  });
+});
+
+describe("tablaProductos", () => {
+  const linea = (total: number) => ({
+    cientifico: "Cedrelinga cateniformis", comun: "Tornillo", tipoProducto: "Madera aserrada",
+    presentacion: "Trozas", cantidad: 2, unidad: "Metros Cúbicos", total,
+  });
+
+  it("el volumen total cierra con la suma del detalle", () => {
+    const html = tablaProductos([linea(2.704), linea(10.607)]);
+    expect(html).toContain("13.311");
+  });
+
+  it("sin líneas lo dice, en vez de una tabla vacía que parece un error", () => {
+    expect(tablaProductos([])).toContain("Sin líneas declaradas");
+  });
+
+  it("escapa el contenido: un nombre con < no rompe el documento", () => {
+    const html = tablaProductos([{ ...linea(1), comun: '<script>x</script>' }]);
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
+  });
+});
+
+describe("cuerpoGtfOficial", () => {
+  const base = {
+    ficha: { ...emptyCtpFicha(), razonSocial: "CC.NN. San Luis", arffs: "GORE Pasco", region: "Pasco" },
+    datos: gtfDatosVacio(),
+    lineas: [],
+    numeroGtf: "019-0000004",
+    fechaExpedicion: "2024-12-18",
+    listasTrozas: "019-0000004",
+    gtfOrigen: "",
+  };
+
+  it("numera los casilleros que el puesto de control pide por número", () => {
+    const html = cuerpoGtfOficial(base);
+    for (const n of ["(2)", "(5)", "(13)", "(22)", "(29)", "(31)", "(35)", "(38)", "(39)", "(40)"]) {
+      expect(html).toContain(n);
+    }
+  });
+
+  it("NO afirma 'REGISTRADA' si SERFOR no devolvió un número", () => {
+    // Imprimirlo sin serlo sería fabricar la constancia de un trámite que
+    // Buleje no hace: el registro lo asigna el SNIFFS.
+    const html = cuerpoGtfOficial(base);
+    expect(html).not.toContain("ESTADO: REGISTRADA");
+    expect(html).toContain("pendiente de registro");
+  });
+
+  it("lo afirma SÓLO con el número que devolvió SERFOR", () => {
+    const html = cuerpoGtfOficial({ ...base, registroSerfor: "1-19-0313969" });
+    expect(html).toContain("ESTADO: REGISTRADA");
+    expect(html).toContain("1-19-0313969");
+  });
+
+  it("por río pide MATRÍCULA y patrón, no placa y conductor", () => {
+    const datos = { ...gtfDatosVacio() };
+    datos.vehiculo = { ...datos.vehiculo, modo: "fluvial" as const };
+    const html = cuerpoGtfOficial({ ...base, datos });
+    expect(html).toContain("Matrícula N°");
+    expect(html).toContain("Patrón");
+  });
+
+  it("un casillero sin dato va vacío, nunca con un guión que parezca declarado", () => {
+    const html = cuerpoGtfOficial(base);
+    expect(html).not.toContain("<b>—</b>");
+  });
+});
+
+describe("detalles del formato que se ven en el papel", () => {
+  const base = {
+    ficha: { ...emptyCtpFicha(), representante: "Osvaldo Muños" },
+    datos: gtfDatosVacio(), lineas: [], numeroGtf: "019-1",
+    fechaExpedicion: "2024-12-18", listasTrozas: "", gtfOrigen: "",
+  };
+
+  it("un campo sin número no dibuja un '()' huérfano", () => {
+    // El representante legal cuelga del (7): no tiene casillero propio.
+    expect(cuerpoGtfOficial(base)).not.toContain("()</span>");
+  });
+
+  it("el tipo de transporte se lee entero, no el valor del enum", () => {
+    expect(cuerpoGtfOficial(base)).toContain("Terrestre");
+    expect(cuerpoGtfOficial(base)).not.toContain(">terrestre<");
+  });
+});
+
+describe("casilleros de ubicación de las partes (17)(18)(19) / (26)(27)(28)", () => {
+  // Existían en el formato y salían vacíos aunque el directorio tuviera el dato:
+  // al elegir una parte de la libreta se aplanaba todo dentro de `direccion`.
+  const conUbicacion = () => {
+    const d = gtfDatosVacio();
+    d.propietario = { ...d.propietario, departamento: "PASCO", provincia: "OXAPAMPA", distrito: "PUERTO BERMUDEZ" };
+    d.destinatario = { ...d.destinatario, departamento: "PASCO", provincia: "OXAPAMPA", distrito: "CONSTITUCION" };
+    return d;
+  };
+  const base = {
+    ficha: emptyCtpFicha(), lineas: [], numeroGtf: "019-1",
+    fechaExpedicion: "2024-12-18", listasTrozas: "", gtfOrigen: "",
+  };
+
+  it("imprime la ubicación del propietario y la del destinatario", () => {
+    const html = cuerpoGtfOficial({ ...base, datos: conUbicacion() });
+    expect(html).toContain("PUERTO BERMUDEZ");
+    expect(html).toContain("CONSTITUCION");
+    expect(html).toContain("OXAPAMPA");
+  });
+
+  it("sin cargar, los casilleros quedan en blanco — no se inventa la ubicación", () => {
+    const html = cuerpoGtfOficial({ ...base, datos: gtfDatosVacio() });
+    expect(html).toContain("(19)");
+    expect(html).toContain("(28)");
+    expect(html).not.toContain("<b>—</b>");
+  });
+});
+
+describe("(8) resolución y (9) plan de manejo salen del título habilitante", () => {
+  // Antes el (8) imprimía `titulo.tipo`, que es el ENUM del título
+  // (concesion|permiso|…): con datos reales ese casillero decía "permiso" en
+  // vez de la resolución. Y el (9) no tenía fuente y salía siempre vacío.
+  const conTitulo = (extra: Record<string, string> = {}) => ({
+    ...emptyCtpFicha(),
+    titulos: [{
+      tipo: "permiso", codigo: "19-SEC/PER-FMC-2024-008",
+      resolucion: "R.A N° D000485-2024-MIDAGRI-SERFOR", planManejo: "Declaración de Manejo (DEMA)",
+      vencimiento: "", ...extra,
+    }],
+  });
+  const base = {
+    datos: gtfDatosVacio(), lineas: [], numeroGtf: "019-1",
+    fechaExpedicion: "2024-12-18", listasTrozas: "", gtfOrigen: "",
+  };
+
+  it("el (8) trae la RESOLUCIÓN, no el tipo de título", () => {
+    const html = cuerpoGtfOficial({ ...base, ficha: conTitulo() });
+    expect(html).toContain("R.A N° D000485-2024-MIDAGRI-SERFOR");
+  });
+
+  it("el (9) trae el plan de manejo", () => {
+    expect(cuerpoGtfOficial({ ...base, ficha: conTitulo() })).toContain("Declaración de Manejo (DEMA)");
+  });
+
+  it("el (5) se cruza solo con el tipo del título: son las mismas categorías", () => {
+    const html = cuerpoGtfOficial({ ...base, ficha: conTitulo() });
+    // Una sola X, y en Permiso.
+    expect(html.match(/>X</g) ?? []).toHaveLength(1);
+    expect(html).toMatch(/Permiso<\/span><span class="bx">X/);
+  });
+
+  it("un origen explícito sigue mandando sobre el del título", () => {
+    const html = cuerpoGtfOficial({ ...base, ficha: conTitulo(), origenRecurso: "concesion" });
+    expect(html).toMatch(/Concesión<\/span><span class="bx">X/);
+  });
+
+  it("un título sin esos datos deja los casilleros vacíos, no inventa", () => {
+    const html = cuerpoGtfOficial({ ...base, ficha: conTitulo({ resolucion: "", planManejo: "" }) });
+    expect(html).toContain("(8)");
+    expect(html).toContain("(9)");
+    expect(html).not.toContain("<b>—</b>");
+  });
+});
+
+describe("los casilleros (5)(6)(8)(9) declaran el título ELEGIDO en la guía", () => {
+  const fichaDosTitulos = {
+    ...emptyCtpFicha(),
+    razonSocial: "Maderera San Martín S.A.C.",
+    titulos: [
+      { tipo: "concesion", codigo: "CONC-1", resolucion: "R.A. 111", planManejo: "PGMF", vencimiento: "" },
+      { tipo: "permiso", codigo: "PER-2", resolucion: "R.A. 222", planManejo: "DEMA", vencimiento: "" },
+    ],
+  };
+  const cuerpo = (titulos: string[]) =>
+    cuerpoGtfOficial({
+      ficha: fichaDosTitulos,
+      datos: { ...gtfDatosVacio(), titulos },
+      lineas: [],
+      numeroGtf: "GTF-001-000001",
+      fechaExpedicion: "2026-08-12",
+      listasTrozas: "",
+      gtfOrigen: "",
+    });
+
+  /**
+   * El bug: el formulario deja elegir el título de la guía y lo guarda, pero el
+   * papel imprimía `ficha.titulos[0]`. Una guía de madera del permiso PER-2
+   * salía declarando la concesión CONC-1 en el (6), con la resolución de otra.
+   */
+  it("elegir el segundo título imprime SU código, SU resolución y SU plan", () => {
+    const html = cuerpo(["PER-2"]);
+    expect(html).toContain("PER-2");
+    expect(html).toContain("R.A. 222");
+    expect(html).toContain("DEMA");
+    expect(html).not.toContain("R.A. 111");
+    expect(html).not.toContain("PGMF");
+  });
+
+  it("y cruza la casilla (5) del tipo de ESE título (permiso, no concesión)", () => {
+    const html = cuerpo(["PER-2"]);
+    // La X va pegada a la casilla marcada; "Permiso" es la del permiso forestal.
+    expect(/Permiso<\/span><span class="bx">X</.test(html)).toBe(true);
+    expect(/Concesión<\/span><span class="bx">X</.test(html)).toBe(false);
+  });
+
+  it("sin elección explícita sigue el predeterminado de la Ficha", () => {
+    const html = cuerpo([]);
+    expect(html).toContain("CONC-1");
+    expect(html).toContain("R.A. 111");
+  });
+});

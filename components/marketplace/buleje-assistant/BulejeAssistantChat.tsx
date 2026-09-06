@@ -194,7 +194,7 @@ export default function BulejeAssistantChat({ hideFab = false }: { hideFab?: boo
           {/* Header */}
           <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]">
             <div className="flex items-center gap-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <Sparkles className="h-4 w-4" strokeWidth={1.75} aria-hidden />
               </span>
               <div>

@@ -40,9 +40,11 @@ import {
 import {
   EmptyState,
   LoadingState,
+  CardTitle,
 } from "@buleje/design-system";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -273,10 +275,10 @@ export default function CatalogoTiendaTab() {
       const tenantSlug = await resolveActiveTenantSlug();
       const res = await fetch("/api/store-page/visibility", {
         method: "PATCH",
-        headers: {
+        headers: csrfHeaders({
           "Content-Type": "application/json",
           "x-tenant-id": tenantSlug,
-        },
+        }),
         body: JSON.stringify({ productIds, visible }),
       });
       if (!res.ok) {
@@ -461,7 +463,7 @@ export default function CatalogoTiendaTab() {
                   {opt.label}
                   <span className={cn(
                     "text-xs font-mono tabular-nums px-1.5 py-0.5 rounded",
-                    active ? "bg-primary/10 text-primary" : "bg-gray-200 dark:bg-gray-700 text-muted"
+                    active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-gray-200 dark:bg-gray-700 text-muted"
                   )}>
                     {opt.count}
                   </span>
@@ -602,9 +604,9 @@ export default function CatalogoTiendaTab() {
           {grouped.map(([cat, prods]) => (
             <section key={cat} className="space-y-2.5">
               <header className="flex items-center justify-between gap-2 px-1">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                <CardTitle as="h3" className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                   {cat}
-                </h3>
+                </CardTitle>
                 <span className="text-xs font-mono tabular-nums text-muted">
                   {prods.filter(p => p.visible).length}/{prods.length} visibles
                 </span>

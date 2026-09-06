@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "@buleje/design-system/icons";
-import { SectionHeader, Chip } from "@/components/ui-system";
+import { SectionHeader } from "@/components/ui-system";
 import { ProductCard } from "@/components/ProductCard";
 import { pickTopN, pickByCategory, type MockProduct } from "@/lib/recommendations/mock";
 import { cn } from "@/lib/utils";

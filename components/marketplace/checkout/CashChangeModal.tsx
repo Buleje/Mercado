@@ -158,7 +158,7 @@ export default function CashChangeModal({
                     className={cn(
                       "flex flex-col items-start gap-1 rounded-2xl border-2 p-4 text-left transition-all",
                       choice === "exact"
-                        ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-[0_4px_16px_-8px_var(--accent)]"
+                        ? "border-[var(--accent)] bg-primary/10 shadow-[0_4px_16px_-8px_var(--accent)]"
                         : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50",
                     )}
                   >
@@ -179,7 +179,7 @@ export default function CashChangeModal({
                     className={cn(
                       "flex flex-col items-start gap-1 rounded-2xl border-2 p-4 text-left transition-all",
                       choice === "custom"
-                        ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-[0_4px_16px_-8px_var(--accent)]"
+                        ? "border-[var(--accent)] bg-primary/10 shadow-[0_4px_16px_-8px_var(--accent)]"
                         : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]/50",
                     )}
                   >
@@ -241,7 +241,7 @@ export default function CashChangeModal({
                           "rounded-full border h-10 px-4 text-[length:var(--ts-xs)] font-bold transition-colors tabular-nums",
                           Number(customAmount) === v
                             ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-                            : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] hover:border-[var(--accent)]/40",
+                            : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-primary/10 hover:text-[var(--accent)] hover:border-[var(--accent)]/40",
                         )}
                       >
                         S/{v}
@@ -251,7 +251,7 @@ export default function CashChangeModal({
 
                   {/* Feedback de vuelto */}
                   {cashAmount > 0 && cashAmount >= total && (
-                    <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-[var(--accent-soft)] px-4 py-3 flex items-center justify-between gap-3">
+                    <div className="rounded-2xl border-2 border-[var(--accent)]/30 bg-primary/10 px-4 py-3 flex items-center justify-between gap-3">
                       <span className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                         Tu vuelto
                       </span>

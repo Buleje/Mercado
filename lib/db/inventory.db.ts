@@ -97,6 +97,42 @@ export const InventoryMovementsDB = {
     })).map(mapInventoryMovement);
   },
   /**
+   * Una página del kardex, con cursor.
+   *
+   * `getAll` corta en 200 sin decirlo: la pantalla de Entradas y Salidas
+   * mostraba «Todo» y era «los últimos 200», así que en un negocio con
+   * movimiento el historial simplemente no estaba. El cursor es el patrón que
+   * ya usa `ActivityLogDB.listWithCursor`, y mantiene acotada cada consulta.
+   */
+  async listWithCursor(
+    tenantId: string,
+    opts: { limit?: number; cursor?: string; desde?: Date } = {},
+  ): Promise<{ items: DbInventoryMovement[]; nextCursor: string | null; total: number }> {
+    const limit = Math.min(500, Math.max(1, opts.limit ?? 100));
+    const where: Record<string, unknown> = { tenantId };
+    if (opts.desde) where.createdAt = { gte: opts.desde };
+
+    const [rows, total] = await Promise.all([
+      prisma.inventoryMovement.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: limit + 1,
+        ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
+        include: { product: { select: { id: true, name: true } } },
+      }),
+      // El total del período, para que la pantalla pueda decir cuánto falta en
+      // vez de dejar al usuario adivinando si la lista terminó.
+      prisma.inventoryMovement.count({ where }),
+    ]);
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    return {
+      items: items.map(mapInventoryMovement),
+      nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null,
+      total,
+    };
+  },
+  /**
    * Round 28 P0 (DB profundo audit): firma cambió de `(productId)` a
    * `(tenantId, productId, limit?)`. Antes:
    *   - Sin `tenantId` filter → cross-tenant leak silencioso. Producto ID 42
@@ -150,11 +186,42 @@ export const InventoryMovementsDB = {
     return { movements: items.map(mapInventoryMovement), nextCursor, total };
   },
 
-  async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string; tenantId: string }): Promise<DbInventoryMovement> {
+  /**
+   * Registra un movimiento y **mueve el stock**.
+   *
+   * Ojo con el nombre: `record` suena a "sólo anotar", y por eso dos llamadores
+   * que YA habían escrito el stock lo llamaban "para el audit trail" y el
+   * movimiento se aplicaba dos veces. Medido el 2026-08-11:
+   *
+   *   - vender 3 unidades descontaba **6** (`app/api/sales`)
+   *   - ajustar el stock a 80 desde 100 dejaba **60** (`PUT /api/products/[id]`)
+   *
+   * Para esos casos existe `stockYaAplicado: true`: deja la constancia en el
+   * kardex con las cantidades correctas, sin volver a tocar el producto.
+   */
+  async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string; tenantId: string; stockYaAplicado?: boolean }): Promise<DbInventoryMovement> {
     // Atomic: read current stock, compute new stock, update product, create movement
     const product = await prisma.product.findFirst({ where: { id: data.productId, tenantId: data.tenantId } });
     const prevStock = product?.stock ?? 0;
     const isIncrease = ["compra", "devolucion", "ajuste_positivo"].includes(data.type);
+
+    if (data.stockYaAplicado) {
+      // El caller ya escribió el stock. El kardex se reconstruye hacia atrás
+      // para que la fila diga de dónde vino y a dónde fue.
+      const previoReal = isIncrease ? prevStock - data.quantity : prevStock + data.quantity;
+      const row = await prisma.inventoryMovement.create({
+        data: {
+          productId: data.productId, type: data.type, lossType: data.lossType, quantity: data.quantity,
+          previousStock: Math.max(0, previoReal), newStock: prevStock,
+          reference: data.reference, notes: data.notes,
+          tenantId: data.tenantId,
+          ...(data.warehouseId ? { warehouseId: data.warehouseId } : {}),
+          ...(data.createdBy ? { createdBy: data.createdBy } : {}),
+        },
+      });
+      return mapInventoryMovement(row);
+    }
+
     const newStock = isIncrease ? prevStock + data.quantity : prevStock - data.quantity;
     const clampedNewStock = Math.max(0, newStock);
     // SECURITY 2026-05-06 (audit stock #1): updateMany con guard `stock=prevStock`
@@ -260,7 +327,19 @@ export const InventoryMovementsDB = {
 
   async adjust(productId: number, newStock: number, tenantId: string, warehouseId?: string, notes?: string, createdBy?: string): Promise<DbInventoryMovement> {
     const product = await prisma.product.findFirst({ where: { id: productId, tenantId } });
-    const prevStock = product?.stock ?? 0;
+    /**
+     * Sin producto no hay ajuste que registrar.
+     *
+     * Antes seguía derecho con `prevStock = 0`: el `updateMany` (que sí filtra
+     * por tenant) no tocaba ninguna fila, pero el movimiento se creaba igual y
+     * la API respondía 201. Ajustar el stock de un producto de otra empresa
+     * —o de uno borrado— devolvía «listo» y dejaba un renglón fantasma en el
+     * kardex, con un `previousStock` inventado en 0.
+     */
+    if (!product) {
+      throw new Error("Ese producto no existe en este negocio");
+    }
+    const prevStock = product.stock ?? 0;
     const diff = newStock - prevStock;
     const type = diff >= 0 ? "ajuste_positivo" : "ajuste_negativo";
     await prisma.product.updateMany({ where: { id: productId, tenantId }, data: { stock: Math.max(0, newStock) } });

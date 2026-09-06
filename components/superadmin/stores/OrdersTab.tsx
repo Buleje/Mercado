@@ -17,7 +17,7 @@ function fmt(n: number) {
 }
 
 const ORDER_STATUS_COLORS: Record<string, string> = {
-  pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
+  pendiente: "bg-[#0d9488] text-[#0d9488] dark:bg-[#0d9488]/30 dark:text-[#0d9488]",
   procesando: "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]",
   completado: "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]",
   cancelado: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",

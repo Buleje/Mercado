@@ -11,6 +11,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { TrendingUp, ArrowLeft } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../../_components/_shared";
+import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import type { GrowthEntry } from "@/components/superadmin/tenants/types";
 
@@ -43,7 +44,14 @@ export default function TenantsGrowthPage() {
   useEffect(() => { void load(); }, [load]);
 
   return (
+    <>
+      <SuperAdminModuleTabs tabs={TENANTS_TABS} />
     <AdminTabShell
+      info={{
+        what: "Muestra el ranking de tiendas ordenado por crecimiento: podio top 3, sparklines de tendencia, delta porcentual y tabla mensual con ingresos y pedidos por tienda.",
+        affects: "Solo lectura para el superadmin. No modifica datos de las tiendas. Útil para detectar qué tiendas crecen y cuáles se estancan.",
+        example: "Si 'Mi Pollo' aparece en primer lugar con +40% vs el mes anterior, es una candidata a caso de éxito o para ofrecer un plan superior.",
+      }}
       title="Crecimiento de tiendas"
       kicker="Plataforma · Tiendas"
       description="Ranking por crecimiento y evolución mensual de cada tienda (ingresos y pedidos)."
@@ -62,5 +70,6 @@ export default function TenantsGrowthPage() {
         <TenantGrowthTab growthData={growthData} loading={loading} />
       </div>
     </AdminTabShell>
+    </>
   );
 }

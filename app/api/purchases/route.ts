@@ -8,7 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { getOrSet } from "@/lib/cache";
+import { getOrSet, revalidateTenantTag } from "@/lib/cache";
+import { totalDeOrden } from "@/lib/compras/totales-oc";
 
 const PurchaseItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -27,6 +28,12 @@ const PurchaseSchema = z.object({
   deliveryDate: z.string().optional(),
   discount: z.number().min(0).max(100).default(0),
   idempotencyKey: z.string().min(1).max(100).optional(),
+  // ADR-377 — el papel del proveedor y lo que costó traer la mercadería.
+  invoiceNumber: z.string().max(60).optional(),
+  invoiceType: z.enum(["factura", "boleta", "guia", "ninguno"]).optional(),
+  igvIncluded: z.boolean().default(true),
+  flete: z.number().min(0).default(0),
+  otrosCostos: z.number().min(0).default(0),
 });
 
 export async function GET(req: NextRequest) {
@@ -75,7 +82,9 @@ export async function POST(req: NextRequest) {
     const id = `po-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const discountPct = data.discount ?? 0;
     const subtotal = data.items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
-    const total = Math.max(0, subtotal * (1 - discountPct / 100));
+    // El total se guarda SIEMPRE con IGV adentro: si los costos vinieron netos
+    // (`igvIncluded: false`), el 18% se agrega acá, una sola vez.
+    const total = totalDeOrden({ subtotal, discountPct, igvIncluded: data.igvIncluded });
     const po = await PurchasesDB.add({
       id,
       supplierId: data.supplierId,
@@ -87,6 +96,13 @@ export async function POST(req: NextRequest) {
       paymentMethod: data.paymentMethod,
       deliveryDate: data.deliveryDate,
       discount: discountPct,
+      // ADR-377
+      invoiceNumber: data.invoiceNumber,
+      invoiceType: data.invoiceType,
+      igvIncluded: data.igvIncluded,
+      flete: data.flete,
+      otrosCostos: data.otrosCostos,
+      createdBy: auth.username,
       createdAt: now,
       updatedAt: now,
     }, auth.tenantId);
@@ -129,6 +145,14 @@ export async function POST(req: NextRequest) {
           },
         });
       });
+
+      // La cuenta se crea con `tx.payable.create` para que sea atómica con la
+      // orden, pero eso saltea `PayablesDB.add`, que es quien invalida el cache
+      // de `getAll` (tag `payables`, 30s). Sin esto comprás a crédito y tu
+      // propia deuda no figura en Cuentas pendientes hasta medio minuto después
+      // — el e2e del ciclo lo mostró listando las deudas de la corrida anterior
+      // y no la recién creada.
+      revalidateTenantTag(auth.tenantId, "payables");
 
       logAudit({ req, action: "CREATE", entity: "Purchase", entityId: id, detail: `Payable auto-generado OC ${id}, S/${total.toFixed(2)}, vence en ${days} días` });
     }

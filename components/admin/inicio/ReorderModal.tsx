@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { X, Package, Check, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
 export interface ReorderCandidate {
   id: string | number;
@@ -138,14 +139,14 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
               className={cn(
                 "pointer-events-auto w-full max-w-2xl max-h-[85vh] flex flex-col",
                 "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]",
-                "shadow-2xl shadow-black/20",
+                "shadow-[var(--shadow-xl)] shadow-black/20",
                 "overflow-hidden",
               )}
             >
               {/* Header */}
               <div className="flex items-start justify-between px-6 py-4 border-b border-[var(--rule-soft)]">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                     <Package className="h-5 w-5" />
                   </span>
                   <div>
@@ -188,6 +189,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                       return (
                         <li key={id}>
                           <label
+                            aria-label={c.name}
                             className={cn(
                               "flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors",
                               selected
@@ -237,21 +239,20 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
 
               {/* Notes */}
               <div className="px-6 py-3 border-t border-[var(--rule-soft)]">
-                <label className="block text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-                  Notas
-                </label>
-                <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Ej: urgente, confirmar precios, etc."
-                  className={cn(
-                    "w-full px-3 py-2 text-sm rounded-md",
-                    "bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
-                    "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
-                    "focus:outline-none focus:ring-2 focus:ring-primary/40",
-                  )}
-                />
+                <Field label="Notas" labelClassName="block text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
+                  <input
+                    type="text"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Ej: urgente, confirmar precios, etc."
+                    className={cn(
+                      "w-full px-3 py-2 text-sm rounded-md",
+                      "bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
+                      "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
+                      "focus:outline-none focus:ring-2 focus:ring-primary/40",
+                    )}
+                  />
+                </Field>
               </div>
 
               {/* Footer */}

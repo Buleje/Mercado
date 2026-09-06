@@ -1,87 +1,66 @@
 ---
 name: deploy
-description: Ejecutar el proceso completo de deploy para Buleje. Usar cuando el usuario quiera deployar, subir a produccion o publicar cambios.
+description: Deploy completo de Buleje con verificación pre-deploy integrada. Modos: check (solo gates, sin deployar), quick (lint+tsc), full (gates + commit + push). Usar cuando el usuario quiera deployar, publicar cambios, o pregunte "está listo para deploy", "deploy check", "pre-deploy".
 disable-model-invocation: true
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob
 model: sonnet
+argument-hint: "[check|quick|full]"
 ---
 
-# Deploy — Buleje
+# /deploy — Deploy Buleje (pre-deploy check integrado)
 
-Ejecutar el proceso completo de deploy para el proyecto Buleje.
+## Modos
 
-## Pasos
+| Modo | Qué corre | Cuándo |
+|---|---|---|
+| `/deploy quick` | lint + tsc (~60s) | sanity rápido |
+| `/deploy check` | TODOS los gates, SIN commit/push | "¿está listo para deploy?" |
+| `/deploy` (full) | gates + schema + commit + push | deploy real |
 
-### 1. Pre-flight checks
-
-Ejecutar los siguientes comandos en orden desde `buleje/`. Si alguno falla, DETENER el proceso y reportar el error.
+## 1. Gates (en orden; cualquiera falla → BLOCKED)
 
 ```bash
 npm run lint
-```
-
-Si lint falla: intentar corregir automaticamente y re-ejecutar. Si persiste, ABORTAR.
-
-```bash
-npm run build
-```
-
-Si build falla: ABORTAR. NUNCA deployar con build roto.
-
-```bash
+npx tsc --noEmit             # pre-check rápido alternativo: tsgo --noEmit
 npm run test
+node scripts/build-gate.mjs  # gate autoritativo: mata dev → build limpio → veredicto → re-levanta dev
 ```
 
-Si los tests fallan: ABORTAR. No deployar con tests fallidos.
+- `build-gate.mjs` reemplaza a `npm run build` a secas: atrapa errores de prerender y caché corrupto de `.next/dev` que tsc NO ve (regla E agentic-style).
+- Lint falla → intentar autofix y re-correr; si persiste → ABORTAR.
+- Tests fallando → ABORTAR. NUNCA deployar con rojo.
 
-### 2. Validar schema (solo si hubo cambios en prisma/)
-
-Verificar si hay cambios en archivos de Prisma:
+## 2. Salud de prod (solo check/full, si el dev server corre)
 
 ```bash
-git diff --name-only HEAD | grep -q "prisma/" && echo "HAY CAMBIOS EN PRISMA" || echo "NO HAY CAMBIOS EN PRISMA"
+curl -s localhost:3000/api/superadmin/slo | head -5          # SLO >90% burned → BLOCKED
+curl -s localhost:3000/api/superadmin/cron-health | head -5  # crons fallando → WARNING (no bloquea)
 ```
 
-Si hay cambios en prisma/:
-- Ejecutar `npx prisma validate`
-- Confirmar que la migracion se ejecuto con `DIRECT_URL` configurada
-- Si no se ejecuto la migracion, ADVERTIR al usuario antes de continuar
+## 3. Schema (solo si `git diff --name-only HEAD | grep -q prisma/`)
 
-### 3. Commit de cambios pendientes
+- `npx prisma validate`
+- Confirmar que la migración corrió con `DIRECT_URL`. Si no corrió → ADVERTIR antes de continuar (ver MEMORIA-PROYECTO.md flujo Supabase/pgBouncer).
 
-Si hay cambios sin commitear:
-- Usar Conventional Commits (feat/fix/refactor/chore/etc.)
-- Staging selectivo: NUNCA agregar `.env*` ni archivos con secrets
-- Mensaje en espanol, maximo 72 caracteres en la primera linea
+## 4. Commit + push (solo full)
 
-### 4. Push al remote
+- Conventional Commits, español, subject ≤100 chars.
+- NUNCA stagear `.env*` ni archivos con secrets — revisar staging antes del commit.
+- `git push origin $(git branch --show-current)` → Vercel dispara el deploy.
+- Canary 5%→25%→100% + monitorear en dashboard Vercel (regla 14 CLAUDE.md).
 
-```bash
-git push origin $(git branch --show-current)
-```
+## Reporte final (siempre tabla)
 
-### 5. Monitorear
+| Gate | Estado | Detalle |
+|---|---|---|
+| Lint | ✅/❌ | N warnings |
+| TSC | ✅/❌ | N errors |
+| Tests | ✅/❌ | N passed / N failed |
+| Build (build-gate) | ✅/❌ | duración |
+| SLOs | ✅/🔴 | budget status |
+| Crons | ✅/⚠️ | N failed 24h |
+| Schema | ✅/—/⚠️ | migración status |
+| Commit + Push | ✅/— | sha / branch |
 
-Informar al usuario que el deploy fue disparado y que debe monitorear en el dashboard de Vercel.
-
-## Reglas criticas
-
-- **NUNCA** deployar si lint o build fallan — sin excepciones
-- **NUNCA** hacer push de archivos `.env*` o secrets
-- Si hay cambios en `schema.prisma`, la migracion DEBE ejecutarse antes del deploy
-- Revisar que no haya archivos sensibles en el staging area antes del commit
-- Si algun paso falla, mostrar tabla resumen con el estado de cada paso
-
-## Reporte final
-
-Al terminar, mostrar tabla resumen:
-
-| Paso | Estado | Detalles |
-|------|--------|----------|
-| Lint | .../... | ... |
-| Build | .../... | ... |
-| Tests | .../... | ... |
-| Schema | .../... | ... |
-| Commit | .../... | ... |
-| Push | .../... | ... |
+**Veredicto: DEPLOY SAFE / DEPLOY BLOCKED** + tiempo total de verificación.

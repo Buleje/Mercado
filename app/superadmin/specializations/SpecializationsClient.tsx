@@ -14,6 +14,7 @@ import {
   Zap,
 } from "@buleje/design-system/icons";
 import type { Specialization, SpecializationKey } from "@/lib/specializations";
+import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { broadcastSpecsChanged } from "@/hooks/use-enabled-specs";
 import { AdminTabShell } from "@/app/admin/_components/_shared";
 import { SAStatChip } from "@/components/superadmin/_shared/SAStatChip";
@@ -65,10 +66,12 @@ export default function SpecializationsClient({
     setError(null);
 
     try {
-      const res = await fetch("/api/superadmin/specializations", {
+      // fetchSuperadmin: inyecta el header x-csrf-token (assertCsrf lo exige) y,
+      // ante 401/403 (sesión de plataforma expirada por idle 30 min), redirige
+      // solo al login en vez de dejar el error muerto "invalid or expired token".
+      const res = await fetchSuperadmin("/api/superadmin/specializations", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({
           tenantId,
           specKey,
@@ -116,6 +119,11 @@ export default function SpecializationsClient({
 
   return (
     <AdminTabShell
+      info={{
+        what: "Activa módulos verticales (forestal CTP, salud, textil…) por cada negocio.",
+        affects: "Aplica en tiempo real al panel admin del tenant: le aparecen los módulos de su vertical.",
+        example: "Activás 'forestal' en una maderera → en su panel aparecen los módulos de trazabilidad de madera.",
+      }}
       title="Especializaciones"
       kicker="Plataforma · Habilitación por tenant"
       description="Activa módulos verticales (forestal CTP, salud, textil) en cada negocio. Cambios aplican en tiempo real al panel admin del tenant."
@@ -188,9 +196,9 @@ export default function SpecializationsClient({
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider ${
                       spec.status === "available"
-                        ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
+                        ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
                         : spec.status === "beta"
-                          ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"
+                          ? "bg-[#0d9488] text-[#0d9488]"
                           : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                     }`}
                   >

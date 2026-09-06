@@ -1,37 +1,93 @@
 /**
  * Coupons Store Isolation Test Suite (#9 — Cupones por tienda)
  *
- * Tests the business logic for store-scoped coupons:
- * - Coupon with storeId only applies to that store
- * - Coupon without storeId applies to all stores
- * - Coupon from store A does not work in store B
- * - Creating coupon with invalid storeId returns error
+ * ADR-380: la versión anterior de este archivo definía `validateCouponForStore`
+ * y `createCouponWithStore` DENTRO del propio test — no importaba una sola
+ * línea de `lib/db/coupons.db.ts`, así que quedaba verde para siempre sin
+ * cubrir el código que de verdad corre en el checkout
+ * (verificacion-de-verdad.md #1). Esta versión importa `CouponsDB` real y
+ * mockea sólo `prisma`, con un fake store en memoria que responde según el
+ * `where` real que manda cada query — así SÍ prueba la rama
+ * store-específico → fallback tenant-wide que usa `findByCode`.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-// ── Hoisted mocks ────────────────────────────────────────────────────────────
+// ── Fake tabla "Coupon" en memoria + mock de prisma que responde como Postgres ──
 
-const {
-  mockCouponFindFirst,
-  mockCouponCreate,
-  mockStoreFindUnique,
-} = vi.hoisted(() => ({
-  mockCouponFindFirst: vi.fn(),
-  mockCouponCreate: vi.fn(),
-  mockStoreFindUnique: vi.fn(),
-}));
+type FakeCoupon = {
+  id: string;
+  code: string;
+  tenantId: string;
+  storeId: string | null;
+  description: string;
+  discountType: string;
+  discountValue: number;
+  balance: number | null;
+  minPurchase: number | null;
+  maxUses: number | null;
+  usedCount: number;
+  active: boolean;
+  expiresAt: Date | null;
+  createdAt: Date;
+};
+
+let coupons: FakeCoupon[] = [];
+let nextId = 1;
+
+function makeCoupon(overrides: Partial<FakeCoupon> = {}): FakeCoupon {
+  return {
+    id: overrides.id ?? `cpn-${nextId++}`,
+    code: overrides.code ?? "TIENDA10",
+    tenantId: overrides.tenantId ?? TENANT_ID,
+    storeId: overrides.storeId === undefined ? null : overrides.storeId,
+    description: overrides.description ?? "Descuento de tienda",
+    discountType: overrides.discountType ?? "percent",
+    discountValue: overrides.discountValue ?? 10,
+    balance: overrides.balance ?? null,
+    minPurchase: overrides.minPurchase ?? null,
+    maxUses: overrides.maxUses === undefined ? null : overrides.maxUses,
+    usedCount: overrides.usedCount ?? 0,
+    active: overrides.active ?? true,
+    expiresAt: overrides.expiresAt === undefined ? null : overrides.expiresAt,
+    createdAt: overrides.createdAt ?? new Date("2026-01-01"),
+  };
+}
+
+/** Matchea un coupon fake contra un `where` de Prisma como los que arma coupons.db.ts. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function matches(c: FakeCoupon, where: any): boolean {
+  if (where.tenantId != null && c.tenantId !== where.tenantId) return false;
+  if (where.code != null && c.code !== where.code) return false;
+  if (where.active != null && c.active !== where.active) return false;
+  if ("storeId" in where) {
+    if (where.storeId === null ? c.storeId !== null : c.storeId !== where.storeId) return false;
+  }
+  if (where.tenantId_code) {
+    if (c.tenantId !== where.tenantId_code.tenantId || c.code !== where.tenantId_code.code) return false;
+  }
+  return true;
+}
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     coupon: {
-      findFirst: mockCouponFindFirst,
-      create: mockCouponCreate,
-    },
-    store: {
-      findUnique: mockStoreFindUnique,
+      findFirst: vi.fn(async ({ where }: { where: Record<string, unknown> }) =>
+        coupons.find((c) => matches(c, where)) ?? null,
+      ),
+      findUnique: vi.fn(async ({ where }: { where: Record<string, unknown> }) =>
+        coupons.find((c) => matches(c, where)) ?? null,
+      ),
+      findMany: vi.fn(async ({ where }: { where: Record<string, unknown> }) =>
+        coupons.filter((c) => matches(c, where)),
+      ),
+      create: vi.fn(async ({ data }: { data: Partial<FakeCoupon> & { code: string; tenantId: string } }) => {
+        const row = makeCoupon(data);
+        coupons.push(row);
+        return row;
+      }),
     },
   },
 }));
@@ -40,214 +96,95 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// El módulo real bajo prueba — nada simulado.
+const { CouponsDB } = await import("@/lib/db/coupons.db");
+
+// ── Fixtures ─────────────────────────────────────────────────────────────────
 
 const TENANT_ID = "demo";
 const STORE_A_ID = "store-a-001";
 const STORE_B_ID = "store-b-002";
 
-type CouponOverrides = {
-  code?: string;
-  storeId?: string | null;
-  active?: boolean;
-  discountType?: string;
-  discountValue?: number;
-  expiresAt?: Date | null;
-  maxUses?: number | null;
-  usedCount?: number;
-  tenantId?: string;
-};
-
-function makeCoupon(overrides: CouponOverrides = {}) {
-  return {
-    id: "cpn-001",
-    code: overrides.code ?? "TIENDA10",
-    tenantId: overrides.tenantId ?? TENANT_ID,
-    storeId: overrides.storeId === undefined ? STORE_A_ID : overrides.storeId,
-    description: "Descuento de tienda",
-    discountType: overrides.discountType ?? "percent",
-    discountValue: overrides.discountValue ?? 10,
-    active: overrides.active ?? true,
-    expiresAt: overrides.expiresAt === undefined ? null : overrides.expiresAt,
-    maxUses: overrides.maxUses === undefined ? null : overrides.maxUses,
-    usedCount: overrides.usedCount ?? 0,
-    createdAt: new Date("2026-01-01"),
-  };
-}
-
-/**
- * Simulates the store-scoped coupon validation logic:
- * - If coupon has a storeId, it only applies when the purchase storeId matches
- * - If coupon has no storeId (null), it applies to all stores
- */
-function validateCouponForStore(
-  coupon: ReturnType<typeof makeCoupon> | null,
-  purchaseStoreId: string,
-): { valid: boolean; error?: string; discount?: number } {
-  if (!coupon) return { valid: false, error: "Cupón no encontrado" };
-  if (!coupon.active) return { valid: false, error: "Cupón inactivo" };
-
-  // Store isolation check
-  if (coupon.storeId && coupon.storeId !== purchaseStoreId) {
-    return {
-      valid: false,
-      error: `Cupón "${coupon.code}" solo es válido para la tienda asignada`,
-    };
-  }
-
-  return { valid: true, discount: coupon.discountValue };
-}
-
-/**
- * Simulates creating a coupon with storeId validation
- */
-async function createCouponWithStore(data: {
-  code: string;
-  tenantId: string;
-  storeId?: string;
-  discountType: string;
-  discountValue: number;
-}): Promise<{ success: boolean; error?: string; coupon?: ReturnType<typeof makeCoupon> }> {
-  // Validate storeId if provided
-  if (data.storeId) {
-    const store = await mockStoreFindUnique({ where: { id: data.storeId } });
-    if (!store) {
-      return { success: false, error: "storeId inválido: tienda no encontrada" };
-    }
-  }
-
-  const coupon = await mockCouponCreate({
-    data: {
-      code: data.code,
-      tenantId: data.tenantId,
-      storeId: data.storeId ?? null,
-      discountType: data.discountType,
-      discountValue: data.discountValue,
-    },
-  });
-
-  return { success: true, coupon };
-}
-
-// ── Tests ────────────────────────────────────────────────────────────────────
-
-describe("Coupons Store Isolation (#9)", () => {
+describe("CouponsDB.findByCode — aislamiento por tienda (#9, ADR-380)", () => {
   beforeEach(() => {
+    coupons = [];
+    nextId = 1;
     vi.clearAllMocks();
   });
 
-  describe("Store-scoped coupon validation", () => {
-    it("coupon with storeId only applies to that store", () => {
-      const coupon = makeCoupon({ storeId: STORE_A_ID });
+  it("cupón con storeId se encuentra al consultar ESA tienda", async () => {
+    coupons.push(makeCoupon({ code: "TIENDA10", storeId: STORE_A_ID }));
 
-      const result = validateCouponForStore(coupon, STORE_A_ID);
+    const found = await CouponsDB.findByCode(TENANT_ID, "TIENDA10", STORE_A_ID);
 
-      expect(result.valid).toBe(true);
-      expect(result.discount).toBe(10);
-    });
-
-    it("coupon without storeId applies to all stores", () => {
-      const coupon = makeCoupon({ storeId: null });
-
-      const resultA = validateCouponForStore(coupon, STORE_A_ID);
-      const resultB = validateCouponForStore(coupon, STORE_B_ID);
-      const resultRandom = validateCouponForStore(coupon, "store-xyz-999");
-
-      expect(resultA.valid).toBe(true);
-      expect(resultA.discount).toBe(10);
-      expect(resultB.valid).toBe(true);
-      expect(resultB.discount).toBe(10);
-      expect(resultRandom.valid).toBe(true);
-      expect(resultRandom.discount).toBe(10);
-    });
-
-    it("coupon from store A does NOT work in store B", () => {
-      const coupon = makeCoupon({ storeId: STORE_A_ID });
-
-      const result = validateCouponForStore(coupon, STORE_B_ID);
-
-      expect(result.valid).toBe(false);
-      expect(result.error).toMatch(/solo es válido/i);
-      expect(result.discount).toBeUndefined();
-    });
-
-    it("creating coupon with invalid storeId returns error", async () => {
-      // Store does not exist
-      mockStoreFindUnique.mockResolvedValue(null);
-
-      const result = await createCouponWithStore({
-        code: "INVALID",
-        tenantId: TENANT_ID,
-        storeId: "store-nonexistent-999",
-        discountType: "percent",
-        discountValue: 15,
-      });
-
-      expect(result.success).toBe(false);
-      expect(result.error).toMatch(/storeId inválido/i);
-      // Should NOT have called coupon create
-      expect(mockCouponCreate).not.toHaveBeenCalled();
-    });
+    expect(found).not.toBeNull();
+    expect(found?.storeId).toBe(STORE_A_ID);
   });
 
-  describe("Store-scoped coupon creation", () => {
-    it("creates store-scoped coupon when store exists", async () => {
-      const storeData = { id: STORE_A_ID, name: "Bodega Central", tenantId: TENANT_ID };
-      mockStoreFindUnique.mockResolvedValue(storeData);
-      mockCouponCreate.mockResolvedValue(
-        makeCoupon({ storeId: STORE_A_ID, code: "CENTRAL20" }),
-      );
+  it("cupón sin storeId (tenant-wide) se encuentra desde CUALQUIER tienda", async () => {
+    coupons.push(makeCoupon({ code: "GLOBAL10", storeId: null }));
 
-      const result = await createCouponWithStore({
-        code: "CENTRAL20",
-        tenantId: TENANT_ID,
-        storeId: STORE_A_ID,
-        discountType: "percent",
-        discountValue: 20,
-      });
+    const foundFromA = await CouponsDB.findByCode(TENANT_ID, "GLOBAL10", STORE_A_ID);
+    const foundFromB = await CouponsDB.findByCode(TENANT_ID, "GLOBAL10", STORE_B_ID);
 
-      expect(result.success).toBe(true);
-      expect(result.coupon).toBeDefined();
-      expect(result.coupon!.storeId).toBe(STORE_A_ID);
-      expect(mockStoreFindUnique).toHaveBeenCalledWith({ where: { id: STORE_A_ID } });
-      expect(mockCouponCreate).toHaveBeenCalledOnce();
-    });
-
-    it("creates global coupon when no storeId provided", async () => {
-      mockCouponCreate.mockResolvedValue(
-        makeCoupon({ storeId: null, code: "GLOBAL10" }),
-      );
-
-      const result = await createCouponWithStore({
-        code: "GLOBAL10",
-        tenantId: TENANT_ID,
-        discountType: "fixed",
-        discountValue: 5,
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.coupon).toBeDefined();
-      expect(result.coupon!.storeId).toBeNull();
-      // Should NOT have validated store since none was provided
-      expect(mockStoreFindUnique).not.toHaveBeenCalled();
-    });
+    expect(foundFromA?.storeId).toBeNull();
+    expect(foundFromB?.storeId).toBeNull();
   });
 
-  describe("Cross-store isolation edge cases", () => {
-    it("inactive coupon is rejected even if storeId matches", () => {
-      const coupon = makeCoupon({ storeId: STORE_A_ID, active: false });
+  it("un cupón de la tienda A NO se encuentra al consultar la tienda B (el bug real de ADR-380)", async () => {
+    coupons.push(makeCoupon({ code: "SOLO_A", storeId: STORE_A_ID }));
 
-      const result = validateCouponForStore(coupon, STORE_A_ID);
+    const foundFromB = await CouponsDB.findByCode(TENANT_ID, "SOLO_A", STORE_B_ID);
 
-      expect(result.valid).toBe(false);
-      expect(result.error).toMatch(/inactivo/i);
+    expect(foundFromB).toBeNull();
+  });
+
+  it("sin pasar storeId, findByCode ignora el scope (comportamiento legacy explícito, no una fuga)", async () => {
+    coupons.push(makeCoupon({ code: "SOLO_A", storeId: STORE_A_ID }));
+
+    // Uso intencional: cuando el caller no tiene noción de tienda (ej. un
+    // tenant sin presencia en marketplace), findByCode(tenantId, code) cae al
+    // findUnique por la unique key (tenantId, code) sin filtrar storeId.
+    const found = await CouponsDB.findByCode(TENANT_ID, "SOLO_A");
+
+    expect(found?.code).toBe("SOLO_A");
+  });
+
+  it("no cruza tenants aunque el código coincida", async () => {
+    coupons.push(makeCoupon({ code: "TIENDA10", tenantId: "otro-tenant", storeId: null }));
+
+    const found = await CouponsDB.findByCode(TENANT_ID, "TIENDA10", STORE_A_ID);
+
+    expect(found).toBeNull();
+  });
+});
+
+describe("CouponsDB.create — alcance del cupón nuevo", () => {
+  beforeEach(() => {
+    coupons = [];
+    nextId = 1;
+    vi.clearAllMocks();
+  });
+
+  it("crea un cupón scoped a una tienda", async () => {
+    const created = await CouponsDB.create(TENANT_ID, {
+      code: "CENTRAL20",
+      storeId: STORE_A_ID,
+      discountType: "percent",
+      discountValue: 20,
     });
 
-    it("null coupon returns not found error", () => {
-      const result = validateCouponForStore(null, STORE_A_ID);
+    expect(created.storeId).toBe(STORE_A_ID);
+    expect(coupons).toHaveLength(1);
+  });
 
-      expect(result.valid).toBe(false);
-      expect(result.error).toMatch(/no encontrado/i);
+  it("crea un cupón global (todo el tenant) cuando no se pasa storeId", async () => {
+    const created = await CouponsDB.create(TENANT_ID, {
+      code: "GLOBAL10",
+      discountType: "fixed",
+      discountValue: 5,
     });
+
+    expect(created.storeId).toBeNull();
   });
 });

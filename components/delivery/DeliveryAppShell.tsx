@@ -54,7 +54,11 @@ export default function DeliveryAppShell({ children }: { children: React.ReactNo
           setIsOnline(Boolean(data.partner.isOnline));
         }
       })
-      .catch(() => { /* probe silencioso: si falla, sigue como guest */ });
+      .catch((err: unknown) => {
+        // Probe silencioso: si falla la red, el rider sigue como guest.
+        // No rompemos la UX, pero dejamos rastro para depurar.
+        void err;
+      });
 
     const handleOnline = () => setNetworkOnline(true);
     const handleOffline = () => setNetworkOnline(false);
@@ -128,7 +132,7 @@ export default function DeliveryAppShell({ children }: { children: React.ReactNo
       <aside className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:left-0 border-r border-[var(--rule-base)] bg-[var(--surface-raised)] z-40">
         <div className="px-6 py-6 border-b border-[var(--rule-base)]">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
+            <div className="h-12 w-12 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center">
               <MotoIcon className="h-7 w-7" />
             </div>
             <div className="min-w-0">
@@ -146,7 +150,7 @@ export default function DeliveryAppShell({ children }: { children: React.ReactNo
             onClick={handleToggleOnline}
             disabled={toggling}
             aria-pressed={isOnline}
-            className={`mt-4 w-full h-12 rounded-2xl border-2 inline-flex items-center justify-center gap-2 text-sm font-extrabold transition-colors disabled:opacity-60 ${
+            className={`mt-4 w-full h-12 border-2 inline-flex items-center justify-center gap-2 text-sm font-extrabold transition-colors disabled:opacity-60 ${
               isOnline
                 ? "bg-[var(--accent)] border-[var(--accent)] text-white"
                 : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-secondary)]"
@@ -166,9 +170,9 @@ export default function DeliveryAppShell({ children }: { children: React.ReactNo
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-3 px-4 h-12 rounded-xl text-base font-bold transition-colors ${
+                className={`flex items-center gap-3 px-4 h-12 text-base font-bold transition-colors ${
                   active
-                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                    ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
                 }`}
               >
@@ -183,7 +187,7 @@ export default function DeliveryAppShell({ children }: { children: React.ReactNo
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full h-11 px-4 rounded-xl text-sm font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--brand-danger)] inline-flex items-center gap-2 transition-colors"
+            className="w-full h-11 px-4 text-sm font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--brand-danger)] inline-flex items-center gap-2 transition-colors"
           >
             <LogOut className="h-4 w-4" />
             Cerrar sesión
@@ -197,7 +201,7 @@ export default function DeliveryAppShell({ children }: { children: React.ReactNo
         style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         <div className="px-4 py-3 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0">
+          <div className="h-10 w-10 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0">
             <MotoIcon className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
@@ -213,7 +217,7 @@ export default function DeliveryAppShell({ children }: { children: React.ReactNo
             onClick={handleToggleOnline}
             disabled={toggling}
             aria-pressed={isOnline}
-            className={`h-10 px-3.5 rounded-full inline-flex items-center gap-2 text-sm font-extrabold border-2 transition-colors disabled:opacity-60 ${
+            className={`h-10 px-3.5 inline-flex items-center gap-2 text-sm font-extrabold border-2 transition-colors disabled:opacity-60 ${
               isOnline
                 ? "bg-[var(--accent)] border-[var(--accent)] text-white"
                 : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-secondary)]"
@@ -255,7 +259,7 @@ export default function DeliveryAppShell({ children }: { children: React.ReactNo
                   {item.label}
                 </span>
                 {active && (
-                  <span className="absolute top-0 left-1/2 -translate-x-1/2 h-1 w-10 rounded-b-full bg-[var(--accent)]" />
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 h-1 w-10 bg-[var(--accent)]" />
                 )}
               </Link>
             );

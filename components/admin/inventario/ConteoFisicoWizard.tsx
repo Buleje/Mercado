@@ -1,8 +1,9 @@
 'use client';
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 
 import { useState, useEffect, useCallback } from 'react';
+import { Field } from '@/components/admin/shared/Field';
 import Image from "next/image";
 import dynamic from 'next/dynamic';
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -148,8 +149,13 @@ export default function ConteoFisicoWizard() {
     if (!conteo) return;
     setLoading(true);
     try {
+      // Sin los headers de CSRF esto devolvía 403 SIEMPRE (el token se valida
+      // en `proxy.ts` para todo POST bajo /api/, y esta ruta no está exenta):
+      // el conteo se podía empezar y cargar, pero nunca cerrar. En la base
+      // quedó la huella — un conteo «INICIADO» desde mayo y ninguno cerrado.
       const res = await fetch(`/api/inventory/conteo/${conteo.id}/close`, {
         method: 'POST',
+        headers: csrfHeaders(),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al cerrar');
@@ -162,9 +168,34 @@ export default function ConteoFisicoWizard() {
     }
   };
 
-  // Toggle ajustado
-  const toggleAjustado = (itemId: string) => {
-    setItems(prev => prev.map(i => i.id === itemId ? { ...i, ajustado: !i.ajustado } : i));
+  /**
+   * Tildar/destildar «ajustar» y que el servidor se entere.
+   *
+   * Antes esto sólo movía estado de React: el cierre leía `ajustado` de la
+   * base —que el PATCH ponía en `true` para toda diferencia— y terminaba
+   * ajustando también los productos que el encargado había desmarcado para
+   * revisar. Se contaban 200 ítems, se desmarcaban 3, y se ajustaban los 200.
+   */
+  const toggleAjustado = async (itemId: string) => {
+    const actual = items.find(i => i.id === itemId);
+    if (!actual || !conteo) return;
+    const nuevo = !actual.ajustado;
+    setItems(prev => prev.map(i => i.id === itemId ? { ...i, ajustado: nuevo } : i));
+    try {
+      const res = await fetch(`/api/inventory/conteo/${conteo.id}/items`, {
+        method: 'PATCH',
+        headers: csrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ itemId, ajustado: nuevo }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      console.warn('[ConteoFisicoWizard] no se pudo guardar el check', err);
+      // Volver atrás: mostrar tildado lo que el servidor no aceptó sería
+      // exactamente el engaño que este arreglo elimina.
+      setItems(prev => prev.map(i => i.id === itemId ? { ...i, ajustado: actual.ajustado } : i));
+      setError('No se pudo guardar ese cambio. Revisá la conexión.');
+      setTimeout(() => setError(''), 4000);
+    }
   };
 
   // Barcode scan handler
@@ -209,13 +240,13 @@ export default function ConteoFisicoWizard() {
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-[var(--text-primary)] mb-2">Tipo de conteo</label>
+                <span className="block text-sm font-medium text-[var(--text-primary)] mb-2">Tipo de conteo</span>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setTipo('completo')}
                     className={`flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
                       tipo === 'completo'
-                        ? 'border-primary bg-primary/5 text-primary'
+                        ? 'border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]'
                         : 'border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300'
                     }`}
                   >
@@ -225,7 +256,7 @@ export default function ConteoFisicoWizard() {
                     onClick={() => setTipo('categoria')}
                     className={`flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
                       tipo === 'categoria'
-                        ? 'border-primary bg-primary/5 text-primary'
+                        ? 'border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]'
                         : 'border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300'
                     }`}
                   >
@@ -235,8 +266,7 @@ export default function ConteoFisicoWizard() {
               </div>
 
               {tipo === 'categoria' && (
-                <div>
-                  <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Categoria</label>
+                <Field label="Categoria" labelClassName="block text-sm font-medium text-[var(--text-primary)] mb-1">
                   <input
                     type="text"
                     value={categoria}
@@ -244,7 +274,7 @@ export default function ConteoFisicoWizard() {
                     placeholder="Ej: Abarrotes, Bebidas..."
                     className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-sm"
                   />
-                </div>
+                </Field>
               )}
 
               <button
@@ -343,7 +373,7 @@ export default function ConteoFisicoWizard() {
                       <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${
                         item.stockContado !== null
                           ? item.diferencia === 0
-                            ? 'bg-[var(--accent-soft)] text-[var(--data-success-500)]'
+                            ? 'bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]'
                             : "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
                           : 'bg-gray-100 text-[var(--text-secondary)]'
                       }`}>
@@ -381,8 +411,7 @@ export default function ConteoFisicoWizard() {
                     <span className="text-2xl font-bold text-[var(--text-primary)] ml-2">{selected.stockSistema}</span>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">Contado:</label>
+                  <Field label="Contado:" labelClassName="block text-sm font-medium text-[var(--text-primary)] mb-1">
                     <input
                       type="number"
                       value={inputValue}
@@ -393,7 +422,7 @@ export default function ConteoFisicoWizard() {
                       className="w-full px-4 py-3 border-2 border-[var(--rule-base)] rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-2xl text-center font-bold focus:border-primary focus:outline-none"
                       autoFocus
                     />
-                  </div>
+                  </Field>
 
                   {/* Preview difference */}
                   {inputValue && !isNaN(parseInt(inputValue)) && (
@@ -454,7 +483,7 @@ export default function ConteoFisicoWizard() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <DataTable className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--rule-base)]">
                       <th className="text-left py-2 px-2 text-[var(--text-secondary)] font-medium">Producto</th>
@@ -486,7 +515,7 @@ export default function ConteoFisicoWizard() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             )}
           </div>
@@ -512,7 +541,7 @@ export default function ConteoFisicoWizard() {
       {/* ═══ PASO 4: Resumen Final ═══ */}
       {paso === 4 && resumen && (
         <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 text-center space-y-6">
-          <div className="w-16 h-16 mx-auto bg-[var(--accent-soft)] rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
             <svg className="w-8 h-8 text-[var(--data-success-500)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
@@ -533,7 +562,7 @@ export default function ConteoFisicoWizard() {
               <div className="text-2xl font-bold text-[var(--data-warning-500)]">{resumen.conDiferencia}</div>
               <div className="text-xs text-[var(--text-secondary)]">Con diferencia</div>
             </div>
-            <div className="bg-[var(--accent-soft)] rounded-lg p-4">
+            <div className="bg-primary/10 rounded-lg p-4">
               <div className="text-2xl font-bold text-[var(--data-success-500)]">{resumen.ajustados}</div>
               <div className="text-xs text-[var(--text-secondary)]">Ajustes aplicados</div>
             </div>

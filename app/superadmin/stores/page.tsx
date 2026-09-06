@@ -26,6 +26,7 @@ import { OperationsTab } from "@/components/superadmin/stores/OperationsTab";
 import { CategoriesTab } from "@/components/superadmin/stores/CategoriesTab";
 import type { StoreRow, StoreTab } from "@/components/superadmin/stores/types";
 import { AdminTabShell } from "../_components/_shared";
+import { SuperAdminModuleTabs, MARKETPLACE_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 // ─── Tabs config ──────────────────────────────────────────────────────────
 
@@ -92,143 +93,155 @@ export default function StoresPage() {
   }, [stores]);
 
   return (
-    <AdminTabShell
-      title="Administrar Marketplace"
-      description="Gestión completa de tiendas, pedidos, cupones y métricas del marketplace."
-      icon={ShoppingBag}
-      kicker="Plataforma · Marketplace"
-      stats={
-        <>
-          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
-            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-              Total
-            </p>
-            <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--text-primary)]">
-              {stats.total}
-            </p>
-          </div>
-          <div className="rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-3.5 py-2 min-w-[88px]">
-            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-              Publicadas
-            </p>
-            <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--data-success-500)]">
-              {stats.published}
-            </p>
-          </div>
-          {stats.unpublished > 0 && (
-            <div className="rounded-xl border border-amber-300/60 bg-amber-50/60 px-3.5 py-2 min-w-[88px] dark:border-amber-700/40 dark:bg-amber-950/30">
+    <>
+      <SuperAdminModuleTabs tabs={MARKETPLACE_TABS} />
+      <AdminTabShell
+        info={{
+          what: "Panel central del marketplace multi-tenant: lista y configura tiendas publicadas, revisa pedidos y operaciones, gestiona cupones globales, analítica de ventas, navegación del catálogo y plantilla del panel.",
+          affects:
+            "Los cambios aquí impactan directamente en lo que cada tienda y sus clientes ven en el marketplace público.",
+          example:
+            "Desde 'Salud' puedes ver qué tiendas tienen errores de configuración. Desde 'Cupones' puedes crear un descuento global del 10% para toda la plataforma.",
+        }}
+        title="Administrar Marketplace"
+        description="Gestión completa de tiendas, pedidos, cupones y métricas del marketplace."
+        icon={ShoppingBag}
+        kicker="Plataforma · Marketplace"
+        stats={
+          <>
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-                Borrador
+                Total
               </p>
-              <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-amber-700 dark:text-amber-300">
-                {stats.unpublished}
+              <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--text-primary)]">
+                {stats.total}
               </p>
             </div>
-          )}
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={refreshing || stores === undefined}
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
-              strokeWidth={2.25}
-            />
-            Refrescar
-          </button>
-        </>
-      }
-    >
-      {/* ─── Tab bar canónico ─────────────────────────────────────
+            <div className="rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 px-3.5 py-2 min-w-[88px]">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                Publicadas
+              </p>
+              <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--data-success-500)]">
+                {stats.published}
+              </p>
+            </div>
+            {stats.unpublished > 0 && (
+              <div className="rounded-xl border border-teal-300/60 bg-teal-50/60 px-3.5 py-2 min-w-[88px] dark:border-teal-700/40 dark:bg-teal-950/30">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                  Borrador
+                </p>
+                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-teal-700 dark:text-teal-300">
+                  {stats.unpublished}
+                </p>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={refreshing || stores === undefined}
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+                strokeWidth={2.25}
+              />
+              Refrescar
+            </button>
+          </>
+        }
+      >
+        {/* ─── Tab bar canónico ─────────────────────────────────────
           Brandon 2026-05-21 mejoras mobile:
           - sticky top-0 + backdrop-blur para mantener tabs visibles al scroll
           - scroll-snap-x para que cada tab se alinee al edge en swipe mobile
           - gradient fade-right (mask-image) indicando "hay más tabs scrolling" */}
-      {/* Brandon 2026-05-21 fix mobile: tab bar wrapper con borde inferior
+        {/* Brandon 2026-05-21 fix mobile: tab bar wrapper con borde inferior
           mobile + scroll-snap-x para que cada tab se alinee al edge en swipe.
           Nota: sticky deshabilitado porque el SuperAdminShell main tiene
           overflow-auto (nuevo scroll context que impide sticky a window). */}
-      <div className="-mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)] sm:bg-transparent sm:border-0 sm:px-0 sm:mx-0 sm:py-0">
-        <div className="overflow-x-auto -mx-1 px-1 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]">
-          <div className="inline-flex gap-1 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-1.5 min-w-full sm:min-w-0">
-          {TABS.map((t) => {
-            const Icon = t.icon;
-            const isActive = tab === t.key;
-            const count =
-              t.key === "stores" ? stats.total : t.key === "health" ? stats.unpublished : undefined;
-            return (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setTab(t.key)}
-                className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold transition whitespace-nowrap [scroll-snap-align:start] sm:[scroll-snap-align:none] ${
-                  isActive
-                    ? "bg-[var(--accent)]/10 text-[var(--accent)] shadow-sm"
-                    : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-                }`}
-              >
-                <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                {t.label}
-                {typeof count === "number" && count > 0 && (
-                  <span
-                    className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums ${
+        <div className="-mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-[var(--surface-canvas)] border-b border-[var(--rule-soft)] sm:bg-transparent sm:border-0 sm:px-0 sm:mx-0 sm:py-0">
+          <div className="overflow-x-auto -mx-1 px-1 [scroll-snap-type:x_mandatory] sm:[scroll-snap-type:none]">
+            <div className="inline-flex gap-1 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-1.5 min-w-full sm:min-w-0">
+              {TABS.map((t) => {
+                const Icon = t.icon;
+                const isActive = tab === t.key;
+                const count =
+                  t.key === "stores"
+                    ? stats.total
+                    : t.key === "health"
+                      ? stats.unpublished
+                      : undefined;
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setTab(t.key)}
+                    className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold transition whitespace-nowrap [scroll-snap-align:start] sm:[scroll-snap-align:none] ${
                       isActive
-                        ? "bg-[var(--accent)]/15 text-[var(--accent)]"
-                        : t.key === "health"
-                          ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
-                          : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+                        ? "bg-[var(--accent)]/10 text-[var(--accent)] shadow-sm"
+                        : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
                     }`}
                   >
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+                    <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                    {t.label}
+                    {typeof count === "number" && count > 0 && (
+                      <span
+                        className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums ${
+                          isActive
+                            ? "bg-[var(--accent)]/15 text-[var(--accent)]"
+                            : t.key === "health"
+                              ? "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300"
+                              : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
 
-      {error && (
-        <div
-          role="alert"
-          className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]"
-        >
-          <span>{error}</span>
-          <button
-            type="button"
-            onClick={handleRefresh}
-            className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:brightness-110"
+        {error && (
+          <div
+            role="alert"
+            className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]"
           >
-            Reintentar
-          </button>
-        </div>
-      )}
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:brightness-110"
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
 
-      {/* Panel de usuario de prueba — SOLO desarrollo local (no en prod). */}
-      <TestCustomerPanel />
+        {/* Panel de usuario de prueba — SOLO desarrollo local (no en prod). */}
+        <TestCustomerPanel />
 
-      {/* ─── Tab content ─────────────────────────────────────────── */}
-      {tab === "stores" && (
-        <StoresTab
-          stores={stores}
-          loading={stores === undefined && !error}
-          error={error}
-          onRefresh={handleRefresh}
-          refreshing={refreshing}
-        />
-      )}
-      {tab === "beneficios" && (
-        <BeneficiosTab stores={stores} onRefresh={handleRefresh} />
-      )}
-      {tab === "health" && <HealthTab />}
-      {tab === "operations" && <OperationsTab />}
-      {tab === "categories" && <CategoriesTab />}
-      {tab === "coupons" && <CouponsTab />}
-      {tab === "analytics" && <AnalyticsTab stores={stores} />}
-      {tab === "navegacion" && <NavegacionTab />}
-      {tab === "plantilla" && <PlantillaPanelTab />}
-    </AdminTabShell>
+        {/* ─── Tab content ─────────────────────────────────────────── */}
+        {tab === "stores" && (
+          <StoresTab
+            stores={stores}
+            loading={stores === undefined && !error}
+            error={error}
+            onRefresh={handleRefresh}
+            refreshing={refreshing}
+          />
+        )}
+        {tab === "beneficios" && <BeneficiosTab stores={stores} onRefresh={handleRefresh} />}
+        {tab === "health" && <HealthTab />}
+        {tab === "operations" && <OperationsTab />}
+        {tab === "categories" && <CategoriesTab />}
+        {tab === "coupons" && <CouponsTab />}
+        {tab === "analytics" && <AnalyticsTab stores={stores} />}
+        {tab === "navegacion" && <NavegacionTab />}
+        {tab === "plantilla" && <PlantillaPanelTab />}
+      </AdminTabShell>
+    </>
   );
 }

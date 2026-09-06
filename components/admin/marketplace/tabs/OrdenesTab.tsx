@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { AlertCircle, ChevronDown, Download, Eye, MessageCircle, MoreHorizontal, RefreshCw, Search, ShoppingCart, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceOrders, type MarketplaceOrderDetail, type OrderTargetStatus } from "@/components/admin/marketplace/hooks/use-marketplace-orders";
@@ -414,7 +415,7 @@ export function MarketplaceOrdenesTab() {
 
       {/* ── Bulk actions bar (visible cuando hay selección) ───────── */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[var(--accent-soft)] border-2 border-[var(--accent)]/40">
+        <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-primary/10 border-2 border-[var(--accent)]/40">
           <p className="text-sm font-extrabold text-[var(--accent)]">
             {selectedIds.size} {selectedIds.size === 1 ? "orden seleccionada" : "órdenes seleccionadas"}
           </p>
@@ -485,7 +486,7 @@ export function MarketplaceOrdenesTab() {
       ) : (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto max-h-[calc(100vh-24rem)]">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] sticky top-0 z-10 border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-3 py-3 w-10">
@@ -549,7 +550,7 @@ export function MarketplaceOrdenesTab() {
                       className={cn(
                         "transition-colors cursor-pointer",
                         isSelected
-                          ? "bg-[var(--accent-soft)]/40"
+                          ? "bg-primary/10"
                           : "hover:bg-[var(--surface-sunken)]/50",
                       )}
                       onClick={(e) => {
@@ -676,7 +677,7 @@ export function MarketplaceOrdenesTab() {
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
           {filtered.length < orders.length && (
             <div className="border-t border-[var(--rule-base)] px-4 py-2 bg-[var(--surface-sunken)] text-xs font-bold text-[var(--text-secondary)] flex items-center justify-between">

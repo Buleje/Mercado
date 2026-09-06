@@ -26,7 +26,6 @@ import { AdminTabShell } from "../_components/_shared";
 import {
   Activity,
   AlertOctagon,
-  ArrowUpRight,
   Award,
   BarChart3,
   BookOpen,
@@ -38,7 +37,6 @@ import {
   Code,
   Compass,
   CreditCard,
-  Database,
   DollarSign,
   Eye,
   FileCheck,
@@ -58,19 +56,16 @@ import {
   LayoutDashboard,
   Lock,
   LogIn,
-  Mail,
   Map as MapIcon,
   MapPin,
   MessageSquare,
   Package,
   Palette,
   PartyPopper,
-  Phone,
   PiggyBank,
   Receipt,
   Rocket,
   Search,
-  Send,
   Server,
   Settings,
   ShieldCheck,
@@ -86,8 +81,6 @@ import {
   Trophy,
   Truck,
   User,
-  Users,
-  Wallet,
   Warehouse,
   Webhook,
   WandSparkles,
@@ -97,6 +90,7 @@ import { PlatformCard } from "@/components/superadmin/control-center/PlatformCar
 import { CredentialRow } from "@/components/superadmin/control-center/CredentialRow";
 import { SystemInfoCard } from "@/components/superadmin/control-center/SystemInfoCard";
 import { SAStatChip } from "@/components/superadmin/_shared/SAStatChip";
+import { CommandCenterAttention } from "./CommandCenterAttention";
 import type { EnvStatus } from "@/lib/superadmin/env-status";
 import type { PlatformHealthMap, PlatformHealthStatus } from "@/lib/superadmin/platform-health";
 
@@ -476,11 +470,19 @@ export function ControlCenterClient({
   return (
     <AdminPage>
       <AdminTabShell
+      info={{
+        what: "Acceso rápido a todas las consolas (Stripe, Vercel, Supabase…) con el estado de credenciales e info del sistema.",
+        affects: "Solo el superadmin. Es un hub de accesos y diagnóstico; no cambia nada en las tiendas.",
+        example: "Querés revisar un pago en Stripe → entrás desde acá y ves si la credencial está activa.",
+      }}
         title="Centro de control"
         description="Acceso rápido a todas las plataformas + estado de credenciales + info del sistema."
         icon={Gauge}
         kicker="Plataforma Buleje"
       >
+      {/* ── Cockpit: lo que necesita atención AHORA ─────────────────── */}
+      <CommandCenterAttention />
+
       {/* ── Quick stats — visión del estado en un golpe ─────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <SAStatChip
@@ -643,7 +645,7 @@ export function ControlCenterClient({
                     <span
                       className={cn(
                         "h-2 w-2 rounded-full shrink-0",
-                        allOk ? "bg-[var(--data-success-500)]" : "bg-[var(--data-warning-500)]",
+                        allOk ? "bg-[var(--data-success-500)]" : "bg-teal-500",
                       )}
                       aria-hidden
                     />
@@ -656,7 +658,7 @@ export function ControlCenterClient({
                       "shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
                       allOk
                         ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
-                        : "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)]",
+                        : "bg-teal-500/10 text-teal-500",
                     )}
                   >
                     {okCount}/{inGroup.length} OK

@@ -26,7 +26,7 @@ const PLAN_LABEL: Record<string, string> = {
 
 const HEALTH_DOT: Record<Health, string> = {
   healthy: "bg-[var(--data-success-500)]",
-  warning: "bg-[var(--data-warning-500)]",
+  warning: "bg-teal-500",
   critical: "bg-[var(--data-error-500)]",
 };
 
@@ -43,7 +43,12 @@ interface TenantCardCompactProps {
   onImpersonate: (slug: string) => void;
 }
 
-export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: TenantCardCompactProps) {
+export function TenantCardCompact({
+  tenant,
+  health,
+  onDetail,
+  onImpersonate,
+}: TenantCardCompactProps) {
   const t = tenant;
   const initials = t.name.slice(0, 2).toUpperCase();
   const pendingCount = t.pendingOrders ?? 0;
@@ -122,7 +127,7 @@ export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: T
           }}
           title={`Abrir panel admin de ${t.name}`}
           aria-label={`Abrir panel admin de ${t.name}`}
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] opacity-70 transition-all hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] group-hover:opacity-100"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] opacity-70 transition-all hover:border-[var(--accent)] hover:bg-primary/10 hover:text-[var(--accent)] group-hover:opacity-100"
         >
           <ExternalLink className="h-3.5 w-3.5" />
         </button>
@@ -130,7 +135,7 @@ export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: T
 
       {/* Señales: plan + ventas + pendientes + trial — 1 fila */}
       <div className="mt-2.5 flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-2.5">
-        <span className="shrink-0 rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <span className="shrink-0 rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
           {PLAN_LABEL[t.plan] ?? t.plan}
         </span>
         <span
@@ -142,11 +147,11 @@ export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: T
         <span className="flex-1" />
         {daysLeft !== null && (
           <span
-            className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+            className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums ${
               daysLeft <= 0
                 ? "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-red-950/40 dark:text-red-300"
                 : daysLeft <= 7
-                  ? "bg-amber-50 text-[var(--data-warning-700)] dark:bg-amber-950/40 dark:text-amber-300"
+                  ? "bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300"
                   : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
             }`}
             title={daysLeft <= 0 ? "Trial expirado" : `${daysLeft} días de prueba restantes`}
@@ -163,7 +168,7 @@ export function TenantCardCompact({ tenant, health, onDetail, onImpersonate }: T
               setPendingModalOpen(true);
             }}
             title={`${pendingCount} pedido${pendingCount === 1 ? "" : "s"} pendiente${pendingCount === 1 ? "" : "s"} — click para ver`}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-error-500)] px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-white transition-colors hover:bg-[var(--data-error-600)]"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-error-500)] px-1.5 py-0.5 text-xs font-bold tabular-nums text-white transition-colors hover:bg-[var(--data-error-600)]"
           >
             <Bell className="h-3 w-3" strokeWidth={2.5} />
             {pendingCount}

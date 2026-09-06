@@ -64,7 +64,7 @@ const PRIORITY_CONFIG: Record<ModulePriority, { label: string; cls: string; dot:
   core:   { label: "Esencial", cls: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/40 dark:text-[var(--data-error-500)]",         dot: "" },
   high:   { label: "Alta",     cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-orange-950/40 dark:text-[var(--data-warning-500)]", dot: "" },
   medium: { label: "Media",    cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/40 dark:text-[var(--data-warning-500)]",     dot: "" },
-  low:    { label: "Normal",   cls: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",     dot: "" },
+  low:    { label: "Normal",   cls: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",     dot: "" },
 };
 
 export function AdminModuleManagerModal({
@@ -134,7 +134,7 @@ export function AdminModuleManagerModal({
               <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/40 dark:text-[var(--data-error-500)]">Esencial</span>
               <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-orange-950/40 dark:text-[var(--data-warning-500)]">Alta</span>
               <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/40 dark:text-[var(--data-warning-500)]">Media</span>
-              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]">Normal</span>
+              <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]">Normal</span>
             </div>
           </div>
 
@@ -245,8 +245,8 @@ export function AdminModuleManagerModal({
                             className={cn(
                               "h-8 w-8 rounded-lg flex items-center justify-center transition-colors",
                               isHidden
-                                ? "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] hover:text-[var(--data-success-500)]"
-                                : "bg-primary/10 text-primary hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:text-[var(--data-error-500)]"
+                                ? "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)] hover:bg-primary/10 dark:hover:bg-primary/15 hover:text-[var(--data-success-500)]"
+                                : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:text-[var(--data-error-500)]"
                             )}
                           >
                             {isHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}

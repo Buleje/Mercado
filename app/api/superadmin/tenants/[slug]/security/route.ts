@@ -9,6 +9,7 @@ import { requireTotpStepUp } from "@/lib/auth/totp-step-up";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
 import { revokeSessionsBefore } from "@/lib/auth/session-revocation";
 import { notifyTenantOwnerSecurity } from "@/lib/auth/security-alerts";
+import { TrustedDevicesDB } from "@/lib/db/trusted-devices.db";
 import { logger } from "@/lib/logger";
 
 async function requirePlatform(req: NextRequest) {
@@ -86,6 +87,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
         `UPDATE "AdminUser" SET "totpSecret" = NULL, "totpEnabledAt" = NULL, "totpLastUsedStep" = NULL, "updatedAt" = NOW() WHERE "tenantId" = $1 AND username = $2`,
         tenant.id, admin.username,
       );
+      // ADR-304: resetear el 2FA revoca TODOS los dispositivos de confianza —
+      // si el reset responde a un compromiso, una cookie trusted vieja no debe
+      // saltar el 2FA re-enrolado. Best-effort (no bloquea el reset).
+      await TrustedDevicesDB.revokeAll(tenant.id, admin.username).catch((err) =>
+        logger.error("[sa/security] revokeAll trusted-devices failed", { error: String(err) }),
+      );
     } else {
       // logout-all: cerrar TODAS las sesiones activas de TODOS los admins del
       // tenant (ADR-133). Corte de revocación masiva por el jti embebido.
@@ -119,7 +126,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       `${parsed.data.action} en ${slug} (${tenant.name}), usuario ${admin.username}`,
       { tenantSlug: slug, username: admin.username },
       session.username,
-    ).catch(() => {});
+    ).catch((err) => logger.error("[security] superadmin action audit failed", { error: String(err), action: auditAction, username: admin.username }));
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[security] action error", { err: e instanceof Error ? e.message : String(e) });

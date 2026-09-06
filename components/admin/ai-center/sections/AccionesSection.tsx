@@ -6,7 +6,6 @@ import {
   Clock,
   Lightbulb,
   CheckSquare,
-  Square,
   Check,
   Package,
   ShoppingCart,
@@ -258,7 +257,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
       <div className="border-b border-[var(--rule-soft)] px-5 py-4 dark:border-[var(--rule-base)]">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2.5">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 dark:bg-primary/15">
               <CheckSquare className="h-5 w-5 text-[var(--data-success-500)]" />
             </span>
             <div>
@@ -327,7 +326,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
       </div>
 
       {completedCount === total && (
-        <div className="flex items-center justify-center gap-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-5 py-3">
+        <div className="flex items-center justify-center gap-2 bg-primary/10 dark:bg-primary/15 px-5 py-3">
           <Check className="h-4 w-4 text-[var(--data-success-500)]" />
           <span className="text-sm font-extrabold text-[var(--data-success-500)]">
             ¡Día completo! Buen trabajo.

@@ -90,10 +90,10 @@ export default function PushNotificationBanner() {
           className={cn(
             "relative flex items-center gap-3 rounded-xl border px-4 py-3",
             state === "success"
-              ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+              ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15"
               : state === "error"
               ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20"
-              : "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+              : "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15"
           )}
         >
           {/* Icono */}
@@ -101,10 +101,10 @@ export default function PushNotificationBanner() {
             className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
               state === "success"
-                ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+                ? "bg-primary/10 dark:bg-primary/15"
                 : state === "error"
                 ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40"
-                : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]"
+                : "bg-primary/10 dark:bg-primary/15"
             )}
           >
             {state === "success" ? (
@@ -150,7 +150,7 @@ export default function PushNotificationBanner() {
                 "min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 rounded-lg text-xs font-semibold transition-colors shrink-0",
                 state === "error"
                   ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/60 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50"
-                  : "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  : "bg-primary/10 dark:bg-primary/10 text-white hover:bg-primary/10 dark:hover:bg-primary/15 disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
               {state === "loading" ? (

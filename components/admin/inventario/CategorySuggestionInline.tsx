@@ -37,7 +37,7 @@ export function CategorySuggestionInline({
   }
 
   return (
-    <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-[var(--accent)]/40 bg-[var(--accent-soft)] px-3 py-2">
+    <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-[var(--accent)]/40 bg-primary/10 px-3 py-2">
       <div className="min-w-0 flex-1">
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
           Sugerencia automática

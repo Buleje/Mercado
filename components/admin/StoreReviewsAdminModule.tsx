@@ -119,7 +119,7 @@ function ReplyBox({ review, onReplied }: { review: AdminReview; onReplied: () =>
   }
   if (!open && review.adminReply) {
     return (
-      <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--accent)]/20 p-3">
+      <div className="rounded-lg bg-primary/10 border border-[var(--accent)]/20 p-3">
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)] mb-1">
           Tu respuesta · {review.adminReplyDate ? new Date(review.adminReplyDate).toLocaleDateString("es-PE") : ""}
         </p>

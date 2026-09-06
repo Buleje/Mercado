@@ -85,7 +85,7 @@ export function SolicitudesTab() {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <FileText className="h-5 w-5" />
             </span>
             <div>
@@ -155,7 +155,7 @@ export function SolicitudesTab() {
             </button>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                   <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
                 </span>
               </div>
@@ -279,7 +279,7 @@ export function SolicitudesTab() {
               >
                 <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-xl font-extrabold shrink-0">
+                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)] text-xl font-extrabold shrink-0">
                       {(data.name || "?").trim().charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -303,7 +303,7 @@ export function SolicitudesTab() {
                             className={cn(
                               "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold",
                               kycCheck.ok
-                                ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                                 : "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
                             )}
                           >
@@ -370,7 +370,7 @@ export function SolicitudesTab() {
                         onClick={() => handleAction(app.id, "approve")}
                         disabled={isProcessing || !canApprove}
                         title={canApprove ? "Aprobar repartidor" : `Falta: ${kycCheck.missing.join(", ")}`}
-                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         <ThumbsUp className="h-4 w-4" />
                         {isProcessing ? "..." : "Aprobar"}
@@ -471,11 +471,6 @@ function KycSection({ title, rows }: { title: string; rows: [string, string][] }
 // ─────────────────────────────────────────────
 // Componente principal
 // ─────────────────────────────────────────────
-interface DeliveryKPIs {
-  activePartners: number;
-  deliveriesToday: number;
-  pendingDeliveries: number;
-}
 
 
 // ── Tipos/helpers movidos de DeliveryPartnersModule (refactor 2026-06-15) ──

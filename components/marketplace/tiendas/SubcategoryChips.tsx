@@ -27,7 +27,7 @@ interface SubcategoryChipsProps {
   subcategories: ReadonlyArray<SubcategoryChipOption>;
   activeId: string | null;
   onSelect: (id: string | null) => void;
-  variant: "pill" | "card" | "row";
+  variant: "pill" | "card" | "row" | "tile";
 }
 
 export default function SubcategoryChips({
@@ -92,7 +92,7 @@ export default function SubcategoryChips({
                   "h-10 w-10 sm:h-12 sm:w-12 rounded-2xl overflow-hidden flex items-center justify-center transition-all",
                   active
                     ? "bg-[var(--accent)] text-white shadow-md scale-105"
-                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-[var(--accent-soft)] group-hover:text-[var(--accent)]",
+                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:bg-primary/10 group-hover:text-[var(--accent)]",
                 )}
               >
                 {s.imageUrl ? (
@@ -117,6 +117,48 @@ export default function SubcategoryChips({
                 )}
               >
                 {s.label}
+              </span>
+            </button>
+          );
+        }
+
+        // ── TILE: cuadro grande estilo Betano (foto cover + label overlay).
+        //     Brandon 2026-07-06: fila de "¿qué se te antoja hoy?" bajo el banner. ──
+        if (variant === "tile") {
+          return (
+            <button
+              key={`tile-${s.id}`}
+              onClick={onClick}
+              aria-pressed={active}
+              title={s.description || s.label}
+              className={cn(
+                "group relative h-[84px] w-[84px] shrink-0 overflow-hidden rounded-2xl border transition-all sm:h-[100px] sm:w-[100px]",
+                active
+                  ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/40"
+                  : "border-[var(--rule-base)] hover:-translate-y-0.5 hover:border-[var(--accent)]/50",
+              )}
+            >
+              {s.imageUrl ? (
+                <Image
+                  src={s.imageUrl}
+                  alt=""
+                  fill
+                  sizes="92px"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              ) : (
+                <span className="absolute inset-0 flex items-center justify-center bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                  <Boxes className="h-6 w-6" strokeWidth={1.75} aria-hidden />
+                </span>
+              )}
+              <span
+                aria-hidden
+                className="absolute inset-0 bg-linear-to-t from-black/70 via-black/5 to-transparent"
+              />
+              <span className="absolute inset-x-0 bottom-0 px-1.5 pb-1.5 text-left">
+                <span className="line-clamp-1 text-[length:var(--ts-xs)] font-extrabold leading-tight text-white drop-shadow">
+                  {s.label}
+                </span>
               </span>
             </button>
           );

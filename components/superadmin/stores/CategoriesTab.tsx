@@ -479,18 +479,18 @@ export function CategoriesTab() {
 
       {/* ── Unlinked report ───────────────────────────────────── */}
       {unlinkedReport && unlinkedReport.length > 0 && (
-        <section className="rounded-2xl border border-amber-300/60 bg-amber-50/30 overflow-hidden dark:border-amber-700/40 dark:bg-amber-950/20">
-          <header className="flex items-center gap-3 border-b border-amber-200/60 dark:border-amber-700/40 px-5 py-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+        <section className="rounded-2xl border border-teal-300/60 bg-teal-50/30 overflow-hidden dark:border-teal-700/40 dark:bg-teal-950/20">
+          <header className="flex items-center gap-3 border-b border-teal-200/60 dark:border-teal-700/40 px-5 py-3">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
               <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
             </span>
             <div>
-              <p className="font-display text-sm font-extrabold text-amber-800 dark:text-amber-200">
+              <p className="font-display text-sm font-extrabold text-teal-800 dark:text-teal-200">
                 {unlinkedReport.length === 1
                   ? "1 elemento sin tienda vinculada"
                   : `${unlinkedReport.length} elementos sin tienda vinculada`}
               </p>
-              <p className="text-xs text-amber-700/80 dark:text-amber-400/80 mt-0.5">
+              <p className="text-xs text-teal-700/80 dark:text-teal-400/80 mt-0.5">
                 No aparecerán poblados en <code className="font-mono">/tiendas</code>. Asigná al
                 menos una tienda.
               </p>
@@ -500,13 +500,13 @@ export function CategoriesTab() {
             {unlinkedReport.map((it, i) => (
               <li
                 key={`${it.kind}-${i}`}
-                className="flex items-center gap-2 rounded-lg border border-amber-300/40 bg-[var(--surface-raised)] px-2.5 py-1.5 text-xs dark:border-amber-700/30"
+                className="flex items-center gap-2 rounded-lg border border-teal-300/40 bg-[var(--surface-raised)] px-2.5 py-1.5 text-xs dark:border-teal-700/30"
               >
                 <span
                   className={`inline-flex items-center rounded px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${
                     it.kind === "category"
-                      ? "bg-amber-200/70 text-amber-800 dark:bg-amber-800/40 dark:text-amber-200"
-                      : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                      ? "bg-teal-200/70 text-teal-800 dark:bg-teal-800/40 dark:text-teal-200"
+                      : "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300"
                   }`}
                 >
                   {it.kind === "category" ? "Cat" : "Sub"}
@@ -641,12 +641,12 @@ function StatCell({
 }) {
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
   const valueTone =
     tone === "warning" && value > 0
-      ? "text-amber-700 dark:text-amber-300"
+      ? "text-teal-700 dark:text-teal-300"
       : "text-[var(--text-primary)]";
   return (
     <div className="flex items-center gap-3 p-4">
@@ -765,8 +765,8 @@ function CategoryRow({
                 {cat.id}
               </span>
               {dirty && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
-                  <span className="h-1 w-1 rounded-full bg-amber-500" />
+                <span className="inline-flex items-center gap-1 rounded-full border border-teal-300/60 bg-teal-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300">
+                  <span className="h-1 w-1 rounded-full bg-teal-500" />
                   Sin guardar
                 </span>
               )}
@@ -874,7 +874,7 @@ function CategoryRow({
                     onClick={() => onPatch({ active: !cat.active })}
                     className={`inline-flex h-11 items-center gap-1.5 rounded-xl border-2 px-4 text-sm font-bold transition ${
                       isHidden
-                        ? "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300"
+                        ? "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300"
                         : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)]/40"
                     }`}
                   >
@@ -1302,7 +1302,7 @@ function SubCategoryCard({
             className={`inline-flex h-8 w-8 items-center justify-center rounded-lg backdrop-blur transition ${
               sub.active
                 ? "bg-black/55 text-white hover:bg-black/75"
-                : "bg-amber-500/90 text-white hover:bg-amber-600"
+                : "bg-teal-500/90 text-white hover:bg-teal-600"
             }`}
           >
             {sub.active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -1473,18 +1473,18 @@ function PrimaryStoreLinker({
     <div className="space-y-3">
       {/* Linked stores grid */}
       {linkedStores.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-amber-300/60 bg-amber-50/30 px-4 py-4 dark:border-amber-700/40 dark:bg-amber-950/20">
+        <div className="rounded-xl border border-dashed border-teal-300/60 bg-teal-50/30 px-4 py-4 dark:border-teal-700/40 dark:bg-teal-950/20">
           <div className="flex items-center gap-2.5">
             <AlertTriangle
-              className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0"
+              className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0"
               strokeWidth={1.75}
               aria-hidden
             />
-            <p className="text-sm font-bold text-amber-800 dark:text-amber-200">
+            <p className="text-sm font-bold text-teal-800 dark:text-teal-200">
               Sin tiendas vinculadas
             </p>
           </div>
-          <p className="text-xs text-amber-700/80 dark:text-amber-400/80 mt-1 ml-7">
+          <p className="text-xs text-teal-700/80 dark:text-teal-400/80 mt-1 ml-7">
             Asigná al menos una tienda para que esta categoría aparezca poblada en /tiendas.
           </p>
         </div>

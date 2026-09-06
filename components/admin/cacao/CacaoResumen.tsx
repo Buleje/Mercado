@@ -7,13 +7,22 @@
  * productores, alerta de humedad + reporte imprimible.
  */
 import { useCallback, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   Scale, Coins, PackageCheck, Users, Leaf, Warehouse, TrendingUp, Award, Droplets,
   AlertCircle, Download, RefreshCw, Calendar, Beaker, Percent, Banknote,
+  Trees, Stethoscope, ClipboardList,
 } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import { CardTitle, StatCard } from "@buleje/design-system";
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
+import { PLAGA_LABEL, type CacaoPlaga } from "@/lib/cacao/cacao-sanidad";
 import { printCacaoReporte } from "@/lib/cacao/cacao-reporte";
+
+// Gráfico central grande (recharts) fuera del bundle inicial.
+const CacaoResumenChart = dynamic(() => import("./CacaoResumenChart"), {
+  ssr: false,
+  loading: () => <div className="flex h-[420px] items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]"><RefreshCw className="h-6 w-6 animate-spin" /></div>,
+});
 
 interface Stats {
   lotes: number; productoresActivos: number; kgAcopiados: number; valorPagado: number;
@@ -29,37 +38,94 @@ interface Trends {
   humedadFuera: { loteCode: string; humedadPct: number }[]; humedadFueraCount: number;
 }
 interface Inventory { kgSecoDisponible: number; valorEstimado: number; kgHumedoProceso: number; rendimientoProm: number | null }
+interface VentasStats { kg: number; ingresos: number; cobrado: number; saldoPendiente: number }
+interface CampoStats { parcelas: number; areaHa: number; alDia: number; pendientes: number; vencidos: number; laboresPendientes: number }
+interface CampoSanidad { focosActivos: number; criticos: number; seccionesAfectadas: number; plagaTop: CacaoPlaga | null }
+interface CampoTotales { cosechaKg: number; rendKgHa: number | null; ingresos: number; costos: number; margen: number }
 
 const n2 = (v: number | null) => (v == null ? "—" : v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+const n0 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 0 });
+const n1 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 1 });
 const fdate = (iso: string | null) => { if (!iso) return "—"; try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", timeZone: "UTC" }); } catch { return iso; } };
-const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const mesLabel = (m: string) => { const [y, mm] = m.split("-"); return `${MESES[Number(mm) - 1] ?? mm} ${(y ?? "").slice(2)}`; };
+
+/** Presets de campaña → rango ISO {from,to} para no mezclar años/campañas. */
+const RANGO_OPCIONES: { v: string; label: string }[] = [
+  { v: "all", label: "Toda la historia" },
+  { v: "year", label: "Este año" },
+  { v: "prev", label: "Año pasado" },
+  { v: "90d", label: "Últimos 90 días" },
+];
+function rangoADatos(r: string): { from?: string; to?: string } {
+  const now = new Date();
+  const y = now.getFullYear();
+  if (r === "year") return { from: new Date(Date.UTC(y, 0, 1)).toISOString() };
+  if (r === "prev")
+    return {
+      from: new Date(Date.UTC(y - 1, 0, 1)).toISOString(),
+      to: new Date(Date.UTC(y - 1, 11, 31, 23, 59, 59)).toISOString(),
+    };
+  if (r === "90d") {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 90);
+    return { from: d.toISOString() };
+  }
+  return {};
+}
 
 export default function CacaoResumen() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [trends, setTrends] = useState<Trends | null>(null);
   const [inv, setInv] = useState<Inventory | null>(null);
+  const [campo, setCampo] = useState<CampoStats | null>(null);
+  const [campoSan, setCampoSan] = useState<CampoSanidad | null>(null);
+  const [campoTot, setCampoTot] = useState<CampoTotales | null>(null);
+  const [ventas, setVentas] = useState<VentasStats | null>(null);
   const [loading, setLoading] = useState(true);
+  /**
+   * FIX 2026-08-22: el guard era `loading && !stats` — `stats` es el PRIMERO
+   * de 7 `await .json()` secuenciales en la misma `load()` (trends, inv,
+   * campo, campoSan, campoTot y ventas vienen después). En esa ventana React
+   * ya podía renderizar con las otras 6 secciones todavía en `null`: el
+   * Resumen se pintaba incompleto un instante y se completaba solo. Mismo
+   * patrón que `CtpAnalisis`/`LothCompliancePanel` (misma sesión), acá con
+   * más pasos de por medio. `ready` cubre las 7 await, no sólo la primera.
+   */
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rango, setRango] = useState<string>("all");
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const [rs, rt, ri] = await Promise.all([
-        fetch("/api/admin/cacao?view=stats", { credentials: "include" }),
-        fetch("/api/admin/cacao?view=trends", { credentials: "include" }),
+      const { from, to } = rangoADatos(rango);
+      const qs = new URLSearchParams();
+      if (from) qs.set("from", from);
+      if (to) qs.set("to", to);
+      const q = qs.toString() ? `&${qs}` : "";
+      const [rs, rt, ri, rc, rcs, rca, rv] = await Promise.all([
+        fetch(`/api/admin/cacao?view=stats${q}`, { credentials: "include" }),
+        fetch(`/api/admin/cacao?view=trends${q}`, { credentials: "include" }),
+        // Inventario + Campo + Ventas = estado ACTUAL, no se filtran por campaña.
         fetch("/api/admin/cacao?view=inventory", { credentials: "include" }),
+        fetch("/api/admin/cacao/campo?view=stats", { credentials: "include" }),
+        fetch("/api/admin/cacao/campo?view=sanidad-stats", { credentials: "include" }),
+        fetch("/api/admin/cacao/campo?view=analytics", { credentials: "include" }),
+        fetch("/api/admin/cacao?view=ventas-stats", { credentials: "include" }),
       ]);
       if (!rs.ok) throw new Error(`HTTP ${rs.status}`);
       setStats((await rs.json()).stats ?? null);
       setTrends(rt.ok ? (await rt.json()).trends ?? null : null);
       setInv(ri.ok ? (await ri.json()).inventory ?? null : null);
+      setCampo(rc.ok ? (await rc.json()).stats ?? null : null);
+      setCampoSan(rcs.ok ? (await rcs.json()).stats ?? null : null);
+      setCampoTot(rca.ok ? (await rca.json()).totales ?? null : null);
+      setVentas(rv.ok ? (await rv.json()).stats ?? null : null);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
-    finally { setLoading(false); }
-  }, []);
+    finally { setLoading(false); setReady(true); }
+  }, [rango]);
   useEffect(() => { load(); }, [load]);
 
-  if (loading && !stats) return <div className="p-12 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando resumen…</p></div>;
+  if (loading && !ready) return <div className="p-12 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando resumen…</p></div>;
   if (error) return <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>No se pudo cargar el resumen:</strong> {error}</div></div>;
   if (!stats) return null;
 
@@ -72,10 +138,23 @@ export default function CacaoResumen() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"><Calendar className="h-4 w-4 text-[var(--text-tertiary)]" /><span className="font-medium">{periodo}</span></div>
         <div className="flex items-center gap-2">
+          <select
+            value={rango}
+            onChange={(e) => setRango(e.target.value)}
+            aria-label="Campaña / rango"
+            className="h-10 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          >
+            {RANGO_OPCIONES.map((o) => (
+              <option key={o.v} value={o.v}>{o.label}</option>
+            ))}
+          </select>
           <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>
           <button type="button" onClick={() => printCacaoReporte(stats, trends)} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" />Imprimir reporte</button>
         </div>
       </div>
+
+      {/* Veredicto de campaña — el TL;DR de un vistazo */}
+      <CampaignVerdict stats={stats} inv={inv} />
 
       {/* Hero KPIs */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -85,6 +164,12 @@ export default function CacaoResumen() {
         <StatCard label="Calidad Grado I" value={`${stats.pctGradoI}%`} subValue="de los lotes" icon={Award} emphasis={stats.pctGradoI >= 50 ? "success" : "warning"} />
       </div>
 
+      {/* Resultado del negocio: ventas de cacao − lo pagado en acopio */}
+      <CacaoResultado ventas={ventas} valorPagado={stats.valorPagado} secoDisponible={inv?.kgSecoDisponible ?? 0} valorInventario={inv?.valorEstimado ?? 0} />
+
+      {/* Gráfico central grande: comprado vs vendido por mes */}
+      <CacaoResumenChart />
+
       {/* KPIs secundarios */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Mini icon={PackageCheck} label="Kg por lote (prom.)" value={`${n2(stats.kgPromLote)} kg`} />
@@ -92,6 +177,22 @@ export default function CacaoResumen() {
         <Mini icon={Leaf} label="Índice ferm. prom." value={`${stats.indiceFermentacionProm}%`} tone={stats.indiceFermentacionProm >= 60 ? "ok" : "warn"} />
         <Mini icon={Percent} label="Humedad en norma" value={`${stats.pctHumedadEnNorma}%`} hint={`${stats.humedadMuestras} muestra${stats.humedadMuestras !== 1 ? "s" : ""}`} tone={stats.pctHumedadEnNorma >= 80 ? "ok" : "warn"} />
       </div>
+
+      {/* Campo — tu chacra (integra el módulo de manejo de campo) */}
+      {campo && campo.parcelas > 0 && (
+        <div>
+          <CardTitle as="h3" className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Trees className="h-4 w-4 text-[var(--accent)]" />Campo — tu chacra</CardTitle>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatCard label="Secciones" value={String(campo.parcelas)} subValue={`${n1(campo.areaHa)} ha`} icon={Trees} emphasis="neutral" />
+            <StatCard label="Cosecha propia" value={campoTot ? `${n0(campoTot.cosechaKg)} kg` : "—"} subValue={campoTot?.rendKgHa != null ? `${n1(campoTot.rendKgHa)} kg/ha` : "sin cosecha"} icon={Scale} emphasis="neutral" />
+            <StatCard label="Labores pendientes" value={String(campo.laboresPendientes)} subValue={campo.vencidos > 0 ? `${campo.vencidos} sección${campo.vencidos !== 1 ? "es" : ""} vencida${campo.vencidos !== 1 ? "s" : ""}` : `${campo.alDia} al día`} icon={ClipboardList} emphasis={campo.vencidos > 0 ? "warning" : "neutral"} />
+            <StatCard label="Sanidad" value={campoSan && campoSan.focosActivos > 0 ? `${campoSan.focosActivos} foco${campoSan.focosActivos !== 1 ? "s" : ""}` : "Sin focos"} subValue={campoSan && campoSan.focosActivos > 0 ? `${campoSan.criticos} de severidad alta${campoSan.plagaTop ? ` · ${PLAGA_LABEL[campoSan.plagaTop]}` : ""}` : "todo sano"} icon={Stethoscope} emphasis={campoSan && campoSan.criticos > 0 ? "error" : campoSan && campoSan.focosActivos > 0 ? "warning" : "success"} />
+          </div>
+          {campoTot && (campoTot.ingresos > 0 || campoTot.costos > 0) && (
+            <p className="mt-2 text-xs text-[var(--text-tertiary)]">Margen del campo: <strong className={campoTot.margen >= 0 ? "text-[var(--data-success-700)]" : "text-[var(--data-error-700)]"}>S/ {n2(campoTot.margen)}</strong> · ingresos S/ {n2(campoTot.ingresos)} − costos de labores S/ {n2(campoTot.costos)}. <span className="text-[var(--text-tertiary)]">El campo refleja el estado actual (no la campaña seleccionada).</span></p>
+          )}
+        </div>
+      )}
 
       {/* Inventario seco */}
       {inv && (inv.kgSecoDisponible > 0 || inv.kgHumedoProceso > 0) && (
@@ -120,15 +221,12 @@ export default function CacaoResumen() {
         </Panel>
       </div>
 
-      {/* Tendencia + top productores */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Panel icon={Calendar} title="Kg acopiados por mes">
-          {!trends || trends.meses.length === 0 ? <Muted /> : (() => { const max = Math.max(...trends.meses.map((m) => m.kg), 1); return trends.meses.map((m) => <Bar key={m.mes} label={mesLabel(m.mes)} value={m.kg} max={max} unit="kg" />); })()}
-        </Panel>
+      {/* Top productores (la tendencia mensual está en el gráfico central de arriba) */}
+      <div className="grid grid-cols-1 gap-4">
         <Panel icon={Users} title="Top productores (por pago)">
           {!trends || trends.topProductores.length === 0 ? <Muted /> : trends.topProductores.map((p, i) => (
             <div key={p.nombre + i} className="flex items-center justify-between gap-2 py-1.5 text-sm">
-              <span className="flex min-w-0 items-center gap-2"><span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">{i + 1}</span><span className="truncate text-[var(--text-primary)]">{p.nombre}</span></span>
+              <span className="flex min-w-0 items-center gap-2"><span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/10 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)]">{i + 1}</span><span className="truncate text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">{p.nombre}</span></span>
               <span className="flex shrink-0 items-center gap-3"><span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{n2(p.kg)} kg</span><span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">S/ {n2(p.pagado)}</span></span>
             </div>
           ))}
@@ -137,13 +235,113 @@ export default function CacaoResumen() {
 
       {/* Alerta humedad */}
       {trends && trends.humedadFueraCount > 0 && (
-        <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-warning-300)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-900)]">
+        <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 text-sm text-[var(--data-warning-700)]">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
           <div><strong>{trends.humedadFueraCount} lote{trends.humedadFueraCount > 1 ? "s" : ""} con humedad fuera de norma</strong> (&gt; 7%).{" "}
-            <span className="text-[var(--data-warning-800)]">{trends.humedadFuera.map((h) => `${h.loteCode} (${h.humedadPct.toFixed(1)}%)`).join(" · ")}</span></div>
+            <span className="text-[var(--data-warning-700)]">{trends.humedadFuera.map((h) => `${h.loteCode} (${h.humedadPct.toFixed(1)}%)`).join(" · ")}</span></div>
         </div>
       )}
     </div>
+  );
+}
+
+/** Resultado del negocio de cacao: ventas − lo pagado en acopio. */
+function CacaoResultado({
+  ventas, valorPagado, secoDisponible, valorInventario,
+}: {
+  ventas: VentasStats | null;
+  valorPagado: number;
+  secoDisponible: number;
+  valorInventario: number;
+}) {
+  if (!ventas || (ventas.ingresos <= 0 && valorPagado <= 0)) return null;
+  const ingresos = ventas.ingresos;
+  const resultado = ingresos - valorPagado;
+  const margen = ingresos > 0 ? (resultado / ingresos) * 100 : null;
+  const gano = resultado >= 0;
+  const color = gano ? "var(--data-success-700,#047857)" : "var(--data-error-700,#b91c1c)";
+  return (
+    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Banknote className="h-4 w-4 text-[var(--accent)]" aria-hidden />
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Resultado del cacao</CardTitle>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 sm:items-center">
+        <div>
+          <div className="flex items-baseline justify-between gap-2 py-1 text-sm">
+            <span className="text-[var(--text-secondary)]">Ingresos por ventas</span>
+            <span className="font-bold tabular-nums text-[var(--text-primary)]">+S/ {n2(ingresos)}</span>
+          </div>
+          <div className="flex items-baseline justify-between gap-2 py-1 text-sm">
+            <span className="text-[var(--text-tertiary)]">− Pagado a productores</span>
+            <span className="font-bold tabular-nums text-[var(--text-secondary)]">−S/ {n2(valorPagado)}</span>
+          </div>
+          <div className="mt-2 flex items-end justify-between gap-3 border-t-2 border-[var(--rule-base)] pt-2">
+            <div>
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Resultado</p>
+              <p className="inline-flex items-center gap-1 text-sm font-bold" style={{ color }}>
+                {gano ? <TrendingUp className="h-4 w-4" aria-hidden /> : <AlertCircle className="h-4 w-4" aria-hidden />}
+                {gano ? "Ganás" : "Perdés"}{margen !== null && ` · margen ${margen.toFixed(0)}%`}
+              </p>
+            </div>
+            <p className="font-mono text-2xl font-extrabold tabular-nums" style={{ color }}>
+              {gano ? "+" : "−"}S/ {n2(Math.abs(resultado))}
+            </p>
+          </div>
+        </div>
+        <div className="space-y-1.5 text-sm text-[var(--text-secondary)] sm:border-l sm:border-[var(--rule-soft)] sm:pl-4">
+          {ventas.saldoPendiente > 0 && (
+            <p>Por cobrar: <b className="text-[var(--data-warning-700,#b45309)]">S/ {n2(ventas.saldoPendiente)}</b></p>
+          )}
+          {secoDisponible > 0 && (
+            <p><b className="text-[var(--text-primary)]">{n2(secoDisponible)} kg</b> secos sin vender (≈ S/ {n2(valorInventario)} a precio acopio) — ingreso potencial.</p>
+          )}
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Ventas = todo el histórico; acopio = la campaña seleccionada arriba.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Veredicto de campaña — el TL;DR: calidad + cuánto acopiaste, de un vistazo. */
+function CampaignVerdict({ stats, inv }: { stats: Stats; inv: Inventory | null }) {
+  if (stats.kgAcopiados <= 0) return null;
+  const q = stats.pctGradoI;
+  const h = stats.pctHumedadEnNorma;
+  const verdict = q >= 60 && h >= 80 ? "solida" : q < 50 || h < 60 ? "vigilar" : "curso";
+  const meta = {
+    solida: { label: "Campaña sólida", color: "var(--data-success-700,#047857)", border: "var(--data-success-500)", Icon: Award },
+    curso: { label: "Campaña en curso", color: "var(--accent-dark)", border: "var(--accent)", Icon: Leaf },
+    vigilar: { label: "Vigilá la calidad", color: "var(--data-warning-700,#b45309)", border: "var(--data-warning-500)", Icon: AlertCircle },
+  }[verdict];
+  const qColor = q >= 50 ? "var(--data-success-700,#047857)" : "var(--data-warning-700,#b45309)";
+  const hColor = h >= 80 ? "var(--data-success-700,#047857)" : "var(--data-warning-700,#b45309)";
+  const secoListo = inv && inv.kgSecoDisponible > 0;
+  return (
+    <section
+      className="flex flex-col gap-3 rounded-2xl border-2 p-4 sm:flex-row sm:items-center sm:gap-4"
+      style={{ borderColor: meta.border, background: "var(--surface-raised)" }}
+    >
+      <div className="flex items-center gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: "var(--surface-sunken)", color: meta.color }}>
+          <meta.Icon className="h-6 w-6" strokeWidth={2} aria-hidden />
+        </span>
+        <div className="sm:min-w-[8.5rem]">
+          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Campaña</p>
+          <p className="text-base font-extrabold" style={{ color: meta.color }}>{meta.label}</p>
+        </div>
+      </div>
+      <p className="text-sm text-[var(--text-secondary)] sm:border-l sm:border-[var(--rule-soft)] sm:pl-4">
+        Acopiaste <b className="text-[var(--text-primary)]">{n2(stats.kgAcopiados)} kg</b> de{" "}
+        <b className="text-[var(--text-primary)]">{stats.productoresActivos}</b> productor
+        {stats.productoresActivos !== 1 ? "es" : ""} por{" "}
+        <b className="text-[var(--text-primary)]">S/ {n2(stats.valorPagado)}</b> (S/ {n2(stats.precioPromKg)}/kg) · Grado I{" "}
+        <b style={{ color: qColor }}>{q}%</b> · humedad en norma <b style={{ color: hColor }}>{h}%</b>
+        {secoListo && (
+          <> · <b className="text-[var(--data-success-700,#047857)]">{n2(inv.kgSecoDisponible)} kg</b> secos listos para vender</>
+        )}
+      </p>
+    </section>
   );
 }
 
@@ -160,7 +358,7 @@ function Mini({ icon: Icon, label, value, hint, tone }: { icon: typeof Leaf; lab
 function Panel({ icon: Icon, title, children }: { icon: typeof Leaf; title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Icon className="h-4 w-4 text-[var(--accent)]" />{title}</h3>
+      <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Icon className="h-4 w-4 text-[var(--accent)]" />{title}</CardTitle>
       <div className="space-y-2">{children}</div>
     </div>
   );

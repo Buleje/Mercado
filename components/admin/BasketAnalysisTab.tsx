@@ -75,7 +75,7 @@ export default function BasketAnalysisTab() {
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
           <button onClick={() => exportToCSV(sorted.map(a => ({ producto_a: a.productA, producto_b: a.productB, categoria: a.category, soporte: (a.support * 100).toFixed(1) + "%", confianza: (a.confidence * 100).toFixed(1) + "%", lift: Number(a.lift).toFixed(1), transacciones: a.count })), "analisis-cesta")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10">
             <Download className="h-3.5 w-3.5" /> CSV
           </button>
         </div>
@@ -146,7 +146,7 @@ export default function BasketAnalysisTab() {
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="flex-1 h-1.5 bg-[var(--rule-soft)] dark:bg-[var(--surface-raised)] rounded-full overflow-hidden">
-                    <div className="h-full bg-[var(--accent-soft)] rounded-full" style={{ width: `${a.confidence * 100}%` }} />
+                    <div className="h-full bg-primary/10 rounded-full" style={{ width: `${a.confidence * 100}%` }} />
                   </div>
                   <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{(a.confidence * 100).toFixed(0)}%</span>
                 </div>
@@ -221,7 +221,7 @@ export default function BasketAnalysisTab() {
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <div className="w-12 h-1.5 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
-                          <div className="h-full bg-[var(--accent-soft)] rounded-full" style={{ width: `${a.confidence * 100}%` }} />
+                          <div className="h-full bg-primary/10 rounded-full" style={{ width: `${a.confidence * 100}%` }} />
                         </div>
                         <span className="text-xs font-bold text-[var(--data-success-500)]">{(a.confidence * 100).toFixed(0)}%</span>
                       </div>

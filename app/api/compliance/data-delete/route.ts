@@ -35,7 +35,6 @@ const DeleteSchema = z.object({
 
 /** Fields to anonymize (replace with placeholder values) */
 const ANONYMIZED_PLACEHOLDER = "[DATOS ELIMINADOS - Ley 29733]";
-const ANONYMIZED_PHONE = "0000000000";
 
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "compliance-data-delete"); if (_rl) return _rl;

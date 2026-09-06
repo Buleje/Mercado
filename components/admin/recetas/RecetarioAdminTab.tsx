@@ -1,7 +1,8 @@
 'use client';
 
-import { LoadingState } from "@buleje/design-system";
+import { DataTable, LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { toast } from "sonner";
 
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -9,6 +10,7 @@ import {
   Eye, EyeOff, Save, BookOpen, Clock, Users, BarChart3,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -95,7 +97,7 @@ export default function RecetarioAdminTab() {
     fetch("/api/products?limit=500")
       .then(r => r.json())
       .then(d => { if (Array.isArray(d)) setProducts(d); })
-      .catch(() => {});
+      .catch((err) => console.warn("[RecetarioAdminTab] products fetch failed:", String(err)));
   }, []);
 
   // ── Form helpers ──
@@ -170,23 +172,31 @@ export default function RecetarioAdminTab() {
         activa: true,
       };
 
-      if (editing?._noteId) {
-        await fetch(`/api/admin/recetario/${editing._noteId}`, {
-          method: "PATCH",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify(body),
-        });
-      } else {
-        await fetch("/api/admin/recetario", {
-          method: "POST",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify(body),
-        });
+      const res = editing?._noteId
+        ? await fetch(`/api/admin/recetario/${editing._noteId}`, {
+            method: "PATCH",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(body),
+          })
+        : await fetch("/api/admin/recetario", {
+            method: "POST",
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(body),
+          });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        toast.error(typeof errBody?.error === "string" ? errBody.error : `No se pudo guardar la receta (error ${res.status})`);
+        setSaving(false);
+        return;
       }
+      toast.success(editing ? "Receta actualizada" : "Receta creada");
       setShowModal(false);
       resetForm();
       fetchRecetas();
-    } catch { /* silent */ }
+    } catch (err) {
+      console.warn("[RecetarioAdminTab] guardar receta falló", err);
+      toast.error("No se pudo guardar la receta — revisá tu conexión.");
+    }
     setSaving(false);
   };
 
@@ -194,22 +204,39 @@ export default function RecetarioAdminTab() {
   const toggleActiva = async (r: RecetaPublica) => {
     if (!r._noteId) return;
     try {
-      await fetch(`/api/admin/recetario/${r._noteId}`, {
+      const res = await fetch(`/api/admin/recetario/${r._noteId}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ activa: !r.activa }),
       });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        toast.error(typeof errBody?.error === "string" ? errBody.error : `No se pudo cambiar el estado (error ${res.status})`);
+        return;
+      }
       fetchRecetas();
-    } catch { /* silent */ }
+    } catch (err) {
+      console.warn("[RecetarioAdminTab] cambiar estado falló", err);
+      toast.error("No se pudo cambiar el estado — revisá tu conexión.");
+    }
   };
 
   // ── Delete ──
   const handleDelete = async (noteId: string) => {
     try {
-      await fetch(`/api/admin/recetario/${noteId}`, { method: "DELETE", headers: csrfHeaders() });
+      const res = await fetch(`/api/admin/recetario/${noteId}`, { method: "DELETE", headers: csrfHeaders() });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        toast.error(typeof errBody?.error === "string" ? errBody.error : `No se pudo eliminar la receta (error ${res.status})`);
+        return;
+      }
+      toast.success("Receta eliminada");
       setDeleteConfirm(null);
       fetchRecetas();
-    } catch { /* silent */ }
+    } catch (err) {
+      console.warn("[RecetarioAdminTab] eliminar receta falló", err);
+      toast.error("No se pudo eliminar la receta — revisá tu conexión.");
+    }
   };
 
   // ── Filter ──
@@ -235,11 +262,11 @@ export default function RecetarioAdminTab() {
     <div className="space-y-6">
       {/* Stats bar */}
       <div className="flex flex-wrap gap-3 text-xs">
-        <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
+        <div className="flex items-center gap-1.5 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
           <BookOpen className="h-3.5 w-3.5" />
           Recetas publicadas: {activas}
         </div>
-        <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
+        <div className="flex items-center gap-1.5 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
           <BarChart3 className="h-3.5 w-3.5" />
           Ingredientes promedio: {avgIng}
         </div>
@@ -293,7 +320,7 @@ export default function RecetarioAdminTab() {
       ) : (
         <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[var(--rule-soft)] text-left">
                   <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Receta</th>
@@ -330,7 +357,7 @@ export default function RecetarioAdminTab() {
                         className={cn(
                           "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors",
                           r.activa !== false
-                            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                             : "bg-gray-100 text-[var(--text-secondary)]"
                         )}
                       >
@@ -358,7 +385,7 @@ export default function RecetarioAdminTab() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}
@@ -404,45 +431,37 @@ export default function RecetarioAdminTab() {
                   {/* A) Info Básica */}
                   {modalTab === "info" && (
                     <div className="space-y-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nombre *</label>
+                      <Field label="Nombre *" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Ceviche Clasico" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Descripcion</label>
+                      </Field>
+                      <Field label="Descripcion" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} placeholder="Descripcion de la receta..." rows={3} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                      </div>
+                      </Field>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Emoji</label>
+                        <Field label="Emoji" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <input type="text" value={emoji} onChange={e => setEmoji(e.target.value)} placeholder="🍲" maxLength={2} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tiempo (min)</label>
+                        </Field>
+                        <Field label="Tiempo (min)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <input type="number" value={tiempoMinutos} onChange={e => setTiempoMinutos(Number(e.target.value))} min={1} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Porciones</label>
+                        </Field>
+                        <Field label="Porciones" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <input type="number" value={porciones} onChange={e => setPorciones(Number(e.target.value))} min={1} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Dificultad</label>
+                        </Field>
+                        <Field label="Dificultad" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <select value={dificultad} onChange={e => setDificultad(e.target.value as typeof dificultad)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                             {DIFICULTADES.map(d => <option key={d} value={d}>{d}</option>)}
                           </select>
-                        </div>
+                        </Field>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Categoria</label>
+                        <Field label="Categoria" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <select value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
                             {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">URL Video YouTube (opcional)</label>
+                        </Field>
+                        <Field label="URL Video YouTube (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <input type="text" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://youtube.com/..." className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </div>
+                        </Field>
                       </div>
                     </div>
                   )}
@@ -462,63 +481,68 @@ export default function RecetarioAdminTab() {
                       {ingredientes.map((ing, idx) => (
                         <div key={idx} className="bg-gray-50 rounded-xl p-3 space-y-2">
                           <div className="flex gap-2 items-start">
-                            <div className="flex-1">
-                              <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Nombre del ingrediente</label>
-                              <div className="relative">
-                                <input
-                                  type="text"
-                                  value={ing.nombre}
-                                  onChange={e => updateIngrediente(idx, "nombre", e.target.value)}
-                                  placeholder="Buscar producto o escribir..."
-                                  className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
-                                  list={`prod-list-${idx}`}
-                                />
-                                <datalist id={`prod-list-${idx}`}>
-                                  {products
-                                    .filter(p => p.name.toLowerCase().includes((ing.nombre || "").toLowerCase()))
-                                    .slice(0, 8)
-                                    .map(p => (
-                                      <option key={p.id} value={p.name} onClick={() => selectProduct(idx, p)} />
-                                    ))}
-                                </datalist>
-                              </div>
-                              {/* Quick product select buttons */}
-                              {ing.nombre && ing.nombre.length >= 2 && (
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {products
-                                    .filter(p => p.name.toLowerCase().includes(ing.nombre.toLowerCase()))
-                                    .slice(0, 3)
-                                    .map(p => (
-                                      <button
-                                        key={p.id}
-                                        onClick={() => selectProduct(idx, p)}
-                                        className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] text-[var(--data-success-500)] px-2 py-0.5 rounded-md hover:bg-[var(--accent-soft)] transition-colors"
-                                      >
-                                        {p.name} — S/{Number(p.price).toFixed(2)}
-                                      </button>
-                                    ))}
-                                </div>
+                            <Field
+                              label="Nombre del ingrediente"
+                              labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5"
+                              className="flex-1"
+                            >
+                              {(id) => (
+                                <>
+                                  <div className="relative">
+                                    <input
+                                      id={id}
+                                      type="text"
+                                      value={ing.nombre}
+                                      onChange={e => updateIngrediente(idx, "nombre", e.target.value)}
+                                      placeholder="Buscar producto o escribir..."
+                                      className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                      list={`prod-list-${idx}`}
+                                    />
+                                    <datalist id={`prod-list-${idx}`}>
+                                      {products
+                                        .filter(p => p.name.toLowerCase().includes((ing.nombre || "").toLowerCase()))
+                                        .slice(0, 8)
+                                        .map(p => (
+                                          <option key={p.id} value={p.name} onClick={() => selectProduct(idx, p)} />
+                                        ))}
+                                    </datalist>
+                                  </div>
+                                  {/* Quick product select buttons */}
+                                  {ing.nombre && ing.nombre.length >= 2 && (
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {products
+                                        .filter(p => p.name.toLowerCase().includes(ing.nombre.toLowerCase()))
+                                        .slice(0, 3)
+                                        .map(p => (
+                                          <button
+                                            key={p.id}
+                                            onClick={() => selectProduct(idx, p)}
+                                            className="text-[length:var(--ts-2xs)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-md hover:bg-primary/10 transition-colors"
+                                          >
+                                            {p.name} — S/{Number(p.price).toFixed(2)}
+                                          </button>
+                                        ))}
+                                    </div>
+                                  )}
+                                </>
                               )}
-                            </div>
+                            </Field>
                             <button onClick={() => removeIngrediente(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors mt-4 shrink-0">
                               <X className="h-3.5 w-3.5" />
                             </button>
                           </div>
                           <div className="grid grid-cols-3 gap-2">
-                            <div>
-                              <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Cantidad</label>
+                            <Field label="Cantidad" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
                               <input type="number" step="0.01" min="0" value={ing.cantidad} onChange={e => updateIngrediente(idx, "cantidad", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                            </div>
-                            <div>
-                              <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Unidad</label>
+                            </Field>
+                            <Field label="Unidad" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
                               <select value={ing.unidad} onChange={e => updateIngrediente(idx, "unidad", e.target.value)} className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30">
                                 {UNIDADES.map(u => <option key={u} value={u}>{u}</option>)}
                               </select>
-                            </div>
-                            <div>
-                              <label className="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">Precio (S/)</label>
+                            </Field>
+                            <Field label="Precio (S/)" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
                               <input type="number" step="0.01" min="0" value={ing.precio} onChange={e => updateIngrediente(idx, "precio", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                            </div>
+                            </Field>
                           </div>
                         </div>
                       ))}
@@ -542,7 +566,7 @@ export default function RecetarioAdminTab() {
                       </div>
                       {pasos.map((paso, idx) => (
                         <div key={idx} className="flex gap-2 items-start">
-                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0 mt-1">{idx + 1}</span>
+                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold shrink-0 mt-1">{idx + 1}</span>
                           <textarea
                             value={paso}
                             onChange={e => updatePaso(idx, e.target.value)}
@@ -581,7 +605,7 @@ export default function RecetarioAdminTab() {
                                 <span className="flex items-center gap-1"><Users className="h-3 w-3" />{porciones} porciones</span>
                                 <span className={cn(
                                   "px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold",
-                                  dificultad === "Fácil" ? "bg-[var(--accent-soft)]" : dificultad === "Media" ? "bg-[var(--data-warning-500)]/30" : "bg-[var(--data-error-500)]/30"
+                                  dificultad === "Fácil" ? "bg-primary/10" : dificultad === "Media" ? "bg-[var(--data-warning-500)]/30" : "bg-[var(--data-error-500)]/30"
                                 )}>{dificultad}</span>
                               </div>
                             </div>
@@ -612,7 +636,7 @@ export default function RecetarioAdminTab() {
                               <ol className="space-y-1.5">
                                 {pasos.filter(p => p.trim()).map((p, idx) => (
                                   <li key={idx} className="flex gap-2 text-xs text-[var(--text-secondary)]">
-                                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-primary text-[length:var(--ts-2xs)] font-bold shrink-0">{idx + 1}</span>
+                                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-2xs)] font-bold shrink-0">{idx + 1}</span>
                                     {p}
                                   </li>
                                 ))}

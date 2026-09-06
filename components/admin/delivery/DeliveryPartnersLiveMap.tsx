@@ -96,14 +96,14 @@ const STATE_META: Record<
   free: {
     label: "Libre",
     color: "text-[var(--data-success-500)]",
-    bg: "bg-[var(--accent-soft)]",
+    bg: "bg-primary/10",
     mapColor: "#10b981",
   },
   "with-offer": {
     label: "Con oferta",
     color: "text-[var(--data-warning-600)]",
     bg: "bg-[var(--data-warning-50)]",
-    mapColor: "#fbbf24",
+    mapColor: "#ff8676",
   },
   busy: {
     label: "Atendiendo",
@@ -292,7 +292,7 @@ export default function DeliveryPartnersLiveMap() {
               <span>· ${Math.round(accNum * 100)}% aceptaci&#243;n</span>
             </div>
             ${p.currentOrderId ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#dbeafe;color:#1e40af;font-size:11px;font-weight:700;">Pedido ${escapeHtml(p.currentOrderId.slice(-8))}</div>` : ""}
-            ${p.pendingOffers > 0 ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;">${escapeHtml(String(p.pendingOffers))} oferta pending</div>` : ""}
+            ${p.pendingOffers > 0 ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#fff1ef;color:#842e25;font-size:11px;font-weight:700;">${escapeHtml(String(p.pendingOffers))} oferta pending</div>` : ""}
             ${!p.currentOrderId && p.pendingOffers === 0 && p.isOnline ? `<div style="margin-top:6px;padding:4px 8px;border-radius:8px;background:#d1fae5;color:#065f46;font-size:11px;font-weight:700;">Libre y disponible</div>` : ""}
           </div>
         `;
@@ -346,7 +346,7 @@ export default function DeliveryPartnersLiveMap() {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <MapPin className="h-5 w-5" />
             </span>
             <div>
@@ -391,7 +391,7 @@ export default function DeliveryPartnersLiveMap() {
             </div>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                   <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
                 </span>
                 {summary.online > 0 && (
@@ -468,7 +468,7 @@ export default function DeliveryPartnersLiveMap() {
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-sm flex flex-col">
           <div className="px-6 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3 min-w-0">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <MapPin className="h-4.5 w-4.5" />
               </span>
               <div>
@@ -500,7 +500,7 @@ export default function DeliveryPartnersLiveMap() {
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm flex flex-col max-h-[calc(560px+88px)]">
           <div className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-2 shrink-0">
             <div className="flex items-center gap-2">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Truck className="h-4 w-4" />
               </span>
               <div>

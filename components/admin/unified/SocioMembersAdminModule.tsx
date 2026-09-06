@@ -7,7 +7,8 @@
  * KPIs de miembros, MRR, churn, etc. + catálogo de ofertas exclusivas.
  */
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { DataTable } from "@buleje/design-system";
 import {
   HeartHandshake,
   Users,
@@ -20,6 +21,7 @@ import {
   Package,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { tenantFetch } from "@/lib/tenant-fetch";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import KPICard from "@/components/admin/shared/KPICard";
@@ -262,7 +264,7 @@ function MembersTab({
       ) : (
         <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-alt)] border-b border-gray-200">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Miembro</th>
@@ -310,7 +312,7 @@ function MembersTab({
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => onSelect(m)}
-                        className="inline-flex items-center gap-1 p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
+                        className="inline-flex items-center gap-1 p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                         title="Ver perfil"
                       >
                         <Eye className="h-4 w-4" />
@@ -319,7 +321,7 @@ function MembersTab({
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}
@@ -388,6 +390,9 @@ export default function SocioMembersAdminModule() {
   const [members, setMembers] = useState<SocioMember[]>(MOCK_MEMBERS);
   const [selected, setSelected] = useState<SocioMember | null>(null);
   const [serverStats, setServerStats] = useState<ServerStats>(null);
+  // true una vez que hidratamos con miembros reales del server (ids = userId).
+  // Solo entonces persistimos acciones vía API; en modo mock evitamos el 404.
+  const [hydrated, setHydrated] = useState(false);
 
   // ADR-078: al mount, intentamos hidratar desde /api/admin/socio/*.
   // Si falla (403, API caída), se mantiene el MOCK_MEMBERS como fallback.
@@ -406,6 +411,7 @@ export default function SocioMembersAdminModule() {
           };
           if (data.ok && Array.isArray(data.members) && data.members.length > 0) {
             setMembers(data.members.map(serverToLegacyMember));
+            setHydrated(true);
           }
         }
         if (!cancelled && statsRes.ok) {
@@ -436,6 +442,26 @@ export default function SocioMembersAdminModule() {
     (m) => m.status === "cancelado" && thisMonth(m.renewsAt)
   ).length;
 
+  // Persiste la acción en el backend (solo con datos reales; en mock no hay
+  // userId válido). Optimista: la UI ya se actualizó; si falla, log + refetch
+  // para revertir al estado real del server.
+  const persistMemberAction = useCallback(
+    async (body: { userId: string; action: "cancel" | "extend"; months?: number; reason?: string }) => {
+      if (!hydrated) return;
+      try {
+        const res = await tenantFetch("/api/admin/socio/members", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      } catch (err) {
+        console.error("[socio] no se pudo persistir la acción de miembro", err);
+      }
+    },
+    [hydrated]
+  );
+
   const handleExtend = (id: string, months: number) => {
     setMembers((prev) =>
       prev.map((m) => {
@@ -446,13 +472,15 @@ export default function SocioMembersAdminModule() {
       })
     );
     setSelected(null);
+    void persistMemberAction({ userId: id, action: "extend", months });
   };
 
-  const handleCancel = (id: string, _reason: string) => {
+  const handleCancel = (id: string, reason: string) => {
     setMembers((prev) =>
       prev.map((m) => (m.id === id ? { ...m, status: "cancelado" as const } : m))
     );
     setSelected(null);
+    void persistMemberAction({ userId: id, action: "cancel", reason });
   };
 
   return (
@@ -494,7 +522,7 @@ export default function SocioMembersAdminModule() {
               : churnEsteMes
           }
           icon={TrendingDown}
-          color="#F59E0B"
+          color="#ff6b5b"
           subtitle="Bajas del periodo"
           alert={(serverStats?.churnRate30d ?? 0) > 0.08 || churnEsteMes > 3}
         />

@@ -1,5 +1,6 @@
 "use client";
-import { PageTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import EmptyState from "@/components/admin/shared/EmptyState";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Shield, TrendingUp, AlertTriangle, CheckCircle, XCircle, Search, Users } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -99,34 +100,39 @@ const LEVEL_CONFIG: Record<ScoreLevel, {
   bar: string;
   icon: React.ElementType;
 }> = {
+  // Rampa de riesgo sobre tokens del DS. Antes las barras eran 4 hex sueltos
+  // (#38a169, #ff6b5b, #f0503f, #e63946) que no existen en la paleta: en dark
+  // quedaban fuera de tono y ningún cambio de tema los tocaba. Y "Regular" y
+  // "Riesgoso" compartían EXACTAMENTE el mismo badge, así que en la tabla los
+  // dos niveles se veían idénticos.
   EXCELENTE: {
     label: "Excelente",
-    badge: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    bar: "var(--accent)",
+    badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+    bar: "var(--data-success-500)",
     icon: CheckCircle,
   },
   BUENO: {
     label: "Bueno",
-    badge: "bg-teal-100 dark:bg-teal-900/30 text-[var(--accent-dark)] dark:text-teal-400",
-    bar: "#38a169",
+    badge: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+    bar: "var(--accent)",
     icon: TrendingUp,
   },
   REGULAR: {
     label: "Regular",
-    badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
-    bar: "#f97316",
+    badge: "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
+    bar: "var(--data-warning-500)",
     icon: AlertTriangle,
   },
   RIESGOSO: {
     label: "Riesgoso",
-    badge: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
-    bar: "#ea580c",
+    badge: "bg-[var(--data-warning-500)]/25 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)] ring-1 ring-inset ring-[var(--data-warning-500)]/40",
+    bar: "var(--data-warning-700)",
     icon: AlertTriangle,
   },
   BLOQUEADO: {
     label: "Bloqueado",
-    badge: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
-    bar: "#e63946",
+    badge: "bg-[var(--data-error-500)]/12 text-[var(--data-error-500)]",
+    bar: "var(--data-error-500)",
     icon: XCircle,
   },
 };
@@ -138,7 +144,7 @@ function fmt(n: number) {
 }
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700", className)} />;
+  return <div className={cn("animate-pulse rounded-lg bg-[var(--surface-sunken)] dark:bg-[var(--rule-soft)]", className)} />;
 }
 
 // ── Score bar ──────────────────────────────────────────────────────────────────
@@ -262,20 +268,66 @@ export default function ScoringCrediticioTab() {
     return tally;
   }, [scoredCustomers]);
 
+  /** KPIs de cabecera — el mismo tipo de resumen que abre "Por cobrar". */
+  const resumen = useMemo(() => {
+    const total = scoredCustomers.length;
+    const scorePromedio = total
+      ? Math.round(scoredCustomers.reduce((s, c) => s + c.score, 0) / total)
+      : 0;
+    const limiteTotal = scoredCustomers.reduce((s, c) => s + c.limiteRecomendado, 0);
+    const enRiesgo = counts.RIESGOSO + counts.BLOQUEADO;
+    const sobreLimite = scoredCustomers.filter(c => c.fiadoActual > c.limiteRecomendado).length;
+    return [
+      { label: "Clientes evaluados", value: String(total), hint: `${counts.EXCELENTE + counts.BUENO} en buen nivel`, icon: Users, tone: "var(--accent)" },
+      { label: "Score promedio", value: String(scorePromedio), hint: "sobre 100 puntos", icon: TrendingUp, tone: "var(--data-success-500)" },
+      { label: "Límite recomendado", value: fmt(limiteTotal), hint: "suma de toda la cartera", icon: Shield, tone: "var(--accent)" },
+      { label: "Para mirar de cerca", value: String(enRiesgo), hint: sobreLimite > 0 ? `${sobreLimite} pasado(s) de su límite` : "riesgosos y bloqueados", icon: AlertTriangle, tone: enRiesgo > 0 ? "var(--data-warning-700)" : "var(--text-tertiary)" },
+    ];
+  }, [scoredCustomers, counts]);
+
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-5 pb-8">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-primary" style={{ backgroundColor: "var(--accent)" }}>
-          <Shield className="h-5 w-5 text-white" />
+    <div className="space-y-4">
+      {/* Header estándar del panel (AdminModuleHeader), igual que sus hermanos
+          de Mi Plata. Antes era un div armado a mano con un PageTitle suelto,
+          así que se perdía el `font-display` que AdminModuleHeader aplica al
+          título: al lado de "Por cobrar" o "Fiados" se leía como otra
+          aplicación. `as="h2"` porque el hub Mi Plata ya puso el h1. */}
+      <AdminModuleHeader
+        as="h2"
+        title="Scoring crediticio"
+        description="Cuánto riesgo tiene cada cliente antes de fiarle"
+        icon={Shield}
+      />
+
+      {/* Resumen — los hermanos de Mi Plata abren con KPIs y este tab no tenía
+          ninguno: el dueño veía la tabla cruda sin saber cómo venía la cartera. */}
+      {!loading && scoredCustomers.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {resumen.map((k) => {
+            const KIcon = k.icon;
+            return (
+              <div
+                key={k.label}
+                className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-sunken)]"
+                    style={{ color: k.tone }}
+                  >
+                    <KIcon className="h-5 w-5" aria-hidden />
+                  </span>
+                  <p className="text-sm font-bold text-[var(--text-primary)] leading-tight">{k.label}</p>
+                </div>
+                <p className="mt-3 text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">{k.value}</p>
+                <p className="text-xs text-[var(--text-tertiary)]">{k.hint}</p>
+              </div>
+            );
+          })}
         </div>
-        <div className="min-w-0">
-          <PageTitle className="text-xl font-bold text-[var(--text-primary)]">Scoring Crediticio</PageTitle>
-          <p className="text-xs text-[var(--text-tertiary)]">Evaluación de riesgo para créditos y fiados</p>
-        </div>
-      </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -299,7 +351,7 @@ export default function ScoringCrediticioTab() {
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
                 isActive
                   ? cfg ? cfg.badge + " ring-1 ring-current" : "bg-primary text-white"
-                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700",
+                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] dark:hover:bg-[var(--rule-base)]",
               )}
             >
               {lvl === "TODOS" ? "Todos" : LEVEL_CONFIG[lvl].label}
@@ -317,7 +369,7 @@ export default function ScoringCrediticioTab() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar cliente..."
-          className="w-full pl-9 pr-4 h-12 rounded-lg text-sm border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+          className="w-full pl-9 pr-4 h-12 rounded-lg text-sm border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
         />
       </div>
 
@@ -329,22 +381,29 @@ export default function ScoringCrediticioTab() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12">
-          <Users className="h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-3" />
-          <p className="text-sm font-semibold text-[var(--text-tertiary)]">
-            {search ? "No hay clientes que coincidan" : "No hay clientes registrados"}
-          </p>
-          <p className="text-xs text-[var(--text-tertiary)] mt-1">
-            {search ? "Intenta con otro nombre" : "Los clientes aparecerán aquí una vez que realicen compras"}
-          </p>
-        </div>
+        // EmptyState del panel (10 consumidores) en vez del div a mano: mismo
+        // encuadre, mismo tamaño de ícono y misma jerarquía que el resto.
+        <EmptyState
+          icon={Users}
+          title={search || filterLevel !== "TODOS" ? "Ningún cliente coincide" : "Todavía no hay clientes para evaluar"}
+          description={
+            search || filterLevel !== "TODOS"
+              ? "Probá con otro nombre o quitá el filtro de nivel."
+              : "En cuanto tus clientes compren o les fíes, acá vas a ver su score."
+          }
+          action={
+            search || filterLevel !== "TODOS"
+              ? { label: "Limpiar filtros", onClick: () => { setSearch(""); setFilterLevel("TODOS"); } }
+              : undefined
+          }
+        />
       ) : (
         <>
           {/* Desktop table */}
           <div className="hidden sm:block bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-x-auto ">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[var(--rule-base)] bg-gray-50/50 dark:bg-gray-800/30">
+                <tr className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
                   <th className="text-left px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Cliente</th>
                   <th className="text-center px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Nivel</th>
                   <th className="px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Score</th>
@@ -361,7 +420,7 @@ export default function ScoringCrediticioTab() {
                     <tr
                       key={c.customerId || `row-${idx}`}
                       className={cn(
-                        "border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors",
+                        "border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0 hover:bg-[var(--surface-sunken)] transition-colors",
                       )}
                     >
                       <td className="px-4 py-3">

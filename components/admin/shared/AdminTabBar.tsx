@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useRef, useEffect, useId, useCallback, type ReactNode } from "react";
+import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { ChevronLeft, ChevronRight, GripVertical } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
@@ -13,6 +14,8 @@ export interface AdminTab {
   icon?: LucideIcon;
   badge?: number | string;
   disabled?: boolean;
+  /** Tooltip nativo al hover. Cae a `label` si no se provee. */
+  title?: string;
 }
 
 interface AdminTabBarProps {
@@ -23,6 +26,12 @@ interface AdminTabBarProps {
   draggable?: boolean;
   className?: string;
   vertical?: boolean;
+  /** Las tabs envuelven a 2+ filas cuando superan el ancho, en vez de scroll
+      horizontal con chevrons. Útil para módulos con muchas sub-tabs (ej. Finanzas
+      con 14) donde el scroll esconde opciones. Default `true` (Brandon 2026-06-18:
+      coherencia admin — ninguna pestaña queda oculta tras scroll). Pasar
+      `wrap={false}` para forzar scroll horizontal en contextos angostos. */
+  wrap?: boolean;
   children?: ReactNode;
   onTabHover?: (id: string) => void;
   /** Contenido alineado a la derecha del tab bar (ej. status chip). */
@@ -37,11 +46,78 @@ export default function AdminTabBar({
   draggable = true,
   className,
   vertical = false,
+  wrap = true,
   children,
   onTabHover,
   rightSlot,
 }: AdminTabBarProps) {
   const { registerSubTabs, registerOnChange, clearSubTabs } = useModuleTabs();
+
+  /**
+   * Ids para atar cada pestaña con su panel (`aria-controls`/`aria-labelledby`).
+   * `useId` y no el `moduleId`: dos barras del mismo módulo en pantalla —pasa
+   * con los hubs— repetirían ids y el lector de pantalla ataría mal los pares.
+   */
+  const barraId = useId();
+  const idDeTab = (id: string) => `${barraId}-tab-${id}`;
+  const idDelPanel = `${barraId}-panel`;
+
+  /**
+   * Flechas dentro de la barra, como manda el patrón de tabs de ARIA.
+   *
+   * Es distinto del Alt+←/→ global de arriba: aquel funciona desde cualquier
+   * lado de la pantalla, éste sólo cuando el foco YA está en las pestañas, que
+   * es lo que espera quien navega con teclado. Home/End van a los extremos.
+   *
+   * Activación automática (mover el foco cambia de pestaña): es lo habitual en
+   * barras donde el panel es barato de renderizar, y evita el doble paso de
+   * "flecha, flecha, Enter".
+   */
+  const teclasDeBarra = (e: React.KeyboardEvent) => {
+    const anterior = vertical ? "ArrowUp" : "ArrowLeft";
+    const siguiente = vertical ? "ArrowDown" : "ArrowRight";
+    if (!["Home", "End", anterior, siguiente].includes(e.key)) return;
+    const usables = orderedTabs.filter((t) => !t.disabled);
+    if (usables.length < 2) return;
+    const i = usables.findIndex((t) => t.id === activeTab);
+    if (i === -1) return;
+    e.preventDefault();
+    const destino =
+      e.key === "Home"
+        ? usables[0]
+        : e.key === "End"
+          ? usables[usables.length - 1]
+          : usables[(i + (e.key === siguiente ? 1 : -1) + usables.length) % usables.length];
+    onTabChange(destino.id);
+    // El foco sigue a la selección: si se quedara donde estaba, la próxima
+    // flecha partiría desde otro lugar del que se ve resaltado.
+    requestAnimationFrame(() => document.getElementById(idDeTab(destino.id))?.focus());
+  };
+
+  /**
+   * Alt+← / Alt+→ recorren las sub-tabs del módulo activo.
+   * Alt+1..9 ya está tomado para saltar entre MÓDULOS (useKeyboardShortcuts),
+   * así que acá van las flechas: mismo gesto mental que cambiar de pestaña.
+   * Se saltean las deshabilitadas y da la vuelta al llegar al extremo.
+   */
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.altKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+      // Mismo guard que el resto de atajos: nada de robar teclas mientras se
+      // escribe en un campo o hay un modal abierto.
+      if (isEditableTarget(e.target) || isModalOpen()) return;
+      const usables = tabs.filter((t) => !t.disabled);
+      if (usables.length < 2) return;
+      const i = usables.findIndex((t) => t.id === activeTab);
+      if (i === -1) return;
+      e.preventDefault();
+      const paso = e.key === "ArrowRight" ? 1 : -1;
+      const siguiente = usables[(i + paso + usables.length) % usables.length];
+      onTabChange(siguiente.id);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [tabs, activeTab, onTabChange]);
 
   // Register tabs in sidebar context so sidebar can render them
   useEffect(() => {
@@ -153,7 +229,17 @@ export default function AdminTabBar({
           "lg:bg-white lg:dark:bg-[var(--surface-raised)]",
           "lg:pt-1 lg:pb-4",
         )}>
-          <div className="grid grid-cols-2 gap-0.5 sm:grid-cols-3 lg:grid-cols-1 lg:pt-0">
+          {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus --
+              el tablist NO debe ser focusable: el patrón de ARIA pone el foco
+              en las pestañas con tabIndex roving y el tablist sólo escucha las
+              flechas por burbujeo. Hacerlo focusable agregaría una parada de
+              Tab que no lleva a ningún lado. */}
+          <div
+            role="tablist"
+            aria-orientation="vertical"
+            onKeyDown={teclasDeBarra}
+            className="grid grid-cols-2 gap-0.5 sm:grid-cols-3 lg:grid-cols-1 lg:pt-0"
+          >
             {orderedTabs.map((tab) => {
               const Icon = tab.icon;
 
@@ -161,12 +247,24 @@ export default function AdminTabBar({
                 <button
                   key={tab.id}
                   onClick={() => !tab.disabled && onTabChange(tab.id)}
+                  /* Patrón de tabs de ARIA: la pestaña activa sólo se
+                     distinguía por color y borde, y un lector leía botones
+                     iguales sin decir en cuál estás. `aria-selected` es la
+                     señal correcta acá (no `aria-current`, que es para
+                     navegación) y el `tabIndex` roving hace que Tab entre y
+                     salga de la barra en un paso, no pestaña por pestaña. */
+                  role="tab"
+                  id={idDeTab(tab.id)}
+                  aria-selected={activeTab === tab.id}
+                  aria-controls={children ? idDelPanel : undefined}
+                  tabIndex={activeTab === tab.id ? 0 : -1}
                   onMouseEnter={() => onTabHover?.(tab.id)}
+                  title={tab.title ?? tab.label}
                   className={cn(
                     "flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--ts-sm)] transition-all duration-[var(--dur-fast)]",
                     "lg:rounded-none lg:rounded-r-lg",
                     activeTab === tab.id
-                      ? "bg-primary/10 font-semibold text-primary border-l-[3px] border-l-primary dark:bg-primary/15"
+                      ? "bg-primary/10 font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] border-l-[3px] border-l-primary dark:bg-primary/15"
                       : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] dark:hover:bg-white/[0.06] border-l-[3px] border-l-transparent",
                     "rounded-lg lg:rounded-none lg:rounded-r-lg",
                     tab.disabled && "cursor-not-allowed opacity-40",
@@ -195,14 +293,25 @@ export default function AdminTabBar({
         </nav>
 
         {/* Content: fills 100% remaining space */}
-        <div className="min-w-0 flex-1 lg:pl-4">{children}</div>
+        {/* `tabIndex={0}`: el panel tiene que poder recibir foco para que Tab
+            desde la pestaña activa lleve a su contenido y no al siguiente
+            control de la página. */}
+        <div
+          id={idDelPanel}
+          role={children ? "tabpanel" : undefined}
+          aria-labelledby={children ? idDeTab(activeTab) : undefined}
+          tabIndex={children ? 0 : undefined}
+          className="min-w-0 flex-1 outline-none lg:pl-4"
+        >
+          {children}
+        </div>
       </div>
     );
   }
 
   return (
     <>
-    <div className={cn("relative", className)}>
+    <div className={cn("@container relative", className)}>
       {canScrollLeft && (
         <button
           onClick={() => scrollTabs("left")}
@@ -213,10 +322,24 @@ export default function AdminTabBar({
         </button>
       )}
 
+      {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- ver el
+          comentario de la rama vertical: el foco va en las pestañas, no acá. */}
       <div
         ref={tabsRef}
         onScroll={checkScroll}
-        className="-mx-1 flex gap-0.5 overflow-x-auto scroll-smooth border-b border-[var(--rule-base)] px-1 scrollbar-none sm:gap-1"
+        role="tablist"
+        aria-orientation="horizontal"
+        onKeyDown={teclasDeBarra}
+        className={cn(
+          "-mx-1 flex gap-0.5 border-b border-[var(--rule-base)] px-1 sm:gap-1",
+          // Angosto: una sola fila que se desliza (recupera ~90px verticales
+          // que las 3 filas del wrap le robaban al contenido). Desde 48rem de
+          // CONTENEDOR —no de viewport, que ignora el ancho del sidebar—
+          // vuelve el wrap de siempre.
+          wrap
+            ? "overflow-x-auto scroll-smooth scrollbar-none @min-[48rem]:flex-wrap @min-[48rem]:gap-y-1 @min-[48rem]:overflow-x-visible"
+            : "overflow-x-auto scroll-smooth scrollbar-none",
+        )}
         style={{ scrollbarWidth: "none" }}
       >
         {orderedTabs.map((tab) => {
@@ -238,23 +361,35 @@ export default function AdminTabBar({
                 setDragOverTab(null);
               }}
               onClick={() => !tab.disabled && onTabChange(tab.id)}
+              role="tab"
+              id={idDeTab(tab.id)}
+              aria-selected={activeTab === tab.id}
+              aria-controls={children ? idDelPanel : undefined}
+              tabIndex={activeTab === tab.id ? 0 : -1}
               onMouseEnter={() => onTabHover?.(tab.id)}
               disabled={tab.disabled}
-              title={tab.label}
+              title={tab.title ?? tab.label}
               className={cn(
                 // Mobile: tap target accesible (min ~44px alto via py-2.5 + texto sm).
                 // Desktop: layout original más compacto.
                 "flex shrink-0 items-center gap-2 whitespace-nowrap border-b-[3px] px-3 py-2.5 text-sm transition-all duration-[var(--dur-base)] sm:gap-1.5 sm:px-4 sm:py-2.5 sm:text-sm",
+                // El `grow` de antes (tabs estiradas para justificar las filas
+                // en móvil) ya no aplica: en angosto la barra es una sola fila
+                // deslizable, no un wrap de varias filas. Se conserva sólo el
+                // padding compacto.
+                wrap && "max-sm:px-2",
                 draggable && "cursor-grab active:cursor-grabbing",
                 activeTab === tab.id
-                  ? "border-primary bg-primary/5 font-semibold text-primary"
+                  ? "border-primary bg-primary/5 font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-transparent font-normal text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]",
                 tab.disabled && "cursor-not-allowed opacity-40",
                 draggedTab === tab.id && "scale-95 opacity-40",
                 dragOverTab === tab.id && draggedTab !== tab.id && "rounded-t-lg ring-2 ring-primary ring-offset-1",
               )}
             >
-              {draggable && <GripVertical className="h-3 w-3 shrink-0 opacity-30" />}
+              {/* El handle de reorden por drag solo aplica en desktop (en touch
+                  el drag de sub-tabs no es un gesto usable y el ⋮⋮ es ruido). */}
+              {draggable && <GripVertical className="hidden lg:inline-block h-3 w-3 shrink-0 opacity-30" />}
               {Icon && <Icon className="h-4 w-4 shrink-0 sm:h-3.5 sm:w-3.5" />}
               <span>{tab.shortLabel || tab.label}</span>
               {tab.badge != null && (
@@ -295,7 +430,17 @@ export default function AdminTabBar({
         </button>
       )}
     </div>
-    {children}
+    {/* El panel de la barra horizontal es hermano, no hijo: `aria-labelledby`
+        ata el par por id, así que no necesitan ser contiguos en el árbol. */}
+    <div
+      id={idDelPanel}
+      role={children ? "tabpanel" : undefined}
+      aria-labelledby={children ? idDeTab(activeTab) : undefined}
+      tabIndex={children ? 0 : undefined}
+      className="outline-none"
+    >
+      {children}
+    </div>
     </>
   );
 }

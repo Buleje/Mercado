@@ -39,12 +39,11 @@ import {
   Building2,
   Loader2,
   Phone,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { setCurrentPlan } from "@/lib/billing/plan-tiers";
 import {
   PLANS,
-  PLAN_ORDER,
   type PlanTier,
 } from "@/lib/billing/plan-tiers";
 
@@ -346,7 +345,7 @@ export default function PlanCheckoutClient() {
                           className={cn(
                             "w-full flex items-center gap-4 rounded-2xl border-2 p-4 text-left transition-all",
                             active
-                              ? "border-[var(--accent)] bg-[var(--accent-soft)] shadow-sm"
+                              ? "border-[var(--accent)] bg-primary/10 shadow-sm"
                               : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-sunken)]",
                           )}
                         >
@@ -425,7 +424,7 @@ export default function PlanCheckoutClient() {
           <aside className="order-1 lg:order-2">
             <div className="sticky top-20 space-y-4">
               <div className="rounded-3xl border-2 border-[var(--accent)]/25 bg-[var(--surface-canvas)] p-6 shadow-sm">
-                <p className="mb-3 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] rounded-full bg-[var(--accent-soft)] border-2 border-[var(--accent)]/25 px-2.5 py-1">
+                <p className="mb-3 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] rounded-full bg-primary/10 border-2 border-[var(--accent)]/25 px-2.5 py-1">
                   <Icon className="h-3 w-3" strokeWidth={2.5} />
                   Plan {planDef.label}
                 </p>
@@ -555,7 +554,7 @@ function PayInstructions({
             </div>
             <p className="mt-4 text-sm font-bold text-[var(--text-primary)]">
               o pagá al número{" "}
-              <span className="rounded-md bg-[var(--accent-soft)] px-2 py-0.5 text-[var(--accent)] font-black">
+              <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[var(--accent)] font-black">
                 929 340 532
               </span>
             </p>

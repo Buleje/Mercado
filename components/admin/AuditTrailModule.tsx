@@ -1,8 +1,15 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
-import { Shield, Search, RefreshCw, ChevronLeft, ChevronRight, User, Clock, FileText } from "@buleje/design-system/icons";
+
+import { EmptyState } from "@/components/admin/EmptyState";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  Shield, Search, RefreshCw, ChevronLeft, ChevronRight, User, Clock, FileText, Globe,
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import {
+  categoryOf, actionLabel, CATEGORY_UI, CATEGORY_ORDER, type AuditCategory,
+} from "@/components/admin/tabs/audit-categories";
 
 interface AuditEntry {
   id: string;
@@ -11,19 +18,71 @@ interface AuditEntry {
   entityId?: string;
   detail?: string;
   user?: string;
+  ipAddress?: string;
   createdAt: string;
   [key: string]: unknown;
+}
+
+interface Summary {
+  total: number;
+  byAction: Array<{ action: string; count: number }>;
+}
+
+type Period = "today" | "7d" | "30d" | "all";
+const PERIODS: Array<{ id: Period; label: string }> = [
+  { id: "today", label: "Hoy" },
+  { id: "7d", label: "7 días" },
+  { id: "30d", label: "30 días" },
+  { id: "all", label: "Todo" },
+];
+
+const ENTITIES = [
+  ["", "Todas las entidades"], ["Sale", "Ventas"], ["Product", "Productos"],
+  ["Purchase", "Compras"], ["Customer", "Clientes"], ["Order", "Pedidos"],
+  ["Settings", "Configuración"], ["Payable", "Cuentas por pagar"],
+] as const;
+
+const LIMIT = 30;
+const FILTER_CLS =
+  "h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition-colors";
+
+function fmtDate(iso: string) {
+  const d = new Date(iso);
+  return {
+    day: d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" }),
+    time: d.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }),
+  };
+}
+
+function ActionBadge({ action }: { action: string }) {
+  const ui = CATEGORY_UI[categoryOf(action)];
+  return (
+    <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-[length:var(--ts-xs)] font-bold", ui.pill)}>
+      {actionLabel(action)}
+    </span>
+  );
 }
 
 export default function AuditTrailModule() {
   const [logs, setLogs] = useState<AuditEntry[]>([]);
   const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [entityFilter, setEntityFilter] = useState("");
-  const LIMIT = 30;
+  const [actionFilter, setActionFilter] = useState("");
+  const [period, setPeriod] = useState<Period>("all");
+
+  /** Vuelve a la vista sin filtros: el vacío casi siempre es un filtro de más. */
+  const resetFiltros = useCallback(() => {
+    setSearch("");
+    setEntityFilter("");
+    setActionFilter("");
+    setPeriod("all");
+    setPage(0);
+  }, []);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -32,8 +91,11 @@ export default function AuditTrailModule() {
       const params = new URLSearchParams({
         limit: String(LIMIT),
         offset: String(page * LIMIT),
+        period,
+        summary: "1",
       });
       if (entityFilter) params.set("entity", entityFilter);
+      if (actionFilter) params.set("action", actionFilter);
       if (search) params.set("user", search);
 
       const res = await fetch(`/api/audit-trail?${params}`);
@@ -41,6 +103,7 @@ export default function AuditTrailModule() {
         const data = await res.json();
         setLogs(data.logs || []);
         setTotal(data.total || 0);
+        if (data.summary) setSummary(data.summary);
       } else {
         setError(`No se pudo cargar el registro de auditoría (HTTP ${res.status})`);
       }
@@ -49,170 +112,256 @@ export default function AuditTrailModule() {
       console.error("[AuditTrail] fetch error", e);
     }
     setLoading(false);
-  }, [page, entityFilter, search]);
+  }, [page, entityFilter, actionFilter, search, period]);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
   const totalPages = Math.ceil(total / LIMIT);
 
-  const actionColor = (action: string) => {
-    if (action === "CREATE") return "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]";
-    if (action === "UPDATE") return "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]";
-    if (action === "DELETE") return "bg-red-100 text-[var(--data-error-700)] dark:bg-red-900/30 dark:text-red-400";
-    return "bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]";
-  };
+  // Conteo por categoría para las cards de resumen.
+  const catCounts = useMemo(() => {
+    const acc: Record<AuditCategory, number> = { crear: 0, cambiar: 0, borrar: 0, acceso: 0, otro: 0 };
+    for (const { action, count } of summary?.byAction ?? []) acc[categoryOf(action)] += count;
+    return acc;
+  }, [summary]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <AdminModuleHeader
         title="Auditoría"
-        description="Registro de todas las acciones del sistema"
+        description="Quién hizo qué y cuándo — el registro completo de tu tienda"
         icon={Shield}
-        iconColor="#9b5de5"
       />
 
-      {/* Filtros */}
-      <div className="flex flex-wrap gap-2">
-        <div className="flex-1 min-w-[200px] relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Buscar por usuario..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(0); }}
-            className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
-          />
+      {/* Resumen por categoría */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <div className="rounded-2xl border-2 border-[var(--accent)]/25 bg-primary/10 p-4">
+          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--accent-dark)] dark:text-[var(--accent)]">
+            Total de acciones
+          </p>
+          <p className="mt-1 font-display text-3xl font-extrabold tabular-nums text-[var(--text-primary)]">
+            {summary ? summary.total.toLocaleString("es-PE") : "—"}
+          </p>
         </div>
-        <select
-          value={entityFilter}
-          onChange={e => { setEntityFilter(e.target.value); setPage(0); }}
-          className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/30"
-        >
-          <option value="">Todas las entidades</option>
-          <option value="Sale">Ventas</option>
-          <option value="Product">Productos</option>
-          <option value="Purchase">Compras</option>
-          <option value="Customer">Clientes</option>
-          <option value="Order">Pedidos</option>
-          <option value="Settings">Configuración</option>
-          <option value="Payable">Cuentas por pagar</option>
-        </select>
-        <button
-          onClick={fetchLogs}
-          className="min-h-[44px] min-w-[44px] px-3 py-2 bg-[var(--surface-sunken)] rounded-lg text-sm hover:bg-[var(--rule-soft)] dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
-          title="Actualizar"
-        >
-          <RefreshCw className="h-4 w-4" />
-        </button>
+        {CATEGORY_ORDER.filter((c) => c !== "otro" || catCounts.otro > 0).map((cat) => {
+          const ui = CATEGORY_UI[cat];
+          const Icon = ui.icon;
+          return (
+            <div key={cat} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <div className="flex items-center gap-2">
+                <span
+                  className="flex h-7 w-7 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: `color-mix(in srgb, ${ui.accentVar} 14%, transparent)`, color: ui.accentVar }}
+                >
+                  <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+                </span>
+                <p className="text-sm font-semibold text-[var(--text-secondary)]">{ui.label}</p>
+              </div>
+              <p className="mt-1.5 font-display text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">
+                {summary ? catCounts[cat].toLocaleString("es-PE") : "—"}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Filtros */}
+      <div className="space-y-3">
+        {/* Período segmentado */}
+        <div className="inline-flex rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
+          {PERIODS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => { setPeriod(p.id); setPage(0); }}
+              className={cn(
+                "rounded-xl px-4 py-2 text-sm font-bold transition-colors",
+                period === p.id
+                  ? "bg-[var(--accent)] text-white"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <div className="relative min-w-[220px] flex-1">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+            <input
+              type="text"
+              placeholder="Buscar por usuario..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+              className={cn(FILTER_CLS, "w-full pl-12 pr-4 placeholder:text-[var(--text-tertiary)]")}
+            />
+          </div>
+          <select
+            value={entityFilter}
+            onChange={(e) => { setEntityFilter(e.target.value); setPage(0); }}
+            className={cn(FILTER_CLS, "px-4 font-medium")}
+          >
+            {ENTITIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+          <select
+            value={actionFilter}
+            onChange={(e) => { setActionFilter(e.target.value); setPage(0); }}
+            className={cn(FILTER_CLS, "px-4 font-medium")}
+          >
+            <option value="">Todas las acciones</option>
+            {(summary?.byAction ?? []).map(({ action, count }) => (
+              <option key={action} value={action}>{actionLabel(action)} ({count})</option>
+            ))}
+          </select>
+          <button
+            onClick={fetchLogs}
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            title="Actualizar"
+            aria-label="Actualizar"
+          >
+            <RefreshCw className={cn("h-5 w-5", loading && "animate-spin")} />
+          </button>
+        </div>
       </div>
 
       {/* Banner de error */}
       {error && (
-        <div className="rounded-xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 px-4 py-3 flex items-start gap-2.5">
-          <Shield className="h-4 w-4 text-[var(--data-error-500)] shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
+        <div className="flex items-start gap-2.5 rounded-2xl border-2 border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 px-4 py-3">
+          <Shield className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-error-500)]" aria-hidden />
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-[var(--data-error-700)]">{error}</p>
-            <button
-              type="button"
-              onClick={() => fetchLogs()}
-              className="text-xs font-bold text-[var(--data-error-700)] underline mt-1 hover:no-underline"
-            >
+            <button type="button" onClick={fetchLogs} className="mt-1 text-sm font-bold text-[var(--data-error-700)] underline hover:no-underline">
               Reintentar
             </button>
           </div>
         </div>
       )}
 
-      {/* Tabla */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+      {/* Contenido */}
+      <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
         {loading ? (
-          <div className="p-8 text-center">
-            <div className="h-6 w-6 border-2 border-[#9b5de5] border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="p-10 text-center">
+            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
           </div>
         ) : logs.length === 0 ? (
-          <div className="p-8 text-center text-[var(--text-tertiary)] text-sm">
-            <Shield className="h-8 w-8 mx-auto mb-2 opacity-30" />
-            <p>No se encontraron registros</p>
-          </div>
+          <EmptyState
+            icon={<Shield className="h-9 w-9" aria-hidden />}
+            title="No hay registros para estos filtros"
+            description="La auditoría guarda quién hizo qué y cuándo. Si esperabas ver algo acá, lo más probable es que el período o los filtros estén dejando fuera esos movimientos."
+            actions={[{ label: "Quitar todos los filtros", variant: "primary", onClick: () => resetFiltros() }]}
+          />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)]/50">
-                <tr>
-                  <th className="text-left p-3 font-medium text-[var(--text-secondary)]">Fecha</th>
-                  <th className="text-left p-3 font-medium text-[var(--text-secondary)]">Acción</th>
-                  <th className="text-left p-3 font-medium text-[var(--text-secondary)]">Entidad</th>
-                  <th className="text-left p-3 font-medium text-[var(--text-secondary)]">Detalle</th>
-                  <th className="text-left p-3 font-medium text-[var(--text-secondary)]">Usuario</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map(log => (
-                  <tr
-                    key={log.id}
-                    className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
-                  >
-                    <td className="p-3 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5 text-[var(--text-tertiary)]">
-                        <Clock className="h-3 w-3 shrink-0" />
-                        <span className="text-xs font-mono">
-                          {new Date(log.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
-                          {" "}
-                          {new Date(log.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", actionColor(log.action))}>
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-1.5">
-                        <FileText className="h-3 w-3 text-[var(--text-tertiary)] shrink-0" />
-                        <span className="text-xs font-medium text-[var(--text-secondary)]">{log.entity}</span>
-                        {log.entityId && (
-                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono">
-                            #{log.entityId.slice(0, 8)}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-3 max-w-xs">
-                      <p className="text-xs text-[var(--text-secondary)] truncate">{log.detail || "—"}</p>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-1.5">
-                        <User className="h-3 w-3 text-[var(--text-tertiary)] shrink-0" />
-                        <span className="text-xs text-[var(--text-secondary)]">{log.user || "sistema"}</span>
-                      </div>
-                    </td>
+          <>
+            {/* Desktop: tabla */}
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full">
+                <thead className="bg-[var(--surface-sunken)]/60">
+                  <tr>
+                    {["Fecha", "Acción", "Entidad", "Detalle", "Usuario"].map((h) => (
+                      <th key={h} className="p-3.5 text-left text-sm font-bold text-[var(--text-secondary)]">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {logs.map((log) => {
+                    const { day, time } = fmtDate(log.createdAt);
+                    return (
+                      <tr key={log.id} className="border-t border-[var(--rule-soft)] transition-colors hover:bg-[var(--surface-sunken)]/40">
+                        <td className="whitespace-nowrap p-3.5">
+                          <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+                            <Clock className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                            <span className="text-sm tabular-nums">{day} · {time}</span>
+                          </div>
+                        </td>
+                        <td className="p-3.5"><ActionBadge action={log.action} /></td>
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-1.5">
+                            <FileText className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                            <span className="text-sm font-semibold text-[var(--text-primary)]">{log.entity}</span>
+                            {log.entityId && (
+                              <span className="text-[length:var(--ts-xs)] font-mono text-[var(--text-tertiary)]">#{log.entityId.slice(0, 8)}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="max-w-sm p-3.5">
+                          <p className="truncate text-sm text-[var(--text-secondary)]" title={log.detail || undefined}>{log.detail || "—"}</p>
+                        </td>
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-1.5">
+                            <User className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                            <span className="text-sm font-medium text-[var(--text-primary)]">{log.user || "sistema"}</span>
+                          </div>
+                          {log.ipAddress && (
+                            <div className="mt-0.5 flex items-center gap-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                              <Globe className="h-3 w-3 shrink-0" aria-hidden />
+                              <span className="font-mono">{log.ipAddress.replace(/^::ffff:/, "")}</span>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile: cards */}
+            <div className="divide-y divide-[var(--rule-soft)] sm:hidden">
+              {logs.map((log) => {
+                const { day, time } = fmtDate(log.createdAt);
+                return (
+                  <div key={log.id} className="p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <ActionBadge action={log.action} />
+                      <span className="text-[length:var(--ts-xs)] tabular-nums text-[var(--text-tertiary)]">{day} · {time}</span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <FileText className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                      <span className="text-sm font-semibold text-[var(--text-primary)]">{log.entity}</span>
+                      {log.entityId && (
+                        <span className="text-[length:var(--ts-xs)] font-mono text-[var(--text-tertiary)]">#{log.entityId.slice(0, 8)}</span>
+                      )}
+                    </div>
+                    {log.detail && <p className="mt-1 text-sm text-[var(--text-secondary)]">{log.detail}</p>}
+                    <div className="mt-2 flex items-center gap-3 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+                      <span className="inline-flex items-center gap-1">
+                        <User className="h-3.5 w-3.5" aria-hidden /> {log.user || "sistema"}
+                      </span>
+                      {log.ipAddress && (
+                        <span className="inline-flex items-center gap-1 font-mono">
+                          <Globe className="h-3.5 w-3.5" aria-hidden /> {log.ipAddress.replace(/^::ffff:/, "")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {/* Paginación */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)]/50 dark:bg-gray-800/30">
-            <span className="text-xs text-[var(--text-secondary)]">{total} registros</span>
+          <div className="flex items-center justify-between border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40 px-4 py-3">
+            <span className="text-sm text-[var(--text-secondary)]">{total.toLocaleString("es-PE")} registros</span>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setPage(p => Math.max(0, p - 1))}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="p-1.5 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-[var(--surface-alt)] dark:hover:bg-gray-700 transition-colors"
+                className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
+                aria-label="Página anterior"
               >
-                <ChevronLeft className="h-3.5 w-3.5" />
+                <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="text-xs text-[var(--text-secondary)]">{page + 1} / {totalPages}</span>
+              <span className="text-sm font-semibold tabular-nums text-[var(--text-secondary)]">{page + 1} / {totalPages}</span>
               <button
-                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="p-1.5 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-[var(--surface-alt)] dark:hover:bg-gray-700 transition-colors"
+                className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
+                aria-label="Página siguiente"
               >
-                <ChevronRight className="h-3.5 w-3.5" />
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>

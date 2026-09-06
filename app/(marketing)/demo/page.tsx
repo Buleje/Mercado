@@ -90,7 +90,7 @@ export default function DemoPage() {
         </div>
 
         {/* Garantía */}
-        <div className="rounded-2xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-5 mb-12 text-center">
+        <div className="rounded-2xl border-2 border-[var(--accent)] bg-primary/10 p-5 mb-12 text-center">
           <p className="text-sm sm:text-base font-extrabold text-[var(--text-primary)]">
             🛡 Garantía de devolución: 30 días
           </p>

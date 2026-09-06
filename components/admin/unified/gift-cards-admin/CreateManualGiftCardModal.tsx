@@ -10,6 +10,7 @@
 import { useState } from "react";
 import { Gift, Save, AlertCircle } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 
 interface Props {
   onClose: () => void;
@@ -87,8 +88,7 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
             </p>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Motivo *</label>
+          <Field label="Motivo *" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <select
               value={form.reason}
               onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))}
@@ -99,10 +99,9 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
               <option value="prueba">Cortesía por producto defectuoso</option>
               <option value="otro">Otro</option>
             </select>
-          </div>
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Monto (S/) *</label>
+          <Field label="Monto (S/) *" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <input
               type="number"
               min={1}
@@ -111,10 +110,9 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
               onChange={(e) => setForm((p) => ({ ...p, amount: parseFloat(e.target.value) || 0 }))}
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Destinatario *</label>
+          <Field label="Destinatario *" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <input
               type="text"
               value={form.recipientName}
@@ -122,10 +120,9 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
               placeholder="Nombre completo"
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Teléfono</label>
+          <Field label="Teléfono" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <input
               type="tel"
               value={form.recipientPhone}
@@ -133,10 +130,9 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
               placeholder="987654321"
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Dedicatoria (opcional)</label>
+          <Field label="Dedicatoria (opcional)" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <textarea
               value={form.message}
               onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
@@ -144,17 +140,16 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
               placeholder="Mensaje para el destinatario"
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Vence el</label>
+          <Field label="Vence el" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <input
               type="date"
               value={form.expiresAt || defaultExpiry}
               onChange={(e) => setForm((p) => ({ ...p, expiresAt: e.target.value }))}
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
-          </div>
+          </Field>
 
           <div className="flex gap-3 pt-2">
             <button

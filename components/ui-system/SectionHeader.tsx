@@ -55,9 +55,9 @@ export function SectionHeader({
           {title}
         </h2>
         {description && (
-          <p className="mt-2 text-sm text-[var(--text-tertiary)] max-w-xl leading-relaxed">
+          <div className="mt-2 text-sm text-[var(--text-tertiary)] max-w-xl leading-relaxed">
             {description}
-          </p>
+          </div>
         )}
       </div>
       {action && <div className="shrink-0">{action}</div>}

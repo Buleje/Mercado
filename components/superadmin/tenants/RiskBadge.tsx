@@ -10,9 +10,9 @@ const LEVEL_META: Record<
   TenantRisk["level"],
   { label: string; cls: string; dot: string }
 > = {
-  critical: { label: "Crítico", cls: "bg-[var(--data-error-50,#fef2f2)] text-[var(--data-error-700,#b91c1c)] dark:bg-red-950/40 dark:text-red-300", dot: "bg-[var(--data-error-500,#ef4444)]" },
-  high:     { label: "Alto",    cls: "bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)] dark:bg-amber-950/40 dark:text-amber-300", dot: "bg-[var(--data-warning-500,#f59e0b)]" },
-  medium:   { label: "Medio",   cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", dot: "bg-[var(--data-warning-400,#fbbf24)]" },
+  critical: { label: "Crítico", cls: "bg-[var(--data-error-100,#fee2e2)] text-[var(--data-error-700,#b91c1c)] dark:bg-red-950/50 dark:text-red-300", dot: "bg-[var(--data-error-500,#ef4444)]" },
+  high:     { label: "Alto",    cls: "bg-[var(--data-error-50,#fef2f2)] text-[var(--data-error-600,#dc2626)] dark:bg-red-950/30 dark:text-red-400", dot: "bg-[var(--data-error-400,#f87171)]" },
+  medium:   { label: "Medio",   cls: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", dot: "bg-[var(--text-tertiary)]" },
   low:      { label: "Sano",    cls: "bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-700,#047857)] dark:bg-emerald-950/40 dark:text-emerald-300", dot: "bg-[var(--data-success-500,#10b981)]" },
 };
 

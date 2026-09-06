@@ -9,7 +9,6 @@ import { z } from "zod";
 import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
-import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
@@ -18,11 +17,12 @@ import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { deductStockFEFO, hasBatchesWithStock } from "@/lib/inventory/fefo-deduct";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { conteoLockKey } from "@/app/api/inventory/conteo/route";
-import { getOrSet } from "@/lib/cache";
+import { getOrSet, revalidateTenantTag } from "@/lib/cache";
 import { FiadosDB } from "@/lib/db/fiados.db";
 import { CustomersDB } from "@/lib/db/customers.db";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { extractIgv, igvRateFromSettings } from "@/lib/tax";
+import { desglosarPago } from "@/lib/caja/desglosar-pago";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -166,8 +166,12 @@ export async function POST(req: NextRequest) {
 
   const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager", "tienda_owner"]);
   if (auth instanceof NextResponse) return auth;
-  const blocked = await requireActiveSubscription(auth.tenantId);
-  if (blocked) return blocked;
+  // MODO GRACIA 2026-07-08 (decisión Brandon, reporte ventas-caja bug 1): el
+  // POS NUNCA se bloquea por trial expirado — una bodega real necesita seguir
+  // cobrando en el mostrador aunque el trial del SaaS haya vencido. El gate
+  // 402 (`requireActiveSubscription`) se mantiene en el resto de writes
+  // (productos, gastos, compras, etc.), NO en la venta. El aviso de "trial
+  // expirado" se muestra como banner persistente en el POS (TrialExpiredGuard).
   // Round 20 M004: Sale + Customer + InventoryMovement + LoyaltyTx writes.
   return runWithAuditContext(req, auth.username, () => salesHandler(req, auth));
 }
@@ -589,6 +593,10 @@ async function salesHandler(
       reference: sale.id,
       notes: `Venta POS: ${item.name}`,
       tenantId: auth.tenantId,
+      // El stock ya lo bajó el `decrement` de la transacción de arriba. Sin
+      // esto, `record` lo bajaba OTRA VEZ: vender 3 descontaba 6 (medido
+      // 2026-08-11). Acá sólo se deja la constancia en el kardex.
+      stockYaAplicado: true,
     }).catch((err) => {
       logger.warn("[sales] inventory movement failed", { saleId: sale.id, err: String(err) });
       import("@sentry/nextjs")
@@ -613,12 +621,24 @@ async function salesHandler(
 
   // Register cash movement if a register is open (fire-and-forget)
   CashRegistersDB.getOpen(auth.tenantId).then(async (reg) => {
-    if (reg) {
+    if (!reg) return;
+    /**
+     * Una línea por forma de pago, no una sola por el total.
+     *
+     * Con pago mixto el POS manda `payment: "MIXTO"`, y el arqueo suma sólo
+     * los movimientos con `method === "efectivo"`: la venta entera quedaba
+     * fuera del esperado y el efectivo que sí estaba en el cajón aparecía
+     * como sobrante al cerrar. Desarmado, cada medio suma donde corresponde.
+     */
+    const lineas = desglosarPago(data.payment, data.paymentDetails, finalTotal);
+    for (const linea of lineas) {
       await CashRegistersDB.addMovement(reg.id, {
         type: "venta",
-        amount: finalTotal,
-        method: data.payment ?? "efectivo",
-        description: `Venta ${sale.id}`,
+        amount: linea.amount,
+        method: linea.method,
+        description: lineas.length > 1
+          ? `Venta ${sale.id} · ${linea.method}`
+          : `Venta ${sale.id}`,
         saleId: sale.id,
       });
     }
@@ -638,6 +658,13 @@ async function salesHandler(
     detail: `Venta POS creada por ${fmtCurrent(finalTotal)} con método ${data.payment ?? "efectivo"}${data.comprobanteTipo !== "ticket" ? ` (${data.comprobanteTipo})` : ""}.`,
     user: cashierId || "system",
   });
+
+  // El stock se descuenta arriba con `tx.product.updateMany` (updateMany
+  // condicional, para no quedar en negativo bajo dos cajeros a la vez), y eso
+  // saltea a ProductsDB, que es quien invalida. Sin esto `getAll` sirve su cache
+  // de 5 minutos: se vende toda la mañana y el Inventario muestra el stock de
+  // antes. Mismo patrón que mordió en recepciones y cuentas por pagar.
+  revalidateTenantTag(auth.tenantId, "products");
 
   // Asegurar que comprobanteNumero + fiadoId se incluyan en la respuesta
   const response = {

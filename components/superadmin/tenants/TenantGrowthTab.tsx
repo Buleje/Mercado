@@ -287,7 +287,7 @@ export function TenantGrowthTab({ growthData, loading }: TenantGrowthTabProps) {
 
               {/* Projection */}
               {lastMonth && prevMonth && (
-                <div className="bg-[var(--accent-soft)] rounded-xl px-4 py-2.5 text-sm flex items-center gap-2">
+                <div className="bg-primary/10 rounded-xl px-4 py-2.5 text-sm flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-[var(--accent)] shrink-0" />
                   <span className="text-[var(--text-secondary)]">
                     Proyección próximo mes:{" "}

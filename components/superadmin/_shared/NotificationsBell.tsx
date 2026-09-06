@@ -17,6 +17,8 @@ import {
   Package,
   User,
   Banknote,
+  HeartHandshake,
+  ShieldAlert,
 } from "@buleje/design-system/icons";
 
 interface InboxOrderItem {
@@ -58,6 +60,8 @@ interface BucketPayload {
 interface InboxResponse {
   total: number;
   buckets: {
+    atRisk: BucketPayload;
+    panelErrors: BucketPayload;
     vendorApplications: BucketPayload;
     paymentApprovals: BucketPayload;
     paymentProofs: BucketPayload;
@@ -69,17 +73,29 @@ const BUCKET_META: Record<
   keyof InboxResponse["buckets"],
   { label: string; description: string; icon: typeof Store; tone: string }
 > = {
+  atRisk: {
+    label: "Negocios en riesgo",
+    description: "Tiendas con riesgo de churn alto o crítico — necesitan rescate",
+    icon: HeartHandshake,
+    tone: "var(--data-error-500)",
+  },
+  panelErrors: {
+    label: "Errores en paneles",
+    description: "Errores en el panel admin de los negocios — ayudalos a resolverlos",
+    icon: ShieldAlert,
+    tone: "var(--data-error-500)",
+  },
   paymentProofs: {
     label: "Yape de apertura de tienda",
     description: "Comprobantes esperando verificación para crear el tenant",
     icon: ReceiptText,
-    tone: "var(--data-warning-500)",
+    tone: "#0d9488",
   },
   paymentApprovals: {
     label: "Aprobaciones Yape",
     description: "Pagos detectados por Yape Vision pendientes de revisión",
     icon: CreditCard,
-    tone: "var(--data-warning-500)",
+    tone: "#0d9488",
   },
   vendorApplications: {
     label: "Solicitudes de tienda",
@@ -96,6 +112,8 @@ const BUCKET_META: Record<
 };
 
 const BUCKET_ORDER: Array<keyof InboxResponse["buckets"]> = [
+  "atRisk",
+  "panelErrors",
   "paymentProofs",
   "paymentApprovals",
   "vendorApplications",
@@ -121,11 +139,21 @@ const PAYMENT_LABEL: Record<string, string> = {
 };
 
 /** Thumbnail de artículo con fallback a icono cuando no hay imagen o falla. */
-function ItemThumb({ src, alt, size = "h-10 w-10" }: { src: string | null; alt: string; size?: string }) {
+function ItemThumb({
+  src,
+  alt,
+  size = "h-10 w-10",
+}: {
+  src: string | null;
+  alt: string;
+  size?: string;
+}) {
   const [broken, setBroken] = useState(false);
   if (!src || broken) {
     return (
-      <div className={`${size} shrink-0 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] flex items-center justify-center`}>
+      <div
+        className={`${size} shrink-0 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] flex items-center justify-center`}
+      >
         <Package className="h-4 w-4 text-[var(--text-tertiary)]" />
       </div>
     );
@@ -183,7 +211,7 @@ function PendingOrderRow({
             </div>
           ))}
           {o.items.length > 3 && (
-            <div className="h-9 w-9 shrink-0 rounded-lg ring-2 ring-[var(--surface-canvas)] bg-[var(--surface-sunken)] border border-[var(--rule-soft)] flex items-center justify-center text-[10px] font-bold text-[var(--text-secondary)] tabular-nums">
+            <div className="h-9 w-9 shrink-0 rounded-lg ring-2 ring-[var(--surface-canvas)] bg-[var(--surface-sunken)] border border-[var(--rule-soft)] flex items-center justify-center text-xs font-bold text-[var(--text-secondary)] tabular-nums">
               +{o.items.length - 3}
             </div>
           )}
@@ -202,7 +230,7 @@ function PendingOrderRow({
             <span className="shrink-0 tabular-nums">{o.itemsCount} art.</span>
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold text-[var(--text-tertiary)] tabular-nums">
+        <div className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)] tabular-nums">
           {timeAgo(item.createdAt)}
           <ChevronDown
             className={`h-4 w-4 transition-transform ${expanded ? "rotate-180 text-[var(--accent)]" : ""}`}
@@ -218,7 +246,9 @@ function PendingOrderRow({
               <li key={it.id} className="flex items-center gap-3 py-2">
                 <ItemThumb src={it.image} alt={it.name} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{it.name}</p>
+                  <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
+                    {it.name}
+                  </p>
                   <p className="text-xs text-[var(--text-tertiary)] tabular-nums">
                     {it.quantity} {it.unit} × S/{Number(it.price).toFixed(2)}
                   </p>
@@ -235,7 +265,8 @@ function PendingOrderRow({
             </span>
             {o.paymentMethod && (
               <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)]">
-                <Banknote className="h-3.5 w-3.5" /> {PAYMENT_LABEL[o.paymentMethod] ?? o.paymentMethod}
+                <Banknote className="h-3.5 w-3.5" />{" "}
+                {PAYMENT_LABEL[o.paymentMethod] ?? o.paymentMethod}
               </span>
             )}
             <span className="flex-1" />
@@ -305,7 +336,10 @@ export function NotificationsBell() {
   useEffect(() => {
     void load();
     const id = setInterval(() => {
-      if (stopped.current) { clearInterval(id); return; }
+      if (stopped.current) {
+        clearInterval(id);
+        return;
+      }
       if (typeof document !== "undefined" && document.hidden) return;
       void load();
     }, 60_000);
@@ -333,10 +367,17 @@ export function NotificationsBell() {
   // del header del topbar (que tiene backdrop-blur creando un nuevo containing
   // block para position: fixed, bug clásico de CSS).
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const drawer = open && (
-    <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true" aria-labelledby="notif-title">
+    <div
+      className="fixed inset-0 z-[80]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="notif-title"
+    >
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150"
         onClick={() => setOpen(false)}
@@ -356,7 +397,10 @@ export function NotificationsBell() {
                 <div className="w-8 h-8 rounded-xl bg-[var(--accent)] text-white flex items-center justify-center shadow-sm shadow-[var(--accent)]/30 shrink-0">
                   <Inbox className="w-4 h-4" strokeWidth={2.25} />
                 </div>
-                <h2 id="notif-title" className="text-base font-bold text-[var(--text-primary)] truncate">
+                <h2
+                  id="notif-title"
+                  className="text-base font-bold text-[var(--text-primary)] truncate"
+                >
                   Centro de notificaciones
                 </h2>
               </div>
@@ -392,9 +436,7 @@ export function NotificationsBell() {
               <div className="w-16 h-16 rounded-2xl bg-[var(--surface-sunken)] flex items-center justify-center mb-4 ring-1 ring-[var(--rule-soft)]">
                 <Bell className="w-7 h-7 text-[var(--text-tertiary)]" />
               </div>
-              <p className="text-base font-bold text-[var(--text-primary)]">
-                Bandeja limpia
-              </p>
+              <p className="text-base font-bold text-[var(--text-primary)]">Bandeja limpia</p>
               <p className="text-sm text-[var(--text-tertiary)] mt-2 max-w-[280px]">
                 Cuando llegue una solicitud de tienda, un Yape o un pedido nuevo aparecerá acá.
               </p>
@@ -431,7 +473,7 @@ export function NotificationsBell() {
                       <p className="text-[13px] font-bold text-[var(--text-primary)] leading-tight">
                         {meta.label}
                       </p>
-                      <p className="text-[11px] text-[var(--text-tertiary)] leading-snug mt-0.5">
+                      <p className="text-xs text-[var(--text-tertiary)] leading-snug mt-0.5">
                         {meta.description}
                       </p>
                     </div>
@@ -472,7 +514,7 @@ export function NotificationsBell() {
                                 {it.subtitle}
                               </p>
                             </div>
-                            <div className="flex items-center gap-1 shrink-0 text-[11px] font-semibold text-[var(--text-tertiary)] tabular-nums pt-0.5">
+                            <div className="flex items-center gap-1 shrink-0 text-xs font-semibold text-[var(--text-tertiary)] tabular-nums pt-0.5">
                               {timeAgo(it.createdAt)}
                               <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                             </div>
@@ -511,7 +553,7 @@ export function NotificationsBell() {
         {hasUnread && (
           <>
             <span
-              className="absolute -top-0.5 -right-0.5 inline-flex h-[18px] min-w-[18px] px-1 items-center justify-center rounded-full text-[10px] font-bold tabular-nums bg-[var(--data-error-500)] text-white shadow-sm shadow-[var(--data-error-500)]/40 ring-2 ring-[var(--surface-canvas)]"
+              className="absolute -top-0.5 -right-0.5 inline-flex h-[18px] min-w-[18px] px-1 items-center justify-center rounded-full text-xs font-bold tabular-nums bg-[var(--data-error-500)] text-white shadow-sm shadow-[var(--data-error-500)]/40 ring-2 ring-[var(--surface-canvas)]"
               aria-hidden
             >
               {total > 99 ? "99+" : total}

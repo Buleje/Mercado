@@ -4,8 +4,8 @@ import { CardTitle, LoadingState } from "@buleje/design-system";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  Users, Search, X, Download, Loader2, AlertCircle,
-  Phone, Crown, Star, UserPlus, Moon, Heart,
+  Users, Search, X, Download, AlertCircle,
+  Phone, Crown, Star, UserPlus, Moon,
   ShoppingCart, TrendingUp, UserCheck,
   ChevronLeft, ChevronRight, BarChart3, RefreshCw,
 } from "@buleje/design-system/icons";
@@ -80,8 +80,8 @@ function inferSegment(c: Customer): Segment {
 // ── Config ─────────────────────────────────────────────────────────────────
 
 const SEGMENT_CONFIG: Record<Segment, { label: string; color: string; bg: string; border: string; Icon: React.ElementType; variant: BadgeVariant }> = {
-  frecuente: { label: "Frecuente", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", Icon: Crown,    variant: "success" },
-  ocasional: { label: "Ocasional", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",     Icon: Star,     variant: "info" },
+  frecuente: { label: "Frecuente", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", Icon: Crown,    variant: "success" },
+  ocasional: { label: "Ocasional", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",     bg: "bg-primary/10 dark:bg-primary/15",     border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",     Icon: Star,     variant: "info" },
   nuevo:     { label: "Nuevo",     color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]", Icon: UserPlus, variant: "pending" },
   perdido:   { label: "Perdido",   color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-50)] dark:bg-red-950/30",       border: "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",       Icon: Moon,     variant: "error" },
 };
@@ -445,7 +445,7 @@ export default function CRMTab() {
 
       {/* Mejora 13: Canal de adquisicion pie chart */}
       {(() => {
-        const CHANNEL_COLORS = ["var(--accent)", "#f97316", "#457b9d", "#9b5de5", "#6b7280"];
+        const CHANNEL_COLORS = ["var(--accent)", "#ff6b5b", "#457b9d", "#9b5de5", "var(--text-secondary)"];
         const CHANNEL_LABELS: Record<string, string> = { local: "Local", whatsapp: "WhatsApp", web: "Web", referido: "Referido", redes: "Redes" };
         const channelCounts: Record<string, number> = {};
         for (const c of customers) {
@@ -486,7 +486,7 @@ export default function CRMTab() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Nombre o teléfono..."
-            className="w-full pl-10 pr-9 h-11 sm:h-auto sm:py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:border-[var(--text-primary)] focus:ring-2 focus:ring-[var(--rule-base)] outline-none transition-all"
+            className="w-full pl-10 pr-9 h-11 sm:h-auto sm:py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] focus:border-[var(--text-primary)] focus:ring-2 focus:ring-[var(--rule-base)] outline-none transition-all"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -496,6 +496,9 @@ export default function CRMTab() {
         </div>
 
         {/* Filtro segmento — chips estandar */}
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          Segmento
+        </span>
         {([
           { key: "todos" as const, label: "Todos", count: customers.length },
           { key: "frecuente" as const, label: "Frecuente", count: segmentCounts.frecuente },
@@ -510,14 +513,14 @@ export default function CRMTab() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               filterSegment === f.key
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
           >
             {f.label}
             {f.count > 0 && (
               <span className={cn(
                 "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-                filterSegment === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+                filterSegment === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
               )}>
                 {f.count > 99 ? "99+" : f.count}
               </span>
@@ -543,7 +546,11 @@ export default function CRMTab() {
 
       {/* Filtros secundarios: quick filter + frecuencia + tags */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Quick filters */}
+        {/* Cada grupo lleva su etiqueta: había TRES chips "Todos" en la misma
+            fila (segmento, estado y frecuencia) y no se sabía cuál filtraba qué. */}
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          Estado
+        </span>
         {([
           { key: "todos" as QuickFilter,     label: "Todos" },
           { key: "activos" as QuickFilter,   label: "Activos" },
@@ -557,20 +564,23 @@ export default function CRMTab() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               quickFilter === f.key
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
           >
             {f.label}
             <span className={cn(
               "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              quickFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+              quickFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
             )}>
               {quickFilterCounts[f.key] > 99 ? "99+" : quickFilterCounts[f.key]}
             </span>
           </button>
         ))}
 
-        <span className="text-[var(--text-tertiary)] dark:text-zinc-600">|</span>
+        <span aria-hidden className="mx-1 h-5 w-px bg-[var(--rule-base)]" />
+        <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          Frecuencia
+        </span>
 
         {/* Frecuencia de compra */}
         {([
@@ -588,13 +598,13 @@ export default function CRMTab() {
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               freqFilter === f.key
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
           >
             {f.label}
             <span className={cn(
               "text-xs font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
-              freqFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300"
+              freqFilter === f.key ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--rule-soft)] dark:bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"
             )}>
               {freqCounts[f.key] > 99 ? "99+" : freqCounts[f.key]}
             </span>
@@ -611,7 +621,7 @@ export default function CRMTab() {
             className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
               filterTag === "todos"
                 ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
             )}
           >
             Todas
@@ -625,7 +635,7 @@ export default function CRMTab() {
                 className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
                   isActive
                     ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]"
-                    : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800"
+                    : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-[var(--surface-sunken)]"
                 )}
               >
                 {tag}
@@ -663,7 +673,7 @@ export default function CRMTab() {
                 <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Ver</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50 dark:divide-card-border">
+            <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
               {paginated.length === 0 && (
                 <tr>
                   <td colSpan={9} className="py-16 text-center">
@@ -717,7 +727,7 @@ export default function CRMTab() {
                     {/* Nombre */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-extrabold text-primary shrink-0 select-none">
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0 select-none">
                           {c.name.split(" ").slice(0, 2).map(n => n[0]?.toUpperCase() ?? "").join("")}
                         </div>
                         <div>
@@ -762,7 +772,7 @@ export default function CRMTab() {
                             step={0.01}
                             value={creditLimitInput}
                             onChange={e => setCreditLimitInput(e.target.value)}
-                            className="w-20 text-xs border border-primary/40 rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="w-20 text-xs border border-primary/40 rounded-lg px-2 py-1 bg-[var(--surface-raised)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                             placeholder="0.00"
                           />
                           <button type="submit" className="text-xs px-1.5 py-1 bg-primary text-white rounded-lg font-bold">OK</button>
@@ -804,8 +814,8 @@ export default function CRMTab() {
                         if (days === 0) { label = "Hoy"; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
                         else if (days === 1) { label = "Ayer"; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
                         else if (days < 7) { label = `Hace ${days}d`; colorClass = "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"; }
-                        else if (days < 14) { label = "Hace 1 sem"; colorClass = "text-yellow-600 dark:text-yellow-400"; }
-                        else if (days < 30) { label = `Hace ${Math.floor(days / 7)} sem`; colorClass = "text-yellow-600 dark:text-yellow-400"; }
+                        else if (days < 14) { label = "Hace 1 sem"; colorClass = "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"; }
+                        else if (days < 30) { label = `Hace ${Math.floor(days / 7)} sem`; colorClass = "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"; }
                         else if (days < 90) { label = `Hace ${Math.floor(days / 30)} meses`; colorClass = "text-[var(--data-error-600)] dark:text-red-400"; }
                         else { label = "Inactivo"; colorClass = "text-[var(--text-tertiary)] dark:text-muted"; }
                         return <span className={cn("text-xs font-bold", colorClass)}>{label}</span>;
@@ -816,7 +826,7 @@ export default function CRMTab() {
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => setDetail(c.phone)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold transition-colors"
                       >
                         <ShoppingCart className="h-3 w-3" />360°
                       </button>
@@ -838,7 +848,7 @@ export default function CRMTab() {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={effectivePage === 1}
-                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-white dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
+                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
               </button>
@@ -851,7 +861,7 @@ export default function CRMTab() {
                     className={cn("w-8 h-8 text-xs rounded-lg font-semibold transition-colors",
                       effectivePage === p
                         ? "bg-primary text-white"
-                        : "border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-white dark:hover:bg-[var(--surface-raised)]"
+                        : "border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)]"
                     )}
                   >
                     {p}
@@ -861,7 +871,7 @@ export default function CRMTab() {
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={effectivePage === totalPages}
-                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-white dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
+                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
               >
                 <ChevronRight className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
               </button>
@@ -936,7 +946,7 @@ export default function CRMTab() {
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-card-border">
+                    <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
                       {/* Total gastado */}
                       {(() => {
                         const values = compareCustomers.map(c => c.totalSpent ?? 0);

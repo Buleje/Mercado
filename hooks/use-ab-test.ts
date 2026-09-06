@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 type Variant = { id: string; label: string; weight: number };
 type ABTest = { id: string; name: string; variants: Variant[]; active: boolean };
@@ -55,7 +56,7 @@ export function useABTest(testName: string) {
     tracked.current = true;
     fetch("/api/ab-tests/events", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ testId: test.id, variantId: variant.id, visitorId: visitorId.current, event: "impression" }),
     }).catch(() => {});
   }, [test, variant]);
@@ -64,7 +65,7 @@ export function useABTest(testName: string) {
     if (!test || !variant) return;
     fetch("/api/ab-tests/events", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ testId: test.id, variantId: variant.id, visitorId: visitorId.current, event: "conversion", value }),
     }).catch(() => {});
   }, [test, variant]);

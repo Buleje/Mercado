@@ -23,7 +23,6 @@ import {
   UserCircle,
   Tag,
   Sparkles,
-  ShieldCheck,
   ArrowRight,
   Eye,
   Pencil,
@@ -34,14 +33,14 @@ import { useCheckoutData } from "@/hooks/use-checkout-data";
 import { useCustomer, isCustomerProfileComplete, type Customer } from "@/contexts/customer-context";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { AuthModal, useAuthModal } from "@/components/auth/AuthModal";
-import CheckoutSummary from "@/components/marketplace/checkout/CheckoutSummary";
+import { useRegisterCheckoutSummary } from "@/contexts/checkout-summary-context";
 import CheckoutUpsell from "@/components/marketplace/checkout/CheckoutUpsell";
-import CheckoutMobileCtaBar from "@/components/marketplace/checkout/CheckoutMobileCtaBar";
 import CheckoutStepHeader from "@/components/marketplace/checkout/CheckoutStepHeader";
+import CheckoutCouponFields from "@/components/marketplace/checkout/CheckoutCouponFields";
 import OrderDetailsModal from "@/components/marketplace/checkout/OrderDetailsModal";
+import CheckoutEditModal from "@/components/marketplace/checkout/CheckoutEditModal";
 import PaicheSuccessToast from "@/components/marketplace/checkout/PaicheSuccessToast";
 import { CheckoutTransitionOverlay } from "@/components/marketplace/checkout/CheckoutTransitionOverlay";
-import OrderSummaryCard from "@/components/ui-system/OrderSummaryCard";
 import { PaicheMascot } from "@/components/ui-system/illustrations";
 import { setLastOrder } from "@/components/marketplace/RepetirUltimoPedido";
 import { incrementOrderCount } from "@/components/marketplace/ClienteFrecuenteBadge";
@@ -74,6 +73,7 @@ export default function CheckoutConfirmarPage() {
     payment,
     setPayment,
     coupons,
+    setCouponForStore,
     loyalty,
     paymentProofs,
     isCustomerValid,
@@ -91,8 +91,13 @@ export default function CheckoutConfirmarPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [guestMode, setGuestMode] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  // Editar datos/entrega en un modal in-place (Brandon 2026-07-06) — sin redirigir.
+  const [editMode, setEditMode] = useState<"datos" | "entrega" | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
   const [toastData, setToastData] = useState<{ title: string; subtitle: string } | null>(null);
+  // Cupón editable acá también: el flujo rápido (perfil completo) salta
+  // /entrega, así que confirmar es el único lugar universal para aplicarlo.
+  const [couponsOpen, setCouponsOpen] = useState(false);
 
   // Brandon mayo 15 v4 (audit QA #1): reemplazado `setTimeout(250ms)` por
   // los flags reales `hydrated` de ambos hooks. En redes lentas el cart no
@@ -112,7 +117,7 @@ export default function CheckoutConfirmarPage() {
     // de "datos faltantes" disparaban un loop /confirmar → /datos.
     if (results.length > 0 || submitting) return;
     if (itemCount === 0) router.replace("/marketplace/carrito");
-    else if (!isCustomerValid) router.replace("/checkout/datos");
+    else if (!isCustomerValid) router.replace("/checkout/entrega");
     else if (!isAddressValid) router.replace("/checkout/entrega");
   }, [
     cartReady, itemCount, isCustomerValid, isAddressValid,
@@ -437,6 +442,20 @@ export default function CheckoutConfirmarPage() {
               storeNames: Array.from(new Set(succeeded.map((s) => s.storeName))),
             }),
           );
+          // buleje-last-order (Brandon 2026-07-06): las páginas públicas de
+          // pedido (/pedido/[id] y /gracias) prueban propiedad con el teléfono
+          // vía este key. Antes NUNCA se escribía → /public daba 404 (tracking)
+          // y /gracias caía al endpoint privado (401). Lo persistimos acá.
+          if (first.orderId !== undefined && customer.phone) {
+            localStorage.setItem(
+              "buleje-last-order",
+              JSON.stringify({
+                orderId: String(first.orderId),
+                customerPhone: customer.phone,
+                ts: Date.now(),
+              }),
+            );
+          }
         } catch {
           /* silent */
         }
@@ -479,6 +498,31 @@ export default function CheckoutConfirmarPage() {
     persistAddress,
   ]);
 
+  // Riel de resumen persistente — lo dibuja el layout (CheckoutShell). Se
+  // registra antes de cualquier early-return (result screen / carrito vacío).
+  useRegisterCheckoutSummary({
+    ctaLabel: submitting
+      ? "Procesando..."
+      : needsPaymentChoice
+        ? "Elegí cómo pagás"
+        : "Confirmar pedido",
+    onCtaClick: handleConfirm,
+    ctaDisabled: submitting || needsPaymentChoice,
+    ctaLoading: submitting,
+    showItems: true,
+    couponDiscount: couponDiscountTotal,
+    loyaltyDiscount: loyaltyDiscountTotal,
+    helperText: needsPaymentChoice
+      ? "Elegí un método de pago para confirmar"
+      : "Al confirmar aceptás que cada bodega te contacte por WhatsApp",
+    mobileTotal: Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal),
+    mobileCtaLabel: submitting
+      ? "Procesando tu pedido..."
+      : needsPaymentChoice
+        ? "Elegí cómo pagás"
+        : "Confirmar pedido",
+  });
+
   // ── Result screen editorial ─────────────────────────────────────
   if (results.length > 0) {
     const succeeded = results.filter((r) => r.success);
@@ -499,7 +543,7 @@ export default function CheckoutConfirmarPage() {
                 <AlertCircle className="h-10 w-10" strokeWidth={1.5} />
               </span>
             ) : (
-              <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 <CheckCircle2 className="h-10 w-10" strokeWidth={1.5} />
               </span>
             )}
@@ -509,7 +553,7 @@ export default function CheckoutConfirmarPage() {
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
               {allOk ? "Pedido confirmado" : allFail ? "Algo falló" : "Parcialmente enviado"}
             </p>
-            <h1 className="text-[clamp(1.75rem,4vw,3rem)] font-black tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
+            <h1 className="text-[clamp(1.75rem,4vw,3rem)] font-bold tracking-[-0.035em] text-[var(--text-primary)] leading-[0.95]">
               {allOk ? (
                 <>
                   ¡Listo,
@@ -544,7 +588,7 @@ export default function CheckoutConfirmarPage() {
                 className={cn(
                   "rounded-2xl border px-5 py-4 flex items-start gap-3",
                   r.success
-                    ? "border-[var(--accent)]/30 bg-[var(--accent-soft)]"
+                    ? "border-[var(--accent)]/30 bg-primary/10"
                     : "border-[var(--data-error-500)]/30 bg-[var(--data-error-50)]",
                 )}
               >
@@ -573,7 +617,7 @@ export default function CheckoutConfirmarPage() {
                         {typeof r.errorAvailable === "number" && r.errorAvailable >= 0 && (
                           <>
                             {" "}— quedan{" "}
-                            <strong className="tabular-nums text-[var(--data-warning-500,#f97316)]">
+                            <strong className="tabular-nums text-[var(--data-warning-500,#ff6b5b)]">
                               {r.errorAvailable}
                             </strong>
                             .
@@ -656,8 +700,7 @@ export default function CheckoutConfirmarPage() {
         subtitle="Verificá que todo esté bien antes de confirmar."
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 sm:gap-6 items-start pb-28 lg:pb-16">
-        <div className="space-y-4 sm:space-y-5">
+      <div className="space-y-4 sm:space-y-5">
           {/* Auth gate v2 — Brandon 2026-05-18: compactado.
               Antes: aside con padding p-5/p-6 + iframe italic font-serif
               + descripción larga + 2 botones — competía con el CTA primario
@@ -667,7 +710,7 @@ export default function CheckoutConfirmarPage() {
           {showAuthBanner && (
             <aside
               aria-label="Iniciar sesión para rastrear pedidos"
-              className="rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent-soft)]/40 p-3.5 sm:p-4 flex items-center gap-3"
+              className="rounded-2xl border border-[var(--accent)]/25 bg-primary/10 p-3.5 sm:p-4 flex items-center gap-3"
             >
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-white shrink-0">
                 <UserCircle className="h-5 w-5" strokeWidth={2.25} aria-hidden />
@@ -715,7 +758,7 @@ export default function CheckoutConfirmarPage() {
               kicker="Datos"
               title="Quién recibe"
               icon={User}
-              editHref="/checkout/datos?edit=1"
+              onEdit={() => setEditMode("datos")}
               className="col-span-2 sm:col-span-1"
             >
               <dl className="space-y-1.5 text-[length:var(--ts-sm)]">
@@ -729,7 +772,7 @@ export default function CheckoutConfirmarPage() {
               kicker="Entrega"
               title="Dónde te llega"
               icon={MapPin}
-              editHref="/checkout/entrega"
+              onEdit={() => setEditMode("entrega")}
               className="col-span-2 sm:col-span-1"
             >
               <dl className="space-y-1.5 text-[length:var(--ts-sm)]">
@@ -741,35 +784,47 @@ export default function CheckoutConfirmarPage() {
 
           </div>
 
-          {/* Cupones aplicados (si hay) */}
-          {couponEntries.length > 0 && (
-            <ReviewCard
-              kicker="Descuentos"
-              title="Cupones aplicados"
-              icon={Tag}
-              editHref="/checkout/entrega"
-              wide
+          {/* Cupón de descuento — EDITABLE acá (no solo lectura). El flujo
+              rápido salta /entrega, así que este es el único lugar universal
+              donde el cliente puede aplicar/quitar su cupón. El descuento lo
+              re-valida el backend al crear la orden (anti-fraude). */}
+          {couponEntries.length > 0 || couponsOpen ? (
+            <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5 space-y-3">
+              <div className="flex items-center gap-2.5">
+                <span
+                  aria-hidden
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0"
+                >
+                  <Tag className="h-4 w-4" strokeWidth={2.25} />
+                </span>
+                <div>
+                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
+                    Descuentos
+                  </p>
+                  <h3 className="text-base font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+                    ¿Tienes un cupón?
+                  </h3>
+                </div>
+              </div>
+              <CheckoutCouponFields
+                byStore={byStore}
+                coupons={coupons}
+                setCouponForStore={setCouponForStore}
+                totalByStore={totalByStore}
+              />
+            </section>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCouponsOpen(true)}
+              className="inline-flex items-center gap-2 self-start rounded-full border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-11 text-base font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             >
-              <ul className="space-y-1.5 text-[length:var(--ts-sm)]">
-                {couponEntries.map(([slug, c]) => (
-                  <li key={slug} className="flex justify-between gap-3">
-                    <span className="text-[var(--text-secondary)] truncate">
-                      <span className="font-bold text-[var(--text-primary)]">{c.code}</span>{" "}
-                      <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                        (
-                        {byStore[
-                          Object.keys(byStore).find((id) => byStore[id].storeSlug === slug) || ""
-                        ]?.storeName ?? slug}
-                        )
-                      </span>
-                    </span>
-                    <span className="text-[var(--accent)] font-black tabular-nums shrink-0">
-                      −{fmt(c.discount)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </ReviewCard>
+              <Tag className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+              <span>¿Tienes un cupón? Agrégalo</span>
+              <span className="text-[var(--accent)] font-extrabold" aria-hidden>
+                +
+              </span>
+            </button>
           )}
 
           {/* Loyalty canjeado */}
@@ -783,12 +838,12 @@ export default function CheckoutConfirmarPage() {
             >
               <div className="flex justify-between items-baseline text-[length:var(--ts-sm)]">
                 <span className="text-[var(--text-secondary)]">
-                  <strong className="text-[var(--text-primary)] tabular-nums font-black">
+                  <strong className="text-[var(--text-primary)] tabular-nums font-bold">
                     {loyalty.redeemPoints}
                   </strong>{" "}
                   puntos
                 </span>
-                <span className="text-[var(--accent)] font-black tabular-nums">
+                <span className="text-[var(--accent)] font-bold tabular-nums">
                   −{fmt(loyaltyDiscountTotal)}
                 </span>
               </div>
@@ -810,7 +865,7 @@ export default function CheckoutConfirmarPage() {
                   <ShoppingBag className="h-3 w-3" strokeWidth={2} aria-hidden />
                   Tu pedido
                 </p>
-                <h2 className="text-lg sm:text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+                <h2 className="text-base sm:text-lg font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                   {itemCount} {itemCount === 1 ? "producto" : "productos"} ·{" "}
                   <span className="tabular-nums">{fmt(grandTotal)}</span>
                 </h2>
@@ -820,13 +875,13 @@ export default function CheckoutConfirmarPage() {
                   type="button"
                   onClick={() => setDetailsOpen(true)}
                   aria-label="Ver detalle del pedido"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--accent)] hover:bg-primary/10 transition-colors"
                 >
                   <Eye className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </button>
                 <Link
                   href="/marketplace/carrito"
-                  className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-4 h-9 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+                  className="inline-flex items-center rounded-full bg-[var(--surface-sunken)] px-4 h-9 text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:bg-primary/10 transition-colors"
                 >
                   Editar
                 </Link>
@@ -855,11 +910,11 @@ export default function CheckoutConfirmarPage() {
                         <ShoppingBag className="h-7 w-7" strokeWidth={1.5} aria-hidden />
                       </span>
                     )}
-                    <span className="absolute top-1.5 right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--text-primary)]/85 px-1.5 text-[length:var(--ts-2xs)] font-black tabular-nums text-[var(--surface-canvas)] backdrop-blur-sm">
+                    <span className="absolute top-1.5 right-1.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--text-primary)]/85 px-1.5 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--surface-canvas)] backdrop-blur-sm">
                       ×{it.quantity}
                     </span>
                   </div>
-                  <p className="mt-1.5 text-[length:var(--ts-sm)] font-black tabular-nums leading-tight text-[var(--text-primary)]">
+                  <p className="mt-1.5 text-[length:var(--ts-sm)] font-bold tabular-nums leading-tight text-[var(--text-primary)]">
                     {fmt(it.price * it.quantity)}
                   </p>
                   <p className="text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)] line-clamp-1">
@@ -971,53 +1026,12 @@ export default function CheckoutConfirmarPage() {
         {/* Upsell final — "¿Le sumás algo?" (no tapa el CTA principal) */}
         <CheckoutUpsell />
 
-        {/* CheckoutSummary oculto en mobile — el cliente ya revisó todo en
-            los pasos previos, en confirmar solo necesita ver y aceptar */}
-        <div className="hidden lg:block">
-          <CheckoutSummary
-            variant="review"
-            ctaLabel={
-              submitting
-                ? "Procesando..."
-                : needsPaymentChoice
-                  ? "Elegí cómo pagás"
-                  : "Confirmar pedido"
-            }
-            onCtaClick={handleConfirm}
-            ctaDisabled={submitting || needsPaymentChoice}
-            ctaLoading={submitting}
-            couponDiscount={couponDiscountTotal}
-            loyaltyDiscount={loyaltyDiscountTotal}
-            helperText={
-              needsPaymentChoice
-                ? "Elegí un método de pago para confirmar"
-                : "Al confirmar aceptás que cada bodega te contacte por WhatsApp"
-            }
-          />
-        </div>
         <AuthModal open={authModalOpen} onClose={closeAuthModal} />
-      </div>
 
-      {/* Sticky bottom CTA mobile — consistente con /carrito /datos /entrega */}
-      <CheckoutMobileCtaBar
-        primaryLabel="Total"
-        total={Math.max(0, grandTotal - couponDiscountTotal - loyaltyDiscountTotal)}
-        ctaLabel={
-          submitting
-            ? "Procesando tu pedido..."
-            : needsPaymentChoice
-              ? "Elegí cómo pagás"
-              : "Confirmar pedido"
-        }
-        ctaOnClick={handleConfirm}
-        ctaDisabled={submitting || needsPaymentChoice}
-        ctaLoading={submitting}
-        helperText={
-          needsPaymentChoice
-            ? "Elegí un método de pago para confirmar"
-            : "Al confirmar aceptás que cada bodega te contacte por WhatsApp"
-        }
-      />
+      {/* Editar datos/entrega en modal in-place (sin redirigir) */}
+      {editMode && (
+        <CheckoutEditModal mode={editMode} onClose={() => setEditMode(null)} />
+      )}
 
       {/* Modal de detalle del pedido (abierto desde el botón ojo) */}
       <OrderDetailsModal
@@ -1064,6 +1078,7 @@ function ReviewCard({
   title,
   icon: Icon,
   editHref,
+  onEdit,
   children,
   wide,
   dense,
@@ -1072,7 +1087,9 @@ function ReviewCard({
   kicker: string;
   title: string;
   icon: typeof User;
-  editHref: string;
+  /** Navegación (fallback). Preferí `onEdit` para editar en modal sin redirigir. */
+  editHref?: string;
+  onEdit?: () => void;
   children: React.ReactNode;
   wide?: boolean;
   /** Cards a media columna (Pago/Pedido): icono + lápiz arriba, título a ancho
@@ -1080,19 +1097,21 @@ function ReviewCard({
   dense?: boolean;
   className?: string;
 }) {
-  const editLink = (
-    <Link
-      href={editHref}
-      aria-label={`Editar ${title}`}
-      className="inline-flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] active:scale-95 transition-all shrink-0"
-    >
+  const editCls =
+    "inline-flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-lg text-[var(--text-tertiary)] hover:bg-primary/10 hover:text-[var(--accent)] active:scale-95 transition-all shrink-0";
+  const editLink = onEdit ? (
+    <button type="button" onClick={onEdit} aria-label={`Editar ${title}`} className={editCls}>
+      <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+    </button>
+  ) : editHref ? (
+    <Link href={editHref} aria-label={`Editar ${title}`} className={editCls}>
       <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
     </Link>
-  );
+  ) : null;
   const iconChip = (
     <span
       aria-hidden
-      className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0"
+      className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0"
     >
       <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2.25} />
     </span>
@@ -1118,7 +1137,7 @@ function ReviewCard({
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
             {kicker}
           </p>
-          <h3 className="text-[length:var(--ts-sm)] sm:text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight mt-0.5">
+          <h3 className="text-[length:var(--ts-sm)] sm:text-base font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight mt-0.5">
             {title}
           </h3>
         </div>
@@ -1130,7 +1149,7 @@ function ReviewCard({
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-tight">
                 {kicker}
               </p>
-              <h3 className="text-[length:var(--ts-sm)] sm:text-base font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight mt-0.5">
+              <h3 className="text-[length:var(--ts-sm)] sm:text-base font-bold tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight mt-0.5">
                 {title}
               </h3>
             </div>

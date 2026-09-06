@@ -92,7 +92,7 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
         className={cn(
           "relative flex flex-col items-center justify-center rounded-xl border border-gray-700 p-2 gap-1 transition-transform active:scale-95 select-none",
           "bg-gray-800 hover:bg-gray-700",
-          flash && "bg-[var(--accent-muted)] border-[var(--data-success-500)]/30",
+          flash && "bg-primary/15 border-[var(--data-success-500)]/30",
         )}
         style={{ height: 80, touchAction: "manipulation" }}
       >
@@ -139,7 +139,7 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
               </button>
               <button
                 onClick={confirmLongPress}
-                className="flex-1 h-12 rounded-xl bg-[var(--accent-soft)] text-white font-bold active:scale-95"
+                className="flex-1 h-12 rounded-xl bg-primary/10 text-white font-bold active:scale-95"
               >
                 Agregar {longPressQty}
               </button>
@@ -385,7 +385,7 @@ export default function MobilePOS() {
               className={cn(
                 "shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-colors",
                 activeCategory === cat
-                  ? "bg-[var(--accent-soft)] text-white"
+                  ? "bg-primary/10 text-white"
                   : "bg-gray-800 text-[var(--text-tertiary)]",
               )}
               style={{ minHeight: 32 }}
@@ -470,7 +470,7 @@ export default function MobilePOS() {
           <button
             onClick={() => handlePay("efectivo")}
             disabled={!cart.length || paying}
-            className="w-full rounded-xl bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] active:scale-95 text-white font-extrabold text-lg transition-all disabled:opacity-30"
+            className="w-full rounded-xl bg-primary/10 hover:bg-primary/10 active:scale-95 text-white font-extrabold text-lg transition-all disabled:opacity-30"
             style={{ height: 80, touchAction: "manipulation" }}
           >
             {paying ? "Procesando..." : paySuccess ? "Cobrado!" : `Cobrar S/${total.toFixed(2)}`}
@@ -485,7 +485,7 @@ export default function MobilePOS() {
 
       {/* Overlay de éxito */}
       {paySuccess && (
-        <div className="fixed inset-0 z-50 bg-[var(--accent-muted)] flex items-center justify-center pointer-events-none">
+        <div className="fixed inset-0 z-50 bg-primary/15 flex items-center justify-center pointer-events-none">
           <div className="text-center">
             <Check className="h-16 w-16 text-white mx-auto mb-2" strokeWidth={3} />
             <p className="text-white text-2xl font-semibold">Cobrado!</p>

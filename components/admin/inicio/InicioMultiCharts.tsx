@@ -61,8 +61,6 @@ const CAT_LABEL: Record<string, string> = {
 // Brandon mayo 2026: labels del eje X con día + fecha corta para que el
 // dueño de la bodega entienda inmediatamente "Lunes 10/05" sin tener que
 // adivinar qué semana es. Variantes según el ancho del rango.
-const DAY_FULL = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-const DAY_SHORT = ["Do", "L", "Ma", "Mi", "Ju", "Vi", "Sa"];
 const MONTH_LABELS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 const MS_DAY = 24 * 60 * 60 * 1000;
@@ -555,7 +553,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       render: () => (
         <DashboardSection
           chartId="resumen.inventario"
-          hasData={invChart.length > 0 && invChart.some((r) => r.stock > 0)}
+          hasData={invChart.some((r) => r.stock > 0)}
           kicker="Inventario · top 7 categorías"
           title="Stock por categoría"
           kpis={[
@@ -593,7 +591,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       render: () => (
         <DashboardSection
           chartId="resumen.compras"
-          hasData={compChart.length > 0 && compChart.some((r) => r.monto > 0)}
+          hasData={compChart.some((r) => r.monto > 0)}
           kicker={`Compras · top 7 proveedores · ${rangeLabel}`}
           title="Compras por proveedor"
           kpis={[
@@ -668,7 +666,7 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       render: () => (
         <DashboardSection
           chartId="resumen.productos"
-          hasData={prodChart.length > 0 && prodChart.some((r) => r.unidades > 0)}
+          hasData={prodChart.some((r) => r.unidades > 0)}
           kicker={`Productos · top 7 · ${rangeLabel}`}
           title="Productos más vendidos"
           kpis={[

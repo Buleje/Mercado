@@ -20,7 +20,7 @@ const STEPS = [
     icon: CreditCard,
     title: "Paga fácil",
     desc: "Paga con Yape o en efectivo contra entrega. Sin complicaciones ni tarjetas.",
-    color: "#f59e0b",
+    color: "#ff6b5b",
     shadow: "rgba(245,158,11,0.3)",
   },
   {
@@ -160,7 +160,7 @@ export default function HowItWorks() {
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className={`text-center mb-16 transition-all duration-[var(--dur-slower)] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--accent-ink)] dark:text-[var(--accent)] mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             Así de fácil
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">
@@ -190,7 +190,7 @@ export default function HowItWorks() {
             <defs>
               <linearGradient id="connGrad" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="#3b82f6" />
-                <stop offset="50%" stopColor="#f59e0b" />
+                <stop offset="50%" stopColor="#ff6b5b" />
                 <stop offset="100%" stopColor="var(--accent)" />
               </linearGradient>
             </defs>
@@ -203,7 +203,7 @@ export default function HowItWorks() {
               opacity="0"
             />
             {/* Arrow heads */}
-            <polygon points="184,8 196,12 184,16" fill="#f59e0b" opacity="0.6" />
+            <polygon points="184,8 196,12 184,16" fill="#ff6b5b" opacity="0.6" />
             <polygon points="384,8 396,12 384,16" fill="var(--accent)" opacity="0.6" />
           </svg>
 

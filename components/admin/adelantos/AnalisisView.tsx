@@ -7,7 +7,11 @@
  *  • KPIs arriba (adelantado / liquidado / pendiente / % recuperado / personas).
  *  • Segmentación por MONEDA (fix bug: antes sumaba S/ y US$ juntos). Toggle si
  *    hay >1 moneda; default a la de mayor volumen.
- *  • Aging de saldos (0-30 / 31-60 / 61-90 / +90 días) — prioriza cobranza.
+ *  • Tramos de atraso (mismos 5 de Cobranza, vía `deudoresDeCobranza`/TRAMOS) —
+ *    antes bucketeaba por antigüedad del adelanto (`daysSince(fechaAdelanto)`),
+ *    el mismo error que `urgencia-cobranza.ts` documenta como el bug que
+ *    vino a corregir: un adelanto de 45 días con entrega pactada para el mes
+ *    que viene contaba como "vencido" acá aunque en Cobranza no lo fuera.
  *  • Tasa de recuperación + velocidad media de liquidación (días).
  */
 
@@ -20,17 +24,8 @@ import {
 } from "recharts";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { fmtMon, EmptyState, SkeletonGrid } from "./shared";
-
-const AGING_BUCKETS = [
-  { key: "0-30", label: "0-30 días", color: "var(--data-success)" },
-  { key: "31-60", label: "31-60 días", color: "var(--data-info)" },
-  { key: "61-90", label: "61-90 días", color: "var(--data-warning)" },
-  { key: "90+", label: "+90 días", color: "var(--data-danger)" },
-] as const;
-
-function daysSince(iso: string): number {
-  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-}
+import { deudoresDeCobranza } from "@/lib/adelantos/urgencia-cobranza";
+import { TRAMOS, tramoDe, type TramoId } from "@/lib/adelantos/gestion-cobranza";
 
 export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; loading: boolean }) {
   // Monedas presentes (por volumen adelantado), para el toggle.
@@ -82,16 +77,21 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
     return Math.round(tiempos.reduce((s, d) => s + d, 0) / tiempos.length);
   }, [scoped]);
 
-  // ── Aging de saldos pendientes ──────────────────────────────────────────────
+  /**
+   * Atraso de saldos pendientes — por DEUDOR, no por adelanto suelto.
+   *
+   * Misma regla que Cobranza (`deudoresDeCobranza` + `tramoDe`): el atraso se
+   * mide contra la pactada/vencimiento incumplido más viejo de la persona, y
+   * sólo cae a antigüedad cuando no hay fecha comprometida. Si una persona
+   * debe por dos adelantos, el peor de los dos arrastra el saldo de ambos al
+   * mismo tramo — es la misma convención de riesgo que usa Cobranza para
+   * decidir a quién llamar primero.
+   */
   const aging = useMemo(() => {
-    const buckets: Record<string, number> = { "0-30": 0, "31-60": 0, "61-90": 0, "90+": 0 };
-    for (const a of scoped) {
-      if (a.status !== "ABIERTO" || a.saldoPendiente <= 0) continue;
-      const d = daysSince(a.fechaAdelanto);
-      const k = d <= 30 ? "0-30" : d <= 60 ? "31-60" : d <= 90 ? "61-90" : "90+";
-      buckets[k] += a.saldoPendiente;
-    }
-    return AGING_BUCKETS.map((b) => ({ ...b, monto: buckets[b.key] }));
+    const abiertos = scoped.filter((a) => a.status === "ABIERTO" && a.saldoPendiente > 0);
+    const buckets = Object.fromEntries(TRAMOS.map((t) => [t.id, 0])) as Record<TramoId, number>;
+    for (const d of deudoresDeCobranza(abiertos)) buckets[tramoDe(d.dias)] += d.saldo;
+    return TRAMOS.map((t) => ({ key: t.id, label: t.label, color: t.tono, monto: buckets[t.id] }));
   }, [scoped]);
   const hayAging = aging.some((b) => b.monto > 0);
 
@@ -191,9 +191,9 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
       {/* Aging de saldos */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-1 inline-flex items-center gap-2">
-          <Clock className="h-5 w-5 text-[var(--data-warning)]" /> Antigüedad de lo que te deben
+          <Clock className="h-5 w-5 text-[var(--data-warning)]" /> Atraso de lo que te deben
         </CardTitle>
-        <p className="text-sm text-[var(--text-tertiary)] mb-4">Mientras más viejo el saldo, más difícil de cobrar. Priorizá los de la derecha.</p>
+        <p className="text-sm text-[var(--text-tertiary)] mb-4">A quién hay que cobrarle primero — mientras más atrasado, más prioridad.</p>
         {hayAging ? (
           <ResponsiveContainer minWidth={0} width="100%" height={220}>
             <BarChart data={aging}>

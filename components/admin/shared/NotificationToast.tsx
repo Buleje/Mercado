@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { ShoppingBag, X, Bell, AlertTriangle } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 import { useAdminNotifications } from "@/hooks/use-admin-notifications";
 
 interface NotificationToastProps {
@@ -14,7 +13,7 @@ interface NotificationToastProps {
  * Auto-dismisses after 8 seconds. Shows up to 3 recent notifications.
  */
 export default function NotificationToast({ onNavigate }: NotificationToastProps) {
-  const { newOrders, lowStockCount, unseenCount, clearUnseen, connected } = useAdminNotifications();
+  const { newOrders, lowStockCount, unseenCount, clearUnseen } = useAdminNotifications();
   const [visible, setVisible] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
@@ -57,7 +56,7 @@ export default function NotificationToast({ onNavigate }: NotificationToastProps
           key={order.id}
           className="flex items-start gap-3 p-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] animate-in slide-in-from-right"
         >
-          <div className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 dark:bg-primary/15 flex items-center justify-center shrink-0">
             <ShoppingBag className="h-5 w-5 text-[var(--data-success-500)]" />
           </div>
           <div className="flex-1 min-w-0">

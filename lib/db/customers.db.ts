@@ -14,6 +14,8 @@ import type {
 import type { DbCustomer, DbReview } from "./misc.db";
 import { normalizePhone } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { invalidateByPrefix } from "@/lib/cache";
+import { loyaltyCachePrefix } from "./loyalty.db";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -231,6 +233,24 @@ export const CustomersDB = {
   },
 
   /**
+   * getFirstNameByPhone: SOLO el primer nombre del customer dentro del tenant.
+   * Diseñado para el autocompletado público del checkout invitado — expone la
+   * mínima PII posible (un nombre de pila, jamás apellidos/email/dirección).
+   * Matching tolerante a formatos legacy (ver phoneMatchCandidates). Null si no
+   * existe. Decisión Brandon 2026-06-18: el tradeoff de enumeración de nombres
+   * de pila (scoped al tenant + rate limit estricto) es aceptable por la UX.
+   */
+  async getFirstNameByPhone(tenantId: string, phone: string): Promise<string | null> {
+    if (!tenantId) throw new Error("CustomersDB.getFirstNameByPhone: tenantId requerido");
+    const row = await withRlsTx(tenantId, (tx) => tx.customer.findFirst({
+      where: { phone: { in: phoneMatchCandidates(phone) }, tenantId },
+      select: { name: true },
+    }));
+    const first = row?.name?.trim().split(/\s+/)[0] ?? "";
+    return first || null;
+  },
+
+  /**
    * Lee las preferencias de notificacion del customer (Ley 29733 consent).
    * Audit project-wide 2026-05-19 — migracion de /api/customer-preferences.
    */
@@ -269,6 +289,29 @@ export const CustomersDB = {
         where: { phone: normalized, tenantId },
         select: { notifOrderUpdates: true, notifPromotions: true, notifRestock: true },
       });
+    });
+  },
+  /**
+   * Marca una dirección guardada como principal (Customer.activeLocationId).
+   * updateMany con doble filtro (phone + tenantId) para evitar cross-tenant
+   * write (mismo patrón que updatePreferences — Customer.phone @unique global,
+   * TD-040 fase 3 pendiente). La pertenencia de locationId al customer debe
+   * verificarse ANTES en el route (MeAddressesDB.findOwned). Retorna false si
+   * el customer no existía en el tenant.
+   */
+  async setActiveLocation(
+    tenantId: string,
+    phone: string,
+    locationId: string,
+  ): Promise<boolean> {
+    if (!tenantId) throw new Error("CustomersDB.setActiveLocation: tenantId requerido");
+    const normalized = normalizePhone(phone);
+    return withRlsTx(tenantId, async (tx) => {
+      const result = await tx.customer.updateMany({
+        where: { phone: normalized, tenantId },
+        data: { activeLocationId: locationId },
+      });
+      return result.count > 0;
     });
   },
   async upsert(data: Omit<DbCustomer, "createdAt" | "updatedAt">, tenantId: string): Promise<DbCustomer> {
@@ -439,32 +482,61 @@ export const LoyaltyDB = {
     const normalized = normalizePhone(phone);
     // TD-116: read-modify-write en UNA tx RLS (de paso cierra la carrera
     // entre dos accruals concurrentes del mismo customer).
-    return withRlsTx(tenantId, async (tx) => {
+    const result = await withRlsTx(tenantId, async (tx) => {
       const c = await tx.customer.findFirst({ where: { phone: normalized, tenantId } });
       if (!c) return null;
       const newTotal = toNumOrZero(c.totalSpent) + amount;
-      const newPoints = c.loyaltyPoints + computePoints(amount);
+      const earned = computePoints(amount);
+      const newPoints = c.loyaltyPoints + earned;
       const newTier = computeTier(newTotal);
       await tx.customer.updateMany({
         where: { phone: normalized, tenantId },
         data: { totalSpent: newTotal, loyaltyPoints: newPoints, loyaltyTier: newTier },
       });
+      // El asiento va DENTRO de la misma tx: si el update falla, no queda un
+      // movimiento fantasma. Antes este camino movía la columna sin escribir
+      // el ledger, así que el historial que muestra el marketplace
+      // (LoyaltyDB.getHistory) tenía huecos y no cuadraba contra el saldo.
+      if (earned > 0) {
+        await tx.loyaltyTransaction.create({
+          data: { customerId: normalized, tenantId, amount: earned, reason: "purchase" },
+        });
+      }
       return { phone: normalized, loyaltyPoints: newPoints, loyaltyTier: newTier, totalSpent: newTotal };
     });
+    // getBalance/getHistory cachean 60s con este prefijo. Sin invalidar, el
+    // marketplace mostraba el saldo viejo hasta un minuto después de la venta.
+    if (result) invalidateByPrefix(loyaltyCachePrefix(tenantId, normalized));
+    return result;
   },
   /** Redeem points (returns false if insufficient) */
   async redeemPoints(tenantId: string, phone: string, points: number) {
+    if (points <= 0) return false;
     const normalized = normalizePhone(phone);
-    // TD-116: check + decremento en UNA tx RLS (cierra doble-canje concurrente).
-    return withRlsTx(tenantId, async (tx) => {
-      const c = await tx.customer.findFirst({ where: { phone: normalized, tenantId } });
-      if (!c || c.loyaltyPoints < points) return false;
-      await tx.customer.updateMany({
-        where: { phone: normalized, tenantId },
-        data: { loyaltyPoints: c.loyaltyPoints - points },
+    // FIX 2026-08-22: el `findFirst` + `updateMany` con el valor calculado
+    // (`c.loyaltyPoints - points`) tenía una carrera real bajo READ COMMITTED
+    // sin lock de fila — dos canjes concurrentes del mismo teléfono (doble
+    // clic en caja, o dos terminales POS con el mismo cliente) podían leer el
+    // MISMO saldo antes de que ninguno commitee, los dos pasar el check, y el
+    // segundo pisar el saldo dejándolo negativo. Ahora la condición de saldo
+    // vive en el WHERE del propio UPDATE (Prisma lo traduce a un solo
+    // statement atómico: `SET points = points - $1 WHERE ... AND points >=
+    // $1`) — el segundo canje concurrente pierde la carrera con `count: 0` en
+    // vez de escribir un saldo inválido. Mismo patrón que `loyalty.db.ts`
+    // (ahí con SQL crudo; acá alcanza con Prisma nativo).
+    const ok = await withRlsTx(tenantId, async (tx) => {
+      const result = await tx.customer.updateMany({
+        where: { phone: normalized, tenantId, loyaltyPoints: { gte: points } },
+        data: { loyaltyPoints: { decrement: points } },
+      });
+      if (result.count === 0) return false;
+      await tx.loyaltyTransaction.create({
+        data: { customerId: normalized, tenantId, amount: -points, reason: "redemption" },
       });
       return true;
     });
+    if (ok) invalidateByPrefix(loyaltyCachePrefix(tenantId, normalized));
+    return ok;
   },
   TIERS: LOYALTY_TIERS,
 };

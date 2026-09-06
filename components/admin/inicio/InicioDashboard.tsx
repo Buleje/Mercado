@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { PageTitle } from "@buleje/design-system";
 import {
-  DollarSign, ShoppingCart, Package, TrendingUp, TrendingDown,
-  Minus, AlertTriangle, Truck, RefreshCw,
+  DollarSign, ShoppingCart, TrendingUp,
+  AlertTriangle, Truck, RefreshCw,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
@@ -105,7 +105,7 @@ function dayLabel(dk: string) {
 }
 
 const CAT_COLORS: Record<string, string> = {
-  "frutas-verduras": "#10b981", abarrotes: "#f59e0b", carnes: "#ef4444",
+  "frutas-verduras": "#10b981", abarrotes: "#ff6b5b", carnes: "#ef4444",
   lacteos: "#3b82f6", bebidas: "#8b5cf6", limpieza: "#06b6d4",
   otros: "#94a3b8",
 };
@@ -115,10 +115,10 @@ const CAT_LABELS: Record<string, string> = {
 };
 const PAY_COLORS: Record<string, string> = {
   efectivo: "#10b981", yape: "#8b5cf6", plin: "#06b6d4",
-  tarjeta: "#3b82f6", transferencia: "#f59e0b",
+  tarjeta: "#3b82f6", transferencia: "#ff6b5b",
 };
 const TIER_COLORS: Record<string, string> = {
-  gold: "#f59e0b", silver: "#94a3b8", bronze: "#b45309", default: "#6b7280",
+  gold: "#ff6b5b", silver: "#94a3b8", bronze: "#c93b2c", default: "#6b7280",
 };
 
 const PERIOD_LABELS: Record<string, string> = {
@@ -358,99 +358,6 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Buen día" : hour < 19 ? "Buenas tardes" : "Buenas noches";
 
-  // Derivar series para DashboardOverviewCharts desde data calculado.
-  // Mapea InicioDashboard.data → DashboardOverviewChartsProps.st
-  const hourMap = new Map<string, number>();
-  for (const o of orders) {
-    if (o.status === "cancelado") continue;
-    const d = new Date(o.createdAt);
-    hourMap.set(`${d.getDay()}-${d.getHours()}`, (hourMap.get(`${d.getDay()}-${d.getHours()}`) ?? 0) + 1);
-  }
-  for (const s of sales) {
-    const d = new Date(s.createdAt);
-    hourMap.set(`${d.getDay()}-${d.getHours()}`, (hourMap.get(`${d.getDay()}-${d.getHours()}`) ?? 0) + 1);
-  }
-  const maxHeat = Math.max(1, ...Array.from(hourMap.values()));
-
-  // Top customers (revenue acumulado periodo)
-  const custRevMap = new Map<string, { revenue: number; orders: number }>();
-  for (const o of orders) {
-    if (o.status === "cancelado") continue;
-    const name = o.customer?.name ?? "Anonimo";
-    const cur = custRevMap.get(name) ?? { revenue: 0, orders: 0 };
-    cur.revenue += o.total ?? 0;
-    cur.orders += 1;
-    custRevMap.set(name, cur);
-  }
-  const topCustomers = Array.from(custRevMap.entries())
-    .sort(([, a], [, b]) => b.revenue - a.revenue)
-    .slice(0, 10)
-    .map(([name, v]) => ({ name, ...v }));
-
-  // Stock por categoria (treemap)
-  const stockCatMap = new Map<string, { value: number; items: number }>();
-  for (const p of products) {
-    if (!p.active) continue;
-    const cat = p.category ?? "Sin categoria";
-    const value = (p.stock ?? 0) * (p.costPrice ?? p.price * 0.7);
-    if (value <= 0) continue;
-    const cur = stockCatMap.get(cat) ?? { value: 0, items: 0 };
-    cur.value += value;
-    cur.items += 1;
-    stockCatMap.set(cat, cur);
-  }
-  const stockByCategory = Array.from(stockCatMap.entries())
-    .sort(([, a], [, b]) => b.value - a.value)
-    .map(([category, v]) => ({ category, ...v }));
-
-  // Productos sin movimiento (deadstock)
-  const soldIds = new Set<number | string>();
-  orders.forEach(o => o.items.forEach(i => soldIds.add(i.id)));
-  sales.forEach(s => s.items.forEach(i => soldIds.add(i.productId)));
-  const sinMov = products
-    .filter(p => p.active && !soldIds.has(p.id))
-    .map(p => ({ id: p.id, name: p.name, stock: p.stock ?? 0, price: p.price, costPrice: p.costPrice, category: p.category }));
-
-  // Stock critico con projection
-   
-  const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
-  const productSales30 = new Map<number | string, number>();
-  orders
-    .filter(o => o.status === "entregado" && new Date(o.createdAt).getTime() >= last30)
-    .forEach(o => o.items.forEach(i => productSales30.set(i.id, (productSales30.get(i.id) ?? 0) + i.quantity)));
-  sales
-    .filter(s => new Date(s.createdAt).getTime() >= last30)
-    .forEach(s => s.items.forEach(i => productSales30.set(i.productId, (productSales30.get(i.productId) ?? 0) + i.quantity)));
-  const criticalStock = products
-    .filter(p => p.active && p.stock != null && p.stock > 0)
-    .map(p => {
-      const sold30 = productSales30.get(p.id) ?? 0;
-      const dailyRate = sold30 / 30;
-      const daysRemaining = dailyRate > 0 ? Math.round((p.stock ?? 0) / dailyRate) : 999;
-      return {
-        id: p.id,
-        name: p.name,
-        stock: p.stock,
-        stockMin: p.stockMin ?? null,
-        daysRemaining,
-        dailyRate: Math.round(dailyRate * 10) / 10,
-        suggestedOrderQty: dailyRate > 0 ? Math.ceil(dailyRate * 30) : (p.stockMin ?? 10),
-      };
-    })
-    .filter(p => p.daysRemaining < 7)
-    .sort((a, b) => a.daysRemaining - b.daysRemaining);
-
-  // Top profit (BCG matrix) — derivar de topProductos
-  // Shape real: { nombre, ingresos, unidades }
-  const topProfit = data.topProductos.map((p, idx) => ({
-    id: idx,
-    name: p.nombre,
-    revenue: p.ingresos,
-    profit: p.ingresos * 0.3, // estimacion proxy 30% margen
-    units: p.unidades,
-    cost: p.ingresos * 0.7,
-  }));
-
   return (
     <div className="space-y-6">
       {/* ── DASHBOARD OVERVIEW CHARTS PRO — 12 secciones de alto nivel ──
@@ -548,7 +455,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
           </div>
           <span className={cn(
             "text-[length:var(--ts-2xs)] font-bold px-2.5 py-1 rounded-full",
-            data.margenHoy >= 30 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : data.margenHoy >= 15 ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
+            data.margenHoy >= 30 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : data.margenHoy >= 15 ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
           )}>
             {data.margenHoy >= 30 ? "Excelente" : data.margenHoy >= 15 ? "Aceptable" : "Revisar"}
           </span>
@@ -557,7 +464,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
           <div
             className={cn(
               "h-full rounded-full transition-all duration-[var(--dur-slower)]",
-              data.margenHoy >= 30 ? "bg-[var(--accent-soft)]" : data.margenHoy >= 15 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
+              data.margenHoy >= 30 ? "bg-primary/10" : data.margenHoy >= 15 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]"
             )}
             style={{ width: `${Math.min(data.margenHoy, 100)}%` }}
           />
@@ -572,88 +479,6 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
       {/* ── Charts ── */}
       <RechartsCharts data={data} />
     </div>
-  );
-}
-
-// ── KPI Card ─────────────────────────────────────────────────────────────────
-
-const COLOR_MAP = {
-  blue: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success-500)]", badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
-  emerald: { bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", icon: "text-[var(--data-success-500)]", badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" },
-  violet: { bg: "bg-[var(--surface-sunken)]", icon: "text-[var(--text-secondary)]", badge: "bg-[var(--surface-sunken)] text-[var(--text-primary)]" },
-  amber: { bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/20", icon: "text-[var(--data-warning-500)]", badge: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" },
-  red: { bg: "bg-[var(--data-error-50)] dark:bg-red-950/20", icon: "text-[var(--data-error-500)]", badge: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" },
-} as const;
-
-function KPICard({
-  label, value, delta, icon: Icon, color, spark, subtitle, badge,
-}: {
-  label: string;
-  value: string;
-  delta?: number | null;
-  icon: typeof DollarSign;
-  color: keyof typeof COLOR_MAP;
-  spark?: number[];
-  subtitle?: string;
-  badge?: string;
-}) {
-  const c = COLOR_MAP[color];
-  return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4 flex flex-col gap-2 relative overflow-hidden group hover:shadow-sm transition-shadow">
-      {/* Sparkline background (decorative) */}
-      {spark && spark.length > 1 && (
-        <svg className="absolute bottom-0 left-0 right-0 h-10 opacity-10 pointer-events-none" viewBox={`0 0 ${spark.length - 1} 1`} preserveAspectRatio="none" aria-hidden="true">
-          <polyline
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="0.05"
-            className={c.icon}
-            points={spark.map((v, i) => {
-              const max = Math.max(...spark, 1);
-              return `${i / (spark.length - 1) * (spark.length - 1)},${1 - v / max}`;
-            }).join(" ")}
-          />
-        </svg>
-      )}
-
-      <div className="flex items-center justify-between">
-        <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", c.bg)}>
-          <Icon className={cn("h-4 w-4", c.icon)} />
-        </div>
-        {delta != null && (
-          <DeltaBadge value={delta} />
-        )}
-        {badge && (
-          <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", c.badge)}>{badge}</span>
-        )}
-      </div>
-
-      <p className="font-display text-2xl sm:text-3xl font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-none tracking-[var(--ls-tight)] tabular-nums">
-        {value}
-      </p>
-      <p className="text-[length:var(--ts-xs)] font-semibold uppercase tracking-[var(--ls-wide)] text-[var(--text-tertiary)] dark:text-muted leading-tight">
-        {label}
-      </p>
-      {subtitle && (
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]">{subtitle}</p>
-      )}
-    </div>
-  );
-}
-
-function DeltaBadge({ value }: { value: number }) {
-  const Icon = value === 0 ? Minus : value > 0 ? TrendingUp : TrendingDown;
-  const color = value === 0
-    ? "text-[var(--text-secondary)] bg-[var(--surface-sunken)]"
-    : value > 0
-      ? "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
-      : "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)]";
-
-  return (
-    <span className={cn("inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", color)}>
-      <Icon className="h-3 w-3" />
-      {Math.abs(value).toFixed(0)}%
-    </span>
   );
 }
 

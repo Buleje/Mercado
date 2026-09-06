@@ -300,6 +300,7 @@ export async function GET(req: NextRequest) {
             (s as Record<string, unknown>).verified = Boolean(b.verified);
             (s as Record<string, unknown>).searchBoost = Boolean(b.searchBoost);
             (s as Record<string, unknown>).ownBanner = Boolean(b.ownBanner);
+            (s as Record<string, unknown>).acceptsFiado = Boolean(b.acceptsFiado);
           }
         } catch {
           // sin cover/hours/tier → marketplace sigue funcionando
@@ -635,6 +636,7 @@ export async function GET(req: NextRequest) {
         verified: Boolean((s as { verified?: boolean }).verified),
         searchBoost: Boolean((s as { searchBoost?: boolean }).searchBoost),
         ownBanner: Boolean((s as { ownBanner?: boolean }).ownBanner),
+        acceptsFiado: Boolean((s as { acceptsFiado?: boolean }).acceptsFiado),
         category: s.category,
         zone: finalZone,
         rating: s.rating,

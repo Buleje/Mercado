@@ -7,17 +7,20 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Webhook, RefreshCw, Clock, Zap, Loader2, ArrowRight } from "@buleje/design-system/icons";
+import Link from "next/link";
+import { Webhook, RefreshCw, Clock, Zap, Loader2, ArrowRight, ChevronDown, ChevronRight, Building2 } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../_components/_shared";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { csrfHeaders } from "@/lib/csrf-client";
 
-type Rule = { key: string; title: string; trigger: string; action: string; enabled: boolean; lastRunAt: string | null; matchCount: number };
+type MatchTenant = { id: string; slug: string; name: string };
+type Rule = { key: string; title: string; trigger: string; action: string; enabled: boolean; lastRunAt: string | null; matchCount: number; matches: MatchTenant[] };
 
 export default function AutomationsPage() {
   const [rules, setRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,6 +56,11 @@ export default function AutomationsPage() {
 
   return (
     <AdminTabShell
+      info={{
+        what: "Reglas que detectan tiendas en cierta condición y disparan un aviso. Activás la regla, ves a cuántas afecta y la ejecutás.",
+        affects: "Manda avisos (WhatsApp/email) a los dueños de las tiendas que cumplen la condición.",
+        example: "Activás 'trial por vencer' → las tiendas con prueba a 3 días de vencer reciben un recordatorio.",
+      }}
       title="Automatizaciones"
       kicker="Plataforma · Operaciones"
       description="Reglas que detectan tiendas y disparan un aviso. Activá, mirá a cuántas afecta y ejecutá."
@@ -95,9 +103,16 @@ export default function AutomationsPage() {
 
               <div className="mt-4 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${r.matchCount > 0 ? "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-600,#d97706)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}>
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((cur) => (cur === r.key ? null : r.key))}
+                    disabled={r.matchCount === 0}
+                    title={r.matchCount > 0 ? "Ver qué tiendas matchean (dry-run)" : "Ninguna tienda matchea"}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-colors ${r.matchCount > 0 ? "bg-teal-500/15 text-[#0d9488] hover:bg-teal-500/25" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-default"}`}
+                  >
                     <Zap className="h-3 w-3" /> {r.matchCount} {r.matchCount === 1 ? "tienda" : "tiendas"}
-                  </span>
+                    {r.matchCount > 0 && (expanded === r.key ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />)}
+                  </button>
                   {r.lastRunAt && (
                     <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                       <Clock className="h-3 w-3" /> última: {new Date(r.lastRunAt).toLocaleDateString("es-PE")}
@@ -112,6 +127,31 @@ export default function AutomationsPage() {
                   {busy === `${r.key}-run` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />} Ejecutar ahora
                 </button>
               </div>
+
+              {/* Dry-run preview: qué tiendas recibirán el aviso */}
+              {expanded === r.key && r.matches.length > 0 && (
+                <div className="mt-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]/40 p-2.5">
+                  <p className="mb-1.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    Recibirán el aviso ({r.matchCount})
+                  </p>
+                  <ul className="max-h-44 space-y-0.5 overflow-y-auto">
+                    {r.matches.map((t) => (
+                      <li key={t.id}>
+                        <Link
+                          href={`/superadmin/chat?tenant=${t.id}&name=${encodeURIComponent(t.name)}`}
+                          className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] hover:text-[var(--accent)]"
+                        >
+                          <Building2 className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
+                          <span className="truncate">{t.name}</span>
+                        </Link>
+                      </li>
+                    ))}
+                    {r.matchCount > r.matches.length && (
+                      <li className="px-2 py-1 text-xs text-[var(--text-tertiary)]">y {r.matchCount - r.matches.length} más…</li>
+                    )}
+                  </ul>
+                </div>
+              )}
             </div>
           ))}
         </div>

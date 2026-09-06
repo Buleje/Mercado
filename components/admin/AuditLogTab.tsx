@@ -50,7 +50,7 @@ const ACTION_META: Record<AuditAction, { label: string; icon: typeof Plus; color
 };
 
 const SEVERITY_META: Record<AuditSeverity, { label: string; color: string; bg: string }> = {
-  info:        { label: "Info",        color: "text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  info:        { label: "Info",        color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
   advertencia: { label: "Advertencia", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
   critica:     { label: "Crítica",     color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
@@ -273,7 +273,7 @@ export default function AuditLogTab() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total eventos", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Total eventos", value: String(stats.total), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Hoy", value: String(stats.hoy), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
           { label: "Advertencias", value: String(stats.advertencias), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
           { label: "Críticas", value: String(stats.criticas), color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)] dark:bg-red-950/30" },

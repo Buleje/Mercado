@@ -7,6 +7,7 @@
  */
 
 import { useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import {
   Plus,
   Edit2,
@@ -18,6 +19,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 
 interface ExclusiveOffer {
   id: string;
@@ -125,8 +127,7 @@ function OfferModal({
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Producto *</label>
+          <Field label="Producto *" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <input
               type="text"
               value={form.productName}
@@ -135,11 +136,10 @@ function OfferModal({
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               autoFocus
             />
-          </div>
+          </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Precio regular (S/)</label>
+            <Field label="Precio regular (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
               <input
                 type="number"
                 min={0}
@@ -148,9 +148,8 @@ function OfferModal({
                 onChange={(e) => setForm((p) => ({ ...p, regularPrice: parseFloat(e.target.value) || 0 }))}
                 className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Precio Socio (S/)</label>
+            </Field>
+            <Field label="Precio Socio (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
               <input
                 type="number"
                 min={0}
@@ -159,7 +158,7 @@ function OfferModal({
                 onChange={(e) => setForm((p) => ({ ...p, socioPrice: parseFloat(e.target.value) || 0 }))}
                 className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               />
-            </div>
+            </Field>
           </div>
 
           <div className="flex items-center justify-between p-3 bg-[var(--data-success-50)] rounded-xl border border-[var(--data-success-500)]">
@@ -265,7 +264,7 @@ export function ExclusiveOffersTab() {
       ) : (
         <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Producto</th>
@@ -311,7 +310,7 @@ export function ExclusiveOffersTab() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setModal({ open: true, offer: o })}
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                           title="Editar"
                         >
                           <Edit2 className="h-4 w-4" />
@@ -328,7 +327,7 @@ export function ExclusiveOffersTab() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}

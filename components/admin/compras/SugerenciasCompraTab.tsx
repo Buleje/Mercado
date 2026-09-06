@@ -7,6 +7,7 @@ import {
   Search, X,
   type LucideIcon,
 } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
@@ -19,12 +20,38 @@ type Sugerencia = {
   category: string;
   currentStock: number;
   stockMin: number;
+  /** Unidades ya pedidas y todavía sin recibir. */
+  enTransito: number;
   dailyAvg: number;
   daysOfStock: number;
+  /** Nivel al que hay que volver a pedir: venta diaria × (lead time + colchón). */
+  puntoReorden: number;
+  leadTimeDias: number;
+  leadTimeOrigen: "declarado" | "historial" | "default";
   suggestedQty: number;
-  suggestedSupplier: { id: string; name: string } | null;
+  suggestedSupplier: { id: string; name: string; condicionPago?: string | null } | null;
   lastPrice: number | null;
   urgency: Urgency;
+  /** Por qué se sugiere, en palabras. */
+  motivo: string;
+};
+
+/** Un producto que no se vendió en la ventana: no se repone, se avisa. */
+type SinRotacion = {
+  productId: number;
+  productName: string;
+  category: string;
+  currentStock: number;
+  stockMin: number;
+  excesoSobreMinimo: number;
+  motivo: string;
+};
+
+type Resumen = {
+  costoEstimado: number;
+  unidades: number;
+  sinPrecio: number;
+  enTransito: number;
 };
 
 const URGENCY_CONFIG: Record<Urgency, {
@@ -65,7 +92,7 @@ const URGENCY_CONFIG: Record<Urgency, {
     short: "Planificar",
     hint: "> 7 días",
     border: "border-[var(--data-success-500)]/40",
-    bg: "bg-[var(--accent-soft)] dark:bg-[var(--data-success-500)]/10",
+    bg: "bg-primary/10 dark:bg-[var(--data-success-500)]/10",
     text: "text-[var(--data-success-500)]",
     iconBg: "bg-emerald-100 dark:bg-[var(--data-success-500)]/20",
     ring: "ring-[var(--data-success-500)]/40",
@@ -126,6 +153,14 @@ function KPICard({ label, value, sub, icon: Icon, accent = "neutral" }: KPIProps
 
 export default function SugerenciasCompraTab() {
   const [sugerencias, setSugerencias] = useState<Sugerencia[]>([]);
+  const [sinRotacion, setSinRotacion] = useState<SinRotacion[]>([]);
+  const [resumen, setResumen] = useState<Resumen | null>(null);
+  const [avisos, setAvisos] = useState<string[]>([]);
+  // Presente sólo cuando NO se analizó ningún producto porque ninguno tiene
+  // stock mínimo cargado — distinto de "analicé todo y está abastecido".
+  const [sinStockMinimo, setSinStockMinimo] = useState<{ productosActivos: number } | null>(null);
+  const [verSinRotacion, setVerSinRotacion] = useState(false);
+  const [ventanaDias, setVentanaDias] = useState(30);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -133,6 +168,8 @@ export default function SugerenciasCompraTab() {
     CRITICO: false, URGENTE: false, PLANIFICAR: true,
   });
   const [creating, setCreating] = useState(false);
+  // productId de la sugerencia cuya OC se está creando (botón "Crear OC" por fila).
+  const [creatingItemId, setCreatingItemId] = useState<number | null>(null);
   const [filter, setFilter] = useState<FilterKey>("todos");
   const [search, setSearch] = useState("");
 
@@ -140,15 +177,19 @@ export default function SugerenciasCompraTab() {
     if (!silent) setLoading(true);
     else setRefreshing(true);
     try {
-      const res = await fetch("/api/compras/sugerencias");
+      const res = await fetch(`/api/compras/sugerencias?dias=${ventanaDias}`);
       if (res.ok) {
         const data = await res.json();
         setSugerencias(data.sugerencias ?? []);
+        setSinRotacion(data.sinRotacion ?? []);
+        setResumen(data.resumen ?? null);
+        setAvisos(data.avisos ?? []);
+        setSinStockMinimo(data.sinStockMinimo ?? null);
       }
     } catch { /* silent */ }
     setLoading(false);
     setRefreshing(false);
-  }, []);
+  }, [ventanaDias]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -234,69 +275,96 @@ export default function SugerenciasCompraTab() {
   }, [selected, sugerencias]);
 
   // ── Crear OCs por proveedor ──────────────────────────────────────────────
+
+  /**
+   * Crea OCs a partir de una lista de sugerencias, agrupando por proveedor
+   * (un POST /api/purchases por proveedor) + payable fire-and-forget. Es el
+   * núcleo reutilizado tanto por la creación masiva (seleccionados) como por
+   * el botón "Crear OC" de una sola fila. Devuelve cuántas OCs se crearon vs
+   * cuántos grupos se intentaron.
+   */
+  const createOCForItems = async (
+    items: Sugerencia[],
+  ): Promise<{ createdCount: number; groupCount: number; sinPrecio: number; aCredito: number }> => {
+    const groups = new Map<string, Sugerencia[]>();
+    for (const item of items) {
+      const key = item.suggestedSupplier?.id ?? "sin-proveedor";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(item);
+    }
+
+    let createdCount = 0;
+    let sinPrecio = 0;
+    let aCredito = 0;
+    for (const [supplierId, groupItems] of groups) {
+      const supplierName =
+        supplierId !== "sin-proveedor"
+          ? groupItems[0].suggestedSupplier?.name ?? "Proveedor por definir"
+          : "Proveedor por definir";
+      // Lo pactado con este proveedor en su ficha. Sin condición declarada se
+      // asume contado: es lo que hace la bodega cuando no hay acuerdo.
+      const condicionPago = groupItems[0].suggestedSupplier?.condicionPago || "contado";
+
+      // Los productos sin precio de referencia entraban con `unitCost: 0`, así
+      // que la orden se creaba por S/0,00 y ese cero viajaba al Historial de
+      // Gastos y al P&L como una compra real. Se cuentan para avisarlo: la
+      // orden se crea igual (hay que poder pedir), pero el usuario se entera de
+      // que le falta ponerle precio antes de recibirla.
+      sinPrecio += groupItems.filter((i) => i.lastPrice == null).length;
+
+      const res = await fetch("/api/purchases", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          supplierId: supplierId !== "sin-proveedor" ? supplierId : "",
+          supplierName,
+          items: groupItems.map((i) => ({
+            productId: i.productId,
+            name: i.productName,
+            quantity: i.suggestedQty,
+            unitCost: i.lastPrice ?? 0,
+            unit: "und",
+          })),
+          notes: `OC generada automaticamente por sugerencias de compra`,
+          // ADR-377: la forma de pago pactada con ESE proveedor. El endpoint
+          // abre la cuenta por pagar sólo si es a crédito, y con el
+          // vencimiento correcto.
+          paymentMethod: condicionPago,
+        }),
+      });
+
+      if (res.ok) {
+        createdCount++;
+        if (condicionPago.startsWith("credito_")) aCredito++;
+        // La cuenta por pagar la abre POST /api/purchases, y SÓLO si la
+        // compra es a crédito. Antes se creaba acá una a 30 días para toda
+        // orden, incluso las que se pagan en efectivo al recibir: eso llenaba
+        // las cuentas por pagar con deuda que nadie debía.
+      }
+    }
+    return { createdCount, groupCount: groups.size, sinPrecio, aCredito };
+  };
+
+  // Creación masiva de los seleccionados.
   const createOCs = async () => {
     if (selected.size === 0) return;
     setCreating(true);
     try {
       const selectedItems = sugerencias.filter((s) => selected.has(s.productId));
+      const { createdCount, groupCount, sinPrecio, aCredito } = await createOCForItems(selectedItems);
 
-      const groups = new Map<string, Sugerencia[]>();
-      for (const item of selectedItems) {
-        const key = item.suggestedSupplier?.id ?? "sin-proveedor";
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key)!.push(item);
-      }
-
-      let createdCount = 0;
-      for (const [supplierId, items] of groups) {
-        const supplierName =
-          supplierId !== "sin-proveedor"
-            ? items[0].suggestedSupplier?.name ?? "Proveedor por definir"
-            : "Proveedor por definir";
-
-        const res = await fetch("/api/purchases", {
-          method: "POST",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({
-            supplierId: supplierId !== "sin-proveedor" ? supplierId : "",
-            supplierName,
-            items: items.map((i) => ({
-              productId: i.productId,
-              name: i.productName,
-              quantity: i.suggestedQty,
-              unitCost: i.lastPrice ?? 0,
-              unit: "und",
-            })),
-            notes: `OC generada automaticamente por sugerencias de compra`,
-          }),
-        });
-
-        if (res.ok) {
-          createdCount++;
-          const po = await res.json();
-          // Auto-create payable (fire-and-forget)
-          fetch("/api/payables", {
-            method: "POST",
-            headers: csrfHeaders({ "Content-Type": "application/json" }),
-            body: JSON.stringify({
-              supplierId: supplierId !== "sin-proveedor" ? supplierId : "",
-              supplierName,
-              purchaseOrderId: po.id,
-              description: `Orden de compra ${po.id}`,
-              amount: po.total,
-              dueDate: new Date(Date.now() + 30 * 86_400_000).toISOString(),
-            }),
-          }).catch((err) => console.warn("[SugerenciasCompraTab] payable create failed:", err));
-        }
-      }
-
-      if (createdCount === groups.size) {
+      if (createdCount === groupCount) {
+        const detalles = [
+          `${selected.size} productos repartidos en ${groupCount} ${groupCount === 1 ? "proveedor" : "proveedores"}.`,
+          sinPrecio > 0 ? `${sinPrecio} ${sinPrecio === 1 ? "producto va" : "productos van"} sin precio: ponéselo antes de recibir la orden o entrará como S/0.` : "",
+          aCredito > 0 ? `${aCredito} ${aCredito === 1 ? "va" : "van"} a crédito: se ${aCredito === 1 ? "abrió su cuenta" : "abrieron sus cuentas"} por pagar.` : "",
+        ].filter(Boolean).join(" ");
         toast.success(
           `${createdCount} ${createdCount === 1 ? "orden creada" : "órdenes creadas"}`,
-          { description: `${selected.size} productos repartidos en ${groups.size} ${groups.size === 1 ? "proveedor" : "proveedores"}.` }
+          { description: detalles },
         );
       } else if (createdCount > 0) {
-        toast(`Creadas ${createdCount}/${groups.size} órdenes`, { description: "Algunas fallaron. Reintentá." });
+        toast(`Creadas ${createdCount}/${groupCount} órdenes`, { description: "Algunas fallaron. Reintentá." });
       } else {
         toast.error("No se pudo crear ninguna orden");
       }
@@ -306,6 +374,30 @@ export default function SugerenciasCompraTab() {
       toast.error("Error al crear órdenes de compra");
     }
     setCreating(false);
+  };
+
+  // Creación de UNA sola OC desde la fila de una sugerencia (1 clic). Reusa el
+  // mismo núcleo; estado de carga por-item para no duplicar.
+  const createOCForOne = async (item: Sugerencia) => {
+    setCreatingItemId(item.productId);
+    try {
+      const { createdCount, sinPrecio, aCredito } = await createOCForItems([item]);
+      if (createdCount > 0) {
+        toast.success("Orden de compra creada", {
+          description: [
+            item.productName,
+            sinPrecio > 0 ? "Va sin precio: ponéselo antes de recibirla o entrará como S/0." : "",
+            aCredito > 0 ? "Va a crédito: se abrió su cuenta por pagar." : "",
+          ].filter(Boolean).join(" · "),
+        });
+        void load(true);
+      } else {
+        toast.error("No se pudo crear la orden");
+      }
+    } catch {
+      toast.error("Error al crear la orden");
+    }
+    setCreatingItemId(null);
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -325,44 +417,58 @@ export default function SugerenciasCompraTab() {
     );
   }
 
-  if (sugerencias.length === 0) {
-    return (
-      <div className="rounded-2xl border-2 border-dashed border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--data-success-500)]/5 px-6 py-14 text-center">
-        <span className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-emerald-100 dark:bg-[var(--data-success-500)]/20 mb-4">
-          <Check className="h-8 w-8 text-[var(--data-success-500)]" strokeWidth={2.5} />
-        </span>
-        <h2 className="text-xl font-extrabold text-[var(--text-primary)]">Tu inventario está al día</h2>
-        <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-md mx-auto">
-          No hay productos por debajo del stock mínimo ahora mismo. El sistema revisa cada noche y te avisará cuando algo necesite reposición.
-        </p>
-        <button
-          type="button"
-          onClick={() => void load(true)}
-          disabled={refreshing}
-          className="mt-5 inline-flex items-center gap-2 h-11 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-          Volver a calcular
-        </button>
-      </div>
-    );
-  }
+  // «Nada que comprar» es un estado, no el fin de la pantalla: la lista de lo
+  // que NO rota sigue abajo. Antes este `return` temprano la escondía justo
+  // cuando era la única información que quedaba — y con el criterio nuevo ese
+  // es el caso más común en un negocio con el inventario sano.
+  const nadaQueComprar = sugerencias.length === 0;
 
   return (
     <div className="space-y-5 pb-32">
       {/* ─── Hero header ─────────────────────────────────────────────── */}
       <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-white to-[var(--accent-soft)]/40 dark:from-[var(--color-card)] dark:to-[var(--accent-muted)]/20 px-5 py-4 flex items-center gap-4 flex-wrap">
-        <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[var(--accent-soft)] dark:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 shrink-0">
+        <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/10 dark:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 shrink-0">
           <Sparkles className="h-6 w-6 text-[var(--data-success-500)]" strokeWidth={2.2} />
         </span>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-extrabold text-[var(--text-primary)]">
+        {/* `basis-64` en vez de `min-w-0`: el contenedor ya tenía `flex-wrap`,
+            pero no alcanzaba. Las utilidades `min-w-*` no hacen nada en este
+            proyecto (un `* { min-width: 0 }` global le gana a la capa de
+            utilities), así que el texto se encogía a cero antes de que la fila
+            decidiera envolver — a 768px el título salía UNA PALABRA POR RENGLÓN
+            con el selector de ventana al lado. Con un `basis` real, el selector
+            y "Recalcular" bajan de línea en tablet. */}
+        <div className="flex-1 basis-64">
+          <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)]">
             Sugerencias de compra
-          </h2>
+          </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)]">
-            {stats.total} {stats.total === 1 ? "producto necesita" : "productos necesitan"} reposición. Marcá los que querés pedir y generamos las órdenes por proveedor.
+            {/* El subtítulo también afirmaba "ningún producto llega a su punto
+                de pedido" cuando en realidad no se había analizado ninguno. */}
+            {sinStockMinimo
+              ? "Falta cargar el stock mínimo de tus productos para poder calcular reposición."
+              : stats.total === 0
+              ? `Nada por reponer: ningún producto llega a su punto de pedido según lo que se vendió en ${ventanaDias} días.`
+              : `${stats.total} ${stats.total === 1 ? "producto llega" : "productos llegan"} a su punto de pedido. Marcá los que querés pedir y generamos las órdenes por proveedor.`}
           </p>
         </div>
+
+        {/* La ventana de análisis manda sobre TODO el cálculo: un almacén que
+            vende estacional necesita mirar más atrás que 30 días para que la
+            rotación signifique algo. */}
+        <label className="flex items-center gap-2">
+          <span className="sr-only">Ventana de análisis</span>
+          <select
+            value={ventanaDias}
+            onChange={(e) => setVentanaDias(Number(e.target.value))}
+            className="h-11 rounded-2xl border-2 border-[var(--rule-base)] bg-white px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary/60 dark:bg-[var(--color-card)]"
+          >
+            <option value={30}>Últimos 30 días</option>
+            <option value={60}>Últimos 60 días</option>
+            <option value={90}>Últimos 90 días</option>
+            <option value={180}>Últimos 6 meses</option>
+          </select>
+        </label>
+
         <button
           type="button"
           onClick={() => void load(true)}
@@ -374,18 +480,98 @@ export default function SugerenciasCompraTab() {
         </button>
       </section>
 
+      {/* Falta configurar, no falta comprar. Antes esto caía en "Nada que
+          reponer", que afirmaba que el stock alcanzaba sin haber analizado un
+          solo producto (medido 2026-08-12: tres tiendas en ese estado). */}
+      {sinStockMinimo && (
+        <div className="rounded-2xl border-2 border-dashed border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/8 px-6 py-10 text-center">
+          <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--data-warning-500)]/15">
+            <AlertTriangle className="h-8 w-8 text-[var(--data-warning-500)]" strokeWidth={2.5} aria-hidden />
+          </span>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">
+            Todavía no puedo sugerirte compras
+          </SectionTitle>
+          <p className="mx-auto mt-2 max-w-lg text-sm text-[var(--text-secondary)]">
+            {sinStockMinimo.productosActivos > 0 ? (
+              <>
+                Tenés <strong>{sinStockMinimo.productosActivos}</strong>{" "}
+                {sinStockMinimo.productosActivos === 1 ? "producto activo" : "productos activos"} y
+                ninguno tiene <strong>stock mínimo</strong> cargado. Ese es el dato que me dice
+                cuándo un producto está por acabarse, así que sin él no hay nada que calcular.
+              </>
+            ) : (
+              <>Todavía no cargaste productos, así que no hay nada de qué calcular reposición.</>
+            )}
+          </p>
+          <p className="mx-auto mt-3 max-w-lg text-xs text-[var(--text-tertiary)]">
+            Se carga por producto en Inventario. Con ponerle mínimo a los que más vendés ya alcanza
+            para empezar: el resto se puede ir completando después.
+          </p>
+        </div>
+      )}
+
+      {nadaQueComprar && !sinStockMinimo && (
+        <div className="rounded-2xl border-2 border-dashed border-[var(--data-success-500)]/30 bg-primary/10 px-6 py-10 text-center dark:bg-[var(--data-success-500)]/5">
+          <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-[var(--data-success-500)]/20">
+            <Check className="h-8 w-8 text-[var(--data-success-ink)]" strokeWidth={2.5} />
+          </span>
+          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">Nada que reponer</SectionTitle>
+          <p className="mx-auto mt-2 max-w-lg text-sm text-[var(--text-secondary)]">
+            Ningún producto llega a su punto de pedido: con lo que se vendió en los últimos{" "}
+            {ventanaDias} días, el stock alcanza hasta la próxima entrega.
+            {sinRotacion.length > 0 && " Abajo está lo que no se movió."}
+          </p>
+          {/* Reporte QA Compras 2026-08-12: ver "Nada que reponer" acá y "2 a
+              reponer" en Punto de Compra parecía un dato roto. Son dos criterios
+              distintos; decirlo evita la desconfianza. */}
+          <p className="mx-auto mt-3 max-w-lg text-xs text-[var(--text-tertiary)]">
+            Si en Punto de Compra ves un número distinto, es correcto: ahí se cuentan los
+            productos por debajo del stock mínimo que fijaste, sin mirar cuánto se vendió.
+          </p>
+          <button
+            type="button"
+            onClick={() => void load(true)}
+            disabled={refreshing}
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-white px-5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:opacity-50 dark:bg-[var(--color-card)]"
+          >
+            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+            Volver a calcular
+          </button>
+        </div>
+      )}
+      {!nadaQueComprar && (
+      <>
       {/* ─── KPI summary ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard label="Críticos"     value={stats.counts.CRITICO}    icon={AlertTriangle} accent="danger"  sub="Se acaban en ≤3 días" />
-        <KPICard label="Urgentes"     value={stats.counts.URGENTE}    icon={Clock}         accent="warning" sub="Esta semana" />
-        <KPICard label="A planificar" value={stats.counts.PLANIFICAR} icon={Package}       accent="success" sub="Más de 7 días" />
+        <KPICard label="Críticos"     value={stats.counts.CRITICO}    icon={AlertTriangle} accent="danger"  sub="No llegan a tiempo" />
+        <KPICard label="Urgentes"     value={stats.counts.URGENTE}    icon={Clock}         accent="warning" sub="Se acaban durante la entrega" />
+        <KPICard label="A planificar" value={stats.counts.PLANIFICAR} icon={Package}       accent="success" sub="Hay margen" />
         <KPICard
           label="Costo estimado"
-          value={stats.totalCost > 0 ? `S/${Math.round(stats.totalCost).toLocaleString("es-PE")}` : "—"}
+          value={resumen && resumen.costoEstimado > 0 ? `S/${Math.round(resumen.costoEstimado).toLocaleString("es-PE")}` : "—"}
           icon={ShoppingCart}
-          sub={`${stats.totalSuggested.toLocaleString("es-PE")} unidades`}
+          // Un «—» sin explicación deja al usuario sin saber si es cero o si
+          // falta el dato. El total sólo cubre los productos con precio.
+          sub={
+            resumen && resumen.sinPrecio > 0
+              ? `${stats.totalSuggested.toLocaleString("es-PE")} unidades · sin precio en ${resumen.sinPrecio}`
+              : `${stats.totalSuggested.toLocaleString("es-PE")} unidades`
+          }
         />
       </div>
+
+      {/* Lo que la pantalla NO pudo saber. Callarlo haría que una lista
+          incompleta se leyera como completa. */}
+      {avisos.length > 0 && (
+        <div className="rounded-2xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-4 py-3">
+          {avisos.map((a) => (
+            <p key={a} className="flex items-start gap-2 text-sm text-[var(--text-primary)]">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-ink)]" />
+              {a}
+            </p>
+          ))}
+        </div>
+      )}
 
       {/* ─── Search + filtros ────────────────────────────────────────── */}
       <div className="space-y-3">
@@ -453,7 +639,7 @@ export default function SugerenciasCompraTab() {
             <button
               type="button"
               onClick={selectAllVisible}
-              className="ml-auto inline-flex items-center gap-1.5 h-11 px-3 rounded-2xl text-sm font-bold text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+              className="ml-auto inline-flex items-center gap-1.5 h-11 px-3 rounded-2xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors whitespace-nowrap"
             >
               {visible.every((s) => selected.has(s.productId)) ? "Deseleccionar visibles" : "Seleccionar visibles"}
             </button>
@@ -541,8 +727,8 @@ export default function SugerenciasCompraTab() {
                   const isSelected = selected.has(s.productId);
                   const lineTotal = s.lastPrice != null ? s.lastPrice * s.suggestedQty : null;
                   return (
+                    <div key={s.productId} className="flex flex-col gap-2">
                     <button
-                      key={s.productId}
                       type="button"
                       onClick={() => toggleSelect(s.productId)}
                       aria-pressed={isSelected}
@@ -621,6 +807,20 @@ export default function SugerenciasCompraTab() {
                         </div>
                       </div>
                     </button>
+                    {/* Crear OC de esta sola sugerencia en 1 clic (reporte QA
+                        Compras: "pasar de sugerencia a OC con un clic"). */}
+                    <button
+                      type="button"
+                      onClick={() => void createOCForOne(s)}
+                      disabled={creatingItemId === s.productId}
+                      className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    >
+                      {creatingItemId === s.productId
+                        ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                        : <ShoppingCart className="h-4 w-4" strokeWidth={2} aria-hidden />}
+                      {creatingItemId === s.productId ? "Creando…" : "Crear OC"}
+                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -640,7 +840,7 @@ export default function SugerenciasCompraTab() {
           <button
             type="button"
             onClick={() => { setFilter("todos"); setSearch(""); }}
-            className="mt-4 inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-primary hover:bg-primary/10 transition-colors"
+            className="mt-4 inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
           >
             Ver todas
           </button>
@@ -650,7 +850,7 @@ export default function SugerenciasCompraTab() {
       {/* Sticky bottom bar — solo aparece con seleccionados */}
       {selected.size > 0 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-1.5rem)] w-full sm:w-auto px-2">
-          <div className="bg-white dark:bg-[var(--color-card)] border-2 border-[var(--rule-base)] rounded-2xl shadow-2xl flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3">
+          <div className="bg-white dark:bg-[var(--color-card)] border-2 border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-xl)] flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3">
             <span className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-primary/10 shrink-0">
               <Sparkles className="h-5 w-5 text-primary" strokeWidth={2.2} />
             </span>
@@ -681,6 +881,60 @@ export default function SugerenciasCompraTab() {
             </button>
           </div>
         </div>
+      )}
+
+      </>
+      )}
+
+      {/* ─── Lo que NO conviene comprar ───────────────────────────────────
+          La otra mitad de la decisión. Antes estos productos salían mezclados
+          entre las sugerencias sólo por estar debajo de su `stockMax`: en el
+          tenant real eran los 52, con cero ventas en 30 días. Reponerlos es
+          inmovilizar plata. */}
+      {sinRotacion.length > 0 && (
+        <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setVerSinRotacion((v) => !v)}
+            aria-expanded={verSinRotacion}
+            className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-raised)]"
+          >
+            <Package className="h-5 w-5 shrink-0 text-[var(--text-secondary)]" />
+            <span className="min-w-0 flex-1">
+              <span className="block font-extrabold text-[var(--text-primary)]">
+                {sinRotacion.length} {sinRotacion.length === 1 ? "producto no se vendió" : "productos no se vendieron"} en {ventanaDias} días
+              </span>
+              <span className="block text-sm text-[var(--text-secondary)]">
+                No entran en la lista de compra. Revisá si conviene liquidarlos antes de reponer.
+              </span>
+            </span>
+            {verSinRotacion ? <ChevronUp className="h-5 w-5 shrink-0" /> : <ChevronDown className="h-5 w-5 shrink-0" />}
+          </button>
+
+          {verSinRotacion && (
+            <ul className="divide-y divide-[var(--rule-soft)] border-t-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)]">
+              {sinRotacion.slice(0, 40).map((s) => (
+                <li key={s.productId} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3">
+                  <span className="min-w-0 flex-1 truncate font-bold text-[var(--text-primary)]">{s.productName}</span>
+                  <span className="text-sm text-[var(--text-secondary)]">{s.motivo}</span>
+                  <span className="text-sm tabular-nums text-[var(--text-secondary)]">
+                    stock {s.currentStock} · mínimo {s.stockMin}
+                  </span>
+                  {s.excesoSobreMinimo > 0 && (
+                    <span className="text-sm font-bold tabular-nums text-[var(--data-warning-ink)]">
+                      +{s.excesoSobreMinimo} de más
+                    </span>
+                  )}
+                </li>
+              ))}
+              {sinRotacion.length > 40 && (
+                <li className="px-4 py-3 text-sm text-[var(--text-secondary)]">
+                  Y {sinRotacion.length - 40} más.
+                </li>
+              )}
+            </ul>
+          )}
+        </section>
       )}
     </div>
   );

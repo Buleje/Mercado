@@ -12,7 +12,7 @@ import { withCronHealth } from "@/lib/cron/with-cron-health";
  *
  * Authorization: Bearer <CRON_SECRET>
  */
-export const GET = withCronHealth("trial-expiry", async (req: NextRequest) => {
+export const GET = withCronHealth("trial-expiry", async (_req: NextRequest) => {
   try {
     const result = await withCronRetry("trial-expiry", async () => {
       const now = new Date();

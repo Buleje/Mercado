@@ -14,7 +14,7 @@ interface FunnelData {
 const STAGES = [
   { key: "registered" as const, label: "Registrados", icon: Users, color: "bg-[var(--data-success-500)]" },
   { key: "onboarded" as const, label: "Onboarding completo", icon: CheckCircle2, color: "bg-[var(--data-info-500)]" },
-  { key: "withProducts" as const, label: "Con productos", icon: Package, color: "bg-[var(--data-warning-500)]" },
+  { key: "withProducts" as const, label: "Con productos", icon: Package, color: "bg-[#0d9488]" },
   { key: "withSales" as const, label: "Con ventas", icon: ShoppingCart, color: "bg-[var(--data-success-500)]" },
 ];
 

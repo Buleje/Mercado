@@ -134,11 +134,11 @@ export default function CategoryImagesClient() {
       <div className="flex flex-wrap items-center gap-3 justify-between">
         <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]" />
+            <span className="h-2 w-2 rounded-full bg-teal-500" />
             {Object.keys(images).filter((k) => images[k]).length} imágenes globales activas
           </span>
           {dirty && (
-            <span className="px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-600)] dark:text-amber-400 text-xs font-bold">
+            <span className="px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-600 dark:text-teal-400 text-xs font-bold">
               Cambios sin guardar
             </span>
           )}

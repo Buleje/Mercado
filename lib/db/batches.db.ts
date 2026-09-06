@@ -129,13 +129,26 @@ function mapBatch(b: PBatchWithProduct): DbBatch {
  * Solo aplica si el lote tiene productId vinculado.
  * Siempre fire-and-forget: propagateExpiresAt(id).catch(() => {})
  */
-export async function propagateExpiresAt(productId: number | null | undefined): Promise<void> {
+export async function propagateExpiresAt(productId: number | null | undefined, tenantId?: string): Promise<void> {
   if (!productId) return;
   const nearest = await prisma.batch.findFirst({
-    where: { productId, quantity: { gt: 0 } },
+    where: { productId, ...(tenantId ? { tenantId } : {}), quantity: { gt: 0 } },
     orderBy: { expiryDate: "asc" },
     select: { expiryDate: true },
   });
+  /**
+   * Con `tenantId` esto pasa a ser `updateMany`: cargar un lote apuntando al
+   * `productId` de otra empresa le escribía la fecha de vencimiento a SU
+   * producto. `update({ where: { id } })` no tiene forma de acotar por tenant;
+   * `updateMany` sí, y si no matchea no toca nada en vez de fallar.
+   */
+  if (tenantId) {
+    await prisma.product.updateMany({
+      where: { id: productId, tenantId },
+      data: { expiresAt: nearest?.expiryDate ?? null },
+    });
+    return;
+  }
   await prisma.product.update({
     where: { id: productId },
     data: { expiresAt: nearest?.expiryDate ?? null },
@@ -314,7 +327,7 @@ export const BatchesDB = {
       include: { product: { select: { id: true, name: true } } },
     });
 
-    propagateExpiresAt(row.productId).catch(() => {
+    propagateExpiresAt(row.productId, tenantId).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });
 
@@ -348,11 +361,11 @@ export const BatchesDB = {
     });
 
     // Propagar al producto anterior y al nuevo si cambió el productId
-    propagateExpiresAt(existing.productId).catch(() => {
+    propagateExpiresAt(existing.productId, tenantId).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });
     if (input.productId && input.productId !== existing.productId) {
-      propagateExpiresAt(input.productId).catch(() => {
+      propagateExpiresAt(input.productId, tenantId).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });
     }
@@ -378,7 +391,7 @@ export const BatchesDB = {
       include: { product: { select: { id: true, name: true } } },
     });
 
-    propagateExpiresAt(existing.productId).catch(() => {
+    propagateExpiresAt(existing.productId, tenantId).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });
 
@@ -396,7 +409,7 @@ export const BatchesDB = {
 
     await prisma.batch.deleteMany({ where: { id, tenantId } });
 
-    propagateExpiresAt(existing.productId).catch(() => {
+    propagateExpiresAt(existing.productId, tenantId).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });
 

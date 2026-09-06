@@ -1,8 +1,11 @@
 "use client";
 
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
+import { activateProps } from "@/components/admin/shared/a11y";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -11,551 +14,55 @@ import {
   Download, Copy, Eye, Edit3, ArrowRight, ArrowLeft, Briefcase, Truck, Home, Package, Users,
   Lock, TreePine, Scale, PenTool, Save, BarChart3, AlertCircle, ClipboardCopy,
   MapPin, Info } from "@buleje/design-system/icons";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart as RechartsPie, Pie, Cell, Legend,
-} from "recharts";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+import {
+  PLANTILLAS,
+  LEGAL_TOOLTIPS,
+  EMISOR_FIELD_MAP,
+  CARGO_OPTIONS,
+  LUGAR_ENTREGA_OPTIONS,
+  fillTemplate,
+  numberToWords,
+  validateField,
+  montoDelContrato,
+  vencimientoDelContrato,
+  inicioDelContrato,
+  contraparteDelContrato,
+} from "@/lib/contratos/plantillas";
+import type { ContractTemplate } from "@/lib/contratos/plantillas";
+import {
+  TIPO_LABELS,
+  ESTADO_VISIBLE_LABELS,
+  estadoVisible,
+  diasParaVencer,
+} from "@/lib/types/contracts";
+import type { DbContract, EstadoVisible } from "@/lib/types/contracts";
+import PanelFirmantes from "@/components/admin/contratos/PanelFirmantes";
+import PanelRevision from "@/components/admin/contratos/PanelRevision";
+import VinculoContraparte from "@/components/admin/contratos/VinculoContraparte";
+
+const ContratosChart = dynamic(() => import("./ContratosChart"), {
+  ssr: false,
+  loading: () => <div className="h-64 animate-pulse bg-[var(--color-muted)] rounded-xl" />,
+});
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type ContratoTipo = "VENTA" | "SERVICIO" | "TRABAJO" | "PROVEEDOR" | "DISTRIBUCION" | "ALQUILER" | "CONSIGNACION" | "MUTUO" | "TRANSPORTE" | "NDA" | "FORESTAL" | "LOCACION";
+/**
+ * El contrato tal como lo devuelve la API. Antes este tipo declaraba
+ * `montoTotal`/`clienteDocumento`/`fechaContrato` mientras el backend mandaba
+ * `monto`/`clienteDoc`/`fecha`, así que TODO monto salía S/ 0.00 y el documento
+ * de la contraparte salía vacío. Ahora es el mismo tipo de la capa de datos.
+ */
+type ContratoAPI = DbContract;
 
-type ContratoEstado = "VIGENTE" | "POR_VENCER" | "VENCIDO" | "ANULADO" | "BORRADOR";
-
-interface TemplateField {
-  key: string;
-  label: string;
-  type: "text" | "number" | "date" | "select" | "textarea";
-  required: boolean;
-  options?: string[];
-  placeholder?: string;
-  group: "emisor" | "contraparte" | "contrato";
-}
-
-interface ContractTemplate {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  legalBasis: string;
-  icon: string;
-  tipo: ContratoTipo;
-  fields: TemplateField[];
-  clausulas: string[];
-  summaryTemplate: string;
-}
-
-interface ContractVersion {
-  version: number;
-  data: Record<string, string>;
-  content: string;
-  savedAt: string;
-}
-
-type ContratoAPI = {
-  id: string;
-  número: string;
-  tenantId: string;
-  tipo: ContratoTipo;
-  clienteNombre: string;
-  clienteDocumento: string;
-  descripcion: string;
-  montoTotal: number;
-  fechaContrato: string;
-  fechaVencimiento?: string;
-  clausulas: string[];
-  createdAt: string;
-  updatedAt: string;
-  /** Estado explicito desde el API (ANULADO/BORRADOR overridean date-based logic). */
-  estado?: ContratoEstado;
-};
+const MODULE_ID = "contratos";
 
 type TabId = "dashboard" | "plantillas" | "contratos" | "crear" | "editor";
 
-// ── Plantillas Legales Peruanas ────────────────────────────────────────────
-
-const PLANTILLAS: ContractTemplate[] = [
-  // 1. COMPRAVENTA DE MERCADERIA
-  {
-    id: "compraventa-mercaderia",
-    name: "Compraventa de Mercaderia",
-    category: "Comercial",
-    description: "Contrato para la transferencia de propiedad de bienes muebles (mercaderia) entre comerciantes.",
-    legalBasis: "Art. 1529-1601 del Codigo Civil Peruano",
-    icon: "Package",
-    tipo: "VENTA",
-    fields: [
-      { key: "NOMBRE_VENDEDOR", label: "Nombre/Razon Social del Vendedor", type: "text", required: true, placeholder: "Buleje S.A.C.", group: "emisor" },
-      { key: "RUC_VENDEDOR", label: "RUC del Vendedor", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "emisor" },
-      { key: "DOMICILIO_VENDEDOR", label: "Domicilio del Vendedor", type: "text", required: true, placeholder: "Jr. San Martin 123, Pucallpa", group: "emisor" },
-      { key: "REPRESENTANTE_VENDEDOR", label: "Representante Legal", type: "text", required: false, placeholder: "Nombre del representante", group: "emisor" },
-      { key: "NOMBRE_COMPRADOR", label: "Nombre/Razon Social del Comprador", type: "text", required: true, placeholder: "Nombre completo o razon social", group: "contraparte" },
-      { key: "DNI_COMPRADOR", label: "DNI/RUC del Comprador", type: "text", required: true, placeholder: "DNI o RUC", group: "contraparte" },
-      { key: "DOMICILIO_COMPRADOR", label: "Domicilio del Comprador", type: "text", required: true, placeholder: "Direccion completa", group: "contraparte" },
-      { key: "DESCRIPCION_MERCADERIA", label: "Descripcion de la Mercaderia", type: "textarea", required: true, placeholder: "Detalle de productos, cantidades, calidades...", group: "contrato" },
-      { key: "PRECIO_TOTAL", label: "Precio Total (S/)", type: "number", required: true, placeholder: "0.00", group: "contrato" },
-      { key: "PRECIO_LETRAS", label: "Precio en Letras", type: "text", required: true, placeholder: "Mil quinientos soles", group: "contrato" },
-      { key: "FORMA_PAGO", label: "Forma de Pago", type: "select", required: true, options: ["Contado", "Credito a 15 dias", "Credito a 30 dias", "Credito a 60 dias", "50% adelanto, 50% contra entrega", "Letras de cambio"], group: "contrato" },
-      { key: "FECHA_ENTREGA", label: "Fecha de Entrega", type: "date", required: true, placeholder: "", group: "contrato" },
-      { key: "LUGAR_ENTREGA", label: "Lugar de Entrega", type: "text", required: true, placeholder: "Almacen del comprador, Pucallpa", group: "contrato" },
-      { key: "PLAZO_GARANTIA", label: "Plazo de Garantia (dias)", type: "number", required: false, placeholder: "30", group: "contrato" },
-      { key: "PENALIDAD_PORCENTAJE", label: "Penalidad por Incumplimiento (%)", type: "number", required: false, placeholder: "2", group: "contrato" },
-      { key: "CIUDAD", label: "Ciudad de Celebracion", type: "text", required: true, placeholder: "Pucallpa", group: "contrato" },
-      { key: "FECHA", label: "Fecha del Contrato", type: "date", required: true, placeholder: "", group: "contrato" },
-    ],
-    clausulas: [
-      "Conste por el presente documento, el contrato de compraventa de mercaderia que celebran de conformidad con los articulos 1529 al 1601 del Codigo Civil Peruano, de una parte, {{NOMBRE_VENDEDOR}}, con RUC N.o {{RUC_VENDEDOR}}, con domicilio en {{DOMICILIO_VENDEDOR}}, debidamente representada por {{REPRESENTANTE_VENDEDOR}}, a quien en adelante se denominara EL VENDEDOR; y de otra parte, {{NOMBRE_COMPRADOR}}, identificado(a) con DNI/RUC N.o {{DNI_COMPRADOR}}, con domicilio en {{DOMICILIO_COMPRADOR}}, a quien en adelante se denominara EL COMPRADOR.",
-      "CLAUSULA PRIMERA.- OBJETO DEL CONTRATO: Por el presente contrato, EL VENDEDOR se obliga a transferir la propiedad de los siguientes bienes muebles (mercaderia) a favor de EL COMPRADOR: {{DESCRIPCION_MERCADERIA}}. La mercaderia debera cumplir con las especificaciones de calidad, cantidad y caracteristicas acordadas por ambas partes, conforme al articulo 1532 del Codigo Civil.",
-      "CLAUSULA SEGUNDA.- PRECIO Y FORMA DE PAGO: El precio total pactado por la mercaderia objeto del presente contrato es de S/ {{PRECIO_TOTAL}} (Son: {{PRECIO_LETRAS}} soles). La forma de pago sera: {{FORMA_PAGO}}. En caso de pago diferido, el incumplimiento en el pago de cualquier cuota dara derecho al VENDEDOR a exigir el pago total del saldo pendiente, conforme al articulo 1561 del Codigo Civil.",
-      "CLAUSULA TERCERA.- ENTREGA DE LA MERCADERIA: EL VENDEDOR se obliga a entregar la mercaderia en {{LUGAR_ENTREGA}}, en la fecha {{FECHA_ENTREGA}}. La entrega se acreditara mediante guia de remision y/o acta de conformidad suscrita por ambas partes. El riesgo de perdida o deterioro de los bienes se transfiere al COMPRADOR en el momento de la entrega, conforme al articulo 1567 del Codigo Civil.",
-      "CLAUSULA CUARTA.- GARANTIA: EL VENDEDOR garantiza que la mercaderia se encuentra libre de vicios ocultos y defectos de fabricacion. EL COMPRADOR dispondra de un plazo de {{PLAZO_GARANTIA}} dias calendario desde la recepcion para formular reclamos por defectos visibles, faltantes o disconformidades. Vencido dicho plazo sin observacion, se entendera otorgada la conformidad total, conforme al articulo 1503 del Codigo Civil (saneamiento por vicios ocultos).",
-      "CLAUSULA QUINTA.- PENALIDAD POR INCUMPLIMIENTO: En caso de incumplimiento en la entrega por parte del VENDEDOR, este pagara una penalidad equivalente al {{PENALIDAD_PORCENTAJE}}% del precio total por cada semana de retraso, hasta un máximo del 10% del monto total. En caso de falta de pago oportuno por parte del COMPRADOR, se aplicara un interes moratorio conforme a la tasa maxima fijada por el Banco Central de Reserva del Peru (BCRP).",
-      "CLAUSULA SEXTA.- RESOLUCION DEL CONTRATO: Cualquiera de las partes podra resolver el presente contrato ante el incumplimiento sustancial de las obligaciones por la otra parte, previa comunicacion notarial otorgando un plazo de subsanacion de siete (7) dias habiles, conforme al articulo 1429 del Codigo Civil. La resolucion no libera al incumpliente del pago de la penalidad pactada ni de la indemnizacion por danos y perjuicios.",
-      "CLAUSULA SEPTIMA.- DOMICILIO Y JURISDICCION: Para todos los efectos del presente contrato, las partes senalan como sus domicilios los indicados en la parte introductoria, donde se les hara llegar las comunicaciones y notificaciones de ley. Cualquier controversia derivada del presente contrato sera resuelta por los jueces y tribunales del distrito judicial de {{CIUDAD}}, renunciando ambas partes a cualquier otro fuero que pudiera corresponderles.",
-      "En senal de conformidad, las partes suscriben el presente contrato en dos (2) ejemplares de igual tenor y valor, en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
-    ],
-    summaryTemplate: "Este contrato es entre {{NOMBRE_VENDEDOR}} (vendedor) y {{NOMBRE_COMPRADOR}} (comprador) para la venta de: {{DESCRIPCION_MERCADERIA}}, por un total de S/ {{PRECIO_TOTAL}}. El pago se hace {{FORMA_PAGO}}. La entrega es el {{FECHA_ENTREGA}} en {{LUGAR_ENTREGA}}. Si alguien no cumple, paga una penalidad del {{PENALIDAD_PORCENTAJE}}% por semana de retraso.",
-  },
-
-  // 2. CONTRATO DE TRABAJO A PLAZO FIJO
-  {
-    id: "trabajo-plazo-fijo",
-    name: "Contrato de Trabajo a Plazo Fijo",
-    category: "Laboral",
-    description: "Contrato sujeto a modalidad para contratar trabajadores por tiempo determinado con todos los beneficios de ley.",
-    legalBasis: "D.S. 003-97-TR, TUO D.Leg. 728 — Ley de Productividad y Competitividad Laboral",
-    icon: "Briefcase",
-    tipo: "TRABAJO",
-    fields: [
-      { key: "NOMBRE_EMPLEADOR", label: "Razon Social del Empleador", type: "text", required: true, placeholder: "Buleje S.A.C.", group: "emisor" },
-      { key: "RUC_EMPLEADOR", label: "RUC del Empleador", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "emisor" },
-      { key: "DOMICILIO_EMPLEADOR", label: "Domicilio del Empleador", type: "text", required: true, placeholder: "Jr. San Martin 123, Pucallpa", group: "emisor" },
-      { key: "REPRESENTANTE_EMPLEADOR", label: "Representante Legal", type: "text", required: true, placeholder: "Nombre del representante", group: "emisor" },
-      { key: "NOMBRE_TRABAJADOR", label: "Nombre Completo del Trabajador", type: "text", required: true, placeholder: "Nombres y apellidos completos", group: "contraparte" },
-      { key: "DNI_TRABAJADOR", label: "DNI del Trabajador", type: "text", required: true, placeholder: "XXXXXXXX", group: "contraparte" },
-      { key: "DOMICILIO_TRABAJADOR", label: "Domicilio del Trabajador", type: "text", required: true, placeholder: "Direccion completa", group: "contraparte" },
-      { key: "CARGO", label: "Cargo / Puesto", type: "text", required: true, placeholder: "Cajero, Almacenero, Repartidor...", group: "contrato" },
-      { key: "MODALIDAD", label: "Modalidad del Contrato", type: "select", required: true, options: ["Inicio de actividad (Art. 57)", "Necesidades del mercado (Art. 58)", "Reconversion empresarial (Art. 59)", "Ocasional (Art. 60)", "Suplencia (Art. 61)", "Obra determinada (Art. 63)"], group: "contrato" },
-      { key: "CAUSA_OBJETIVA", label: "Causa Objetiva de Contratacion", type: "textarea", required: true, placeholder: "Descripcion de la causa que justifica la contratacion temporal...", group: "contrato" },
-      { key: "REMUNERACION", label: "Remuneracion Mensual (S/)", type: "number", required: true, placeholder: "1025.00", group: "contrato" },
-      { key: "FECHA_INICIO", label: "Fecha de Inicio", type: "date", required: true, placeholder: "", group: "contrato" },
-      { key: "FECHA_FIN", label: "Fecha de Fin", type: "date", required: true, placeholder: "", group: "contrato" },
-      { key: "PERIODO_PRUEBA", label: "Periodo de Prueba (meses)", type: "select", required: true, options: ["3 meses (general)", "6 meses (confianza)", "12 meses (direccion)"], group: "contrato" },
-      { key: "JORNADA", label: "Jornada Laboral", type: "select", required: true, options: ["8 horas diarias / 48 horas semanales", "6 horas diarias (part-time)", "4 horas diarias (part-time)"], group: "contrato" },
-      { key: "HORARIO", label: "Horario de Trabajo", type: "text", required: true, placeholder: "8:00 a.m. a 5:00 p.m.", group: "contrato" },
-      { key: "CIUDAD", label: "Ciudad", type: "text", required: true, placeholder: "Pucallpa", group: "contrato" },
-      { key: "FECHA", label: "Fecha del Contrato", type: "date", required: true, placeholder: "", group: "contrato" },
-    ],
-    clausulas: [
-      "Conste por el presente documento, el contrato de trabajo sujeto a modalidad que celebran al amparo del Texto Único Ordenado del Decreto Legislativo 728 — Ley de Productividad y Competitividad Laboral, aprobado por Decreto Supremo N.o 003-97-TR, de una parte, {{NOMBRE_EMPLEADOR}}, con RUC N.o {{RUC_EMPLEADOR}}, con domicilio en {{DOMICILIO_EMPLEADOR}}, representada por {{REPRESENTANTE_EMPLEADOR}}, a quien en adelante se denominara EL EMPLEADOR; y de otra parte, {{NOMBRE_TRABAJADOR}}, identificado(a) con DNI N.o {{DNI_TRABAJADOR}}, con domicilio en {{DOMICILIO_TRABAJADOR}}, a quien en adelante se denominara EL TRABAJADOR; en los terminos y condiciones siguientes:",
-      "CLAUSULA PRIMERA.- ANTECEDENTES Y CAUSA OBJETIVA: EL EMPLEADOR es una persona juridica dedicada al comercio minorista de abarrotes y productos de primera necesidad. Requiere contratar los servicios de EL TRABAJADOR bajo la modalidad de {{MODALIDAD}}, por la siguiente causa objetiva: {{CAUSA_OBJETIVA}}. Esta contratacion se realiza conforme a los articulos 53 al 83 del D.S. 003-97-TR.",
-      "CLAUSULA SEGUNDA.- OBJETO: EL EMPLEADOR contrata los servicios de EL TRABAJADOR para desempenar el cargo de {{CARGO}}, realizando las funciones propias del puesto conforme al Manual de Organizacion y Funciones (MOF) de la empresa.",
-      "CLAUSULA TERCERA.- DURACION Y PERIODO DE PRUEBA: El presente contrato tiene una duracion determinada, iniciandose el {{FECHA_INICIO}} y concluyendo el {{FECHA_FIN}}, sin necesidad de previo aviso para su terminacion. El periodo de prueba sera de {{PERIODO_PRUEBA}}, conforme al articulo 10 del D.S. 003-97-TR. Durante el periodo de prueba, cualquiera de las partes puede resolver el contrato sin expresion de causa.",
-      "CLAUSULA CUARTA.- REMUNERACION: EL TRABAJADOR percibira una remuneracion mensual bruta de S/ {{REMUNERACION}}, sujeta a los descuentos de ley (aportes al sistema de pensiones ONP/AFP, e impuesto a la renta de quinta categoria cuando corresponda). El pago se realizara de forma mensual, mediante deposito en cuenta bancaria del trabajador.",
-      "CLAUSULA QUINTA.- JORNADA Y HORARIO DE TRABAJO: La jornada laboral sera de {{JORNADA}}, conforme al articulo 25 de la Constitucion Politica del Peru y al D.S. 007-2002-TR. El horario de trabajo sera de {{HORARIO}}, de lunes a sabado. Las horas extras se remuneraran con la sobretasa de ley: 25% las dos primeras horas y 35% las siguientes, conforme al D.S. 007-2002-TR.",
-      "CLAUSULA SEXTA.- BENEFICIOS SOCIALES: EL TRABAJADOR gozara de todos los beneficios laborales que le corresponden conforme a la legislacion peruana vigente: (a) Compensacion por Tiempo de Servicios (CTS) conforme al D.S. 001-97-TR, depositada semestralmente en mayo y noviembre; (b) Gratificaciones legales en julio y diciembre equivalentes a una remuneracion mensual cada una, conforme a la Ley 27735; (c) Descanso vacacional de 30 dias calendario por cada ano completo de servicios, conforme al D.Leg. 713; (d) Seguro social de salud (EsSalud) a cargo del empleador, equivalente al 9% de la remuneracion; (e) Seguro Complementario de Trabajo de Riesgo (SCTR) si corresponde a la actividad; (f) Asignacion familiar de S/ 102.50 cuando corresponda, conforme a la Ley 25129.",
-      "CLAUSULA SEPTIMA.- OBLIGACIONES DEL TRABAJADOR: EL TRABAJADOR se compromete a: (a) Cumplir con las funciones asignadas con diligencia y eficiencia; (b) Respetar el Reglamento Interno de Trabajo; (c) Cuidar los bienes, mercaderia e instalaciones del negocio; (d) Mantener la confidencialidad de la informacion comercial, de clientes y proveedores; (e) Someterse a los controles de inventario y arqueos de caja que disponga el empleador.",
-      "CLAUSULA OCTAVA.- CAUSALES DE EXTINCION: El presente contrato se extinguira por las causales previstas en el articulo 16 del D.S. 003-97-TR: vencimiento del plazo, fallecimiento, renuncia (con 30 dias de preaviso), mutuo disenso, invalidez absoluta permanente, jubilacion, despido por causa justa, y las demas previstas por ley. En caso de despido injustificado antes del vencimiento del plazo, EL EMPLEADOR abonara una indemnizacion equivalente a una remuneracion y media mensual por cada mes dejado de laborar hasta el vencimiento del contrato, con un máximo de doce remuneraciones, conforme al articulo 76 del D.S. 003-97-TR.",
-      "CLAUSULA NOVENA.- JURISDICCION: Para la solucion de cualquier controversia derivada del presente contrato, las partes se someten a la jurisdiccion de los juzgados laborales del distrito judicial de {{CIUDAD}}, conforme a la Ley 29497 — Nueva Ley Procesal del Trabajo.",
-      "En senal de conformidad, las partes suscriben el presente contrato en tres (3) ejemplares de igual tenor y valor (uno para cada parte y uno para el Ministerio de Trabajo), en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
-    ],
-    summaryTemplate: "Este es un contrato de trabajo a plazo fijo entre {{NOMBRE_EMPLEADOR}} (empleador) y {{NOMBRE_TRABAJADOR}} (trabajador). El puesto es {{CARGO}} con un sueldo de S/ {{REMUNERACION}} al mes. El contrato va desde el {{FECHA_INICIO}} hasta el {{FECHA_FIN}}. Incluye todos los beneficios de ley: CTS, gratificaciones, vacaciones y EsSalud.",
-  },
-
-  // 3. CONTRATO DE TRABAJO A PLAZO INDETERMINADO
-  {
-    id: "trabajo-indeterminado",
-    name: "Contrato de Trabajo a Plazo Indeterminado",
-    category: "Laboral",
-    description: "Contrato de trabajo sin fecha de termino, con estabilidad laboral y todos los beneficios de ley.",
-    legalBasis: "D.Leg. 728 — Ley de Productividad y Competitividad Laboral",
-    icon: "Users",
-    tipo: "TRABAJO",
-    fields: [
-      { key: "NOMBRE_EMPLEADOR", label: "Razon Social del Empleador", type: "text", required: true, placeholder: "Buleje S.A.C.", group: "emisor" },
-      { key: "RUC_EMPLEADOR", label: "RUC del Empleador", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "emisor" },
-      { key: "DOMICILIO_EMPLEADOR", label: "Domicilio del Empleador", type: "text", required: true, placeholder: "Jr. San Martin 123, Pucallpa", group: "emisor" },
-      { key: "REPRESENTANTE_EMPLEADOR", label: "Representante Legal", type: "text", required: true, placeholder: "Nombre del representante", group: "emisor" },
-      { key: "NOMBRE_TRABAJADOR", label: "Nombre Completo del Trabajador", type: "text", required: true, placeholder: "Nombres y apellidos completos", group: "contraparte" },
-      { key: "DNI_TRABAJADOR", label: "DNI del Trabajador", type: "text", required: true, placeholder: "XXXXXXXX", group: "contraparte" },
-      { key: "DOMICILIO_TRABAJADOR", label: "Domicilio del Trabajador", type: "text", required: true, placeholder: "Direccion completa", group: "contraparte" },
-      { key: "CARGO", label: "Cargo / Puesto", type: "text", required: true, placeholder: "Administrador, Cajero principal...", group: "contrato" },
-      { key: "REMUNERACION", label: "Remuneracion Mensual (S/)", type: "number", required: true, placeholder: "1025.00", group: "contrato" },
-      { key: "FECHA_INICIO", label: "Fecha de Inicio", type: "date", required: true, placeholder: "", group: "contrato" },
-      { key: "JORNADA", label: "Jornada Laboral", type: "select", required: true, options: ["8 horas diarias / 48 horas semanales", "6 horas diarias (part-time)", "4 horas diarias (part-time)"], group: "contrato" },
-      { key: "HORARIO", label: "Horario de Trabajo", type: "text", required: true, placeholder: "8:00 a.m. a 5:00 p.m.", group: "contrato" },
-      { key: "CIUDAD", label: "Ciudad", type: "text", required: true, placeholder: "Pucallpa", group: "contrato" },
-      { key: "FECHA", label: "Fecha del Contrato", type: "date", required: true, placeholder: "", group: "contrato" },
-    ],
-    clausulas: [
-      "Conste por el presente documento, el contrato de trabajo a plazo indeterminado que celebran al amparo del Texto Único Ordenado del Decreto Legislativo 728, aprobado por Decreto Supremo N.o 003-97-TR, de una parte, {{NOMBRE_EMPLEADOR}}, con RUC N.o {{RUC_EMPLEADOR}}, con domicilio en {{DOMICILIO_EMPLEADOR}}, representada por {{REPRESENTANTE_EMPLEADOR}}, a quien en adelante se denominara EL EMPLEADOR; y de otra parte, {{NOMBRE_TRABAJADOR}}, identificado(a) con DNI N.o {{DNI_TRABAJADOR}}, con domicilio en {{DOMICILIO_TRABAJADOR}}, a quien en adelante se denominara EL TRABAJADOR.",
-      "CLAUSULA PRIMERA.- OBJETO: EL EMPLEADOR contrata los servicios de EL TRABAJADOR para que desempene el cargo de {{CARGO}} de manera permanente e indeterminada, realizando las funciones inherentes a dicho puesto.",
-      "CLAUSULA SEGUNDA.- INICIO: El presente contrato surte efectos a partir del {{FECHA_INICIO}}, siendo de duracion indeterminada. El periodo de prueba sera de tres (3) meses, conforme al articulo 10 del D.S. 003-97-TR.",
-      "CLAUSULA TERCERA.- REMUNERACION: EL TRABAJADOR percibira una remuneracion mensual bruta de S/ {{REMUNERACION}}, sujeta a los descuentos y aportes de ley. El pago se realizara de forma mensual.",
-      "CLAUSULA CUARTA.- JORNADA Y HORARIO: La jornada laboral sera de {{JORNADA}}. El horario de trabajo sera de {{HORARIO}}. Las horas extras se remuneraran conforme al D.S. 007-2002-TR.",
-      "CLAUSULA QUINTA.- BENEFICIOS SOCIALES: EL TRABAJADOR gozara de todos los beneficios que la ley establece: CTS (D.S. 001-97-TR), gratificaciones (Ley 27735), vacaciones (D.Leg. 713), EsSalud (9%), y asignacion familiar (Ley 25129) cuando corresponda.",
-      "CLAUSULA SEXTA.- OBLIGACIONES: EL TRABAJADOR se compromete a cumplir con sus funciones, respetar el reglamento interno, cuidar los bienes de la empresa y mantener la confidencialidad de la informacion comercial.",
-      "CLAUSULA SEPTIMA.- EXTINCION: El contrato podra extinguirse unicamente por las causales previstas en el articulo 16 del D.S. 003-97-TR. En caso de despido arbitrario, EL EMPLEADOR pagara una indemnizacion equivalente a una remuneracion y media mensual por cada ano completo de servicios, con un máximo de doce remuneraciones (Art. 38 D.S. 003-97-TR).",
-      "CLAUSULA OCTAVA.- JURISDICCION: Las partes se someten a la jurisdiccion de los juzgados laborales de {{CIUDAD}}.",
-      "En senal de conformidad, las partes suscriben el presente contrato en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
-    ],
-    summaryTemplate: "Contrato de trabajo permanente (sin fecha de fin) entre {{NOMBRE_EMPLEADOR}} y {{NOMBRE_TRABAJADOR}} para el puesto de {{CARGO}}. Sueldo: S/ {{REMUNERACION}} mensuales. Incluye CTS, gratificaciones, vacaciones y EsSalud.",
-  },
-
-  // 4. LOCACION DE SERVICIOS
-  {
-    id: "locacion-servicios",
-    name: "Locacion de Servicios",
-    category: "Servicios",
-    description: "Contrato civil para servicios independientes sin relacion laboral. El prestador emite recibos por honorarios.",
-    legalBasis: "Art. 1764-1770 del Codigo Civil Peruano",
-    icon: "PenTool",
-    tipo: "LOCACION",
-    fields: [
-      { key: "NOMBRE_COMITENTE", label: "Nombre/Razon Social del Comitente", type: "text", required: true, placeholder: "Buleje S.A.C.", group: "emisor" },
-      { key: "RUC_COMITENTE", label: "RUC del Comitente", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "emisor" },
-      { key: "DOMICILIO_COMITENTE", label: "Domicilio del Comitente", type: "text", required: true, placeholder: "Jr. San Martin 123, Pucallpa", group: "emisor" },
-      { key: "NOMBRE_LOCADOR", label: "Nombre del Locador (Prestador)", type: "text", required: true, placeholder: "Nombre completo del prestador", group: "contraparte" },
-      { key: "DNI_LOCADOR", label: "DNI/RUC del Locador", type: "text", required: true, placeholder: "DNI o RUC", group: "contraparte" },
-      { key: "DOMICILIO_LOCADOR", label: "Domicilio del Locador", type: "text", required: true, placeholder: "Direccion completa", group: "contraparte" },
-      { key: "DESCRIPCION_SERVICIO", label: "Descripcion del Servicio", type: "textarea", required: true, placeholder: "Detalle del servicio a prestar...", group: "contrato" },
-      { key: "RETRIBUCION", label: "Retribucion Total (S/)", type: "number", required: true, placeholder: "0.00", group: "contrato" },
-      { key: "FORMA_PAGO", label: "Forma de Pago", type: "select", required: true, options: ["Contra entrega del servicio", "50% al inicio, 50% al termino", "Mensual", "Por entregables"], group: "contrato" },
-      { key: "FECHA_INICIO", label: "Fecha de Inicio", type: "date", required: true, placeholder: "", group: "contrato" },
-      { key: "FECHA_FIN", label: "Fecha de Termino", type: "date", required: true, placeholder: "", group: "contrato" },
-      { key: "CIUDAD", label: "Ciudad", type: "text", required: true, placeholder: "Pucallpa", group: "contrato" },
-      { key: "FECHA", label: "Fecha del Contrato", type: "date", required: true, placeholder: "", group: "contrato" },
-    ],
-    clausulas: [
-      "Conste por el presente documento, el contrato de locacion de servicios que celebran de conformidad con los articulos 1764 al 1770 del Codigo Civil Peruano, de una parte, {{NOMBRE_COMITENTE}}, con RUC N.o {{RUC_COMITENTE}}, con domicilio en {{DOMICILIO_COMITENTE}}, a quien en adelante se denominara EL COMITENTE; y de otra parte, {{NOMBRE_LOCADOR}}, identificado(a) con DNI/RUC N.o {{DNI_LOCADOR}}, con domicilio en {{DOMICILIO_LOCADOR}}, a quien en adelante se denominara EL LOCADOR.",
-      "CLAUSULA PRIMERA.- OBJETO: EL LOCADOR se obliga a prestar el siguiente servicio a favor de EL COMITENTE, sin subordinacion: {{DESCRIPCION_SERVICIO}}. EL LOCADOR realizara el servicio con sus propios medios, herramientas y conocimientos tecnicos, conforme al articulo 1764 del Codigo Civil.",
-      "CLAUSULA SEGUNDA.- RETRIBUCION: La retribucion por el servicio sera de S/ {{RETRIBUCION}}. La forma de pago sera: {{FORMA_PAGO}}. EL LOCADOR emitira el correspondiente recibo por honorarios electrónico (SUNAT) para cada pago recibido. Se aplicara la retencion del impuesto a la renta de cuarta categoria cuando corresponda (8%).",
-      "CLAUSULA TERCERA.- PLAZO: El servicio sera ejecutado desde el {{FECHA_INICIO}} hasta el {{FECHA_FIN}}. EL LOCADOR no podra ceder su posicion contractual sin autorizacion escrita del COMITENTE.",
-      "CLAUSULA CUARTA.- INDEPENDENCIA Y NO SUBORDINACION: Queda expresamente establecido que EL LOCADOR presta sus servicios de forma autonoma e independiente, sin sujecion a horario fijo, sin exclusividad, y sin relacion laboral de subordinacion o dependencia con EL COMITENTE, conforme al articulo 1764 del Codigo Civil. El presente contrato no genera vinculo laboral alguno.",
-      "CLAUSULA QUINTA.- OBLIGACIONES DEL LOCADOR: EL LOCADOR se obliga a: (a) ejecutar el servicio personalmente y con la diligencia debida; (b) informar periodicamente al COMITENTE sobre el avance del servicio; (c) entregar el resultado del servicio en el plazo pactado.",
-      "CLAUSULA SEXTA.- RESOLUCION: El contrato podra resolverse por mutuo acuerdo, incumplimiento de cualquiera de las partes, o vencimiento del plazo. En caso de resolucion anticipada sin causa justificada, la parte que resuelva indemnizara a la otra por los danos causados.",
-      "CLAUSULA SEPTIMA.- JURISDICCION: Las partes se someten a la jurisdiccion de los jueces civiles de {{CIUDAD}}.",
-      "En senal de conformidad, las partes suscriben el presente contrato en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
-    ],
-    summaryTemplate: "Contrato de servicios independientes (sin relacion laboral) entre {{NOMBRE_COMITENTE}} y {{NOMBRE_LOCADOR}}. Servicio: {{DESCRIPCION_SERVICIO}}. Pago: S/ {{RETRIBUCION}} ({{FORMA_PAGO}}). Del {{FECHA_INICIO}} al {{FECHA_FIN}}. El locador emite recibos por honorarios.",
-  },
-
-  // 5. CONTRATO DE SUMINISTRO
-  {
-    id: "suministro",
-    name: "Contrato de Suministro",
-    category: "Comercial",
-    description: "Acuerdo de provision periodica y continuada de mercaderia entre proveedor y bodega.",
-    legalBasis: "Art. 1604-1620 del Codigo Civil Peruano",
-    icon: "Truck",
-    tipo: "PROVEEDOR",
-    fields: [
-      { key: "NOMBRE_SUMINISTRANTE", label: "Nombre/Razon Social del Proveedor", type: "text", required: true, placeholder: "Distribuidora ABC S.A.C.", group: "emisor" },
-      { key: "RUC_SUMINISTRANTE", label: "RUC del Proveedor", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "emisor" },
-      { key: "DOMICILIO_SUMINISTRANTE", label: "Domicilio del Proveedor", type: "text", required: true, placeholder: "Direccion completa", group: "emisor" },
-      { key: "NOMBRE_SUMINISTRADO", label: "Nombre/Razon Social del Adquirente", type: "text", required: true, placeholder: "Buleje S.A.C.", group: "contraparte" },
-      { key: "RUC_SUMINISTRADO", label: "RUC del Adquirente", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "contraparte" },
-      { key: "DOMICILIO_SUMINISTRADO", label: "Domicilio del Adquirente", type: "text", required: true, placeholder: "Jr. San Martin 123, Pucallpa", group: "contraparte" },
-      { key: "LISTA_PRODUCTOS", label: "Productos a Suministrar", type: "textarea", required: true, placeholder: "Arroz, azucar, aceite, fideos...", group: "contrato" },
-      { key: "FRECUENCIA", label: "Frecuencia de Entrega", type: "select", required: true, options: ["Semanal", "Quincenal", "Mensual", "Bimensual"], group: "contrato" },
-      { key: "PEDIDO_MINIMO", label: "Pedido Mínimo (S/)", type: "number", required: true, placeholder: "500.00", group: "contrato" },
-      { key: "PLAZO_PAGO", label: "Plazo de Pago (dias)", type: "select", required: true, options: ["Contado", "7 dias", "15 dias", "30 dias", "60 dias"], group: "contrato" },
-      { key: "VIGENCIA_MESES", label: "Vigencia (meses)", type: "number", required: true, placeholder: "12", group: "contrato" },
-      { key: "EXCLUSIVIDAD", label: "Clausula de Exclusividad", type: "select", required: false, options: ["No aplica", "Exclusividad por zona", "Exclusividad por marca", "Exclusividad total"], group: "contrato" },
-      { key: "CIUDAD", label: "Ciudad", type: "text", required: true, placeholder: "Pucallpa", group: "contrato" },
-      { key: "FECHA", label: "Fecha del Contrato", type: "date", required: true, placeholder: "", group: "contrato" },
-    ],
-    clausulas: [
-      "Conste por el presente documento, el contrato de suministro que celebran de conformidad con los articulos 1604 al 1620 del Codigo Civil Peruano, de una parte, {{NOMBRE_SUMINISTRANTE}}, con RUC N.o {{RUC_SUMINISTRANTE}}, con domicilio en {{DOMICILIO_SUMINISTRANTE}}, a quien en adelante se denominara EL SUMINISTRANTE; y de otra parte, {{NOMBRE_SUMINISTRADO}}, con RUC N.o {{RUC_SUMINISTRADO}}, con domicilio en {{DOMICILIO_SUMINISTRADO}}, a quien en adelante se denominara EL SUMINISTRADO.",
-      "CLAUSULA PRIMERA.- OBJETO: EL SUMINISTRANTE se obliga a proveer de forma periodica y continuada los siguientes productos: {{LISTA_PRODUCTOS}}, conforme a las condiciones de calidad, cantidad y especificaciones acordadas (Art. 1604 del Codigo Civil).",
-      "CLAUSULA SEGUNDA.- FRECUENCIA Y CANTIDAD: Las entregas se realizaran con frecuencia {{FRECUENCIA}}, con un pedido mínimo de S/ {{PEDIDO_MINIMO}} por cada orden. Los pedidos se cursaran con al menos 3 dias habiles de anticipacion.",
-      "CLAUSULA TERCERA.- PRECIO: Los precios se fijan conforme a la lista de precios vigente al momento de cada pedido. Los precios podran revisarse trimestralmente con previo aviso de 15 dias. Los incrementos no podran superar el indice de precios al consumidor (IPC) publicado por el INEI.",
-      "CLAUSULA CUARTA.- FORMA DE PAGO: El pago se realizara a {{PLAZO_PAGO}} de recibida la factura y la mercaderia conforme, mediante transferencia bancaria o deposito en cuenta.",
-      "CLAUSULA QUINTA.- CALIDAD Y RECLAMOS: EL SUMINISTRANTE garantiza que los productos cumplen con las normas sanitarias (DIGESA), las Normas Tecnicas Peruanas aplicables y los registros sanitarios vigentes. EL SUMINISTRADO podra rechazar mercaderia defectuosa, vencida o que no cumpla especificaciones dentro de las 24 horas de recibida, conforme al articulo 1612 del Codigo Civil.",
-      "CLAUSULA SEXTA.- PENALIDAD POR INCUMPLIMIENTO: El incumplimiento en la entrega generara una penalidad del 2% del valor del pedido por cada dia de retraso (Art. 1614 CC). Si el incumplimiento supera los 15 dias, el SUMINISTRADO podra resolver el contrato.",
-      "CLAUSULA SEPTIMA.- EXCLUSIVIDAD: {{EXCLUSIVIDAD}}. De pactarse exclusividad, el SUMINISTRANTE no podra abastecer a comercios competidores en un radio de 500 metros.",
-      "CLAUSULA OCTAVA.- VIGENCIA: El contrato tendra una vigencia de {{VIGENCIA_MESES}} meses, renovable automaticamente por periodos iguales, salvo comunicacion escrita con 30 dias de anticipacion (Art. 1611 CC).",
-      "CLAUSULA NOVENA.- JURISDICCION: Las partes se someten a los jueces comerciales de {{CIUDAD}}.",
-      "En senal de conformidad, ambas partes suscriben el presente contrato en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
-    ],
-    summaryTemplate: "Contrato de suministro periodico entre {{NOMBRE_SUMINISTRANTE}} (proveedor) y {{NOMBRE_SUMINISTRADO}} (comprador). Productos: {{LISTA_PRODUCTOS}}. Entregas: {{FRECUENCIA}}. Pedido mínimo: S/ {{PEDIDO_MINIMO}}. Pago: {{PLAZO_PAGO}}. Vigencia: {{VIGENCIA_MESES}} meses.",
-  },
-
-  // 6. ARRENDAMIENTO DE LOCAL COMERCIAL
-  {
-    id: "arrendamiento-local",
-    name: "Arrendamiento de Local Comercial",
-    category: "Inmobiliario",
-    description: "Contrato de alquiler de local comercial con clausula de desalojo express (Ley 30201).",
-    legalBasis: "Art. 1666-1712 del Codigo Civil, Ley 30201 (desalojo notarial express)",
-    icon: "Home",
-    tipo: "ALQUILER",
-    fields: [
-      { key: "NOMBRE_ARRENDADOR", label: "Nombre del Propietario", type: "text", required: true, placeholder: "Nombre del propietario", group: "emisor" },
-      { key: "DNI_ARRENDADOR", label: "DNI del Propietario", type: "text", required: true, placeholder: "XXXXXXXX", group: "emisor" },
-      { key: "DOMICILIO_ARRENDADOR", label: "Domicilio del Propietario", type: "text", required: true, placeholder: "Direccion completa", group: "emisor" },
-      { key: "NOMBRE_ARRENDATARIO", label: "Nombre/Razon Social del Arrendatario", type: "text", required: true, placeholder: "Buleje S.A.C.", group: "contraparte" },
-      { key: "RUC_ARRENDATARIO", label: "DNI/RUC del Arrendatario", type: "text", required: true, placeholder: "DNI o RUC", group: "contraparte" },
-      { key: "DOMICILIO_ARRENDATARIO", label: "Domicilio del Arrendatario", type: "text", required: true, placeholder: "Direccion completa", group: "contraparte" },
-      { key: "DIRECCION_INMUEBLE", label: "Direccion del Inmueble", type: "text", required: true, placeholder: "Direccion exacta del local", group: "contrato" },
-      { key: "AREA_M2", label: "Area del Local (m2)", type: "number", required: true, placeholder: "50", group: "contrato" },
-      { key: "RENTA_MENSUAL", label: "Renta Mensual (S/)", type: "number", required: true, placeholder: "1500.00", group: "contrato" },
-      { key: "GARANTIA_MESES", label: "Garantia (meses de renta)", type: "select", required: true, options: ["1 mes", "2 meses", "3 meses"], group: "contrato" },
-      { key: "DURACION_MESES", label: "Duracion del Contrato (meses)", type: "number", required: true, placeholder: "12", group: "contrato" },
-      { key: "FECHA_INICIO", label: "Fecha de Inicio", type: "date", required: true, placeholder: "", group: "contrato" },
-      { key: "USO_PERMITIDO", label: "Uso Permitido", type: "text", required: true, placeholder: "Local comercial — bodega/abarrotes", group: "contrato" },
-      { key: "CIUDAD", label: "Ciudad", type: "text", required: true, placeholder: "Pucallpa", group: "contrato" },
-      { key: "FECHA", label: "Fecha del Contrato", type: "date", required: true, placeholder: "", group: "contrato" },
-    ],
-    clausulas: [
-      "Conste por el presente documento, el contrato de arrendamiento de bien inmueble para uso comercial que celebran de conformidad con los articulos 1666 al 1712 del Codigo Civil Peruano y la Ley 30201 (Ley del Desalojo Notarial), de una parte, {{NOMBRE_ARRENDADOR}}, identificado(a) con DNI N.o {{DNI_ARRENDADOR}}, con domicilio en {{DOMICILIO_ARRENDADOR}}, propietario(a) del inmueble, a quien en adelante se denominara EL ARRENDADOR; y de otra parte, {{NOMBRE_ARRENDATARIO}}, con DNI/RUC N.o {{RUC_ARRENDATARIO}}, con domicilio en {{DOMICILIO_ARRENDATARIO}}, a quien en adelante se denominara EL ARRENDATARIO.",
-      "CLAUSULA PRIMERA.- OBJETO: EL ARRENDADOR cede en uso temporal el inmueble ubicado en {{DIRECCION_INMUEBLE}}, con un area de {{AREA_M2}} m2, para uso exclusivo como: {{USO_PERMITIDO}}. EL ARRENDATARIO no podra destinar el inmueble a un fin distinto al pactado (Art. 1681 inc. 1 CC).",
-      "CLAUSULA SEGUNDA.- RENTA (MERCED CONDUCTIVA): La renta mensual pactada es de S/ {{RENTA_MENSUAL}}, pagadera dentro de los primeros cinco (5) dias de cada mes, mediante deposito bancario o transferencia. El incumplimiento del pago por dos (2) meses consecutivos constituye causal de resolucion del contrato (Art. 1697 CC).",
-      "CLAUSULA TERCERA.- GARANTIA: EL ARRENDATARIO entrega en calidad de garantia la suma equivalente a {{GARANTIA_MESES}} de renta, la cual sera devuelta al termino del contrato previa verificacion del buen estado del inmueble, descontando reparaciones pendientes y servicios impagos.",
-      "CLAUSULA CUARTA.- PLAZO: El plazo del arrendamiento es de {{DURACION_MESES}} meses, iniciandose el {{FECHA_INICIO}}. La renovacion se pactara por acuerdo escrito de ambas partes con 30 dias de anticipacion al vencimiento.",
-      "CLAUSULA QUINTA.- MANTENIMIENTO: EL ARRENDATARIO se obliga a mantener el inmueble en buen estado de conservacion y a realizar las reparaciones locativas (menores). Las reparaciones mayores o estructurales corresponden al ARRENDADOR (Art. 1680-1681 CC). Queda prohibido realizar modificaciones estructurales sin autorizacion escrita.",
-      "CLAUSULA SEXTA.- SERVICIOS: Los pagos de energia electrica, agua potable, internet y teléfono corren por cuenta de EL ARRENDATARIO. El impuesto predial y los arbitrios municipales son de cargo de EL ARRENDADOR.",
-      "CLAUSULA SEPTIMA.- SUBARRENDAMIENTO: EL ARRENDATARIO no podra subarrendar total ni parcialmente el inmueble, ni ceder su posicion contractual, sin autorizacion expresa y escrita de EL ARRENDADOR (Art. 1692 CC).",
-      "CLAUSULA OCTAVA.- DESALOJO EXPRESS (LEY 30201): Las partes acuerdan someterse al procedimiento de desalojo notarial establecido en la Ley 30201, por lo que el presente contrato se inscribira en el Registro de Predios de SUNARP. Ante el vencimiento del plazo o la falta de pago de dos meses de renta, EL ARRENDADOR podra iniciar el desalojo notarial sin necesidad de proceso judicial.",
-      "CLAUSULA NOVENA.- DEVOLUCION: Al termino del contrato, EL ARRENDATARIO devolvera el inmueble en el mismo estado en que lo recibio, salvo el deterioro por uso normal.",
-      "CLAUSULA DECIMA.- JURISDICCION: Las partes se someten a los jueces civiles de {{CIUDAD}}.",
-      "En senal de conformidad, las partes suscriben el presente contrato en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
-    ],
-    summaryTemplate: "Contrato de alquiler de local en {{DIRECCION_INMUEBLE}} ({{AREA_M2}} m2). El propietario {{NOMBRE_ARRENDADOR}} alquila a {{NOMBRE_ARRENDATARIO}} por S/ {{RENTA_MENSUAL}} al mes. Duracion: {{DURACION_MESES}} meses desde el {{FECHA_INICIO}}. Garantia: {{GARANTIA_MESES}} de renta. Incluye clausula de desalojo express (Ley 30201).",
-  },
-
-  // 7. CONTRATO DE DISTRIBUCION
-  {
-    id: "distribucion",
-    name: "Contrato de Distribucion",
-    category: "Comercial",
-    description: "Acuerdo para distribuir productos en un territorio o zona exclusiva.",
-    legalBasis: "Basado en practicas comerciales peruanas y principios del Codigo Civil",
-    icon: "Truck",
-    tipo: "DISTRIBUCION",
-    fields: [
-      { key: "NOMBRE_PRINCIPAL", label: "Nombre del Principal (Proveedor)", type: "text", required: true, placeholder: "Buleje S.A.C.", group: "emisor" },
-      { key: "RUC_PRINCIPAL", label: "RUC del Principal", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "emisor" },
-      { key: "DOMICILIO_PRINCIPAL", label: "Domicilio del Principal", type: "text", required: true, placeholder: "Direccion completa", group: "emisor" },
-      { key: "NOMBRE_DISTRIBUIDOR", label: "Nombre del Distribuidor", type: "text", required: true, placeholder: "Nombre o razon social", group: "contraparte" },
-      { key: "RUC_DISTRIBUIDOR", label: "DNI/RUC del Distribuidor", type: "text", required: true, placeholder: "DNI o RUC", group: "contraparte" },
-      { key: "DOMICILIO_DISTRIBUIDOR", label: "Domicilio del Distribuidor", type: "text", required: true, placeholder: "Direccion completa", group: "contraparte" },
-      { key: "PRODUCTOS", label: "Productos a Distribuir", type: "textarea", required: true, placeholder: "Lista de productos...", group: "contrato" },
-      { key: "ZONA", label: "Zona/Territorio Asignado", type: "text", required: true, placeholder: "Distrito de Calleria, Coronel Portillo", group: "contrato" },
-      { key: "COMISION", label: "Comision (%)", type: "number", required: true, placeholder: "15", group: "contrato" },
-      { key: "META_MENSUAL", label: "Meta Minima Mensual (S/)", type: "number", required: true, placeholder: "5000.00", group: "contrato" },
-      { key: "VIGENCIA_MESES", label: "Vigencia (meses)", type: "number", required: true, placeholder: "12", group: "contrato" },
-      { key: "CIUDAD", label: "Ciudad", type: "text", required: true, placeholder: "Pucallpa", group: "contrato" },
-      { key: "FECHA", label: "Fecha del Contrato", type: "date", required: true, placeholder: "", group: "contrato" },
-    ],
-    clausulas: [
-      "Conste por el presente documento, el contrato de distribucion comercial que celebran, de una parte, {{NOMBRE_PRINCIPAL}}, con RUC N.o {{RUC_PRINCIPAL}}, con domicilio en {{DOMICILIO_PRINCIPAL}}, a quien en adelante se denominara EL PRINCIPAL; y de otra parte, {{NOMBRE_DISTRIBUIDOR}}, con DNI/RUC N.o {{RUC_DISTRIBUIDOR}}, con domicilio en {{DOMICILIO_DISTRIBUIDOR}}, a quien en adelante se denominara EL DISTRIBUIDOR.",
-      "CLAUSULA PRIMERA.- OBJETO: EL PRINCIPAL otorga a EL DISTRIBUIDOR la distribucion de los siguientes productos: {{PRODUCTOS}}, en la zona geografica de: {{ZONA}}.",
-      "CLAUSULA SEGUNDA.- EXCLUSIVIDAD: EL DISTRIBUIDOR sera el único autorizado para comercializar los productos del PRINCIPAL en la zona asignada. A su vez, EL DISTRIBUIDOR se compromete a no comercializar productos de la competencia directa en la misma zona.",
-      "CLAUSULA TERCERA.- PRECIOS Y COMISIONES: EL DISTRIBUIDOR percibira una comision del {{COMISION}}% sobre el precio de venta al público. Los precios de venta seran fijados por EL PRINCIPAL. Las liquidaciones se realizaran quincenalmente.",
-      "CLAUSULA CUARTA.- METAS MINIMAS: EL DISTRIBUIDOR se compromete a alcanzar una meta minima de ventas de S/ {{META_MENSUAL}} mensuales. El incumplimiento reiterado (3 meses consecutivos) facultara al PRINCIPAL a resolver el contrato y revocar la exclusividad.",
-      "CLAUSULA QUINTA.- USO DE MARCA: EL DISTRIBUIDOR podra utilizar las marcas y signos distintivos del PRINCIPAL exclusivamente para la comercializacion de los productos objeto del contrato, conforme al D.Leg. 1075.",
-      "CLAUSULA SEXTA.- VIGENCIA: El contrato tendra una vigencia de {{VIGENCIA_MESES}} meses, renovable por acuerdo de las partes.",
-      "CLAUSULA SEPTIMA.- RESOLUCION: El contrato podra resolverse por: incumplimiento de metas por 3 meses consecutivos, actos que danien la marca, incumplimiento de obligaciones contractuales, o mutuo acuerdo. La resolucion surtira efecto a los 30 dias de la comunicacion notarial.",
-      "CLAUSULA OCTAVA.- JURISDICCION: Las partes se someten a los jueces comerciales de {{CIUDAD}}.",
-      "En senal de conformidad, las partes suscriben el presente contrato en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
-    ],
-    summaryTemplate: "Contrato de distribucion entre {{NOMBRE_PRINCIPAL}} y {{NOMBRE_DISTRIBUIDOR}} para comercializar: {{PRODUCTOS}} en la zona de {{ZONA}}. Comision: {{COMISION}}%. Meta mensual: S/ {{META_MENSUAL}}. Vigencia: {{VIGENCIA_MESES}} meses.",
-  },
-
-  // 8. CONSIGNACION
-  {
-    id: "consignacion",
-    name: "Contrato de Consignacion",
-    category: "Comercial",
-    description: "Entrega de mercaderia para venta sin transferir la propiedad hasta la venta efectiva.",
-    legalBasis: "Art. 1804-1814 del Codigo Civil Peruano (estimatorio)",
-    icon: "Package",
-    tipo: "CONSIGNACION",
-    fields: [
-      { key: "NOMBRE_CONSIGNANTE", label: "Nombre del Consignante (Proveedor)", type: "text", required: true, placeholder: "Proveedor S.A.C.", group: "emisor" },
-      { key: "RUC_CONSIGNANTE", label: "RUC del Consignante", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "emisor" },
-      { key: "DOMICILIO_CONSIGNANTE", label: "Domicilio del Consignante", type: "text", required: true, placeholder: "Direccion completa", group: "emisor" },
-      { key: "NOMBRE_CONSIGNATARIO", label: "Nombre del Consignatario (Bodega)", type: "text", required: true, placeholder: "Buleje S.A.C.", group: "contraparte" },
-      { key: "RUC_CONSIGNATARIO", label: "RUC del Consignatario", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "contraparte" },
-      { key: "DOMICILIO_CONSIGNATARIO", label: "Domicilio del Consignatario", type: "text", required: true, placeholder: "Direccion completa", group: "contraparte" },
-      { key: "MERCADERIA", label: "Descripcion de la Mercaderia", type: "textarea", required: true, placeholder: "Productos, cantidades, precios unitarios...", group: "contrato" },
-      { key: "VALOR_TOTAL", label: "Valor Total de la Mercaderia (S/)", type: "number", required: true, placeholder: "0.00", group: "contrato" },
-      { key: "COMISION", label: "Comision del Consignatario (%)", type: "number", required: true, placeholder: "20", group: "contrato" },
-      { key: "PLAZO_LIQUIDACION", label: "Plazo de Liquidacion (dias)", type: "number", required: true, placeholder: "30", group: "contrato" },
-      { key: "CIUDAD", label: "Ciudad", type: "text", required: true, placeholder: "Pucallpa", group: "contrato" },
-      { key: "FECHA", label: "Fecha del Contrato", type: "date", required: true, placeholder: "", group: "contrato" },
-    ],
-    clausulas: [
-      "Conste por el presente documento, el contrato estimatorio (consignacion) que celebran de conformidad con los articulos 1804 al 1814 del Codigo Civil Peruano, de una parte, {{NOMBRE_CONSIGNANTE}}, con RUC N.o {{RUC_CONSIGNANTE}}, con domicilio en {{DOMICILIO_CONSIGNANTE}}, a quien en adelante se denominara EL CONSIGNANTE; y de otra parte, {{NOMBRE_CONSIGNATARIO}}, con RUC N.o {{RUC_CONSIGNATARIO}}, con domicilio en {{DOMICILIO_CONSIGNATARIO}}, a quien en adelante se denominara EL CONSIGNATARIO.",
-      "CLAUSULA PRIMERA.- OBJETO: EL CONSIGNANTE entrega al CONSIGNATARIO la siguiente mercaderia para su venta al público: {{MERCADERIA}}. La propiedad de los bienes permanece en el CONSIGNANTE hasta que se realice la venta efectiva al consumidor final (Art. 1804 CC).",
-      "CLAUSULA SEGUNDA.- VALOR Y PRECIO: El valor total de la mercaderia consignada es de S/ {{VALOR_TOTAL}}. EL CONSIGNATARIO vendera al precio establecido por el CONSIGNANTE, reteniendo una comision del {{COMISION}}% sobre cada venta realizada.",
-      "CLAUSULA TERCERA.- LIQUIDACION: EL CONSIGNATARIO liquidara las ventas realizadas cada {{PLAZO_LIQUIDACION}} dias calendario, entregando al CONSIGNANTE el importe correspondiente menos su comision. La liquidacion se acompanara de un detalle de ventas.",
-      "CLAUSULA CUARTA.- DEVOLUCION: La mercaderia no vendida debera ser devuelta al CONSIGNANTE en las mismas condiciones en que fue recibida, a solicitud de cualquiera de las partes. El CONSIGNATARIO no podra disponer de la mercaderia para fines distintos a la venta (Art. 1808 CC).",
-      "CLAUSULA QUINTA.- RESPONSABILIDAD Y SEGURO: EL CONSIGNATARIO sera responsable de la custodia, conservacion y cuidado de la mercaderia. En caso de perdida, robo o deterioro por causas imputables al CONSIGNATARIO, este debera pagar el valor total de la mercaderia afectada.",
-      "CLAUSULA SEXTA.- RESOLUCION: El contrato podra resolverse por: vencimiento del plazo, mutuo acuerdo, incumplimiento en la liquidacion, o deterioro imputable de la mercaderia.",
-      "CLAUSULA SEPTIMA.- JURISDICCION: Las partes se someten a los jueces civiles de {{CIUDAD}}.",
-      "En senal de conformidad, las partes suscriben el presente contrato en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
-    ],
-    summaryTemplate: "Contrato de consignacion: {{NOMBRE_CONSIGNANTE}} entrega mercaderia a {{NOMBRE_CONSIGNATARIO}} para venderla. Mercaderia: {{MERCADERIA}} (valor: S/ {{VALOR_TOTAL}}). El consignatario cobra {{COMISION}}% de comision. Liquidacion cada {{PLAZO_LIQUIDACION}} dias. Lo que no se vende se devuelve.",
-  },
-
-  // 9. MUTUO / PRESTAMO
-  {
-    id: "mutuo-prestamo",
-    name: "Contrato de Mutuo (Prestamo)",
-    category: "Financiero",
-    description: "Contrato de prestamo de dinero con tasa de interes y cronograma de pagos.",
-    legalBasis: "Art. 1648-1665 del Codigo Civil Peruano",
-    icon: "DollarSign",
-    tipo: "MUTUO",
-    fields: [
-      { key: "NOMBRE_MUTUANTE", label: "Nombre del Prestamista", type: "text", required: true, placeholder: "Nombre completo o razon social", group: "emisor" },
-      { key: "DNI_MUTUANTE", label: "DNI/RUC del Prestamista", type: "text", required: true, placeholder: "DNI o RUC", group: "emisor" },
-      { key: "DOMICILIO_MUTUANTE", label: "Domicilio del Prestamista", type: "text", required: true, placeholder: "Direccion completa", group: "emisor" },
-      { key: "NOMBRE_MUTUATARIO", label: "Nombre del Prestatario", type: "text", required: true, placeholder: "Nombre completo", group: "contraparte" },
-      { key: "DNI_MUTUATARIO", label: "DNI/RUC del Prestatario", type: "text", required: true, placeholder: "DNI o RUC", group: "contraparte" },
-      { key: "DOMICILIO_MUTUATARIO", label: "Domicilio del Prestatario", type: "text", required: true, placeholder: "Direccion completa", group: "contraparte" },
-      { key: "MONTO_PRESTAMO", label: "Monto del Prestamo (S/)", type: "number", required: true, placeholder: "5000.00", group: "contrato" },
-      { key: "MONTO_LETRAS", label: "Monto en Letras", type: "text", required: true, placeholder: "Cinco mil soles", group: "contrato" },
-      { key: "TASA_INTERES", label: "Tasa de Interes Mensual (%)", type: "number", required: true, placeholder: "1.5", group: "contrato" },
-      { key: "PLAZO_MESES", label: "Plazo de Devolucion (meses)", type: "number", required: true, placeholder: "12", group: "contrato" },
-      { key: "GARANTIA", label: "Garantia Ofrecida", type: "textarea", required: false, placeholder: "Descripcion de la garantia (mueble, inmueble, fiador)...", group: "contrato" },
-      { key: "CIUDAD", label: "Ciudad", type: "text", required: true, placeholder: "Pucallpa", group: "contrato" },
-      { key: "FECHA", label: "Fecha del Contrato", type: "date", required: true, placeholder: "", group: "contrato" },
-    ],
-    clausulas: [
-      "Conste por el presente documento, el contrato de mutuo (prestamo de dinero) que celebran de conformidad con los articulos 1648 al 1665 del Codigo Civil Peruano, de una parte, {{NOMBRE_MUTUANTE}}, identificado(a) con DNI/RUC N.o {{DNI_MUTUANTE}}, con domicilio en {{DOMICILIO_MUTUANTE}}, a quien en adelante se denominara EL MUTUANTE (Prestamista); y de otra parte, {{NOMBRE_MUTUATARIO}}, identificado(a) con DNI/RUC N.o {{DNI_MUTUATARIO}}, con domicilio en {{DOMICILIO_MUTUATARIO}}, a quien en adelante se denominara EL MUTUATARIO (Prestatario).",
-      "CLAUSULA PRIMERA.- OBJETO: Por el presente contrato, EL MUTUANTE entrega en calidad de prestamo la suma de S/ {{MONTO_PRESTAMO}} (Son: {{MONTO_LETRAS}} soles) a favor de EL MUTUATARIO, quien declara recibir dicho monto a su entera satisfaccion (Art. 1648 CC).",
-      "CLAUSULA SEGUNDA.- TASA DE INTERES: El prestamo devengara un interes compensatorio del {{TASA_INTERES}}% mensual, conforme al articulo 1242 del Codigo Civil. La tasa pactada no excede la tasa maxima de interes convencional fijada por el Banco Central de Reserva del Peru (BCRP). En caso de mora, se aplicara adicionalmente un interes moratorio conforme a ley.",
-      "CLAUSULA TERCERA.- PLAZO DE DEVOLUCION: EL MUTUATARIO se obliga a devolver el monto prestado mas los intereses en un plazo de {{PLAZO_MESES}} meses, mediante cuotas mensuales iguales que incluyen capital e intereses. El cronograma de pagos se adjunta como Anexo 1.",
-      "CLAUSULA CUARTA.- GARANTIA: Para asegurar el cumplimiento de la obligacion, EL MUTUATARIO ofrece la siguiente garantia: {{GARANTIA}}. En caso de no especificar garantia, el prestamo se entiende con garantia personal (quirografaria).",
-      "CLAUSULA QUINTA.- VENCIMIENTO ANTICIPADO: EL MUTUANTE podra dar por vencido el plazo y exigir el pago total de la deuda si EL MUTUATARIO incurre en mora de dos (2) cuotas consecutivas, conforme al articulo 1323 del Codigo Civil.",
-      "CLAUSULA SEXTA.- PAGO ANTICIPADO: EL MUTUATARIO tiene derecho a realizar pagos anticipados parciales o totales, con la correspondiente reduccion de intereses (Art. 1658 CC).",
-      "CLAUSULA SEPTIMA.- JURISDICCION: Las partes se someten a los jueces civiles de {{CIUDAD}}.",
-      "En senal de conformidad, las partes suscriben el presente contrato en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
-    ],
-    summaryTemplate: "Prestamo de S/ {{MONTO_PRESTAMO}} de {{NOMBRE_MUTUANTE}} a {{NOMBRE_MUTUATARIO}}. Interes: {{TASA_INTERES}}% mensual. Plazo: {{PLAZO_MESES}} meses en cuotas. Garantia: {{GARANTIA}}.",
-  },
-
-  // 10. TRANSPORTE DE MERCANCIA
-  {
-    id: "transporte-mercancia",
-    name: "Contrato de Transporte de Mercancias",
-    category: "Logística",
-    description: "Contrato para el transporte terrestre de mercaderia con seguro y responsabilidad.",
-    legalBasis: "Ley 27181 (Ley Gral. de Transporte), D.S. 017-2009-MTC",
-    icon: "Truck",
-    tipo: "TRANSPORTE",
-    fields: [
-      { key: "NOMBRE_REMITENTE", label: "Nombre del Remitente", type: "text", required: true, placeholder: "Buleje S.A.C.", group: "emisor" },
-      { key: "RUC_REMITENTE", label: "RUC del Remitente", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "emisor" },
-      { key: "DOMICILIO_REMITENTE", label: "Domicilio del Remitente", type: "text", required: true, placeholder: "Direccion completa", group: "emisor" },
-      { key: "NOMBRE_TRANSPORTISTA", label: "Nombre del Transportista", type: "text", required: true, placeholder: "Transportes XYZ S.A.C.", group: "contraparte" },
-      { key: "RUC_TRANSPORTISTA", label: "RUC del Transportista", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "contraparte" },
-      { key: "DOMICILIO_TRANSPORTISTA", label: "Domicilio del Transportista", type: "text", required: true, placeholder: "Direccion completa", group: "contraparte" },
-      { key: "MERCADERIA", label: "Descripcion de la Mercaderia", type: "textarea", required: true, placeholder: "Detalle de productos, peso, volumen...", group: "contrato" },
-      { key: "ORIGEN", label: "Punto de Origen", type: "text", required: true, placeholder: "Pucallpa, Ucayali", group: "contrato" },
-      { key: "DESTINO", label: "Punto de Destino", type: "text", required: true, placeholder: "Lima, Lima", group: "contrato" },
-      { key: "FLETE", label: "Flete (S/)", type: "number", required: true, placeholder: "2000.00", group: "contrato" },
-      { key: "VALOR_MERCADERIA", label: "Valor Declarado de la Mercaderia (S/)", type: "number", required: true, placeholder: "15000.00", group: "contrato" },
-      { key: "FECHA_DESPACHO", label: "Fecha de Despacho", type: "date", required: true, placeholder: "", group: "contrato" },
-      { key: "CIUDAD", label: "Ciudad", type: "text", required: true, placeholder: "Pucallpa", group: "contrato" },
-      { key: "FECHA", label: "Fecha del Contrato", type: "date", required: true, placeholder: "", group: "contrato" },
-    ],
-    clausulas: [
-      "Conste por el presente documento, el contrato de transporte terrestre de mercancias que celebran de conformidad con la Ley 27181 — Ley General de Transporte y Transito Terrestre, y su Reglamento aprobado por D.S. 017-2009-MTC, de una parte, {{NOMBRE_REMITENTE}}, con RUC N.o {{RUC_REMITENTE}}, con domicilio en {{DOMICILIO_REMITENTE}}, a quien en adelante se denominara EL REMITENTE; y de otra parte, {{NOMBRE_TRANSPORTISTA}}, con RUC N.o {{RUC_TRANSPORTISTA}}, con domicilio en {{DOMICILIO_TRANSPORTISTA}}, a quien en adelante se denominara EL TRANSPORTISTA.",
-      "CLAUSULA PRIMERA.- OBJETO: EL TRANSPORTISTA se obliga a trasladar la siguiente mercaderia: {{MERCADERIA}}, desde {{ORIGEN}} hasta {{DESTINO}}, en condiciones de seguridad y oportunidad.",
-      "CLAUSULA SEGUNDA.- FLETE: El flete total pactado es de S/ {{FLETE}}, pagadero al momento de la entrega de la mercaderia en destino. El flete incluye el servicio de carga y descarga en origen.",
-      "CLAUSULA TERCERA.- DOCUMENTACION: EL TRANSPORTISTA se obliga a portar durante el traslado: (a) Guia de remision del remitente; (b) Guia de remision del transportista; (c) Manifiesto de carga; (d) Licencia de conducir del chofer; (e) SOAT vigente; (f) Tarjeta de propiedad o contrato de alquiler del vehiculo.",
-      "CLAUSULA CUARTA.- RESPONSABILIDAD: EL TRANSPORTISTA asume responsabilidad por la perdida, averia o deterioro de la mercaderia desde el momento de la recepcion hasta la entrega en destino. El valor declarado de la mercaderia es de S/ {{VALOR_MERCADERIA}}. EL TRANSPORTISTA debera contar con seguro de responsabilidad civil y de carga.",
-      "CLAUSULA QUINTA.- PLAZO DE ENTREGA: La mercaderia debera ser despachada el {{FECHA_DESPACHO}} y entregada en destino dentro de los plazos razonables segun la distancia. El retraso injustificado generara una penalidad del 1% del flete por cada dia de retraso.",
-      "CLAUSULA SEXTA.- SEGURO: EL TRANSPORTISTA declara contar con poliza de seguro de transporte de carga vigente. En caso de siniestro, la indemnizacion se efectuara conforme al valor declarado de la mercaderia.",
-      "CLAUSULA SEPTIMA.- JURISDICCION: Las partes se someten a los jueces civiles de {{CIUDAD}}.",
-      "En senal de conformidad, las partes suscriben el presente contrato en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
-    ],
-    summaryTemplate: "Transporte de mercaderia de {{ORIGEN}} a {{DESTINO}}. Transportista: {{NOMBRE_TRANSPORTISTA}}. Mercaderia: {{MERCADERIA}} (valor: S/ {{VALOR_MERCADERIA}}). Flete: S/ {{FLETE}}. Despacho: {{FECHA_DESPACHO}}.",
-  },
-
-  // 11. ACUERDO DE CONFIDENCIALIDAD (NDA)
-  {
-    id: "nda-confidencialidad",
-    name: "Acuerdo de Confidencialidad (NDA)",
-    category: "Legal",
-    description: "Acuerdo para proteger informacion confidencial del negocio, proveedores y clientes.",
-    legalBasis: "D.Leg. 1075 — Ley de Propiedad Industrial, Art. 1321 CC (responsabilidad contractual)",
-    icon: "Lock",
-    tipo: "NDA",
-    fields: [
-      { key: "NOMBRE_REVELADOR", label: "Parte Reveladora", type: "text", required: true, placeholder: "Buleje S.A.C.", group: "emisor" },
-      { key: "RUC_REVELADOR", label: "RUC de la Parte Reveladora", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "emisor" },
-      { key: "DOMICILIO_REVELADOR", label: "Domicilio de la Parte Reveladora", type: "text", required: true, placeholder: "Direccion completa", group: "emisor" },
-      { key: "NOMBRE_RECEPTOR", label: "Parte Receptora", type: "text", required: true, placeholder: "Nombre completo", group: "contraparte" },
-      { key: "DNI_RECEPTOR", label: "DNI/RUC del Receptor", type: "text", required: true, placeholder: "DNI o RUC", group: "contraparte" },
-      { key: "DOMICILIO_RECEPTOR", label: "Domicilio del Receptor", type: "text", required: true, placeholder: "Direccion completa", group: "contraparte" },
-      { key: "PROPOSITO", label: "Proposito de la Revelacion", type: "textarea", required: true, placeholder: "Para que se comparte la informacion...", group: "contrato" },
-      { key: "DURACION_ANOS", label: "Duracion de la Confidencialidad (anos)", type: "number", required: true, placeholder: "2", group: "contrato" },
-      { key: "PENALIDAD", label: "Penalidad por Incumplimiento (S/)", type: "number", required: true, placeholder: "10000.00", group: "contrato" },
-      { key: "CIUDAD", label: "Ciudad", type: "text", required: true, placeholder: "Pucallpa", group: "contrato" },
-      { key: "FECHA", label: "Fecha del Acuerdo", type: "date", required: true, placeholder: "", group: "contrato" },
-    ],
-    clausulas: [
-      "Conste por el presente documento, el acuerdo de confidencialidad que celebran en el marco del Decreto Legislativo 1075 — Ley de Propiedad Industrial y el articulo 1321 del Codigo Civil Peruano, de una parte, {{NOMBRE_REVELADOR}}, con RUC N.o {{RUC_REVELADOR}}, con domicilio en {{DOMICILIO_REVELADOR}}, a quien en adelante se denominara LA PARTE REVELADORA; y de otra parte, {{NOMBRE_RECEPTOR}}, identificado(a) con DNI/RUC N.o {{DNI_RECEPTOR}}, con domicilio en {{DOMICILIO_RECEPTOR}}, a quien en adelante se denominara LA PARTE RECEPTORA.",
-      "CLAUSULA PRIMERA.- OBJETO: El presente acuerdo tiene por objeto proteger la informacion confidencial que LA PARTE REVELADORA compartira con LA PARTE RECEPTORA para el siguiente proposito: {{PROPOSITO}}.",
-      "CLAUSULA SEGUNDA.- DEFINICION DE INFORMACION CONFIDENCIAL: Se considera informacion confidencial toda informacion comercial, financiera, técnica, de clientes, proveedores, precios, estrategias, bases de datos, procesos, know-how y cualquier otra informacion que LA PARTE REVELADORA identifique como confidencial, ya sea oral, escrita, electrónica o en cualquier otro soporte.",
-      "CLAUSULA TERCERA.- OBLIGACIONES DEL RECEPTOR: LA PARTE RECEPTORA se obliga a: (a) Mantener en estricta reserva la informacion confidencial; (b) No divulgar, publicar, reproducir ni transmitir dicha informacion a terceros; (c) Utilizar la informacion unicamente para el proposito declarado; (d) Restringir el acceso a la informacion solo al personal estrictamente necesario; (e) Devolver o destruir toda la informacion al termino del acuerdo.",
-      "CLAUSULA CUARTA.- EXCEPCIONES: No se considerara informacion confidencial aquella que: (a) Sea de dominio público; (b) Ya era conocida por el receptor antes de la revelacion; (c) Sea revelada por mandato judicial o legal; (d) Sea desarrollada independientemente por el receptor.",
-      "CLAUSULA QUINTA.- DURACION: La obligacion de confidencialidad se mantendra durante {{DURACION_ANOS}} anos contados desde la fecha de suscripcion del presente acuerdo, subsistiendo incluso despues del termino de la relacion comercial.",
-      "CLAUSULA SEXTA.- PENALIDAD: El incumplimiento de la obligacion de confidencialidad generara una penalidad convencional de S/ {{PENALIDAD}}, sin perjuicio de la indemnizacion por danos y perjuicios efectivamente causados (Art. 1321 CC).",
-      "CLAUSULA SEPTIMA.- JURISDICCION: Las partes se someten a los jueces civiles de {{CIUDAD}}.",
-      "En senal de conformidad, las partes suscriben el presente acuerdo en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
-    ],
-    summaryTemplate: "Acuerdo de confidencialidad entre {{NOMBRE_REVELADOR}} y {{NOMBRE_RECEPTOR}}. Proposito: {{PROPOSITO}}. La informacion debe mantenerse en secreto por {{DURACION_ANOS}} anos. Si alguien incumple, paga S/ {{PENALIDAD}} de penalidad.",
-  },
-
-  // 12. COMPRAVENTA DE PRODUCTOS FORESTALES
-  {
-    id: "compraventa-forestal",
-    name: "Compraventa de Productos Forestales",
-    category: "Forestal",
-    description: "Contrato especializado para compra-venta de madera con certificacion de origen legal (SERFOR/GTF).",
-    legalBasis: "Ley 29763 — Ley Forestal y de Fauna Silvestre, D.S. 018-2015-MINAGRI",
-    icon: "TreePine",
-    tipo: "FORESTAL",
-    fields: [
-      { key: "NOMBRE_VENDEDOR", label: "Nombre/Razon Social del Vendedor", type: "text", required: true, placeholder: "Aserradero o concesionario forestal", group: "emisor" },
-      { key: "RUC_VENDEDOR", label: "RUC del Vendedor", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "emisor" },
-      { key: "DOMICILIO_VENDEDOR", label: "Domicilio del Vendedor", type: "text", required: true, placeholder: "Direccion completa", group: "emisor" },
-      { key: "NUM_TITULO_HABILITANTE", label: "N.o Titulo Habilitante / Permiso", type: "text", required: true, placeholder: "RA-XXXXX-20XX-ATFFS", group: "emisor" },
-      { key: "NOMBRE_COMPRADOR", label: "Nombre/Razon Social del Comprador", type: "text", required: true, placeholder: "Buleje S.A.C.", group: "contraparte" },
-      { key: "RUC_COMPRADOR", label: "RUC del Comprador", type: "text", required: true, placeholder: "20XXXXXXXXX", group: "contraparte" },
-      { key: "DOMICILIO_COMPRADOR", label: "Domicilio del Comprador", type: "text", required: true, placeholder: "Direccion completa", group: "contraparte" },
-      { key: "ESPECIE", label: "Especie(s) Forestal(es)", type: "text", required: true, placeholder: "Tornillo (Cedrelinga cateniformis), Ishpingo...", group: "contrato" },
-      { key: "VOLUMEN", label: "Volumen (pies tablares o m3)", type: "text", required: true, placeholder: "5000 PT / 11.80 m3", group: "contrato" },
-      { key: "PRECIO_TOTAL", label: "Precio Total (S/)", type: "number", required: true, placeholder: "0.00", group: "contrato" },
-      { key: "PRECIO_UNITARIO", label: "Precio Unitario (S/ por PT o m3)", type: "text", required: true, placeholder: "S/ 2.50 por PT", group: "contrato" },
-      { key: "NUM_GTF", label: "N.o de Guia de Transporte Forestal (GTF)", type: "text", required: true, placeholder: "GTF-XXXXX-XXXX", group: "contrato" },
-      { key: "FORMA_PAGO", label: "Forma de Pago", type: "select", required: true, options: ["Contado", "50% adelanto, 50% contra entrega", "Credito a 15 dias", "Credito a 30 dias"], group: "contrato" },
-      { key: "LUGAR_ENTREGA", label: "Lugar de Entrega", type: "text", required: true, placeholder: "Planta o deposito", group: "contrato" },
-      { key: "CIUDAD", label: "Ciudad", type: "text", required: true, placeholder: "Pucallpa", group: "contrato" },
-      { key: "FECHA", label: "Fecha del Contrato", type: "date", required: true, placeholder: "", group: "contrato" },
-    ],
-    clausulas: [
-      "Conste por el presente documento, el contrato de compraventa de productos forestales que celebran de conformidad con la Ley 29763 — Ley Forestal y de Fauna Silvestre, su Reglamento aprobado por D.S. 018-2015-MINAGRI, y los articulos 1529 al 1601 del Codigo Civil Peruano, de una parte, {{NOMBRE_VENDEDOR}}, con RUC N.o {{RUC_VENDEDOR}}, con domicilio en {{DOMICILIO_VENDEDOR}}, titular del permiso/titulo habilitante N.o {{NUM_TITULO_HABILITANTE}}, a quien en adelante se denominara EL VENDEDOR; y de otra parte, {{NOMBRE_COMPRADOR}}, con RUC N.o {{RUC_COMPRADOR}}, con domicilio en {{DOMICILIO_COMPRADOR}}, a quien en adelante se denominara EL COMPRADOR.",
-      "CLAUSULA PRIMERA.- OBJETO: EL VENDEDOR transfiere en propiedad a EL COMPRADOR los siguientes productos forestales maderables de origen legal: Especie(s): {{ESPECIE}}. Volumen: {{VOLUMEN}}. Los productos provienen de un titulo habilitante vigente registrado ante SERFOR/ATFFS.",
-      "CLAUSULA SEGUNDA.- ORIGEN LEGAL: EL VENDEDOR declara bajo juramento que los productos forestales objeto del presente contrato tienen origen legal, acreditado mediante: (a) Titulo habilitante N.o {{NUM_TITULO_HABILITANTE}}; (b) Guia de Transporte Forestal (GTF) N.o {{NUM_GTF}} emitida a traves del SNIFFS (Sistema Nacional de Informacion Forestal y de Fauna Silvestre); (c) Lista de trozas y/o productos con su respectiva cubicacion. El incumplimiento de esta declaracion generara responsabilidad penal por el delito de trafico ilegal de productos forestales (Art. 310-310C del Codigo Penal).",
-      "CLAUSULA TERCERA.- PRECIO: El precio total pactado es de S/ {{PRECIO_TOTAL}} a razon de {{PRECIO_UNITARIO}}. La forma de pago sera: {{FORMA_PAGO}}.",
-      "CLAUSULA CUARTA.- ENTREGA Y TRANSPORTE: La entrega se realizara en {{LUGAR_ENTREGA}}. El transporte se realizara con la GTF correspondiente y la guia de remision que exige SUNAT. EL VENDEDOR es responsable de tramitar la GTF ante la autoridad forestal competente.",
-      "CLAUSULA QUINTA.- CALIDAD Y CUBICACION: EL COMPRADOR verificara la especie, volumen y calidad de los productos al momento de la recepcion. Cualquier diferencia en la cubicacion se resolvera mediante nueva medicion conjunta. Las mermas aceptables son del 3% del volumen total.",
-      "CLAUSULA SEXTA.- OBLIGACIONES LEGALES: Ambas partes se comprometen a cumplir con la normativa forestal vigente, incluyendo: (a) Registro en el SNIFFS; (b) Libro de operaciones actualizado; (c) Declaracion de inventario; (d) Pago de derecho de aprovechamiento cuando corresponda.",
-      "CLAUSULA SEPTIMA.- PENALIDADES: Si los productos no tienen origen legal, EL VENDEDOR asumira todas las consecuencias legales, administrativas y penales, e indemnizara al COMPRADOR por todos los perjuicios causados, incluyendo decomiso, multas y lucro cesante.",
-      "CLAUSULA OCTAVA.- JURISDICCION: Las partes se someten a los jueces civiles de {{CIUDAD}}. En caso de conflicto forestal, se acudira previamente al OSINFOR y SERFOR.",
-      "En senal de conformidad, las partes suscriben el presente contrato en la ciudad de {{CIUDAD}}, a los {{FECHA}}.",
-    ],
-    summaryTemplate: "Compraventa de madera de {{NOMBRE_VENDEDOR}} a {{NOMBRE_COMPRADOR}}. Especie: {{ESPECIE}}, volumen: {{VOLUMEN}}. Precio: S/ {{PRECIO_TOTAL}} ({{PRECIO_UNITARIO}}). GTF: {{NUM_GTF}}. Origen legal acreditado con titulo {{NUM_TITULO_HABILITANTE}}. Pago: {{FORMA_PAGO}}.",
-  },
-];
+/** Las vistas direccionables, estables: el hook las usa como dependencia. */
+const CONTRATOS_VISTAS = ["dashboard", "plantillas", "contratos", "crear", "editor"] as const;
 
 // ── Icon Map ────────────────────────────────────────────────────────────
 
@@ -570,9 +77,13 @@ function TemplateIcon({ icon, className }: { icon: string; className?: string })
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
-function formatCurrency(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
+/** Respeta la moneda del contrato: un contrato en dólares se mostraba en soles. */
+function formatMoney(n: number, moneda: "PEN" | "USD" = "PEN") {
+  const simbolo = moneda === "USD" ? "US$" : "S/";
+  return `${simbolo} ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
-function formatDatePeru(iso: string) {
+function formatDatePeru(iso: string | null | undefined) {
   if (!iso) return "---";
   try {
     const d = new Date(iso.includes("T") ? iso : iso + "T00:00:00");
@@ -580,60 +91,33 @@ function formatDatePeru(iso: string) {
   } catch { return iso; }
 }
 
-function getDiasVencimiento(fecha?: string): number | null {
-  if (!fecha) return null;
-  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
-  const venc = new Date(fecha); venc.setHours(0, 0, 0, 0);
-  return Math.ceil((venc.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
-}
-
-function getEstado(c: ContratoAPI): ContratoEstado {
-  // Respect explicit states (ANULADO, BORRADOR) from the API before date-based logic
-  if (c.estado === "ANULADO" || c.estado === "BORRADOR") return c.estado;
-  if (!c.fechaVencimiento) return "VIGENTE";
-  const dias = getDiasVencimiento(c.fechaVencimiento);
-  if (dias === null) return "VIGENTE";
-  if (dias < 0) return "VENCIDO";
-  if (dias <= 30) return "POR_VENCER";
-  return "VIGENTE";
-}
-
-function fillTemplate(text: string, data: Record<string, string>): string {
-  return text.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] || `[${key}]`);
-}
-
-const ESTADO_STYLES: Record<ContratoEstado, string> = {
-  VIGENTE: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+const ESTADO_STYLES: Record<EstadoVisible, string> = {
+  VIGENTE: "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
   POR_VENCER: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
   VENCIDO: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
-  ANULADO: "bg-[var(--rule-soft)] dark:bg-gray-800 text-[var(--text-tertiary)]",
+  PENDIENTE_FIRMA: "bg-[color-mix(in_oklch,var(--accent)_14%,transparent)] text-[var(--accent-ink)] dark:text-[var(--accent)]",
+  RENOVADO: "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]",
+  TERMINADO: "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]",
+  ANULADO: "bg-[var(--rule-soft)] dark:bg-white/5 text-[var(--text-tertiary)]",
   BORRADOR: "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]",
 };
 
-const TIPO_LABELS: Record<string, string> = {
-  VENTA: "Compraventa",
-  SERVICIO: "Servicios",
-  TRABAJO: "Trabajo",
-  PROVEEDOR: "Suministro",
-  DISTRIBUCION: "Distribucion",
-  ALQUILER: "Arrendamiento",
-  CONSIGNACION: "Consignacion",
-  MUTUO: "Mutuo/Prestamo",
-  TRANSPORTE: "Transporte",
-  NDA: "Confidencialidad",
-  FORESTAL: "Forestal",
-  LOCACION: "Locacion Serv.",
-};
-
-// Using CSS variables via getComputedStyle to honor DS tokens at runtime
-const PIE_COLORS = [
-  "var(--brand-ink)", "var(--secondary)", "var(--data-warning)", "var(--data-error)",
-  "var(--accent)", "var(--brand-ink-light, #00BDBD)", "var(--data-success)",
-  "var(--text-secondary)", "var(--rule-base)", "var(--data-warning-100)",
-  "var(--surface-sunken)", "var(--data-error-100)",
-];
-
 const PER_PAGE = 12;
+
+/** Cómo se lee cada evento del historial, en criollo. */
+const EVENTO_LABELS: Record<string, string> = {
+  CREADO: "Se creó el contrato",
+  EDITADO: "Se editó",
+  PDF_GENERADO: "Se generó el PDF",
+  ENVIADO_FIRMA: "Se envió a firmar",
+  FIRMADO: "Lo firmaron",
+  RECHAZADO: "Lo rechazaron",
+  VENCIMIENTO_AVISADO: "Se avisó del vencimiento",
+  RENOVADO: "Se renovó",
+  ANULADO: "Se anuló",
+  TERMINADO: "Se dio por terminado",
+  REVISADO_IA: "Lo revisó la IA",
+};
 
 // ── LegalTooltip Component ──────────────────────────────────────────────
 
@@ -654,7 +138,7 @@ function LegalTooltip({ term, explanation, example }: { term: string; explanatio
     <span ref={ref} className="relative inline-flex items-center">
       <button
         onClick={() => setOpen(!open)}
-        className="ml-1 w-5 h-5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs flex items-center justify-center hover:bg-[var(--accent-soft)] transition-colors"
+        className="ml-1 w-5 h-5 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-xs flex items-center justify-center hover:bg-primary/10 transition-colors"
         title="¿Qué significa esto?"
         aria-expanded={open}
         aria-haspopup="true"
@@ -672,184 +156,15 @@ function LegalTooltip({ term, explanation, example }: { term: string; explanatio
   );
 }
 
-// ── Legal Tooltips Data ──────────────────────────────────────────────────
-
-const LEGAL_TOOLTIPS: Record<string, { explanation: string; example: string }> = {
-  MODALIDAD: { explanation: "Tipo de contrato segun la razon de contratacion", example: "Necesidades del mercado: cuando hay mas clientes y necesitas mas personal temporal" },
-  CAUSA_OBJETIVA: { explanation: "Razon legal por la que contratas temporalmente", example: "Incremento de ventas por campaña navideña que requiere 2 cajeros adicionales" },
-  PERIODO_PRUEBA: { explanation: "Tiempo para evaluar si el trabajador es apto", example: "Durante 3 meses, si el trabajador no rinde, puedes terminar el contrato sin indemnizacion" },
-  CTS: { explanation: "Dinero que el empleador deposita como seguro de desempleo", example: "Si ganas S/1,025 al mes, tu CTS es aprox. S/512 cada 6 meses (mayo y noviembre)" },
-  GRATIFICACION: { explanation: "Pago extra en julio y diciembre", example: "Si ganas S/1,025, recibes S/1,025 extra en julio y S/1,025 extra en diciembre" },
-  PENALIDAD_PORCENTAJE: { explanation: "Multa por no cumplir el contrato", example: "Si el proveedor se atrasa 2 semanas y la penalidad es 2%, paga S/100 extra sobre S/5,000" },
-  PENALIDAD: { explanation: "Multa por no cumplir el contrato", example: "Si el proveedor se atrasa 2 semanas y la penalidad es 2%, paga S/100 extra sobre S/5,000" },
-  RESOLUCION: { explanation: "Terminar/cancelar el contrato legalmente", example: "Si el proveedor no entrega la mercaderia en 3 ocasiones, puedes cancelar el contrato" },
-  SANEAMIENTO: { explanation: "Garantia de que el bien esta libre de problemas", example: "Si compras un lote de arroz y resulta que esta vencido, el vendedor debe reemplazarlo" },
-  CONFIDENCIALIDAD: { explanation: "Obligacion de no revelar informacion privada", example: "El contador no puede contarle a otros cuanto ganas o quienes son tus proveedores" },
-  RUC_VENDEDOR: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_EMPLEADOR: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_COMITENTE: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_PRINCIPAL: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_REVELADOR: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_SUMINISTRANTE: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_REMITENTE: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  RUC_CONSIGNANTE: { explanation: "Número de identificacion tributaria de empresas (11 digitos)", example: "El RUC tiene 11 digitos: 20123456789. Empieza con 10 (persona) o 20 (empresa)" },
-  TASA_INTERES: { explanation: "IGV: Impuesto del 18% sobre ventas y servicios", example: "Si vendes S/100, S/15.25 es IGV que debes pagar a SUNAT" },
-  PLAZO_GARANTIA: { explanation: "Garantia de que el bien esta libre de problemas (saneamiento)", example: "Si compras un lote de arroz y resulta que esta vencido, el vendedor debe reemplazarlo" },
-  EXCLUSIVIDAD: { explanation: "Solo tu puedes vender esos productos en esa zona", example: "Si tienes exclusividad en Calleria, ningun otro distribuidor puede vender esos productos ahi" },
-  PROPOSITO: { explanation: "Obligacion de no revelar informacion privada del negocio", example: "El contador no puede contarle a otros cuanto ganas o quienes son tus proveedores" },
-};
-
-// ── Number to Words (Spanish) ──────────────────────────────────────────
-
-function numberToWords(n: number): string {
-  if (n === 0) return "cero";
-  if (n < 0) return "menos " + numberToWords(-n);
-
-  const unidades = ["", "un", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve"];
-  const especiales = ["diez", "once", "doce", "trece", "catorce", "quince"];
-  const decenas = ["", "diez", "veinte", "treinta", "cuarenta", "cincuenta", "sesenta", "setenta", "ochenta", "noventa"];
-  const centenas = ["", "ciento", "doscientos", "trescientos", "cuatrocientos", "quinientos", "seiscientos", "setecientos", "ochocientos", "novecientos"];
-
-  function convertGroup(num: number): string {
-    if (num === 0) return "";
-    if (num === 100) return "cien";
-    let result = "";
-    if (num >= 100) {
-      result += centenas[Math.floor(num / 100)] + " ";
-      num %= 100;
-    }
-    if (num >= 10 && num <= 15) {
-      result += especiales[num - 10];
-      return result.trim();
-    }
-    if (num >= 16 && num <= 19) {
-      result += "dieci" + unidades[num - 10];
-      return result.trim();
-    }
-    if (num >= 21 && num <= 29) {
-      result += "veinti" + unidades[num - 20];
-      return result.trim();
-    }
-    if (num >= 10) {
-      result += decenas[Math.floor(num / 10)];
-      num %= 10;
-      if (num > 0) result += " y ";
-    }
-    if (num > 0) {
-      result += unidades[num];
-    }
-    return result.trim();
-  }
-
-  const intPart = Math.floor(n);
-  const decPart = Math.round((n - intPart) * 100);
-
-  let words = "";
-  if (intPart === 0) {
-    words = "cero";
-  } else {
-    const millions = Math.floor(intPart / 1000000);
-    const thousands = Math.floor((intPart % 1000000) / 1000);
-    const hundreds = intPart % 1000;
-
-    if (millions > 0) {
-      words += (millions === 1 ? "un millon" : convertGroup(millions) + " millones") + " ";
-    }
-    if (thousands > 0) {
-      words += (thousands === 1 ? "mil" : convertGroup(thousands) + " mil") + " ";
-    }
-    if (hundreds > 0) {
-      words += convertGroup(hundreds);
-    }
-  }
-
-  words = words.trim();
-  // Capitalize first letter
-  words = words.charAt(0).toUpperCase() + words.slice(1);
-
-  const decStr = decPart.toString().padStart(2, "0");
-  return `${words} y ${decStr}/100 soles`;
-}
-
-// ── Field Validation ──────────────────────────────────────────────────
-
-function validateField(key: string, value: string, allData: Record<string, string>): string | null {
-  if (!value) return null;
-  // DNI: exactly 8 digits
-  if (key.includes("DNI") && !key.includes("RUC")) {
-    if (!/^\d{8}$/.test(value.trim())) return "El DNI debe tener exactamente 8 digitos";
-  }
-  // RUC: exactly 11 digits, starts with 10 or 20
-  if (key.startsWith("RUC_")) {
-    const v = value.trim();
-    if (!/^\d{11}$/.test(v)) return "El RUC debe tener exactamente 11 digitos";
-    if (!v.startsWith("10") && !v.startsWith("20")) return "El RUC debe empezar con 10 (persona) o 20 (empresa)";
-  }
-  // DNI/RUC combo fields
-  if (key.includes("DNI") && key.includes("RUC")) {
-    const v = value.trim();
-    if (!/^\d{8}$/.test(v) && !/^\d{11}$/.test(v)) return "Ingrese un DNI (8 digitos) o RUC (11 digitos)";
-    if (v.length === 11 && !v.startsWith("10") && !v.startsWith("20")) return "El RUC debe empezar con 10 o 20";
-  }
-  // Amounts > 0
-  if ((key.includes("PRECIO_TOTAL") || key.includes("REMUNERACION") || key.includes("RENTA_MENSUAL") || key.includes("RETRIBUCION") || key.includes("FLETE") || key.includes("MONTO_PRESTAMO") || key.includes("VALOR_TOTAL")) && value) {
-    const num = parseFloat(value);
-    if (isNaN(num) || num <= 0) return "El monto debe ser mayor a 0";
-  }
-  // Date: FECHA_FIN must be after FECHA_INICIO
-  if (key === "FECHA_FIN" && allData["FECHA_INICIO"]) {
-    if (value < allData["FECHA_INICIO"]) return "La fecha de fin debe ser posterior a la fecha de inicio";
-  }
-  return null;
-}
-
-// ── Emisor Field Mapping (auto-fill from settings) ────────────────────
-
-const EMISOR_FIELD_MAP: Record<string, string> = {
-  NOMBRE_VENDEDOR: "storeName",
-  NOMBRE_EMPLEADOR: "storeName",
-  NOMBRE_COMITENTE: "storeName",
-  NOMBRE_PRINCIPAL: "storeName",
-  NOMBRE_REVELADOR: "storeName",
-  NOMBRE_REMITENTE: "storeName",
-  NOMBRE_SUMINISTRANTE: "storeName",
-  NOMBRE_CONSIGNANTE: "storeName",
-  RUC_VENDEDOR: "ruc",
-  RUC_EMPLEADOR: "ruc",
-  RUC_COMITENTE: "ruc",
-  RUC_PRINCIPAL: "ruc",
-  RUC_REVELADOR: "ruc",
-  RUC_REMITENTE: "ruc",
-  RUC_SUMINISTRANTE: "ruc",
-  RUC_CONSIGNANTE: "ruc",
-  DOMICILIO_VENDEDOR: "address",
-  DOMICILIO_EMPLEADOR: "address",
-  DOMICILIO_COMITENTE: "address",
-  DOMICILIO_PRINCIPAL: "address",
-  DOMICILIO_REVELADOR: "address",
-  DOMICILIO_REMITENTE: "address",
-  DOMICILIO_SUMINISTRANTE: "address",
-  DOMICILIO_CONSIGNANTE: "address",
-  REPRESENTANTE_VENDEDOR: "ownerName",
-  REPRESENTANTE_EMPLEADOR: "ownerName",
-};
-
-// ── CARGO select options ──────────────────────────────────────────────
-
-const CARGO_OPTIONS = [
-  "Cajero(a)", "Almacenero(a)", "Repartidor(a)", "Vendedor(a)", "Administrador(a)",
-  "Asistente administrativo", "Jefe de almacen", "Contador(a)", "Limpieza y mantenimiento",
-  "Chofer", "Seguridad", "Auxiliar de tienda", "Otro (escribir)",
-];
-
-const LUGAR_ENTREGA_OPTIONS = [
-  "Almacen de la bodega (Jr. Ucayali 450, Pucallpa)", "Almacen del comprador",
-  "Puerto de Pucallpa", "Terminal terrestre de Pucallpa", "Otro (escribir)",
-];
-
 
 // ── Main Component ──────────────────────────────────────────────────────
 
+/**
+ * Este módulo usa `useSubvistaModulo` (`?sub=`) y no `?vista=`: se renderiza
+ * DENTRO de DocumentosHubModule, que ya es dueño de ese parámetro. Dos componentes
+ * escribiendo el mismo se pisarían — el de adentro le cambiaría la pestaña al
+ * de afuera en cada click.
+ */
 export default function ContratosModule() {
   // -- Data from API
   const [contratos, setContratos] = useState<ContratoAPI[]>([]);
@@ -857,7 +172,13 @@ export default function ContratosModule() {
   const [error, setError] = useState<string | null>(null);
 
   // -- UI
-  const [activeTab, setActiveTab] = useState<TabId>("dashboard");
+  // Recuerda el último tab, igual que los hubs y Mi Plata: entrar a Contratos
+  // y caer siempre en Dashboard obligaba a re-navegar en cada visita.
+  const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo<TabId>(
+    MODULE_ID,
+    CONTRATOS_VISTAS,
+    "dashboard",
+  );
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -867,6 +188,13 @@ export default function ContratosModule() {
 
   // -- Contract detail
   const [selected, setSelected] = useState<ContratoAPI | null>(null);
+  /** El mismo contrato pero completo (con firmantes e historial), pedido al abrirlo. */
+  const [detalle, setDetalle] = useState<ContratoAPI | null>(null);
+  const [archivando, setArchivando] = useState<string | null>(null);
+  const [archivoError, setArchivoError] = useState<string | null>(null);
+  const [renovando, setRenovando] = useState(false);
+  const [renovarError, setRenovarError] = useState<string | null>(null);
+  const [mesesRenovacion, setMesesRenovacion] = useState(12);
 
   // -- Wizard: Crear Contrato
   const [wizardStep, setWizardStep] = useState(0);
@@ -874,6 +202,8 @@ export default function ContratosModule() {
   const [wizardData, setWizardData] = useState<Record<string, string>>({});
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  /** Vencimiento cargado a mano cuando la plantilla no define ninguno. */
+  const [vencimientoManual, setVencimientoManual] = useState("");
 
   // -- Auto-fill from settings
   const [storeSettings, setStoreSettings] = useState<Record<string, string>>({});
@@ -916,6 +246,18 @@ export default function ContratosModule() {
   }, []);
 
   useEffect(() => { fetchContratos(); }, [fetchContratos]);
+
+  // El listado no trae el historial (sería una consulta por contrato); se pide
+  // sólo al abrir el detalle.
+  useEffect(() => {
+    if (!selected) { setDetalle(null); return; }
+    let vigente = true;
+    fetch(`/api/contratos/${selected.id}`)
+      .then(res => (res.ok ? res.json() : null))
+      .then((data: ContratoAPI | null) => { if (vigente && data) setDetalle(data); })
+      .catch((err) => console.warn("[contratos] no se pudo cargar el detalle", err));
+    return () => { vigente = false; };
+  }, [selected]);
 
   // Debounce search
   useEffect(() => {
@@ -986,10 +328,10 @@ export default function ContratosModule() {
     let list = contratos;
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
-      list = list.filter(c => c.clienteNombre.toLowerCase().includes(q) || c.número.toLowerCase().includes(q) || c.descripcion.toLowerCase().includes(q));
+      list = list.filter(c => c.clienteNombre.toLowerCase().includes(q) || c.numero.toLowerCase().includes(q) || c.descripcion.toLowerCase().includes(q));
     }
     if (filterTipo !== "ALL") list = list.filter(c => c.tipo === filterTipo);
-    if (filterEstado !== "ALL") list = list.filter(c => getEstado(c) === filterEstado);
+    if (filterEstado !== "ALL") list = list.filter(c => estadoVisible(c) === filterEstado);
     return list;
   }, [contratos, debouncedSearch, filterTipo, filterEstado]);
 
@@ -999,14 +341,22 @@ export default function ContratosModule() {
 
   // Stats
   const stats = useMemo(() => {
-    const vigentes = contratos.filter(c => getEstado(c) === "VIGENTE").length;
-    const porVencer = contratos.filter(c => getEstado(c) === "POR_VENCER").length;
-    const vencidos = contratos.filter(c => getEstado(c) === "VENCIDO").length;
-    const montoTotal = contratos.reduce((s, c) => s + (c.montoTotal || 0), 0);
+    const vigentes = contratos.filter(c => estadoVisible(c) === "VIGENTE").length;
+    const porVencer = contratos.filter(c => estadoVisible(c) === "POR_VENCER").length;
+    const vencidos = contratos.filter(c => estadoVisible(c) === "VENCIDO").length;
+    const pendientesFirma = contratos.filter(c => estadoVisible(c) === "PENDIENTE_FIRMA").length;
+    // Lo comprometido = lo que sigue en pie. Un contrato anulado o vencido ya no
+    // es plata que la bodega deba o vaya a cobrar.
+    const montoVigente = contratos
+      .filter(c => ["VIGENTE", "POR_VENCER", "PENDIENTE_FIRMA"].includes(estadoVisible(c)))
+      .reduce((s, c) => s + (c.monto || 0), 0);
 
     const byType: Record<string, number> = {};
     contratos.forEach(c => { byType[c.tipo] = (byType[c.tipo] || 0) + 1; });
-    const typeData = Object.entries(byType).map(([k, v]) => ({ name: TIPO_LABELS[k] || k, value: v }));
+    const typeData = Object.entries(byType).map(([k, v]) => ({
+      name: TIPO_LABELS[k as keyof typeof TIPO_LABELS] || k,
+      value: v,
+    }));
 
     const byMonth: Record<string, number> = {};
     contratos.forEach(c => {
@@ -1015,7 +365,11 @@ export default function ContratosModule() {
     });
     const monthData = Object.entries(byMonth).sort().slice(-6).map(([k, v]) => ({ name: k, contratos: v }));
 
-    return { vigentes, porVencer, vencidos, montoTotal, typeData, monthData, total: contratos.length };
+    // Mezclar monedas en un solo total sería mentir; el panel muestra soles y
+    // avisa aparte si hay contratos en dólares.
+    const hayDolares = contratos.some(c => c.moneda === "USD" && c.monto > 0);
+
+    return { vigentes, porVencer, vencidos, pendientesFirma, montoVigente, hayDolares, typeData, monthData, total: contratos.length };
   }, [contratos]);
 
   // ── Wizard: Create ────────────────────────────────────────────────────
@@ -1026,6 +380,7 @@ export default function ContratosModule() {
     setFieldErrors({});
     setCustomSelectValues({});
     setGeoResult(null);
+    setVencimientoManual("");
 
     // Auto-fill emisor fields from settings + date + city
     const autoData: Record<string, string> = {};
@@ -1091,54 +446,44 @@ export default function ContratosModule() {
 
     setCreating(true);
     try {
-      // Extract client info from template fields
-      const contraparteFields = selectedTemplate.fields.filter(f => f.group === "contraparte");
-      const nameField = contraparteFields.find(f => f.key.includes("NOMBRE")) || contraparteFields[0];
-      const docField = contraparteFields.find(f => f.key.includes("DNI") || f.key.includes("RUC")) || contraparteFields[1];
-
-      const clienteNombre = nameField ? (wizardData[nameField.key] || "Sin nombre") : "Sin nombre";
-      const clienteDoc = docField ? (wizardData[docField.key] || "Sin doc") : "Sin doc";
-
-      const montoField = selectedTemplate.fields.find(f => f.key.includes("PRECIO_TOTAL") || f.key.includes("REMUNERACION") || f.key.includes("RENTA_MENSUAL") || f.key.includes("RETRIBUCION") || f.key.includes("FLETE") || f.key.includes("MONTO_PRESTAMO") || f.key.includes("VALOR_TOTAL") || f.key.includes("PENALIDAD"));
-      const monto = montoField ? parseFloat(wizardData[montoField.key] || "0") : 0;
+      const { nombre: clienteNombre, documento: clienteDoc } = contraparteDelContrato(selectedTemplate, wizardData);
+      const monto = montoDelContrato(selectedTemplate, wizardData);
 
       const content = generateContent();
       const summary = generateSummary();
       const descripcion = `${selectedTemplate.name} — ${summary}`.substring(0, 1999);
 
-      const fechaField = selectedTemplate.fields.find(f => f.key === "FECHA");
-      const fecha = fechaField ? wizardData[fechaField.key] : new Date().toISOString().slice(0, 10);
+      const fecha = inicioDelContrato(wizardData);
+      // El vencimiento sale de la fecha de fin o del plazo en meses/años de la
+      // plantilla. Antes no se mandaba nunca: todos los contratos quedaban
+      // vigentes para siempre y los avisos jamás se disparaban. Si la plantilla
+      // no lo define, lo cargó a mano en el último paso.
+      const fechaVencimiento =
+        vencimientoDelContrato(selectedTemplate, wizardData) || vencimientoManual.trim() || null;
 
       const clausulasArr = content.split("\n\n").filter(c => c.trim());
-
-      // Map plantilla tipo → tipos aceptados por el API (schema de la ruta)
-      const API_TIPO_MAP: Record<ContratoTipo, "VENTA" | "SERVICIO" | "TRABAJO" | "PROVEEDOR" | "DISTRIBUCION" | "ALQUILER" | "COMPRAVENTA" | "SUMINISTRO"> = {
-        VENTA: "COMPRAVENTA",
-        SERVICIO: "SERVICIO",
-        TRABAJO: "TRABAJO",
-        PROVEEDOR: "PROVEEDOR",
-        DISTRIBUCION: "DISTRIBUCION",
-        ALQUILER: "ALQUILER",
-        CONSIGNACION: "PROVEEDOR",
-        MUTUO: "SERVICIO",
-        TRANSPORTE: "SERVICIO",
-        NDA: "SERVICIO",
-        FORESTAL: "COMPRAVENTA",
-        LOCACION: "SERVICIO",
-      };
-      const apiTipo = API_TIPO_MAP[selectedTemplate.tipo];
 
       const res = await fetch("/api/contratos", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
-          tipo: apiTipo,
+          // El tipo va tal cual lo declara la plantilla. El mapa viejo aplastaba
+          // 12 tipos en 8, así que un NDA se guardaba y se listaba como "Servicios".
+          tipo: selectedTemplate.tipo,
           clienteNombre,
           clienteDoc,
           descripcion,
-          monto: monto || 0,
-          fecha: new Date(fecha || Date.now()).toISOString(),
-          clausulas: clausulasArr.slice(0, 20),
+          resumen: summary.substring(0, 1999),
+          monto,
+          fecha,
+          fechaVencimiento,
+          plantillaId: selectedTemplate.id,
+          lugarFirma: wizardData["CIUDAD"] || "Pucallpa",
+          // El texto y los datos del asistente ahora viajan al servidor: antes
+          // vivían sólo en el localStorage del navegador que creó el contrato.
+          contenido: content,
+          datos: wizardData,
+          clausulas: clausulasArr.slice(0, 40),
         }),
       });
 
@@ -1146,25 +491,19 @@ export default function ContratosModule() {
         const err = await res.json().catch(() => ({ error: "Error al crear" }));
         throw new Error(typeof err.error === "string" ? err.error : JSON.stringify(err.error));
       }
-
-      // Save version to localStorage
-      const result = await res.json();
-      try {
-        const vKey = `contract-versions-${result.id}`;
-        const v: ContractVersion = { version: 1, data: wizardData, content, savedAt: new Date().toISOString() };
-        localStorage.setItem(vKey, JSON.stringify([v]));
-      } catch { /* noop */ }
-
-      // Save locally generated content
-      try {
-        localStorage.setItem(`contract-content-${result.id}`, JSON.stringify({ content, summary, templateId: selectedTemplate.id, data: wizardData }));
-      } catch { /* noop */ }
+      const creado: ContratoAPI = await res.json();
 
       setSelectedTemplate(null);
       setWizardData({});
+      setVencimientoManual("");
       setWizardStep(0);
       setActiveTab("contratos");
-      fetchContratos();
+      await fetchContratos();
+      // El asistente terminaba tirándote al listado, y definir quién firma o
+      // revisar el contrato quedaba como algo que había que descubrir después.
+      // Ahora se abre la ficha recién creada, que es donde están el revisor,
+      // los firmantes y el envío por WhatsApp, todo seguido.
+      setSelected(creado);
     } catch (e) {
       setCreateError(e instanceof Error ? e.message : "Error desconocido");
     } finally {
@@ -1174,51 +513,59 @@ export default function ContratosModule() {
 
   // ── Download Helpers ──────────────────────────────────────────────────
 
+  /**
+   * El texto del contrato vive en el servidor. El localStorage queda sólo como
+   * rescate de los contratos creados antes de la migración, cuyo texto nunca
+   * salió del navegador que los generó.
+   */
   const getContractContent = (c: ContratoAPI): { content: string; summary: string } => {
+    if (c.contenido?.trim()) return { content: c.contenido, summary: c.resumen || c.descripcion };
     try {
       const raw = localStorage.getItem(`contract-content-${c.id}`);
       if (raw) { const p = JSON.parse(raw); return { content: p.content || "", summary: p.summary || "" }; }
-    } catch { /* noop */ }
-    return { content: c.clausulas.join("\n\n"), summary: c.descripcion };
+    } catch { /* el rescate es best-effort: si no está, caemos a las cláusulas */ }
+    return { content: c.clausulas.join("\n\n"), summary: c.resumen || c.descripcion };
   };
 
+  /**
+   * PDF de verdad, armado en el servidor con pdf-lib. Antes esto abría una
+   * ventana con HTML y llamaba a `window.print()`: no quedaba archivo, así que
+   * el contrato no se podía guardar, firmar ni mandar.
+   */
   const downloadPDF = (c: ContratoAPI) => {
-    const { content, summary } = getContractContent(c);
-    const tipoLabel = TIPO_LABELS[c.tipo] || c.tipo;
-    const html = `<!DOCTYPE html><html><head><title>Contrato ${c.número}</title>
-<style>
-@media print { @page { size: A4; margin: 25mm; } body { margin: 0; } }
-body { font-family: 'Times New Roman', Georgia, serif; max-width: 680px; margin: 0 auto; padding: 40px 30px; font-size: 12.5px; line-height: 1.7; color: #111; }
-.header { text-align: center; border-bottom: 3px double #333; padding-bottom: 15px; margin-bottom: 25px; }
-h1 { font-size: 16px; text-transform: uppercase; letter-spacing: 3px; margin: 0 0 5px; }
-.número { font-size: 13px; color: #555; }
-.summary { background: #f8f8f0; border-left: 4px solid var(--accent); padding: 12px 16px; margin: 20px 0; font-size: 12px; color: #333; }
-.summary strong { color: var(--accent); }
-.clause { margin: 14px 0; text-align: justify; }
-.firmas { margin-top: 80px; display: flex; justify-content: space-between; gap: 40px; }
-.firma-box { text-align: center; flex: 1; }
-.firma-line { border-top: 1px solid #000; padding-top: 8px; font-size: 11px; margin-top: 60px; }
-.footer { margin-top: 50px; text-align: center; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 10px; }
-</style></head><body>
-<div class="header"><h1>CONTRATO DE ${tipoLabel.toUpperCase()}</h1><div class="número">N.o ${c.número}</div></div>
-${summary ? `<div class="summary"><strong>RESUMEN:</strong> ${summary}</div>` : ""}
-${content.split("\n\n").map(p => `<div class="clause">${p}</div>`).join("")}
-<div class="firmas">
-<div class="firma-box"><div class="firma-line">PRIMERA PARTE</div></div>
-<div class="firma-box"><div class="firma-line">SEGUNDA PARTE</div></div>
-</div>
-<div class="footer">Documento generado el ${new Date().toLocaleDateString("es-PE")} | Buleje</div>
-</body></html>`;
-    const w = window.open("", "_blank");
-    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 300); }
+    window.open(`/api/contratos/${c.id}/pdf?download=1`, "_blank", "noopener");
+  };
+
+  const verPDF = (c: ContratoAPI) => {
+    window.open(`/api/contratos/${c.id}/pdf`, "_blank", "noopener");
+  };
+
+  /** Deja el contrato archivado en Documentación, con su vencimiento. */
+  const archivarEnDrive = async (c: ContratoAPI) => {
+    setArchivando(c.id);
+    setArchivoError(null);
+    try {
+      const res = await fetch(`/api/contratos/${c.id}/pdf`, {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof json.error === "string" ? json.error : "No se pudo archivar");
+      setDetalle(d => (d && d.id === c.id ? { ...d, documentId: json.documentId, hashSha256: json.hash } : d));
+      setContratos(prev => prev.map(x => (x.id === c.id ? { ...x, documentId: json.documentId } : x)));
+    } catch (e) {
+      setArchivoError(e instanceof Error ? e.message : "No se pudo archivar");
+    } finally {
+      setArchivando(null);
+    }
   };
 
   const downloadWord = (c: ContratoAPI) => {
     const { content, summary } = getContractContent(c);
     const tipoLabel = TIPO_LABELS[c.tipo] || c.tipo;
-    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Contrato ${c.número}</title>
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Contrato ${c.numero}</title>
 <style>body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.6;}h1{text-align:center;font-size:14pt;text-transform:uppercase;}p{text-align:justify;margin:8pt 0;}</style></head>
-<body><h1>CONTRATO DE ${tipoLabel.toUpperCase()}</h1><p style="text-align:center;color:#555;">N.o ${c.número}</p>
+<body><h1>CONTRATO DE ${tipoLabel.toUpperCase()}</h1><p style="text-align:center;color:#555;">N.o ${c.numero}</p>
 ${summary ? `<p style="background:#f0f0e0;padding:10px;border-left:4px solid var(--accent);"><b>RESUMEN:</b> ${summary}</p>` : ""}
 ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 <br/><br/><table width="100%"><tr><td width="45%" style="border-top:1px solid #000;text-align:center;padding-top:8px;">PRIMERA PARTE</td><td width="10%"></td><td width="45%" style="border-top:1px solid #000;text-align:center;padding-top:8px;">SEGUNDA PARTE</td></tr></table>
@@ -1226,39 +573,77 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
     const blob = new Blob(["\ufeff" + html], { type: "application/msword" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `Contrato_${c.número}.doc`; a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const downloadTxt = (c: ContratoAPI) => {
-    const { content, summary } = getContractContent(c);
-    const tipoLabel = TIPO_LABELS[c.tipo] || c.tipo;
-    const text = `CONTRATO DE ${tipoLabel.toUpperCase()}\nN.o ${c.número}\n${"=".repeat(50)}\n\nRESUMEN: ${summary}\n\n${"=".repeat(50)}\n\n${content}\n\n${"=".repeat(50)}\n\n_________________________          _________________________\n    PRIMERA PARTE                      SEGUNDA PARTE\n\nFecha: ${new Date().toLocaleDateString("es-PE")}`;
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `Contrato_${c.número}.txt`; a.click();
+    a.href = url; a.download = `Contrato_${c.numero}.doc`; a.click();
     URL.revokeObjectURL(url);
   };
 
   const copyToClipboard = async (c: ContratoAPI) => {
     const { content, summary } = getContractContent(c);
-    const text = `CONTRATO N.o ${c.número}\n\nRESUMEN: ${summary}\n\n${content}`;
+    const text = `CONTRATO N.o ${c.numero}\n\nRESUMEN: ${summary}\n\n${content}`;
     try { await navigator.clipboard.writeText(text); } catch { /* noop */ }
   };
 
-  // ── Version History ───────────────────────────────────────────────────
+  // ── Renovar ───────────────────────────────────────────────────────────
 
-  const getVersions = (id: string): ContractVersion[] => {
+  /**
+   * Crea el contrato sucesor y deja el actual marcado como renovado. Se abre
+   * el nuevo para que quede claro qué se firmó y desde cuándo rige.
+   */
+  const renovarContrato = async (c: ContratoAPI) => {
+    setRenovando(true);
+    setRenovarError(null);
     try {
-      const raw = localStorage.getItem(`contract-versions-${id}`);
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
+      const res = await fetch(`/api/contratos/${c.id}/renovar`, {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ meses: mesesRenovacion }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof json.error === "string" ? json.error : "No se pudo renovar");
+      await fetchContratos();
+      setSelected(json.contrato ?? null);
+    } catch (e) {
+      setRenovarError(e instanceof Error ? e.message : "No se pudo renovar");
+    } finally {
+      setRenovando(false);
+    }
+  };
+
+  // ── Duplicar ──────────────────────────────────────────────────────────
+
+  /**
+   * Vuelve a abrir el asistente con los datos del contrato original. Los datos
+   * llegan del servidor (`datos`), así que duplicar funciona desde cualquier
+   * dispositivo — antes dependía del localStorage del navegador que lo creó.
+   */
+  const duplicarContrato = (c: ContratoAPI) => {
+    const tpl =
+      PLANTILLAS.find(t => t.id === c.plantillaId) ??
+      PLANTILLAS.find(t => t.tipo === c.tipo);
+
+    let datos: Record<string, string> = c.datos ?? {};
+    if (Object.keys(datos).length === 0) {
+      try {
+        const raw = localStorage.getItem(`contract-content-${c.id}`);
+        if (raw) datos = JSON.parse(raw).data ?? {};
+      } catch { /* rescate de contratos viejos: si no está, arranca vacío */ }
+    }
+
+    if (!tpl) {
+      setActiveTab("plantillas");
+      setSelected(null);
+      return;
+    }
+    setSelectedTemplate(tpl);
+    setWizardData(datos);
+    setWizardStep(0);
+    setSelected(null);
+    setActiveTab("crear");
   };
 
   // ── Tab definitions ───────────────────────────────────────────────────
 
-  const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  const TABS: AdminTab[] = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "plantillas", label: "Plantillas", icon: BookOpen },
     { id: "contratos", label: "Mis Contratos", icon: FileText },
@@ -1288,27 +673,17 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
         </button>
       </AdminModuleHeader>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
-        {TABS.map(tab => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all",
-                activeTab === tab.id
-                  ? "bg-primary text-white "
-                  : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      {/* AdminTabBar, el mismo componente que el resto del panel. Antes esto
+          era un segmented control propio: mismo rol que las sub-pestañas de
+          Mi Plata o Marketplace pero con otro alto, otro radio y otro estado
+          activo, y sin el reorden por arrastre ni la persistencia del último
+          tab que el resto sí tiene. */}
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as TabId)}
+        moduleId={MODULE_ID}
+      />
 
       {/* Loading / Error */}
       {loading && (
@@ -1336,11 +711,12 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
             {activeTab === "dashboard" && (
               <div className="space-y-6">
                 {/* KPI Cards — uniform surface; intent solo en icono+valor cuando count > 0 */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                   {([
-                    { label: "Total Contratos", value: stats.total, icon: FileText, tone: "neutral" as const },
+                    { label: "Contratos", value: stats.total, icon: FileText, tone: "neutral" as const },
                     { label: "Vigentes", value: stats.vigentes, icon: CheckCircle, tone: "neutral" as const },
-                    { label: "Por Vencer", value: stats.porVencer, icon: Clock, tone: (stats.porVencer > 0 ? "warning" : "neutral") as "neutral" | "warning" },
+                    { label: "Esperando firma", value: stats.pendientesFirma, icon: PenTool, tone: "neutral" as const },
+                    { label: "Por vencer", value: stats.porVencer, icon: Clock, tone: (stats.porVencer > 0 ? "warning" : "neutral") as "neutral" | "warning" },
                     { label: "Vencidos", value: stats.vencidos, icon: AlertCircle, tone: (stats.vencidos > 0 ? "danger" : "neutral") as "neutral" | "danger" },
                   ]).map(kpi => {
                     const iconBg =
@@ -1371,46 +747,19 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   })}
                 </div>
 
-                {/* Monto Total */}
+                {/* Plata comprometida — sólo lo que sigue en pie */}
                 <div className="bg-[var(--brand-ink)] rounded-lg p-6 text-[var(--surface-canvas)]">
-                  <p className="text-sm opacity-80">Monto Total en Contratos</p>
-                  <p className="text-3xl font-bold mt-1">{formatCurrency(stats.montoTotal)}</p>
+                  <p className="text-sm opacity-80">Plata comprometida en contratos vigentes</p>
+                  <p className="text-3xl font-bold mt-1">{formatMoney(stats.montoVigente)}</p>
+                  {stats.hayDolares && (
+                    <p className="text-xs opacity-70 mt-1">
+                      Hay contratos en dólares: se muestran aparte en cada ficha, no se suman acá.
+                    </p>
+                  )}
                 </div>
 
-                {/* Charts Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* Por tipo */}
-                  <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
-                    <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Contratos por Tipo</CardTitle>
-                    {stats.typeData.length > 0 ? (
-                      <ResponsiveContainer minWidth={0} width="100%" height={250}>
-                        <RechartsPie>
-                          <Pie data={stats.typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, value }) => `${name}: ${value}`}>
-                            {stats.typeData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                          </Pie>
-                          <Tooltip />
-                          <Legend />
-                        </RechartsPie>
-                      </ResponsiveContainer>
-                    ) : <p className="text-sm text-[var(--text-tertiary)] text-center py-8">Sin datos</p>}
-                  </div>
-
-                  {/* Por mes */}
-                  <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
-                    <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Contratos por Mes</CardTitle>
-                    {stats.monthData.length > 0 ? (
-                      <ResponsiveContainer minWidth={0} width="100%" height={250}>
-                        <BarChart data={stats.monthData}>
-                          <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                          <XAxis dataKey="name" fontSize={11} />
-                          <YAxis fontSize={11} allowDecimals={false} />
-                          <Tooltip />
-                          <Bar dataKey="contratos" fill="var(--brand-ink)" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : <p className="text-sm text-[var(--text-tertiary)] text-center py-8">Sin datos</p>}
-                  </div>
-                </div>
+                {/* Charts Row — gráficos sin datos NO se muestran (lo decide ContratosChart) */}
+                <ContratosChart typeData={stats.typeData} monthData={stats.monthData} />
 
                 {/* Contratos por vencer */}
                 {stats.porVencer > 0 && (
@@ -1419,9 +768,9 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       <Clock className="h-4 w-4" /> Contratos por vencer (30 dias)
                     </CardTitle>
                     <div className="space-y-2">
-                      {contratos.filter(c => getEstado(c) === "POR_VENCER").slice(0, 5).map(c => (
+                      {contratos.filter(c => estadoVisible(c) === "POR_VENCER").slice(0, 5).map(c => (
                         <div key={c.id} className="flex items-center justify-between text-xs">
-                          <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{c.clienteNombre} — {c.número} — vence {formatDatePeru(c.fechaVencimiento!)}</span>
+                          <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{c.clienteNombre} — {c.numero} — vence {formatDatePeru(c.fechaVencimiento!)}</span>
                           <button onClick={() => { setSelected(c); }} className="px-2 py-1 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] font-bold hover:bg-[var(--data-warning-500)] transition-colors">
                             Ver
                           </button>
@@ -1442,18 +791,18 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <m.div
                       key={tpl.id}
                       whileHover={{ scale: 1.02 }}
-                      className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-[var(--shadow-lg)] transition-all group"
+                      className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-[var(--shadow-lg)] transition-all group"
                       onClick={() => startWizard(tpl)}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors text-primary">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           <TemplateIcon icon={tpl.icon} className="h-5 w-5" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <h4 className="text-sm font-bold text-[var(--text-primary)]">{tpl.name}</h4>
                           <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">{tpl.description}</p>
                           <div className="mt-2 flex items-center gap-2 flex-wrap">
-                            <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">{tpl.category}</span>
+                            <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold">{tpl.category}</span>
                             <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{tpl.fields.length} campos</span>
                             <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{tpl.clausulas.length} clausulas</span>
                           </div>
@@ -1478,14 +827,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       placeholder="Buscar por cliente, número..."
                       value={search}
                       onChange={e => setSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
-                  <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="ALL">Todos los tipos</option>
                     {Object.entries(TIPO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
-                  <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="ALL">Todos los estados</option>
                     <option value="VIGENTE">Vigentes</option>
                     <option value="POR_VENCER">Por vencer</option>
@@ -1507,38 +856,38 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 ) : viewMode === "cards" ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {paginated.map(c => {
-                      const estado = getEstado(c);
-                      const dias = getDiasVencimiento(c.fechaVencimiento);
+                      const estado = estadoVisible(c);
+                      const dias = diasParaVencer(c.fechaVencimiento);
                       const borderColor = estado === "VENCIDO" ? "border-l-red-500" : estado === "POR_VENCER" ? "border-l-amber-500" : "border-l-emerald-500";
                       return (
                         <div
                           key={c.id}
-                          onClick={() => setSelected(c)}
-                          className={cn("bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg  hover:shadow-[var(--shadow-lg)] transition-all cursor-pointer border-l-4", borderColor)}
+                          {...activateProps(() => setSelected(c))}
+                          className={cn("bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg  hover:shadow-[var(--shadow-lg)] transition-all cursor-pointer border-l-4", borderColor)}
                         >
                           <div className="p-4 space-y-3">
                             <div className="flex items-start justify-between">
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs text-[var(--text-tertiary)] font-mono">{c.número}</p>
+                                <p className="text-xs text-[var(--text-tertiary)] font-mono">{c.numero}</p>
                                 <p className="text-sm font-bold text-[var(--text-primary)] mt-0.5">{TIPO_LABELS[c.tipo] || c.tipo}</p>
                               </div>
                               <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold shrink-0 ml-2", ESTADO_STYLES[estado])}>
-                                {estado === "VIGENTE" ? "Vigente" : estado === "POR_VENCER" ? "Por vencer" : estado === "VENCIDO" ? "Vencido" : estado}
+                                {ESTADO_VISIBLE_LABELS[estado]}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
                               <div className="h-7 w-7 rounded-full bg-secondary/20 flex items-center justify-center shrink-0"><User className="h-3.5 w-3.5 text-secondary" /></div>
                               <div className="min-w-0">
                                 <p className="text-sm text-[var(--text-secondary)] truncate">{c.clienteNombre}</p>
-                                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{c.clienteDocumento}</p>
+                                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{c.clienteDoc}</p>
                               </div>
                             </div>
                             <div className="text-xs text-[var(--text-secondary)] space-y-0.5">
-                              <p>Fecha: {formatDatePeru(c.fechaContrato || c.createdAt)}</p>
+                              <p>Fecha: {formatDatePeru(c.fechaInicio || c.createdAt)}</p>
                               {c.fechaVencimiento && <p>Vence: {formatDatePeru(c.fechaVencimiento)} {dias !== null && dias >= 0 ? `(${dias}d)` : dias !== null ? `(hace ${Math.abs(dias)}d)` : ""}</p>}
                             </div>
                             <div className="flex items-center justify-between pt-2 border-t border-[var(--rule-soft)] dark:border-white/5">
-                              <p className="text-sm font-bold text-primary">{formatCurrency(c.montoTotal || 0)}</p>
+                              <p className="text-sm font-bold text-primary">{formatMoney(c.monto, c.moneda)}</p>
                               <div className="flex gap-1">
                                 <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-primary transition-colors" title="PDF"><Printer className="h-3.5 w-3.5" /></button>
                                 <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
@@ -1550,7 +899,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     })}
                   </div>
                 ) : (
-                  <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl overflow-hidden ">
+                  <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
@@ -1566,21 +915,21 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         </thead>
                         <tbody>
                           {paginated.map(c => {
-                            const estado = getEstado(c);
+                            const estado = estadoVisible(c);
                             return (
-                              <tr key={c.id} onClick={() => setSelected(c)} className="border-b border-gray-50 dark:border-white/5 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 cursor-pointer transition-colors">
-                                <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">{c.número}</td>
+                              <tr key={c.id} onClick={() => setSelected(c)} className="border-b border-[var(--rule-soft)] dark:border-white/5 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 cursor-pointer transition-colors">
+                                <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">{c.numero}</td>
                                 <td className="px-4 py-3">
                                   <p className="font-medium text-[var(--text-primary)] truncate">{c.clienteNombre}</p>
-                                  <p className="text-xs text-[var(--text-tertiary)]">{c.clienteDocumento}</p>
+                                  <p className="text-xs text-[var(--text-tertiary)]">{c.clienteDoc}</p>
                                 </td>
                                 <td className="px-4 py-3 hidden sm:table-cell">
                                   <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]">{TIPO_LABELS[c.tipo] || c.tipo}</span>
                                 </td>
-                                <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">{formatCurrency(c.montoTotal || 0)}</td>
-                                <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">{formatDatePeru(c.fechaContrato || c.createdAt)}</td>
+                                <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">{formatMoney(c.monto, c.moneda)}</td>
+                                <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">{formatDatePeru(c.fechaInicio || c.createdAt)}</td>
                                 <td className="px-4 py-3 hidden lg:table-cell">
-                                  <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", ESTADO_STYLES[estado])}>{estado}</span>
+                                  <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", ESTADO_STYLES[estado])}>{ESTADO_VISIBLE_LABELS[estado]}</span>
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex gap-1">
@@ -1623,9 +972,9 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 ) : (
                   <>
                     {/* Wizard Header */}
-                    <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+                    <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           <TemplateIcon icon={selectedTemplate.icon} className="h-5 w-5" />
                         </div>
                         <div>
@@ -1645,7 +994,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             onClick={() => setWizardStep(i)}
                             className={cn(
                               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all",
-                              wizardStep === i ? "bg-primary text-white" : wizardStep > i ? "bg-primary/10 text-primary" : "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-tertiary)]"
+                              wizardStep === i ? "bg-primary text-white" : wizardStep > i ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-tertiary)]"
                             )}
                           >
                             <span className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold",
@@ -1666,14 +1015,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       const filledRequired = allFields.filter(f => f.required && wizardData[f.key]?.trim()).length;
                       const progress = totalRequired > 0 ? Math.round((filledRequired / totalRequired) * 100) : 0;
                       return (
-                        <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+                        <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-bold text-[var(--text-secondary)]">Progreso del contrato</span>
                             <span className="text-xs font-bold text-[var(--text-primary)]">{filledRequired} de {totalRequired} campos completados ({progress}%)</span>
                           </div>
                           <div className="relative h-3 bg-[var(--rule-soft)] dark:bg-white/10 rounded-full overflow-hidden">
                             <div
-                              className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", progress === 100 ? "bg-[var(--accent-soft)]" : progress >= 60 ? "bg-primary" : "bg-secondary")}
+                              className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", progress === 100 ? "bg-primary/10" : progress >= 60 ? "bg-primary" : "bg-secondary")}
                               style={{ width: `${progress}%` }}
                             />
                           </div>
@@ -1683,7 +1032,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                     {/* Wizard Steps 0-2: Form Fields */}
                     {wizardStep < 3 && (
-                      <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
+                      <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
                         <h4 className="text-sm font-bold text-[var(--text-primary)]">{wizardGroupLabels[wizardStep]}</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {wizardGroups[wizardStep]?.fields.map(field => {
@@ -1708,7 +1057,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                   {field.label} {field.required && <span className="text-[var(--data-error-500)]">*</span>}
                                   {hasTooltip && <LegalTooltip term={field.label} explanation={hasTooltip.explanation} example={hasTooltip.example} />}
                                   {isAutoFilled && (
-                                    <span className="ml-1 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+                                    <span className="ml-1 px-1.5 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                                       Auto-completado
                                     </span>
                                   )}
@@ -1727,14 +1076,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       placeholder={field.placeholder}
                                       className={cn(
                                         "flex-1 px-3 py-2 rounded-lg border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
-                                        isAutoFilled ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
+                                        isAutoFilled ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : "border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5"
                                       )}
                                     />
                                     <button
                                       type="button"
                                       onClick={detectLocation}
                                       disabled={geoLoading}
-                                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 transition-colors shrink-0"
+                                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors shrink-0"
                                     >
                                       {geoLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MapPin className="h-3.5 w-3.5" />}
                                       Detectar
@@ -1763,7 +1112,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                         }
                                         setAutoFilledFields(prev => { const n = new Set(prev); n.delete(field.key); return n; });
                                       }}
-                                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     >
                                       <option value="">Seleccionar...</option>
                                       {selectOptions?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -1792,7 +1141,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       setWizardData(p => ({ ...p, [field.key]: e.target.value }));
                                       setAutoFilledFields(prev => { const n = new Set(prev); n.delete(field.key); return n; });
                                     }}
-                                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                                   >
                                     <option value="">Seleccionar...</option>
                                     {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -1809,7 +1158,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                     }}
                                     placeholder={field.placeholder}
                                     rows={3}
-                                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                                   />
                                 )}
 
@@ -1845,7 +1194,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                     step={field.type === "number" ? "0.01" : undefined}
                                     className={cn(
                                       "w-full px-3 py-2 rounded-lg border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
-                                      isAutoFilled && !isCiudadField ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : validationError ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : "border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5"
+                                      isAutoFilled && !isCiudadField ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : validationError ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : "border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5"
                                     )}
                                   />
                                 )}
@@ -1883,13 +1232,13 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         </div>
 
                         {/* Full Document Preview — with highlighted filled fields */}
-                        <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 sm:p-8 max-h-[60vh] overflow-y-auto">
+                        <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 sm:p-8 max-h-[60vh] overflow-y-auto">
                           <div className="max-w-[680px] mx-auto font-serif" ref={printRef}>
                             <SectionTitle className="text-center text-base font-bold mb-1">
                               CONTRATO DE {selectedTemplate.name.toUpperCase()}
                             </SectionTitle>
                             <p className="text-center text-xs text-[var(--text-tertiary)] mb-6">{selectedTemplate.legalBasis}</p>
-                            <div className="border-t-2 border-double border-gray-400 mb-6" />
+                            <div className="border-t-2 border-double border-[var(--rule-strong)] mb-6" />
                             {selectedTemplate.clausulas.map((clause, i) => {
                               // Replace {{KEY}} with highlighted spans for filled data
                               const parts = clause.split(/(\{\{\w+\}\})/g);
@@ -1912,10 +1261,10 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             })}
                             <div className="mt-12 flex justify-between gap-8">
                               <div className="flex-1 text-center">
-                                <div className="border-t border-gray-400 mt-16 pt-2 text-xs text-[var(--text-secondary)]">PRIMERA PARTE</div>
+                                <div className="border-t border-[var(--rule-strong)] mt-16 pt-2 text-xs text-[var(--text-secondary)]">PRIMERA PARTE</div>
                               </div>
                               <div className="flex-1 text-center">
-                                <div className="border-t border-gray-400 mt-16 pt-2 text-xs text-[var(--text-secondary)]">SEGUNDA PARTE</div>
+                                <div className="border-t border-[var(--rule-strong)] mt-16 pt-2 text-xs text-[var(--text-secondary)]">SEGUNDA PARTE</div>
                               </div>
                             </div>
                           </div>
@@ -1932,7 +1281,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     {/* Step 4: Confirm */}
                     {wizardStep === 4 && (
                       <div className="space-y-6">
-                        <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
+                        <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
                           <div className="flex items-center gap-3">
                             <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center text-white">
                               <CheckCircle className="h-6 w-6" />
@@ -1957,6 +1306,41 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             <p className="text-sm text-[var(--text-secondary)]">{generateSummary()}</p>
                           </div>
 
+                          {/* Cuándo deja de valer. Si la plantilla no lo pide (ni fecha
+                              de fin ni plazo), acá se pregunta en vez de guardar el
+                              contrato sin vencimiento y que nadie te avise nunca. */}
+                          {(() => {
+                            const delaPlantilla = vencimientoDelContrato(selectedTemplate, wizardData);
+                            if (delaPlantilla) {
+                              return (
+                                <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                                  <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
+                                  Vence el <strong className="text-[var(--text-primary)]">{formatDatePeru(delaPlantilla)}</strong>.
+                                  Te vamos a avisar 30 días antes.
+                                </div>
+                              );
+                            }
+                            return (
+                              <div className="rounded-xl border border-[var(--rule-base)] dark:border-white/10 p-3 space-y-2">
+                                <label className="block text-sm font-semibold text-[var(--text-primary)]" htmlFor="venc-manual">
+                                  ¿Hasta cuándo vale este contrato?
+                                </label>
+                                <p className="text-xs text-[var(--text-secondary)]">
+                                  Esta plantilla no pide fecha de término. Si la cargás, te avisamos
+                                  30 días antes de que venza; si la dejás vacía, no te avisa nadie.
+                                </p>
+                                <input
+                                  id="venc-manual"
+                                  type="date"
+                                  value={vencimientoManual}
+                                  min={inicioDelContrato(wizardData)}
+                                  onChange={e => setVencimientoManual(e.target.value)}
+                                  className="w-full sm:w-auto px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)]"
+                                />
+                              </div>
+                            );
+                          })()}
+
                           {createError && <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold bg-[var(--data-error-50)] dark:bg-red-950/20 p-3 rounded-lg">{createError}</p>}
                         </div>
                       </div>
@@ -1975,7 +1359,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         {wizardStep < 4 && (
                           <button
                             onClick={() => setWizardStep(s => s + 1)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
                           >
                             Siguiente
                             <ArrowRight className="h-4 w-4" />
@@ -1985,7 +1369,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <button
                             onClick={handleCreate}
                             disabled={creating}
-                            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-colors"
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                           >
                             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                             Guardar Contrato
@@ -2013,7 +1397,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         setEditorPreview(false);
                       }
                     }}
-                    className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                   >
                     <option value="">Seleccionar plantilla...</option>
                     {PLANTILLAS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -2039,14 +1423,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Editor */}
                     <div className="space-y-3">
-                      <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+                      <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
                         <p className="text-xs font-bold text-[var(--text-secondary)] mb-2">Campos disponibles (clic para insertar):</p>
                         <div className="flex flex-wrap gap-1 mb-3">
                           {editorTemplate.fields.map(f => (
                             <button
                               key={f.key}
                               onClick={() => setEditorText(prev => prev + ` {{${f.key}}}`)}
-                              className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                              className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 transition-colors"
                             >
                               {`{{${f.key}}}`}
                             </button>
@@ -2063,7 +1447,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     </div>
 
                     {/* Preview */}
-                    <div className="bg-white dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 max-h-[70vh] overflow-y-auto">
+                    <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 max-h-[70vh] overflow-y-auto">
                       <h4 className="text-sm font-bold text-[var(--text-primary)] mb-4">Vista Previa</h4>
                       <div className="font-serif space-y-3">
                         {editorText.split("\n\n").filter(p => p.trim()).map((para, i) => (
@@ -2095,13 +1479,13 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-[#1a1a2e] border-l border-[var(--rule-base)] dark:border-white/10 overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] dark:bg-[#1a1a2e] border-l border-[var(--rule-base)] dark:border-white/10 overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Contrato {selected.número}</CardTitle>
+                    <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Contrato {selected.numero}</CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">{TIPO_LABELS[selected.tipo] || selected.tipo}</p>
                   </div>
                   <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5">
@@ -2126,8 +1510,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                 {/* Estado Badge */}
                 <div className="flex items-center gap-2">
-                  <span className={cn("px-3 py-1 rounded-lg text-xs font-bold", ESTADO_STYLES[getEstado(selected)])}>
-                    {getEstado(selected)}
+                  <span className={cn("px-3 py-1 rounded-lg text-xs font-bold", ESTADO_STYLES[estadoVisible(selected)])}>
+                    {ESTADO_VISIBLE_LABELS[estadoVisible(selected)]}
                   </span>
                   <span className="px-3 py-1 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]">
                     {TIPO_LABELS[selected.tipo] || selected.tipo}
@@ -2142,17 +1526,17 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     </div>
                     <div>
                       <p className="font-bold text-[var(--text-primary)]">{selected.clienteNombre}</p>
-                      <p className="text-xs text-[var(--text-secondary)]">{selected.clienteDocumento}</p>
+                      <p className="text-xs text-[var(--text-secondary)]">{selected.clienteDoc}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[var(--rule-base)] dark:border-white/10">
-                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Monto</p><p className="text-sm font-bold text-primary">{formatCurrency(selected.montoTotal || 0)}</p></div>
-                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Fecha</p><p className="text-sm text-[var(--text-secondary)]">{formatDatePeru(selected.fechaContrato || selected.createdAt)}</p></div>
+                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Monto</p><p className="text-sm font-bold text-primary">{formatMoney(selected.monto, selected.moneda)}</p></div>
+                    <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Fecha</p><p className="text-sm text-[var(--text-secondary)]">{formatDatePeru(selected.fechaInicio || selected.createdAt)}</p></div>
                   </div>
 
                   {/* Vigencia Timeline */}
                   {selected.fechaVencimiento && (() => {
-                    const inicio = new Date(selected.fechaContrato || selected.createdAt).getTime();
+                    const inicio = new Date(selected.fechaInicio || selected.createdAt).getTime();
                     const vence = new Date(selected.fechaVencimiento).getTime();
                     const hoy = Date.now();
                     const total = vence - inicio;
@@ -2166,7 +1550,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${progreso}%` }} />
                         </div>
                         <div className="flex items-center justify-between text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-                          <span>{formatDatePeru(selected.fechaContrato || selected.createdAt)}</span>
+                          <span>{formatDatePeru(selected.fechaInicio || selected.createdAt)}</span>
                           <span className="font-bold">{diasRestantes > 0 ? `${diasRestantes} dias restantes` : diasRestantes === 0 ? "Vence hoy" : `Vencido hace ${Math.abs(diasRestantes)}d`}</span>
                           <span>{formatDatePeru(selected.fechaVencimiento)}</span>
                         </div>
@@ -2189,74 +1573,129 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   </div>
                 )}
 
-                {/* Version History */}
-                {(() => {
-                  const versions = getVersions(selected.id);
-                  if (versions.length === 0) return null;
-                  return (
-                    <div>
-                      <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
-                        <Clock className="h-4 w-4" /> Historial de Versiones
-                        <span className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] dark:bg-white/10 px-2 py-0.5 rounded-full">{versions.length}</span>
-                      </h4>
-                      <div className="space-y-1">
-                        {versions.map(v => (
-                          <div key={v.version} className="p-2 bg-[var(--surface-alt)] dark:bg-white/5 rounded-lg text-xs flex items-center justify-between">
-                            <span className="font-bold text-[var(--text-secondary)]">v{v.version}</span>
-                            <span className="text-[var(--text-tertiary)]">{new Date(v.savedAt).toLocaleString("es-PE")}</span>
-                          </div>
+                {/* Qué pasó con este contrato — historial real, guardado en el servidor */}
+                {detalle?.eventos && detalle.eventos.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
+                      <Clock className="h-4 w-4" /> Qué pasó con este contrato
+                      <span className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] dark:bg-white/10 px-2 py-0.5 rounded-full">{detalle.eventos.length}</span>
+                    </h4>
+                    <ol className="space-y-1.5 border-l-2 border-[var(--rule-soft)] pl-3">
+                      {detalle.eventos.map(ev => (
+                        <li key={ev.id} className="text-xs">
+                          <p className="font-semibold text-[var(--text-primary)]">{EVENTO_LABELS[ev.tipo] ?? ev.tipo}</p>
+                          {ev.detalle && <p className="text-[var(--text-secondary)]">{ev.detalle}</p>}
+                          <p className="text-[var(--text-tertiary)]">
+                            {new Date(ev.createdAt).toLocaleString("es-PE")}{ev.actor ? ` · ${ev.actor}` : ""}
+                          </p>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+
+                {/* Con quién es de verdad: atado a su ficha, no texto suelto */}
+                <VinculoContraparte
+                  contratoId={selected.id}
+                  clienteNombre={selected.clienteNombre}
+                  customerId={(detalle ?? selected).customerId}
+                  supplierId={(detalle ?? selected).supplierId}
+                  onVinculado={(patch) => {
+                    setDetalle(d => (d ? { ...d, ...patch } : d));
+                    setContratos(prev => prev.map(c => (c.id === selected.id ? { ...c, ...patch } : c)));
+                  }}
+                />
+
+                {/* Revisor de cláusulas */}
+                <PanelRevision
+                  contratoId={selected.id}
+                  revision={(detalle ?? selected).revisionIa}
+                  onRevisado={rev => setDetalle(d => (d ? { ...d, revisionIa: rev } : d))}
+                />
+
+                {/* Firmantes y links de firma */}
+                <PanelFirmantes contrato={detalle ?? selected} onCambio={fetchContratos} />
+
+                {/* Renovar: sólo tiene sentido cuando el contrato tiene un final a la vista */}
+                {["VIGENTE", "POR_VENCER", "VENCIDO"].includes(estadoVisible(selected)) && (
+                  <div className="p-3 rounded-xl bg-[var(--surface-alt)] dark:bg-white/5 space-y-2">
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      Renovar crea un contrato nuevo con las mismas condiciones y las fechas corridas.
+                      El actual queda archivado como renovado, sin perder qué estuvo vigente y cuándo.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={mesesRenovacion}
+                        onChange={e => setMesesRenovacion(Number(e.target.value))}
+                        className="px-2.5 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-xs text-[var(--text-primary)]"
+                        aria-label="Meses de renovación"
+                      >
+                        {[3, 6, 12, 24, 36].map(m => (
+                          <option key={m} value={m}>{m} meses</option>
                         ))}
-                      </div>
+                      </select>
+                      <button
+                        onClick={() => renovarContrato(selected)}
+                        disabled={renovando}
+                        // Renovar es constructivo: en coral lleno se leía como
+                        // una acción destructiva, justo al lado del badge rojo
+                        // de "Vencido".
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-primary/40 hover:bg-primary/10 transition-colors disabled:opacity-60"
+                      >
+                        {renovando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
+                        Renovar contrato
+                      </button>
                     </div>
-                  );
-                })()}
+                    {renovarError && <p className="text-xs text-[var(--data-error-500)]">{renovarError}</p>}
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
-                      <Printer className="h-4 w-4" /> PDF
+                    <button onClick={() => verPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors">
+                      <Eye className="h-4 w-4" /> Ver PDF
                     </button>
-                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors">
-                      <Download className="h-4 w-4" /> Word
+                    <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 transition-colors">
+                      <Download className="h-4 w-4" /> Descargar
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => downloadTxt(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] transition-colors">
-                      <FileText className="h-3.5 w-3.5" /> Texto (.txt)
+
+                  {/* Guardar en el drive: de ahí salen la búsqueda, la IA, los permisos y el aviso de vencimiento */}
+                  <button
+                    onClick={() => archivarEnDrive(selected)}
+                    disabled={archivando === selected.id}
+                    // En dark el brand-ink es casi negro: sin borde el botón se
+                    // funde con el panel y parece un hueco, no una acción.
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--brand-ink)] border border-transparent dark:border-white/20 hover:opacity-90 transition-opacity disabled:opacity-60"
+                  >
+                    {archivando === selected.id
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : <Save className="h-4 w-4" />}
+                    {(detalle?.documentId ?? selected.documentId)
+                      ? "Actualizar en Documentación"
+                      : "Guardar en Documentación"}
+                  </button>
+                  {(detalle?.documentId ?? selected.documentId) && (
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-center">
+                      Archivado en Documentación · se busca por su texto, la IA lo lee y te avisa antes de que venza.
+                    </p>
+                  )}
+                  {archivoError && (
+                    <p className="text-xs text-[var(--data-error-500)] text-center">{archivoError}</p>
+                  )}
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] transition-colors">
+                      <FileText className="h-3.5 w-3.5" /> Word
                     </button>
-                    <button onClick={() => copyToClipboard(selected)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] transition-colors">
+                    <button onClick={() => copyToClipboard(selected)} className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] transition-colors">
                       <ClipboardCopy className="h-3.5 w-3.5" /> Copiar
                     </button>
+                    <button onClick={() => duplicarContrato(selected)} className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-bold text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors">
+                      <Copy className="h-3.5 w-3.5" /> Duplicar
+                    </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      const tpl = PLANTILLAS.find(t => {
-                        const _c = getContractContent(selected);
-                        try { const data = JSON.parse(localStorage.getItem(`contract-content-${selected.id}`) || "{}"); return data.templateId === t.id; } catch { return false; }
-                      });
-                      if (tpl) {
-                        try {
-                          const raw = localStorage.getItem(`contract-content-${selected.id}`);
-                          if (raw) {
-                            const saved = JSON.parse(raw);
-                            setSelectedTemplate(tpl);
-                            setWizardData(saved.data || {});
-                            setWizardStep(0);
-                            setSelected(null);
-                            setActiveTab("crear");
-                          }
-                        } catch { /* noop */ }
-                      } else {
-                        // Duplicate as new contract
-                        setActiveTab("plantillas");
-                        setSelected(null);
-                      }
-                    }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors"
-                  >
-                    <Copy className="h-3.5 w-3.5" /> Duplicar Contrato
-                  </button>
                 </div>
               </div>
             </m.div>

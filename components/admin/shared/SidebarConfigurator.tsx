@@ -80,7 +80,7 @@ const ACCENT_COLORS: Array<{ id: AccentColor; label: string; hex: string; ring: 
   { id: "emerald", label: "Verde",   hex: "#10B981", ring: "ring-emerald-400" },
   { id: "sky",     label: "Cielo",   hex: "#0EA5E9", ring: "ring-sky-400" },
   { id: "violet",  label: "Violeta", hex: "#8B5CF6", ring: "ring-violet-400" },
-  { id: "amber",   label: "Ámbar",   hex: "#F59E0B", ring: "ring-amber-400" },
+  { id: "amber",   label: "Ámbar",   hex: "#ff6b5b", ring: "ring-amber-400" },
   { id: "rose",    label: "Rosa",    hex: "#F43F5E", ring: "ring-rose-400" },
 ];
 
@@ -190,7 +190,7 @@ function SortableCategoryItem({
           className={cn(
             "h-9 w-9 rounded-md flex items-center justify-center shrink-0 transition-all",
             isVisible
-              ? "bg-primary/20 text-primary hover:bg-primary/30"
+              ? "bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/30"
               : "bg-zinc-800 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300",
           )}
           title={isVisible ? "Ocultar módulo" : "Mostrar módulo"}
@@ -327,10 +327,10 @@ function ThemePreview({
 function SectionHeader({ icon: Icon, title, hint }: { icon: React.ElementType; title: string; hint?: string }) {
   return (
     <div className="mb-2">
-      <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-400">
+      <CardTitle as="h3" className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-400">
         <Icon className="h-3 w-3 text-primary" strokeWidth={2.5} />
         {title}
-      </h3>
+      </CardTitle>
       {hint && <p className="text-xs text-zinc-500 mt-0.5 leading-relaxed">{hint}</p>}
     </div>
   );
@@ -767,7 +767,7 @@ export default function SidebarConfigurator({
                                   className={cn(
                                     "h-4 w-4 rounded flex items-center justify-center shrink-0 border",
                                     isSubVisible
-                                      ? "bg-primary/25 border-primary/50 text-primary"
+                                      ? "bg-primary/25 border-primary/50 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                                       : "bg-zinc-800 border-zinc-600 text-transparent",
                                   )}
                                 >

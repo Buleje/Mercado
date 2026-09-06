@@ -22,6 +22,7 @@ import {
   Calendar,
   Trash2,
 } from "@buleje/design-system/icons";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import KPICard from "@/components/admin/shared/KPICard";
@@ -304,13 +305,23 @@ export default function GiftCardsAdminModule() {
     }
   };
 
-  // TODO(ADR-077 follow-up): implementar endpoint /extend. Por ahora queda
-  // como optimistic local update — no persiste. La UI avisa cuando hay API.
-  const handleExtend = (id: string, newExpiry: string) => {
-    setCards((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, expiresAt: newExpiry } : c)),
-    );
-    setSelected((s) => (s?.id === id ? { ...s, expiresAt: newExpiry } : s));
+  const handleExtend = async (id: string, newExpiry: string) => {
+    try {
+      const res = await fetch(`/api/admin/gift-cards/${id}/extend`, {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ expiresAt: newExpiry }),
+      });
+      if (!res.ok) return;
+      const iso = new Date(newExpiry).toISOString();
+      setCards((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, expiresAt: iso } : c)),
+      );
+      setSelected((s) => (s?.id === id ? { ...s, expiresAt: iso } : s));
+      void refetch();
+    } catch {
+      /* noop: la UI no cambia si falla la persistencia */
+    }
   };
 
   const handleCreate = async (data: {
@@ -394,7 +405,7 @@ export default function GiftCardsAdminModule() {
           label="Saldo pendiente"
           value={fmt(saldoPendiente)}
           icon={Wallet}
-          color="#F59E0B"
+          color="#ff6b5b"
           subtitle="Pasivo por canjear"
           alert={saldoPendiente > 2000}
         />
@@ -411,12 +422,12 @@ export default function GiftCardsAdminModule() {
           onClick={() => setIssuedCode(null)}
         >
           <div
-            className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-md p-5"
+            className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-md p-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-extrabold text-[var(--text-primary)]">
+            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">
               Codigo generado
-            </h3>
+            </CardTitle>
             <p className="mt-2 text-sm text-[var(--text-secondary)]">
               Este codigo solo se muestra UNA vez. Copialo y entregalo al destinatario
               (WhatsApp, email, impreso). No lo podemos recuperar despues.
@@ -491,7 +502,7 @@ export default function GiftCardsAdminModule() {
       ) : (
         <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Código</th>
@@ -537,7 +548,7 @@ export default function GiftCardsAdminModule() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setSelected(c)}
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
+                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                           title="Ver detalles"
                         >
                           <Eye className="h-4 w-4" />
@@ -556,7 +567,7 @@ export default function GiftCardsAdminModule() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}

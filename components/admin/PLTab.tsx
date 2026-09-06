@@ -1,9 +1,10 @@
 "use client";
 
-import { LoadingState, PageTitle, SectionTitle } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
-  TrendingUp, TrendingDown, DollarSign, Loader2, RefreshCw,
+  TrendingUp, TrendingDown, DollarSign, RefreshCw,
   ChevronDown, ChevronUp, Download, BarChart2,
   ArrowUpRight, ArrowDownRight, Minus,
 } from "@buleje/design-system/icons";
@@ -59,33 +60,6 @@ function deltaIcon(val: number) {
   return <Minus className="h-3.5 w-3.5" />;
 }
 
-// ── Mock data builder (uses real API data where available) ─────────────────────
-
-function buildMockMonths(monthCount = 6): MonthData[] {
-  const now = new Date();
-  const result: MonthData[] = [];
-  for (let i = monthCount - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const base = 12000 + Math.random() * 8000;
-    const revenue = parseFloat(base.toFixed(2));
-    const cogs = parseFloat((revenue * (0.52 + Math.random() * 0.08)).toFixed(2));
-    const grossProfit = revenue - cogs;
-    const expenses = parseFloat((revenue * (0.18 + Math.random() * 0.06)).toFixed(2));
-    const netProfit = grossProfit - expenses;
-    result.push({
-      label: buildMonthLabel(d.getFullYear(), d.getMonth()),
-      revenue,
-      cogs,
-      grossProfit,
-      expenses,
-      netProfit,
-      grossMargin: (grossProfit / revenue) * 100,
-      netMargin: (netProfit / revenue) * 100,
-    });
-  }
-  return result;
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function PLTab() {
@@ -98,61 +72,70 @@ export default function PLTab() {
   const [expandExpenses, setExpandExpenses] = useState(false);
   const [tick, setTick] = useState(0);
 
-  // Load data: merge real API calls with computed P&L
+  // Carga datos REALES: una ventana de 6 meses (orders + expenses) y de ahí se
+  // derivan tanto el resumen del mes seleccionado como el trend de 6 meses.
+  // (Antes el trend usaba Math.random — ver buildMockMonths eliminado.)
   useEffect(() => {
     let active = true;
     setLoading(true);
 
-    const from = new Date(year, month, 1).toISOString().slice(0, 10);
-    const to = new Date(year, month + 1, 0).toISOString().slice(0, 10);
+    const TREND_MONTHS = 6;
+    const rangeFrom = new Date(year, month - (TREND_MONTHS - 1), 1).toISOString().slice(0, 10);
+    const rangeTo = new Date(year, month + 1, 0).toISOString().slice(0, 10);
+
+    const monthKey = (y: number, m: number) => `${y}-${String(m + 1).padStart(2, "0")}`;
+    const isIncome = (o: { status?: string }) => o.status === "entregado" || o.status === "confirmado";
+    const ordKey = (o: { createdAt?: string }) => (o.createdAt ?? "").slice(0, 7);
+    const expKey = (e: { date?: string; createdAt?: string }) => (e.date ?? e.createdAt ?? "").slice(0, 7);
 
     Promise.all([
-      fetch(`/api/orders?from=${from}&to=${to}`).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`/api/expenses?from=${from}&to=${to}`).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`/api/expenses/summary`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`/api/orders?from=${rangeFrom}&to=${rangeTo}`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`/api/expenses?from=${rangeFrom}&to=${rangeTo}`).then(r => r.ok ? r.json() : []).catch(() => []),
     ]).then(([orders, expenses]) => {
       if (!active) return;
+      const ordersArr: { createdAt?: string; status?: string; total?: number }[] = Array.isArray(orders) ? orders : [];
+      const expArr: { date?: string; createdAt?: string; category?: string; amount?: number }[] = Array.isArray(expenses) ? expenses : [];
 
-      // Calculate revenue from delivered/confirmed orders
-      const revenue = Array.isArray(orders)
-        ? orders
-          .filter((o: { status: string }) => o.status === "entregado" || o.status === "confirmado")
-          .reduce((sum: number, o: { total: number }) => sum + (o.total ?? 0), 0)
-        : 0;
+      // ── Trend REAL: bucket por mes (COGS estimado 55% del ingreso) ──
+      const realMonths: MonthData[] = [];
+      for (let i = TREND_MONTHS - 1; i >= 0; i--) {
+        const d = new Date(year, month - i, 1);
+        const y = d.getFullYear(), m = d.getMonth();
+        const key = monthKey(y, m);
+        const revenue = ordersArr.filter(o => ordKey(o) === key && isIncome(o)).reduce((s, o) => s + (o.total ?? 0), 0);
+        const cogs = revenue * 0.55;
+        const grossProfit = revenue - cogs;
+        const monthExp = expArr.filter(e => expKey(e) === key).reduce((s, e) => s + (e.amount ?? 0), 0);
+        const netProfit = grossProfit - monthExp;
+        realMonths.push({
+          label: buildMonthLabel(y, m),
+          revenue, cogs, grossProfit, expenses: monthExp, netProfit,
+          grossMargin: revenue > 0 ? (grossProfit / revenue) * 100 : 0,
+          netMargin: revenue > 0 ? (netProfit / revenue) * 100 : 0,
+        });
+      }
+      setMonths(realMonths);
 
-      // COGS estimate: 55% of revenue (configurable in future)
+      // ── Resumen del mes seleccionado (con desglose de gastos por categoría) ──
+      const selKey = monthKey(year, month);
+      const revenue = ordersArr.filter(o => ordKey(o) === selKey && isIncome(o)).reduce((s, o) => s + (o.total ?? 0), 0);
       const cogs = revenue * 0.55;
       const grossProfit = revenue - cogs;
-
-      // Real expenses from DB
-      const totalExpenses = Array.isArray(expenses)
-        ? expenses.reduce((sum: number, e: { amount: number }) => sum + (e.amount ?? 0), 0)
-        : 0;
-
-      // Group expenses by category
+      const selExpenses = expArr.filter(e => expKey(e) === selKey);
+      const totalExpenses = selExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
       const expMap: Record<string, number> = {};
-      if (Array.isArray(expenses)) {
-        for (const e of expenses as { category: string; amount: number }[]) {
-          expMap[e.category] = (expMap[e.category] ?? 0) + e.amount;
-        }
+      for (const e of selExpenses) {
+        const c = e.category ?? "Otros";
+        expMap[c] = (expMap[c] ?? 0) + (e.amount ?? 0);
       }
-
       const netProfit = grossProfit - totalExpenses;
 
       setSummary({
         period: `${MONTHS[month]} ${year}`,
-        revenue,
-        cogs,
-        grossProfit,
-        expenses: expMap,
-        totalExpenses,
-        netProfit,
+        revenue, cogs, grossProfit, expenses: expMap, totalExpenses, netProfit,
         grossMargin: revenue > 0 ? (grossProfit / revenue) * 100 : 0,
         netMargin: revenue > 0 ? (netProfit / revenue) * 100 : 0,
       });
-
-      // Build trend data (last 6 months mock enriched)
-      setMonths(buildMockMonths(6));
       setLoading(false);
     });
 
@@ -181,17 +164,16 @@ export default function PLTab() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
-            <DollarSign className="h-6 w-6 text-primary" />
-            Ganancias y Pérdidas del Mes
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Cuánto entró, cuánto salió y cuánto quedó de ganancia</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="space-y-4">
+      {/* Header estándar del panel. Antes era un div a mano con PageTitle, que
+          se saltea el `font-display` de AdminModuleHeader: al lado de sus
+          hermanos de Mi Plata se leía como otro producto. */}
+      <AdminModuleHeader
+        as="h2"
+        title="Ganancias y pérdidas del mes"
+        description="Cuánto entró, cuánto salió y cuánto quedó de ganancia"
+        icon={DollarSign}
+      >
           <select
             value={month}
             onChange={e => setMonth(Number(e.target.value))}
@@ -212,8 +194,7 @@ export default function PLTab() {
           <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Descargar
           </button>
-        </div>
-      </div>
+      </AdminModuleHeader>
 
       {loading ? (
         <LoadingState />
@@ -222,10 +203,10 @@ export default function PLTab() {
           {/* KPI Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             {[
-              { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+              { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
               { label: "Utilidad Bruta", value: summary.grossProfit, sub: `Margen ${Number(summary.grossMargin).toFixed(1)}%`, icon: BarChart2, color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
               { label: "Gastos Operativos", value: summary.totalExpenses, icon: TrendingDown, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-amber-950/30" },
-              { label: "Utilidad Neta", value: summary.netProfit, delta: profitDelta, sub: `Margen ${Number(summary.netMargin).toFixed(1)}%`, icon: DollarSign, color: summary.netProfit >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: summary.netProfit >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
+              { label: "Utilidad Neta", value: summary.netProfit, delta: profitDelta, sub: `Margen ${Number(summary.netMargin).toFixed(1)}%`, icon: DollarSign, color: summary.netProfit >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]", bg: summary.netProfit >= 0 ? "bg-primary/10 dark:bg-primary/15" : "bg-[var(--data-error-50)] dark:bg-red-950/30" },
             ].map(({ label, value, delta, sub, icon: Icon, color, bg }) => (
               <div key={label} className={cn("rounded-xl p-4", bg, "border border-transparent")}>
                 <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-3", bg)}>
@@ -249,7 +230,7 @@ export default function PLTab() {
               <SectionTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">
                 Ganancias y Pérdidas — {summary.period}
               </SectionTitle>
-              <span className={cn("text-xs font-bold px-3 py-1 rounded-full", summary.netProfit >= 0 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)]")}>
+              <span className={cn("text-xs font-bold px-3 py-1 rounded-full", summary.netProfit >= 0 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)]")}>
                 {summary.netProfit >= 0 ? "GANANDO" : "PERDIENDO"}
               </span>
             </div>
@@ -305,13 +286,13 @@ export default function PLTab() {
                   <div className="w-full flex flex-col gap-0.5 justify-end" style={{ height: "120px" }}>
                     {/* Revenue bar */}
                     <div
-                      className="w-full rounded-t-md bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] transition-all"
+                      className="w-full rounded-t-md bg-primary/10 dark:bg-primary/10 transition-all"
                       style={{ height: `${(m.revenue / maxRevenue) * 100}px` }}
                       title={`Ingresos: ${fmt(m.revenue)}`}
                     />
                     {/* Net profit overlay */}
                     <div
-                      className={cn("w-full rounded-t-md transition-all", m.netProfit >= 0 ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]")}
+                      className={cn("w-full rounded-t-md transition-all", m.netProfit >= 0 ? "bg-primary/10" : "bg-[var(--data-error-500)]")}
                       style={{ height: `${(Math.abs(m.netProfit) / maxRevenue) * 100}px`, marginTop: "2px" }}
                       title={`Utilidad neta: ${fmt(m.netProfit)}`}
                     />
@@ -321,8 +302,8 @@ export default function PLTab() {
               ))}
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3">
-              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] dark:text-muted"><span className="w-3 h-3 rounded bg-[var(--accent-soft)]" /> Ingresos</span>
-              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] dark:text-muted"><span className="w-3 h-3 rounded bg-[var(--accent-soft)]" /> Utilidad neta</span>
+              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] dark:text-muted"><span className="w-3 h-3 rounded bg-primary/10" /> Ingresos</span>
+              <span className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] dark:text-muted"><span className="w-3 h-3 rounded bg-primary/10" /> Utilidad neta</span>
             </div>
           </div>
         </>

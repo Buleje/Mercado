@@ -6,7 +6,6 @@ import {
   Truck, DollarSign, AlertTriangle,
   Clock, ShoppingCart, CreditCard, CalendarDays,
 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
@@ -58,7 +57,7 @@ export interface ComprasData {
 function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
 function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
 function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
-const PROV_COLORS = ["var(--accent)", "#3b82f6", "#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899", "#10b981", "#f97316", "#6366f1"];
+const PROV_COLORS = ["var(--accent)", "#3b82f6", "#8b5cf6", "#ff6b5b", "#ef4444", "#06b6d4", "#ec4899", "#10b981", "#ff6b5b", "#6366f1"];
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -126,7 +125,7 @@ export default function ComprasDashboard({ dateRange, onChangeRange }: ComprasDa
     // Account status (payables)
     const statusGroups = [
       { key: "pagado", label: "Pagado", color: "var(--accent)" },
-      { key: "parcial", label: "Parcial", color: "#f59e0b" },
+      { key: "parcial", label: "Parcial", color: "#ff6b5b" },
       { key: "pendiente", label: "Pendiente", color: "#3b82f6" },
       { key: "vencido", label: "Vencido", color: "#ef4444" },
     ];
@@ -225,25 +224,6 @@ export default function ComprasDashboard({ dateRange, onChangeRange }: ComprasDa
 
       {/* ── Charts especializados (pareto, salud, anual, mix, waterfall, comparativa) ── */}
       <ComprasAdvancedCharts />
-    </div>
-  );
-}
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-5 animate-pulse">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28" />)}
-      </div>
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-[380px]" />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />)}
-      </div>
     </div>
   );
 }

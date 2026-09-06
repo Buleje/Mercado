@@ -88,11 +88,11 @@ export function readNavVisibility(): Store {
     const parsed = JSON.parse(raw) as Partial<Store>;
     const base = defaultStore();
     return {
-      landing: { ...base.landing, ...(parsed.landing ?? {}) },
-      marketplace: { ...base.marketplace, ...(parsed.marketplace ?? {}) },
+      landing: { ...base.landing, ...parsed.landing },
+      marketplace: { ...base.marketplace, ...parsed.marketplace },
       "marketplace-sections": {
         ...base["marketplace-sections"],
-        ...(parsed["marketplace-sections"] ?? {}),
+        ...parsed["marketplace-sections"],
       },
     };
   } catch {

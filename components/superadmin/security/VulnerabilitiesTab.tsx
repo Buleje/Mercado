@@ -157,10 +157,10 @@ export function VulnerabilitiesTab() {
 
       {/* ─── Header status (empty/honest) ─────────────────────── */}
       <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 sm:p-8 text-center">
-        <div className="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 mb-4">
+        <div className="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300 mb-4">
           <ShieldAlert className="h-7 w-7" strokeWidth={1.75} aria-hidden />
         </div>
-        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:text-teal-300">
           Estado · Sin escáner
         </p>
         <h2 className="mt-1 font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
@@ -367,12 +367,12 @@ function StatCell({
   const iconBg = {
     info: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
     success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
     danger: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
   }[tone];
   const valueTone =
     tone === "warning"
-      ? "text-amber-700 dark:text-amber-300"
+      ? "text-teal-700 dark:text-teal-300"
       : tone === "danger"
         ? "text-rose-700 dark:text-rose-300"
         : "text-[var(--text-primary)]";

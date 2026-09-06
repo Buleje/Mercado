@@ -83,6 +83,8 @@ const CORE_BASE: ModuleId[] = [
   "rendimiento",
   "mi-perfil",
   "support-inbox",
+  // Inbox WhatsApp del negocio — universal: toda vertical habla con clientes por WhatsApp
+  "whatsapp-inbox",
 ];
 
 /** Set extendido — todos los tabs actuales (35). */
@@ -103,6 +105,7 @@ const ALL_CURRENT: ModuleId[] = [
   "delivery-partners",
   "delivery-live",
   "marketplace-chat",
+  "canales",
   "store-customizer",
   "pagina-inicio",
   "auditoria",
@@ -119,7 +122,10 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
     description: "Bodegas, minimarkets, abarrotes — venta diaria + fiados + delivery.",
     modules: {
       enabled: ALL_CURRENT,
-      featured: ["vendor-dashboard", "ventas-caja", "inventario", "fiados", "marketplace"],
+      // "fiados" ya no es entrada propia del sidebar (colapsada dentro de
+      // FinanzasModule, auditoría 2026-08-02) — el destacado apunta a "plata",
+      // que es la entrada visible que lleva hasta Fiados en 2 clicks.
+      featured: ["vendor-dashboard", "ventas-caja", "inventario", "plata", "marketplace"],
       hidden: [],
       comingSoon: [],
     },
@@ -179,7 +185,9 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "analytics-pro",
         "auditoria",
       ],
-      featured: ["cotizaciones", "guias-remision", "contratos", "fiados", "compras"],
+      // "fiados" ya no es entrada propia del sidebar (colapsada dentro de
+      // FinanzasModule, auditoría 2026-08-02) — el destacado apunta a "plata".
+      featured: ["cotizaciones", "guias-remision", "contratos", "plata", "compras"],
       hidden: ["delivery-partners", "delivery-live", "marketplace-chat", "metas-logros"],
       comingSoon: ["pietaje", "calculadora-cubicaje", "lotes-madera"],
     },
@@ -208,7 +216,10 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "store-customizer",
         "pagina-inicio",
       ],
-      featured: ["inventario", "ventas-caja", "lotes-vencimiento", "recetas-medicas", "auditoria"],
+      // "auditoria" ya no es entrada propia del sidebar (colapsada dentro de
+      // SistemaHubModule, auditoría 2026-08-02) — el destacado apunta a
+      // "rendimiento", que es la entrada visible del hub.
+      featured: ["inventario", "ventas-caja", "lotes-vencimiento", "recetas-medicas", "rendimiento"],
       hidden: ["cotizaciones", "contratos", "marketplace-chat"],
       comingSoon: [
         "lotes-vencimiento",       // Batch model ya existe — solo UI
@@ -246,7 +257,9 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "store-customizer",
         "pagina-inicio",
       ],
-      featured: ["productos", "cotizaciones", "fiados", "ventas-caja", "compras"],
+      // "fiados" ya no es entrada propia del sidebar (colapsada dentro de
+      // FinanzasModule, auditoría 2026-08-02) — el destacado apunta a "plata".
+      featured: ["productos", "cotizaciones", "plata", "ventas-caja", "compras"],
       hidden: ["delivery-live", "marketplace-chat"],
       comingSoon: ["mayorista-pricing", "kits-bundles", "garantias-tracking"],
     },
@@ -301,6 +314,8 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
         "mi-perfil",
         "support-inbox",
         "plan",
+        "compras",
+        "dropship", // ADR-298 — tiendas dropshipping (gate real = Settings.dropshipEnabled)
       ],
       featured: [],
       hidden: [],

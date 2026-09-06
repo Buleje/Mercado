@@ -7,8 +7,8 @@ import { cn, exportToCSV } from "@/lib/utils";
 import type { ComplianceItem } from "@/app/api/compliance/route";
 
 const STATUS_CONFIG = {
-  "vigente":     { label: "Vigente",           icon: CheckCircle,    color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]", border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]" },
-  "por-vencer":  { label: "Por vencer",         icon: Calendar,       color: "bg-[var(--accent-soft)] text-[var(--data-success)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success)]",             border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" },
+  "vigente":     { label: "Vigente",           icon: CheckCircle,    color: "bg-primary/10 text-[var(--data-success)] dark:bg-primary/15 dark:text-[var(--data-success)]", border: "border-[var(--rule-base)] dark:border-[var(--rule-base)]" },
+  "por-vencer":  { label: "Por vencer",         icon: Calendar,       color: "bg-primary/10 text-[var(--data-success)] dark:bg-primary/15 dark:text-[var(--data-success)]",             border: "border-[var(--data-success)]/30 dark:border-[var(--data-success)]/30" },
   "vencido":     { label: "Vencido",            icon: AlertTriangle,  color: "bg-[var(--data-error-100)] text-[var(--data-error)] dark:bg-[var(--data-error)]/30 dark:text-[var(--data-error)]",                 border: "border-[var(--data-error)] dark:border-[var(--data-error)]/30" },
   "pendiente":   { label: "Pendiente",          icon: Clock,          color: "bg-[var(--data-warning-100)] text-[var(--data-warning)] dark:bg-[var(--data-warning)]/30 dark:text-[var(--data-warning)]",          border: "border-[var(--data-warning)] dark:border-[var(--data-warning)]/30" },
 };
@@ -86,7 +86,7 @@ export default function ComplianceTab() {
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
           <button onClick={() => exportToCSV(filtered.map(o => ({ obligacion: o.title, entidad: o.entity, categoria: o.category, frecuencia: o.frequency, proximo_vencimiento: fmtDate(o.nextDue), estado: o.status, ultimo_presentado: fmtDate(o.lastFiled) })), "cumplimiento")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10">
             <Download className="h-3.5 w-3.5" /> CSV
           </button>
         </div>

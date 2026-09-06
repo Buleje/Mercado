@@ -376,7 +376,22 @@ export async function updateCreditProfile(
 
   // TD-018: existing.usedCredit es Decimal
   const usedCredit = toNumOrZero(existing?.usedCredit);
-  const availableCredit = Math.max(0, result.creditLimit - usedCredit);
+
+  // Frente 3 — override manual de la línea (columna out-of-schema). Si el dueño
+  // aprobó una solicitud con un límite mayor al derivado del score, se HONRA:
+  // el recálculo del score nunca baja una línea otorgada a mano. Lectura raw
+  // porque `manualCreditLimit` no está en schema.prisma.
+  const manualRows = await prisma.$queryRawUnsafe<Array<{ manualCreditLimit: string | null }>>(
+    `SELECT "manualCreditLimit" FROM "CreditProfile" WHERE "tenantId" = $1 AND "customerId" = $2 LIMIT 1`,
+    tenantId,
+    customerId,
+  );
+  const manualLimit =
+    manualRows[0]?.manualCreditLimit != null ? Number(manualRows[0].manualCreditLimit) : null;
+  const effectiveLimit =
+    manualLimit != null ? Math.max(result.creditLimit, manualLimit) : result.creditLimit;
+
+  const availableCredit = Math.max(0, effectiveLimit - usedCredit);
 
   await prisma.creditProfile.upsert({
     where: { tenantId_customerId: { tenantId, customerId } },
@@ -384,9 +399,9 @@ export async function updateCreditProfile(
       tenantId,
       customerId,
       creditScore: result.score,
-      creditLimit: result.creditLimit,
+      creditLimit: effectiveLimit,
       usedCredit: 0,
-      availableCredit: result.creditLimit,
+      availableCredit: effectiveLimit,
       riskLevel: result.riskLevel,
       totalLoans: existing?.totalLoans ?? 0,
       paidOnTime: existing?.paidOnTime ?? 0,
@@ -398,7 +413,7 @@ export async function updateCreditProfile(
     },
     update: {
       creditScore: result.score,
-      creditLimit: result.creditLimit,
+      creditLimit: effectiveLimit,
       availableCredit,
       riskLevel: result.riskLevel,
       avgTicket,

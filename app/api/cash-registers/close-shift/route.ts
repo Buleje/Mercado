@@ -65,9 +65,13 @@ export async function POST(req: NextRequest) {
         const activo = await TurnosDB.getActivo(auth.tenantId, adminUserId);
         if (activo) {
           // Audit project-wide 2026-05-19: migrado a CashShiftSalesDB.
+          // FIX 2026-07-08 (reporte ventas-caja bug 3/6): Sale.cashierId guarda
+          // el username, no el adminUserId. Pasamos AMBAS formas para que el
+          // agregado no devuelva S/0.00.
+          const cajeroUsername = await AdminUsersDB.getUsernameById(auth.tenantId, adminUserId);
           const ventasTotal = await CashShiftSalesDB.aggregateByCashierShift(
             auth.tenantId,
-            adminUserId,
+            [adminUserId, cajeroUsername].filter((v): v is string => !!v),
             new Date(activo.abrioEn),
           );
           const updated = await TurnosDB.cerrar(activo.id, auth.tenantId, {

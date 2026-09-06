@@ -12,6 +12,7 @@
 
 import { cache } from "react";
 import { headers } from "next/headers";
+import { connection } from "next/server";
 import type { Metadata } from "next";
 import { SettingsDB } from "@/lib/db/settings.db";
 
@@ -31,6 +32,12 @@ export const getCachedSettings = cache(async (tenantId: string) => {
  * compartan resultado.
  */
 export const resolveStoreContext = cache(async (): Promise<{ name: string; tenantId: string; isTenant: boolean }> => {
+  // Next 16 Cache Components: opt-out explícito de pre-render estático — esta
+  // función lee headers() + hace una query no cacheada (settings por tenant).
+  // Debe ir FUERA del try/catch: connection() lanza una excepción especial
+  // durante el prerender que React captura internamente; si quedara dentro
+  // del try, el catch la tragaría y Next perdería la señal de "dinámico".
+  await connection();
   try {
     const hdrs = await headers();
     const tenantId = hdrs.get("x-tenant-id") ?? "main";

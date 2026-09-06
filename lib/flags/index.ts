@@ -154,7 +154,7 @@ export async function getAllFlags(context: FlagContext = {}): Promise<
   Array<{ name: string; enabled: boolean; source: string }>
 > {
   const results = []
-  for (const [name, defaultValue] of Object.entries(FLAG_DEFAULTS)) {
+  for (const [name, _defaultValue] of Object.entries(FLAG_DEFAULTS)) {
     const enabled = await isEnabled(name, context)
     const source = POSTHOG_API_KEY ? 'posthog' : (process.env[`FEATURE_FLAG_${name.toUpperCase()}`] ? 'env' : 'default')
     results.push({ name, enabled, source })

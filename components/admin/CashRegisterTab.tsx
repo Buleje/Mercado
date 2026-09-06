@@ -11,8 +11,11 @@ import {
 import dynamic from "next/dynamic";
 import { CardTitle, EmptyState, LoadingState, WarningAlert } from "@buleje/design-system";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
+import { Field } from "@/components/admin/shared/Field";
+import { activateProps } from "@/components/admin/shared/a11y";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { diaLocal, ultimosDiasLocales } from "@/lib/fechas/dia-local";
 
 const CashRegisterChart = dynamic(
   () => import("./cash-register/CashRegisterChart"),
@@ -40,7 +43,7 @@ interface CashRegister {
   movements: CashMovement[];
 }
 
-type View = "current" | "history" | "reconcile";
+type View = "current" | "history" | "reconcile" | "auditoria";
 type MethodFilter = "all" | "efectivo" | "yape" | "plin" | "tarjeta";
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
@@ -63,7 +66,7 @@ function ModuleTooltip() {
             <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Historial:</span> <span className="text-[var(--text-secondary)] dark:text-muted">listado de todas las sesiones cerradas con su diferencia.</span></p>
             <p><span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ingreso / Egreso:</span> <span className="text-[var(--text-secondary)] dark:text-muted">ejemplo: registrar S/50 de egreso por compra de bolsas.</span></p>
           </div>
-          <div className="mt-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-2">
+          <div className="mt-3 bg-primary/10 dark:bg-primary/15 rounded-xl p-2">
             <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">Ejemplo</p>
             <p className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Valentina abre caja con S/200, vende durante el turno y al cerrar el sistema le dice si hay faltante o sobrante.</p>
           </div>
@@ -82,8 +85,8 @@ function fmtDateShort(iso: string) {
 }
 
 const MOVEMENT_COLORS: Record<string, string> = {
-  venta: "text-[var(--data-success-500)] bg-[var(--accent-soft)]",
-  ingreso: "text-[var(--data-success-500)] bg-[var(--accent-soft)]",
+  venta: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12",
+  ingreso: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12",
   egreso: "text-[var(--data-error-500)] bg-[var(--data-error-50)]",
   apertura: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]",
   cierre: "text-[var(--text-secondary)] dark:text-muted bg-[var(--surface-sunken)] dark:bg-accent",
@@ -140,7 +143,7 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
         </div>
       </div>
       {concilAmount && (
-        <div className={cn("rounded-lg p-3 mb-3 text-center", cuadra ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" : "bg-[var(--data-warning-50)] dark:bg-amber-950/20")}>
+        <div className={cn("rounded-lg p-3 mb-3 text-center", cuadra ? "bg-primary/10 dark:bg-primary/15" : "bg-[var(--data-warning-50)] dark:bg-amber-950/20")}>
           {cuadra ? (
             <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Cuadra perfecto{diferencia !== 0 ? ` (dif. S/${diferencia.toFixed(2)})` : ""}</p>
           ) : (
@@ -181,6 +184,8 @@ export default function CashRegisterTab() {
   const [registers, setRegisters] = useState<CashRegister[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("current");
+  /** Rastro de auditoría: quién abrió, cerró o movió plata, y cuándo. */
+  const [trail, setTrail] = useState<{ id: string; action: string; entity: string; detail: string; user: string; createdAt: string }[] | null>(null);
   // Open dialog
   const [showOpen, setShowOpen] = useState(false);
   const [openAmount, setOpenAmount] = useState("");
@@ -218,6 +223,15 @@ export default function CashRegisterTab() {
   const [guiadoBilletes, setGuiadoBilletes] = useState<Record<string, number>>({});
   const [guiadoMonedas, setGuiadoMonedas] = useState<Record<string, number>>({});
   const [addingArqueoGuiado, setAddingArqueoGuiado] = useState(false);
+  /**
+   * Error de abrir caja, cerrar caja o registrar un movimiento.
+   *
+   * Los tres hacían `await fetch(...)` sin mirar la respuesta, con
+   * `catch { /* ignore *\/ }`, y limpiaban el modal igual: el cajero cerraba
+   * la caja, veía la pantalla volver a la normalidad y seguía trabajando sin
+   * saber que no se había guardado nada.
+   */
+  const [cajaError, setCajaError] = useState<string | null>(null);
   // Mejora 12: Tolerancia configurable
   const [cashTolerance, setCashTolerance] = useState(() => {
     try { const v = localStorage.getItem("cash-tolerance"); return v ? Number(v) : 5; } catch { return 5; }
@@ -235,6 +249,24 @@ export default function CashRegisterTab() {
   // Mejora 10: Foto del arqueo
   const [arqueoFoto, setArqueoFoto] = useState<string | null>(null);
   const fotoInputRef = useRef<HTMLInputElement>(null);
+
+  // Umbral de alerta de exceso de efectivo: viene de Settings (cashAlertMax),
+  // configurable en Configuración → Caja. Antes se leía de localStorage (default
+  // 1000) e IGNORABA el valor que el dueño configuraba. Brandon 2026-06-20.
+  const [cashAlertMax, setCashAlertMax] = useState<number>(500);
+  useEffect(() => {
+    let active = true;
+    // credentials same-origin: /api/settings sólo devuelve cashAlertMax al caller
+    // con sesión admin (tryAdmin); sin la cookie el campo se strippea (ADMIN_ONLY).
+    fetch("/api/settings", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const v = Number(d?.cashAlertMax);
+        if (active && Number.isFinite(v) && v > 0) setCashAlertMax(v);
+      })
+      .catch(() => { /* mantiene el default si falla */ });
+    return () => { active = false; };
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -318,7 +350,7 @@ export default function CashRegisterTab() {
     const salesCount = mvs.filter(m => m.type === "venta").length;
     const expectedCash = currentRegister.openingAmount + salesEfectivo + totalIn - totalOut;
     // Hourly sales chart data
-    const hourlyData: number[] = new Array(24).fill(0);
+    const hourlyData: number[] = Array.from({ length: 24 }, () => 0);
     for (const m of mvs.filter(mv => mv.type === "venta")) {
       try {
         const h = new Date(m.createdAt).getHours();
@@ -353,18 +385,24 @@ export default function CashRegisterTab() {
   const handleOpen = async () => {
     if (opening) return;
     setOpening(true);
+    setCajaError(null);
     try {
-      await fetch("/api/cash-registers", {
+      const res = await fetch("/api/cash-registers", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "open", openingAmount: Number(openAmount) || 0, notes: openNotes || undefined }),
       });
+      if (!res.ok) { setCajaError(await mensajeDeError(res, "No se pudo abrir la caja")); return; }
       setShowOpen(false);
       setOpenAmount("");
       setOpenNotes("");
       fetchData();
-    } catch { /* ignore */ }
-    setOpening(false);
+    } catch (err) {
+      console.warn("[CashRegisterTab] abrir caja falló", err);
+      setCajaError("Sin conexión con el servidor — la caja NO se abrió.");
+    } finally {
+      setOpening(false);
+    }
   };
 
   // ── Close register ─────────────────────────────────────────────────────────
@@ -372,19 +410,27 @@ export default function CashRegisterTab() {
   const handleClose = async () => {
     if (!currentRegister || closing) return;
     setClosing(true);
+    setCajaError(null);
     try {
-      await fetch(`/api/cash-registers/${currentRegister.id}`, {
+      const res = await fetch(`/api/cash-registers/${currentRegister.id}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action: "close", closingAmount: Number(closeAmount) || 0, notes: closeNotes || undefined }),
       });
+      // Si el cierre falla, el conteo de billetes NO se borra: volver a
+      // contarlo todo por un 503 es lo que hacía que nadie confiara en esto.
+      if (!res.ok) { setCajaError(await mensajeDeError(res, "No se pudo cerrar la caja")); return; }
       setShowClose(false);
       setCloseAmount("");
       setCloseNotes("");
       setDenominations({});
       fetchData();
-    } catch { /* ignore */ }
-    setClosing(false);
+    } catch (err) {
+      console.warn("[CashRegisterTab] cerrar caja falló", err);
+      setCajaError("Sin conexión con el servidor — la caja NO se cerró y el conteo sigue acá.");
+    } finally {
+      setClosing(false);
+    }
   };
 
   // ── Add movement ───────────────────────────────────────────────────────────
@@ -394,8 +440,9 @@ export default function CashRegisterTab() {
     // Egreso requires a description (motivo)
     if (mvType === "egreso" && !mvDescription.trim()) return;
     setAddingMv(true);
+    setCajaError(null);
     try {
-      await fetch(`/api/cash-registers/${currentRegister.id}`, {
+      const res = await fetch(`/api/cash-registers/${currentRegister.id}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
@@ -406,14 +453,29 @@ export default function CashRegisterTab() {
           description: [mvMotivo, mvDescription].filter(Boolean).join(" — ") || (mvType === "ingreso" ? "Ingreso manual" : "Egreso manual"),
         }),
       });
+      // Un retiro que no se guarda descuadra el arqueo del día entero.
+      if (!res.ok) {
+        setCajaError(await mensajeDeError(res, `No se pudo registrar el ${mvType}`));
+        return;
+      }
       setShowMovement(false);
       setMvAmount("");
       setMvMotivo("");
       setMvDescription("");
       fetchData();
-    } catch { /* ignore */ }
-    setAddingMv(false);
+    } catch (err) {
+      console.warn("[CashRegisterTab] movimiento de caja falló", err);
+      setCajaError("Sin conexión con el servidor — el movimiento NO se registró.");
+    } finally {
+      setAddingMv(false);
+    }
   };
+
+  /** El mensaje del servidor, o uno genérico con el código. */
+  async function mensajeDeError(res: Response, fallback: string): Promise<string> {
+    const body = await res.json().catch(() => ({}));
+    return typeof body?.error === "string" ? body.error : `${fallback} (error ${res.status})`;
+  }
 
   // ── Arqueo Express ──────────────────────────────────────────────────────────
 
@@ -474,7 +536,19 @@ export default function CashRegisterTab() {
 
   const handleArqueoGuiado = async () => {
     if (!currentRegister || addingArqueoGuiado) return;
+    /**
+     * Esto CIERRA la caja del día (manda `action: "close"`), no es sólo contar.
+     * El botón decía «Confirmar arqueo» y el cajero se quedaba sin caja sin
+     * haberlo pedido — y sin que nada se lo dijera.
+     */
+    const ok = window.confirm(
+      `Esto CIERRA la caja del día con S/${guiadoTotal.toFixed(2)} contados en efectivo.\n\n` +
+      `Esperado: S/${guiadoExpected.toFixed(2)} · Diferencia: ${guiadoDiff >= 0 ? "+" : "−"}S/${Math.abs(guiadoDiff).toFixed(2)}\n\n` +
+      "Después de cerrar hay que abrir una caja nueva para seguir vendiendo. ¿Cerrar?",
+    );
+    if (!ok) return;
     setAddingArqueoGuiado(true);
+    setArqueoError(null);
     try {
       const timestamp = new Date().toLocaleString("es-PE", {
         day: "2-digit",
@@ -486,9 +560,29 @@ export default function CashRegisterTab() {
       const digitalTotal = (Number(arqueoYape) || 0) + (Number(arqueoPlin) || 0) + (Number(arqueoTarjeta) || 0);
       const grandTotal = guiadoTotal + digitalTotal;
       const digitalNote = digitalTotal > 0 ? ` | Yape: S/${(Number(arqueoYape) || 0).toFixed(2)} | Plin: S/${(Number(arqueoPlin) || 0).toFixed(2)} | Tarjeta: S/${(Number(arqueoTarjeta) || 0).toFixed(2)}` : "";
-      const fotoNote = arqueoFoto ? " | Foto: adjunta" : "";
+      // Brandon 2026-06-17: persiste la foto del arqueo SERVER-SIDE (antes solo
+      // quedaba en localStorage + flag de texto "adjunta", se perdía al limpiar).
+      // Sube a /api/upload (Supabase + Sharp) y guarda la URL real en notes.
+      // Best-effort: si el upload falla, conserva el flag para no bloquear el cierre.
+      let fotoNote = "";
+      if (arqueoFoto) {
+        try {
+          const blob = await (await fetch(arqueoFoto)).blob();
+          const file = new File([blob], `arqueo-${currentRegister.id}.jpg`, {
+            type: blob.type || "image/jpeg",
+          });
+          const fd = new FormData();
+          fd.append("file", file);
+          fd.append("folder", "general");
+          const upRes = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
+          const up = upRes.ok ? ((await upRes.json()) as { url?: string }) : null;
+          fotoNote = up?.url ? ` | Foto: ${up.url}` : " | Foto: adjunta";
+        } catch {
+          fotoNote = " | Foto: adjunta";
+        }
+      }
 
-      await fetch(`/api/cash-registers/${currentRegister.id}`, {
+      const res = await fetch(`/api/cash-registers/${currentRegister.id}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
@@ -497,6 +591,18 @@ export default function CashRegisterTab() {
           notes: `Arqueo Guiado - ${timestamp} | Billetes: S/${guiadoTotalBilletes.toFixed(2)} | Monedas: S/${guiadoTotalMonedas.toFixed(2)} | Total efectivo: S/${guiadoTotal.toFixed(2)}${digitalNote} | Total general: S/${grandTotal.toFixed(2)} | Diferencia: ${guiadoDiff >= 0 ? "+" : ""}S/${guiadoDiff.toFixed(2)}${fotoNote}`,
         }),
       });
+      // Antes se limpiaba la pantalla pasara lo que pasara: si el cierre
+      // fallaba (409 de otra pestaña, 503 de la base), el conteo de billetes
+      // se perdía y la caja quedaba abierta sin que nadie se enterara.
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setArqueoError(
+          typeof body?.error === "string"
+            ? body.error
+            : `No se pudo cerrar la caja (error ${res.status}). El conteo sigue acá.`,
+        );
+        return;
+      }
 
       setShowArqueoGuiado(false);
       setGuiadoBilletes({});
@@ -507,8 +613,12 @@ export default function CashRegisterTab() {
       setArqueoFoto(null);
       setArqueoTab("efectivo");
       fetchData();
-    } catch { /* ignore */ }
-    setAddingArqueoGuiado(false);
+    } catch (err) {
+      console.warn("[CashRegisterTab] arqueo guiado falló", err);
+      setArqueoError("Sin conexión con el servidor. La caja NO se cerró y el conteo sigue acá.");
+    } finally {
+      setAddingArqueoGuiado(false);
+    }
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -519,6 +629,26 @@ export default function CashRegisterTab() {
 
   return (
     <div className="space-y-4">
+      {/* Lo que el servidor rechazó, a la vista. Abrir caja, cerrarla y
+          registrar un retiro fallaban en silencio: el modal se cerraba igual y
+          el cajero seguía trabajando sobre una caja que no existía. */}
+      {cajaError && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-4 py-3"
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-error-500)]" aria-hidden />
+          <p className="flex-1 text-sm font-semibold text-[var(--text-primary)]">{cajaError}</p>
+          <button
+            type="button"
+            onClick={() => setCajaError(null)}
+            className="text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          >
+            Entendido
+          </button>
+        </div>
+      )}
+
       {/* Toolbar (sin breadcrumb redundante — el nav ya indica el modulo) */}
       <div className="flex items-center justify-end flex-wrap gap-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -578,6 +708,20 @@ export default function CashRegisterTab() {
               Historial
             </button>
             <button
+              onClick={() => {
+                setView("auditoria");
+                if (trail === null) {
+                  fetch("/api/cash-registers/historial?limit=100", { credentials: "include" })
+                    .then((r) => (r.ok ? r.json() : { entries: [] }))
+                    .then((j) => setTrail(j.entries ?? []))
+                    .catch(() => setTrail([]));
+                }
+              }}
+              className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "auditoria" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+            >
+              Quién la tocó
+            </button>
+            <button
               onClick={() => setView("reconcile")}
               className={cn("px-4 py-2 rounded-lg text-sm font-semibold transition-all", view === "reconcile" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
             >
@@ -595,7 +739,7 @@ export default function CashRegisterTab() {
             <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
               <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl p-6 sm:p-7">
                 <div className="flex items-start gap-4 mb-6">
-                  <div className="h-12 w-12 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <Lock className="h-6 w-6 text-primary" strokeWidth={1.75} aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -653,7 +797,7 @@ export default function CashRegisterTab() {
 
                 <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-3">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                    <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                       <Banknote className="h-4 w-4" />
                     </div>
                     <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">Ventas efectivo</span>
@@ -673,7 +817,7 @@ export default function CashRegisterTab() {
 
                 <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-3">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                    <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                       <Calculator className="h-4 w-4" />
                     </div>
                     <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted uppercase">Esperado caja</span>
@@ -686,7 +830,7 @@ export default function CashRegisterTab() {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => { setMvType("ingreso"); setMvMotivo(""); setShowMovement(true); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] font-bold text-xs hover:bg-[var(--accent-soft)] transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] font-bold text-xs hover:bg-primary/10 transition-colors"
                 >
                   <ArrowUp className="h-4 w-4" /> Ingreso
                 </button>
@@ -698,7 +842,7 @@ export default function CashRegisterTab() {
                 </button>
                 <button
                   onClick={() => { setArqueoAmount(""); setArqueoDenoms({}); setArqueoError(null); setShowArqueo(true); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--accent-soft)] text-[var(--data-success-500)] font-bold text-xs hover:bg-[var(--accent-soft)] transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] font-bold text-xs hover:bg-primary/10 transition-colors"
                   title="Conteo físico del efectivo para verificar que cuadra con las ventas"
                 >
                   <Scan className="h-4 w-4" /> Arqueo Express
@@ -780,7 +924,7 @@ export default function CashRegisterTab() {
 
               {/* Mejora 7: Alerta de exceso de efectivo */}
               {(() => {
-                const threshold = (() => { try { const v = localStorage.getItem("cash-alert-threshold"); return v ? Number(v) : 1000; } catch { return 1000; } })();
+                const threshold = cashAlertMax;
                 const efectivoEnCaja = stats?.expectedCash ?? 0;
                 if (efectivoEnCaja <= threshold) return null;
                 return (
@@ -803,10 +947,10 @@ export default function CashRegisterTab() {
               {Object.keys(computedPaymentBreakdown).length > 0 && (() => {
                 const totalSales = Object.values(computedPaymentBreakdown).reduce((s, v) => s + v, 0);
                 const METHOD_CONFIG: Record<string, { icon: typeof Banknote; bg: string; color: string }> = {
-                  efectivo: { icon: Banknote, bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+                  efectivo: { icon: Banknote, bg: "bg-primary/10 dark:bg-primary/15", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
                   yape: { icon: Smartphone, bg: "bg-[var(--surface-sunken)]", color: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]" },
                   plin: { icon: Smartphone, bg: "bg-[var(--data-info-50)] dark:bg-cyan-950/20", color: "text-[var(--data-info-500)] dark:text-[var(--data-info-500)]" },
-                  tarjeta: { icon: CreditCard, bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
+                  tarjeta: { icon: CreditCard, bg: "bg-primary/10 dark:bg-primary/15", color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
                 };
                 return (
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -850,9 +994,9 @@ export default function CashRegisterTab() {
                       const fullTimeStr = (() => { try { return new Date(item.time).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", second: "2-digit" }); } catch { return ""; } })();
                       const isPositive = ["venta", "ingreso", "apertura"].includes(item.type);
                       const badgeColor = item.type === "apertura" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" :
-                        item.type === "venta" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
+                        item.type === "venta" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
                         item.type === "egreso" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]" :
-                        item.type === "ingreso" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" :
+                        item.type === "ingreso" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
                         "bg-[var(--surface-sunken)] text-[var(--text-primary)]";
                       const isExpanded = expandedMovIdx === idx;
                       return (
@@ -865,7 +1009,7 @@ export default function CashRegisterTab() {
                           {/* Content — clickable */}
                           <div
                             className="pb-3 flex-1 min-w-0 cursor-pointer hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 rounded-lg px-1.5 -mx-1.5 transition-colors"
-                            onClick={() => setExpandedMovIdx(isExpanded ? null : idx)}
+                            {...activateProps(() => setExpandedMovIdx(isExpanded ? null : idx))}
                           >
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">{timeStr}</span>
@@ -1009,7 +1153,7 @@ export default function CashRegisterTab() {
           {/* Mejora 11: Sparkline de diferencias con AreaChart + badge de tendencia */}
           {closedRegisters.length > 2 && (() => {
             const last30 = closedRegisters.slice(0, 30);
-            const diffs = [...last30.map(r => r.difference ?? 0)].reverse();
+            const diffs = last30.map(r => r.difference ?? 0).reverse();
             const sparkData = diffs.map((d, i) => ({ idx: i, diff: d, pos: d >= 0 ? d : 0, neg: d < 0 ? d : 0 }));
 
             // Badge de tendencia (solo si hay 10+ datos)
@@ -1019,7 +1163,7 @@ export default function CashRegisterTab() {
               const prev5 = diffs.slice(-10, -5).map(d => Math.abs(d));
               const avgLast = last5.reduce((s, v) => s + v, 0) / 5;
               const avgPrev = prev5.reduce((s, v) => s + v, 0) / 5;
-              if (avgLast < avgPrev * 0.8) tendencia = { label: "Mejorando", color: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" };
+              if (avgLast < avgPrev * 0.8) tendencia = { label: "Mejorando", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" };
               else if (avgLast > avgPrev * 1.2) tendencia = { label: "Empeorando", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]" };
               else tendencia = { label: "Estable", color: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:bg-zinc-700 dark:text-zinc-400" };
             } else if (diffs.length >= 5) {
@@ -1088,7 +1232,7 @@ export default function CashRegisterTab() {
                     <span>Esperado: {fmt(r.expectedAmount ?? 0)}</span>
                     <span>Cierre: {fmt(r.closingAmount ?? 0)}</span>
                     {withinTolerance ? (
-                      <span className="px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold">Dentro de tolerancia (±S/{cashTolerance})</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold">Dentro de tolerancia (±S/{cashTolerance})</span>
                     ) : (
                       <span className="px-1.5 py-0.5 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-bold">Fuera de tolerancia</span>
                     )}
@@ -1101,12 +1245,69 @@ export default function CashRegisterTab() {
       )}
 
       {/* Reconciliation view */}
+      {view === "auditoria" && (
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-[var(--rule-base)]">
+            <h3 className="text-sm font-bold text-[var(--text-primary)]">Quién tocó la caja</h3>
+            <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+              Aperturas, cierres e ingresos o egresos manuales, con el usuario que los hizo. Es un registro de auditoría: no se edita
+              ni se borra.
+            </p>
+          </div>
+          {trail === null ? (
+            <div className="p-8 text-center text-sm text-[var(--text-secondary)]">Cargando el historial…</div>
+          ) : trail.length === 0 ? (
+            <div className="p-8 text-center text-sm text-[var(--text-secondary)]">
+              Todavía no hay movimientos registrados. Las aperturas y cierres de caja quedan acá desde ahora.
+            </div>
+          ) : (
+            <ul className="divide-y divide-[var(--rule-base)]">
+              {trail.map((t) => {
+                const esApertura = t.action === "Abrir";
+                const esCierre = t.action === "Cerrar";
+                return (
+                  <li key={t.id} className="flex flex-wrap items-start gap-3 px-5 py-3">
+                    <span
+                      className={cn(
+                        "mt-0.5 inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide",
+                        esApertura
+                          ? "bg-primary/10 text-primary"
+                          : esCierre
+                            ? "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+                      )}
+                    >
+                      {esApertura ? "Apertura" : esCierre ? "Cierre" : "Movimiento"}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-[var(--text-primary)]">{t.detail}</p>
+                      <p className="text-xs text-[var(--text-secondary)]">
+                        <span className="font-semibold">{t.user}</span> ·{" "}
+                        {new Date(t.createdAt).toLocaleString("es-PE", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+
       {view === "reconcile" && (() => {
         // Group closed registers by calendar day
         type DayRow = { date: string; count: number; totalExpected: number; totalClosing: number; totalDiff: number; hasAlert: boolean };
         const byDay = new Map<string, DayRow>();
         for (const r of closedRegisters) {
-          const day = r.closedAt ? r.closedAt.slice(0, 10) : r.openedAt.slice(0, 10);
+          // Día local: con el ISO crudo, un cierre de las 20:00 aparecía en la
+          // fila del día siguiente.
+          const day = diaLocal(r.closedAt ?? r.openedAt);
           const existing = byDay.get(day) ?? { date: day, count: 0, totalExpected: 0, totalClosing: 0, totalDiff: 0, hasAlert: false };
           existing.count++;
           existing.totalExpected += r.expectedAmount ?? 0;
@@ -1118,24 +1319,34 @@ export default function CashRegisterTab() {
         const rows = Array.from(byDay.values()).sort((a, b) => b.date.localeCompare(a.date));
         const totalDiscrepancy = rows.reduce((s, r) => s + Math.abs(r.totalDiff), 0);
         
-        // Weekly cash flow computation (last 7 days)
-        const today = new Date();
+        /**
+         * Flujo de caja de los últimos 7 días. Tres cosas que estaban mal:
+         *
+         *  1. El día se calculaba en UTC (`toISOString().slice(0,10)` y el
+         *     `closedAt` crudo). En Perú son 5 horas de corrimiento: la caja
+         *     que se cierra a las 20:00 del lunes caía en el martes.
+         *  2. Sumaba `openingAmount` como ingreso. El fondo con el que se abre
+         *     no es plata que entró: es la misma que ya estaba.
+         *  3. Sumaba TODAS las ventas, también las de Yape y tarjeta, que no
+         *     pasan por el cajón. Esto es flujo de EFECTIVO.
+         */
         const weekData: Array<{ date: string; income: number; expenses: number; net: number }> = [];
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date(today);
-          d.setDate(d.getDate() - i);
-          const dateStr = d.toISOString().slice(0, 10);
-          const dayRegs = closedRegisters.filter(r => {
-            const rDate = r.closedAt ? r.closedAt.slice(0, 10) : r.openedAt.slice(0, 10);
-            return rDate === dateStr;
-          });
+        for (const dateStr of ultimosDiasLocales(7)) {
+          const dayRegs = closedRegisters.filter(r =>
+            diaLocal(r.closedAt ?? r.openedAt) === dateStr,
+          );
           let income = 0;
           let expenses = 0;
           for (const reg of dayRegs) {
-            income += reg.openingAmount;
             for (const m of reg.movements) {
-              if (m.type === "venta" || m.type === "ingreso") income += m.amount;
-              else if (m.type === "egreso") expenses += m.amount;
+              if (m.type === "venta") {
+                // Sólo lo cobrado en efectivo entra al cajón.
+                if ((m.method ?? "efectivo") === "efectivo") income += m.amount;
+              } else if (m.type === "ingreso") {
+                income += m.amount;
+              } else if (m.type === "egreso") {
+                expenses += m.amount;
+              }
             }
           }
           weekData.push({ date: dateStr, income, expenses, net: income - expenses });
@@ -1156,7 +1367,7 @@ export default function CashRegisterTab() {
                 </CardTitle>
                 <div className="flex flex-wrap items-center gap-3 text-xs">
                   <div className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full bg-[var(--accent-soft)]"></div>
+                    <div className="h-2 w-2 rounded-full bg-primary/10"></div>
                     <span className="text-[var(--text-secondary)] dark:text-muted">Ingresos</span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -1174,7 +1385,7 @@ export default function CashRegisterTab() {
                     <div key={idx} className="flex flex-col items-center">
                       <div className="relative w-full h-20 flex flex-wrap items-end justify-center gap-0.5 mb-1">
                         <div
-                          className="w-2.5 bg-[var(--accent-soft)] rounded-t transition-all"
+                          className="w-2.5 bg-primary/10 rounded-t transition-all"
                           style={{ height: `${incomeH}px` }}
                           title={`Ingresos: ${fmt(day.income)}`}
                         ></div>
@@ -1210,7 +1421,7 @@ export default function CashRegisterTab() {
                 <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(rows.reduce((s, r) => s + r.totalClosing, 0))}</p>
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Total recaudado</p>
               </div>
-              <div className={cn("border rounded-xl p-3 text-center", totalDiscrepancy > 10 ? "bg-[var(--data-error-50)] border-[var(--data-error-500)]" : totalDiscrepancy > 0 ? "bg-[var(--data-warning-50)] border-[var(--data-warning-500)]" : "bg-[var(--accent-soft)] border-[var(--data-success-500)]/30")}>
+              <div className={cn("border rounded-xl p-3 text-center", totalDiscrepancy > 10 ? "bg-[var(--data-error-50)] border-[var(--data-error-500)]" : totalDiscrepancy > 0 ? "bg-[var(--data-warning-50)] border-[var(--data-warning-500)]" : "bg-primary/10 border-[var(--data-success-500)]/30")}>
                 <p className={cn("text-lg font-extrabold", totalDiscrepancy > 10 ? "text-[var(--data-error-500)]" : totalDiscrepancy > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]")}>{fmt(totalDiscrepancy)}</p>
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Diferencia acumulada</p>
               </div>
@@ -1253,7 +1464,7 @@ export default function CashRegisterTab() {
                           </td>
                           <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                             {isOk ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)] text-xs font-bold"><Check className="h-4 w-4" />OK</span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold"><Check className="h-4 w-4" />OK</span>
                             ) : isMinor ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-bold"><AlertTriangle className="h-4 w-4" />Menor</span>
                             ) : (
@@ -1293,46 +1504,49 @@ export default function CashRegisterTab() {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Monto de apertura</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.10"
-                    value={openAmount}
-                    onChange={e => setOpenAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    autoFocus
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {[100, 200, 300, 500].map(amount => {
-                    const active = parseFloat(openAmount || "0") === amount;
-                    return (
-                      <button
-                        key={amount}
-                        type="button"
-                        onClick={() => setOpenAmount(String(amount))}
-                        className={cn(
-                          "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
-                          active
-                            ? "bg-primary text-white border-primary"
-                            : "bg-white dark:bg-white/5 text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
-                        )}
-                      >
-                        S/ {amount}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="text-sm text-[var(--text-tertiary)] mt-2">Dinero con el que abre la caja al empezar el día.</p>
-              </div>
+              <Field label="Monto de apertura" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+                {(id) => (
+                  <>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
+                      <input
+                        id={id}
+                        type="number"
+                        min="0"
+                        step="0.10"
+                        value={openAmount}
+                        onChange={e => setOpenAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {[100, 200, 300, 500].map(amount => {
+                        const active = parseFloat(openAmount || "0") === amount;
+                        return (
+                          <button
+                            key={amount}
+                            type="button"
+                            onClick={() => setOpenAmount(String(amount))}
+                            className={cn(
+                              "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
+                              active
+                                ? "bg-primary text-white border-primary"
+                                : "bg-white dark:bg-white/5 text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
+                            )}
+                          >
+                            S/ {amount}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-sm text-[var(--text-tertiary)] mt-2">Dinero con el que abre la caja al empezar el día.</p>
+                  </>
+                )}
+              </Field>
 
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Notas <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></label>
+              <Field label={<>Notas <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></>} labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                 <textarea
                   value={openNotes}
                   onChange={e => setOpenNotes(e.target.value)}
@@ -1340,7 +1554,7 @@ export default function CashRegisterTab() {
                   rows={2}
                   className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                 />
-              </div>
+              </Field>
             </div>
 
             {/* Footer */}
@@ -1456,7 +1670,7 @@ export default function CashRegisterTab() {
             </div>
 
             {/* Esperado card */}
-            <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-4 border border-[var(--data-success-500)]/30">
+            <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-4 border border-[var(--data-success-500)]/30">
               <p className="text-xs uppercase tracking-wide font-semibold text-[var(--data-success-500)] mb-1">Esperado en caja</p>
               <p className="text-2xl font-extrabold text-[var(--data-success-500)] tabular-nums mb-2">{fmt(stats?.expectedCash ?? 0)}</p>
               <p className="text-sm text-[var(--data-success-500)]/80">
@@ -1467,10 +1681,10 @@ export default function CashRegisterTab() {
               {/* Denomination Helper */}
               <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1">
+                  <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1">
                     <Banknote className="h-4 w-4 text-primary" />
                     Contador de denominaciones
-                  </label>
+                  </span>
                   {Object.keys(denominations).length > 0 && (
                     <button
                       onClick={handleDenomReset}
@@ -1504,32 +1718,35 @@ export default function CashRegisterTab() {
                 )}
               </div>
               
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Monto contado en caja</label>
-                <div className="relative mt-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] dark:text-muted font-bold text-sm">S/</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.10"
-                    value={closeAmount}
-                    onChange={e => setCloseAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
-                    autoFocus
-                  />
-                </div>
-                {closeAmount && (
-                  <div className={cn(
-                    "mt-2 rounded-xl p-2 text-center text-xs font-bold",
-                    Number(closeAmount) - (stats?.expectedCash ?? 0) >= 0 ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)]"
-                  )}>
-                    Diferencia: {Number(closeAmount) - (stats?.expectedCash ?? 0) > 0 ? "+" : ""}{fmt(Number(closeAmount) - (stats?.expectedCash ?? 0))}
-                  </div>
+              <Field label="Monto contado en caja" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                {(id) => (
+                  <>
+                    <div className="relative mt-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] dark:text-muted font-bold text-sm">S/</span>
+                      <input
+                        id={id}
+                        type="number"
+                        min="0"
+                        step="0.10"
+                        value={closeAmount}
+                        onChange={e => setCloseAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                        autoFocus
+                      />
+                    </div>
+                    {closeAmount && (
+                      <div className={cn(
+                        "mt-2 rounded-xl p-2 text-center text-xs font-bold",
+                        Number(closeAmount) - (stats?.expectedCash ?? 0) >= 0 ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)]"
+                      )}>
+                        Diferencia: {Number(closeAmount) - (stats?.expectedCash ?? 0) > 0 ? "+" : ""}{fmt(Number(closeAmount) - (stats?.expectedCash ?? 0))}
+                      </div>
+                    )}
+                  </>
                 )}
-              </div>
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Notas (opcional)</label>
+              </Field>
+              <Field label="Notas (opcional)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input
                   type="text"
                   value={closeNotes}
@@ -1537,7 +1754,7 @@ export default function CashRegisterTab() {
                   placeholder="Observaciones"
                   className="w-full mt-1 px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                 />
-              </div>
+              </Field>
             </div>
             </div>
 
@@ -1572,7 +1789,7 @@ export default function CashRegisterTab() {
               <div className="flex items-center gap-3">
                 <div className={cn(
                   "h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
-                  mvType === "ingreso" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-500)]/15"
+                  mvType === "ingreso" ? "bg-primary/10" : "bg-[var(--data-error-500)]/15"
                 )}>
                   {mvType === "ingreso"
                     ? <ArrowUp className="h-5 w-5 text-[var(--data-success-500)]" strokeWidth={2} />
@@ -1594,62 +1811,63 @@ export default function CashRegisterTab() {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">Monto</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.10"
-                    value={mvAmount}
-                    onChange={e => setMvAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
-                  Motivo {mvType === "egreso" && <span className="text-[var(--data-error-500)]">*</span>}
-                </label>
-                <select
-                  value={mvMotivo}
-                  onChange={e => setMvMotivo(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-base text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                >
-                  {/* QA Brandon 2026-06-10 #8: motivos separados por tipo —
-                      antes la lista era única y Egreso ofrecía "Ingreso extra"
-                      (y viceversa), mezclando categorías contables. */}
-                  <option value="">Selecciona un motivo...</option>
-                  {mvType === "egreso" ? (
-                    <>
-                      <option value="Pago a proveedor">Pago a proveedor</option>
-                      <option value="Retiro personal">Retiro personal</option>
-                      <option value="Compra de insumos">Compra de insumos</option>
-                      <option value="Cambio">Cambio</option>
-                      <option value="Otro">Otro</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="Ingreso extra">Ingreso extra</option>
-                      <option value="Cobro pendiente">Cobro pendiente</option>
-                      <option value="Cambio">Cambio</option>
-                      <option value="Otro">Otro</option>
-                    </>
-                  )}
-                </select>
-                {mvType === "egreso" && !mvMotivo && !mvDescription.trim() && (
-                  <p className="text-sm text-[var(--data-error-500)] mt-1.5 font-medium">Motivo obligatorio para egresos</p>
+              <Field label="Monto" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+                {(id) => (
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[var(--text-tertiary)]">S/</span>
+                    <input
+                      id={id}
+                      type="number"
+                      min="0.01"
+                      step="0.10"
+                      value={mvAmount}
+                      onChange={e => setMvAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      autoFocus
+                    />
+                  </div>
                 )}
-              </div>
+              </Field>
 
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
-                  Descripción <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span>
-                </label>
+              <Field label={<>Motivo {mvType === "egreso" && <span className="text-[var(--data-error-500)]">*</span>}</>} labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
+                {(id) => (
+                  <>
+                    <select
+                      id={id}
+                      value={mvMotivo}
+                      onChange={e => setMvMotivo(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-base text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    >
+                      {/* QA Brandon 2026-06-10 #8: motivos separados por tipo —
+                          antes la lista era única y Egreso ofrecía "Ingreso extra"
+                          (y viceversa), mezclando categorías contables. */}
+                      <option value="">Selecciona un motivo...</option>
+                      {mvType === "egreso" ? (
+                        <>
+                          <option value="Pago a proveedor">Pago a proveedor</option>
+                          <option value="Retiro personal">Retiro personal</option>
+                          <option value="Compra de insumos">Compra de insumos</option>
+                          <option value="Cambio">Cambio</option>
+                          <option value="Otro">Otro</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="Ingreso extra">Ingreso extra</option>
+                          <option value="Cobro pendiente">Cobro pendiente</option>
+                          <option value="Cambio">Cambio</option>
+                          <option value="Otro">Otro</option>
+                        </>
+                      )}
+                    </select>
+                    {mvType === "egreso" && !mvMotivo && !mvDescription.trim() && (
+                      <p className="text-sm text-[var(--data-error-500)] mt-1.5 font-medium">Motivo obligatorio para egresos</p>
+                    )}
+                  </>
+                )}
+              </Field>
+
+              <Field label={<>Descripción <span className="text-[var(--text-tertiary)] font-normal">(opcional)</span></>} labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
                 <textarea
                   value={mvDescription}
                   onChange={e => setMvDescription(e.target.value)}
@@ -1657,7 +1875,7 @@ export default function CashRegisterTab() {
                   rows={2}
                   className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                 />
-              </div>
+              </Field>
             </div>
 
             {/* Footer */}
@@ -1707,7 +1925,7 @@ export default function CashRegisterTab() {
               {/* Header */}
               <div className="px-6 py-5 border-b border-[var(--rule-soft)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <Scan className="h-5 w-5 text-[var(--data-success-500)]" strokeWidth={2} />
                   </div>
                   <div>
@@ -1741,10 +1959,10 @@ export default function CashRegisterTab() {
                 {/* Quick Denomination Counter */}
                 <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1">
+                    <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1">
                       <Banknote className="h-4 w-4 text-primary" />
                       Conteo rápido
-                    </label>
+                    </span>
                     {Object.keys(arqueoDenoms).length > 0 && (
                       <button
                         onClick={handleArqueoReset}
@@ -1778,29 +1996,31 @@ export default function CashRegisterTab() {
                   )}
                 </div>
                 
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Monto total verificado</label>
-                  <div className="relative mt-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] dark:text-muted font-bold text-sm">S/</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.10"
-                      value={arqueoAmount}
-                      onChange={e => setArqueoAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
-                      autoFocus
-                    />
-                  </div>
-                </div>
+                <Field label="Monto total verificado" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                  {(id) => (
+                    <div className="relative mt-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] dark:text-muted font-bold text-sm">S/</span>
+                      <input
+                        id={id}
+                        type="number"
+                        min="0"
+                        step="0.10"
+                        value={arqueoAmount}
+                        onChange={e => setArqueoAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                        autoFocus
+                      />
+                    </div>
+                  )}
+                </Field>
                 
                 {/* Difference Badge */}
                 {arqueoAmount && (
                   <div className={cn(
                     "rounded-xl p-3 text-center border-2",
                     Math.abs(difference) < 0.5
-                      ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                      ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                       : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30"
                   )}>
                     <div className="flex flex-wrap items-center justify-center gap-2 mb-1">
@@ -1913,10 +2133,10 @@ export default function CashRegisterTab() {
 
             {/* Billetes section */}
             <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)] mb-3">
-              <label className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1 mb-2">
+              <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1 mb-2">
                 <Banknote className="h-4 w-4 text-[var(--data-success-500)]" />
                 Billetes
-              </label>
+              </span>
               <div className="space-y-2">
                 {BILLETES.map(b => (
                   <div key={b} className="flex items-center gap-3">
@@ -1943,10 +2163,10 @@ export default function CashRegisterTab() {
 
             {/* Monedas section */}
             <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)] mb-3">
-              <label className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1 mb-2">
+              <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1 mb-2">
                 <DollarSign className="h-4 w-4 text-[var(--data-warning-500)]" />
                 Monedas
-              </label>
+              </span>
               <div className="space-y-2">
                 {MONEDAS.map(m => (
                   <div key={m} className="flex items-center gap-3">
@@ -1993,37 +2213,46 @@ export default function CashRegisterTab() {
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">Usa los conteos de billetes y monedas de arriba para el efectivo.</p>
               )}
               {arqueoTab === "yape" && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Total en vouchers Yape</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
-                    <input type="number" min="0" step="0.10" value={arqueoYape} onChange={e => setArqueoYape(e.target.value)} placeholder="0.00"
-                      className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--text-primary)]" />
-                  </div>
-                  <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Yape del dia</p>
-                </div>
+                <Field label="Total en vouchers Yape" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
+                  {(id) => (
+                    <>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
+                        <input id={id} type="number" min="0" step="0.10" value={arqueoYape} onChange={e => setArqueoYape(e.target.value)} placeholder="0.00"
+                          className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--text-primary)]" />
+                      </div>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Yape del dia</p>
+                    </>
+                  )}
+                </Field>
               )}
               {arqueoTab === "plin" && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--data-info-500)] mb-1 block">Total en vouchers Plin</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
-                    <input type="number" min="0" step="0.10" value={arqueoPlin} onChange={e => setArqueoPlin(e.target.value)} placeholder="0.00"
-                      className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]" />
-                  </div>
-                  <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Plin del dia</p>
-                </div>
+                <Field label="Total en vouchers Plin" labelClassName="text-xs font-bold text-[var(--data-info-500)] mb-1 block">
+                  {(id) => (
+                    <>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
+                        <input id={id} type="number" min="0" step="0.10" value={arqueoPlin} onChange={e => setArqueoPlin(e.target.value)} placeholder="0.00"
+                          className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]" />
+                      </div>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Plin del dia</p>
+                    </>
+                  )}
+                </Field>
               )}
               {arqueoTab === "tarjeta" && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--data-success-500)] mb-1 block">Total en vouchers tarjeta</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
-                    <input type="number" min="0" step="0.10" value={arqueoTarjeta} onChange={e => setArqueoTarjeta(e.target.value)} placeholder="0.00"
-                      className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]/30" />
-                  </div>
-                  <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los vouchers de tarjeta del dia</p>
-                </div>
+                <Field label="Total en vouchers tarjeta" labelClassName="text-xs font-bold text-[var(--data-success-500)] mb-1 block">
+                  {(id) => (
+                    <>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
+                        <input id={id} type="number" min="0" step="0.10" value={arqueoTarjeta} onChange={e => setArqueoTarjeta(e.target.value)} placeholder="0.00"
+                          className="w-full pl-8 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]/30" />
+                      </div>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los vouchers de tarjeta del dia</p>
+                    </>
+                  )}
+                </Field>
               )}
               {/* Comparacion por metodo */}
               {(Number(arqueoYape) > 0 || Number(arqueoPlin) > 0 || Number(arqueoTarjeta) > 0) && (
@@ -2052,10 +2281,10 @@ export default function CashRegisterTab() {
 
             {/* Mejora 10: Foto de evidencia */}
             <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)] mb-3">
-              <label className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1 mb-2">
+              <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1 mb-2">
                 <Camera className="h-4 w-4 text-[var(--text-secondary)]" />
                 Foto del cajon (opcional, recomendado)
-              </label>
+              </span>
               {arqueoFoto ? (
                 <div className="relative inline-block">
                   <Image src={arqueoFoto} alt="Foto del cajon" width={200} height={120} className="object-cover rounded-lg border border-[var(--rule-base)]" unoptimized />
@@ -2111,7 +2340,7 @@ export default function CashRegisterTab() {
               <div className={cn(
                 "rounded-xl p-3 text-center border-2 mb-3",
                 Math.abs(guiadoDiff) < 0.5
-                  ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
+                  ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30"
                   : "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30"
               )}>
                 <div className="flex flex-wrap items-center justify-center gap-2 mb-1">
@@ -2154,9 +2383,15 @@ export default function CashRegisterTab() {
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
               >
                 {addingArqueoGuiado ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
-                Confirmar arqueo
+                {/* El botón dice lo que hace: esto cierra la caja del día. */}
+                Cerrar caja con este conteo
               </button>
             </div>
+            {arqueoError && (
+              <p className="mt-3 text-sm font-semibold text-[var(--data-error-500)]" role="alert">
+                {arqueoError}
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -2221,7 +2456,7 @@ export default function CashRegisterTab() {
             })()}
             <div className={cn(
               "px-2 sm:px-4 py-1.5 sm:py-2 text-center text-xs font-bold border-b",
-              (detailRegister.difference ?? 0) >= 0 ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
+              (detailRegister.difference ?? 0) >= 0 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
             )}>
               Diferencia: {(detailRegister.difference ?? 0) > 0 ? "+" : ""}{fmt(detailRegister.difference ?? 0)}
             </div>

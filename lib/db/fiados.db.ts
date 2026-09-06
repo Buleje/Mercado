@@ -23,6 +23,21 @@ export class FiadoConflictError extends Error {
 }
 
 /**
+ * El pago tipeado excede el saldo pendiente. Es un error de VALIDACIÓN (el
+ * cajero se equivocó de monto), no de infraestructura — antes registerPago
+ * lo lanzaba como Error plano y el handler HTTP lo confundía con una falla
+ * de DB, respondiendo 503 "Database error" en vez del motivo real (audit
+ * 2026-08-26).
+ */
+export class FiadoOverpaymentError extends Error {
+  readonly code = "FIADO_OVERPAYMENT";
+  constructor(message: string) {
+    super(message);
+    this.name = "FiadoOverpaymentError";
+  }
+}
+
+/**
  * Detecta si un error es race-condition de Prisma/Postgres. Centraliza el
  * pattern para que los handlers HTTP no tengan que conocer códigos internos.
  */
@@ -321,7 +336,7 @@ export const FiadosDB = {
 
       const saldoFinal = Number(afterDecrement.saldo);
       if (saldoFinal < -0.01) {
-        throw new Error(`Overpayment: el pago excede el saldo en ${Math.abs(saldoFinal).toFixed(2)}`);
+        throw new FiadoOverpaymentError(`El pago excede el saldo en S/${Math.abs(saldoFinal).toFixed(2)}`);
       }
 
       if (saldoFinal <= 0.01) {
@@ -359,6 +374,29 @@ export const FiadosDB = {
       include: { cuotas: { orderBy: { createdAt: "asc" } } },
     }).catch((err) => {
       logger.warn("FiadosDB.updateStatus: update failed", { fiadoId: id, status, err: String(err) });
+      return null;
+    });
+    return row ? mapFiado(row) : null;
+  },
+
+  /**
+   * Audit 2026-08-26: el PATCH de /api/fiados/[id] sólo aceptaba `status`,
+   * así que el compromiso de pago con firma digital (que manda `descripcion`)
+   * era rechazado por Zod SIEMPRE — el cajero veía "guardado" porque el
+   * caller no revisaba la respuesta y de todos modos imprimía. Este método
+   * habilita el otro campo que ese flujo necesita escribir.
+   */
+  async updateDescripcion(tenantId: string, id: string, descripcion: string): Promise<DbFiado | null> {
+    const result = await prisma.fiado.updateMany({
+      where: { id, tenantId },
+      data: { descripcion },
+    });
+    if (result.count === 0) return null;
+    const row = await prisma.fiado.findFirst({
+      where: { id, tenantId },
+      include: { cuotas: { orderBy: { createdAt: "asc" } } },
+    }).catch((err) => {
+      logger.warn("FiadosDB.updateDescripcion: lookup failed", { fiadoId: id, err: String(err) });
       return null;
     });
     return row ? mapFiado(row) : null;
@@ -469,15 +507,31 @@ export const FiadosDB = {
           const currentSaldo = Number(fiado.saldo);
           const paymentAmount = Math.min(payment.monto, currentSaldo);
 
-          // Brandon perf P1 #5: update retorna el registro directamente con select.
-          // Antes: update (void) + findFirst extra = 2 queries por fiado.
-          // Ahora: 1 sola query — el update ya devuelve el saldo actualizado.
-          const updated = await tx.fiado.update({
-            where: { id: payment.fiadoId, tenantId },
+          // Audit 2026-08-26 (audit-verificado): el prefetch de arriba es UNA
+          // foto fija tomada antes del loop — usarla para cada decrement (como
+          // hacía la versión vieja) es el mismo TOCTOU que B-P0-2 ya resolvió
+          // en cobrarPorCliente: dos cobro-masivo concurrentes sobre el mismo
+          // fiado, o el mismo fiadoId repetido en `payments`, decrementaban
+          // ambos contra el saldo ORIGINAL y podían dejarlo negativo. Mismo
+          // guard v2: `updateMany` con `saldo: { gte: paymentAmount }` — si
+          // otro cobro ya consumió el saldo, count=0 y abortamos el lote
+          // entero (FiadoConflictError → 409 retryable), en vez de persistir
+          // una cuota por un monto que ya no corresponde a ninguna deuda real.
+          const guard = await tx.fiado.updateMany({
+            where: { id: payment.fiadoId, tenantId, saldo: { gte: paymentAmount } },
             data: { saldo: { decrement: paymentAmount } },
+          });
+          if (guard.count === 0) {
+            throw new FiadoConflictError(
+              `Fiado ${payment.fiadoId.slice(-6)}: el saldo cambió antes de aplicar el cobro`,
+            );
+          }
+
+          const afterDecrement = await tx.fiado.findFirst({
+            where: { id: payment.fiadoId, tenantId },
             select: { saldo: true, status: true },
           });
-          const finalSaldo = updated ? Number(updated.saldo) : 0;
+          const finalSaldo = afterDecrement ? Number(afterDecrement.saldo) : 0;
           const newStatus = finalSaldo <= 0.01 ? "PAGADO" : fiado.status;
           if (newStatus !== fiado.status) {
             await tx.fiado.update({

@@ -81,7 +81,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
             Comparar precios
           </span>
           {prices.length > 0 && (
-            <span className="text-xs bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold px-2 py-0.5 rounded-full">
               {prices.length} tiendas
             </span>
           )}
@@ -115,7 +115,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
                   onClick={() => setSortBy("price")}
                   className={cn(
                     "text-xs font-semibold px-2 py-1 rounded-lg transition-colors",
-                    sortBy === "price" ? "bg-primary/10 text-primary" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    sortBy === "price" ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   )}
                 >
                   Precio
@@ -124,7 +124,7 @@ export function PriceCompare({ productName, productId, className }: PriceCompare
                   onClick={() => setSortBy("rating")}
                   className={cn(
                     "text-xs font-semibold px-2 py-1 rounded-lg transition-colors",
-                    sortBy === "rating" ? "bg-primary/10 text-primary" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    sortBy === "rating" ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   )}
                 >
                   Rating

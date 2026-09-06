@@ -31,7 +31,7 @@ const STATUS_META: Record<SiteRoute["status"], { label: string; className: strin
   },
   wip: {
     label: "WIP",
-    className: "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]",
+    className: "bg-[#0d9488] text-[#0d9488]",
   },
   mock: {
     label: "Mock",
@@ -69,7 +69,7 @@ export default function RouteCard({ route }: Props) {
       <div className="flex items-start gap-3 mb-2">
         <span
           aria-hidden="true"
-          className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:text-[var(--accent)] group-hover:bg-[var(--accent-soft)] transition-colors"
+          className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:text-[var(--accent)] group-hover:bg-primary/10 transition-colors"
         >
           {iconEl}
         </span>

@@ -360,7 +360,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                       ? "invisible"
                       : key === "⌫"
                       ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95"
-                      : "bg-[var(--surface-sunken)] text-[var(--text-primary)] hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 active:scale-95",
+                      : "bg-[var(--surface-sunken)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] dark:hover:bg-primary/20 active:scale-95",
                     "disabled:opacity-40 disabled:cursor-not-allowed"
                   )}
                 >

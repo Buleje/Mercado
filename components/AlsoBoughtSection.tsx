@@ -198,7 +198,7 @@ export default function AlsoBoughtSection({
                 </span>
                 <button
                   onClick={() => handleAdd(product)}
-                  className="flex items-center gap-1 rounded-full bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1 text-xs font-semibold transition-colors"
+                  className="flex items-center gap-1 rounded-full bg-primary/10 hover:bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)] px-2.5 py-1 text-xs font-semibold transition-colors"
                   aria-label={`Agregar ${product.name} al carrito`}
                 >
                   <Plus className="h-3 w-3" />

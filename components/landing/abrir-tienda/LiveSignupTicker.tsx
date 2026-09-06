@@ -29,7 +29,7 @@ export default function LiveSignupTicker(_props?: { start?: number }) {
       transition={{ delay: 0.6, duration: 0.5 }}
       className="inline-flex items-center gap-2.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-2 pr-4 py-1.5 shadow-sm"
     >
-      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
         <MapPin className="h-3.5 w-3.5" strokeWidth={2.5} />
       </span>
       <span className="relative flex h-2 w-2">

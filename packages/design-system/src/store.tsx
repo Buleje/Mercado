@@ -44,11 +44,11 @@ export interface ProductBadgeProps {
 }
 
 const INTENT_STYLES: Record<ProductBadgeIntent, string> = {
-  popular:  "bg-[var(--accent-soft)] text-[var(--accent)]",
+  popular:  "bg-primary/10 text-[var(--accent)]",
   offer:    "bg-[var(--data-warning-50)] text-[var(--data-warning-700)]",
-  fresh:    "bg-[var(--accent-soft)] text-[var(--accent)]",
+  fresh:    "bg-primary/10 text-[var(--accent)]",
   new:      "bg-[var(--surface-sunken)] text-[var(--text-primary)] border border-[var(--rule-base)]",
-  scarcity: "bg-[var(--accent-soft)] text-[var(--accent)]",
+  scarcity: "bg-primary/10 text-[var(--accent)]",
   premium:  "bg-[var(--text-primary)] text-[var(--surface-canvas)]",
 };
 

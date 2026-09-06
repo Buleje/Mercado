@@ -57,7 +57,9 @@ export const WholesaleOrdersDB = {
     if (productIds.length === 0) return [];
     return prisma.storeProduct.findMany({
       where: { storeId, productId: { in: productIds } },
-      select: { productId: true, volumePricingTiers: true },
+      // retailPrice/wholesalePrice: precio AUTORITATIVO del vendedor para la base
+      // mayorista (nunca confiar en el unitPrice del cliente — money-integrity).
+      select: { productId: true, volumePricingTiers: true, retailPrice: true, wholesalePrice: true },
     });
   },
 

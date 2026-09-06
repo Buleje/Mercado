@@ -52,16 +52,23 @@ export async function GET(
       }
     }
 
-    // T2: scoped por cashierId del turno + ventana temporal abrioEn..(cerroEn|now).
+    // T2: scoped por cajero del turno + ventana temporal abrioEn..(cerroEn|now).
     // Para turnos cerrados usa cerroEn como upper bound; para abiertos usa now.
     const lowerBound = turno.abrioEn;
     const upperBound = turno.cerroEn ?? new Date();
+
+    // FIX 2026-07-08 (reporte ventas-caja bug 3): `Sale.cashierId` guarda el
+    // `username` del cajero, no el `adminUserId` (CUID). Filtrar solo por
+    // adminUserId devolvía 0 ventas → summary vacío. Resolvemos el username y
+    // filtramos por ambas formas (defensivo ante datos legados).
+    const cajeroUsername = await AdminUsersDB.getUsernameById(auth.tenantId, turno.adminUserId);
+    const cashierIds = [turno.adminUserId, cajeroUsername].filter((v): v is string => !!v);
 
     // eslint-disable-next-line no-restricted-properties -- aggregate scoped por tenantId+cashierId+createdAt; refactor a SalesDB.summarizeShift pendiente.
     const sales = await prisma.sale.findMany({
       where: {
         tenantId: auth.tenantId,
-        cashierId: turno.adminUserId,
+        cashierId: { in: cashierIds },
         createdAt: { gte: lowerBound, lte: upperBound },
       },
       select: {
@@ -69,6 +76,7 @@ export async function GET(
         total: true,
         payment: true,
         createdAt: true,
+        descuentoMonto: true,
         items: {
           select: { name: true, quantity: true },
         },
@@ -80,10 +88,12 @@ export async function GET(
     const payMap = new Map<string, number>();
     const prodMap = new Map<string, number>();
     let totalVendido = 0;
+    let totalDescuentos = 0;
 
     for (const s of sales) {
       const totalNum = Number(s.total);
       totalVendido += totalNum;
+      totalDescuentos += s.descuentoMonto ? Number(s.descuentoMonto) : 0;
       const method = (s.payment ?? "efectivo").toLowerCase();
       payMap.set(method, (payMap.get(method) ?? 0) + totalNum);
 
@@ -108,6 +118,7 @@ export async function GET(
       turnoId: turno.id,
       cantidadVentas: sales.length,
       totalVendido: Math.round(totalVendido * 100) / 100,
+      totalDescuentos: Math.round(totalDescuentos * 100) / 100,
       metodosPago,
       topProductos,
       periodo: {

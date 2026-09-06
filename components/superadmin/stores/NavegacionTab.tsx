@@ -448,7 +448,7 @@ export function NavegacionTab() {
             <div className="rounded-t-2xl border-2 border-b-0 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-2 flex items-center gap-2">
               <div className="flex gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                <span className="h-2.5 w-2.5 rounded-full bg-teal-400" />
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
               </div>
               <div className="flex-1 rounded-md bg-[var(--surface-raised)] border border-[var(--rule-soft)] px-3 py-1 text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)] truncate">
@@ -588,7 +588,7 @@ export function NavegacionTab() {
             const tonePill = {
               accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
               violet: "bg-violet-100 text-[var(--accent)] dark:bg-violet-950/40 dark:text-[var(--accent)]",
-              amber: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+              amber: "bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300",
             }[mode.tone];
             return (
               <button
@@ -728,7 +728,7 @@ function Pill({
     success:
       "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]",
     warning:
-      "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
+      "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300",
     accent: "border-[var(--accent)]/30 bg-[var(--accent)]/10 text-[var(--accent)]",
     neutral: "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]",
   }[tone];
@@ -841,12 +841,12 @@ function NavScopeSection({
             className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${
               hiddenCount === 0
                 ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]"
-                : "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300"
+                : "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300"
             }`}
           >
             <span
               className={`h-1 w-1 rounded-full ${
-                hiddenCount === 0 ? "bg-[var(--data-success-500)]" : "bg-amber-500"
+                hiddenCount === 0 ? "bg-[var(--data-success-500)]" : "bg-teal-500"
               }`}
             />
             {visibleCount}/{links.length}

@@ -15,17 +15,20 @@
  *   4. SEO defaults
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 import {
   Loader2, Save, CheckCircle, Upload, Smartphone, CreditCard,
-  Building2, MessageCircle, Search, AlertTriangle, X, Settings,
+  Building2, MessageCircle, Search, AlertTriangle, X, Settings, ShieldCheck,
 } from "@buleje/design-system/icons";
+import { KeepAliveSwitch } from "@/components/shared/KeepAliveSwitch";
 import {
   PLATFORM_CONFIG_DEFAULTS,
   type PlatformConfig,
 } from "@/lib/platform-config";
 import { AdminTabShell } from "../_components/_shared";
+import { SuperAdminModuleTabs, SETTINGS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 type ImageKind = "logo" | "favicon" | "yapeQr" | "plinQr" | "ogImage";
@@ -140,6 +143,11 @@ export default function ConfiguracionClient() {
   if (loading) {
     return (
       <AdminTabShell
+      info={{
+        what: "Ajustes globales de la plataforma: landing pública, registro de tiendas y panel del negocio.",
+        affects: "Se aplica en vivo (sin redeploy) en la landing, el registro y el panel admin de los negocios.",
+        example: "Cambiás el texto de bienvenida del registro → los nuevos dueños lo ven al instante.",
+      }}
         title="Configuración general"
         description="Todo lo que cambia acá se aplica en vivo en landing, registro y panel del negocio — sin redeploy."
         icon={Settings}
@@ -152,7 +160,18 @@ export default function ConfiguracionClient() {
     );
   }
 
+  // Estado "configurado" por sección → dots del nav lateral + completitud.
+  const navSections: NavSection[] = [
+    { id: "cfg-sesion", label: "Sesión", icon: <ShieldCheck className="h-4 w-4" />, done: true },
+    { id: "cfg-pagos", label: "Pagos", icon: <Smartphone className="h-4 w-4" />, done: !!(config.payment.yapeNumber || config.payment.plinNumber || config.payment.bankAccount) },
+    { id: "cfg-marca", label: "Marca", icon: <Building2 className="h-4 w-4" />, done: !!config.brand?.name },
+    { id: "cfg-contacto", label: "Contacto", icon: <MessageCircle className="h-4 w-4" />, done: !!(config.support.whatsappNumber || config.support.supportEmail) },
+    { id: "cfg-seo", label: "SEO", icon: <Search className="h-4 w-4" />, done: !!config.seo.metaDescription },
+  ];
+
   return (
+    <>
+      <SuperAdminModuleTabs tabs={SETTINGS_TABS} />
     <AdminTabShell
       title="Configuración general"
       description="Todo lo que cambia acá se aplica en vivo en landing, registro y panel del negocio — sin redeploy."
@@ -164,8 +183,8 @@ export default function ConfiguracionClient() {
           inline que duplicaba kicker/título con el AdminTabShell del wrapper. */}
       <div className="sticky top-2 z-20 flex items-center justify-between gap-3 flex-wrap rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur px-5 py-3.5">
         {dirty ? (
-          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-700)]">
-            <span aria-hidden className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)]" />
+          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[#0d9488]">
+            <span aria-hidden className="inline-flex h-1.5 w-1.5 rounded-full bg-[#0d9488]" />
             Cambios sin guardar
           </p>
         ) : (
@@ -206,8 +225,24 @@ export default function ConfiguracionClient() {
         </div>
       )}
 
+      {/* Layout de dos paneles: nav lateral pegajoso + contenido. */}
+      <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
+        <SectionNav sections={navSections} />
+
+        <div className="min-w-0 space-y-6">
+      {/* ── Sesión y seguridad ────────────────────────────────────── */}
+      <Section
+        id="cfg-sesion"
+        icon={<ShieldCheck className="h-5 w-5 text-[var(--accent)]" />}
+        title="Sesión y seguridad"
+        subtitle="Controlá cómo se mantiene tu sesión mientras trabajás en el panel."
+      >
+        <KeepAliveSwitch />
+      </Section>
+
       {/* ── 1. Pagos manuales ─────────────────────────────────────── */}
       <Section
+        id="cfg-pagos"
         icon={<Smartphone className="h-5 w-5 text-[var(--accent)]" />}
         title="Pagos manuales"
         subtitle="Datos que el cliente ve cuando elige pagar con Yape, Plin o transferencia."
@@ -300,6 +335,7 @@ export default function ConfiguracionClient() {
 
         {/* ── 2. Marca ─────────────────────────────────────────────── */}
         <Section
+          id="cfg-marca"
           icon={<Building2 className="h-5 w-5 text-[var(--accent)]" />}
           title="Marca"
           subtitle="Nombre, logo y colores que se aplican en todo el sitio."
@@ -388,6 +424,7 @@ export default function ConfiguracionClient() {
 
         {/* ── 3. Contacto / Soporte ───────────────────────────────── */}
         <Section
+          id="cfg-contacto"
           icon={<MessageCircle className="h-5 w-5 text-[var(--accent)]" />}
           title="Contacto y soporte"
           subtitle="Datos públicos de contacto que aparecen en footer y CTAs."
@@ -430,6 +467,7 @@ export default function ConfiguracionClient() {
 
         {/* ── 4. SEO ──────────────────────────────────────────────── */}
         <Section
+          id="cfg-seo"
           icon={<Search className="h-5 w-5 text-[var(--accent)]" />}
           title="SEO defaults"
           subtitle="Lo que aparece cuando alguien comparte tu sitio en redes."
@@ -452,37 +490,41 @@ export default function ConfiguracionClient() {
             onClear={() => setConfig({ ...config, seo: { ...config.seo, ogImageUrl: null } })}
           />
         </Section>
+        </div>
+      </div>
 
-      {/* Sticky save al pie — accent teal, sin uppercase forzado */}
-      <div className="mt-2 sticky bottom-4 flex justify-end z-10">
+      {/* Guardado al pie — full-width bajo el grid, refuerza la barra superior */}
+      <div className="sticky bottom-4 z-10 flex justify-end">
         <button
           onClick={save}
-          disabled={saving}
-          className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-[var(--accent-600,var(--accent))] text-white font-extrabold text-sm shadow-[var(--shadow-xl)] shadow-[var(--accent)]/40 hover:gap-2.5 hover:shadow-2xl hover:opacity-95 disabled:opacity-60 transition-all"
+          disabled={saving || !dirty}
+          className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-[var(--accent-600,var(--accent))] text-white font-extrabold text-sm shadow-[var(--shadow-xl)] hover:gap-2.5 hover:opacity-95 disabled:opacity-40 disabled:shadow-none transition-all"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : savedAt ? <CheckCircle className="h-4 w-4" /> : <Save className="h-4 w-4" strokeWidth={2.5} />}
-          {savedAt ? "Guardado" : "Guardar todos los cambios"}
+          {saving ? "Guardando…" : savedAt ? "Guardado" : dirty ? "Guardar todos los cambios" : "Sin cambios"}
         </button>
       </div>
     </div>
     </AdminTabShell>
+    </>
   );
 }
 
 // ─── Helpers de UI ────────────────────────────────────────────────────
 
 function Section({
-  icon, title, subtitle, children,
+  id, icon, title, subtitle, children,
 }: {
+  id?: string;
   icon: React.ReactNode;
   title: string;
   subtitle: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+    <section id={id} className="scroll-mt-24 rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
       <div className="px-5 sm:px-7 py-4 sm:py-5 border-b-2 border-[var(--rule-soft)] bg-linear-to-br from-[var(--surface-sunken)]/60 to-transparent flex items-start gap-3">
-        <span className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)]">
+        <span className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
           {icon}
         </span>
         <div className="min-w-0">
@@ -494,6 +536,68 @@ function Section({
       </div>
       <div className="px-5 sm:px-7 py-6 space-y-6">{children}</div>
     </section>
+  );
+}
+
+// ── Nav lateral de secciones (salto + estado + highlight activo) ─────────────
+interface NavSection { id: string; label: string; icon: React.ReactNode; done: boolean }
+
+function useActiveSection(ids: string[]): string {
+  const [active, setActive] = useState(ids[0] ?? "");
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]) setActive(visible[0].target.id);
+      },
+      { rootMargin: "-96px 0px -55% 0px", threshold: [0.1, 0.5] },
+    );
+    ids.forEach((id) => { const el = document.getElementById(id); if (el) obs.observe(el); });
+    return () => obs.disconnect();
+  }, [ids]);
+  return active;
+}
+
+function SectionNav({ sections }: { sections: NavSection[] }) {
+  const ids = useMemo(() => sections.map((s) => s.id), [sections]);
+  const active = useActiveSection(ids);
+  const doneCount = sections.filter((s) => s.done).length;
+  return (
+    <nav aria-label="Secciones de configuración" className="lg:sticky lg:top-20 lg:self-start">
+      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+        <div className="px-3 py-2">
+          <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Secciones</p>
+          <p className="mt-0.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">{doneCount}/{sections.length} configuradas</p>
+        </div>
+        <ul className="space-y-0.5">
+          {sections.map((s) => {
+            const isActive = active === s.id;
+            return (
+              <li key={s.id}>
+                <a
+                  href={`#${s.id}`}
+                  aria-current={isActive ? "true" : undefined}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
+                    isActive
+                      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
+                  )}
+                >
+                  <span className={cn("shrink-0", isActive ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]")}>{s.icon}</span>
+                  <span className="min-w-0 flex-1 truncate">{s.label}</span>
+                  <span
+                    className={cn("h-2 w-2 shrink-0 rounded-full", s.done ? "bg-[var(--data-success-500)]" : "bg-[var(--rule-base)]")}
+                    title={s.done ? "Configurada" : "Sin configurar"}
+                    aria-hidden
+                  />
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </nav>
   );
 }
 
@@ -633,7 +737,7 @@ function ImageField({
         <div className="flex-1 flex flex-wrap gap-2">
           <label
             htmlFor={inputId}
-            className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-extrabold uppercase tracking-[var(--ls-wider)] cursor-pointer hover:bg-[var(--accent)] hover:text-white transition-colors ${busy ? "opacity-60 pointer-events-none" : ""}`}
+            className={`inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold uppercase tracking-[var(--ls-wider)] cursor-pointer hover:bg-[var(--accent)] hover:text-white transition-colors ${busy ? "opacity-60 pointer-events-none" : ""}`}
           >
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" strokeWidth={2.5} />}
             {url ? "Reemplazar" : "Subir"}

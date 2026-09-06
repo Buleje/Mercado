@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, Mail, Loader2, CheckCircle2, Copy } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 interface InviteModalProps {
   tenantSlug: string;
@@ -21,7 +22,7 @@ export function InviteModal({ tenantSlug, tenantName, onClose }: InviteModalProp
     if (!email.trim()) { setError("Introduce un email"); return; }
     setSending(true); setError("");
     try {
-      const res = await fetch("/api/invite", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "x-tenant-id": tenantSlug }, body: JSON.stringify({ email: email.trim(), role }) });
+      const res = await fetch("/api/invite", { method: "POST", credentials: "include", headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }), body: JSON.stringify({ email: email.trim(), role }) });
       const data = await res.json() as { inviteUrl?: string; error?: string };
       if (!res.ok) { setError(data.error ?? "Error"); return; }
       setInviteUrl(data.inviteUrl ?? null);

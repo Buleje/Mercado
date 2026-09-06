@@ -59,6 +59,27 @@ export const AdminUsersDB = {
   },
 
   /**
+   * Resuelve el username desde el AdminUser.id (inverso de resolveIdByUsername).
+   *
+   * CRÍTICO 2026-07-08 (reporte ventas-caja bug 3/6): `Sale.cashierId` guarda
+   * el `username` del cajero (ver app/api/sales POST), pero los agregados de
+   * turno (cerrar/summary/metrics/zombie-close) filtraban por `adminUserId`
+   * (CUID) — NUNCA coincidían → ventasTotal del turno siempre S/0.00. Los
+   * callers ahora resuelven el username con este helper y filtran por
+   * `cashierId IN [adminUserId, username]` (defensivo ante datos legados).
+   */
+  async getUsernameById(
+    tenantId: string,
+    adminUserId: string,
+  ): Promise<string | null> {
+    const row = await prisma.adminUser.findFirst({
+      where: { tenantId, id: adminUserId },
+      select: { username: true },
+    });
+    return row?.username ?? null;
+  },
+
+  /**
    * Lookup completo (id, name, role, active) por username. Usado por
    * dashboards que necesitan el nombre/rol del cajero, no solo su id.
    */

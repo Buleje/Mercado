@@ -170,7 +170,7 @@ export default function HistorialCierresTab() {
                       <td className="px-4 py-3 text-center">
                         <button
                           onClick={() => setDetail(s)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary hover:bg-primary/5 transition-colors"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           Ver

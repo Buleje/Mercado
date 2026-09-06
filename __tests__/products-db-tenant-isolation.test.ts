@@ -73,7 +73,7 @@ describe("ProductsDB.getById — cross-tenant guard", () => {
     const product = await ProductsDB.getById(TENANT_A, 5);
     expect(product?.id).toBe(5);
     expect(mockPrisma.product.findFirst).toHaveBeenCalledWith({
-      where: { id: 5, tenantId: TENANT_A },
+      where: { id: 5, tenantId: TENANT_A, deletedAt: null },
     });
   });
 
@@ -81,6 +81,27 @@ describe("ProductsDB.getById — cross-tenant guard", () => {
     mockPrisma.product.findFirst.mockResolvedValueOnce(null);
     const product = await ProductsDB.getById(TENANT_A, 5);
     expect(product).toBeNull();
+  });
+
+  /**
+   * El borrado de productos es SOFT. Hasta 2026-08-11 este método no filtraba
+   * `deletedAt`, así que `DELETE /api/products/<id>` devolvía 200, el producto
+   * salía de la lista y un GET por id lo seguía trayendo con `active: true`.
+   * Lo consultan por id el recomendador, el agente de pricing y el asistente
+   * IA: todos podían operar sobre mercadería dada de baja.
+   */
+  it("no devuelve un producto dado de baja", async () => {
+    await ProductsDB.getById(TENANT_A, 5);
+    expect(mockPrisma.product.findFirst).toHaveBeenCalledWith({
+      where: expect.objectContaining({ deletedAt: null }),
+    });
+  });
+
+  it("getByIdIncluyendoBorrados sí los trae, para mirar hacia atrás", async () => {
+    await ProductsDB.getByIdIncluyendoBorrados(TENANT_A, 5);
+    expect(mockPrisma.product.findFirst).toHaveBeenCalledWith({
+      where: { id: 5, tenantId: TENANT_A },
+    });
   });
 });
 

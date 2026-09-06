@@ -22,12 +22,9 @@ import { useStoreProducts } from "@/hooks/use-store-products";
 import { useCart } from "@/contexts/cart-context";
 import { useSettings } from "@/contexts/settings-context";
 import type { WishlistProduct } from "@/lib/mock-wishlist";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
 // ── Types ──────────────────────────────────────────────────────────
 

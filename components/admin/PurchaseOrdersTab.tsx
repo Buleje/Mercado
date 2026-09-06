@@ -1,35 +1,47 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useState, useEffect, useCallback, useMemo, type FormEvent } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent } from "react";
 import dynamic from "next/dynamic";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   Trash2, Plus, ChevronDown, ChevronUp, Package,
   X, FileText, ScanBarcode, History,
   TrendingUp, BarChart3, Download, PackageCheck, Copy, ShoppingBag,
-  Search, Calendar, Building2, Loader2, Repeat, Hash, StickyNote, Check, Truck } from "@buleje/design-system/icons";
+  Calendar, Building2, Loader2, Repeat, Hash, StickyNote, Check, Truck,
+  AlertTriangle, CreditCard, Percent, Receipt, Search, ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
 import type { DbPurchaseOrder, DbSupplier, DbProduct, PurchaseStatus } from "@/lib/jsondb";
+// Sólo el tipo: TS lo borra al compilar, así que el "server-only" de esa clase
+// no viaja al bundle del cliente (mismo patrón que el resto del repo).
+import type { DbRecurringPurchase } from "@/lib/db/recurring-purchases.db";
+import {
+  ESTADO_OC_LABELS, opcionesDeEstado, FORMAS_DE_PAGO, generaCuentaPorPagar,
+  TIPOS_COMPROBANTE, type FormaDePago, type TipoComprobante,
+} from "@/lib/compras/estados-oc";
+import {
+  useFiltrosOrdenesCompra, ORDENES_DE_LISTA, POR_PAGINA, type OrdenDeLista,
+} from "@/hooks/use-filtros-ordenes-compra";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
+import { Field } from "@/components/admin/shared/Field";
 import OCPDFExport from "./compras/OCPDFExport";
 import SupplierPriceComparison, { QuotationComparator } from "./compras/SupplierPriceComparison";
 
 const BarcodeScanner = dynamic(() => import("./BarcodeScanner"), { ssr: false });
 const OCRecepcionModal = dynamic(() => import("./compras/OCRecepcionModal"), { ssr: false });
+// Sólo se ven al expandir un proveedor en el Historial: no cargarlos de entrada.
+const SupplierScorecard = dynamic(() => import("./compras/SupplierScorecard"), { ssr: false });
+const SupplierTimeline = dynamic(() => import("./compras/SupplierTimeline"), { ssr: false });
 
-const STATUS_LABELS: Record<PurchaseStatus, string> = {
-  pendiente: "Pendiente",
-  recibido: "Recibido",
-  parcial: "Parcial",
-  cancelado: "Cancelado",
-  auto_generated: "Auto-generado",
-};
+// Labels y transiciones salen de lib/compras/estados-oc.ts — la misma tabla
+// que valida el endpoint. Antes este select ofrecía "Auto-generado", que el
+// servidor rechaza con 400.
+const STATUS_LABELS = ESTADO_OC_LABELS as Record<PurchaseStatus, string>;
 const STATUS_COLORS: Record<PurchaseStatus, string> = {
   pendiente: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30",
-  recibido: "bg-[var(--accent-soft)] dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] border-[var(--data-success-500)]/30",
+  recibido: "bg-primary/10 dark:bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] border-[var(--data-success-500)]/30",
   parcial: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] border-[var(--data-warning-500)]/30",
   cancelado: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-500)] border-[var(--data-error-500)]/30",
   auto_generated: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-base)]",
@@ -85,6 +97,13 @@ function formatDate(iso: string) {
 
 type ItemDraft = { productId: number; name: string; quantity: number; unitCost: number; unit: string };
 
+/** Clave de un intento de creación: dos clicks al mismo botón comparten clave. */
+function nuevaIdempotencyKey(): string {
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `oc-${Math.random().toString(36).slice(2)}`;
+}
+
 // ── KPI Card (audit 2026-05-17): card compacta con ícono tinted box ──
 type KPIAccent = "danger" | "warning" | "success" | "neutral";
 function KPICardOC({
@@ -123,6 +142,107 @@ function KPICardOC({
   );
 }
 
+/**
+ * Cargar el flete a una orden ya recibida (ADR-377 · backfill).
+ *
+ * Las compras anteriores al ADR no tienen flete, así que el costo de esos
+ * productos —y el margen que sale de él— es optimista. Acá se carga, y el
+ * servidor reparte el sobrecosto entre las unidades que quedan en stock.
+ */
+function FleteTardio({
+  orden,
+  onGuardado,
+}: {
+  orden: DbPurchaseOrder;
+  onGuardado: (mensaje: string) => void;
+}) {
+  const yaTiene = (orden.flete ?? 0) + (orden.otrosCostos ?? 0) > 0;
+  const [abierto, setAbierto] = useState(false);
+  const [monto, setMonto] = useState(orden.flete ?? 0);
+  const [guardando, setGuardando] = useState(false);
+
+  if (orden.status !== "recibido") return null;
+
+  if (!abierto) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        className={cn(
+          "mt-3 inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border-2 text-xs font-bold transition-colors",
+          yaTiene
+            ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+            : "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)]",
+        )}
+      >
+        <Truck className="h-3.5 w-3.5" />
+        {yaTiene ? `Costo de traerla: S/${((orden.flete ?? 0) + (orden.otrosCostos ?? 0)).toFixed(2)}` : "Falta cargar el flete"}
+      </button>
+    );
+  }
+
+  const guardar = async () => {
+    setGuardando(true);
+    try {
+      const res = await fetch(`/api/purchases/${orden.id}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ flete: monto }),
+      });
+      if (!res.ok) { onGuardado("No se pudo guardar el flete"); return; }
+      const data = await res.json().catch(() => null);
+      const n = data?.productosRevaluados ?? 0;
+      onGuardado(
+        n > 0
+          ? `Flete cargado — se recalculó el costo de ${n} producto${n === 1 ? "" : "s"}`
+          : "Flete cargado — no quedaba stock de esta compra, así que no hubo costo que recalcular",
+      );
+      setAbierto(false);
+    } catch {
+      onGuardado("Sin conexión con el servidor — el flete no se guardó");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3.5 space-y-2.5">
+      <p className="text-xs text-[var(--text-secondary)]">
+        Lo que costó traer esta compra (mototaxi, carga, estiba). Se reparte entre las unidades
+        que todavía tenés en stock, para que el costo del producto deje de ser optimista.
+      </p>
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--text-tertiary)]">S/</span>
+          <input
+            type="number" min="0" step="0.5"
+            value={monto}
+            onChange={(e) => setMonto(Math.max(0, Number(e.target.value)))}
+            aria-label="Costo de traer la mercadería"
+            className="w-32 h-11 pl-9 pr-3 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={guardar}
+          disabled={guardando}
+          className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60"
+        >
+          {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          Guardar
+        </button>
+        <button
+          type="button"
+          onClick={() => { setAbierto(false); setMonto(orden.flete ?? 0); }}
+          className="h-11 px-3 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function PurchaseOrdersTab() {
   const [orders, setOrders] = useState<DbPurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,19 +251,34 @@ export default function PurchaseOrdersTab() {
   const [suppliers, setSuppliers] = useState<DbSupplier[]>([]);
   const [products, setProducts] = useState<DbProduct[]>([]);
   
-  // Supplier filtering and history
-  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
+  // Supplier history
   const [showSupplierHistory, setShowSupplierHistory] = useState(false);
   const [expandedHistorySupplier, setExpandedHistorySupplier] = useState<string | null>(null);
 
-  // Status filter pills
-  const [statusFilter, setStatusFilter] = useState<"todas" | "pendiente" | "parcial" | "recibido" | "cancelado">("todas");
+  // Buscar / acotar por fecha / ordenar / paginar viven en su propio hook.
+  const f = useFiltrosOrdenesCompra(orders);
+  const selectedSupplierId = f.proveedorId;
+  const setSelectedSupplierId = f.setProveedorId;
+  const statusFilter = f.estado;
+  const setStatusFilter = f.setEstado;
 
   // Create form
   const [supplierId, setSupplierId] = useState("");
   const [items, setItems] = useState<ItemDraft[]>([]);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  // Campos que la DB y el endpoint ya soportaban y el formulario nunca mandaba:
+  // toda OC salía como "contado" sin fecha de entrega ni descuento.
+  const [paymentMethod, setPaymentMethod] = useState<FormaDePago>("contado");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const idempotencyKeyRef = useRef<string>(nuevaIdempotencyKey());
+  // ADR-377 — el papel del proveedor y lo que costó traer la mercadería.
+  const [invoiceType, setInvoiceType] = useState<TipoComprobante>("ninguno");
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [flete, setFlete] = useState(0);
+  const [otrosCostos, setOtrosCostos] = useState(0);
+  const [igvIncluded, setIgvIncluded] = useState(true);
 
   // Per-item search
   const [itemQueries, setItemQueries] = useState<string[]>([]);
@@ -158,59 +293,101 @@ export default function PurchaseOrdersTab() {
   // Reception modal
   const [recepcionOC, setRecepcionOC] = useState<DbPurchaseOrder | null>(null);
 
-  // Mejora 19: Toast for duplicate
-  const [duplicateToast, setDuplicateToast] = useState<string | null>(null);
+  // Aviso flotante. Nace como toast de "OC duplicada" pero ahora también
+  // reporta los rechazos del servidor: antes un cambio de estado fallido no
+  // decía nada y la pantalla mostraba el estado nuevo igual.
+  const [toast, setToast] = useState<{ msg: string; tone: "ok" | "error" } | null>(null);
+  const avisar = useCallback((msg: string, tone: "ok" | "error" = "ok") => {
+    setToast({ msg, tone });
+    setTimeout(() => setToast(null), tone === "error" ? 6000 : 4000);
+  }, []);
 
-  // Mejora 15: Pedido recurrente a proveedor
-  type RecurringOrder = { ocId: string; items: ItemDraft[]; supplierId: string; supplierName: string; intervalDays: number; nextDate: string; notifyDaysBefore: number };
-  const [recurringOrders, setRecurringOrders] = useState<RecurringOrder[]>([]);
+  // Pedidos recurrentes (ADR-377). Antes vivían en localStorage: se perdían
+  // al abrir el admin en otro equipo y nadie más del negocio los veía.
+  const [recurringOrders, setRecurringOrders] = useState<DbRecurringPurchase[]>([]);
   const [showRecurringModal, setShowRecurringModal] = useState<DbPurchaseOrder | null>(null);
   const [recurringInterval, setRecurringInterval] = useState(15);
   const [recurringNotifyDays, setRecurringNotifyDays] = useState(2);
+  const [guardandoRecurrente, setGuardandoRecurrente] = useState(false);
 
-  // Load recurring orders from localStorage
-  useEffect(() => {
+  const cargarRecurrentes = useCallback(async () => {
     try {
-      const stored = localStorage.getItem("recurring-orders");
-      if (stored) setRecurringOrders(JSON.parse(stored));
-    } catch { /* ignore */ }
+      const res = await fetch("/api/compras/recurrentes");
+      if (res.ok) setRecurringOrders(await res.json());
+    } catch (err) {
+      console.warn("[compras] no se pudieron cargar los pedidos recurrentes", err);
+    }
   }, []);
 
-  const saveRecurring = (updated: RecurringOrder[]) => {
-    setRecurringOrders(updated);
-    localStorage.setItem("recurring-orders", JSON.stringify(updated));
-  };
+  useEffect(() => { void cargarRecurrentes(); }, [cargarRecurrentes]);
 
-  const addRecurringOrder = (oc: DbPurchaseOrder) => {
+  const addRecurringOrder = async (oc: DbPurchaseOrder) => {
     const sup = suppliers.find(s => s.id === oc.supplierId);
-    const nextDate = new Date(Date.now() + recurringInterval * 86400000).toISOString().slice(0, 10);
-    const newRecurring: RecurringOrder = {
-      ocId: oc.id,
-      items: oc.items.map(i => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })),
-      supplierId: oc.supplierId,
-      supplierName: sup?.name || oc.supplierName || "",
-      intervalDays: recurringInterval,
-      nextDate,
-      notifyDaysBefore: recurringNotifyDays,
-    };
-    const updated = [...recurringOrders.filter(r => r.ocId !== oc.id), newRecurring];
-    saveRecurring(updated);
-    setShowRecurringModal(null);
+    setGuardandoRecurrente(true);
+    try {
+      const res = await fetch("/api/compras/recurrentes", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          supplierId: oc.supplierId,
+          supplierName: sup?.name || oc.supplierName || "",
+          items: oc.items.map(i => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })),
+          intervalDays: recurringInterval,
+          notifyDaysBefore: recurringNotifyDays,
+          paymentMethod: oc.paymentMethod,
+        }),
+      });
+      if (!res.ok) {
+        avisar("No se pudo programar el pedido recurrente", "error");
+        return;
+      }
+      avisar(`Listo: se repite cada ${recurringInterval} días`);
+      setShowRecurringModal(null);
+      cargarRecurrentes();
+    } catch {
+      avisar("Sin conexión con el servidor — no se programó", "error");
+    } finally {
+      setGuardandoRecurrente(false);
+    }
   };
 
-  const removeRecurring = (ocId: string) => {
-    saveRecurring(recurringOrders.filter(r => r.ocId !== ocId));
+  const removeRecurring = async (id: string) => {
+    try {
+      const res = await fetch(`/api/compras/recurrentes/${id}`, { method: "DELETE", headers: csrfHeaders() });
+      if (!res.ok) { avisar("No se pudo eliminar la recurrencia", "error"); return; }
+      setRecurringOrders(prev => prev.filter(r => r.id !== id));
+    } catch {
+      avisar("Sin conexión con el servidor", "error");
+    }
   };
 
-  // Upcoming recurring orders — Date.now() intencional.
+  /** Crea la orden ahora y corre la fecha al siguiente ciclo. */
+  const generarDesdeRecurrente = async (id: string) => {
+    try {
+      const res = await fetch(`/api/compras/recurrentes/${id}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ generar: true }),
+      });
+      if (!res.ok) { avisar("No se pudo crear la orden", "error"); return; }
+      avisar("Orden creada — revisá las cantidades antes de enviarla");
+      load();
+      cargarRecurrentes();
+    } catch {
+      avisar("Sin conexión con el servidor — no se creó la orden", "error");
+    }
+  };
+
+  // Cuánto falta para cada uno. Date.now() intencional (componente cliente).
   const upcomingRecurring = useMemo(() => {
-     
     const now = Date.now();
     return recurringOrders
-      .map(r => {
-        const daysUntil = Math.max(0, Math.ceil((new Date(r.nextDate).getTime() - now) / 86400000));
-        return { ...r, daysUntil };
-      })
+      .filter(r => r.active)
+      .map(r => ({
+        ...r,
+        daysUntil: Math.max(0, Math.ceil((new Date(r.nextDate).getTime() - now) / 86400000)),
+        vencido: new Date(r.nextDate).getTime() < now,
+      }))
       .sort((a, b) => a.daysUntil - b.daysUntil);
   }, [recurringOrders]);
 
@@ -252,6 +429,24 @@ export default function PurchaseOrdersTab() {
    
   useEffect(() => { void load(); }, [load]);
 
+  // "Crear OC" desde el Comparador de proveedores deja el proveedor en un stash;
+  // al montar (con proveedores ya cargados) abrimos el form de Nueva Orden
+  // preseleccionado y limpiamos el stash. Reemplaza el POST roto del comparador.
+  useEffect(() => {
+    if (suppliers.length === 0) return;
+    let stash: { id: string; name: string } | null = null;
+    try {
+      const raw = localStorage.getItem("bsm-new-oc-supplier");
+      if (raw) stash = JSON.parse(raw) as { id: string; name: string };
+    } catch { /* ignore */ }
+    if (!stash) return;
+    try { localStorage.removeItem("bsm-new-oc-supplier"); } catch { /* ignore */ }
+    if (suppliers.some(s => s.id === stash!.id)) {
+      setSupplierId(stash.id);
+      setShowCreate(true);
+    }
+  }, [suppliers]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const addItemFromProduct = (p: DbProduct) => {
     setItems(prev => [...prev, { productId: p.id, name: p.name, quantity: 1, unitCost: p.costPrice ?? p.price, unit: p.unit }]);
     setItemQueries(prev => [...prev, p.name]);
@@ -281,51 +476,123 @@ export default function PurchaseOrdersTab() {
 
   const createOrder = async (e: FormEvent) => {
     e.preventDefault();
-    if (!supplierId || items.length === 0) return;
+    if (!supplierId || items.length === 0 || saving) return;
     const sup = suppliers.find(s => s.id === supplierId);
     setSaving(true);
-    const res = await fetch("/api/purchases", {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        supplierId,
-        supplierName: sup?.name || "",
-        items,
-        notes: notes || undefined,
-      }),
-    });
-    if (res.ok) {
-      // Auto-create payable for this PO
-      const po = await res.json();
-      await fetch("/api/payables", {
+    try {
+      const res = await fetch("/api/purchases", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           supplierId,
           supplierName: sup?.name || "",
-          purchaseOrderId: po.id,
-          description: `Orden de compra ${po.id}`,
-          amount: po.total,
-          dueDate: new Date(Date.now() + 30 * 86400000).toISOString(),
+          items,
+          notes: notes || undefined,
+          paymentMethod,
+          deliveryDate: deliveryDate || undefined,
+          discount,
+          // ADR-377
+          invoiceType,
+          invoiceNumber: invoiceType === "ninguno" ? undefined : (invoiceNumber || undefined),
+          flete,
+          otrosCostos,
+          igvIncluded,
+          // Dos clicks al botón ya no crean dos órdenes.
+          idempotencyKey: idempotencyKeyRef.current,
         }),
       });
+      if (!res.ok) {
+        avisar("No se pudo crear la orden de compra", "error");
+        return;
+      }
+      // La cuenta por pagar la abre el endpoint, y sólo si la compra es a
+      // crédito. Antes la creaba acá SIEMPRE, a 30 días: cada compra pagada en
+      // efectivo dejaba una deuda que nadie debía.
+      avisar(
+        generaCuentaPorPagar(paymentMethod)
+          ? "Orden creada — se abrió la cuenta por pagar con su vencimiento"
+          : "Orden de compra creada",
+      );
+      setShowCreate(false);
+      setSupplierId("");
+      setItems([]);
+      setItemQueries([]);
+      setNotes("");
+      setPaymentMethod("contado");
+      setDeliveryDate("");
+      setDiscount(0);
+      setInvoiceType("ninguno");
+      setInvoiceNumber("");
+      setFlete(0);
+      setOtrosCostos(0);
+      setIgvIncluded(true);
+      idempotencyKeyRef.current = nuevaIdempotencyKey();
+      load();
+    } catch {
+      avisar("Sin conexión con el servidor — la orden no se creó", "error");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    setShowCreate(false);
-    setSupplierId("");
-    setItems([]);
-    setItemQueries([]);
-    setNotes("");
-    load();
   };
 
+  // El estado sólo cambia en pantalla si el servidor lo aceptó. Antes esto
+  // ignoraba la respuesta y pintaba "Recibido" aunque el PATCH devolviera 422:
+  // la orden se veía cerrada y el stock nunca subía.
   const updateStatus = async (id: string, status: PurchaseStatus) => {
-    await fetch(`/api/purchases/${id}`, {
-      method: "PATCH",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ status }),
-    });
+    const orden = orders.find(o => o.id === id);
+    const anterior = orden?.status;
+    // Cancelar cierra la orden y anula su cuenta por pagar: no es un cambio de
+    // estado más, y salía del `<select>` sin preguntar nada.
+    if (status === "cancelado") {
+      const aCredito = (orden?.paymentMethod ?? "").startsWith("credito_");
+      const ok = window.confirm(
+        `¿Cancelar la orden de ${orden?.supplierName || "este proveedor"} por S/${Number(orden?.total ?? 0).toFixed(2)}?` +
+        (aCredito ? "\n\nSe anulará también la cuenta por pagar que generó (salvo que ya tenga pagos)." : "") +
+        "\n\nUna orden cancelada no vuelve atrás.",
+      );
+      if (!ok) return;
+    }
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+    try {
+      const res = await fetch(`/api/purchases/${id}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        if (anterior) setOrders(prev => prev.map(o => o.id === id ? { ...o, status: anterior } : o));
+        // El cuerpo puede no ser JSON (502 de un proxy, por ejemplo): en ese
+        // caso cae al mensaje genérico con el código.
+        const detalle = await res.json().catch((err) => {
+          console.warn("[compras] respuesta de error sin JSON", err);
+          return null;
+        });
+        avisar(
+          typeof detalle?.error === "string"
+            ? detalle.error
+            : `No se pudo cambiar el estado (error ${res.status})`,
+          "error",
+        );
+        return;
+      }
+      // Marcar recibido mueve stock: recargar para ver los totales reales.
+      if (status === "recibido" || status === "parcial") load();
+      if (status === "cancelado") {
+        const detalle = await res.json().catch(() => null);
+        avisar(
+          detalle?.cuentaPorPagar === "conservada_con_pagos"
+            ? "Orden cancelada. La cuenta por pagar quedó abierta porque ya tenía pagos registrados."
+            : detalle?.cuentaPorPagar === "anulada"
+              ? "Orden cancelada y su cuenta por pagar anulada."
+              : "Orden cancelada.",
+          detalle?.cuentaPorPagar === "conservada_con_pagos" ? "error" : "ok",
+        );
+        load();
+      }
+    } catch {
+      if (anterior) setOrders(prev => prev.map(o => o.id === id ? { ...o, status: anterior } : o));
+      avisar("Sin conexión con el servidor — el estado no se guardó", "error");
+    }
   };
 
   const _receiveOrder = async (id: string) => {
@@ -358,7 +625,7 @@ export default function PurchaseOrdersTab() {
 
   const deleteOrder = async (id: string) => {
     if (!confirm("¿Eliminar esta orden de compra?")) return;
-    await fetch(`/api/purchases/${id}`, { method: "DELETE" });
+    await fetch(`/api/purchases/${id}`, { method: "DELETE", headers: csrfHeaders() });
     load();
   };
 
@@ -377,39 +644,48 @@ export default function PurchaseOrdersTab() {
         }),
       });
       if (res.ok) {
-        setDuplicateToast("OC duplicada — revisa las cantidades antes de enviar");
-        setTimeout(() => setDuplicateToast(null), 4000);
+        avisar("OC duplicada — revisa las cantidades antes de enviar");
         load();
+      } else {
+        avisar("No se pudo duplicar la orden", "error");
       }
-    } catch { /* ignore */ }
+    } catch {
+      avisar("Sin conexión con el servidor — no se duplicó la orden", "error");
+    }
   };
 
   const itemsTotal = items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
+  // Preview: el total que manda es el que calcula el backend con la misma
+  // fórmula (regla 6 — totales en backend, el cliente sólo anticipa).
+  const totalConDescuento = Math.max(0, itemsTotal * (1 - discount / 100));
+  // ADR-377: flete y otros costos NO van en el total que se le paga al
+  // proveedor por la mercadería, pero sí en lo que cuesta tenerla en el local.
+  const sobrecostos = flete + otrosCostos;
 
-  // Filter orders by supplier + status
-  const filteredOrders = orders.filter((o) => {
-    if (selectedSupplierId && o.supplierId !== selectedSupplierId) return false;
-    if (statusFilter !== "todas") {
-      if (statusFilter === "pendiente"  && o.status !== "pendiente") return false;
-      if (statusFilter === "parcial"    && o.status !== "parcial") return false;
-      if (statusFilter === "recibido"   && o.status !== "recibido") return false;
-      if (statusFilter === "cancelado"  && o.status !== "cancelado") return false;
-    }
-    return true;
-  });
+  // Lo que se pinta: la página actual de lo filtrado (el hook ordena y corta).
+  const filteredOrders = f.visibles;
 
   // KPIs por estado (sobre todas las órdenes, no filtradas — para que el chip mantenga el counter)
   const kpis = useMemo(() => {
     const counts = { pendiente: 0, parcial: 0, recibido: 0, cancelado: 0, auto_generated: 0 };
     let totalAcumulado = 0;
     let totalMes = 0;
+    let canceladas = 0;
+    let montoCancelado = 0;
     const mesActual = new Date().toISOString().slice(0, 7);
     for (const o of orders) {
       if (counts[o.status as keyof typeof counts] != null) counts[o.status as keyof typeof counts] += 1;
+      // Una orden cancelada no se le compró a nadie: sumarla al acumulado
+      // inflaba «lo que llevás comprado» con pedidos que nunca existieron.
+      if (o.status === "cancelado") {
+        canceladas += 1;
+        montoCancelado += o.total;
+        continue;
+      }
       totalAcumulado += o.total;
       if (o.createdAt.startsWith(mesActual)) totalMes += o.total;
     }
-    return { counts, totalAcumulado, totalMes, total: orders.length };
+    return { counts, totalAcumulado, totalMes, canceladas, montoCancelado, total: orders.length };
   }, [orders]);
 
   // Supplier analytics
@@ -466,11 +742,17 @@ export default function PurchaseOrdersTab() {
           <FileText className="h-6 w-6 text-primary" strokeWidth={2.2} />
         </span>
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg font-extrabold text-[var(--text-primary)]">Órdenes de Compra</h2>
+          <SectionTitle className="text-lg font-extrabold">Órdenes de Compra</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)]">
             {orders.length === 0
               ? "Creá la primera orden a un proveedor. Después podés duplicarla o hacerla recurrente."
-              : `${orders.length} ${orders.length === 1 ? "orden registrada" : "órdenes registradas"} · Total acumulado S/${kpis.totalAcumulado.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
+              : `${orders.length} ${orders.length === 1 ? "orden registrada" : "órdenes registradas"} · Total acumulado S/${kpis.totalAcumulado.toLocaleString("es-PE", { maximumFractionDigits: 0 })}${
+                  // Decir qué quedó afuera: un total que baja sin explicación
+                  // se lee como un error del sistema.
+                  kpis.canceladas > 0
+                    ? ` (sin ${kpis.canceladas} cancelada${kpis.canceladas === 1 ? "" : "s"} por S/${kpis.montoCancelado.toLocaleString("es-PE", { maximumFractionDigits: 0 })})`
+                    : ""
+                }`}
           </p>
         </div>
         <button
@@ -483,28 +765,102 @@ export default function PurchaseOrdersTab() {
         </button>
       </section>
 
-      {/* ─── Toolbar: filtro proveedor + acciones ────────────────────── */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-          <select
-            value={selectedSupplierId ?? ""}
-            onChange={(e) => setSelectedSupplierId(e.target.value || null)}
-            className="w-full h-11 pl-10 pr-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary appearance-none cursor-pointer"
-          >
-            <option value="">Todos los proveedores</option>
-            {suppliers.map(s => (
-              <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (${s.ruc})` : ""}</option>
-            ))}
-          </select>
+      {/* ─── Buscador: por proveedor, factura o producto ─────────────── */}
+      {!loading && orders.length > 0 && (
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-3 sm:p-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[240px]">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+              <input
+                value={f.busqueda}
+                onChange={(e) => f.setBusqueda(e.target.value)}
+                placeholder="Buscar por proveedor, N° de factura o producto…"
+                aria-label="Buscar órdenes de compra"
+                className="w-full h-12 pl-10 pr-10 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+              />
+              {f.busqueda && (
+                <button
+                  type="button"
+                  onClick={() => f.setBusqueda("")}
+                  aria-label="Borrar búsqueda"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 h-8 w-8 inline-flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Field label="Desde" labelClassName="sr-only">
+              <input
+                type="date"
+                value={f.desde}
+                onChange={(e) => f.setDesde(e.target.value)}
+                aria-label="Desde"
+                className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+              />
+            </Field>
+            <Field label="Hasta" labelClassName="sr-only">
+              <input
+                type="date"
+                value={f.hasta}
+                onChange={(e) => f.setHasta(e.target.value)}
+                aria-label="Hasta"
+                className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+              />
+            </Field>
+            <div className="relative min-w-[190px]">
+              <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+              <select
+                value={selectedSupplierId ?? ""}
+                onChange={(e) => setSelectedSupplierId(e.target.value || null)}
+                aria-label="Filtrar por proveedor"
+                className="w-full h-12 pl-10 pr-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary appearance-none cursor-pointer"
+              >
+                <option value="">Todos los proveedores</option>
+                {suppliers.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (${s.ruc})` : ""}</option>
+                ))}
+              </select>
+            </div>
+            <select
+              value={f.orden}
+              onChange={(e) => f.setOrden(e.target.value as OrdenDeLista)}
+              aria-label="Ordenar por"
+              className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer"
+            >
+              {ORDENES_DE_LISTA.map(o => (
+                <option key={o.id} value={o.id}>{o.label}</option>
+              ))}
+            </select>
+            {f.hayFiltros && (
+              <button
+                type="button"
+                onClick={f.limpiar}
+                className="inline-flex items-center gap-1.5 h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
+              >
+                <X className="h-4 w-4" />
+                Limpiar
+              </button>
+            )}
+          </div>
+          {f.hayFiltros && (
+            <p className="text-sm font-bold text-[var(--text-secondary)]">
+              {f.filtradas.length === 0
+                ? "Ninguna orden coincide con lo que buscás."
+                : `${f.filtradas.length} de ${orders.length} ${orders.length === 1 ? "orden" : "órdenes"}`}
+            </p>
+          )}
         </div>
+      )}
+
+      {/* ─── Toolbar: acciones sobre la lista ────────────────────────── */}
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => setShowSupplierHistory(v => !v)}
           className={cn(
             "inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 text-sm font-bold transition-colors",
             showSupplierHistory
-              ? "border-primary bg-primary/10 text-primary"
+              ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
               : "border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
           )}
         >
@@ -515,18 +871,26 @@ export default function PurchaseOrdersTab() {
           type="button"
           disabled={orders.length === 0}
           onClick={() => {
-            if (orders.length === 0) return;
-            const rows = orders.map(o => ({
+            // Se exporta lo que estás viendo: filtrar y que el Excel traiga
+            // igual las 300 órdenes del año es una sorpresa desagradable.
+            if (f.filtradas.length === 0) return;
+            const rows = f.filtradas.map(o => ({
               ID: o.id,
               Proveedor: suppliers.find(s => s.id === o.supplierId)?.name ?? o.supplierId,
               Estado: STATUS_LABELS[o.status as PurchaseStatus] ?? o.status,
+              Comprobante: o.invoiceNumber ?? "",
               "Total (S/)": o.total,
+              "Flete (S/)": o.flete ?? 0,
               Fecha: new Date(o.createdAt).toLocaleDateString("es-PE"),
+              "Prometida": o.deliveryDate ? new Date(o.deliveryDate).toLocaleDateString("es-PE") : "",
+              "Llegó": o.receivedDate ? new Date(o.receivedDate).toLocaleDateString("es-PE") : "",
+              "La pidió": o.createdBy ?? "",
+              "La recibió": o.receivedBy ?? "",
               Notas: o.notes ?? "",
             }));
             exportToExcel(rows, `compras-${new Date().toISOString().slice(0, 10)}`, "Compras");
           }}
-          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--data-success-500)]/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           title="Exportar compras a Excel"
         >
           <Download className="h-4 w-4" />
@@ -612,6 +976,30 @@ export default function PurchaseOrdersTab() {
         </div>
       )}
 
+      {/* ─── Órdenes recibidas sin flete: su costo es optimista ──────── */}
+      {(() => {
+        const sinFlete = orders.filter(
+          (o) => o.status === "recibido" && (o.flete ?? 0) + (o.otrosCostos ?? 0) === 0,
+        );
+        if (sinFlete.length === 0) return null;
+        return (
+          <section className="rounded-2xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 px-4 py-3 flex items-start gap-3">
+            <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-[var(--data-warning-500)]/15 shrink-0">
+              <Truck className="h-4 w-4 text-[var(--data-warning-500)]" strokeWidth={2.2} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-extrabold text-[var(--text-primary)]">
+                {sinFlete.length} {sinFlete.length === 1 ? "compra recibida no tiene" : "compras recibidas no tienen"} cargado lo que costó traerla
+              </p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                El costo de esos productos —y el margen que ves— está por debajo del real.
+                Abrí el detalle de cada una y cargá el flete: se reparte entre lo que quede en stock.
+              </p>
+            </div>
+          </section>
+        );
+      })()}
+
       {/* ─── Mejora 15: cards de pedidos recurrentes ─────────────────── */}
       {upcomingRecurring.length > 0 && (
         <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 sm:p-5 space-y-3">
@@ -619,17 +1007,31 @@ export default function PurchaseOrdersTab() {
             <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-primary/10 shrink-0">
               <Repeat className="h-4 w-4 text-primary" strokeWidth={2.2} />
             </span>
-            <p className="text-sm font-extrabold text-[var(--text-primary)]">
-              {upcomingRecurring.length} pedido{upcomingRecurring.length > 1 ? "s" : ""} recurrente{upcomingRecurring.length > 1 ? "s" : ""} programado{upcomingRecurring.length > 1 ? "s" : ""}
-            </p>
+            <div className="min-w-0">
+              <p className="text-sm font-extrabold text-[var(--text-primary)]">
+                {upcomingRecurring.length} pedido{upcomingRecurring.length > 1 ? "s" : ""} recurrente{upcomingRecurring.length > 1 ? "s" : ""} programado{upcomingRecurring.length > 1 ? "s" : ""}
+              </p>
+              {(() => {
+                const tocan = upcomingRecurring.filter(r => r.daysUntil <= r.notifyDaysBefore).length;
+                if (tocan === 0) return null;
+                return (
+                  <p className="text-xs font-bold text-[var(--data-warning-500)]">
+                    {tocan === 1 ? "1 toca pedirlo ahora" : `${tocan} tocan pedirlos ahora`}
+                  </p>
+                );
+              })()}
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {upcomingRecurring.map(r => {
-              const dueToday = r.daysUntil === 0;
-              const dueSoon = r.daysUntil <= 3;
+              const dueToday = r.daysUntil === 0 || r.vencido;
+              // Acá es donde `notifyDaysBefore` por fin significa algo: cada
+              // recurrencia se pone en amarillo según SU propio umbral, no
+              // según un 3 fijo que ignoraba lo que el usuario configuró.
+              const dueSoon = r.daysUntil <= r.notifyDaysBefore;
               return (
                 <div
-                  key={r.ocId}
+                  key={r.id}
                   className={cn(
                     "rounded-2xl border-2 p-4 bg-white dark:bg-[var(--color-card)] transition-all",
                     dueToday ? "border-[var(--data-error-500)]/50 ring-2 ring-[var(--data-error-500)]/20" : dueSoon ? "border-[var(--data-warning-500)]/40" : "border-[var(--rule-base)]",
@@ -639,10 +1041,13 @@ export default function PurchaseOrdersTab() {
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">OC a</p>
                       <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">{r.supplierName}</p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                        {r.items.length} producto{r.items.length === 1 ? "" : "s"} · S/{r.items.reduce((s, i) => s + i.quantity * i.unitCost, 0).toFixed(2)}
+                      </p>
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeRecurring(r.ocId)}
+                      onClick={() => removeRecurring(r.id)}
                       className="h-8 w-8 inline-flex items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors"
                       title="Eliminar recurrencia"
                       aria-label="Eliminar pedido recurrente"
@@ -660,7 +1065,7 @@ export default function PurchaseOrdersTab() {
                         : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-base)]",
                     )}>
                       <Calendar className="h-3.5 w-3.5" />
-                      {dueToday ? "Hoy" : r.daysUntil === 1 ? "Mañana" : `En ${r.daysUntil} días`}
+                      {r.vencido ? "Atrasado" : dueToday ? "Hoy" : r.daysUntil === 1 ? "Mañana" : `En ${r.daysUntil} días`}
                     </span>
                     <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-semibold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
                       <Repeat className="h-3 w-3" />
@@ -669,11 +1074,8 @@ export default function PurchaseOrdersTab() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      const oc = orders.find(o => o.id === r.ocId);
-                      if (oc) duplicateOrder(oc);
-                    }}
-                    className="w-full inline-flex items-center justify-center gap-1.5 h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+                    onClick={() => generarDesdeRecurrente(r.id)}
+                    className="w-full inline-flex items-center justify-center gap-1.5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
                   >
                     <Plus className="h-4 w-4" />
                     Crear OC ahora
@@ -694,7 +1096,7 @@ export default function PurchaseOrdersTab() {
               OC para {suppliers.find(s => s.id === showRecurringModal.supplierId)?.name} · {showRecurringModal.items.length} productos
             </p>
             <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1.5 block">Repetir cada</label>
+              <span className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1.5 block">Repetir cada</span>
               <div className="flex gap-2">
                 {[7, 15, 30].map(d => (
                   <button
@@ -711,13 +1113,12 @@ export default function PurchaseOrdersTab() {
               </div>
             </div>
             <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1 block">Próximo pedido</label>
+              <span className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1 block">Próximo pedido</span>
               <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                 {nextRecurringDateLabel}
               </p>
             </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1 block">Notificarme</label>
+            <Field label="Notificarme" labelClassName="text-xs font-bold text-[var(--text-secondary)] uppercase mb-1 block">
               <select
                 value={recurringNotifyDays}
                 onChange={e => setRecurringNotifyDays(Number(e.target.value))}
@@ -728,13 +1129,23 @@ export default function PurchaseOrdersTab() {
                 <option value={3}>3 dias antes</option>
                 <option value={5}>5 dias antes</option>
               </select>
-            </div>
+            </Field>
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setShowRecurringModal(null)} className="flex-1 py-2.5 rounded-lg bg-[var(--surface-sunken)] dark:bg-surface text-sm font-bold text-[var(--text-secondary)]">
+              <button
+                type="button"
+                onClick={() => setShowRecurringModal(null)}
+                className="flex-1 h-12 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface text-sm font-bold text-[var(--text-secondary)]"
+              >
                 Cancelar
               </button>
-              <button onClick={() => addRecurringOrder(showRecurringModal)} className="flex-1 py-2.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:bg-[var(--accent)] transition-colors">
-                Guardar
+              <button
+                type="button"
+                disabled={guardandoRecurrente}
+                onClick={() => addRecurringOrder(showRecurringModal)}
+                className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:bg-[var(--accent)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {guardandoRecurrente && <Loader2 className="h-4 w-4 animate-spin" />}
+                {guardandoRecurrente ? "Guardando…" : "Guardar"}
               </button>
             </div>
           </div>
@@ -773,11 +1184,11 @@ export default function PurchaseOrdersTab() {
                   
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                    <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                    <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                       <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Órdenes</p>
                       <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{stats.count}</p>
                     </div>
-                    <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                    <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                       <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Total gastado</p>
                       <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(stats.totalAmount).toFixed(2)}</p>
                     </div>
@@ -839,26 +1250,15 @@ export default function PurchaseOrdersTab() {
                   </div>
                 </div>
 
-                {/* Expanded Timeline */}
+                {/* Expandido: cómo se porta el proveedor y su cronología.
+                    SupplierScorecard y SupplierTimeline ya existían en
+                    components/admin/compras/ y ningún archivo los importaba;
+                    la cronología estaba reimplementada a mano acá, sin las
+                    devoluciones que el Timeline sí cruza. */}
                 {isExpanded && (
-                  <div className="border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface p-4">
-                    <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase mb-3">Cronología completa de compras</p>
-                    <div className="space-y-2 max-h-80 overflow-y-auto">
-                      {orders.filter(o => o.supplierId === supplier.id).map(order => (
-                        <div key={order.id} className="bg-[var(--surface-raised)] rounded-xl p-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatDate(order.createdAt)}</span>
-                            <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[order.status])}>
-                              {STATUS_LABELS[order.status]}
-                            </span>
-                          </div>
-                          <div className="text-xs text-[var(--text-secondary)] dark:text-muted">
-                            {order.items.length} producto{order.items.length !== 1 ? "s" : ""} · <span className="font-bold text-primary">S/{Number(order.total).toFixed(2)}</span>
-                          </div>
-                          {order.notes && <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1 italic">{order.notes}</p>}
-                        </div>
-                      ))}
-                    </div>
+                  <div className="border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface p-4 space-y-4">
+                    <SupplierScorecard supplierId={supplier.id} />
+                    <SupplierTimeline supplierId={supplier.id} supplierName={supplier.name} />
                   </div>
                 )}
               </div>
@@ -876,14 +1276,14 @@ export default function PurchaseOrdersTab() {
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
           onClick={(e) => e.target === e.currentTarget && setShowCreate(false)}
         >
-          <div className="bg-white dark:bg-[var(--color-card)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-3xl shadow-2xl flex flex-col max-h-[92dvh] border-0 sm:border-2 sm:border-[var(--rule-base)] overflow-hidden">
+          <div className="bg-white dark:bg-[var(--color-card)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[92dvh] border-0 sm:border-2 sm:border-[var(--rule-base)] overflow-hidden">
             {/* Header */}
             <header className="px-5 sm:px-6 py-4 border-b-2 border-[var(--rule-base)] flex items-center gap-3 bg-linear-to-r from-primary/5 to-transparent">
               <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/15 border border-primary/30 shrink-0">
                 <FileText className="h-6 w-6 text-primary" strokeWidth={2.2} />
               </span>
               <div className="flex-1 min-w-0">
-                <h2 id="create-oc-title" className="text-lg font-extrabold text-[var(--text-primary)]">Nueva orden de compra</h2>
+                <SectionTitle id="create-oc-title" className="text-lg font-extrabold">Nueva orden de compra</SectionTitle>
                 <p className="text-sm text-[var(--text-secondary)]">Elegí proveedor, sumá productos y guardá. Después podés marcarla como recibida cuando llegue la mercadería.</p>
               </div>
               <button
@@ -901,13 +1301,12 @@ export default function PurchaseOrdersTab() {
               <div className="px-5 sm:px-6 py-5 space-y-6">
                 {/* ── Sección: Proveedor + Notas ── */}
                 <section className="space-y-3">
-                  <h3 className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                  <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
                     <Building2 className="h-4 w-4 text-[var(--text-tertiary)]" />
                     Proveedor
-                  </h3>
+                  </CardTitle>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">Proveedor *</label>
+                    <Field label="Proveedor *" labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1" className="sm:col-span-2">
                       <select
                         required
                         value={supplierId}
@@ -917,34 +1316,163 @@ export default function PurchaseOrdersTab() {
                         <option value="">— Seleccionar proveedor —</option>
                         {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (RUC ${s.ruc})` : ""}</option>)}
                       </select>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
-                        <StickyNote className="inline h-3 w-3 mr-1" />
-                        Notas (opcional)
-                      </label>
+                    </Field>
+                    <Field label={<><StickyNote className="inline h-3 w-3 mr-1" />Notas (opcional)</>} labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1" className="sm:col-span-2">
                       <input
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Ej. Entrega antes del 25, pagar a 30 días, traer factura..."
+                        placeholder="Ej. Traer factura, descargar por el portón de atrás..."
                         className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
                       />
-                    </div>
+                    </Field>
                   </div>
+                </section>
+
+                {/* ── Sección: Condiciones de compra ── */}
+                <section className="space-y-3">
+                  <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                    <CreditCard className="h-4 w-4 text-[var(--text-tertiary)]" />
+                    Condiciones
+                  </CardTitle>
+
+                  <div>
+                    <span className="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">Forma de pago</span>
+                    <div className="flex flex-wrap gap-2">
+                      {FORMAS_DE_PAGO.map(forma => {
+                        const activa = paymentMethod === forma.id;
+                        return (
+                          <button
+                            key={forma.id}
+                            type="button"
+                            onClick={() => setPaymentMethod(forma.id)}
+                            aria-pressed={activa}
+                            title={forma.ayuda}
+                            className={cn(
+                              "h-12 px-4 rounded-2xl border-2 text-sm font-bold transition-colors",
+                              activa
+                                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                                : "border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
+                            )}
+                          >
+                            {forma.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1.5">
+                      {generaCuentaPorPagar(paymentMethod)
+                        ? `Se abre una cuenta por pagar que vence en ${FORMAS_DE_PAGO.find(f => f.id === paymentMethod)?.dias} días.`
+                        : "No genera cuenta por pagar: la compra queda saldada."}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field label={<><Calendar className="inline h-3 w-3 mr-1" />Fecha de entrega prometida</>} labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                      <input
+                        type="date"
+                        value={deliveryDate}
+                        onChange={(e) => setDeliveryDate(e.target.value)}
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                      />
+                    </Field>
+                    <Field label={<><Percent className="inline h-3 w-3 mr-1" />Descuento del proveedor</>} labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                      {(id) => (
+                        <div className="relative">
+                          <input
+                            id={id}
+                            type="number" min="0" max="100" step="0.5"
+                            value={discount}
+                            onChange={(e) => setDiscount(Math.min(100, Math.max(0, Number(e.target.value))))}
+                            className="w-full h-12 pl-3.5 pr-9 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                          />
+                          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--text-tertiary)]">%</span>
+                        </div>
+                      )}
+                    </Field>
+                  </div>
+                </section>
+
+                {/* ── Sección: Comprobante y costos de traer (ADR-377) ── */}
+                <section className="space-y-3">
+                  <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                    <Receipt className="h-4 w-4 text-[var(--text-tertiary)]" />
+                    Comprobante y costos de traer
+                  </CardTitle>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field label="Tipo de comprobante" labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                      <select
+                        value={invoiceType}
+                        onChange={(e) => setInvoiceType(e.target.value as TipoComprobante)}
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary cursor-pointer"
+                      >
+                        {TIPOS_COMPROBANTE.map(t => (
+                          <option key={t.id} value={t.id}>{t.label}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Número" labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                      <input
+                        value={invoiceNumber}
+                        onChange={(e) => setInvoiceNumber(e.target.value)}
+                        disabled={invoiceType === "ninguno"}
+                        placeholder={invoiceType === "ninguno" ? "Sin comprobante" : "F001-00012345"}
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary disabled:opacity-50"
+                      />
+                    </Field>
+                    <Field label={<><Truck className="inline h-3 w-3 mr-1" />Flete (S/)</>} labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                      <input
+                        type="number" min="0" step="0.5"
+                        value={flete}
+                        onChange={(e) => setFlete(Math.max(0, Number(e.target.value)))}
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                      />
+                    </Field>
+                    <Field label="Otros costos (S/)" labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                      <input
+                        type="number" min="0" step="0.5"
+                        value={otrosCostos}
+                        onChange={(e) => setOtrosCostos(Math.max(0, Number(e.target.value)))}
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                      />
+                    </Field>
+                  </div>
+
+                  {sobrecostos > 0 && items.length > 0 && (
+                    <p className="text-xs text-[var(--text-secondary)] bg-[var(--surface-sunken)] rounded-xl px-3.5 py-2.5 border border-[var(--rule-base)]">
+                      Los S/{sobrecostos.toFixed(2)} se reparten entre los productos según cuánto vale cada uno.
+                      Así el costo del producto incluye lo que costó traerlo, y el margen que ves después es el de verdad.
+                    </p>
+                  )}
+
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={igvIncluded}
+                      onChange={(e) => setIgvIncluded(e.target.checked)}
+                      className="mt-0.5 h-5 w-5 rounded-md border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                    />
+                    <span className="text-sm font-medium text-[var(--text-primary)]">
+                      Los costos que cargué ya incluyen IGV
+                      <span className="block text-xs text-[var(--text-secondary)] font-normal">
+                        Es lo normal cuando el proveedor te pasa precio de lista.
+                      </span>
+                    </span>
+                  </label>
                 </section>
 
                 {/* ── Sección: Productos ── */}
                 <section className="space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <h3 className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                    <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
                       <Package className="h-4 w-4 text-[var(--text-tertiary)]" />
                       Productos de la orden
                       {items.length > 0 && (
-                        <span className="inline-flex items-center justify-center h-6 min-w-[24px] px-2 rounded-full bg-primary/10 text-primary text-xs font-extrabold tabular-nums">
+                        <span className="inline-flex items-center justify-center h-6 min-w-[24px] px-2 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold tabular-nums">
                           {items.length}
                         </span>
                       )}
-                    </h3>
+                    </CardTitle>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -984,7 +1512,7 @@ export default function PurchaseOrdersTab() {
                         return (
                           <div key={idx} className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] p-3 transition-all hover:border-[var(--text-tertiary)]">
                             <div className="flex items-start gap-2 mb-2">
-                              <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10 text-primary text-xs font-extrabold shrink-0">
+                              <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold shrink-0">
                                 {idx + 1}
                               </span>
                               <div className="flex-1 relative">
@@ -1030,28 +1558,38 @@ export default function PurchaseOrdersTab() {
                             </div>
                             <div className="flex items-center gap-2 ml-9 flex-wrap">
                               <div className="flex items-center gap-1">
-                                <label className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Cant</label>
-                                <input
-                                  type="number" min="1" step="1"
-                                  value={item.quantity}
-                                  onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })}
-                                  className="w-20 h-10 px-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
-                                />
-                                <span className="text-xs font-bold text-[var(--text-tertiary)] ml-1">{item.unit}</span>
+                                <Field label="Cant" labelClassName="text-xs font-bold text-[var(--text-tertiary)] uppercase">
+                                  {(id) => (
+                                    <>
+                                      <input
+                                        id={id}
+                                        type="number" min="1" step="1"
+                                        value={item.quantity}
+                                        onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })}
+                                        className="w-20 h-10 px-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
+                                      />
+                                      <span className="text-xs font-bold text-[var(--text-tertiary)] ml-1">{item.unit}</span>
+                                    </>
+                                  )}
+                                </Field>
                               </div>
                               <div className="flex items-center gap-1">
-                                <label className="text-xs font-bold text-[var(--text-tertiary)] uppercase">Costo</label>
-                                <div className="relative">
-                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--text-tertiary)]">S/</span>
-                                  <input
-                                    type="number" min="0" step="0.01"
-                                    value={item.unitCost}
-                                    onChange={(e) => updateItem(idx, { unitCost: Number(e.target.value) })}
-                                    className="w-24 h-10 pl-7 pr-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
-                                  />
-                                </div>
+                                <Field label="Costo" labelClassName="text-xs font-bold text-[var(--text-tertiary)] uppercase">
+                                  {(id) => (
+                                    <div className="relative">
+                                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--text-tertiary)]">S/</span>
+                                      <input
+                                        id={id}
+                                        type="number" min="0" step="0.01"
+                                        value={item.unitCost}
+                                        onChange={(e) => updateItem(idx, { unitCost: Number(e.target.value) })}
+                                        className="w-24 h-10 pl-7 pr-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
+                                      />
+                                    </div>
+                                  )}
+                                </Field>
                               </div>
-                              <div className="ml-auto inline-flex items-center gap-2 h-10 px-3 rounded-xl bg-primary/10 text-primary">
+                              <div className="ml-auto inline-flex items-center gap-2 h-10 px-3 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                                 <span className="text-xs font-bold uppercase">Total</span>
                                 <span className="text-base font-extrabold tabular-nums">S/{lineTotal.toFixed(2)}</span>
                               </div>
@@ -1071,10 +1609,25 @@ export default function PurchaseOrdersTab() {
                     <div>
                       <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Total de la orden</p>
                       <p className="text-xs text-[var(--text-secondary)]">{items.length} producto{items.length === 1 ? "" : "s"} · {items.reduce((s, i) => s + i.quantity, 0)} unidades</p>
+                      {discount > 0 && (
+                        <p className="text-xs text-[var(--data-success-500)] font-bold mt-0.5">
+                          Subtotal S/{itemsTotal.toFixed(2)} − {discount}% = ahorrás S/{(itemsTotal - totalConDescuento).toFixed(2)}
+                        </p>
+                      )}
+                      {sobrecostos > 0 && (
+                        <p className="text-xs text-[var(--text-secondary)] font-bold mt-0.5">
+                          + S/{sobrecostos.toFixed(2)} de traerla · te cuesta S/{(totalConDescuento + sobrecostos).toFixed(2)}
+                        </p>
+                      )}
                     </div>
-                    <p className="text-3xl font-extrabold text-primary tabular-nums">
-                      S/{itemsTotal.toFixed(2)}
-                    </p>
+                    <div className="text-right">
+                      <p className="text-3xl font-extrabold text-primary tabular-nums">
+                        S/{totalConDescuento.toFixed(2)}
+                      </p>
+                      {sobrecostos > 0 && (
+                        <p className="text-xs text-[var(--text-tertiary)] font-bold">le pagás al proveedor</p>
+                      )}
+                    </div>
                   </div>
                 )}
                 <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
@@ -1108,22 +1661,35 @@ export default function PurchaseOrdersTab() {
           <span className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 mb-4">
             <ShoppingBag className="h-8 w-8 text-primary" strokeWidth={2.2} />
           </span>
-          <h3 className="text-xl font-extrabold text-[var(--text-primary)]">
-            {selectedSupplierId ? "Sin órdenes para este proveedor" : "Sin órdenes de compra"}
-          </h3>
+          {/* Buscar sin resultados no es lo mismo que no tener órdenes: en el
+              primer caso ofrecer "crear la primera" desorienta. */}
+          <CardTitle className="text-xl font-extrabold">
+            {f.hayFiltros ? "Ninguna orden coincide" : "Sin órdenes de compra"}
+          </CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-md mx-auto">
-            {selectedSupplierId
-              ? "Este proveedor todavía no tiene órdenes registradas. Creá la primera o cambiá de proveedor."
+            {f.hayFiltros
+              ? "Probá con otro texto, ampliá el rango de fechas o sacá los filtros."
               : "Llevá registro de lo que pedís a tus proveedores: fechas, cantidades, costos. Después podés duplicar pedidos frecuentes o hacerlos recurrentes."}
           </p>
-          <button
-            type="button"
-            onClick={() => setShowCreate(true)}
-            className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors shadow-sm"
-          >
-            <Plus className="h-5 w-5" strokeWidth={2.5} />
-            Crear primera orden
-          </button>
+          {f.hayFiltros ? (
+            <button
+              type="button"
+              onClick={f.limpiar}
+              className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors"
+            >
+              <X className="h-5 w-5" strokeWidth={2.5} />
+              Limpiar filtros
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors shadow-sm"
+            >
+              <Plus className="h-5 w-5" strokeWidth={2.5} />
+              Crear primera orden
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -1187,16 +1753,28 @@ export default function PurchaseOrdersTab() {
 
                 {/* Acciones */}
                 <div className="flex flex-wrap items-center gap-2 shrink-0 lg:border-l-2 lg:border-[var(--rule-soft)] lg:pl-4">
-                  <select
-                    value={o.status}
-                    onChange={(e) => updateStatus(o.id, e.target.value as PurchaseStatus)}
-                    aria-label="Cambiar estado"
-                    className="h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer"
-                  >
-                    {(Object.keys(STATUS_LABELS) as PurchaseStatus[]).map(s => (
-                      <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                    ))}
-                  </select>
+                  {/* Sólo los estados a los que esta orden puede ir de verdad.
+                      Una orden recibida no tiene destinos: el select queda
+                      deshabilitado en vez de ofrecer cambios que el servidor
+                      rechaza. */}
+                  {(() => {
+                    const destinos = opcionesDeEstado(o.status);
+                    const cerrada = destinos.length <= 1;
+                    return (
+                      <select
+                        value={o.status}
+                        onChange={(e) => updateStatus(o.id, e.target.value as PurchaseStatus)}
+                        aria-label="Cambiar estado"
+                        disabled={cerrada}
+                        title={cerrada ? `Una orden ${STATUS_LABELS[o.status].toLowerCase()} ya no cambia de estado` : "Cambiar estado"}
+                        className="h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {destinos.map(s => (
+                          <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                        ))}
+                      </select>
+                    );
+                  })()}
                   {(o.status === "pendiente" || o.status === "parcial") && (
                     <button
                       type="button"
@@ -1222,7 +1800,7 @@ export default function PurchaseOrdersTab() {
                     <button
                       type="button"
                       onClick={() => { setShowRecurringModal(o); setRecurringInterval(15); setRecurringNotifyDays(2); }}
-                      className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-primary hover:bg-primary/10 text-sm font-bold transition-colors"
+                      className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 text-sm font-bold transition-colors"
                       title="Hacer pedido recurrente"
                     >
                       <Repeat className="h-4 w-4" />
@@ -1302,6 +1880,51 @@ export default function PurchaseOrdersTab() {
                       <span className="text-primary">S/{Number(o.total).toFixed(2)}</span>
                     </div>
                   </div>
+                  {/* ADR-377: el papel, lo que costó traerla y quién la manejó. */}
+                  {(() => {
+                    const sobrecosto = (o.flete ?? 0) + (o.otrosCostos ?? 0);
+                    const datos: Array<{ etiqueta: string; valor: string }> = [];
+                    if (o.invoiceNumber) datos.push({ etiqueta: TIPOS_COMPROBANTE.find(t => t.id === o.invoiceType)?.label ?? "Comprobante", valor: o.invoiceNumber });
+                    if (sobrecosto > 0) datos.push({ etiqueta: "Costo de traerla", valor: `S/${sobrecosto.toFixed(2)}` });
+                    if (o.deliveryDate) datos.push({ etiqueta: "Prometida", valor: formatDate(o.deliveryDate) });
+                    if (o.receivedDate) datos.push({ etiqueta: "Llegó", valor: formatDate(o.receivedDate) });
+                    if (o.createdBy) datos.push({ etiqueta: "La pidió", valor: o.createdBy });
+                    if (o.receivedBy) datos.push({ etiqueta: "La recibió", valor: o.receivedBy });
+                    if (datos.length === 0) return null;
+                    return (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {datos.map(d => (
+                          <span key={d.etiqueta} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs">
+                            <span className="font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{d.etiqueta}</span>
+                            <span className="font-extrabold text-[var(--text-primary)]">{d.valor}</span>
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Entrega tarde: la promesa contra lo que pasó. */}
+                  {(() => {
+                    if (!o.deliveryDate || !o.receivedDate) return null;
+                    const dias = Math.round(
+                      (new Date(o.receivedDate).getTime() - new Date(o.deliveryDate).getTime()) / 86400000,
+                    );
+                    if (dias <= 0) return (
+                      <p className="mt-2 text-xs font-bold text-[var(--data-success-500)]">
+                        Llegó {dias === 0 ? "el día prometido" : `${Math.abs(dias)} día${Math.abs(dias) === 1 ? "" : "s"} antes`}
+                      </p>
+                    );
+                    return (
+                      <p className="mt-2 text-xs font-bold text-[var(--data-warning-500)]">
+                        Llegó {dias} día{dias === 1 ? "" : "s"} después de lo prometido
+                      </p>
+                    );
+                  })()}
+
+                  {/* Cargar el flete después de recibir: el costo de esos
+                      productos se calculó sin ese gasto (ADR-377). */}
+                  <FleteTardio orden={o} onGuardado={(msg) => { avisar(msg); load(); }} />
+
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">ID: {o.id}</p>
 
                   {/* Mejora 14: Ahorro vs compra anterior del proveedor */}
@@ -1315,7 +1938,7 @@ export default function PurchaseOrdersTab() {
                     return (
                       <div className={cn("mt-2 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg",
                         diff < 0
-                          ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                          ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                           : diff > 0
                           ? "bg-[var(--data-warning-50)] dark:bg-orange-950/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
                           : "bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)]"
@@ -1344,6 +1967,41 @@ export default function PurchaseOrdersTab() {
             </div>
             );
           })}
+
+          {/* ─── Paginación ──────────────────────────────────────────── */}
+          {f.totalPaginas > 1 && (
+            <nav
+              aria-label="Páginas de órdenes"
+              className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-4 py-3"
+            >
+              <p className="text-sm font-bold text-[var(--text-secondary)]">
+                Mostrando {(f.pagina - 1) * POR_PAGINA + 1}–{Math.min(f.pagina * POR_PAGINA, f.filtradas.length)} de {f.filtradas.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => f.setPagina(f.pagina - 1)}
+                  disabled={f.pagina <= 1}
+                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anterior
+                </button>
+                <span className="text-sm font-extrabold text-[var(--text-primary)] tabular-nums px-2">
+                  {f.pagina} / {f.totalPaginas}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => f.setPagina(f.pagina + 1)}
+                  disabled={f.pagina >= f.totalPaginas}
+                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </nav>
+          )}
         </div>
       )}
 
@@ -1410,22 +2068,20 @@ export default function PurchaseOrdersTab() {
                     <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-4 space-y-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                       <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{addItemSel.name}</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Cantidad</label>
+                        <Field label="Cantidad" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                           <input
                             type="number" min="1" step="1" value={addItemQty}
                             onChange={(e) => setAddItemQty(Number(e.target.value))}
                             className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                           />
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Costo unitario (S/)</label>
+                        </Field>
+                        <Field label="Costo unitario (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                           <input
                             type="number" min="0" step="0.01" value={addItemCost}
                             onChange={(e) => setAddItemCost(Number(e.target.value))}
                             className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                           />
-                        </div>
+                        </Field>
                       </div>
                       <button
                         onClick={() => {
@@ -1461,17 +2117,15 @@ export default function PurchaseOrdersTab() {
                   setSavingNewProd(false);
                 }} className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="sm:col-span-2">
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Nombre *</label>
+                    <Field label="Nombre *" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1" className="sm:col-span-2">
                       <input
                         required value={newProdForm.name}
                         onChange={(e) => setNewProdForm(p => ({ ...p, name: e.target.value }))}
                         placeholder="Nombre del producto"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Categoría</label>
+                    </Field>
+                    <Field label="Categoría" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <select value={newProdForm.category} onChange={(e) => setNewProdForm(p => ({ ...p, category: e.target.value }))}
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none">
                         <option value="abarrotes">Abarrotes</option>
@@ -1483,42 +2137,37 @@ export default function PurchaseOrdersTab() {
                         <option value="higiene">Higiene</option>
                         <option value="otros">Otros</option>
                       </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Unidad</label>
+                    </Field>
+                    <Field label="Unidad" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input value={newProdForm.unit} onChange={(e) => setNewProdForm(p => ({ ...p, unit: e.target.value }))}
                         placeholder="und, kg, L…"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Precio venta (S/)</label>
+                    </Field>
+                    <Field label="Precio venta (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input type="number" min="0" step="0.01" value={newProdForm.price}
                         onChange={(e) => setNewProdForm(p => ({ ...p, price: Number(e.target.value) }))}
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Costo compra (S/)</label>
+                    </Field>
+                    <Field label="Costo compra (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input type="number" min="0" step="0.01" value={newProdForm.costPrice}
                         onChange={(e) => setNewProdForm(p => ({ ...p, costPrice: Number(e.target.value) }))}
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Cantidad inicial</label>
+                    </Field>
+                    <Field label="Cantidad inicial" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input type="number" min="0" step="1" value={newProdForm.stock}
                         onChange={(e) => setNewProdForm(p => ({ ...p, stock: Number(e.target.value) }))}
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">Código de barras</label>
+                    </Field>
+                    <Field label="Código de barras" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input value={newProdForm.barcode} onChange={(e) => setNewProdForm(p => ({ ...p, barcode: e.target.value }))}
                         placeholder="Opcional"
                         className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
-                    </div>
+                    </Field>
                   </div>
                   <button
                     type="submit" disabled={savingNewProd || !newProdForm.name}
@@ -1537,6 +2186,7 @@ export default function PurchaseOrdersTab() {
       {recepcionOC && (
         <OCRecepcionModal
           ocId={recepcionOC.id}
+          supplier={recepcionOC.supplierName}
           items={recepcionOC.items}
           onComplete={() => {
             setRecepcionOC(null);
@@ -1546,14 +2196,31 @@ export default function PurchaseOrdersTab() {
         />
       )}
 
-      {/* Mejora 19: Toast de duplicacion */}
-      {duplicateToast && (
-        <div className="fixed bottom-4 right-4 z-50 bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] flex items-center justify-center shrink-0">
-              <Copy className="h-4 w-4 text-[var(--data-success-500)]" />
+      {/* Aviso flotante: confirma lo que salió bien y, sobre todo, muestra lo
+          que el servidor rechazó (antes fallaba en silencio). */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={cn(
+            "fixed bottom-4 right-4 z-50 bg-[var(--surface-raised)] border-2 rounded-2xl p-4 max-w-sm shadow-lg animate-in slide-in-from-bottom-5",
+            toast.tone === "error"
+              ? "border-[var(--data-error-500)]/40"
+              : "border-[var(--data-success-500)]/40",
+          )}
+        >
+          <div className="flex items-start gap-3">
+            <div className={cn(
+              "h-9 w-9 rounded-xl flex items-center justify-center shrink-0",
+              toast.tone === "error"
+                ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/15"
+                : "bg-primary/10 dark:bg-[var(--data-success-500)]/15",
+            )}>
+              {toast.tone === "error"
+                ? <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
+                : <Check className="h-5 w-5 text-[var(--data-success-500)]" />}
             </div>
-            <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{duplicateToast}</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)] pt-1.5">{toast.msg}</p>
           </div>
         </div>
       )}

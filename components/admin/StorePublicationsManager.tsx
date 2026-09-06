@@ -90,7 +90,7 @@ export default function StorePublicationsManager() {
   return (
     <div className="space-y-6">
       <header className="flex items-center gap-3">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Megaphone className="h-6 w-6" strokeWidth={2} aria-hidden />
         </span>
         <div>
@@ -125,7 +125,7 @@ export default function StorePublicationsManager() {
             className={cn(
               "inline-flex h-11 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition-colors",
               pinned
-                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]",
             )}
           >
@@ -164,7 +164,7 @@ export default function StorePublicationsManager() {
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
                 {p.pinned && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 font-bold text-[var(--accent)]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-bold text-[var(--accent)]">
                     <Pin className="h-3 w-3" aria-hidden /> Fijada
                   </span>
                 )}

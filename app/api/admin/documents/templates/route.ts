@@ -8,7 +8,7 @@ import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   try {
-    const rl = await applyRateLimit(req, "MODERATE", "documents:templates:list");
+    const rl = await applyRateLimit(req, "DRIVE_READ", "documents:templates:list");
     if (rl) return rl;
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;

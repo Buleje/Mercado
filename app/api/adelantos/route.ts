@@ -9,12 +9,30 @@ import { assertCsrf } from "@/lib/auth/csrf";
 
 const CreateSchema = z.object({
   beneficiarioId: z.string().min(1).max(40),
-  modalidad: z.enum(["CUENTA_CORRIENTE", "ENTREGAS_PACTADAS"]).optional(),
+  modalidad: z.enum(["CUENTA_CORRIENTE", "ENTREGAS_PACTADAS", "DESCUENTO_PLANILLA"]).optional(),
   montoAdelantado: z.number().positive().max(9999999999),
   moneda: z.string().max(3).optional(),
   fechaAdelanto: z.string().optional(),
+  /** (332) Cuándo se acordó devolverlo. */
+  fechaVencimiento: z.string().max(40).nullable().optional(),
   notas: z.string().max(1000).optional(),
   comprobanteUrl: z.string().url().max(500).optional(),
+  /** N° del talonario de papel que firmó la persona (ADR-329). */
+  reciboManual: z.string().trim().max(60).optional(),
+  /** Volumen de madera de referencia — no toca saldoPendiente ni el tope de crédito. */
+  piesTablares: z.number().positive().max(9999999).optional(),
+  piesTablaresTipo: z.enum(["COMPRADO", "VENDIDO"]).optional(),
+  /**
+   * Pasar el tope de crédito a sabiendas. Va explícito y por defecto NO: un
+   * desborde por descuido sigue rechazándose; éste lo manda la pantalla recién
+   * después de que alguien confirmó el aviso con el monto exacto.
+   */
+  forzarLimite: z.boolean().optional(),
+  /**
+   * Por qué vía salió la plata del cajón. Ausente = no mover la caja (el
+   * adelanto salió del banco, o se está cargando en diferido).
+   */
+  metodoCaja: z.enum(["efectivo", "yape", "plin", "tarjeta", "transferencia"]).nullable().optional(),
   entregasPactadas: z
     .array(
       z.object({

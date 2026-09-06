@@ -16,6 +16,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import CouponInput, { type AppliedCoupon } from "@/components/ui-system/CouponInput";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const STORAGE_KEY = "buleje-applied-coupon-v1";
 
@@ -93,7 +94,7 @@ export default function CartCouponSection({ subtotal, onDiscountChange, classNam
       try {
         const res = await fetch("/api/marketplace/coupons/validate", {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: csrfHeaders({ "content-type": "application/json" }),
           body: JSON.stringify({ code, storeSlug: "main", cartTotal: subtotal }),
         });
         if (res.ok) {

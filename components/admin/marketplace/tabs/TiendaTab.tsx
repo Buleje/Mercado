@@ -1,5 +1,6 @@
 "use client";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { AlertCircle, CheckCircle, DollarSign, ExternalLink, Eye, Globe, Clock, EyeOff, MapPin, Save, Star, Store, Zap } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceTienda } from "@/components/admin/marketplace/hooks/use-marketplace-tienda";
@@ -115,7 +116,7 @@ export function MarketplaceTiendaTab() {
           {/* Identidad */}
           <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
             <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Store className="h-5 w-5" />
               </span>
               <div className="min-w-0">
@@ -127,54 +128,67 @@ export function MarketplaceTiendaTab() {
             </header>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-2 sm:col-span-1">
-                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
-                  <Globe className="h-4 w-4" /> URL pública
-                </label>
-                <div className="flex items-stretch h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
-                  <span className="inline-flex items-center px-4 text-sm font-extrabold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-r-2 border-[var(--rule-base)] whitespace-nowrap">/marketplace/</span>
-                  <input
-                    type="text"
-                    value={store.slug}
-                    onChange={(e) => setStore((p) => ({ ...p, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
-                    placeholder="mi-bodega"
-                    className="flex-1 min-w-0 px-4 bg-transparent text-base font-semibold text-[var(--text-primary)] outline-none"
-                  />
-                </div>
+                <Field
+                  label={<span className="flex items-center gap-1.5"><Globe className="h-4 w-4" /> URL pública</span>}
+                  labelClassName="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]"
+                >
+                  {(id) => (
+                    <div className="flex items-stretch h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+                      <span className="inline-flex items-center px-4 text-sm font-extrabold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-r-2 border-[var(--rule-base)] whitespace-nowrap">/marketplace/</span>
+                      <input
+                        id={id}
+                        type="text"
+                        value={store.slug}
+                        onChange={(e) => setStore((p) => ({ ...p, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))}
+                        placeholder="mi-bodega"
+                        className="flex-1 min-w-0 px-4 bg-transparent text-base font-semibold text-[var(--text-primary)] outline-none"
+                      />
+                    </div>
+                  )}
+                </Field>
                 <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
                   Solo minúsculas y guiones. Evita cambiarla — los links viejos dejan de funcionar.
                 </p>
               </div>
               <div className="space-y-2 sm:col-span-1">
-                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                  Nombre visible <span className="text-[var(--data-error)]">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={store.name}
-                  onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="Bodega San Martín"
-                  maxLength={60}
-                  className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
+                <Field
+                  label={<>Nombre visible <span className="text-[var(--data-error)]">*</span></>}
+                  labelClassName="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]"
+                >
+                  <input
+                    type="text"
+                    value={store.name}
+                    onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))}
+                    placeholder="Bodega San Martín"
+                    maxLength={60}
+                    className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </Field>
                 <p className="text-sm text-[var(--text-tertiary)]">
                   <span className="font-bold tabular-nums">{store.name.length}</span>/60 caracteres
                 </p>
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">Descripción</label>
-                  <span className="text-sm text-[var(--text-tertiary)] tabular-nums">
-                    <span className="font-bold">{(store.description ?? "").length}</span>/240
-                  </span>
-                </div>
-                <textarea
-                  rows={3}
-                  maxLength={240}
-                  value={store.description}
-                  onChange={(e) => setStore((p) => ({ ...p, description: e.target.value }))}
-                  placeholder="Describe tu tienda: horarios, especialidades, qué te hace única…"
-                  className="w-full px-4 py-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all leading-relaxed"
-                />
+                <Field
+                  label={
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">Descripción</span>
+                      <span className="text-sm text-[var(--text-tertiary)] tabular-nums">
+                        <span className="font-bold">{(store.description ?? "").length}</span>/240
+                      </span>
+                    </div>
+                  }
+                  labelClassName=""
+                >
+                  <textarea
+                    rows={3}
+                    maxLength={240}
+                    value={store.description}
+                    onChange={(e) => setStore((p) => ({ ...p, description: e.target.value }))}
+                    placeholder="Describe tu tienda: horarios, especialidades, qué te hace única…"
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all leading-relaxed"
+                  />
+                </Field>
               </div>
             </div>
           </section>
@@ -249,16 +263,15 @@ export function MarketplaceTiendaTab() {
                 aspectRatio="square"
               />
               <div className="space-y-3">
-                <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                  …o pega una URL de imagen
-                </label>
-                <input
-                  type="url"
-                  value={store.logoUrl}
-                  onChange={(e) => setStore((p) => ({ ...p, logoUrl: e.target.value }))}
-                  placeholder="https://…"
-                  className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
+                <Field label="…o pega una URL de imagen" labelClassName="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                  <input
+                    type="url"
+                    value={store.logoUrl}
+                    onChange={(e) => setStore((p) => ({ ...p, logoUrl: e.target.value }))}
+                    placeholder="https://…"
+                    className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  />
+                </Field>
                 {store.logoUrl ? (
                   <div className="flex items-center gap-2 text-sm font-bold text-[var(--data-success)]">
                     <CheckCircle className="h-4 w-4" /> Logo configurado
@@ -279,7 +292,7 @@ export function MarketplaceTiendaTab() {
           {/* Vista previa */}
           <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
             <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Eye className="h-5 w-5" />
               </span>
               <div className="min-w-0">
@@ -362,17 +375,16 @@ export function MarketplaceTiendaTab() {
               />
               {store.vacationMode && (
                 <div className="mt-3 px-2 space-y-2">
-                  <label className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                    Mensaje a clientes
-                  </label>
-                  <input
-                    type="text"
-                    value={store.vacationMessage ?? ""}
-                    onChange={(e) => setStore((p) => ({ ...p, vacationMessage: e.target.value }))}
-                    placeholder="Ej: Volvemos el lunes 15"
-                    maxLength={140}
-                    className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--data-warning)]/50 bg-[var(--data-warning-50)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--data-warning)]/30 transition-all"
-                  />
+                  <Field label="Mensaje a clientes" labelClassName="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                    <input
+                      type="text"
+                      value={store.vacationMessage ?? ""}
+                      onChange={(e) => setStore((p) => ({ ...p, vacationMessage: e.target.value }))}
+                      placeholder="Ej: Volvemos el lunes 15"
+                      maxLength={140}
+                      className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--data-warning)]/50 bg-[var(--data-warning-50)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--data-warning)]/30 transition-all"
+                    />
+                  </Field>
                 </div>
               )}
             </div>
@@ -431,7 +443,7 @@ function ToggleRow({
   const iconBg = active
     ? tone === "warning"
       ? "bg-[var(--data-warning)]/15 text-[var(--data-warning)]"
-      : "bg-primary/15 text-primary"
+      : "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]"
     : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]";
   return (
     <button

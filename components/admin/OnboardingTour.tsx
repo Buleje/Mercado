@@ -134,7 +134,7 @@ export function OnboardingTour({
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key === "Enter") {
         e.preventDefault();
-        isLastStep ? onComplete() : onNext();
+        if (isLastStep) onComplete(); else onNext();
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
         onPrev();
@@ -155,7 +155,7 @@ export function OnboardingTour({
   const targetSelector = `[data-tour-tab="${step.tabId}"]`;
 
   return (
-    <TourSpotlight targetSelector={targetSelector}>
+    <TourSpotlight targetSelector={targetSelector} onMissingTarget={onSkip}>
       <div className="w-[320px] sm:w-[340px] bg-white dark:bg-[#1e293b] rounded-xl border border-[var(--rule-base)] overflow-hidden">
         {/* Header with step counter */}
         <div className="flex items-center justify-between px-4 pt-3 pb-1">
@@ -198,7 +198,7 @@ export function OnboardingTour({
               </p>
             </div>
           </div>
-          <div className="bg-[#f0fdf4] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg px-3 py-2">
+          <div className="bg-[#f0fdf4] dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-lg px-3 py-2">
             <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
               {step.example}
             </p>

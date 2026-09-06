@@ -14,6 +14,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FlaskConical, Check, ArrowRight, LogOut, Loader2 } from "@buleje/design-system/icons";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 const TEST_CUSTOMER = { phone: "999000111", name: "Cliente Prueba", tenantId: "main" };
 
@@ -43,7 +44,7 @@ const STALE_CUSTOMER_KEYS = [
 function clearAllCustomerIdentities() {
   try {
     for (const k of Object.keys(localStorage)) {
-      if (/-customer$/.test(k) || /^(marketplace-customer|marketplace-checkout-customer|buleje-checkout-data)$/.test(k)) {
+      if (k.endsWith("-customer") || /^(marketplace-customer|marketplace-checkout-customer|buleje-checkout-data)$/.test(k)) {
         localStorage.removeItem(k);
       }
     }
@@ -84,7 +85,7 @@ export default function TestCustomerPanel() {
     try {
       const res = await fetch("/api/auth/customer/test-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(TEST_CUSTOMER),
       });
       if (res.status === 404) {
@@ -106,7 +107,7 @@ export default function TestCustomerPanel() {
 
   const deactivate = async () => {
     setState("loading");
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {
+    await fetch("/api/auth/logout", { method: "POST", headers: csrfHeaders() }).catch(() => {
       /* best-effort: en dev no bloqueamos la UI si el logout falla */
     });
     clearTestCustomerFromStorage();
@@ -115,7 +116,7 @@ export default function TestCustomerPanel() {
   };
 
   return (
-    <div className="mb-5 rounded-2xl border-2 border-dashed border-[var(--accent)]/40 bg-[var(--accent-soft)] p-4 sm:p-5">
+    <div className="mb-5 rounded-2xl border-2 border-dashed border-[var(--accent)]/40 bg-primary/10 p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white">

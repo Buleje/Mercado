@@ -7,604 +7,619 @@
  * Solo se renderiza si el tenant tiene `spec:forestal:ctp-libro` habilitado
  * (gating en sidebar via useEnabledSpecs + en endpoints via 403).
  *
- * 2026-05-28 v2 — Refactor visual: AdminModuleHeader + StatCard + AdminModal
- * para alinear con resto de módulos admin (AdelantosModule, etc.).
+ * 2026-05-28 v2 — Refactor visual: AdminModuleHeader + StatCard + AdminModal.
+ * 2026-07-15 v3 — El shell queda fino: cabecera + período + pestañas. El
+ * período es del MÓDULO (un libro se lleva por período) y lo consumen las 5
+ * vistas y el export; cada vista trae sus propios datos y acciones.
+ * 2026-07-15 v4 — 5ª pestaña "Cumplimiento": las alertas del período que
+ * antes solo se veían al exportar el Excel (fuera de plazo, CITES, saldos
+ * negativos, pendientes de validar) ahora tienen su propio panel. Va al
+ * final (después de Saldos) porque combina datos de Ingresos + Saldos —
+ * un cierre de período la revisa último, no primero.
+ * 2026-07-26 v5 — cabina (`libro-chrome`): identidad + período + acciones en
+ * una fila y las doce vistas agrupadas por fase (Operación → Trazabilidad →
+ * Control → Gestión). El cromo pasó de ~370px a ~130px y la nav de doce
+ * destinos planos a cuatro grupos de tres.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Plus,
-  Search,
-  Filter,
-  TreePine,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  X as XIcon,
-  RefreshCw,
-  ThumbsUp,
-  ThumbsDown,
-  BarChart3,
   Boxes,
-  Truck,
-  Scale,
+  Building2,
+  BarChart3,
+  ClipboardList,
+  Coins,
+  FileSpreadsheet,
+  FileText,
+  FolderOpen,
+  Globe,
+  Layers,
+  Lock,
+  MapPin,
+  Flame,
+  PackageCheck,
   PackageOpen,
+  Scale,
+  Search,
+  Share2,
+  History,
+  ShieldCheck,
+  TreePine,
+  TrendingUp,
+  Truck,
+  Trash2,
+  Upload,
+  Users,
 } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { csrfHeaders } from "@/lib/csrf-client";
-import WoodEntryForm from "./WoodEntryForm";
-import SpeciesAggregateChart from "./SpeciesAggregateChart";
+import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
+import type { ShortcutSection } from "@/contexts/admin-shortcuts-context";
+import { exportarLibroCtp, exportarLibroCtpOficial } from "@/lib/forestal/ctp-export";
+import { printInformePeriodo } from "@/lib/forestal/ctp-informe";
+import { abrirDossierFiscalizacion } from "@/lib/forestal/ctp-dossier-abrir";
+import { resolveCtpPeriod, type CtpPeriodKey } from "@/lib/forestal/ctp-period";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
+import CtpPeriodPicker, { type CtpCustomRange } from "./CtpPeriodPicker";
+import CtpIngresosView from "./CtpIngresosView";
 import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
+import CtpCompliancePanel from "./CtpCompliancePanel";
+import CtpFichaEditor from "./CtpFichaEditor";
+import CtpDirectorioView from "./CtpDirectorioView";
+import CtpFletesView from "./CtpFletesView";
+import CtpGuiasEmitidasView from "./CtpGuiasEmitidasView";
+import CtpCierrePanel from "./CtpCierrePanel";
+import { useCtpCierres } from "@/hooks/use-ctp-cierres";
+import CtpPatioBandeja from "./CtpPatioBandeja";
+import { usePatioCola } from "@/hooks/use-patio-cola";
+import CtpCierreAsistido from "./CtpCierreAsistido";
+import CtpEudrPanel from "./CtpEudrPanel";
+import CtpRentabilidadPanel from "./CtpRentabilidadPanel";
+import CtpSerforImportModal from "./CtpSerforImportModal";
+import VaciarLibroModal from "./VaciarLibroModal";
+import CtpTrazaRadar from "./CtpTrazaRadar";
+import CtpHistoriaLoteView from "./CtpHistoriaLoteView";
+import CtpPlantaView from "./CtpPlantaView";
+import CtpAsistente from "./CtpAsistente";
+import CtpAnalisis from "./CtpAnalisis";
+import CtpTableroControl from "./CtpTableroControl";
+import CtpHealthChip from "./CtpHealthChip";
+import CtpPendientes from "./CtpPendientes";
+import CtpBuscarGtf from "./CtpBuscarGtf";
+import CtpPaqueteFicha from "./CtpPaqueteFicha";
+import CtpEntryDetailModal from "./CtpEntryDetailModal";
+import type { WoodEntry } from "./ctp-shared";
+import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
+import CtpResumenesSerfor from "./CtpResumenesSerfor";
+import CtpConsumosView from "./CtpConsumosView";
+import CtpProductosDisponibles from "./CtpProductosDisponibles";
+import CtpLotesView, { type LoteAProducir } from "./CtpLotesView";
+import CtpTrozasView from "./CtpTrozasView";
+import {
+  CTP_INGRESAR_GTF_KEY,
+  CTP_MODULE_TAB_ID,
+  type CtpFiltroRapido,
+  type CtpIngresosFiltroRapido,
+} from "./ctp-shared";
+import { CTP_VISTAS } from "@/lib/admin/subvistas-modulos";
 
-type CtpView = "ingresos" | "produccion" | "despacho" | "saldos";
+type CtpView = "ingresos" | "gtf-ingresadas" | "lotes" | "consumos" | "produccion" | "disponibles" | "despacho" | "trozas" | "radar" | "historia-lote" | "planta" | "tablero" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "fletes" | "guias" | "directorio" | "ficha";
 
-const CTP_VIEWS: { key: CtpView; label: string; icon: typeof Boxes; hint: string }[] = [
-  { key: "ingresos", label: "Ingresos", icon: PackageOpen, hint: "Materia prima recibida" },
-  { key: "produccion", label: "Producción", icon: Boxes, hint: "Transformación" },
-  { key: "despacho", label: "Despacho", icon: Truck, hint: "Salida de producto" },
-  { key: "saldos", label: "Saldos", icon: Scale, hint: "Balance de planta" },
+/**
+ * Las doce vistas, agrupadas por la fase del libro a la que sirven. El orden
+ * dentro de cada grupo es el del flujo real de la planta; el orden de los
+ * grupos es el de un mes de trabajo: se opera, se demuestra de dónde salió,
+ * se controla y recién al final se mira el negocio.
+ */
+/** label y hint salen de `lib/admin/subvistas-modulos` — la MISMA fuente que
+ *  indexa el buscador global. Acá sólo se agrega lo visual (icono) y la tecla. */
+const CTP_VISTAS_POR_KEY = Object.fromEntries(CTP_VISTAS.map((v) => [v.key, { label: v.label, hint: v.hint }]));
+
+const CTP_GROUPS: LibroGroup[] = [
+  {
+    id: "operacion",
+    label: "Operación",
+    views: [
+      { key: "ingresos", ...CTP_VISTAS_POR_KEY["ingresos"], icon: PackageOpen, tecla: "i" },
+      /* Las guías que ya se recibieron salen de la bandeja y viven acá (ADR-339):
+         Ingresos es trabajo por hacer, esto es el archivo del período. */
+      { key: "gtf-ingresadas", ...CTP_VISTAS_POR_KEY["gtf-ingresadas"], icon: PackageCheck, tecla: "z" },
+      /* Va entre Ingresos y Consumos porque ése es el orden del patio: llega la
+         madera, se aparta la que entra junta al carro, y recién ahí se aserra. */
+      { key: "lotes", ...CTP_VISTAS_POR_KEY["lotes"], icon: Layers, tecla: "l" },
+      { key: "consumos", ...CTP_VISTAS_POR_KEY["consumos"], icon: Flame, tecla: "n" },
+      { key: "produccion", ...CTP_VISTAS_POR_KEY["produccion"], icon: Boxes, tecla: "p" },
+      { key: "disponibles", ...CTP_VISTAS_POR_KEY["disponibles"], icon: PackageOpen, tecla: "v" },
+      { key: "despacho", ...CTP_VISTAS_POR_KEY["despacho"], icon: Truck, tecla: "d" },
+    ],
+  },
+  {
+    id: "trazabilidad",
+    label: "Trazabilidad",
+    views: [
+      { key: "trozas", ...CTP_VISTAS_POR_KEY["trozas"], icon: PackageOpen, tecla: "t" },
+      { key: "radar", ...CTP_VISTAS_POR_KEY["radar"], icon: Share2, tecla: "r" },
+      /* El expediente del lote va en Trazabilidad y no en «Lotes de aserrío»:
+         esa vista es operativa —armar, cargar, producir— y contesta «¿qué hago
+         hoy?». Esta contesta la que llega después, de un comprador o de un
+         fiscalizador: «¿qué pasó con este lote?». */
+      { key: "historia-lote", ...CTP_VISTAS_POR_KEY["historia-lote"], icon: History, tecla: "h" },
+      { key: "planta", ...CTP_VISTAS_POR_KEY["planta"], icon: MapPin, tecla: "m" },
+      { key: "eudr", ...CTP_VISTAS_POR_KEY["eudr"], icon: Globe, tecla: "u" },
+      { key: "guias", ...CTP_VISTAS_POR_KEY["guias"], icon: FileText, tecla: "e" },
+    ],
+  },
+  {
+    id: "control",
+    label: "Control",
+    views: [
+      { key: "tablero", ...CTP_VISTAS_POR_KEY["tablero"], icon: BarChart3, tecla: "k" },
+      { key: "saldos", ...CTP_VISTAS_POR_KEY["saldos"], icon: Scale, tecla: "s" },
+      { key: "resumenes", ...CTP_VISTAS_POR_KEY["resumenes"], icon: ClipboardList, tecla: "q" },
+      { key: "cumplimiento", ...CTP_VISTAS_POR_KEY["cumplimiento"], icon: ShieldCheck, tecla: "c" },
+      { key: "cierre", ...CTP_VISTAS_POR_KEY["cierre"], icon: Lock, tecla: "x" },
+    ],
+  },
+  {
+    id: "gestion",
+    label: "Gestión",
+    views: [
+      { key: "rentabilidad", ...CTP_VISTAS_POR_KEY["rentabilidad"], icon: Coins, tecla: "b" },
+      { key: "analisis", ...CTP_VISTAS_POR_KEY["analisis"], icon: TrendingUp, tecla: "a" },
+      { key: "fletes", ...CTP_VISTAS_POR_KEY["fletes"], icon: Truck, tecla: "j" },
+      { key: "directorio", ...CTP_VISTAS_POR_KEY["directorio"], icon: Users, tecla: "g" },
+      { key: "ficha", ...CTP_VISTAS_POR_KEY["ficha"], icon: Building2, tecla: "f" },
+    ],
+  },
 ];
 
-interface WoodEntry {
-  id: string;
-  entryDate: string;
-  gtfNumber: string;
-  gtfDate: string | null;
-  providerName: string;
-  originType: string;
-  speciesCommonName: string;
-  speciesScientificName: string | null;
-  speciesCites: boolean;
-  productType: string;
-  volumeM3: string;
-  pieces: number;
-  status: "pendiente" | "validado" | "rechazado" | "procesado" | "anulado";
-  rejectionReason: string | null;
-  notes: string | null;
-  createdAt: string;
-}
-
-interface ListResponse {
-  entries: WoodEntry[];
-  total: number;
-}
-
-const STATUS_META: Record<
-  WoodEntry["status"],
-  { label: string; tone: "success" | "warning" | "danger" | "info" | "muted"; Icon: typeof CheckCircle2 }
-> = {
-  pendiente:  { label: "Pendiente",  tone: "warning", Icon: Clock },
-  validado:   { label: "Validado",   tone: "success", Icon: CheckCircle2 },
-  procesado:  { label: "Procesado",  tone: "info",    Icon: CheckCircle2 },
-  rechazado:  { label: "Rechazado",  tone: "danger",  Icon: AlertCircle },
-  anulado:    { label: "Anulado",    tone: "muted",   Icon: XIcon },
-};
+const CTP_VIEW_KEYS = CTP_GROUPS.flatMap((g) => g.views.map((v) => v.key));
+/** Las mismas claves, tipadas: es lo que valida la vista que pide la URL. */
+const CTP_VIEW_KEYS_TIPADAS = CTP_VIEW_KEYS as CtpView[];
+const CTP_MODULE_ID = "ctp-libro";
+/** Vistas que no leen el período: Análisis (6 meses fijos), Cierre (por mes) y
+ *  Ficha (identidad). Con el selector visible parecería que no hace nada.
+ *  Lotes tampoco: es el estado VIVO del patio (lo que está apartado hoy), no un
+ *  asiento del período — el período de lo aserrado se mira en Consumos. */
+const SIN_PERIODO: CtpView[] = ["analisis", "cierre", "ficha", "trozas", "directorio", "lotes"];
 
 export default function CTPLibroOperaciones() {
-  const [view, setView] = useState<CtpView>("ingresos");
-  const [entries, setEntries] = useState<WoodEntry[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  /** Un solo estado de cierres para el asistente y el historial. */
+  const cierres = useCtpCierres();
+  /** Lo anotado en el patio sin señal, esperando subir al libro. */
+  const cola = usePatioCola();
+  // La vista vive en la URL (`?vista=`) con localStorage de memoria: así se
+  // puede compartir un link a Saldos y el atrás recorre las vistas del libro.
+  const { vista: view, irA: setView } = useVistaModulo<CtpView>(CTP_MODULE_ID, CTP_VIEW_KEYS_TIPADAS, "ingresos");
+  // Default = trimestre, no "mes actual": una planta con un mes flojo abriría el
+  // libro vacío teniendo datos, y "vacío al abrir" se lee como "roto".
+  // El cierre mensual está a un click en el selector.
+  /** Producto elegido en Saldos para despachar (atajo "del stock a la guía"). */
+  const [productoADespachar, setProductoADespachar] = useState<{ producto: string; especie: string | null } | null>(null);
+  /** Lote elegido en Lotes para aserrar: abre la corrida con él ya cargado. */
+  const [loteAProducir, setLoteAProducir] = useState<LoteAProducir | null>(null);
+  /** Lote que se va a CARGAR: Consumos abre con él y la tabla filtrada (ADR-342). */
+  const [loteACargar, setLoteACargar] = useState<LoteAProducir | null>(null);
+  const [periodKey, setPeriodKey] = useState<CtpPeriodKey>("trimestre");
+  const [custom, setCustom] = useState<CtpCustomRange>({ from: "", to: "" });
+  const [exporting, setExporting] = useState<null | "interno" | "oficial" | "informe" | "dossier">(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  // Puente inverso: GTF que el Libro de Títulos Habilitantes mandó a ingresar.
+  const [pendingIngresoGtf, setPendingIngresoGtf] = useState<string | null>(null);
+  // Importación del LO-CTP (ADR-138) — etapa 1: ingresos.
+  /** El otro importador: el archivo que devuelve el SNIFFS, no la plantilla. */
+  const [showSerforImport, setShowSerforImport] = useState(false);
+  const [showVaciar, setShowVaciar] = useState(false);
+  // Remonta la vista de Ingresos tras importar → re-fetch de la lista.
+  const [ingresosKey, setIngresosKey] = useState(0);
+  /** Buscador de guías del libro (atajo `b`): "¿qué pasó con esta GTF?". */
+  const [buscarGtf, setBuscarGtf] = useState(false);
+  /** Ficha abierta desde el buscador, sin salir de la vista donde estabas. */
+  const [fichaIngreso, setFichaIngreso] = useState<WoodEntry | null>(null);
+  /** Código del paquete cuya ficha está abierta (ADR-366). */
+  const [fichaPaquete, setFichaPaquete] = useState<string | null>(null);
 
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [search, setSearch] = useState("");
+  const period = useMemo(() => resolveCtpPeriod(periodKey, custom), [periodKey, custom]);
 
-  const [showForm, setShowForm] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(false);
+  /** Qué falta hacer en el libro. Vive en el shell y no en la tira: los avisos
+   *  de la cabina y la tira leen la MISMA carga (antes cada uno fetcheaba). */
+  const pendientes = useCtpPendientes(period);
 
-  const [actionPending, setActionPending] = useState<string | null>(null);
-  const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState("");
+  /** Filtro que otra pestaña dejó pedido para Ingresos ("mostrame ESOS 2"). */
+  const [filtroIngresos, setFiltroIngresos] = useState<CtpFiltroRapido | null>(null);
 
-  async function load() {
-    setLoading(true);
-    setError(null);
+  /** Estable: la cabina y los paneles la pasan a efectos (atajos de teclado).
+   *  El 2° argumento deja el destino filtrado — hoy sólo Ingresos lo entiende. */
+  const irA = useCallback((v: string, filtro?: CtpIngresosFiltroRapido) => {
+    setView(v as CtpView);
+    // El contador hace que repetir el MISMO salto vuelva a aplicar el filtro.
+    if (filtro) setFiltroIngresos((prev) => ({ tipo: filtro, n: (prev?.n ?? 0) + 1 }));
+  }, []);
+
+  // Levanta el handoff de sessionStorage → abre Ingresos pre-llenado. Se
+  // dispara al montar (tab abierto en frío) y cada vez que el tab se re-activa
+  // (TabMultiplexer cachea el módulo montado, así que el mount no vuelve a correr).
+  const consumirHandoff = useCallback(() => {
+    let gtf: string | null = null;
     try {
-      const params = new URLSearchParams();
-      if (statusFilter) params.set("status", statusFilter);
-      if (search) params.set("search", search);
-      params.set("limit", "100");
-
-      const res = await fetch(
-        `/api/admin/forestal/wood-entries?${params.toString()}`,
-        { credentials: "include" },
-      );
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message ?? data.error ?? `HTTP ${res.status}`);
-      }
-      const data: ListResponse = await res.json();
-      setEntries(data.entries);
-      setTotal(data.total);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
+      gtf = sessionStorage.getItem(CTP_INGRESAR_GTF_KEY);
+      if (gtf) sessionStorage.removeItem(CTP_INGRESAR_GTF_KEY);
+    } catch {
+      // sessionStorage puede fallar (modo privado/SSR): sin handoff, sin bug.
     }
-  }
+    if (gtf) {
+      setView("ingresos");
+      setPendingIngresoGtf(gtf);
+    }
+  }, []);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter]);
+    consumirHandoff();
+    const onActivated = (e: Event) => {
+      if ((e as CustomEvent).detail?.tab === CTP_MODULE_TAB_ID) consumirHandoff();
+    };
+    window.addEventListener("admin-tab-activated", onActivated);
+    return () => window.removeEventListener("admin-tab-activated", onActivated);
+  }, [consumirHandoff]);
 
-  async function doAction(
-    id: string,
-    action: "validate" | "reject" | "delete",
-    reason?: string,
-  ) {
-    setActionPending(`${id}:${action}`);
-    setError(null);
+  async function exportar(kind: "interno" | "oficial" | "informe" | "dossier") {
+    setExporting(kind);
+    setExportError(null);
     try {
-      const res = await fetch(`/api/admin/forestal/wood-entries/${id}`, {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify({ action, ...(reason ? { reason } : {}) }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message ?? data.error ?? `HTTP ${res.status}`);
-      }
-      await load();
-      setRejectingId(null);
-      setRejectReason("");
+      if (kind === "informe") await printInformePeriodo(period);
+      else if (kind === "oficial") await exportarLibroCtpOficial(period);
+      else if (kind === "dossier") await abrirDossierFiscalizacion(period, period.label);
+      else await exportarLibroCtp(period);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setExportError(err instanceof Error ? err.message : String(err));
     } finally {
-      setActionPending(null);
+      setExporting(null);
     }
   }
 
-  const kpis = useMemo(() => {
-    const totalVolume = entries.reduce((acc, e) => acc + Number(e.volumeM3 ?? 0), 0);
-    const pendingCount = entries.filter((e) => e.status === "pendiente").length;
-    const citesCount = entries.filter((e) => e.speciesCites).length;
-    const speciesSet = new Set(entries.map((e) => e.speciesCommonName));
-    return {
-      totalVolume,
-      pendingCount,
-      citesCount,
-      speciesCount: speciesSet.size,
+  /**
+   * `b` abre el buscador de guías desde cualquier vista. Vive en el shell y no
+   * en una vista porque la pregunta ("¿qué pasó con esta guía?") no pertenece a
+   * ninguna: llega por teléfono mientras mirás cualquier pestaña.
+   */
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      const t = ev.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t?.isContentEditable) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      if (ev.key === "b" || ev.key === "B") {
+        ev.preventDefault();
+        setBuscarGtf(true);
+      }
     };
-  }, [entries]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  /** Los atajos de la vista activa, para que la hoja (`?`) los liste junto a los
+   *  de navegación. Declararlos acá y no en la vista mantiene la hoja completa
+   *  aunque la vista todavía no esté montada. */
+  const atajosDeVista = useMemo<ShortcutSection[]>(() => {
+    const global: ShortcutSection = {
+      title: "En todo el Libro CTP",
+      items: [{ keys: ["B"], description: "Buscar una guía (de entrada o de salida)" }],
+    };
+    if (view === "ingresos") {
+      return [
+        global,
+        {
+          title: "En Ingresos",
+          items: [
+            { keys: ["N"], description: "Nuevo ingreso" },
+            { keys: ["/"], description: "Ir al buscador" },
+            { keys: ["V"], description: "Validar lo marcado" },
+            { keys: ["R"], description: "Recargar la lista" },
+            { keys: ["Esc"], description: "Limpiar la selección" },
+          ],
+        },
+      ];
+    }
+    if (view === "produccion" || view === "despacho") {
+      return [
+        global,
+        {
+          title: view === "produccion" ? "En Producción" : "En Despacho",
+          items: [
+            { keys: ["N"], description: view === "produccion" ? "Elegir el lote a producir" : "Nuevo despacho" },
+            { keys: ["/"], description: "Ir al buscador" },
+            { keys: ["R"], description: "Recargar la lista" },
+          ],
+        },
+      ];
+    }
+    return [global];
+  }, [view]);
+
+  /** Un pendiente que se resuelve en una pestaña se anuncia EN esa pestaña:
+   *  el número aparece en el grupo y el punto en la vista. Misma fuente que la
+   *  tira de abajo — no puede decir "3" arriba y listar dos. */
+  const alertasPorVista = useMemo(
+    () => pendientes.lista.reduce<Record<string, number>>((acc, p) => {
+      acc[p.vista] = (acc[p.vista] ?? 0) + p.cantidad;
+      return acc;
+    }, {}),
+    [pendientes.lista],
+  );
+
+  /** Importar/exportar/informar se usan una vez por mes: van plegadas en el
+   *  menú, no ocupando dos filas de la cabecera todo el tiempo. */
+  const acciones: LibroAction[] = useMemo(
+    () => [
+      {
+        id: "dossier",
+        label: "Carpeta de fiscalización",
+        hint: "Todo el período en un documento: portada, índice, ingresos, retrozado, consumos, producción, despachos, existencias, guías y anexos",
+        icon: FolderOpen,
+        tone: "dark",
+        busy: exporting === "dossier",
+        disabled: exporting !== null,
+        onSelect: () => void exportar("dossier"),
+      },
+      {
+        id: "oficial",
+        label: "Formato oficial SERFOR",
+        hint: "LO-CTP (RDE D000025-2023): portada + las 4 secciones con su numeración + existencias",
+        icon: ShieldCheck,
+        tone: "dark",
+        busy: exporting === "oficial",
+        disabled: exporting !== null,
+        onSelect: () => void exportar("oficial"),
+      },
+      {
+        id: "informe",
+        label: "Informe ARFFS",
+        hint: "Imprimible para presentar: ficha + movimientos + existencias + cumplimiento",
+        icon: FileText,
+        busy: exporting === "informe",
+        disabled: exporting !== null,
+        onSelect: () => void exportar("informe"),
+      },
+      {
+        id: "interno",
+        label: "Exportar libro (Excel)",
+        hint: "Ingresos, Producción, Despacho y Saldos del período — vista interna",
+        icon: FileSpreadsheet,
+        busy: exporting === "interno",
+        disabled: exporting !== null,
+        onSelect: () => void exportar("interno"),
+      },
+      {
+        /* UN solo importador. Antes había dos —la plantilla propia y el reporte
+           del SNIFFS— y el operador tenía que acordarse de cuál archivo tenía
+           para saber por dónde subirlo. */
+        id: "importar",
+        label: "Importar libro",
+        hint: "El Excel del SNIFFS o la plantilla — reconoce las 5 secciones por sus columnas",
+        icon: Upload,
+        onSelect: () => setShowSerforImport(true),
+      },
+      {
+        /* Va último y aparte: es lo único del menú que destruye. El modal es el
+           que exige la frase y bloquea si hay meses cerrados — acá sólo se
+           abre. */
+        id: "vaciar",
+        label: "Vaciar el libro",
+        hint: "Borra ingresos, consumos, producción y despachos — no se puede deshacer",
+        icon: Trash2,
+        tone: "danger" as const,
+        onSelect: () => setShowVaciar(true),
+      },
+    ],
+    // `exportar` se redefine en cada render (usa `period`): la lista depende del
+    // período y del export en curso, que es lo que realmente cambia el menú.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [exporting, period],
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Header editorial unificado (mismo patrón que AdelantosModule, etc.) */}
-      <AdminModuleHeader
-        eyebrow="Forestal · Especialización"
+    <>
+      <LibroChrome
+        moduleId={CTP_MODULE_ID}
+        eyebrow="Forestal · LO-CTP SERFOR"
         title="Libro de Operaciones CTP"
-        description="Registro de ingresos de madera al Centro de Transformación Primaria. Compatible con LOE-CTP SERFOR (interno, no oficial)."
         icon={TreePine}
-      >
-        {view === "ingresos" && (
+        groups={CTP_GROUPS}
+        view={view}
+        onView={irA}
+        alerts={alertasPorVista}
+        status={
+          view !== "cumplimiento" ? (
+            <CtpHealthChip period={period} onNavigate={() => setView("cumplimiento")} />
+          ) : undefined
+        }
+        context={
+          // El período no aplica a Análisis (tendencia fija de 6 meses), Cierre
+          // (por mes) ni Ficha (identidad): mostrarlo ahí hacía parecer que "el
+          // selector no hace nada".
+          SIN_PERIODO.includes(view) ? undefined : (
+            <CtpPeriodPicker
+              periodKey={periodKey}
+              custom={custom}
+              period={period}
+              onKeyChange={setPeriodKey}
+              onCustomChange={setCustom}
+            />
+          )
+        }
+        tools={
           <>
             <button
               type="button"
-              onClick={() => setShowDashboard((v) => !v)}
-              className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition ${
-                showDashboard
-                  ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white"
-                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-              }`}
+              onClick={() => setBuscarGtf(true)}
+              title="Buscar una guía en el libro (atajo: B)"
+              aria-label="Buscar una guía en el libro"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)]"
             >
-              <BarChart3 className="h-4 w-4" />
-              <span>{showDashboard ? "Cerrar dashboard" : "Dashboard"}</span>
+              <Search className="h-4 w-4" />
+              <span className="max-lg:sr-only">Buscar guía</span>
             </button>
-            <button
-              type="button"
-              onClick={load}
-              disabled={loading}
-              className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
-              aria-label="Recargar"
+            {/* Los avisos del libro (Brandon, 2026-09-02): campana acá, al lado
+                de «Modo patio», en vez de una tira de chips arriba de cada
+                vista. La tira costaba uno o dos renglones en las doce pestañas
+                y con seis avisos hacía wrap; son avisos, se miran cuando se
+                quiere. El número sigue a la vista en el badge. */}
+            <CtpPendientes estado={pendientes} onIr={irA} />
+            {/* La puerta al modo patio. Va acá y no en el sidebar porque se abre
+                UNA vez, en la tablet que se lleva a la pila, y de ahí no se
+                vuelve al panel: es otra sesión de trabajo, no otra pestaña. */}
+            <a
+              href="/admin/patio"
+              title="Abrir el modo patio: consultar una troza por su número y recibir guías desde la pila"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--surface-canvas)]"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              <span>Recargar</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(true)}
-              className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--brand-ink)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"
-            >
-              <Plus className="h-5 w-5" />
-              Nuevo ingreso
-            </button>
+              <TreePine className="h-4 w-4" />
+              <span className="max-lg:sr-only">Modo patio</span>
+            </a>
+            <CtpAsistente />
           </>
+        }
+        actions={acciones}
+        atajosDeVista={atajosDeVista}
+      >
+        {exportError && (
+          <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+            <strong>No se pudo exportar:</strong> {exportError}
+          </div>
         )}
-      </AdminModuleHeader>
 
-      {/* Sub-tabs del Libro CTP: flujo materia prima → producto → salida */}
-      <div className="flex flex-wrap gap-2 border-b-2 border-[var(--rule-soft)] pb-px">
-        {CTP_VIEWS.map((v) => {
-          const Icon = v.icon;
-          const active = view === v.key;
-          return (
-            <button
-              key={v.key}
-              type="button"
-              onClick={() => setView(v.key)}
-              className={`group inline-flex items-center gap-2 rounded-t-xl border-b-2 px-4 py-2.5 text-sm font-bold transition ${
-                active
-                  ? "border-[var(--brand-ink)] text-[var(--brand-ink)]"
-                  : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{v.label}</span>
-              <span className="hidden text-xs font-normal text-[var(--text-tertiary)] sm:inline">· {v.hint}</span>
-            </button>
-          );
-        })}
-      </div>
+        {/* Lo anotado sin señal y lo que falta hacer: semáforo de camino, no
+            contenido — una tira de chips arriba de la vista. */}
+        <CtpPatioBandeja cola={cola} />
 
-      {view === "produccion" && <CtpEntriesView section="produccion" />}
-      {view === "despacho" && <CtpEntriesView section="despacho" />}
-      {view === "saldos" && <CtpSaldosView />}
-
-      {view === "ingresos" && (
-      <>
-      {/* KPIs con StatCard del DS (mismo look-and-feel que finanzas/adelantos) */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard
-          label="Total registros"
-          value={total.toString()}
-          subValue={`${entries.length} visibles`}
-          icon={Boxes}
-          emphasis="neutral"
-        />
-        <StatCard
-          label="Volumen total"
-          value={`${kpis.totalVolume.toFixed(2)} m³`}
-          subValue={`${kpis.speciesCount} especies`}
-          icon={TreePine}
-          emphasis="success"
-        />
-        <StatCard
-          label="Pendientes validar"
-          value={kpis.pendingCount.toString()}
-          subValue="Requieren acción"
-          icon={Clock}
-          emphasis={kpis.pendingCount > 0 ? "warning" : "neutral"}
-        />
-        <StatCard
-          label="Especies CITES"
-          value={kpis.citesCount.toString()}
-          subValue="Protección internacional"
-          icon={AlertCircle}
-          emphasis={kpis.citesCount > 0 ? "error" : "neutral"}
-        />
-      </div>
-
-      {/* Dashboard agregados */}
-      {showDashboard && <SpeciesAggregateChart />}
-
-      {/* Filtros */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-12">
-          <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && load()}
-            placeholder="Buscar por GTF, proveedor o especie..."
-            className="w-full bg-transparent outline-none text-base text-[var(--text-primary)]"
+        {view === "ingresos" && (
+          <CtpIngresosView
+            key={ingresosKey}
+            period={period}
+            openGtf={pendingIngresoGtf}
+            onOpenConsumed={() => setPendingIngresoGtf(null)}
+            filtroRapido={filtroIngresos}
+            recepcion="pendiente"
           />
-        </div>
-        <div className="flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 h-12">
-          <Filter className="h-4 w-4 text-[var(--text-tertiary)]" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-transparent text-base font-medium text-[var(--text-primary)] outline-none"
-          >
-            <option value="">Todos los estados</option>
-            <option value="pendiente">Pendientes</option>
-            <option value="validado">Validados</option>
-            <option value="procesado">Procesados</option>
-            <option value="rechazado">Rechazados</option>
-            <option value="anulado">Anulados</option>
-          </select>
-        </div>
-      </div>
-
-      {error && (
-        <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-[var(--data-error-700)]">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-            <div className="text-sm">
-              <strong>Error:</strong> {error}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tabla */}
-      <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <table className="w-full text-sm">
-          <thead className="bg-[var(--surface-sunken)] text-left">
-            <tr>
-              <Th>Fecha</Th>
-              <Th>GTF</Th>
-              <Th>Proveedor / Origen</Th>
-              <Th>Especie</Th>
-              <Th>Producto</Th>
-              <Th className="text-right">Volumen (m³)</Th>
-              <Th className="text-right">Piezas</Th>
-              <Th>Estado</Th>
-              <Th className="text-right">Acciones</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((e) => (
-              <tr
-                key={e.id}
-                className="border-t border-[var(--rule-soft)] hover:bg-[var(--surface-canvas)]/40"
-              >
-                <Td>
-                  <div className="font-bold text-[var(--text-primary)]">
-                    {formatDate(e.entryDate)}
-                  </div>
-                </Td>
-                <Td>
-                  <div className="font-mono text-xs font-bold text-[var(--text-primary)]">
-                    {e.gtfNumber}
-                  </div>
-                  {e.gtfDate && (
-                    <div className="text-xs text-[var(--text-tertiary)]">
-                      {formatDate(e.gtfDate)}
-                    </div>
-                  )}
-                </Td>
-                <Td>
-                  <div className="font-medium text-[var(--text-primary)]">
-                    {e.providerName}
-                  </div>
-                  <div className="text-xs text-[var(--text-tertiary)]">
-                    {originLabel(e.originType)}
-                  </div>
-                </Td>
-                <Td>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-[var(--text-primary)]">
-                      {e.speciesCommonName}
-                    </span>
-                    {e.speciesCites && (
-                      <span
-                        title="Especie protegida CITES"
-                        className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]"
-                      >
-                        CITES
-                      </span>
-                    )}
-                  </div>
-                  {e.speciesScientificName && (
-                    <div className="text-xs italic text-[var(--text-tertiary)]">
-                      {e.speciesScientificName}
-                    </div>
-                  )}
-                </Td>
-                <Td>
-                  <span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
-                    {productLabel(e.productType)}
-                  </span>
-                </Td>
-                <Td className="text-right">
-                  <div className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                    {Number(e.volumeM3).toFixed(4)}
-                  </div>
-                </Td>
-                <Td className="text-right">
-                  <div className="font-mono tabular-nums text-[var(--text-primary)]">
-                    {e.pieces}
-                  </div>
-                </Td>
-                <Td>
-                  <StatusBadge status={e.status} />
-                  {e.rejectionReason && (
-                    <div className="mt-1 text-xs text-[var(--data-error-700)]">
-                      {e.rejectionReason}
-                    </div>
-                  )}
-                </Td>
-                <Td className="text-right">
-                  {e.status === "pendiente" ? (
-                    rejectingId === e.id ? (
-                      <div className="inline-flex flex-col items-end gap-2">
-                        <input
-                          type="text"
-                          value={rejectReason}
-                          onChange={(ev) => setRejectReason(ev.target.value)}
-                          placeholder="Motivo (min 3 chars)"
-                          className="h-9 w-48 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm outline-none focus:border-[var(--data-error-500)]"
-                          autoFocus
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            disabled={
-                              rejectReason.trim().length < 3 ||
-                              actionPending === `${e.id}:reject`
-                            }
-                            onClick={() => doAction(e.id, "reject", rejectReason.trim())}
-                            className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-error-600)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
-                          >
-                            Confirmar rechazo
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setRejectingId(null);
-                              setRejectReason("");
-                            }}
-                            className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)]"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="inline-flex gap-2">
-                        <button
-                          type="button"
-                          disabled={actionPending === `${e.id}:validate`}
-                          onClick={() => doAction(e.id, "validate")}
-                          title="Validar ingreso"
-                          className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-success-600)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
-                        >
-                          <ThumbsUp className="h-3 w-3" />
-                          Validar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRejectingId(e.id);
-                            setRejectReason("");
-                          }}
-                          title="Rechazar"
-                          className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"
-                        >
-                          <ThumbsDown className="h-3 w-3" />
-                          Rechazar
-                        </button>
-                      </div>
-                    )
-                  ) : (
-                    <span className="text-xs text-[var(--text-tertiary)]">—</span>
-                  )}
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {!loading && entries.length === 0 && (
-          <div className="p-12 text-center text-[var(--text-tertiary)]">
-            <TreePine className="mx-auto mb-3 h-10 w-10 opacity-30" />
-            <p className="text-base font-medium">
-              Sin ingresos registrados aún.
-            </p>
-            <p className="mt-1 text-sm">
-              Hacé click en &quot;Nuevo ingreso&quot; para registrar el primer
-              movimiento de madera.
-            </p>
+        )}
+        {view === "gtf-ingresadas" && (
+          <CtpIngresosView key={`gtf-ing-${ingresosKey}`} period={period} recepcion="cerrada" />
+        )}
+        {view === "lotes" && (
+          <CtpLotesView
+            onProducir={(lote) => {
+              // «Producir este lote» cruza de pestaña: el lote se guarda acá —el
+              // shell es lo único que sobrevive al cambio de vista— y Producción
+              // lo consume una vez, igual que el producto que llega de Saldos.
+              setLoteAProducir(lote);
+              setView("produccion");
+            }}
+            onCargar={(lote) => {
+              // «Cargar» va a Consumos, que es donde se eligen las piezas ya
+              // filtradas por la especie del lote (ADR-342).
+              setLoteACargar(lote);
+              setView("consumos");
+            }}
+          />
+        )}
+        {view === "consumos" && (
+          <CtpConsumosView
+            period={period}
+            onIr={irA}
+            presetLoteId={loteACargar?.id ?? null}
+            onPresetLoteUsado={() => setLoteACargar(null)}
+          />
+        )}
+        {view === "produccion" && (
+          <CtpEntriesView
+            key={`prod-${ingresosKey}`}
+            section="produccion"
+            period={period}
+            presetLoteAserrioId={loteAProducir?.id ?? null}
+            onPresetUsado={() => setLoteAProducir(null)}
+            /* Sin lotes abiertos no hay nada que producir: el CTA lleva a
+               armarlos en vez de abrir un menú vacío. */
+            onIr={irA}
+            onVerTodoElHistorico={() => setPeriodKey("todo")}
+          />
+        )}
+        {view === "disponibles" && <CtpProductosDisponibles period={period} />}
+        {view === "despacho" && (
+          <CtpEntriesView
+            key={`desp-${ingresosKey}`}
+            section="despacho"
+            period={period}
+            presetProducto={productoADespachar?.producto ?? null}
+            presetEspecie={productoADespachar?.especie ?? null}
+            onPresetUsado={() => setProductoADespachar(null)}
+          />
+        )}
+        {view === "radar" && <CtpTrazaRadar period={period} />}
+        {view === "historia-lote" && <CtpHistoriaLoteView />}
+        {view === "planta" && <CtpPlantaView period={period} />}
+        {view === "saldos" && (
+          <CtpSaldosView
+            period={period}
+            // Cada excepción de existencias sabe en qué pestaña se corrige.
+            onIr={irA}
+            onDespachar={(producto, especie) => {
+              // Del stock a la guía: se elige el producto en Saldos y el
+              // despacho se abre con él, sin volver a buscarlo en el catálogo.
+              setProductoADespachar({ producto, especie });
+              setView("despacho");
+            }}
+          />
+        )}
+        {view === "trozas" && <CtpTrozasView />}
+        {view === "resumenes" && <CtpResumenesSerfor period={period} />}
+        {view === "tablero" && <CtpTableroControl period={period} onIr={irA} />}
+        {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={irA} />}
+        {view === "cierre" && (
+          <div className="space-y-6">
+            {/* El asistente ordena el trabajo; el panel de abajo sigue siendo
+                el historial de cierres (y el único lugar para reabrir). */}
+            <CtpCierreAsistido onIr={irA} cierres={cierres} />
+            <CtpCierrePanel estado={cierres} />
           </div>
         )}
+        {view === "eudr" && <CtpEudrPanel period={period} onNavigate={irA} />}
+        {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
+        {view === "analisis" && <CtpAnalisis />}
+        {view === "guias" && <CtpGuiasEmitidasView period={period} onAbrirDespacho={() => setView("despacho")} />}
+        {view === "fletes" && <CtpFletesView period={period} />}
+        {view === "directorio" && <CtpDirectorioView />}
+        {view === "ficha" && <CtpFichaEditor />}
+      </LibroChrome>
 
-        {loading && (
-          <div className="p-8 text-center text-[var(--text-tertiary)]">
-            <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
-            <p className="mt-2 text-sm">Cargando registros...</p>
-          </div>
-        )}
-      </div>
-
-      {/* Modal Form — ahora usa AdminModal del shared (Radix Dialog) */}
-      {showForm && (
-        <WoodEntryForm
-          onClose={() => setShowForm(false)}
-          onSaved={() => {
-            setShowForm(false);
-            load();
-          }}
+      {buscarGtf && (
+        <CtpBuscarGtf
+          period={period}
+          onCerrar={() => setBuscarGtf(false)}
+          onVerIngreso={setFichaIngreso}
+          onVerPaquete={setFichaPaquete}
+          onIrA={irA}
         />
       )}
-      </>
+      {fichaIngreso && <CtpEntryDetailModal entry={fichaIngreso} onClose={() => setFichaIngreso(null)} />}
+      {/* El otro extremo de la cadena: del cartel del atado a su corrida y a la
+          madera con la que se hizo (ADR-366). */}
+      {fichaPaquete && (
+        <CtpPaqueteFicha codigo={fichaPaquete} onClose={() => setFichaPaquete(null)} onIrA={irA} />
       )}
-    </div>
+
+      {showVaciar && (
+        <VaciarLibroModal
+          onClose={() => setShowVaciar(false)}
+          onVaciado={() => setIngresosKey((k) => k + 1)}
+        />
+      )}
+
+      {showSerforImport && (
+        <CtpSerforImportModal
+          onClose={() => setShowSerforImport(false)}
+          onImportado={() => setIngresosKey((k) => k + 1)}
+        />
+      )}
+
+    </>
   );
-}
-
-// ─── Helpers ───────────────────────────────────────────────────────────────
-
-function Th({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <th
-      className={`px-4 py-3 font-bold text-[var(--text-primary)] ${className ?? ""}`}
-    >
-      {children}
-    </th>
-  );
-}
-
-function Td({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return <td className={`px-4 py-3 ${className ?? ""}`}>{children}</td>;
-}
-
-function StatusBadge({ status }: { status: WoodEntry["status"] }) {
-  const meta = STATUS_META[status];
-  const { Icon } = meta;
-  // tonos coherentes con DS — sin nesting de var()
-  const cls =
-    meta.tone === "success"
-      ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]"
-      : meta.tone === "warning"
-        ? "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"
-        : meta.tone === "danger"
-          ? "bg-[var(--data-error-100)] text-[var(--data-error-700)]"
-          : meta.tone === "info"
-            ? "bg-[var(--data-info-100)] text-[var(--data-info-900)]"
-            : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]";
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}
-    >
-      <Icon className="h-3 w-3" />
-      {meta.label}
-    </span>
-  );
-}
-
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
-
-function originLabel(type: string) {
-  const labels: Record<string, string> = {
-    concesion: "Concesión forestal",
-    predio_privado: "Predio privado",
-    comunidad_nativa: "Comunidad nativa",
-    reforestacion: "Reforestación",
-    retroaserradero: "Re-entrada CTP",
-    otro: "Otro",
-  };
-  return labels[type] ?? type;
-}
-
-function productLabel(type: string) {
-  const labels: Record<string, string> = {
-    rolliza: "Rolliza",
-    aserrada: "Aserrada",
-    tablones: "Tablones",
-    listones: "Listones",
-    durmientes: "Durmientes",
-    pulgada: "Pulgada",
-    carbon: "Carbón",
-    lena: "Leña",
-    otro: "Otro",
-  };
-  return labels[type] ?? type;
 }

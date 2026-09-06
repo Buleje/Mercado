@@ -1,57 +1,38 @@
-# SESSION HANDOFF — 2026-05-29 (Cacao · modo autónomo)
+# SESSION HANDOFF — 2026-07-01
 
-**Branch:** `chore/p0-audit-2026-05-28` · **Working tree:** todo commiteado.
-**Commits de la sesión:** 19 (`ff8e60f1` → `17ae7fdf`). Ronda 2 (continuación): handoff + empty states (e851413e) + **fix global tokens danger en 15 archivos** (7abec9a1) + sub-tabs mobile scroll (17ae7fdf).
-**Gates:** `tsc --noEmit` 0 en cada paso · 30 tests cacao verdes · verificación e2e en navegador (tenant `main`) por feature. NO se corrió `npm run build` completo (recomendado antes de deploy). NO se pusheó.
+Branch: `audit/storefront-mejoras-verificadas-2026-06-15` (local, **sin pushear**). 17 commits esta sesión (16 feat/refactor + 1 revert).
 
-## Qué se hizo (arsenal de mejoras de Cacao, ADR-128)
+## ⚠️ PENDIENTE #1 — Verificación visual (bloqueada para mí)
+Casi todo lo de **admin/cacao** se hizo **sin poder verlo renderizado**: el admin redirige el tab `cacao-acopio → inicio` en sesión impersonada (spec `spec:agricola:cacao-acopio` SÍ está on para el tenant BLAS, pero `allowedTabs` de la sesión impersonada no lo incluye). **Brandon tiene acceso real** → debe verificar en:
+`http://localhost:3000/t/inversiones-agroforestales-blas-sociedad-anonima/admin?tab=cacao-acopio&cacaoView=mercado`
+Chequear: hero local S//kg grande, **gráfico clickeable** (tocar punto → fija precio en hero + "a cuánto se vende" + botón "Volver a hoy"), "a cuánto se vende" compacto (1 línea/plaza), pestaña **Noticias** aparte, sub-nav sin textos de grupo.
 
-| # | Commit | Mejora |
-|---|---|---|
-| 1 | ff8e60f1 | Fix: tab Cacao no aparecía en sidebar (faltaba en `SPEC_GATED_MODULE_IDS`) |
-| 2 | 60a61b81 | Sidebar: split Especializaciones → **Forestal** + **Agricultura** (flag `alwaysGroup`) + acordeón estricto + arranque colapsado |
-| 3 | 8e1a99ee | Backend: `cacao.db` (producerDetail/loteDetail/inventory/trends + filtros) + views API |
-| 4 | 4b92448d | **Fichas drawer** lote + productor (perfil/historial/editar) + **recibo imprimible** |
-| 5 | 802b8065 | **Inventario** seco + valorización + **dashboard** (tendencias/top/calidad/alertas) + filtros + export CSV |
-| 6 | 3a702000 | **Mercado**: precio ICE en vivo (Yahoo CC=F) + FX→S//kg + noticias (Google News) |
-| 7 | d8cedef9 | **Gráfico de flujo** (recharts, rangos 1S–1A, volatilidad) + **FIX tokens `--data-danger-*`→`--data-error-*`** |
-| 8 | 1d5d0097 | **Asesor híbrido**: señal vender/aguantar (determinística) + narrativa IA grounded + checklist |
-| 9 | 3504a9da | Rediseño modal **Anular** → AdminModal (a11y) |
-| 10 | 7c25d483 | **Tests**: cacao-quality (proyección/rendimiento) + cacao-advisor (30 verdes) |
-| 11 | e90a9870 | Asesor: **tu precio de compra vs. internacional** (`avgBuyPrice`) |
-| 12 | 811af648 | **ADR-128** (faltaba el archivo) |
-| 13 | 279c70d7 | **Reporte de campaña imprimible** (Resumen) |
+## ✅ GASTOS superadmin — suite financiera completa (9 commits, verificado E2E autenticado)
+`/superadmin/gastos`. Auth para verificar: cookie de plataforma UA-bound + addCookies en Playwright ([[superadmin-visual-qa-auth]]).
+- `f6e570ee` P&L (MRR vs gasto → utilidad/margen/break-even) + editar + presupuesto por categoría + búsqueda/agrupar + rediseño.
+- `04f6e175` tipo de cambio USD→PEN editable.
+- `e76dff7d` historial mensual real (snapshots congelados en `PlatformSettings`).
+- `c2386a36` cron mensual de cierre (`/api/cron/expense-month-close`, `vercel.json` `20 5 1 * *`).
+- `2ffac989` exportar P&L a PDF (jsPDF).
+- `a9606f45` alertas de sobregasto por email (cron `superadmin-alerts` + `checkOverspend` con dedup).
+- `cff24de7` historial mensual navegable en tabla expandible.
+- `1e95ca5b` + `4bf6a12d` formato canónico (AdminTabShell + SuperadminChartCard) + 4 pestañas + fix de tokens de storefront que causaban "bordes negros" (`--surface-1/2/border` → `--surface-sunken/rule-base/rule-soft`).
 
-El módulo de Cacao pasó de 4 sub-vistas a **7**: Acopio · Beneficio · Inventario · Productores · Resumen · Mercado · Asesor.
+## ✅ RESCUE superadmin (1 commit)
+`f078c1f5` `/superadmin/rescue` alineado al formato canónico (AdminTabShell + SuperadminChartCard). El hero vive en `RescueQueue` (client) porque AdminTabShell necesita `icon` (no serializable desde el server component de page.tsx).
 
-## Verificación rápida (Brandon)
-Ctrl+Shift+R en `/t/pizza-pucallpa/admin?tab=cacao-acopio` (o `main`). Recorré: **Mercado** (gráfico+rangos), **Asesor** (señal+IA+tu precio vs mercado), **Inventario**, click en una fila de Acopio (ficha+recibo), **Resumen** (imprimir reporte).
+## ✅ CACAO admin (módulo BLAS agroforestal) — 6 commits + 1 revert
+- `c681db40` **Parte A** (Brandon OK): las 8 sub-vistas del tab Cacao agrupadas en 3 familias (Operación/Gestión/Inteligencia) con sub-nav; deep-link `?cacaoView=`. Config: `lib/cacao/cacao-views.ts`.
+- `39de4430` **Parte B** sub-sidebar de módulo → **REVERTIDA** (`b315eeb3`, a Brandon no le gustó). NOTA: `ModuleTabsContext` + `AdminSubSidebar` existen pero quedaron **sin cablear** (infra a medias); si se retoma, cablear con blast-radius contenido (solo el módulo que registre subTabs).
+- **Vista Mercado** (`CacaoNoticiero`): `2c5cca71` header "En vivo" + hero dual → `62b11c91` pase integral (precio local como hero, headings DS) → `609e08da` pestaña **Noticias** aparte (`CacaoNews`), gráfico ANTES de "a cuánto se vende", sub-nav sin labels de grupo → `584f28b3` "a cuánto se vende" compacto (1 línea/plaza) + **gráfico interactivo** (`onPointSelect` en CacaoPriceChart → escala S//kg local por precioPunto/precioHoy).
 
-## Hallazgo importante
-🐛 `--data-danger-*` **no existe** en el design system (toda la familia indefinida). El token de rojo es `--data-error-*` (50/100/500/600/700). Arreglé los 9 componentes de cacao. **Quedan ~15 archivos del repo con el token roto** (rojos sin estilo) — fix global pendiente (1 sed). Ver memoria `reference_ds_token_danger_gotcha`.
+## ⚠️ Dirty NO míos (pre-existían al iniciar)
+`.claude/hooks/*`, `.claude/settings.json`, `.gitignore`, `app/api/admin/store-customizer/`, `reports/*.png`, `setup-ibkr-mcp.sh`, `test-ibkr-login.sh`, MEMORIA/handoff previos. Revisar con Brandon.
 
-## Backlog v4 (estado)
-1. ✅ Empty states con CTA · 5. ✅ Fix global tokens danger · 7. ✅ Mobile sub-tabs.
-2. ✅ **Trazabilidad QR pública** `/verificar-cacao/[code]` + QR en la ficha + WhatsApp al productor (wa.me) — hechos.
-6. ⚠️ **Schema drift** (sin resolver): `CacaoProducer/Lote/Beneficio` vía Supabase MCP, NO en `prisma/migrations` → correr en prod antes de deploy.
+## ▶️ Próxima ronda
+1. **Verificar cacao visualmente** (arriba) y ajustar según feedback.
+2. Superadmin pendiente del sweep: compliance, automations, banners (1511 LOC).
+3. Abrir PR del branch (17 commits).
+4. Gastos: si querés más, quedan ideas (FX histórico, comparador de meses).
 
-## Backlog v5 — elegido por Brandon, PENDIENTE (features pesados)
-- **Registrar ventas (stock real)** — necesita modelo `CacaoVenta` (schema nuevo → drift) + DB + API + UI. Descuenta del inventario, ingresos/margen real.
-- **Venta FOB / USD** — parte de ventas, con tipo de cambio (FX ya disponible en cacao-market).
-- **Recordatorios de beneficio** — cron (`lib/cron/`) que avisa lotes con N días en proceso. Hoy el inventario ya marca 12+ días (parcial).
-- **Documentos del lote** — upload + storage (Supabase Storage). Adjuntar certificados/fotos.
-- **Beneficio: avanzar etapa** (fermentando→secando→terminado desde tabla) — chico; avanzar a terminado necesita capturar peso seco (mini-form).
-- **Mi precio en el tiempo** — chart mensual de mi precio de compra vs intl (mejor con datos multi-mes; hoy `main` solo tiene mayo).
-
-## Notas operativas
-- Mercado: Yahoo Finance (`CC=F`, `PEN=X`, no-oficial) + Google News RSS — gratis, sin key, degradan con gracia. Cache 20min (precio/news) / 2h (narrativa IA).
-- Narrativa IA: `callLLM("cheap")` (Anthropic→Groq→OpenAI). En dev configurada y responde.
-
-## Credenciales (verificadas, carryover)
-- Pizzería: `pizza-pucallpa.localhost:3000/admin` → `pizzaadmin` / `Pizza-2026-Buleje`
-- Bodega main: `localhost:3000/admin` → `qaadmin` / `Qa-admin-1234`
-- Superadmin: `localhost:3000/superadmin/login` → `superadmin` / `Super-2026-Buleje`
-
-## Notas técnicas (carryover)
-- Migraciones Prisma: `migrate dev` NO va (pgBouncer). Editar schema → `prisma generate` → DDL via `migrate diff` → aplicar additivo con Supabase MCP. **Reiniciar dev server tras `prisma generate`** (client viejo → 503).
-- Iconos: solo los exportados por `@buleje/design-system/icons` (barrel runtime); tsc NO detecta faltantes (d.ts más amplio). `Newspaper` se agregó esta sesión.
+Gates en TODOS los commits: tsc 0 · eslint 0. Datos de prueba (gastos/settings/impersonación) **limpiados** en cada verificación.

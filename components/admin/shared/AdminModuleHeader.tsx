@@ -38,6 +38,13 @@ import { cn } from "@/lib/utils";
 import type { LucideIcon } from "@buleje/design-system/icons";
 
 interface AdminModuleHeaderProps {
+  /**
+   * Nivel semántico del título. Un módulo montado DENTRO de un hub que ya
+   * puso su propio h1 (ej. Mi Plata → Activos) debe pasar `as="h2"`: dos h1
+   * en la misma página rompen la jerarquía para lectores de pantalla y SEO.
+   * El aspecto visual no cambia — PageTitle se ve igual en ambos niveles.
+   */
+  as?: "h1" | "h2";
   /** Línea pequeña arriba del título (ej: "Inventario · Catálogo"). */
   eyebrow?: string;
   /** Título principal — se renderiza con font-display italic. */
@@ -65,47 +72,68 @@ export default function AdminModuleHeader({
   description,
   icon: Icon,
   children,
+  as: nivel = "h1",
   noBorder = false,
   className,
 }: AdminModuleHeaderProps) {
   return (
+    // `@container`: el header se mide contra SU ancho real, no contra el
+    // viewport. Con el sidebar abierto, una ventana de 991px deja ~700px de
+    // contenido — un `sm:flex-row` (viewport ≥640) ponía título y acciones en
+    // fila igual, y como las acciones no cedían ancho el título quedaba con
+    // 15px: la descripción se partía en 12 líneas de una palabra.
+    //
+    // Los breakpoints van en REM EXPLÍCITOS (`@min-[48rem]`) y no en `@sm/@md`:
+    // este proyecto redefine `--container-*` en @theme (sm=720px, md=960px) y
+    // ni siquiera existen `--container-2xl/3xl`, así que las variantes con
+    // nombre valdrían otra cosa —o nada— sin avisar.
     <header
       className={cn(
-        "flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6 pb-4",
+        "@container mb-6 pb-4",
         !noBorder && "border-b border-[var(--rule-soft)]",
         className,
       )}
     >
-      <div className="flex gap-3 min-w-0">
-        {Icon && (
-          <Icon
-            // Antes hidden sm:block — en mobile el header perdia ancla
-            // visual. Ahora se muestra desde mobile, un poco mas chico.
-            className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-tertiary)] dark:text-zinc-500 shrink-0 mt-1 sm:mt-1.5"
-            strokeWidth={1.5}
-            aria-hidden
-          />
-        )}
-        <div className="min-w-0">
-          {eyebrow && <Kicker className="mb-1">{eyebrow}</Kicker>}
-          <PageTitle
-            as="h1"
-            className="font-display tracking-tight leading-[1.05]"
-          >
-            {title}
-          </PageTitle>
-          {description && (
-            <p className="mt-1.5 text-sm text-[var(--text-secondary)] dark:text-zinc-400 max-w-2xl leading-relaxed">
-              {description}
-            </p>
+      <div className="flex flex-col gap-4 @min-[48rem]:flex-row @min-[48rem]:items-end @min-[48rem]:justify-between">
+        <div className="flex gap-3 min-w-0">
+          {Icon && (
+            <Icon
+              // Antes hidden sm:block — en mobile el header perdia ancla
+              // visual. Ahora se muestra desde mobile, un poco mas chico.
+              className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-tertiary)] dark:text-zinc-500 shrink-0 mt-1 sm:mt-1.5"
+              strokeWidth={1.5}
+              aria-hidden
+            />
           )}
+          <div className="min-w-0">
+            {eyebrow && <Kicker className="mb-1">{eyebrow}</Kicker>}
+            <PageTitle
+              as={nivel}
+              className="font-display tracking-tight leading-[1.05]"
+            >
+              {title}
+            </PageTitle>
+            {/* En angosto la descripción se oculta (Brandon 2026-07-22): en una
+                pantalla chica lo que importa es el título y las acciones, no el
+                subtítulo explicativo.
+                Con `hidden`, no con `sr-only` + `not-sr-only`: la utilidad
+                `sr-only` gana por orden en el CSS generado y el texto quedaba
+                oculto SIEMPRE, también en escritorio (verificado en navegador). */}
+            {description && (
+              <div className="hidden @min-[32rem]:block mt-1.5 text-sm text-[var(--text-secondary)] dark:text-zinc-400 max-w-2xl leading-relaxed">
+                {description}
+              </div>
+            )}
+          </div>
         </div>
+        {children && (
+          // Sin `shrink-0`: cuando entran en la misma fila no deben aplastar al
+          // título; cuando no entran, bajan y se envuelven entre ellas.
+          <div className="flex flex-wrap items-center gap-2 @min-[48rem]:justify-end">
+            {children}
+          </div>
+        )}
       </div>
-      {children && (
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          {children}
-        </div>
-      )}
     </header>
   );
 }

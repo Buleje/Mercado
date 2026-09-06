@@ -20,6 +20,7 @@
  *  - Atajos: `/` busca · `R` recarga · `Esc` cierra modal/limpia filtros
  */
 
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import {
   useCallback,
   useEffect,
@@ -53,6 +54,7 @@ import {
 import type { LucideIcon } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
+import { SuperAdminModuleTabs, FINANZAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import {
   SUPERADMIN_PAGE,
   SUPERADMIN_HERO,
@@ -105,8 +107,8 @@ const METHOD_LABEL: Record<string, string> = {
 const STATUS_META = {
   pending: {
     label: "Pendiente",
-    pill: "border-amber-300 bg-amber-100/80 text-amber-800 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
-    dot: "bg-amber-500",
+    pill: "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+    dot: "bg-[var(--accent)]",
   },
   approved: {
     label: "Aprobado",
@@ -115,15 +117,15 @@ const STATUS_META = {
   },
   rejected: {
     label: "Rechazado",
-    pill: "border-rose-300 bg-rose-100/80 text-rose-800 dark:border-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
+    pill: "border-[var(--data-error-500)] bg-[var(--data-error-100)] text-[var(--data-error)]",
     dot: "bg-rose-500",
   },
 } as const;
 
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
   good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
-  warn: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
-  bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
+  warn: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+  bad: "bg-[var(--data-error-50)] text-[var(--data-error)]",
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -277,7 +279,8 @@ export default function PagosPendientesClient() {
         }
         const data = (await res.json()) as { proofs: PaymentProof[] };
         setProofs(data.proofs ?? []);
-      } catch {
+      } catch (err) {
+        console.error("[sa-pagos-pendientes] load failed", err);
         setError("Error de red.");
       } finally {
         if (!silent) setLoading(false);
@@ -322,11 +325,7 @@ export default function PagosPendientesClient() {
   };
 
   // ── Auto refresh ─────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const t = setInterval(() => load(true), 60_000);
-    return () => clearInterval(t);
-  }, [autoRefresh, load]);
+  useVisiblePolling(() => void load(true), 60_000, autoRefresh);
 
   // ── Keyboard ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -459,7 +458,8 @@ export default function PagosPendientesClient() {
         );
         if (r.ok) ok++;
         else fail++;
-      } catch {
+      } catch (err) {
+        console.error("[sa-pagos-pendientes] bulkApprove item failed", err);
         fail++;
       }
     }
@@ -477,7 +477,8 @@ export default function PagosPendientesClient() {
     try {
       await navigator.clipboard.writeText(text);
       pushToast(`${label} copiado`, "success");
-    } catch {
+    } catch (err) {
+      console.error("[sa-pagos-pendientes] clipboard copy failed", err);
       pushToast("No se pudo copiar", "error");
     }
   };
@@ -527,12 +528,13 @@ export default function PagosPendientesClient() {
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
 
   return (
     <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={FINANZAS_TABS} />
       {/* ─── Toasts ─────────────────────────────────────────── */}
       <Toasts toasts={toasts} />
 
@@ -550,7 +552,7 @@ export default function PagosPendientesClient() {
             className="w-full max-w-md overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
           >
             <div className="bg-[var(--accent)] px-5 py-4 text-white">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider opacity-85">
+              <p className="text-xs font-bold uppercase tracking-wider opacity-85">
                 Tienda creada
               </p>
               <h3 className="text-lg font-extrabold leading-tight">Credenciales de {newCreds.storeName}</h3>
@@ -579,7 +581,7 @@ export default function PagosPendientesClient() {
                   className="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2.5 text-left transition-colors hover:border-[var(--accent)]"
                 >
                   <span className="min-w-0">
-                    <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <span className="block text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                       {row.label}
                     </span>
                     <span className="block truncate text-sm font-bold text-[var(--text-primary)]">{row.value}</span>
@@ -589,7 +591,7 @@ export default function PagosPendientesClient() {
               ))}
               {!newCreds.password && (
                 <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3.5 py-2.5">
-                  <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                     Contraseña
                   </span>
                   <span className="block text-sm font-semibold text-[var(--text-secondary)]">
@@ -624,7 +626,7 @@ export default function PagosPendientesClient() {
                 />
               </span>
               <div className="min-w-0">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
+                <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Tesorería · Aprobaciones
                 </p>
                 <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
@@ -790,7 +792,7 @@ export default function PagosPendientesClient() {
         {error && (
           <div
             role="alert"
-            className="flex items-center gap-3 rounded-xl border-2 border-rose-300/60 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-rose-300"
+            className="flex items-center gap-3 rounded-xl border-2 border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm font-semibold text-[var(--data-error)]"
           >
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
             {error}
@@ -881,11 +883,11 @@ function StatPill({
     accent === "success"
       ? "border-emerald-300/50 bg-emerald-50 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-950/30 dark:text-emerald-300"
       : accent === "warning"
-        ? "border-amber-300/60 bg-amber-50/80 text-amber-800 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300"
+        ? "border-[var(--accent)]/60 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)]";
   return (
     <div className={`rounded-xl border-2 px-3.5 py-2 min-w-[100px] ${cls}`}>
-      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider opacity-70 leading-none">
+      <p className="text-xs font-extrabold uppercase tracking-wider opacity-70 leading-none">
         {label}
       </p>
       <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none">
@@ -901,7 +903,7 @@ function SlaBadge({ submittedAt }: { submittedAt: string }) {
     <span
       title={`Hace ${sla.hours}h`}
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-extrabold uppercase tracking-wider",
         SLA_STYLES[sla.tone],
       )}
     >
@@ -944,7 +946,7 @@ function ProofCard({
             onChange={onToggleSelect}
             onClick={(e) => e.stopPropagation()}
             aria-label={`Seleccionar ${proof.storeName}`}
-            className="h-5 w-5 accent-[var(--accent)] cursor-pointer drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+            className="h-5 w-5 accent-[var(--accent)] cursor-pointer drop-shadow-[var(--shadow-sm)]"
           />
         </label>
       )}
@@ -966,9 +968,9 @@ function ProofCard({
               unoptimized
             />
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[var(--accent-soft)]/40 text-[var(--accent)]">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-primary/10 text-[var(--accent)]">
               <Gift className="h-8 w-8" strokeWidth={1.75} aria-hidden />
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider">
+              <span className="text-xs font-bold uppercase tracking-wider">
                 Plan gratis · sin comprobante
               </span>
             </div>
@@ -984,19 +986,19 @@ function ProofCard({
             )}
           >
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${status.pill}`}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider ${status.pill}`}
             >
               <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
               {status.label}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-black/65 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-white backdrop-blur-sm">
+            <span className="inline-flex items-center gap-1 rounded-full bg-black/65 px-2.5 py-0.5 text-xs font-extrabold uppercase tracking-wider text-white backdrop-blur-sm">
               <Banknote className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               {METHOD_LABEL[proof.method] ?? proof.method}
             </span>
           </div>
           <div className="absolute inset-x-3 bottom-3 flex items-end justify-between gap-2 text-white">
             <div className="min-w-0">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider opacity-80 truncate">
+              <p className="text-xs font-bold uppercase tracking-wider opacity-80 truncate">
                 {PLAN_LABEL[proof.planTier] ?? proof.planTier} ·{" "}
                 {proof.billingCycle === "anual" ? "Anual" : "Mensual"}
               </p>
@@ -1004,7 +1006,7 @@ function ProofCard({
                 {proof.amountPEN === 0 ? "Gratis" : fmt(proof.amountPEN)}
               </p>
             </div>
-            <span className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2 py-1 text-[length:var(--ts-2xs)] font-bold backdrop-blur-sm transition group-hover:bg-white/25 shrink-0">
+            <span className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2 py-1 text-xs font-bold backdrop-blur-sm transition group-hover:bg-white/25 shrink-0">
               <Eye className="h-3 w-3" strokeWidth={2.5} aria-hidden />
               Revisar
             </span>
@@ -1111,13 +1113,13 @@ function ProofModal({
         <div className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 sm:px-5 py-3.5">
           <div className="flex items-center gap-3 min-w-0">
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider ${status.pill}`}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-extrabold uppercase tracking-wider ${status.pill}`}
             >
               <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
               {status.label}
             </span>
             <div className="min-w-0">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
+              <p className="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">
                 {PLAN_LABEL[proof.planTier] ?? proof.planTier} ·{" "}
                 {proof.billingCycle === "anual" ? "Anual" : "Mensual"}
               </p>
@@ -1156,14 +1158,14 @@ function ProofModal({
                   href={proof.proofUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/70 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-black/85"
+                  className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/70 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm hover:bg-black/85"
                 >
                   <ExternalLink className="h-3 w-3" strokeWidth={2.5} aria-hidden />
                   Abrir original
                 </a>
               </>
             ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center bg-[var(--accent-soft)]/30">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center bg-primary/10">
                 <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent)] text-white">
                   <Gift className="h-8 w-8" strokeWidth={2} aria-hidden />
                 </span>
@@ -1221,7 +1223,7 @@ function ProofModal({
             </div>
 
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3.5">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+              <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
                 Ubicación
               </p>
               <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
@@ -1297,8 +1299,8 @@ function ProofModal({
                   className={cn(
                     "inline-flex items-center justify-center gap-2 rounded-xl border-2 h-12 px-4 text-sm font-bold transition",
                     rejectOpen
-                      ? "border-rose-400 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
-                      : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-rose-300 hover:text-rose-700 dark:hover:text-rose-300",
+                      ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error)]"
+                      : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error)]",
                   )}
                 >
                   <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
@@ -1306,10 +1308,10 @@ function ProofModal({
                 </button>
               </div>
               {rejectOpen && (
-                <div className="rounded-xl border-2 border-rose-300/60 bg-rose-50/60 p-3 dark:border-rose-700/40 dark:bg-rose-950/30">
+                <div className="rounded-xl border-2 border-[var(--data-error-100)] bg-[var(--data-error-50)] p-3">
                   <label
                     htmlFor="reject-reason"
-                    className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-300"
+                    className="text-xs font-extrabold uppercase tracking-wider text-[var(--data-error)]"
                   >
                     Motivo del rechazo (lo recibe por WhatsApp)
                   </label>
@@ -1389,7 +1391,7 @@ function Field({
           : "border-[var(--rule-soft)] bg-[var(--surface-canvas)]",
       )}
     >
-      <p className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+      <p className="flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
         <Icon className="h-3 w-3" strokeWidth={2.25} aria-hidden />
         {label}
       </p>

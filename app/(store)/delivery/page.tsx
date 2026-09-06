@@ -110,7 +110,7 @@ export default function DeliveryPage() {
       formData.append("file", file);
       formData.append("orderId", orderId);
       formData.append("type", "delivery-proof");
-      await fetch("/api/uploads", { method: "POST", body: formData });
+      await fetch("/api/uploads", { method: "POST", headers: csrfHeaders(), body: formData });
     } catch { /* best effort */ }
   };
 

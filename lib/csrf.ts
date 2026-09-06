@@ -16,6 +16,7 @@
 
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { constantTimeStringEqual } from "@/lib/constant-time";
 
 const CSRF_COOKIE_NAME = "csrf-token";
 const CSRF_HEADER_NAME = "x-csrf-token";
@@ -145,6 +146,30 @@ export function validateCsrfToken(request: NextRequest): boolean {
     // IDs con regex, rate-limit GENEROUS y solo incrementa contadores (sin
     // datos sensibles ni mutación de estado de usuario).
     "/api/marketplace/promo-banners/track",
+    // Beacon de Core Web Vitals RUM (historial de rendimiento por tenant):
+    // mismo caso sendBeacon sin headers. El endpoint valida slug con regex +
+    // Zod safeParse, rate-limit STRICT, y solo suma números a un rollup
+    // diario (sin datos sensibles ni mutación de estado de usuario).
+    "/api/analytics/vitals",
+    // Firma pública de documentos por link: un tercero sin sesión firma un PDF
+    // vía token de share (+ password opcional). No tiene csrf-cookie; se protege
+    // con el token unguessable + rate-limit STRICT. El único write es POST /sign
+    // (los demás bajo el prefijo son GET, que igual no pasan por CSRF).
+    "/api/public/documents/",
+    // Firma pública de CONTRATOS: el trabajador o el proveedor recibe un link
+    // por WhatsApp y firma desde su celular, sin cuenta ni sesión. Mismo modelo
+    // de protección: token unguessable e irrepetible por firmante, con
+    // vencimiento propio, rate-limit STRICT y un único write (POST /firmar).
+    "/api/public/contratos/",
+    // Entradas de integración: n8n y el bot de Telegram, por donde llegan las
+    // operaciones dictadas (un audio de WhatsApp, un mensaje de Telegram).
+    //
+    // Todas son máquina a máquina: se autentican con `Authorization: Bearer` +
+    // el slug del negocio, o con el `X-Telegram-Bot-Api-Secret-Token` que sólo
+    // puede fabricar quien tiene el token del bot — NUNCA con la cookie de
+    // sesión. El CSRF protege contra que un sitio ajeno use la sesión del
+    // navegador; acá no hay sesión que abusar. Rate-limit propio en cada una.
+    "/api/integrations/",
   ];
   if (webhookPaths.some((p) => pathname.startsWith(p) || pathname === p)) {
     return true;
@@ -157,17 +182,8 @@ export function validateCsrfToken(request: NextRequest): boolean {
     return false;
   }
 
-  // Constant-time comparison to prevent timing attacks
-  if (cookieToken.length !== headerToken.length) {
-    return false;
-  }
-
-  let result = 0;
-  for (let i = 0; i < cookieToken.length; i++) {
-    result |= cookieToken.charCodeAt(i) ^ headerToken.charCodeAt(i);
-  }
-
-  return result === 0;
+  // Comparación en tiempo constante (Edge-safe) — ver constantTimeStringEqual.
+  return constantTimeStringEqual(cookieToken, headerToken);
 }
 
 /**
@@ -197,13 +213,9 @@ export function validateSuperadminCsrf(request: NextRequest): boolean {
   const cookieToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;
   const headerToken = request.headers.get(CSRF_HEADER_NAME);
   if (!cookieToken || !headerToken) return false;
-  if (cookieToken.length !== headerToken.length) return false;
 
-  let result = 0;
-  for (let i = 0; i < cookieToken.length; i++) {
-    result |= cookieToken.charCodeAt(i) ^ headerToken.charCodeAt(i);
-  }
-  return result === 0;
+  // Comparación en tiempo constante (Edge-safe) — ver constantTimeStringEqual.
+  return constantTimeStringEqual(cookieToken, headerToken);
 }
 
 /**

@@ -51,8 +51,8 @@ export interface ShipmentOrder {
 export const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; bg: string }> = {
   pendiente:  { label: "Pendiente",   color: "text-[var(--text-secondary)]",    bg: "bg-[var(--surface-sunken)]" },
   confirmado: { label: "Confirmado",  color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  en_camino:  { label: "En camino",   color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",    bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  entregado:  { label: "Entregado",   color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  en_camino:  { label: "En camino",   color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
+  entregado:  { label: "Entregado",   color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   cancelado:  { label: "Cancelado",   color: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",      bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
 
@@ -243,7 +243,7 @@ function ShipmentOrderCardImpl({ order, onUpdateStatus, updating }: ShipmentOrde
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                   next === "cancelado"
                     ? "bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
-                    : "bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20",
+                    : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 border border-primary/20",
                   updating && "opacity-50 cursor-not-allowed"
                 )}
               >

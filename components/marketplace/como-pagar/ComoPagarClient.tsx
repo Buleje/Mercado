@@ -28,6 +28,7 @@ import {
   Truck,
   Receipt,
 } from "@buleje/design-system/icons";
+import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
 
 // ── Metodos secundarios (Yape va destacado en su propia seccion) ──────────
 type Method = {
@@ -117,10 +118,10 @@ const FAQ = [
 // Mismo kicker que /negocios: text-xs font-bold + dash teal.
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
+    <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-6">
       <span aria-hidden className="inline-flex h-[3px] w-10 rounded-full bg-[var(--accent)]" />
       {children}
-    </p>
+    </div>
   );
 }
 
@@ -129,16 +130,12 @@ const H2_CLS =
   "text-[clamp(2rem,5vw,3.5rem)] font-extrabold tracking-[-0.03em] text-[var(--text-primary)] leading-[1.05]";
 
 function MethodCard({ method }: { method: Method }) {
-  const Icon = method.icon;
   return (
     <article className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 flex flex-col gap-4 transition-all hover:border-[var(--accent)]/40 hover:shadow-md">
       <header className="flex items-center gap-3">
-        <span
-          aria-hidden
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"
-        >
-          <Icon className="h-5 w-5" strokeWidth={1.75} />
-        </span>
+        {/* Logo del método (oficial si está en public/payment-logos/, arte custom
+            de PaymentIcons si no) — reemplaza el glifo Lucide genérico. */}
+        <PaymentMethodIcon method={method.id} size={44} className="rounded-xl" title={method.title} />
         <div className="min-w-0">
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             {method.eyebrow}
@@ -158,7 +155,7 @@ function MethodCard({ method }: { method: Method }) {
           <li key={i} className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
             <span
               aria-hidden
-              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)] text-[length:var(--ts-2xs)] font-extrabold tabular-nums"
+              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-2xs)] font-extrabold tabular-nums"
             >
               {i + 1}
             </span>
@@ -286,10 +283,10 @@ export default function ComoPagarClient() {
                     scope="row"
                     className="sticky left-0 bg-inherit px-4 sm:px-5 py-4 font-extrabold text-[var(--text-primary)] whitespace-nowrap"
                   >
-                    {row.id === "yape" && (
-                      <span className="inline-block h-2 w-2 rounded-full bg-[var(--accent)] mr-2" aria-hidden />
-                    )}
-                    {row.name}
+                    <span className="inline-flex items-center gap-2">
+                      <PaymentMethodIcon method={row.id} size={20} title={row.name} />
+                      {row.name}
+                    </span>
                   </th>
                   {FEATURES.map((f) => (
                     <td key={f.key} className="px-3 py-4 text-center">

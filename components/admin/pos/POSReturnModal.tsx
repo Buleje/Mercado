@@ -2,6 +2,7 @@
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useCallback, useEffect } from "react";
+import { Field } from "@/components/admin/shared/Field";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { X, Search, Loader2, Check, RotateCcw, Package, FileText } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -338,8 +339,7 @@ export default function POSReturnModal({
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmt(item.price)} x {item.maxQty} = {fmt(item.price * item.maxQty)}</p>
                       </div>
                       {item.selected && (
-                        <div className="flex items-center gap-1.5">
-                          <label className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Cant:</label>
+                        <Field label="Cant:" labelClassName="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]" className="flex items-center gap-1.5">
                           <input
                             type="number"
                             min={1}
@@ -348,7 +348,7 @@ export default function POSReturnModal({
                             onChange={e => updateReturnQty(idx, parseInt(e.target.value) || 0)}
                             className="w-14 px-2 py-1 rounded-lg border border-[var(--rule-base)] text-xs text-center text-[var(--text-primary)] bg-white dark:bg-[var(--color-card)] outline-none focus:border-primary"
                           />
-                        </div>
+                        </Field>
                       )}
                     </div>
                   </div>
@@ -356,8 +356,7 @@ export default function POSReturnModal({
               </div>
 
               {/* Motivo */}
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Motivo</label>
+              <Field label="Motivo" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <select
                   value={motivo}
                   onChange={e => setMotivo(e.target.value)}
@@ -367,11 +366,11 @@ export default function POSReturnModal({
                     <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
-              </div>
+              </Field>
 
               {/* Refund type */}
               <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Devolver como</label>
+                <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Devolver como</span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setRefundType("efectivo")}
@@ -433,7 +432,7 @@ export default function POSReturnModal({
             <div className="flex-1 p-6 flex flex-col items-center justify-center text-center gap-3">
               <div className={cn(
                 "h-14 w-14 rounded-full flex items-center justify-center",
-                result.success ? "bg-[var(--accent-soft)]" : "bg-[var(--data-error-50)]"
+                result.success ? "bg-primary/10" : "bg-[var(--data-error-50)]"
               )}>
                 {result.success ? (
                   <Check className="h-7 w-7 text-[var(--data-success-500)]" />
@@ -478,7 +477,7 @@ export default function POSReturnModal({
                     setCreatingNC(false);
                   }}
                   disabled={creatingNC}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 disabled:opacity-50 transition-colors"
                 >
                   {creatingNC ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
                   Crear Nota de Crédito

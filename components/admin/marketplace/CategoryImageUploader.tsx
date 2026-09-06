@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { ImagePlus, Loader2, Trash2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -88,7 +88,7 @@ export default function CategoryImageUploader({
           "relative shrink-0 overflow-hidden rounded-xl border-2 border-dashed transition-colors",
           displayUrl
             ? "border-transparent ring-1 ring-[var(--rule-base)]"
-            : "border-[var(--rule-base)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30",
+            : "border-[var(--rule-base)] hover:border-[var(--accent)] hover:bg-primary/10",
           uploading && "opacity-60 cursor-wait",
           isUsingDefault && "ring-1 ring-amber-400/60",
         )}

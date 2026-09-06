@@ -95,7 +95,7 @@ export default function BatchStatsWidget() {
           value: stats.activeBatches,
           icon: CheckCircle2,
           colorClass: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-          bgClass: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+          bgClass: "bg-primary/10 dark:bg-primary/15",
         },
         {
           label: "Por vencer (7 días)",
@@ -108,7 +108,7 @@ export default function BatchStatsWidget() {
           bgClass:
             stats.expiringWithin7Days > 0
               ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/30"
-              : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+              : "bg-primary/10 dark:bg-primary/15",
         },
         {
           label: "Vencidos con stock",
@@ -121,14 +121,14 @@ export default function BatchStatsWidget() {
           bgClass:
             stats.expiredWithStock > 0
               ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/30"
-              : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+              : "bg-primary/10 dark:bg-primary/15",
         },
         {
           label: "Total unidades",
           value: stats.totalUnits,
           icon: Package,
           colorClass: "text-primary dark:text-[var(--data-success-500)]",
-          bgClass: "bg-primary/10 dark:bg-[var(--accent-muted)]",
+          bgClass: "bg-primary/10 dark:bg-primary/15",
         },
       ]
     : [];
@@ -137,7 +137,7 @@ export default function BatchStatsWidget() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-primary/10 dark:bg-[var(--accent-muted)] flex items-center justify-center">
+          <div className="w-6 h-6 rounded-lg bg-primary/10 dark:bg-primary/15 flex items-center justify-center">
             <Package className="h-3.5 w-3.5 text-primary dark:text-[var(--data-success-500)]" />
           </div>
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Lotes de inventario</CardTitle>

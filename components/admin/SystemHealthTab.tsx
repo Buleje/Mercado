@@ -9,7 +9,7 @@ import type { HealthPayload, HealthService } from "@/app/api/admin/health/route"
 // ── Status config ─────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
-  operativo: { icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]", label: "Operativo" },
+  operativo: { icon: CheckCircle, color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15", label: "Operativo" },
   degradado:  { icon: AlertTriangle, color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20",   label: "Degradado" },
   caido:      { icon: XCircle,       color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20",       label: "Caído" },
 };
@@ -106,7 +106,7 @@ export default function SystemHealthTab() {
         <button
           onClick={() => load(true)}
           disabled={refreshing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 disabled:opacity-50 transition-colors"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
           {refreshing ? "Verificando…" : "Actualizar"}
@@ -187,7 +187,7 @@ export default function SystemHealthTab() {
               const barColor =
                 m.status === "critical" ? "bg-[var(--data-error-500)]" :
                 m.status === "warning"  ? "bg-[var(--data-warning-500)]" :
-                "bg-[var(--accent-soft)]";
+                "bg-primary/10";
               return (
                 <div key={m.label}>
                   <div className="flex items-center justify-between mb-1">
@@ -220,7 +220,7 @@ export default function SystemHealthTab() {
               <div key={inc.id} className="flex flex-wrap items-center gap-3 py-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0">
                 <div className={cn(
                   "h-2.5 w-2.5 rounded-full shrink-0",
-                  inc.severity === "critical" ? "bg-[var(--data-error-500)]" : inc.severity === "warning" ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]"
+                  inc.severity === "critical" ? "bg-[var(--data-error-500)]" : inc.severity === "warning" ? "bg-[var(--data-warning-500)]" : "bg-primary/10"
                 )} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{inc.title}</p>
@@ -229,7 +229,7 @@ export default function SystemHealthTab() {
                 <span className={cn(
                   "text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
                   inc.status === "resolved"
-                    ? "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                    ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                     : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
                 )}>
                   {inc.status === "resolved" ? "Resuelto" : "Activo"}

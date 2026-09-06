@@ -3,11 +3,13 @@
 /** CacaoProducerForm — alta de productor de cacao (ADR-128, v2 rediseñado).
  *  Layout 2 columnas: formulario seccionado + tarjeta viva del productor. */
 import { useState } from "react";
-import { Users, Loader2, X, MapPin, Phone, Award, Leaf, CreditCard, Gauge } from "@buleje/design-system/icons";
+import { Users, Loader2, X, MapPin, Phone, Award, Leaf, CreditCard, Gauge, Navigation } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import LeafletMap from "@/components/LeafletMap";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { CACAO_VARIEDADES, CACAO_CERTIFICACIONES } from "@/lib/cacao/cacao-quality";
+import { BRAND_GEO } from "@/lib/geo";
 
 const I = "w-full h-11 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20 placeholder:text-[var(--text-tertiary)]";
 const CERT_LABEL: Record<string, string> = { organico: "Orgánico", comercio_justo: "Comercio justo", convencional: "Convencional" };
@@ -15,9 +17,27 @@ const CERT_LABEL: Record<string, string> = { organico: "Orgánico", comercio_jus
 export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [f, setF] = useState({ nombre: "", dni: "", sector: "", parcelaHa: "", variedad: "", certificacion: "", altitudMsnm: "", telefono: "", observaciones: "" });
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [f, setF] = useState({ nombre: "", dni: "", sector: "", parcelaHa: "", variedad: "", certificacion: "", altitudMsnm: "", latitud: "", longitud: "", telefono: "", observaciones: "" });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
   const isValid = f.nombre.trim().length >= 2;
+
+  // GPS del teléfono: el acopiador suele estar EN la parcela al registrar.
+  function useMyLocation() {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setError("Tu dispositivo no permite ubicación GPS.");
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setF((s) => ({ ...s, latitud: pos.coords.latitude.toFixed(6), longitud: pos.coords.longitude.toFixed(6) }));
+        setGeoLoading(false);
+      },
+      (err) => { setError(`No se pudo obtener la ubicación: ${err.message}`); setGeoLoading(false); },
+      { enableHighAccuracy: true, timeout: 10_000 },
+    );
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +48,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
         nombre: f.nombre.trim(), dni: f.dni.trim() || null, sector: f.sector.trim() || null,
         parcelaHa: f.parcelaHa ? Number(f.parcelaHa) : null, variedad: f.variedad || null,
         certificacion: f.certificacion || null, altitudMsnm: f.altitudMsnm ? Number(f.altitudMsnm) : null,
+        latitud: f.latitud ? Number(f.latitud) : null, longitud: f.longitud ? Number(f.longitud) : null,
         telefono: f.telefono.trim() || null, observaciones: f.observaciones.trim() || null,
       };
       const r = await fetch("/api/admin/cacao?type=producer", { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify(payload) });
@@ -37,11 +58,18 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
   }
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="!max-w-[860px]">
+    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="!max-w-[860px]"
+      footer={
+        <div className="flex items-center justify-end gap-2 px-5 py-3.5">
+          <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button type="submit" form="cacao-producer-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar productor"}</button>
+        </div>
+      }
+    >
       <div className="flex h-full max-h-[90vh] flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Users className="h-5 w-5" strokeWidth={1.75} /></span>
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Users className="h-5 w-5" strokeWidth={1.75} /></span>
             <div><CardTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">Nuevo productor</CardTitle><p className="text-xs text-[var(--text-tertiary)]">Proveedor de cacao · maestro</p></div>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-lg p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"><X className="h-4 w-4" /></button>
@@ -69,6 +97,49 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
                 </div>
               </Section>
 
+              <Section icon={MapPin} title="Ubicación de la parcela">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={useMyLocation}
+                    disabled={geoLoading}
+                    className="inline-flex h-10 items-center gap-2 rounded-lg border-2 border-[var(--accent)] px-3 text-sm font-bold text-[var(--accent)] hover:bg-primary/10 disabled:opacity-60"
+                  >
+                    {geoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+                    Usar mi ubicación (GPS)
+                  </button>
+                  {f.latitud && f.longitud && (
+                    <span className="font-mono text-xs text-[var(--text-secondary)]">
+                      {Number(f.latitud).toFixed(5)}, {Number(f.longitud).toFixed(5)}
+                    </span>
+                  )}
+                  {(f.latitud || f.longitud) && (
+                    <button
+                      type="button"
+                      onClick={() => setF((s) => ({ ...s, latitud: "", longitud: "" }))}
+                      className="text-xs font-bold text-[var(--text-tertiary)] underline hover:text-[var(--text-primary)]"
+                    >
+                      Quitar
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-[var(--text-tertiary)]">
+                  Tocá el mapa para marcar la parcela, o usá el GPS del teléfono si estás ahí. Sirve
+                  para logística de recojo y trazabilidad de origen.
+                </p>
+                <div className="overflow-hidden rounded-xl border-2 border-[var(--rule-base)]">
+                  <LeafletMap
+                    lat={f.latitud ? Number(f.latitud) : BRAND_GEO.lat}
+                    lon={f.longitud ? Number(f.longitud) : BRAND_GEO.lng}
+                    zoom={f.latitud ? 15 : 12}
+                    height={200}
+                    onPick={(la, lo) =>
+                      setF((s) => ({ ...s, latitud: la.toFixed(6), longitud: lo.toFixed(6) }))
+                    }
+                  />
+                </div>
+              </Section>
+
               <Section icon={Phone} title="Contacto">
                 <Field label="Teléfono / WhatsApp"><input value={f.telefono} onChange={set("telefono")} placeholder="9XXXXXXXX" className={I} /></Field>
                 <Field label="Observaciones"><textarea value={f.observaciones} onChange={set("observaciones")} rows={2} placeholder="Notas…" className={`${I} h-auto resize-none py-2.5`} /></Field>
@@ -80,7 +151,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
               <p className="mb-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Tarjeta del productor</p>
               <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
                 <div className="flex items-center gap-3">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]"><Users className="h-6 w-6" /></span>
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Users className="h-6 w-6" /></span>
                   <div className="min-w-0">
                     <p className="truncate text-base font-extrabold text-[var(--text-primary)]">{f.nombre.trim() || "Nuevo productor"}</p>
                     <p className="text-xs text-[var(--text-tertiary)]">El código (P-00X) se asigna al guardar</p>
@@ -89,7 +160,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
                 {(f.variedad || f.certificacion) && (
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {f.variedad && <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]">{f.variedad}</span>}
-                    {f.certificacion && <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-xs font-medium text-[var(--accent)]"><Award className="h-3 w-3" />{CERT_LABEL[f.certificacion]}</span>}
+                    {f.certificacion && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-[var(--accent)]"><Award className="h-3 w-3" />{CERT_LABEL[f.certificacion]}</span>}
                   </div>
                 )}
                 <div className="mt-3 space-y-1.5 border-t border-[var(--rule-soft)] pt-3 text-sm">
@@ -105,10 +176,6 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
           </div>
         </div>
 
-        <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-3.5">
-          <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="submit" form="cacao-producer-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar productor"}</button>
-        </footer>
       </div>
     </AdminModal>
   );
@@ -119,7 +186,7 @@ function Section({ icon: Icon, title, children }: { icon: typeof Users; title: s
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--surface-sunken)] text-[var(--accent)]"><Icon className="h-4 w-4" /></span>
-        <h3 className="text-sm font-bold text-[var(--text-primary)]">{title}</h3>
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{title}</CardTitle>
       </div>
       {children}
     </section>

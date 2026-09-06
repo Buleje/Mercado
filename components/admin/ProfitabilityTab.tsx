@@ -1,11 +1,14 @@
 "use client";
 
-import { CardTitle, PageTitle } from "@buleje/design-system";
-import { useState, useMemo } from "react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { CardTitle } from "@buleje/design-system";
+import { useState, useMemo, useEffect } from "react";
 import {
   TrendingUp, Download, Search, Eye, X, ArrowUpRight, ArrowDownRight,
+  AlertTriangle, RefreshCw,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { useProductProfitability } from "@/hooks/use-product-profitability";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -19,6 +22,8 @@ type ProfitLine = {
   grossMargin: number;
   marginPct: number;
   period: string;
+  /** El costo de alguna línea salió del producto, no de la venta: margen aproximado. */
+  costEstimated: boolean;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -28,26 +33,55 @@ function fmt(n: number) {
 }
 function pct(n: number) { return `${n.toFixed(1)}%`; }
 
-const CATEGORIES = ["Bebidas", "Abarrotes", "Lácteos", "Limpieza", "Snacks", "Licores"];
-
-// ── Seed Data ─────────────────────────────────────────────────────────────────
-
-function seed(): ProfitLine[] {
-  const items: Omit<ProfitLine, "id" | "grossMargin" | "marginPct">[] = [];
-  return items.map((it, i) => {
-    const gm = it.revenue - it.cogs;
-    return { ...it, id: `p${i + 1}`, grossMargin: gm, marginPct: it.revenue > 0 ? (gm / it.revenue) * 100 : 0 };
-  });
-}
+const PERIODOS = [
+  { days: 7, label: "7 días" },
+  { days: 30, label: "30 días" },
+  { days: 90, label: "90 días" },
+] as const;
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ProfitabilityTab() {
-  const [lines] = useState<ProfitLine[]>(seed);
+  const [days, setDays] = useState<number>(30);
+  const { lines: raw, resumen, since, loading, error, refetch } = useProductProfitability(days);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("todos");
   const [sortBy, setSortBy] = useState<"marginPct" | "grossMargin" | "revenue" | "unitsSold">("marginPct");
   const [detail, setDetail] = useState<ProfitLine | null>(null);
+
+  const periodo = since ? `desde ${since}` : `últimos ${days} días`;
+
+  // Escape cierra el detalle (regla del proyecto: todo modal con click-fuera + Escape).
+  useEffect(() => {
+    if (!detail) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setDetail(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [detail]);
+
+  const lines = useMemo<ProfitLine[]>(
+    () => raw.map(l => ({
+      id: String(l.productId),
+      product: l.product,
+      category: l.category,
+      unitsSold: l.unitsSold,
+      revenue: l.revenue,
+      cogs: l.cogs,
+      grossMargin: l.grossMargin,
+      marginPct: l.marginPct,
+      period: periodo,
+      costEstimated: l.costEstimated,
+    })),
+    [raw, periodo]
+  );
+
+  // Las categorías salen de lo realmente vendido, no de una lista fija.
+  const categories = useMemo(
+    () => Array.from(new Set(lines.map(l => l.category))).sort((a, b) => a.localeCompare(b, "es")),
+    [lines]
+  );
+
+  const estimatedCount = useMemo(() => lines.filter(l => l.costEstimated).length, [lines]);
 
   const filtered = useMemo(() => {
     let list = [...lines];
@@ -60,12 +94,34 @@ export default function ProfitabilityTab() {
     return list;
   }, [lines, filterCat, search, sortBy]);
 
-  const totals = useMemo(() => {
-    const rev = lines.reduce((s, l) => s + l.revenue, 0);
-    const cost = lines.reduce((s, l) => s + l.cogs, 0);
-    const gm = rev - cost;
-    return { revenue: rev, cogs: cost, grossMargin: gm, marginPct: rev > 0 ? (gm / rev) * 100 : 0, units: lines.reduce((s, l) => s + l.unitsSold, 0) };
-  }, [lines]);
+  // KPIs de arriba: el período completo, lo calcula el backend.
+  const totals = useMemo(
+    () => ({
+      revenue: resumen.totalRevenue,
+      cogs: resumen.totalCogs,
+      grossMargin: resumen.totalMargin,
+      marginPct: resumen.marginPct,
+      units: resumen.totalUnits,
+    }),
+    [resumen]
+  );
+
+  // Pie de tabla: solo lo que se está viendo. Si no, filtrar por una categoría
+  // dejaba una fila de "Totales" que no cerraba con las filas de arriba.
+  const visibleTotals = useMemo(() => {
+    const revenue = filtered.reduce((s, l) => s + l.revenue, 0);
+    const cogs = filtered.reduce((s, l) => s + l.cogs, 0);
+    const grossMargin = revenue - cogs;
+    return {
+      revenue,
+      cogs,
+      grossMargin,
+      marginPct: revenue > 0 ? (grossMargin / revenue) * 100 : 0,
+      units: filtered.reduce((s, l) => s + l.unitsSold, 0),
+    };
+  }, [filtered]);
+
+  const isFiltered = filtered.length !== lines.length;
 
   const catSummary = useMemo(() => {
     const map: Record<string, { revenue: number; cogs: number; margin: number }> = {};
@@ -81,26 +137,71 @@ export default function ProfitabilityTab() {
   const maxCatMargin = catSummary.length > 0 ? catSummary[0][1].margin : 1;
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-primary" /> Cuánto Gano por Producto
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Mira cuánto ganas con cada producto y categoría</p>
+    <div className="space-y-4">
+      {/* Header estándar del panel. Antes era un div armado a mano, que se
+          saltea el font-display que AdminModuleHeader aplica al título. */}
+      <AdminModuleHeader
+        as="h2"
+        title="Cuánto gano por producto"
+        description={`Mirá cuánto ganás con cada producto y categoría · ${periodo}`}
+        icon={TrendingUp}
+      >
+          <div className="flex rounded-lg border border-[var(--rule-base)] overflow-hidden">
+            {PERIODOS.map(p => (
+              <button
+                key={p.days}
+                onClick={() => setDays(p.days)}
+                className={cn(
+                  "px-3 py-2 text-sm font-semibold transition-colors",
+                  days === p.days
+                    ? "bg-primary text-white"
+                    : "bg-white dark:bg-surface text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-accent"
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={refetch}
+            disabled={loading}
+            aria-label="Actualizar rentabilidad"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} /> Actualizar
+          </button>
+          <button onClick={() => exportToCSV(filtered.map(l => ({ producto: l.product, categoria: l.category, unidades: l.unitsSold, ingresos: l.revenue, costo: l.cogs, margen_bruto: l.grossMargin, margen_pct: Number(l.marginPct).toFixed(1) + "%" })), "ganancias-producto")} disabled={filtered.length === 0} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors disabled:opacity-50">
+            <Download className="h-4 w-4" /> Descargar
+          </button>
+      </AdminModuleHeader>
+
+      {error && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3">
+          <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)]" />
+          <p className="text-sm font-semibold text-[var(--text-primary)] flex-1">{error}</p>
+          <button onClick={refetch} className="text-sm font-bold text-[var(--data-error-500)] underline">
+            Reintentar
+          </button>
         </div>
-        <button onClick={() => exportToCSV(filtered.map(l => ({ producto: l.product, categoria: l.category, unidades: l.unitsSold, ingresos: l.revenue, costo: l.cogs, margen_bruto: l.grossMargin, margen_pct: Number(l.marginPct).toFixed(1) + "%" })), "ganancias-producto")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-          <Download className="h-4 w-4" /> Descargar
-        </button>
-      </div>
+      )}
+
+      {estimatedCount > 0 && !loading && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] dark:bg-amber-950/20 px-4 py-3">
+          <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" />
+          <p className="text-sm text-[var(--text-primary)]">
+            <span className="font-bold">{estimatedCount}</span>{" "}
+            {estimatedCount === 1 ? "producto usa" : "productos usan"} el costo actual porque la venta
+            no guardó el costo del momento. Ese margen es aproximado.
+          </p>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Ingresos totales", value: fmt(totals.revenue), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Ingresos totales", value: fmt(totals.revenue), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "Costo de venta", value: fmt(totals.cogs), color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-orange-950/30" },
-          { label: "Margen bruto", value: fmt(totals.grossMargin), color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+          { label: "Margen bruto", value: fmt(totals.grossMargin), color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
           { label: "% Margen", value: pct(totals.marginPct), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
           { label: "Uds. vendidas", value: totals.units.toLocaleString("es-PE"), color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]" },
         ].map(({ label, value, color, bg }) => (
@@ -140,7 +241,7 @@ export default function ProfitabilityTab() {
         </div>
         <select value={filterCat} onChange={e => setFilterCat(e.target.value)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="todos">Todas las categorías</option>
-          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          {categories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           <option value="marginPct">Mayor % margen</option>
@@ -168,7 +269,25 @@ export default function ProfitabilityTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
-              {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-[var(--text-tertiary)] text-sm">Sin datos.</td></tr>}
+              {loading && (
+                <tr><td colSpan={9} className="px-4 py-8 text-center text-[var(--text-tertiary)] text-sm">Calculando tus ganancias…</td></tr>
+              )}
+              {!loading && filtered.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center">
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">
+                      {lines.length === 0
+                        ? `No hay ventas en los ${days === 7 ? "últimos 7" : days === 30 ? "últimos 30" : "últimos 90"} días`
+                        : "Ningún producto coincide con el filtro"}
+                    </p>
+                    <p className="text-sm text-[var(--text-secondary)] mt-1">
+                      {lines.length === 0
+                        ? "Cuando registres ventas vas a ver acá cuánto ganás con cada producto."
+                        : "Probá con otra categoría o limpiá la búsqueda."}
+                    </p>
+                  </td>
+                </tr>
+              )}
               {filtered.map((l, i) => (
                 <tr key={l.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-tertiary)]">{i + 1}</td>
@@ -176,7 +295,17 @@ export default function ProfitabilityTab() {
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{l.category}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)] dark:text-muted">{l.unitsSold.toLocaleString("es-PE")}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(l.revenue)}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)]">{fmt(l.cogs)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)]">
+                    <span className="inline-flex items-center justify-end gap-1">
+                      {l.costEstimated && (
+                        <AlertTriangle
+                          className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0"
+                          aria-label="Costo aproximado: la venta no guardó el costo del momento"
+                        />
+                      )}
+                      {fmt(l.cogs)}
+                    </span>
+                  </td>
                   <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", l.grossMargin >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{fmt(l.grossMargin)}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                     <span className={cn("inline-flex items-center gap-0.5 text-xs font-bold", l.marginPct >= 35 ? "text-[var(--data-success-500)]" : l.marginPct >= 25 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
@@ -185,19 +314,21 @@ export default function ProfitabilityTab() {
                     </span>
                   </td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3">
-                    <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)]"><Eye className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button>
                   </td>
                 </tr>
               ))}
             </tbody>
             <tfoot className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface/50">
               <tr className="font-extrabold">
-                <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 text-xs uppercase text-[var(--text-secondary)]">Totales</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{totals.units.toLocaleString("es-PE")}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(totals.revenue)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)]">{fmt(totals.cogs)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success-500)]">{fmt(totals.grossMargin)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success-500)]">{pct(totals.marginPct)}</td>
+                <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 text-xs uppercase text-[var(--text-secondary)]">
+                  {isFiltered ? `Totales (${filtered.length} de ${lines.length})` : "Totales"}
+                </td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{visibleTotals.units.toLocaleString("es-PE")}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(visibleTotals.revenue)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)]">{fmt(visibleTotals.cogs)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success-500)]">{fmt(visibleTotals.grossMargin)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success-500)]">{pct(visibleTotals.marginPct)}</td>
                 <td />
               </tr>
             </tfoot>
@@ -207,11 +338,25 @@ export default function ProfitabilityTab() {
 
       {/* Detail modal */}
       {detail && (
-        <div className="modal-backdrop p-4" onClick={() => setDetail(null)}>
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+        <div
+          className="modal-backdrop p-4"
+          role="button"
+          tabIndex={0}
+          aria-label="Cerrar detalle"
+          onClick={() => setDetail(null)}
+          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setDetail(null); }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Detalle de producto"
+            className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-sm space-y-4"
+            onClick={e => e.stopPropagation()}
+            onKeyDown={e => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Detalle de producto</CardTitle>
-              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
+              <button onClick={() => setDetail(null)} aria-label="Cerrar"><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
             </div>
             <div className="space-y-2 text-sm">
               {[

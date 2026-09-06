@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import {
@@ -50,8 +51,8 @@ type EmitForm = {
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
 const TYPE_META: Record<DocType, { label: string; color: string; bg: string }> = {
-  boleta:         { label: "Boleta",          color: "text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  factura:        { label: "Factura",         color: "text-[var(--data-success-500)]",  bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  boleta:         { label: "Boleta",          color: "text-[var(--data-success-500)]",     bg: "bg-primary/10 dark:bg-primary/15" },
+  factura:        { label: "Factura",         color: "text-[var(--data-success-500)]",  bg: "bg-primary/10 dark:bg-primary/15" },
   "nota-credito": { label: "Nota de crédito", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
   "nota-debito":  { label: "Nota de débito",  color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
 };
@@ -81,7 +82,7 @@ export default function EInvoiceTab() {
   const [filterType, setFilterType] = useState<DocType | "todos">("todos");
   const [filterStatus, setFilterStatus] = useState<DocStatus | "todos">("todos");
   const [detail, setDetail] = useState<EDocument | null>(null);
-  const [loadingDocs, setLoadingDocs] = useState(true);
+  const [, setLoadingDocs] = useState(true);
 
   // Emisión
   const [emitForm, setEmitForm] = useState<EmitForm | null>(null);
@@ -96,41 +97,58 @@ export default function EInvoiceTab() {
       const res = await fetch("/api/admin/sunat/invoices?limit=100");
       if (!res.ok) { setLoadingDocs(false); return; }
       const data = await res.json();
+      // El endpoint /api/admin/sunat/invoices devuelve { data: [...] } con campos
+      // en inglés (series/number/type/sunatStatus/customerName). El mapeo previo
+      // leía serie/número/tipo/status/clienteNombre → todo caía a defaults
+      // ("0", "boleta", "emitido", "-"). Verificado contra el route 2026-07-05.
       const invoices = (data.data ?? data.invoices ?? []) as Array<{
         id: string;
-        serie: string;
-        número: string;
-        tipo: string;
-        status: string;
-        clienteNombre?: string;
-        clienteDocumento?: string;
+        series?: string;
+        number?: number | string;
+        type?: string;
+        sunatStatus?: string;
+        customerName?: string;
+        customerRuc?: string;
         subtotal?: number;
         igv?: number;
         total?: number;
-        items?: number;
-        sunatResponse?: string;
+        errorMessage?: string | null;
         pdfUrl?: string | null;
         createdAt?: string;
       }>;
+      const TYPE_MAP: Record<string, DocType> = {
+        factura: "factura",
+        nota_credito: "nota-credito",
+        "nota-credito": "nota-credito",
+        nota_debito: "nota-debito",
+        "nota-debito": "nota-debito",
+        boleta: "boleta",
+      };
+      const STATUS_MAP: Record<string, DocStatus> = {
+        pending: "pendiente",
+        accepted: "aceptado",
+        rejected: "rechazado",
+        voided: "anulado",
+      };
       const mapped: EDocument[] = invoices.map(inv => ({
         id: inv.id,
-        serie: inv.serie || (inv.tipo === "factura" ? "F001" : "B001"),
-        number: inv.número || "0",
+        serie: inv.series || (inv.type === "factura" ? "F001" : "B001"),
+        number: inv.number != null ? String(inv.number) : "0",
         date: inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("es-PE") : "-",
-        type: (inv.tipo === "factura" ? "factura" : inv.tipo === "nota-credito" ? "nota-credito" : inv.tipo === "nota-debito" ? "nota-debito" : "boleta") as DocType,
-        status: (["emitido", "aceptado", "rechazado", "anulado", "pendiente"].includes(inv.status) ? inv.status : "emitido") as DocStatus,
-        clientName: inv.clienteNombre || "-",
-        clientRUC: inv.clienteDocumento || "-",
+        type: TYPE_MAP[inv.type ?? ""] ?? "boleta",
+        status: STATUS_MAP[inv.sunatStatus ?? ""] ?? "emitido",
+        clientName: inv.customerName || "-",
+        clientRUC: inv.customerRuc || "-",
         subtotal: inv.subtotal ?? 0,
         igv: inv.igv ?? 0,
         total: inv.total ?? 0,
-        items: inv.items ?? 0,
-        sunatResponse: inv.sunatResponse || "-",
+        items: 0,
+        sunatResponse: inv.errorMessage || "-",
         pdfUrl: inv.pdfUrl,
       }));
       setDocs(mapped);
-    } catch {
-      // silently fail — user sees empty state
+    } catch (e) {
+      console.error("[EInvoiceTab] no se pudo cargar comprobantes", e);
     } finally {
       setLoadingDocs(false);
     }
@@ -245,7 +263,7 @@ export default function EInvoiceTab() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[var(--accent-soft)] text-white px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
+        <div className="fixed bottom-6 right-6 z-50 bg-primary/10 text-white px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 shrink-0" /> {toast}
         </div>
       )}
@@ -441,7 +459,7 @@ export default function EInvoiceTab() {
                 href={detail.pdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-[var(--accent-soft)] text-white text-sm font-semibold hover:bg-[var(--accent-soft)] transition-colors"
+                className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-primary/10 text-white text-sm font-semibold hover:bg-primary/10 transition-colors"
               >
                 <Download className="h-4 w-4" /> Descargar PDF
               </a>
@@ -467,8 +485,7 @@ export default function EInvoiceTab() {
 
             <div className="space-y-3">
               {/* Tipo de comprobante */}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Tipo de comprobante</label>
+              <Field label="Tipo de comprobante" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                 <select
                   value={emitForm.tipoDoc}
                   onChange={e => setEmitForm(f => f && { ...f, tipoDoc: e.target.value as "01" | "03" })}
@@ -477,34 +494,31 @@ export default function EInvoiceTab() {
                   <option value="03">Boleta (B001)</option>
                   <option value="01">Factura (F001)</option>
                 </select>
-              </div>
+              </Field>
 
               {/* ID del pedido */}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">ID del pedido</label>
+              <Field label="ID del pedido" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                 <input
                   value={emitForm.orderId}
                   onChange={e => setEmitForm(f => f && { ...f, orderId: e.target.value })}
                   placeholder="ej. cm3abc123..."
                   className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 />
-              </div>
+              </Field>
 
               {/* Nombre del cliente */}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Nombre del cliente</label>
+              <Field label="Nombre del cliente" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                 <input
                   value={emitForm.clienteNombre}
                   onChange={e => setEmitForm(f => f && { ...f, clienteNombre: e.target.value })}
                   placeholder="Nombre o razón social"
                   className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 />
-              </div>
+              </Field>
 
               {/* DNI o RUC según tipo */}
               {emitForm.tipoDoc === "03" ? (
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">DNI <span className="font-normal">(opcional)</span></label>
+                <Field label={<>DNI <span className="font-normal">(opcional)</span></>} labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                   <input
                     value={emitForm.clienteDni}
                     onChange={e => setEmitForm(f => f && { ...f, clienteDni: e.target.value })}
@@ -512,10 +526,9 @@ export default function EInvoiceTab() {
                     maxLength={8}
                     className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                   />
-                </div>
+                </Field>
               ) : (
-                <div>
-                  <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">RUC</label>
+                <Field label="RUC" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                   <input
                     value={emitForm.clienteRuc}
                     onChange={e => setEmitForm(f => f && { ...f, clienteRuc: e.target.value })}
@@ -523,19 +536,18 @@ export default function EInvoiceTab() {
                     maxLength={11}
                     className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                   />
-                </div>
+                </Field>
               )}
 
               {/* Dirección */}
-              <div>
-                <label className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">Dirección <span className="font-normal">(opcional)</span></label>
+              <Field label={<>Dirección <span className="font-normal">(opcional)</span></>} labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
                 <input
                   value={emitForm.clienteDireccion}
                   onChange={e => setEmitForm(f => f && { ...f, clienteDireccion: e.target.value })}
                   placeholder="Av. Centenario 123, Pucallpa"
                   className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 />
-              </div>
+              </Field>
             </div>
 
             {emitError && (

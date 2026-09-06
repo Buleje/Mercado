@@ -1,5 +1,9 @@
 import { Suspense } from "react";
 import SuperAdminMessenger from "@/components/superadmin/chat/SuperAdminMessenger";
+import {
+  SuperAdminModuleTabs,
+  COMUNICACION_TABS,
+} from "@/components/superadmin/_shared/ModuleTabs";
 
 export const metadata = {
   title: "Chat — Platform Admin | Buleje",
@@ -11,8 +15,11 @@ export const metadata = {
 // Suspense: SuperAdminMessenger usa useSearchParams (deep-link ?tenant/?c).
 export default function SuperAdminChatPage() {
   return (
-    <Suspense fallback={null}>
-      <SuperAdminMessenger />
-    </Suspense>
+    <>
+      <SuperAdminModuleTabs tabs={COMUNICACION_TABS} />
+      <Suspense fallback={null}>
+        <SuperAdminMessenger />
+      </Suspense>
+    </>
   );
 }

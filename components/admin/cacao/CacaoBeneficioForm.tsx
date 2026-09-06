@@ -18,9 +18,9 @@ const I = "w-full h-11 rounded-lg border border-[var(--rule-base)] bg-[var(--sur
 const FERM_LABEL: Record<string, string> = { cajon: "Cajón", saco: "Saco", monton: "Montón", tina: "Tina" };
 const SEC_LABEL: Record<string, string> = { solar: "Solar", tunel: "Túnel", mecanico: "Mecánico" };
 const ESTADO_CFG: Record<string, { label: string; cls: string }> = {
-  fermentando: { label: "Fermentando", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]" },
-  secando: { label: "Secando", cls: "bg-[var(--data-info-100)] text-[var(--data-info-900)]" },
-  terminado: { label: "Terminado", cls: "bg-[var(--data-success-100)] text-[var(--data-success-900)]" },
+  fermentando: { label: "Fermentando", cls: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" },
+  secando: { label: "Secando", cls: "bg-[var(--data-info-100)] text-[var(--data-info-700)]" },
+  terminado: { label: "Terminado", cls: "bg-[var(--data-success-100)] text-[var(--data-success-700)]" },
 };
 
 export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
@@ -91,11 +91,18 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
   const est = ESTADO_CFG[estado];
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="!max-w-[940px]">
+    <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="!max-w-[940px]"
+      footer={
+        <div className="flex items-center justify-end gap-2 px-5 py-3.5">
+          <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button type="submit" form="cacao-beneficio-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar beneficio"}</button>
+        </div>
+      }
+    >
       <div className="flex h-full max-h-[90vh] flex-col bg-[var(--surface-raised)]">
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"><Droplets className="h-5 w-5" strokeWidth={1.75} /></span>
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Droplets className="h-5 w-5" strokeWidth={1.75} /></span>
             <div><CardTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">Beneficio del lote</CardTitle><p className="text-xs text-[var(--text-tertiary)]">Fermentación + secado · estado y merma al vuelo</p></div>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-lg p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"><X className="h-4 w-4" /></button>
@@ -107,7 +114,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
               {error && <div className="rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">{error}</div>}
 
               {/* Picker de lote */}
-              <div className="space-y-2 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-3">
+              <div className="space-y-2 rounded-xl border border-[var(--accent)]/30 bg-primary/10 p-3">
                 <span className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]"><Leaf className="h-3.5 w-3.5" />Lote a beneficiar</span>
                 {loteCode && <div className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Check className="h-4 w-4 text-[var(--accent)]" /> {loteCode}</div>}
                 <div className="relative"><Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" /><input value={lq} onChange={(e) => setLq(e.target.value)} placeholder="Buscar lote…" className={`${I} h-9 pl-8`} /></div>
@@ -115,7 +122,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
                   {loadingL ? <div className="flex items-center gap-2 px-3 py-3 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</div>
                     : filtered.length === 0 ? <div className="px-3 py-3 text-center text-sm text-[var(--text-tertiary)]">Sin lotes pendientes de beneficio. Registrá un acopio primero (o escribí el código abajo).</div>
                     : filtered.map((l) => (
-                      <button key={l.id} type="button" onClick={() => pick(l)} className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-[var(--accent-soft)]/60 ${loteId === l.id ? "bg-[var(--accent-soft)]/60" : ""}`}>
+                      <button key={l.id} type="button" onClick={() => pick(l)} className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-primary/10 ${loteId === l.id ? "bg-primary/10" : ""}`}>
                         <span className="truncate"><span className="font-mono text-xs font-bold text-[var(--text-primary)]">{l.loteCode}</span> <span className="text-[var(--text-secondary)]">{l.variedad ?? ""}</span></span>
                         <span className="shrink-0 text-xs text-[var(--text-tertiary)]">{Number(l.pesoKg).toFixed(0)} kg {l.tipoGrano === "humedo" ? "húmedo" : "seco"}</span>
                       </button>
@@ -140,7 +147,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
                   <Field label="Días"><input type="number" value={secDias} onChange={(e) => setSecDias(e.target.value)} placeholder="7" className={`${I} font-mono tabular-nums`} /></Field>
                   <Field label="Método"><select value={metodoSecado} onChange={(e) => setMetodo(e.target.value)} className={I}><option value="">—</option>{CACAO_SECADO.map((s) => <option key={s} value={s}>{SEC_LABEL[s]}</option>)}</select></Field>
                   <Field label="Humedad inicial %"><input type="number" step="0.1" value={humedadInicial} onChange={(e) => setHumIni(e.target.value)} placeholder="55" className={`${I} font-mono tabular-nums`} /></Field>
-                  <Field label="Humedad final %"><input type="number" step="0.1" value={humedadFinal} onChange={(e) => setHumFin(e.target.value)} placeholder="7.0" className={`${I} font-mono tabular-nums ${humOk === false ? "border-[var(--data-warning-400)]" : ""}`} /></Field>
+                  <Field label="Humedad final %"><input type="number" step="0.1" value={humedadFinal} onChange={(e) => setHumFin(e.target.value)} placeholder="7.0" className={`${I} font-mono tabular-nums ${humOk === false ? "border-[var(--data-warning-500)]" : ""}`} /></Field>
                 </div>
               </Section>
 
@@ -159,7 +166,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
 
               <div className="flex items-center justify-between">
                 <span className={`inline-flex rounded-full px-3 py-1.5 text-base font-extrabold ${est.cls}`}>{est.label}</span>
-                {humedadFinal && <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${humOk ? "bg-[var(--data-success-100)] text-[var(--data-success-900)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-900)]"}`}><Droplets className="h-3.5 w-3.5" />{Number(humedadFinal).toFixed(1)}%</span>}
+                {humedadFinal && <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${humOk ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"}`}><Droplets className="h-3.5 w-3.5" />{Number(humedadFinal).toFixed(1)}%</span>}
               </div>
 
               <div className="mt-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
@@ -191,10 +198,6 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
           </div>
         </div>
 
-        <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-3.5">
-          <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="submit" form="cacao-beneficio-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar beneficio"}</button>
-        </footer>
       </div>
     </AdminModal>
   );
@@ -205,7 +208,7 @@ function Section({ icon: Icon, title, hint, children }: { icon: typeof Leaf; tit
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--surface-sunken)] text-[var(--accent)]"><Icon className="h-4 w-4" /></span>
-        <h3 className="text-sm font-bold text-[var(--text-primary)]">{title}</h3>
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{title}</CardTitle>
         {hint && <span className="text-xs text-[var(--text-tertiary)]">· {hint}</span>}
       </div>
       {children}

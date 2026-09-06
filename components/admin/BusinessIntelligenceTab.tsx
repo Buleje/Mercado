@@ -1,80 +1,86 @@
 "use client";
 
-import { CardTitle, PageTitle } from "@buleje/design-system";
-import { useState, useMemo } from "react";
+import { CardTitle, LoadingState, PageTitle } from "@buleje/design-system";
+import { useEffect, useState } from "react";
 import {
-  Brain, Download, TrendingUp, TrendingDown, AlertTriangle,
-  Target, BarChart3, ArrowUpRight, ArrowDownRight,
+  Brain, Download, TrendingUp, AlertTriangle,
+  Target, ArrowUpRight, ArrowDownRight, Package, Calendar, Clock,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import type { Anomalia } from "@/app/api/analytics/anomalias/route";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Trend = "up" | "down" | "stable";
-type ForecastPeriod = "7d" | "30d" | "90d";
+/** Tarjeta de KPI: `pct` sólo cuando el endpoint trae comparación vs. período
+ *  anterior (ingresos/ticket/transacciones/margen la traen; fiado pendiente y
+ *  stock crítico no — se muestran con `caption` en vez de inventar un % que
+ *  el backend no calcula). */
+type KpiCard = { label: string; value: string; pct?: number; caption?: string };
 
-type CategoryTrend = {
-  category: string;
-  currentSales: number;
-  previousSales: number;
-  trend: Trend;
-  growthPct: number;
-  topProduct: string;
+type KpisResponse = {
+  ingresosHoy: { valor: number; cambio: number };
+  ticketPromedio: { valor: number; cambio: number };
+  transaccionesHoy: { valor: number; cambio: number };
+  margenOperativo: { valor: number; cambio: number };
+  fiadoPendiente: { valor: number; count: number };
+  stockCritico: { valor: number };
 };
 
-type KPI = {
-  label: string;
-  value: string;
-  prevValue: string;
-  trend: Trend;
-  pct: number;
-};
-
-type Anomaly = {
-  id: string;
-  date: string;
-  type: "spike" | "drop" | "unusual";
-  description: string;
-  severity: "alta" | "media" | "baja";
-  metric: string;
-  value: number;
-  expected: number;
-};
-
-type Forecast = {
-  period: ForecastPeriod;
-  predictedRevenue: number;
-  confidenceLow: number;
-  confidenceHigh: number;
-  predictedOrders: number;
-  avgTicket: number;
+type Predictions = {
+  salesForecast: number;
+  trendPct: number;
+  stockRisk: { id: string; name: string }[];
+  bestPurchaseDay: { day: string; reason: string };
+  peakHour: { hour: number; label: string };
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
 
-// ── Seed Data ─────────────────────────────────────────────────────────────────
+function kpisATarjetas(k: KpisResponse): KpiCard[] {
+  return [
+    { label: "Ingresos hoy", value: fmt(k.ingresosHoy.valor), pct: k.ingresosHoy.cambio },
+    { label: "Ticket promedio", value: fmt(k.ticketPromedio.valor), pct: k.ticketPromedio.cambio },
+    { label: "Transacciones hoy", value: String(k.transaccionesHoy.valor), pct: k.transaccionesHoy.cambio },
+    { label: "Margen operativo", value: `${k.margenOperativo.valor.toFixed(1)}%`, pct: k.margenOperativo.cambio },
+    { label: "Fiado pendiente", value: fmt(k.fiadoPendiente.valor), caption: `${k.fiadoPendiente.count} cuenta${k.fiadoPendiente.count === 1 ? "" : "s"}` },
+    { label: "Stock crítico", value: String(k.stockCritico.valor), caption: "producto(s) bajo el mínimo" },
+  ];
+}
 
-const KPIS: KPI[] = [];
-
-const CATEGORY_TRENDS: CategoryTrend[] = [];
-
-const ANOMALIES: Anomaly[] = [];
-
-const FORECASTS: Record<ForecastPeriod, Forecast> = {
-  "7d":  { period: "7d",  predictedRevenue: 17150, confidenceLow: 15400, confidenceHigh: 18900, predictedOrders: 445, avgTicket: 38.5 },
-  "30d": { period: "30d", predictedRevenue: 73500, confidenceLow: 65200, confidenceHigh: 81800, predictedOrders: 1910, avgTicket: 38.5 },
-  "90d": { period: "90d", predictedRevenue: 225000, confidenceLow: 196000, confidenceHigh: 254000, predictedOrders: 5845, avgTicket: 38.5 },
+const SEV_META: Record<Anomalia["severity"], { bg: string; text: string }> = {
+  alto: { bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border-[var(--data-error-500)]/30 dark:border-[var(--data-error-500)]/30", text: "text-[var(--data-error-500)]" },
+  medio: { bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15 border-[var(--data-warning-500)]/30 dark:border-[var(--data-warning-500)]/30", text: "text-[var(--data-warning-500)]" },
+  bajo: { bg: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30", text: "text-[var(--data-success-500)]" },
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function BusinessIntelligenceTab() {
-  const [forecastPeriod, setForecastPeriod] = useState<ForecastPeriod>("30d");
-  const forecast = FORECASTS[forecastPeriod];
+  const [kpis, setKpis] = useState<KpiCard[] | null>(null);
+  const [anomalias, setAnomalias] = useState<Anomalia[] | null>(null);
+  const [predictions, setPredictions] = useState<Predictions | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const sortedTrends = useMemo(() => [...CATEGORY_TRENDS].sort((a, b) => b.growthPct - a.growthPct), []);
+  useEffect(() => {
+    const ac = new AbortController();
+    Promise.all([
+      fetch("/api/analytics/kpis", { credentials: "include", signal: ac.signal }).then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/analytics/anomalias", { credentials: "include", signal: ac.signal }).then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/analytics/predictions", { credentials: "include", signal: ac.signal }).then((r) => (r.ok ? r.json() : null)),
+    ])
+      .then(([k, a, p]) => {
+        if (k) setKpis(kpisATarjetas(k as KpisResponse));
+        if (a) setAnomalias((a.anomalias ?? []) as Anomalia[]);
+        if (p) setPredictions(p as Predictions);
+      })
+      .catch((e) => { if ((e as Error).name !== "AbortError") { setKpis([]); setAnomalias([]); } })
+      .finally(() => { if (!ac.signal.aborted) setLoading(false); });
+    return () => ac.abort();
+  }, []);
+
+  if (loading) return <LoadingState />;
 
   return (
     <div className="space-y-3 sm:space-y-6">
@@ -83,100 +89,89 @@ export default function BusinessIntelligenceTab() {
           <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Brain className="h-6 w-6 text-primary" /> Business Intelligence
           </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Proyecciones, tendencias, anomalías y KPIs clave</p>
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">KPIs, proyección de ventas y alertas de anomalías</p>
         </div>
-        <button onClick={() => exportToCSV(CATEGORY_TRENDS.map(t => ({ categoria: t.category, ventas_actual: t.currentSales, ventas_anterior: t.previousSales, crecimiento: t.growthPct + "%", top_producto: t.topProduct })), "bi-tendencias")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
-          <Download className="h-4 w-4" /> Exportar
-        </button>
+        {kpis && kpis.length > 0 && (
+          <button onClick={() => exportToCSV(kpis.map(k => ({ kpi: k.label, valor: k.value, cambio: k.pct != null ? `${k.pct}%` : k.caption ?? "" })), "bi-kpis")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+            <Download className="h-4 w-4" /> Exportar
+          </button>
+        )}
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {KPIS.map(kpi => (
-          <div key={kpi.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
-            <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{kpi.label}</p>
-            <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{kpi.value}</p>
-            <div className="flex items-center gap-1 mt-1">
-              {kpi.trend === "up" ? <ArrowUpRight className="h-3 w-3 text-[var(--data-success-500)]" /> : <ArrowDownRight className="h-3 w-3 text-[var(--data-error-500)]" />}
-              <span className={cn("text-xs font-bold", kpi.trend === "up" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{kpi.pct > 0 ? "+" : ""}{kpi.pct}%</span>
-              <span className="text-xs text-[var(--text-tertiary)] ml-1">vs. antes</span>
+      {kpis && kpis.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {kpis.map(kpi => (
+            <div key={kpi.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">{kpi.label}</p>
+              <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{kpi.value}</p>
+              <div className="flex items-center gap-1 mt-1">
+                {kpi.pct != null ? (
+                  <>
+                    {kpi.pct >= 0 ? <ArrowUpRight className="h-3 w-3 text-[var(--data-success-500)]" /> : <ArrowDownRight className="h-3 w-3 text-[var(--data-error-500)]" />}
+                    <span className={cn("text-xs font-bold", kpi.pct >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{kpi.pct > 0 ? "+" : ""}{kpi.pct}%</span>
+                    <span className="text-xs text-[var(--text-tertiary)] ml-1">vs. antes</span>
+                  </>
+                ) : (
+                  <span className="text-xs text-[var(--text-tertiary)]">{kpi.caption}</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Forecast — próxima semana, dato real (/api/analytics/predictions) */}
+      {predictions && (
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5">
+          <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-4"><Target className="h-4 w-4 text-primary" /> Proyección de ventas — próximos 7 días</CardTitle>
+          <div className="flex flex-wrap items-baseline gap-3 mb-4">
+            <p className="text-2xl font-extrabold text-primary">{fmt(predictions.salesForecast)}</p>
+            <span className={cn("inline-flex items-center gap-1 text-xs font-bold", predictions.trendPct >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
+              <TrendingUp className="h-3 w-3" /> {predictions.trendPct > 0 ? "+" : ""}{predictions.trendPct}% vs. promedio de 4 semanas
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2">
+              <Package className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
+              <p className="text-xs text-[var(--text-secondary)]">{predictions.stockRisk.length} producto(s) en riesgo de agotarse en 7 días</p>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2">
+              <Calendar className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-xs text-[var(--text-secondary)]">Mejor día para comprar: <b>{predictions.bestPurchaseDay.day}</b></p>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 py-2">
+              <Clock className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-xs text-[var(--text-secondary)]">Hora pico: <b>{predictions.peakHour.label}</b></p>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Forecast */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5">
-        <div className="flex items-center justify-between mb-4">
-          <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Target className="h-4 w-4 text-primary" /> Proyección de ventas</CardTitle>
-          <div className="flex flex-wrap gap-1">
-            {(["7d", "30d", "90d"] as ForecastPeriod[]).map(p => (
-              <button key={p} onClick={() => setForecastPeriod(p)} className={cn("px-3 py-1 rounded-lg text-xs font-bold transition-colors", forecastPeriod === p ? "bg-primary text-white" : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] dark:hover:bg-accent")}>{p === "7d" ? "7 días" : p === "30d" ? "30 días" : "90 días"}</button>
-            ))}
-          </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-          <div><p className="text-xs text-[var(--text-tertiary)] mb-1">Ingresos proyectados</p><p className="text-xl font-extrabold text-primary">{fmt(forecast.predictedRevenue)}</p></div>
-          <div><p className="text-xs text-[var(--text-tertiary)] mb-1">Rango confianza</p><p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(forecast.confidenceLow)} – {fmt(forecast.confidenceHigh)}</p></div>
-          <div><p className="text-xs text-[var(--text-tertiary)] mb-1">Pedidos esperados</p><p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{forecast.predictedOrders.toLocaleString()}</p></div>
-          <div><p className="text-xs text-[var(--text-tertiary)] mb-1">Ticket promedio</p><p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(forecast.avgTicket)}</p></div>
-        </div>
-        {/* Confidence bar */}
-        <div className="mt-4 relative h-6 bg-[var(--surface-sunken)] dark:bg-surface rounded-full overflow-hidden">
-          <div className="absolute inset-y-0 bg-primary/20 rounded-full" style={{ left: `${(forecast.confidenceLow / forecast.confidenceHigh) * 100 * 0.5}%`, right: `${100 - 95}%` }} />
-          <div className="absolute inset-y-0 left-0 bg-primary/60 rounded-full" style={{ width: `${(forecast.predictedRevenue / forecast.confidenceHigh) * 100}%` }} />
-          <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(forecast.predictedRevenue)}</span>
-        </div>
-      </div>
-
-      {/* Category Trends */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5">
-        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-4"><BarChart3 className="h-4 w-4 text-primary" /> Tendencias por categoría</CardTitle>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead><tr className="text-left text-xs font-bold text-[var(--text-tertiary)]"><th className="py-2 pr-4">Categoría</th><th className="py-2 pr-4">Ventas actual</th><th className="py-2 pr-4">Ventas anterior</th><th className="py-2 pr-4">Crecimiento</th><th className="py-2">Top producto</th></tr></thead>
-            <tbody>
-              {sortedTrends.map(t => (
-                <tr key={t.category} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                  <td className="py-2.5 pr-4 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{t.category}</td>
-                  <td className="py-2.5 pr-4 text-[var(--text-secondary)] dark:text-muted">{fmt(t.currentSales)}</td>
-                  <td className="py-2.5 pr-4 text-[var(--text-tertiary)]">{fmt(t.previousSales)}</td>
-                  <td className="py-2.5 pr-4">
-                    <span className={cn("font-bold flex items-center gap-1", t.growthPct >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
-                      {t.growthPct >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                      {t.growthPct > 0 ? "+" : ""}{t.growthPct}%
-                    </span>
-                  </td>
-                  <td className="py-2.5 text-[var(--text-secondary)] dark:text-muted">{t.topProduct}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
 
       {/* Anomaly alerts */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5">
-        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-4"><AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" /> Alertas de anomalías</CardTitle>
-        <div className="space-y-2">
-          {ANOMALIES.map(a => {
-            const sevMeta = { alta: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50", media: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50", baja: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" };
-            const sevColor = { alta: "text-[var(--data-error-500)]", media: "text-[var(--data-warning-500)]", baja: "text-[var(--data-success-500)]" };
-            return (
-              <div key={a.id} className={cn("rounded-xl p-3 border", sevMeta[a.severity])}>
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.description}</p>
-                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{a.metric} · {a.date}</p>
+      {anomalias && (
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5">
+          <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-4"><AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" /> Alertas de anomalías {anomalias.length > 0 && `(${anomalias.length})`}</CardTitle>
+          {anomalias.length === 0 ? (
+            <p className="text-sm text-[var(--text-tertiary)]">Sin anomalías detectadas — todo marcha bien.</p>
+          ) : (
+            <div className="space-y-2">
+              {anomalias.map((a, i) => (
+                <div key={`${a.type}-${i}`} className={cn("rounded-xl p-3 border", SEV_META[a.severity].bg)}>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.title}</p>
+                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{a.body}</p>
+                    </div>
+                    <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full shrink-0", SEV_META[a.severity].text)}>{a.severity}</span>
                   </div>
-                  <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", sevColor[a.severity])}>{a.severity}</span>
+                  <a href={a.actionUrl} className="mt-1.5 inline-block text-xs font-bold text-primary hover:underline">{a.actionLabel} →</a>
                 </div>
-                <div className="text-xs text-[var(--text-secondary)] mt-1">Valor: <b>{a.value.toLocaleString()}</b> (esperado: {a.expected.toLocaleString()})</div>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

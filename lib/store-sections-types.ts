@@ -22,7 +22,18 @@ export type SectionType =
   | "faq"
   | "benefits"
   | "gallery"
-  | "image-text";
+  | "image-text"
+  // Bloques nuevos (Brandon 2026-06-27 · #2)
+  | "cta"
+  | "video"
+  | "map"
+  | "logos"
+  | "countdown"
+  // Lote A (Brandon 2026-06-27)
+  | "team"
+  | "social"
+  // Lote B (Brandon 2026-06-27)
+  | "categories";
 
 export interface SectionBase {
   id: string;
@@ -93,6 +104,8 @@ export interface FaqSection extends SectionBase {
       question: string;
       answer: string;
     }>;
+    /** Lote J (Brandon 2026-06-27): accordion (colapsable) o lista abierta. */
+    layout?: "accordion" | "open";
   };
 }
 
@@ -120,6 +133,8 @@ export interface GallerySection extends SectionBase {
       alt?: string;
       caption?: string;
     }>;
+    /** Lote I (Brandon 2026-06-27): columnas del grid. Default = auto por cantidad. */
+    columns?: 2 | 3 | 4;
   };
 }
 
@@ -131,11 +146,99 @@ export interface ImageTextSection extends SectionBase {
     body: string;
     imageUrl: string;
     imageAlt?: string;
-    /** Lado de la imagen — left | right. */
-    imagePosition: "left" | "right";
+    /** Lado de la imagen — left | right | top | bottom (Lote I). */
+    imagePosition: "left" | "right" | "top" | "bottom";
+    /** Proporción imagen/texto en layout horizontal (Lote V #2.4). Default 50/50. */
+    imageRatio?: "30/70" | "40/60" | "50/50" | "60/40" | "70/30";
+    /** Fondo del bloque — claro | marca (gradiente primary→accent) | oscuro. */
+    background?: "light" | "brand" | "dark";
+    /** Etiqueta superior (eyebrow) editable. */
+    eyebrow?: string;
     /** CTA opcional. */
     ctaLabel?: string;
     ctaUrl?: string;
+  };
+}
+
+// ── Banner CTA grande ──────────────────────────────────────────────────
+export interface CtaSection extends SectionBase {
+  type: "cta";
+  data: {
+    title: string;
+    subtitle?: string;
+    buttonLabel: string;
+    buttonUrl: string;
+    /** Fondo del bloque — marca (gradiente), oscuro o claro. */
+    background?: "brand" | "dark" | "light";
+  };
+}
+
+// ── Video (YouTube o MP4) ──────────────────────────────────────────────
+export interface VideoSection extends SectionBase {
+  type: "video";
+  data: {
+    title?: string;
+    subtitle?: string;
+    /** URL de YouTube (watch/youtu.be) o archivo .mp4. */
+    videoUrl: string;
+  };
+}
+
+// ── Mapa de ubicación ──────────────────────────────────────────────────
+export interface MapSection extends SectionBase {
+  type: "map";
+  data: {
+    title?: string;
+    address: string;
+  };
+}
+
+// ── Franja de logos / marcas ───────────────────────────────────────────
+export interface LogosSection extends SectionBase {
+  type: "logos";
+  data: {
+    title?: string;
+    logos: Array<{ url: string; alt?: string }>;
+  };
+}
+
+// ── Contador de oferta (countdown) ─────────────────────────────────────
+export interface CountdownSection extends SectionBase {
+  type: "countdown";
+  data: {
+    title: string;
+    subtitle?: string;
+    /** ISO date string (fin de la oferta). */
+    endsAt: string;
+  };
+}
+
+// ── Nuestro equipo ─────────────────────────────────────────────────────
+export interface TeamSection extends SectionBase {
+  type: "team";
+  data: {
+    title: string;
+    subtitle?: string;
+    members: Array<{ name: string; role?: string; photo?: string }>;
+  };
+}
+
+// ── Redes sociales ─────────────────────────────────────────────────────
+export interface SocialSection extends SectionBase {
+  type: "social";
+  data: {
+    title?: string;
+    links: Array<{ platform: "instagram" | "facebook" | "tiktok" | "whatsapp" | "web"; url: string }>;
+  };
+}
+
+// ── Categorías visual (grid de tarjetas con imagen) ────────────────────
+export interface CategoriesSection extends SectionBase {
+  type: "categories";
+  data: {
+    title: string;
+    subtitle?: string;
+    items: Array<{ name: string; image?: string; url?: string }>;
   };
 }
 
@@ -147,7 +250,15 @@ export type Section =
   | FaqSection
   | BenefitsSection
   | GallerySection
-  | ImageTextSection;
+  | ImageTextSection
+  | CtaSection
+  | VideoSection
+  | MapSection
+  | LogosSection
+  | CountdownSection
+  | TeamSection
+  | SocialSection
+  | CategoriesSection;
 
 // ── Plantillas pre-armadas con copy real ───────────────────────────────
 
@@ -353,8 +464,135 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
         imageUrl: "",
         imageAlt: "Foto del negocio",
         imagePosition: "right",
+        background: "brand",
+        eyebrow: "Nuestra historia",
         ctaLabel: "Conocenos más",
         ctaUrl: "",
+      },
+    }),
+  },
+  // ── Bloques nuevos (Brandon 2026-06-27 · #2) ──────────────────────────
+  {
+    type: "cta",
+    label: "Banner de acción",
+    emoji: "🎯",
+    description: "Una franja grande con un mensaje y un botón — ideal para 'Pedí ahora' o una promo.",
+    tag: "operaciones",
+    create: () => ({
+      type: "cta",
+      visible: true,
+      data: {
+        title: "¿Listo para tu pedido?",
+        subtitle: "Escribinos y te atendemos al toque.",
+        buttonLabel: "Pedir ahora",
+        buttonUrl: "",
+        background: "brand",
+      },
+    }),
+  },
+  {
+    type: "video",
+    label: "Video",
+    emoji: "🎬",
+    description: "Mostrá un video de YouTube o un .mp4 — tu local, cómo cocinás, una reseña.",
+    tag: "informacion",
+    create: () => ({
+      type: "video",
+      visible: true,
+      data: { title: "Mirá nuestro video", subtitle: "", videoUrl: "" },
+    }),
+  },
+  {
+    type: "map",
+    label: "Mapa de ubicación",
+    emoji: "📍",
+    description: "Un mapa con tu dirección para que te encuentren fácil.",
+    tag: "informacion",
+    create: () => ({
+      type: "map",
+      visible: true,
+      data: { title: "Dónde estamos", address: "" },
+    }),
+  },
+  {
+    type: "logos",
+    label: "Marcas / logos",
+    emoji: "🏷️",
+    description: "Franja con logos de marcas que vendés o aliados — genera confianza.",
+    tag: "trust",
+    create: () => ({
+      type: "logos",
+      visible: true,
+      data: { title: "Trabajamos con", logos: [] },
+    }),
+  },
+  {
+    type: "countdown",
+    label: "Cuenta regresiva",
+    emoji: "⏳",
+    description: "Un contador hasta el fin de una oferta — crea urgencia.",
+    tag: "operaciones",
+    create: () => ({
+      type: "countdown",
+      visible: true,
+      data: { title: "¡Oferta por tiempo limitado!", subtitle: "", endsAt: "" },
+    }),
+  },
+  // ── Lote A (Brandon 2026-06-27) ──────────────────────────────────────
+  {
+    type: "team",
+    label: "Nuestro equipo",
+    emoji: "👥",
+    description: "Mostrá las caras del negocio: foto, nombre y rol. Genera cercanía.",
+    tag: "trust",
+    create: () => ({
+      type: "team",
+      visible: true,
+      data: {
+        title: "Nuestro equipo",
+        subtitle: "Las personas detrás de la atención",
+        members: [
+          { name: "Nombre Apellido", role: "Dueño/a", photo: "" },
+          { name: "Nombre Apellido", role: "Atención", photo: "" },
+        ],
+      },
+    }),
+  },
+  {
+    type: "social",
+    label: "Redes sociales",
+    emoji: "📲",
+    description: "Links grandes a tus redes para que te sigan.",
+    tag: "soporte",
+    create: () => ({
+      type: "social",
+      visible: true,
+      data: {
+        title: "Seguinos en redes",
+        links: [
+          { platform: "instagram", url: "" },
+          { platform: "facebook", url: "" },
+        ],
+      },
+    }),
+  },
+  {
+    type: "categories",
+    label: "Categorías visual",
+    emoji: "🗂️",
+    description: "Grid de categorías con imagen de fondo — atajos visuales a tu catálogo.",
+    tag: "operaciones",
+    create: () => ({
+      type: "categories",
+      visible: true,
+      data: {
+        title: "Explorá por categoría",
+        subtitle: "",
+        items: [
+          { name: "Categoría 1", image: "", url: "" },
+          { name: "Categoría 2", image: "", url: "" },
+          { name: "Categoría 3", image: "", url: "" },
+        ],
       },
     }),
   },

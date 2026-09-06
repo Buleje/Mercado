@@ -6,11 +6,14 @@
  * Bar chart horizontal con volumen total por especie (validado + procesado).
  * Sin librería externa (recharts/chart.js) — bars CSS puros para 0 bundle.
  *
- * Filtro temporal: hoy / 7d / 30d / 90d / año / all.
+ * El período lo manda el módulo (`CtpPeriodPicker`): tenía un selector propio
+ * (7d/30d/90d…) que podía decir "últimos 30 días" mientras la pestaña mostraba
+ * otro rango. Un solo control = un solo período para todo el libro.
  */
-import { useEffect, useMemo, useState } from "react";
-import { BarChart3, Loader2, RefreshCw, AlertCircle } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { BarChart3, RefreshCw, AlertCircle } from "@buleje/design-system/icons";
+import { CardTitle, LoadingState } from "@buleje/design-system";
+import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 
 interface Aggregate {
   species: string;
@@ -26,41 +29,16 @@ interface AggregateResponse {
   generated_at: string;
 }
 
-type Period = "7d" | "30d" | "90d" | "year" | "all";
-
-const PERIOD_LABEL: Record<Period, string> = {
-  "7d": "Últimos 7 días",
-  "30d": "Últimos 30 días",
-  "90d": "Últimos 90 días",
-  year: "Este año",
-  all: "Todo el histórico",
-};
-
-function dateRangeForPeriod(p: Period): { from?: string; to?: string } {
-  if (p === "all") return {};
-  const now = new Date();
-  const days = p === "7d" ? 7 : p === "30d" ? 30 : p === "90d" ? 90 : 365;
-  const from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-  return {
-    from: from.toISOString().slice(0, 10),
-    to: now.toISOString().slice(0, 10),
-  };
-}
-
-export default function SpeciesAggregateChart() {
-  const [period, setPeriod] = useState<Period>("30d");
+export default function SpeciesAggregateChart({ period }: { period: CtpPeriod }) {
   const [data, setData] = useState<AggregateResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { from, to } = dateRangeForPeriod(period);
-      const params = new URLSearchParams();
-      if (from) params.set("from", from);
-      if (to) params.set("to", to);
+      const params = applyCtpPeriodParams(new URLSearchParams(), period);
       const res = await fetch(
         `/api/admin/forestal/wood-entries/aggregate?${params.toString()}`,
         { credentials: "include" },
@@ -75,12 +53,11 @@ export default function SpeciesAggregateChart() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [period]);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period]);
+    void load();
+  }, [load]);
 
   const maxVolume = useMemo(() => {
     if (!data?.aggregates?.length) return 0;
@@ -93,24 +70,13 @@ export default function SpeciesAggregateChart() {
     <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-[var(--brand-ink)]" />
+          <BarChart3 className="h-5 w-5 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" />
           <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">
-            Volumen por especie ({PERIOD_LABEL[period]})
+            Volumen por especie · {period.label}
           </CardTitle>
         </div>
 
         <div className="flex items-center gap-2">
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value as Period)}
-            className="h-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none"
-          >
-            <option value="7d">Últimos 7 días</option>
-            <option value="30d">Últimos 30 días</option>
-            <option value="90d">Últimos 90 días</option>
-            <option value="year">Este año</option>
-            <option value="all">Todo el histórico</option>
-          </select>
           <button
             type="button"
             onClick={load}
@@ -149,9 +115,7 @@ export default function SpeciesAggregateChart() {
       {/* Bar chart horizontal */}
       <div className="space-y-2">
         {loading && !data && (
-          <div className="flex items-center justify-center py-10 text-[var(--text-tertiary)]">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
+          <LoadingState message={null} className="py-10" />
         )}
 
         {!loading && top.length === 0 && (

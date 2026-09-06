@@ -133,6 +133,8 @@ export const PLAN_BASICO: PlanDefinition = {
     // Inicio (limitado: solo dashboard + asistente)
     "vendor-dashboard",
     "asistente-ia",
+    // WhatsApp del negocio (core: el bot toma pedidos 24/7 en todos los planes)
+    "whatsapp-inbox",
     // Ventas (POS + pedidos basicos)
     "ventas-caja",
     "pedidos",
@@ -148,6 +150,10 @@ export const PLAN_BASICO: PlanDefinition = {
     // Activos & Maquinaria — alquiler de equipos (forestal: cargador, oruga,
     // camión). En basico para que sea visible/usable desde el free.
     "activos",
+    // Equipo — tareas + notas de turno. Herramientas operativas internas,
+    // visibles desde el free (sin costo asociado, igual que adelantos/activos).
+    "tareas",
+    "notas",
     // Config (siempre)
     "config",
     "plan",
@@ -189,6 +195,9 @@ export const PLAN_PRO: PlanDefinition = {
     // Clientes + fiados
     "clientes",
     "fiados",
+    // Por cobrar — tablero consolidado de cuentas por cobrar (agrega fiados).
+    // Acompaña a fiados/plata en el plan Starter.
+    "por-cobrar",
     // Documentos basicos (boleta interna, no SUNAT todavia)
     "documentos",
     // Plata basico (ingresos/egresos)
@@ -197,6 +206,10 @@ export const PLAN_PRO: PlanDefinition = {
     "metas-logros",
     "support-inbox",
     "turnos",
+    // Canales de venta social (TikTok Shop + Meta pixel) — tracking/marketing
+    // básico. Desde Starter (S/89) para que el negocio que ya vende a diario
+    // pueda optimizar sus anuncios. enterprise/max lo heredan vía spread.
+    "canales",
   ]),
   features: new Set<PlanFeature>([]),
   limits: {
@@ -233,6 +246,7 @@ export const PLAN_ENTERPRISE: PlanDefinition = {
     "compras",
     "contratos",
     "devoluciones-proveedor",
+    "dropship",
     // Documentos SUNAT
     "cotizaciones",
     "guias-remision",
@@ -242,6 +256,12 @@ export const PLAN_ENTERPRISE: PlanDefinition = {
     "promociones",
     "prestamos",
     "scoring",
+    // Crecimiento (Marketing & Fidelización) — campañas segmentadas + puntos.
+    // Consistente con el highlight "Promociones, fidelizacion y chat".
+    // (Los 4 programas premium — gift cards, socio, suscripciones, lives —
+    //  siguen en Business/max.)
+    "campanas",
+    "puntos",
     // Recetas + tesoreria
     "recetas",
     "tesoreria",

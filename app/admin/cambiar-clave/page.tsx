@@ -49,7 +49,7 @@ export default function CambiarClavePage() {
     <div className="min-h-[100dvh] flex items-center justify-center bg-[var(--surface-canvas)] px-4">
       <div className="w-full max-w-md rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-xl)]">
         <div className="flex items-center gap-3 mb-1">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <ShieldCheck className="h-5 w-5" />
           </span>
           <h1 className="text-lg font-extrabold text-[var(--text-primary)]">Creá tu contraseña</h1>
@@ -79,7 +79,7 @@ export default function CambiarClavePage() {
                 {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
-            <span className={`mt-1 block text-xs ${next.length === 0 ? "text-[var(--text-tertiary)]" : strong ? "text-[var(--data-success-600,#059669)]" : "text-[var(--data-warning-600,#d97706)]"}`}>
+            <span className={`mt-1 block text-xs ${next.length === 0 ? "text-[var(--text-tertiary)]" : strong ? "text-[var(--data-success-600,#059669)]" : "text-[var(--data-warning-600,#f0503f)]"}`}>
               {next.length === 0 ? "Mínimo 10 caracteres, con letra y número o símbolo." : strong ? "Contraseña segura ✓" : "Aún débil — sumá largo o un símbolo."}
             </span>
           </label>

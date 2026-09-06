@@ -35,11 +35,11 @@ const HOURS = [6, 8, 10, 12, 14, 16, 18, 20, 22] as const;
 function getColor(value: number, max: number): string {
   if (!value || max === 0) return "bg-[var(--surface-sunken)]";
   const pct = value / max;
-  if (pct < 0.15) return "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]";
-  if (pct < 0.35) return "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]";
-  if (pct < 0.55) return "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]";
-  if (pct < 0.8) return "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)] text-white";
-  return "bg-[var(--accent-muted)] dark:bg-[var(--accent-soft)] text-white";
+  if (pct < 0.15) return "bg-primary/10 dark:bg-primary/15";
+  if (pct < 0.35) return "bg-primary/10 dark:bg-primary/10";
+  if (pct < 0.55) return "bg-primary/10 dark:bg-primary/10";
+  if (pct < 0.8) return "bg-primary/10 dark:bg-primary/10 text-white";
+  return "bg-primary/15 dark:bg-primary/10 text-white";
 }
 
 function formatHour(h: number): string {
@@ -292,11 +292,11 @@ export default function VentasHeatmap() {
         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">Menor</span>
         <div className="flex w-48 h-4 rounded-full overflow-hidden">
           <div className="flex-1 bg-[var(--surface-sunken)]" />
-          <div className="flex-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" />
-          <div className="flex-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]" />
-          <div className="flex-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]" />
-          <div className="flex-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]" />
-          <div className="flex-1 bg-[var(--accent-muted)] dark:bg-[var(--accent-soft)]" />
+          <div className="flex-1 bg-primary/10 dark:bg-primary/15" />
+          <div className="flex-1 bg-primary/10 dark:bg-primary/10" />
+          <div className="flex-1 bg-primary/10 dark:bg-primary/10" />
+          <div className="flex-1 bg-primary/10 dark:bg-primary/10" />
+          <div className="flex-1 bg-primary/15 dark:bg-primary/10" />
         </div>
         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">Mayor</span>
       </div>
@@ -326,7 +326,7 @@ export default function VentasHeatmap() {
         const bestIsQuincena = bestSlot.dow === 1 || bestSlot.dow === 3; // Lun o Mie (quincenas tipicas)
 
         return (
-          <div className="mt-4 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-l-4 border-[var(--data-success-500)]/30 p-4 rounded-r-lg space-y-3">
+          <div className="mt-4 bg-primary/10 dark:bg-primary/15 border-l-4 border-[var(--data-success-500)]/30 p-4 rounded-r-lg space-y-3">
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Análisis de Horario</span>
             </div>
@@ -342,12 +342,12 @@ export default function VentasHeatmap() {
                 </p>
               )}
               {worstSlot.avg > 0 && isBusinessHour(worstSlot.hour) && (
-                <p className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-2">
+                <p className="bg-primary/10 dark:bg-primary/15 rounded-lg p-2">
                   <span className="font-bold">Sugerencia:</span> Considera una promocion especial los {DOW_LABELS[worstSlot.dow]} a las {formatHour(worstSlot.hour)} para impulsar ventas
                 </p>
               )}
               {bestIsQuincena && bestSlot.avg > 0 && (
-                <p className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg p-2">
+                <p className="bg-primary/10 dark:bg-primary/15 rounded-lg p-2">
                   <span className="font-bold">Tus picos coinciden con inicio de semana — prepara stock extra esos dias</span>
                 </p>
               )}

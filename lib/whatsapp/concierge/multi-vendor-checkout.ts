@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { calculateCommission, recordCommission } from "@/lib/commissions";
 import { logger } from "@/lib/logger";
+import { precioVigente } from "@/lib/marketplace/precio-vigente";
 import type { CartItem } from "./types";
 
 // TODO F3: PaymentApproval model will be added by agent F3.
@@ -228,16 +229,13 @@ export async function checkoutMultiVendor(
                 }>,
             )
         : [];
-      const toNum = (v: DecOrNum): number =>
-        typeof v === "number" ? v : (v?.toNumber?.() ?? 0);
       const livePriceById = new Map<number, number>();
       for (const sp of storeProducts) {
-        const discountActive =
-          sp.discountUntil != null && new Date(sp.discountUntil) > new Date();
-        const live = discountActive && sp.discountPrice != null
-          ? toNum(sp.discountPrice)
-          : toNum(sp.retailPrice);
-        livePriceById.set(sp.productId, live);
+        // Una sola regla para el precio, compartida con la vidriera. Antes acá
+        // se exigía `discountUntil != null`, así que una oferta SIN caducidad
+        // —la que el schema define como permanente— se anunciaba rebajada en la
+        // tarjeta y se cobraba entera en la caja.
+        livePriceById.set(sp.productId, precioVigente(sp).precio);
       }
 
       // Recompute subtotal usando precios live (no los del cart cliente).

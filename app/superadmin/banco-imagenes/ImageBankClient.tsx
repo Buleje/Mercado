@@ -296,7 +296,7 @@ function CategorySummaryCard({
             <button
               onClick={onOpen}
               title="Abrir"
-              className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+              className="p-1.5 rounded-lg text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
             >
               <FolderOpen className="h-4 w-4" />
             </button>
@@ -621,7 +621,7 @@ function ItemCard({ categoryId, item, onChanged }: { categoryId: string; item: B
       <div className="p-2.5">
         <p className="text-xs font-bold text-[var(--text-primary)] truncate" title={item.name}>{item.name}</p>
         <div className="flex justify-between gap-1 mt-1.5">
-          <button onClick={() => setEditing(true)} className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold text-primary border border-primary/30 hover:bg-primary/5">
+          <button onClick={() => setEditing(true)} className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary/30 hover:bg-primary/5">
             <Pencil className="h-3 w-3" /> {safeUrl ? "Editar" : "Subir foto"}
           </button>
           <button

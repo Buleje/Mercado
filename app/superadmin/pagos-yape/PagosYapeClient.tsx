@@ -46,6 +46,8 @@ import {
   Check,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { SAKpiCard } from "@/components/superadmin/_shared/SAKpiCard";
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -182,8 +184,8 @@ function exportCSV(rows: PaymentApproval[]) {
 
 const DELTA_CLASS: Record<string, string> = {
   exact: "text-emerald-700 dark:text-emerald-300 font-extrabold",
-  near: "text-amber-700 dark:text-amber-300 font-extrabold",
-  far: "text-rose-700 dark:text-rose-300 font-extrabold",
+  near: "text-[var(--accent)] font-extrabold",
+  far: "text-[var(--data-error)] font-extrabold",
   unknown: "text-[var(--text-tertiary)]",
 };
 
@@ -196,8 +198,8 @@ const DELTA_ICON: Record<string, React.ReactNode> = {
 
 const SLA_STYLES: Record<"good" | "warn" | "bad", string> = {
   good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
-  warn: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
-  bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
+  warn: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+  bad: "bg-[var(--data-error-50)] text-[var(--data-error)]",
 };
 
 // ─── Optimistic reducer ───────────────────────────────────────────────────────
@@ -257,7 +259,6 @@ export default function PagosYapeClient(_: Props) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastIdRef = useRef(1);
   const searchRef = useRef<HTMLInputElement>(null);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const pushToast = useCallback(
     (text: string, tone: ToastTone = "info") => {
@@ -296,7 +297,8 @@ export default function PagosYapeClient(_: Props) {
           total: number;
         };
         dispatch({ type: "set", payload: data.approvals ?? [] });
-      } catch {
+      } catch (err) {
+        console.error("[sa-pagos-yape] fetch payment-approvals", err);
         pushToast("Error de red", "error");
       } finally {
         if (!silent) setLoading(false);
@@ -310,18 +312,8 @@ export default function PagosYapeClient(_: Props) {
     void load();
   }, [load]);
 
-  // ── Polling toggle ────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!autoRefresh) {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-      pollingRef.current = null;
-      return;
-    }
-    pollingRef.current = setInterval(() => void load(true), 30_000);
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
-  }, [autoRefresh, load]);
+  // ── Polling visibility-aware (pausa con la pestaña oculta) ────────────────
+  useVisiblePolling(() => void load(true), 30_000, autoRefresh);
 
   // ── Deep-link ?id= ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -369,6 +361,24 @@ export default function PagosYapeClient(_: Props) {
     });
   }, [approvals, search, deltaFilter]);
 
+  // ── Resumen para los KPIs de triage (sobre TODOS los pendientes) ──────────
+  const stats = useMemo(() => {
+    const exact = approvals.filter((a) => deltaStatus(a.expectedAmount, a.detectedAmount) === "exact").length;
+    const codeCounts = new Map<string, number>();
+    for (const a of approvals) {
+      if (a.yapeOpCode) codeCounts.set(a.yapeOpCode, (codeCounts.get(a.yapeOpCode) ?? 0) + 1);
+    }
+    const dupCodeSet = new Set([...codeCounts.entries()].filter(([, n]) => n > 1).map(([c]) => c));
+    return {
+      pending: approvals.length,
+      totalExpected: approvals.reduce((s, a) => s + a.expectedAmount, 0),
+      exact,
+      review: approvals.length - exact,
+      dupCodes: dupCodeSet.size,
+      dupCodeSet,
+    };
+  }, [approvals]);
+
   // ── Single approve / reject ───────────────────────────────────────────────
   const approve = useCallback(
     async (approval: PaymentApproval) => {
@@ -395,7 +405,8 @@ export default function PagosYapeClient(_: Props) {
         } else {
           pushToast("Aprobado", "success");
         }
-      } catch {
+      } catch (err) {
+        console.error("[sa-pagos-yape] approve payment", err);
         dispatch({ type: "revert", items: [approval] });
         pushToast("Error de red al aprobar", "error");
       } finally {
@@ -444,7 +455,8 @@ export default function PagosYapeClient(_: Props) {
       } else {
         pushToast("Rechazado · cliente notificado", "success");
       }
-    } catch {
+    } catch (err) {
+      console.error("[sa-pagos-yape] reject payment", err);
       dispatch({ type: "revert", items: [approval] });
       pushToast("Error de red al rechazar", "error");
     } finally {
@@ -493,7 +505,8 @@ export default function PagosYapeClient(_: Props) {
           fail++;
           failed.push(a);
         }
-      } catch {
+      } catch (err) {
+        console.error("[sa-pagos-yape] bulk approve payment", err);
         fail++;
         failed.push(a);
       }
@@ -511,7 +524,8 @@ export default function PagosYapeClient(_: Props) {
     try {
       await navigator.clipboard.writeText(text);
       pushToast(`${what} copiado`, "success");
-    } catch {
+    } catch (err) {
+      console.error("[sa-pagos-yape] clipboard write", err);
       pushToast("No se pudo copiar", "error");
     }
   };
@@ -520,7 +534,7 @@ export default function PagosYapeClient(_: Props) {
   const toggleSelect = (id: string) =>
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
 
@@ -642,6 +656,17 @@ export default function PagosYapeClient(_: Props) {
           CSV ({filtered.length})
         </button>
       </div>
+
+      {/* ── KPIs de triage ─────────────────────────────────── */}
+      {!isEmpty && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <SAKpiCard label="Pendientes" value={stats.pending} tone="warn" />
+          <SAKpiCard label="A confirmar" value={fmtPEN(stats.totalExpected)} />
+          <SAKpiCard label="Match exacto" value={stats.exact} sub="la IA cuadra el monto" tone="good" />
+          <SAKpiCard label="A revisar" value={stats.review} sub="monto no coincide" tone={stats.review > 0 ? "warn" : "default"} />
+          <SAKpiCard label="Op-code repetido" value={stats.dupCodes} sub="posible fraude" tone={stats.dupCodes > 0 ? "bad" : "default"} />
+        </div>
+      )}
 
       {/* ── Search + filtros ───────────────────────────────── */}
       {!isEmpty && (
@@ -843,7 +868,7 @@ export default function PagosYapeClient(_: Props) {
                       </span>
                       <span
                         className={cn(
-                          "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider shrink-0",
+                          "inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wider shrink-0",
                           SLA_STYLES[sla.tone],
                         )}
                       >
@@ -853,7 +878,7 @@ export default function PagosYapeClient(_: Props) {
                     </div>
 
                     <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-                      <span className="text-[11px] text-[var(--text-tertiary)]">
+                      <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
                         Esperado{" "}
                         <span
                           className="font-extrabold text-[var(--text-primary)] tabular-nums"
@@ -866,7 +891,7 @@ export default function PagosYapeClient(_: Props) {
                         <>
                           <span className="text-[var(--text-tertiary)]">·</span>
                           <span
-                            className={`text-[11px] tabular-nums ${DELTA_CLASS[delta]}`}
+                            className={`text-[length:var(--ts-xs)] tabular-nums ${DELTA_CLASS[delta]}`}
                             data-no-translate
                           >
                             {DELTA_ICON[delta]}
@@ -877,7 +902,7 @@ export default function PagosYapeClient(_: Props) {
                     </div>
 
                     {a.status === "review_required" && (
-                      <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 dark:bg-amber-500/15 dark:text-amber-200">
+                      <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-extrabold text-[var(--accent)]">
                         <AlertTriangle className="w-3 h-3" />
                         Revisión requerida
                       </div>
@@ -887,7 +912,7 @@ export default function PagosYapeClient(_: Props) {
                       const conf = getConfidence(a.visionResponse);
                       if (conf != null && conf < 0.7) {
                         return (
-                          <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                          <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent)]">
                             <AlertTriangle className="w-3 h-3" />
                             IA {Math.round(conf * 100)}%
                           </div>
@@ -898,10 +923,15 @@ export default function PagosYapeClient(_: Props) {
 
                     {a.yapeOpCode && (
                       <p
-                        className="mt-1 text-[10px] font-mono text-[var(--text-tertiary)]"
+                        className="mt-1 text-sm font-mono text-[var(--text-tertiary)] flex items-center gap-1.5 flex-wrap"
                         data-no-translate
                       >
                         Op. {a.yapeOpCode}
+                        {stats.dupCodeSet.has(a.yapeOpCode) && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-500)]/10 px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wider text-[var(--data-error-600,#dc2626)] not-italic">
+                            <AlertTriangle className="h-3 w-3" aria-hidden /> repetido
+                          </span>
+                        )}
                       </p>
                     )}
                   </button>
@@ -1009,7 +1039,7 @@ export default function PagosYapeClient(_: Props) {
               aria-label="Motivo del rechazo"
               maxLength={500}
             />
-            <p className="mt-1 text-right text-[10px] text-[var(--text-tertiary)]">
+            <p className="mt-1 text-right text-xs text-[var(--text-tertiary)]">
               {rejectReason.length}/500
             </p>
             <div className="mt-4 flex gap-3">
@@ -1291,8 +1321,8 @@ function DetailPanel({
                       conf >= 0.85
                         ? "text-emerald-700 dark:text-emerald-300"
                         : conf >= 0.7
-                          ? "text-amber-700 dark:text-amber-300"
-                          : "text-rose-700 dark:text-rose-300",
+                          ? "text-[var(--accent)]"
+                          : "text-[var(--data-error)]",
                     )}
                     data-no-translate
                   >
@@ -1305,7 +1335,7 @@ function DetailPanel({
         </div>
 
         {/* Metadata */}
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[var(--text-tertiary)]">
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
           {approval.conversationId && (
             <span data-no-translate>
               Conv:{" "}
@@ -1315,7 +1345,7 @@ function DetailPanel({
             </span>
           )}
           {approval.rejectionReason && (
-            <span className="text-amber-700 dark:text-amber-300">
+            <span className="text-[var(--accent)]">
               Razón IA: {approval.rejectionReason}
             </span>
           )}

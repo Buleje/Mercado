@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { PayablesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { withDbRetry } from "@/lib/db-retry";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+
+// coerce en amount: algunos callers mandan number, otros string numérico.
+const CreatePayableSchema = z.object({
+  supplierId: z.string().min(1),
+  amount: z.coerce.number().positive(),
+  supplierName: z.string().optional(),
+  purchaseOrderId: z.string().optional(),
+  description: z.string().optional(),
+  dueDate: z.string().optional(),
+});
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
@@ -28,21 +39,23 @@ export async function POST(req: NextRequest) {
   const blocked = await requireActiveSubscription(auth.tenantId);
   if (blocked) return blocked;
 
-  const body = await req.json();
-  if (!body.supplierId || !body.amount) {
-    return NextResponse.json({ error: "supplierId and amount required" }, { status: 400 });
+  const raw = await req.json().catch(() => ({}));
+  const parsed = CreatePayableSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.flatten() }, { status: 400 });
   }
+  const data = parsed.data;
   const id = `pay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   const payable = await PayablesDB.add(auth.tenantId, {
     id,
-    supplierId: body.supplierId,
-    supplierName: body.supplierName || "",
-    purchaseOrderId: body.purchaseOrderId || undefined,
-    description: body.description || "",
-    amount: Number(body.amount),
+    supplierId: data.supplierId,
+    supplierName: data.supplierName || "",
+    purchaseOrderId: data.purchaseOrderId || undefined,
+    description: data.description || "",
+    amount: data.amount,
     paidAmount: 0,
     status: "pendiente",
-    dueDate: body.dueDate || new Date().toISOString(),
+    dueDate: data.dueDate || new Date().toISOString(),
     payments: [],
     createdAt: new Date().toISOString(),
   });

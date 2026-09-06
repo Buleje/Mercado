@@ -121,9 +121,9 @@ export async function GET(req: NextRequest) {
 // Category color mappings for visual placeholders
 const DEMO_COLORS: Record<string, { from: string; to: string }> = {
   "Entradas": { from: "#60a5fa", to: "#06b6d4" },
-  "Platos de fondo": { from: "#f97316", to: "#ef4444" },
+  "Platos de fondo": { from: "#ff6b5b", to: "#ef4444" },
   "Postres": { from: "#f472b6", to: "#a855f7" },
-  "Bebidas": { from: "#facc15", to: "#f59e0b" },
+  "Bebidas": { from: "#facc15", to: "#ff6b5b" },
   "Sopas": { from: "#4ade80", to: "#14C2C2" },
 };
 

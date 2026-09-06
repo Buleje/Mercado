@@ -44,9 +44,7 @@ export async function listCronDeadLetters(
 ): Promise<CronDeadLetterListResult> {
   const [entries, summary] = await Promise.all([
     prisma.cronDeadLetter.findMany({
-      where: {
-        ...(jobName ? { jobName } : {}),
-      },
+      where: jobName ? { jobName } : {},
       orderBy: { createdAt: "desc" },
       take: limit,
     }),

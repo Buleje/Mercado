@@ -113,9 +113,6 @@ interface Props {
 const ANIM_DURATION_MS = 400;
 const ZOOM_MIN = 50;
 const ZOOM_MAX = 250;
-const NUDGE_PCT = 5;
-const NUDGE_FAST = 20;
-const HISTORY_CAP = 30;
 
 const DEFAULT_ADJ: ImageAdjust = { position: { x: 50, y: 50 }, scale: 100, fit: "cover" };
 
@@ -132,7 +129,7 @@ const DEFAULT_PROMO: StudioPromoEmbed = {
 const FALLBACK_PRESETS: Array<{ id: string; label: string; from: string; to: string }> = [
   { id: "teal", label: "Buleje", from: "#ccfbf1", to: "#5eead4" },
   { id: "sky", label: "Cielo", from: "#dbeafe", to: "#bfdbfe" },
-  { id: "amber", label: "Calidez", from: "#fef3c7", to: "#fde68a" },
+  { id: "amber", label: "Calidez", from: "#0d9488", to: "#0d9488" },
   { id: "rose", label: "Promo", from: "#fce7f3", to: "#fbcfe8" },
   { id: "slate", label: "Editorial", from: "#e2e8f0", to: "#cbd5e1" },
 ];
@@ -182,8 +179,8 @@ const BANNER_TEMPLATES: BannerTemplate[] = [
       type: "promo",
       title: "Llevá 2, pagá 1",
       subtitle: "Combo de la semana en bodega",
-      bgFrom: "#fef3c7",
-      bgTo: "#fde68a",
+      bgFrom: "#0d9488",
+      bgTo: "#0d9488",
       ctaLabel: "Lo quiero",
       promo: {
         ...DEFAULT_PROMO,
@@ -203,8 +200,8 @@ const BANNER_TEMPLATES: BannerTemplate[] = [
       type: "promo",
       title: "Liquidación total",
       subtitle: "Hasta 70% off · Stock limitado",
-      bgFrom: "#fed7aa",
-      bgTo: "#fb923c",
+      bgFrom: "#ffe1dd",
+      bgTo: "#0d9488",
       ctaLabel: "Ver stock",
       promo: {
         ...DEFAULT_PROMO,
@@ -684,7 +681,7 @@ function EditMode({
                     {b.title || "(sin título)"}
                   </span>
                   {!b.active && (
-                    <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-warning-500)] shrink-0">
+                    <span className="inline-flex items-center gap-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-500 shrink-0">
                       <EyeOff className="h-2.5 w-2.5" />
                       off
                     </span>
@@ -762,7 +759,7 @@ function EditMode({
                   "inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition-colors",
                   current.active
                     ? "bg-[var(--data-success-500)]/20 text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/30"
-                    : "bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/30",
+                    : "bg-teal-500/20 text-teal-500 hover:bg-teal-500/30",
                 )}
               >
                 {current.active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -2515,7 +2512,7 @@ function StateTab({
             "w-full inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-extrabold transition-colors",
             banner.active
               ? "bg-[var(--data-success-500)]/20 text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/30"
-              : "bg-[var(--data-warning-500)]/20 text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/30",
+              : "bg-teal-500/20 text-teal-500 hover:bg-teal-500/30",
           )}
         >
           {banner.active ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}

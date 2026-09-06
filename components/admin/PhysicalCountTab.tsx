@@ -389,7 +389,7 @@ export default function PhysicalCountTab() {
         </div>
 
         {success && (
-          <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 p-3 text-sm text-[var(--data-success-500)] flex items-center gap-2">
+          <div className="rounded-lg bg-primary/10 border border-[var(--data-success-500)]/30 p-3 text-sm text-[var(--data-success-500)] flex items-center gap-2">
             <CheckCircle className="h-4 w-4 shrink-0" />
             {success}
           </div>
@@ -509,14 +509,14 @@ export default function PhysicalCountTab() {
           </div>
         )}
         {success && (
-          <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 p-3 text-sm text-[var(--data-success-500)] flex items-center gap-2">
+          <div className="rounded-lg bg-primary/10 border border-[var(--data-success-500)]/30 p-3 text-sm text-[var(--data-success-500)] flex items-center gap-2">
             <CheckCircle className="h-4 w-4 shrink-0" />
             {success}
           </div>
         )}
 
         {withDiff.length === 0 ? (
-          <div className="rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]/50 p-8 text-center">
+          <div className="rounded-xl border border-[var(--data-success-500)]/30 bg-primary/10 p-8 text-center">
             <CheckCircle className="h-10 w-10 text-[var(--data-success-500)] mx-auto mb-2" />
             <p className="font-semibold text-[var(--data-success-500)]">Sin diferencias</p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">
@@ -591,7 +591,7 @@ export default function PhysicalCountTab() {
         </div>
 
         {success && (
-          <div className="rounded-lg bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 p-3 text-sm text-[var(--data-success-500)] flex items-center gap-2">
+          <div className="rounded-lg bg-primary/10 border border-[var(--data-success-500)]/30 p-3 text-sm text-[var(--data-success-500)] flex items-center gap-2">
             <CheckCircle className="h-4 w-4 shrink-0" />
             {success}
           </div>
@@ -616,7 +616,7 @@ export default function PhysicalCountTab() {
                     <span
                       className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${
                         s.status === "aplicado"
-                          ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                          ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                           : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                       }`}
                     >

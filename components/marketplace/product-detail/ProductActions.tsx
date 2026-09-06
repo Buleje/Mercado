@@ -12,6 +12,7 @@ import {
   Minus,
   Plus,
   ShoppingCart,
+  Check,
   Zap,
   Heart,
   Truck,
@@ -22,6 +23,7 @@ import { cn } from "@buleje/design-system";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
 import { useCurrency } from "@/contexts/currency-context";
 import { useLocale } from "@/contexts/locale-context";
+import { useAddedToCartDrawer } from "@/components/marketplace/AddedToCartDrawer";
 import OneClickBuyButton from "./OneClickBuyButton";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -58,6 +60,7 @@ export function ProductActions({
   onBuyNow,
 }: ProductActionsProps) {
   const { addItem } = useMarketplaceCart();
+  const { open: openAddedDrawer } = useAddedToCartDrawer();
   const { format } = useCurrency();
   const { t } = useLocale();
   const [quantity, setQuantity] = useState(minOrderQty);
@@ -76,8 +79,11 @@ export function ProductActions({
     setQuantity((q) => Math.min(maxQty, q + 1));
   }, [maxQty]);
 
-  const handleAddToCart = useCallback(() => {
-    if (isOutOfStock) return;
+  // Núcleo del add — sin feedback UI. Reusado por "Agregar" (con drawer) y por
+  // "Comprar ahora" (que navega al checkout, sin drawer). Devuelve false si no
+  // hay stock. Brandon 2026-07-05 (audit comprador).
+  const addToCartCore = useCallback(() => {
+    if (isOutOfStock) return false;
     addItem({
       storeId,
       storeName,
@@ -90,17 +96,33 @@ export function ProductActions({
       unit,
       quantity,
     });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+    return true;
   }, [
     isOutOfStock, addItem, storeId, storeName, storeSlug,
     storeProductId, productId, name, price, image, unit, quantity,
   ]);
 
+  const handleAddToCart = useCallback(() => {
+    if (!addToCartCore()) return;
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+    // Confirmación CLARA: abre el drawer "¡Agregado!" (Ver carrito / Seguir
+    // comprando). Antes el único cambio visible era el texto del botón y el
+    // badge del carrito — el comprador nuevo no lo notaba y volvía a clickear
+    // (pedidos duplicados). Reporte de recorrido 2026-07-05.
+    openAddedDrawer({
+      storeId, storeName, storeSlug, productId, storeProductId,
+      name, price, image, unit,
+    });
+  }, [
+    addToCartCore, openAddedDrawer, storeId, storeName, storeSlug,
+    productId, storeProductId, name, price, image, unit,
+  ]);
+
   const handleBuyNow = useCallback(() => {
-    handleAddToCart();
+    addToCartCore();
     onBuyNow?.();
-  }, [handleAddToCart, onBuyNow]);
+  }, [addToCartCore, onBuyNow]);
 
   // Preview price (UI only — backend recalcula el total real).
   // Usa useCurrency() para reflejar PEN/USD toggle activo.
@@ -113,7 +135,7 @@ export function ProductActions({
         <div className="flex flex-col items-center text-center gap-1 px-2 py-3">
           <Truck className="h-5 w-5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-tight">Delivery</p>
-          <p className="text-sm font-medium text-[var(--text-primary)] leading-tight">25 min</p>
+          <p className="text-sm font-medium text-[var(--text-primary)] leading-tight">A domicilio</p>
         </div>
         <div className="flex flex-col items-center text-center gap-1 px-2 py-3">
           <ShieldCheck className="h-5 w-5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
@@ -175,7 +197,11 @@ export function ProductActions({
         )}
         aria-label={isOutOfStock ? "Producto agotado" : "Agregar al carrito"}
       >
-        <ShoppingCart className="h-5 w-5" strokeWidth={2} aria-hidden />
+        {added ? (
+          <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+        ) : (
+          <ShoppingCart className="h-5 w-5" strokeWidth={2} aria-hidden />
+        )}
         {isOutOfStock
           ? t("product.outOfStock")
           : added

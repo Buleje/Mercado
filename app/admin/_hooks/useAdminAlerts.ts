@@ -22,6 +22,8 @@ export interface QuickStats {
   lowStockProducts: number;
   overduePayables?: number;
   oldPendingOrders?: number;
+  /** Mensajes WhatsApp entrantes sin leer (badge de Mensajes). */
+  waUnread?: number;
 }
 
 interface StatsResponse {
@@ -30,6 +32,7 @@ interface StatsResponse {
   lowStockProducts: number;
   overduePayables?: number;
   oldPendingOrders?: number;
+  waUnread?: number;
 }
 
 export interface UseAdminAlertsResult {
@@ -61,6 +64,12 @@ export function useAdminAlerts(authReady: boolean): UseAdminAlertsResult {
         const a: Record<string, number> = {};
         if (d.lowStockProducts > 0) a["inventario"] = d.lowStockProducts;
         if (d.pendingOrders > 0) a.pedidos = d.pendingOrders;
+        // Mensajes WhatsApp sin leer → badge en el tab WhatsApp del sidebar
+        // (y en Mensajes/marketplace-chat, que también contiene el inbox)
+        if ((d.waUnread ?? 0) > 0) {
+          a["whatsapp-inbox"] = d.waUnread!;
+          a["marketplace-chat"] = d.waUnread!;
+        }
         setAlerts(a);
         setQuickStats({
           pendingOrders: d.pendingOrders,
@@ -68,6 +77,7 @@ export function useAdminAlerts(authReady: boolean): UseAdminAlertsResult {
           lowStockProducts: d.lowStockProducts,
           overduePayables: d.overduePayables,
           oldPendingOrders: d.oldPendingOrders,
+          waUnread: d.waUnread,
         });
       })
       .catch(() => {});
@@ -100,6 +110,11 @@ export function useAdminAlerts(authReady: boolean): UseAdminAlertsResult {
       if (stopped || failCount >= SSE_MAX_FAILURES) return;
       es = new EventSource("/api/admin/sse");
       es.addEventListener("new_order", () => {
+        failCount = 0;
+        fetchAlerts();
+      });
+      // Mensaje WhatsApp entrante → refrescar el badge de Mensajes al instante
+      es.addEventListener("wa_message_new", () => {
         failCount = 0;
         fetchAlerts();
       });

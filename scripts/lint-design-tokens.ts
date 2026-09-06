@@ -39,7 +39,64 @@ type Rule = {
   strictUpgrade?: boolean;
 };
 
+// ─── Tokens --data-* que NO existen ────────────────────────────────────────
+//
+// POR QUÉ ESTA REGLA:
+// la paleta `--data-{success,warning,error,info}` es una escala SEMÁNTICA de 5
+// pasos (50 bg-soft · 100 bg-soft-hover · 500 default · 600 hover · 700 pressed),
+// NO una rampa Tailwind 50→900. Escribir `--data-success-900` no rompe el build
+// ni el type-check: la `var()` simplemente no resuelve, la declaración se
+// descarta y el elemento **hereda el color del padre**.
+//
+// En light suele pasar desapercibido (hereda texto oscuro sobre fondo claro).
+// En DARK hereda texto claro sobre un fondo claro ⇒ ilegible. Así estuvieron los
+// badges del Libro CTP (medido con getComputedStyle 2026-07-15: el color del
+// badge era idéntico al del padre) y así siguen ~128 usos en el resto del repo.
+//
+// El linter daba 0 violaciones porque sólo miraba el FORMATO del token, nunca si
+// existía. Los tonos válidos se leen de globals.css: si mañana se agrega uno, la
+// regla lo acepta sola (single source, no una lista que se desincroniza).
+
+/** Tonos realmente definidos, leídos de la fuente. */
+function tonosDefinidos(): string[] {
+  const cssPath = resolve(process.cwd(), "app/globals.css");
+  if (!existsSync(cssPath)) return [];
+  const css = readFileSync(cssPath, "utf8");
+  const tonos = new Set<string>();
+  for (const m of css.matchAll(/--data-(?:success|warning|error|info)-(\d+)\s*:/g)) {
+    tonos.add(m[1]);
+  }
+  return [...tonos].sort((a, b) => Number(a) - Number(b));
+}
+
+const TONOS = tonosDefinidos();
+/**
+ * `--data-<tono>-<N>` con N no definido y SIN fallback.
+ *
+ * El `(?=\s*\))` es lo que separa roto de feo: `var(--data-x-900)` no resuelve y
+ * hereda el color del padre (el bug), mientras que `var(--data-x-900, #a7f3d0)`
+ * pinta el fallback y funciona. Eso último es un hex hardcodeado —otro problema,
+ * de otras reglas—, no un color heredado. Sin esta distinción la regla gritaba
+ * sobre 16 usos que renderizan bien.
+ *
+ * Sin tonos leídos (globals.css movido) → no matchea nada, no rompe el gate.
+ */
+const UNDEFINED_DATA_TOKEN = TONOS.length
+  ? new RegExp(`--data-(?:success|warning|error|info)-(?!(?:${TONOS.join("|")})\\b)\\d+(?=\\s*\\))`, "g")
+  : /(?!)/g;
+
 const RULES: Rule[] = [
+  {
+    id: "ds-undefined-data-token",
+    pattern: UNDEFINED_DATA_TOKEN,
+    message:
+      `Este token --data-* NO existe en globals.css (definidos: ${TONOS.join(", ") || "ninguno"}). ` +
+      "La var() no resuelve y el elemento HEREDA el color del padre — en dark mode eso es texto claro " +
+      "sobre fondo claro. La paleta es semántica, no una rampa Tailwind: 50=bg-soft · 100=bg-soft-hover · " +
+      "500=default · 600=hover · 700=pressed. Mapeá al rol: texto oscuro → 700 · fondo tenue → 50/100 · " +
+      "borde → 500. Para un hover sobre un botón -700 no hay tono más oscuro: usá hover:opacity-90.",
+    severity: "error",
+  },
   {
     id: "no-decorative-gradient",
     pattern: /bg-(linear|gradient)-to-[a-z]+\s+from-(indigo|purple|violet|pink|fuchsia|rose|emerald|cyan|teal|amber|orange|yellow|red|green|blue|sky|slate)-\d{2,3}/g,
@@ -244,11 +301,7 @@ const RULES: Rule[] = [
 
 const WHITELIST_PATTERNS: Array<{ file: RegExp; allowedRules: string[] }> = [
   { file: /shared[\\/]AdminTabBar\.tsx$/, allowedRules: ["no-decorative-gradient"] },
-  { file: /BannerEditor\.tsx$/, allowedRules: ["no-decorative-gradient"] },
-  // DesignTab es el editor visual de design tokens del modulo Mi tienda publica.
-  // Sus gradients violet/fuchsia son previews de los tokens decorativos que el
-  // tenant puede activar — no son chrome del DS, son data del tenant.
-  { file: /admin[\\/]store-page[\\/]_components[\\/]DesignTab\.tsx$/, allowedRules: ["no-decorative-gradient", "no-legacy-gradient-prefix"] },
+  // (DesignTab borrado en ADR-299 fase 4 — su allowlist se fue con él.)
   // DS primitives — shared/ y packages/design-system/** pueden importar lucide-react directo.
   { file: /packages[\\/]design-system[\\/]/, allowedRules: ["ds-no-direct-lucide-import", "ds-no-style-color-inline"] },
   { file: /components[\\/]admin[\\/]shared[\\/]/, allowedRules: ["ds-no-direct-lucide-import"] },
@@ -257,7 +310,6 @@ const WHITELIST_PATTERNS: Array<{ file: RegExp; allowedRules: string[] }> = [
   { file: /StoreCustomizer\.tsx$/, allowedRules: ["ds-no-style-color-inline", "ds-no-style-inline-any-color"] },
   { file: /StoreCreativeMode\.tsx$/, allowedRules: ["ds-no-style-color-inline", "ds-no-style-inline-any-color"] },
   { file: /ThemeCustomizer\.tsx$/, allowedRules: ["ds-no-style-color-inline", "ds-no-style-inline-any-color"] },
-  { file: /BannerEditor\.tsx$/, allowedRules: ["ds-no-style-color-inline", "ds-no-style-inline-any-color"] },
   // Admin token catalog — las clases hardcodeadas ARE the data (single source of truth para todo /admin).
   // El errorBanner usa rose semantico (canonical danger color) que no tiene aun un --danger token.
   { file: /admin[\\/]_components[\\/]_shared[\\/]admin-tokens\.ts$/, allowedRules: ["no-decorative-text-color"] },
@@ -279,6 +331,34 @@ const WHITELIST_PATTERNS: Array<{ file: RegExp; allowedRules: string[] }> = [
     file: /admin[\\/]unified[\\/](LivesAdminModule|SocioMembersAdminModule)\.tsx$|admin[\\/]unified[\\/](gift-cards-admin|socio-admin)[\\/]|superadmin[\\/](SidebarConfigPanel|vendor-applications[\\/]ApplicationDetailsDrawer)\.tsx$|superadmin[\\/]_shared[\\/]ImageUploader\.tsx$|superadmin[\\/]dashboard[\\/]TenantsGrowthRanking\.tsx$/,
     allowedRules: ["no-decorative-gradient", "no-legacy-gradient-prefix"],
   },
+  // POSPaymentModal usa el morado de marca de Yape (text-purple-*) como
+  // identificador del metodo de pago — NO es decorativo, es la convencion de
+  // marca que el cajero reconoce de un vistazo (Yape=morado, Plin=cyan). Mismo
+  // criterio que AdminSidebar con colores categoriales. Tambien tiene el mapa
+  // de colores de billetes/monedas peruanos (S/200 indigo, S/100 verde, S/50
+  // violeta, S/20 naranja, S/10 celeste, S/5 amarillo, S/.50 ambar) — imitan
+  // el color real del billete/moneda a propósito, para que el cajero lo
+  // reconozca de un vistazo; forzarlos a tokens semánticos (success/warning/
+  // error/info) rompería ese mnemonico visual sin ganar nada.
+  { file: /admin[\\/]pos[\\/]POSPaymentModal\.tsx$/, allowedRules: ["no-decorative-text-color", "ds-no-decorative-color-admin"] },
+  // Colores por TIPO DE ARCHIVO (PDF=rojo/Adobe, Excel=verde, Word=azul,
+  // PowerPoint=naranja, zip=ambar, audio=esmeralda, video=violeta,
+  // imagen=rosa, correo=celeste) — imitan a propósito el color de marca real
+  // de cada extensión para que el usuario reconozca el tipo de archivo de un
+  // vistazo. NO son decorativos, son la convención categorial establecida en
+  // todo el hub de Documentos (mismo criterio que POSPaymentModal arriba).
+  { file: /admin[\\/]documentos[\\/]archivo-visual\.tsx$/, allowedRules: ["ds-no-decorative-color-admin"] },
+  { file: /admin[\\/]unified[\\/]DocumentosModule\.tsx$/, allowedRules: ["ds-no-decorative-color-admin"] },
+  { file: /admin[\\/]documentos[\\/]DocumentosModule\.tsx$/, allowedRules: ["ds-no-decorative-color-admin"] },
+  // ZONE_PALETTE: hash determinístico zona→color de avatar (6 paletas) para
+  // distinguir zonas de reparto de un vistazo — asignación categorial
+  // arbitraria, no un estado semántico (success/warning/error/info).
+  { file: /admin[\\/]delivery-partners[\\/]tabs[\\/]RepartidoresTab\.tsx$/, allowedRules: ["ds-no-decorative-color-admin"] },
+  // PRESETS de StampModal: paleta de "elegí el color de tu sello" (RECIBIDO,
+  // CONFIDENCIAL, BORRADOR, URGENTE, etc.) — 8 sellos necesitan 8 colores
+  // distinguibles, más de los 4 tokens semánticos disponibles. Es un color
+  // picker, no un badge de estado.
+  { file: /admin[\\/]documentos[\\/]StampModal\.tsx$/, allowedRules: ["ds-no-decorative-color-admin"] },
 ];
 
 function isAdminPath(file: string): boolean {

@@ -26,6 +26,16 @@ const errLogPath = join(projectRoot, ".claude/learning/auto-learn.errors.log");
 function logErr(scope, err) {
   try {
     mkdirSync(dirname(errLogPath), { recursive: true });
+    // Rotación: >100KB → conservar solo el último cuarto (llegó a 45KB de
+    // puro EAGAIN; sin cap crecería indefinido).
+    try {
+      const prev = readFileSync(errLogPath, "utf-8");
+      if (prev.length > 100_000) {
+        writeFileSync(errLogPath, prev.slice(-25_000), "utf-8");
+      }
+    } catch {
+      /* primera escritura: el file no existe todavía */
+    }
     appendFileSync(
       errLogPath,
       `${new Date().toISOString()} [${scope}] ${String(err?.stack ?? err ?? "unknown")}\n`,
@@ -55,9 +65,20 @@ function writeJSON(path, data) {
   }
 }
 
-try {
-  const input = readFileSync(process.stdin.fd, "utf8");
-  const event = JSON.parse(input);
+// FIX 2026-08-19: la versión anterior leía con `readFileSync(process.stdin.fd)`
+// dentro de un retry-EAGAIN que devolvía en el PRIMER read exitoso — en un pipe
+// no-bloqueante eso puede ser un chunk parcial (el payload real llega en varios
+// writes desde post-edit-dispatcher.mjs). Resultado: 1080 líneas de
+// `SyntaxError: Unexpected token` en auto-learn.errors.log, siempre con
+// fragmentos de la MITAD de un archivo grande (ej. "ounded-xl", "nt-disable-").
+// Mismo patrón `data`+`end` que ya usan hex-code-guard/typography-lint/
+// ui-screenshot (esos 3 nunca tuvieron este bug) — acumula TODOS los chunks
+// hasta que el pipe cierra de verdad, en vez de confiar en un solo read.
+let raw = "";
+process.stdin.on("data", (c) => (raw += c));
+process.stdin.on("end", () => {
+  try {
+    const event = JSON.parse(raw);
 
   // Only process Edit/Write/MultiEdit
   const toolName = event.tool_name || "";
@@ -80,11 +101,16 @@ try {
 
   // ── Track edit in edit-log ──────────────────────────────────
   const logPath = join(projectRoot, ".claude/learning/edit-log.json");
-  let editLog = readJSON(logPath) || {
-    edits: [],
-    sessionEdits: [],
-    coEditClusters: [],
-    lastUpdated: null
+  // Fallback robusto por-array: edit-log.json puede existir pero estar parcial
+  // o vacío ({}) → readJSON devuelve un objeto truthy sin las arrays, y el
+  // antiguo `|| {default}` no aplicaba → `.push` sobre undefined (TypeError que
+  // erroreaba en CADA edit). Garantizamos cada array explícitamente.
+  const rawEditLog = readJSON(logPath) || {};
+  const editLog = {
+    edits: Array.isArray(rawEditLog.edits) ? rawEditLog.edits : [],
+    sessionEdits: Array.isArray(rawEditLog.sessionEdits) ? rawEditLog.sessionEdits : [],
+    coEditClusters: Array.isArray(rawEditLog.coEditClusters) ? rawEditLog.coEditClusters : [],
+    lastUpdated: rawEditLog.lastUpdated ?? null,
   };
 
   const now = new Date().toISOString();
@@ -140,11 +166,12 @@ try {
 
   if (strongClusters.length > 0) {
     const patternsPath = join(projectRoot, ".claude/learning/patterns.json");
-    let patterns = readJSON(patternsPath) || {
-      patterns: [],
-      totalScanned: 0,
-      totalLearned: 0,
-      lastScan: null
+    const rawPatterns = readJSON(patternsPath) || {};
+    const patterns = {
+      patterns: Array.isArray(rawPatterns.patterns) ? rawPatterns.patterns : [],
+      totalScanned: rawPatterns.totalScanned ?? 0,
+      totalLearned: rawPatterns.totalLearned ?? 0,
+      lastScan: rawPatterns.lastScan ?? null,
     };
 
     strongClusters.forEach(cluster => {
@@ -169,15 +196,33 @@ try {
       }
     });
 
+    // Cap: patterns crecía sin límite (372KB / 9379 líneas al 2026-07-02).
+    // Quedan los 300 con lastSeen más reciente; evolve-autopilot lee este file.
+    if (patterns.patterns.length > 300) {
+      patterns.patterns.sort(
+        (a, b) => new Date(b.lastSeen ?? 0) - new Date(a.lastSeen ?? 0),
+      );
+      patterns.patterns = patterns.patterns.slice(0, 300);
+    }
+
     patterns.lastScan = now;
     writeJSON(patternsPath, patterns);
+  }
+
+  // Cap: coEditClusters era la única array sin límite en edit-log (153KB).
+  if (editLog.coEditClusters.length > 150) {
+    editLog.coEditClusters.sort(
+      (a, b) => new Date(b.lastSeen ?? 0) - new Date(a.lastSeen ?? 0),
+    );
+    editLog.coEditClusters = editLog.coEditClusters.slice(0, 150);
   }
 
   editLog.lastUpdated = now;
   writeJSON(logPath, editLog);
 
-} catch (err) {
-  logErr("main", err);
-}
+  } catch (err) {
+    logErr("main", err);
+  }
 
-process.exit(0);
+  process.exit(0);
+});

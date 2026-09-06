@@ -30,7 +30,7 @@ const fmtSoles = (n: number) =>
 
 const PLAN_COLORS: Record<string, string> = {
   free: "#94A3B8",
-  pro: "#F59E0B",
+  pro: "#FF6B5B",
   business: "#0EA5E9",
   enterprise: "#10B981",
 };
@@ -136,9 +136,9 @@ export default function ExecutiveAnalyticsCharts({ mrrByPlan, aov }: Props) {
               yAxisId="orders"
               type="monotone"
               dataKey="orders"
-              stroke="#F59E0B"
+              stroke="#FF6B5B"
               strokeWidth={2.5}
-              dot={{ r: 3, fill: "#F59E0B", strokeWidth: 0 }}
+              dot={{ r: 3, fill: "#FF6B5B", strokeWidth: 0 }}
             />
           </ComposedChart>
         </ResponsiveContainer>

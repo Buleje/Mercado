@@ -25,7 +25,6 @@ import {
 import {
   Send,
   Sparkles,
-  User,
   Lightbulb,
   TrendingUp,
   AlertTriangle,
@@ -36,12 +35,47 @@ import {
   Loader2,
   Copy,
   Check,
+  ArrowRight,
+  Mic,
+  MicOff,
+  Paperclip,
 } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useVozContinua } from "@/hooks/use-voz-continua";
 
 type Role = "user" | "assistant";
+
+/**
+ * Un lugar del panel al que la respuesta puede llevarte. Lo emite el agente
+ * `ui` (SSE `{accion}`) cuando la respuesta implica "andá a…": el texto de un
+ * LLM no puede navegar, y nombrar el módulo deja al usuario buscándolo a mano.
+ */
+interface AccionNavegar {
+  tab: string;
+  vista: string | null;
+  filtro: string | null;
+  label: string;
+  url: string;
+}
+
+/**
+ * Una acción que TOCA datos y espera el sí del usuario (HITL). El servidor ya
+ * guardó el pedido con su payload; acá sólo se confirma o se descarta.
+ */
+interface AprobacionPendiente {
+  id: string;
+  tool: string;
+  titulo: string;
+  /** Lo que va a pasar, en una línea legible ("Stock de X: 3 → 4"). */
+  resumen?: string | null;
+  payload: Record<string, unknown>;
+  /** Qué pasó al resolverla — para no dejar la tarjeta viva después del click. */
+  estado?: "hecha" | "cancelada" | "error";
+  detalle?: string;
+}
 
 interface Message {
   id: string;
@@ -49,6 +83,10 @@ interface Message {
   content: string;
   timestamp: number;
   error?: boolean;
+  /** Botones "Abrir X" que acompañan a la respuesta. */
+  acciones?: AccionNavegar[];
+  /** Acciones de escritura esperando confirmación. */
+  aprobaciones?: AprobacionPendiente[];
 }
 
 interface QuickPrompt {
@@ -56,6 +94,21 @@ interface QuickPrompt {
   label: string;
   prompt: string;
 }
+
+/**
+ * Lo que se puede ANOTAR hablando o escribiendo.
+ *
+ * Va arriba y separado de las preguntas de análisis porque es una capacidad
+ * distinta —escribe en los libros del negocio, no los lee— y nadie la
+ * descubre leyendo una lista de «¿qué hago hoy?». Son frases de verdad, tal
+ * como se dicen: el punto es que se vea que no hay que hablarle raro.
+ */
+const EJEMPLOS_ANOTAR: string[] = [
+  "Anotame 25 galones de petróleo para el camión N12, a 27 el galón",
+  "Le adelanté 300 soles en efectivo a Juan Pérez",
+  "Doña Rosa me pagó 50 soles de lo que debía",
+  "Pagué 180 soles de luz del local, por Yape",
+];
 
 const QUICK_PROMPTS: QuickPrompt[] = [
   {
@@ -125,6 +178,20 @@ interface ChatIACleanProps {
   maxTokens?: number;
 }
 
+/**
+ * Palabras que CIERRAN el dictado y mandan lo dictado.
+ *
+ * Existen porque anotar a viva voz es de manos ocupadas: si para enviar hay que
+ * soltar la manguera del combustible y tocar la pantalla, el dictado no sirve.
+ * Se comparan contra la frase entera, no como substring: «listo, ya cargué» NO
+ * puede mandar el mensaje a mitad de la oración.
+ */
+const COMANDOS_ENVIAR = new Set(["listo", "enviar", "manda", "mandalo", "envialo", "ya esta"]);
+const COMANDO_CANCELAR = new Set(["cancelar", "borra eso", "borrar", "olvidalo"]);
+
+const normalizarComando = (t: string) =>
+  t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z ]/g, "").trim();
+
 export default function ChatIAClean({
   tone = "feynman",
   model: _model = "balanced",
@@ -141,6 +208,72 @@ export default function ChatIAClean({
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  /**
+   * Dictado. El texto reconocido se ACUMULA en el mismo campo que se tipea:
+   * así se puede empezar hablando, corregir con el teclado y mandar — que es
+   * como se dicta de verdad, con el celular en el bolsillo del pantalón.
+   *
+   * `inputRef` existe porque el callback del reconocedor se cablea una sola vez
+   * y no ve el `input` fresco de cada render: sin él, decir «listo» mandaba
+   * siempre la primera frase dictada.
+   */
+  const inputRef = useRef("");
+  inputRef.current = input;
+  const enviarRef = useRef<(t: string) => void>(() => {});
+
+  const voz = useVozContinua((texto) => {
+    const limpio = texto.trim();
+    if (!limpio) return;
+    const comando = normalizarComando(limpio);
+    if (COMANDO_CANCELAR.has(comando)) {
+      setInput("");
+      return;
+    }
+    if (COMANDOS_ENVIAR.has(comando)) {
+      const pendiente = inputRef.current.trim();
+      if (pendiente) enviarRef.current(pendiente);
+      return;
+    }
+    setInput((prev) => (prev ? `${prev.replace(/\s+$/, "")} ${limpio}` : limpio));
+  });
+
+  /**
+   * Subir un audio que YA existe (el de WhatsApp que mandó el chofer).
+   *
+   * El dictado del navegador sólo sirve para hablar en vivo. Esto va por
+   * Whisper en el servidor, que además entiende mejor con ruido de motor
+   * atrás — que es donde se graban estos audios.
+   */
+  const [transcribiendo, setTranscribiendo] = useState(false);
+  const [errorAudio, setErrorAudio] = useState<string | null>(null);
+  const archivoRef = useRef<HTMLInputElement | null>(null);
+
+  const subirAudio = useCallback(async (archivo: File) => {
+    setTranscribiendo(true);
+    setErrorAudio(null);
+    try {
+      const fd = new FormData();
+      fd.append("audio", archivo);
+      const res = await fetch("/api/ai/transcribir", {
+        method: "POST",
+        headers: csrfHeaders(),
+        body: fd,
+      });
+      const json = (await res.json().catch(() => ({}))) as { texto?: string; error?: string };
+      if (!res.ok || !json.texto) {
+        setErrorAudio(json.error ?? "No se pudo transcribir el audio.");
+        return;
+      }
+      // Va al campo, no se manda solo: lo transcrito se lee ANTES de anotarlo.
+      setInput((prev) => (prev ? `${prev.replace(/\s+$/, "")} ${json.texto}` : json.texto!));
+      textareaRef.current?.focus();
+    } catch (e) {
+      setErrorAudio(e instanceof Error ? e.message : String(e));
+    } finally {
+      setTranscribiendo(false);
+    }
+  }, []);
 
   // Hydrate desde localStorage en cliente
   useEffect(() => {
@@ -249,9 +382,34 @@ export default function ChatIAClean({
               const payload = t.slice(6);
               if (payload === "[DONE]") break;
               try {
-                const json = JSON.parse(payload) as { content?: string; error?: string };
+                const json = JSON.parse(payload) as {
+                  content?: string;
+                  error?: string;
+                  accion?: AccionNavegar;
+                  aprobacion?: AprobacionPendiente;
+                };
                 if (json.error) {
                   sawError = json.error;
+                } else if (json.accion) {
+                  // Se acumulan en el mensaje: llegan ANTES del texto (el tool
+                  // corre antes de la segunda llamada al modelo).
+                  const accion = json.accion;
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === assistantId
+                        ? { ...m, acciones: [...(m.acciones ?? []).filter((a) => a.url !== accion.url), accion] }
+                        : m,
+                    ),
+                  );
+                } else if (json.aprobacion) {
+                  const ap = json.aprobacion;
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === assistantId
+                        ? { ...m, aprobaciones: [...(m.aprobaciones ?? []).filter((x) => x.id !== ap.id), ap] }
+                        : m,
+                    ),
+                  );
                 } else if (json.content) {
                   fullContent += json.content;
                   const captured = fullContent;
@@ -331,6 +489,18 @@ export default function ChatIAClean({
     [messages, streaming, tone],
   );
 
+  /**
+   * El puente entre el reconocedor —que se cablea una sola vez— y la función de
+   * envío, que se recrea en cada render. Sin esto, decir «listo» llamaría a la
+   * versión de `sendMessage` del primer render.
+   */
+  useEffect(() => {
+    enviarRef.current = (t: string) => {
+      voz.detener();
+      void sendMessage(t);
+    };
+  }, [sendMessage, voz]);
+
   const handleSubmit = useCallback(
     (e: FormEvent) => {
       e.preventDefault();
@@ -349,6 +519,56 @@ export default function ChatIAClean({
     },
     [input, sendMessage],
   );
+
+  /**
+   * Confirma o descarta una acción que toca datos. El resultado se escribe en
+   * la propia tarjeta: si el POST falla, la tarjeta lo dice y NO se marca como
+   * hecha — dar por buena una escritura que no ocurrió es el peor final posible.
+   */
+  const resolverAprobacion = useCallback(async (id: string, accion: "approve" | "reject") => {
+    const marcar = (estado: AprobacionPendiente["estado"], detalle?: string) =>
+      setMessages((prev) =>
+        prev.map((m) => ({
+          ...m,
+          aprobaciones: m.aprobaciones?.map((a) => (a.id === id ? { ...a, estado, detalle } : a)),
+        })),
+      );
+    try {
+      const res = await fetch("/api/ai-assistant/approvals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...csrfHeaders() },
+        credentials: "include",
+        body: JSON.stringify({ id, action: accion }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { error?: string; result?: unknown };
+      if (!res.ok) {
+        marcar("error", body.error ?? `HTTP ${res.status}`);
+        return;
+      }
+      if (accion === "reject") {
+        marcar("cancelada");
+        return;
+      }
+      const datos = body.result as Record<string, unknown> | undefined;
+      /**
+       * Lo que se muestra al confirmar es la frase que escribió el agente
+       * («Anotado: S/ 675.00 de combustible para Camión N12»), no el volcado
+       * de claves. El volcado era legible para mí y para nadie más: decía
+       * `registrado: true · destino: activos · gastoId: cmtn…` con el dato que
+       * importa —cuánto y a qué— perdido al final.
+       */
+      const humano = typeof datos?.confirmacion === "string" ? datos.confirmacion : null;
+      const crudo = datos
+        ? Object.entries(datos)
+            .filter(([k, v]) => v !== null && typeof v !== "object" && k !== "confirmacion")
+            .map(([k, v]) => `${k}: ${String(v)}`)
+            .join(" · ")
+        : "";
+      marcar("hecha", humano ?? crudo ?? "Acción ejecutada.");
+    } catch (e) {
+      marcar("error", e instanceof Error ? e.message : String(e));
+    }
+  }, []);
 
   const handleCopy = useCallback(async (msg: Message) => {
     try {
@@ -391,6 +611,7 @@ export default function ChatIAClean({
                 isStreaming={streaming && m.role === "assistant" && m === messages[messages.length - 1]}
                 copied={copiedId === m.id}
                 onCopy={() => handleCopy(m)}
+                onResolverAprobacion={resolverAprobacion}
               />
             ))}
             <div ref={messagesEndRef} />
@@ -412,18 +633,75 @@ export default function ChatIAClean({
               placeholder={
                 streaming
                   ? "Esperando respuesta…"
-                  : "Pregunta cualquier cosa sobre tu negocio…"
+                  : voz.listening
+                    ? "Escuchando… decí «listo» para mandarlo"
+                    : "Preguntá o dictá: «anotame 25 galones de petróleo para el camión N12 a 27»"
               }
               className={cn(
                 "w-full resize-none rounded-2xl border border-[var(--rule-base)]",
                 "bg-[var(--surface-sunken)] dark:bg-surface",
-                "px-5 py-4 pr-14 text-base leading-relaxed",
+                "px-5 py-4 pr-36 text-base leading-relaxed",
                 "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
                 "focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20 focus:border-[var(--text-primary)]/40",
                 "transition-all",
                 streaming && "opacity-60 cursor-wait",
               )}
             />
+            {/*
+              Micrófono. Sigue visible mientras el asistente responde —cortar el
+              dictado porque el modelo está escribiendo obliga a esperarlo con la
+              frase en la cabeza— pero se deshabilita, porque el campo también
+              lo está.
+            */}
+            <input
+              ref={archivoRef}
+              type="file"
+              accept="audio/*,.ogg,.oga,.m4a,.mp3,.wav,.webm"
+              // `hidden` y no `sr-only`: con sr-only el input queda en el orden
+              // de tabulación y el lector de pantalla anuncia DOS controles para
+              // la misma acción. El botón de al lado ya lleva la etiqueta.
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void subirAudio(f);
+                e.target.value = "";
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => archivoRef.current?.click()}
+              disabled={streaming || transcribiendo}
+              title="Subir un audio (el de WhatsApp, una nota de voz)"
+              aria-label="Subir un audio"
+              className={cn(
+                "absolute bottom-3 h-10 w-10 rounded-xl flex items-center justify-center transition-all",
+                "border border-[var(--rule-base)] bg-[var(--surface-raised)]",
+                "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]/40",
+                voz.supported ? "right-25" : "right-14",
+                (streaming || transcribiendo) && "opacity-50 cursor-not-allowed",
+              )}
+            >
+              {transcribiendo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+            </button>
+            {voz.supported && (
+              <button
+                type="button"
+                onClick={voz.toggle}
+                disabled={streaming}
+                title={voz.listening ? "Dejar de dictar" : "Dictar (español)"}
+                aria-label={voz.listening ? "Dejar de dictar" : "Dictar"}
+                aria-pressed={voz.listening}
+                className={cn(
+                  "absolute right-14 bottom-3 h-10 w-10 rounded-xl flex items-center justify-center transition-all",
+                  voz.listening
+                    ? "bg-[var(--data-error-500)] text-white animate-pulse"
+                    : "bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]/40",
+                  streaming && "opacity-50 cursor-not-allowed",
+                )}
+              >
+                {voz.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </button>
+            )}
             {streaming ? (
               <button
                 type="button"
@@ -442,7 +720,12 @@ export default function ChatIAClean({
                 className={cn(
                   "absolute right-3 bottom-3 h-10 w-10 rounded-xl flex items-center justify-center transition-all",
                   input.trim()
-                    ? "bg-[var(--text-primary)] text-white hover:opacity-90"
+                    // `text-white` sobre `--text-primary` funciona en claro y
+                    // desaparece en oscuro: ahí el fondo se vuelve casi blanco
+                    // y el avión de papel queda blanco sobre blanco. El token
+                    // del lienzo invierte con el tema, que es lo que hace el
+                    // `PrimaryButton` del DS.
+                    ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:opacity-90"
                     : "bg-[var(--rule-soft)] text-[var(--text-tertiary)] cursor-not-allowed",
                 )}
                 aria-label="Enviar"
@@ -451,6 +734,47 @@ export default function ChatIAClean({
               </button>
             )}
           </form>
+          {/*
+            Lo que el reconocedor está escuchando AHORA. Sin esto el dictado es
+            a ciegas: no se sabe si entendió «veinticinco» o «venticinco» hasta
+            que el texto ya está en el campo.
+          */}
+          {voz.listening && voz.liveText && (
+            <p className="mt-2 text-[length:var(--ts-xs)] italic text-[var(--text-tertiary)] truncate" aria-live="polite">
+              «{voz.liveText}»
+            </p>
+          )}
+          {transcribiendo && (
+            <p className="mt-2 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+              Transcribiendo el audio…
+            </p>
+          )}
+          {errorAudio && (
+            <div className="mt-2 flex items-start gap-2 rounded-lg border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] px-3 py-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
+              <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] flex-1">{errorAudio}</p>
+              <button
+                type="button"
+                onClick={() => setErrorAudio(null)}
+                className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+              >
+                Cerrar
+              </button>
+            </div>
+          )}
+          {voz.errMsg && (
+            <div className="mt-2 flex items-start gap-2 rounded-lg border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] px-3 py-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-[var(--data-error-500)] shrink-0 mt-0.5" />
+              <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] flex-1">{voz.errMsg}</p>
+              <button
+                type="button"
+                onClick={() => voz.setErrMsg(null)}
+                className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+              >
+                Cerrar
+              </button>
+            </div>
+          )}
           <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
             <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
               <kbd className="font-mono text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] px-1.5 py-0.5 rounded border border-[var(--rule-soft)]">
@@ -461,6 +785,7 @@ export default function ChatIAClean({
                 Shift+Enter
               </kbd>{" "}
               nueva línea
+              {voz.listening && <> · decí «listo» para mandarlo, «cancelar» para borrarlo</>}
             </p>
             {messages.length > 0 && (
               <button
@@ -485,20 +810,51 @@ export default function ChatIAClean({
 function EmptyState({ onPick }: { onPick: (prompt: string) => void }) {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-8 py-16 sm:py-20 flex flex-col items-center text-center">
-      <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] mb-5">
+      <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/15 mb-5">
         <Sparkles className="h-7 w-7 text-[color:var(--data-success)]" />
       </span>
-      <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight mb-2">
+      <SectionTitle as="h2" className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight mb-2">
         Asistente de tu negocio
-      </h2>
+      </SectionTitle>
       <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-xl">
-        Te ayudo a entender qué pasa en tu negocio, qué hacer ahora y cómo vender más.
-        Respondo con ejemplos fáciles y datos reales — sin adornos.
+        Contame qué pasó y lo anoto donde va — gastos, ingresos, adelantos, cobros.
+        Y si querés entender el negocio, preguntame: respondo con datos reales y
+        ejemplos fáciles.
       </p>
 
       <div className="mt-10 w-full">
+        <div className="flex items-center gap-2 mb-4">
+          <Mic className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            Dictá o escribí para anotar
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-2">
+          {EJEMPLOS_ANOTAR.map((frase) => (
+            <button
+              key={frase}
+              type="button"
+              onClick={() => onPick(frase)}
+              className={cn(
+                "flex items-center gap-2.5 px-4 py-3 rounded-xl text-left text-sm",
+                "border border-[var(--rule-soft)] bg-[var(--surface-sunken)]",
+                "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                "hover:border-[var(--text-primary)]/30 transition-all",
+              )}
+            >
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
+              <span className="min-w-0 flex-1 leading-snug">«{frase}»</span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-3 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+          Siempre te muestro qué se va a anotar y por cuánto <strong className="font-semibold text-[var(--text-secondary)]">antes</strong> de escribirlo.
+        </p>
+      </div>
+
+      <div className="mt-10 w-full">
         <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-4">
-          Probá con estas preguntas
+          O preguntame sobre el negocio
         </p>
         <div className="grid sm:grid-cols-2 gap-3">
           {QUICK_PROMPTS.map((q) => (
@@ -539,18 +895,22 @@ function MessageRow({
   isStreaming,
   copied,
   onCopy,
+  onResolverAprobacion,
 }: {
   message: Message;
   isStreaming: boolean;
   copied: boolean;
   onCopy: () => void;
+  onResolverAprobacion: (id: string, accion: "approve" | "reject") => void;
 }) {
   const isUser = message.role === "user";
 
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-[var(--text-primary)] text-white px-5 py-3">
+        {/* Mismo caso que el botón de enviar: en oscuro, `text-white` sobre
+            `--text-primary` deja la burbuja del usuario ilegible. */}
+        <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-[var(--text-primary)] text-[var(--surface-canvas)] px-5 py-3">
           <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
             {message.content}
           </p>
@@ -566,7 +926,7 @@ function MessageRow({
           "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl mt-1",
           message.error
             ? "bg-[var(--data-error-50)] dark:bg-red-950/30"
-            : "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+            : "bg-primary/10 dark:bg-primary/15",
         )}
       >
         <Sparkles
@@ -619,12 +979,140 @@ function MessageRow({
         ) : isStreaming ? (
           <StreamingDots />
         ) : null}
+        {/* Fuera del `content`: si el modelo no llegó a redactar (429, timeout)
+            la acción pendiente y el botón igual tienen que verse — si no, el
+            usuario pidió algo, el sistema lo preparó y no hay dónde apretar. */}
+        <TarjetasDeAprobacion aprobaciones={message.aprobaciones} onResolver={onResolverAprobacion} />
+        <BotonesDeAccion acciones={message.acciones} />
       </div>
     </div>
   );
 }
 
 // ── MarkdownContent — renderer minimalista seguro ────────────────────────────
+
+/**
+ * La tarjeta «¿Confirmás?» de una acción que va a tocar datos.
+ *
+ * El asistente NUNCA escribe solo: el servidor guarda el pedido con su payload
+ * y hasta que no se aprieta Confirmar no pasa nada. Se muestra el payload
+ * completo a propósito —qué producto, qué número, con qué motivo— porque una
+ * confirmación a ciegas no es una confirmación.
+ */
+function TarjetasDeAprobacion({
+  aprobaciones,
+  onResolver,
+}: {
+  aprobaciones?: AprobacionPendiente[];
+  onResolver: (id: string, accion: "approve" | "reject") => void;
+}) {
+  const [enCurso, setEnCurso] = useState<string | null>(null);
+  if (!aprobaciones || aprobaciones.length === 0) return null;
+
+  return (
+    <div className="mt-3 space-y-2">
+      {aprobaciones.map((a) => {
+        if (a.estado === "hecha") {
+          return (
+            <div key={a.id} className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 text-sm text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]">
+              <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span><strong>Hecho.</strong> {a.detalle}</span>
+            </div>
+          );
+        }
+        if (a.estado === "cancelada" || a.estado === "error") {
+          const malo = a.estado === "error";
+          return (
+            <div
+              key={a.id}
+              className={`flex items-start gap-2 rounded-xl border-2 p-3 text-sm ${malo
+                ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"
+                : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              <span>{malo ? <><strong>No se pudo:</strong> {a.detalle}</> : "Cancelado. No se tocó nada."}</span>
+            </div>
+          );
+        }
+        return (
+          <div key={a.id} className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-4 dark:bg-[var(--data-warning-500)]/12">
+            <p className="flex items-center gap-2 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+              {a.titulo} — esto cambia tus datos
+            </p>
+            {a.resumen && (
+              <p className="mt-1.5 text-sm font-medium text-[var(--text-primary)]">{a.resumen}</p>
+            )}
+            <dl className="mt-2 grid gap-1 text-sm text-[var(--text-secondary)] sm:grid-cols-2">
+              {Object.entries(a.payload).map(([k, v]) => (
+                <div key={k} className="flex gap-1.5">
+                  <dt className="font-semibold text-[var(--text-tertiary)]">{k}:</dt>
+                  <dd className="min-w-0 break-words text-[var(--text-primary)]">{String(v)}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={enCurso === a.id}
+                onClick={() => { setEnCurso(a.id); onResolver(a.id, "approve"); }}
+                className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
+              >
+                {enCurso === a.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                Confirmar
+              </button>
+              <button
+                type="button"
+                disabled={enCurso === a.id}
+                onClick={() => { setEnCurso(a.id); onResolver(a.id, "reject"); }}
+                className="inline-flex h-10 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Los botones que abren la pantalla de la que habla la respuesta.
+ *
+ * Navega por el evento `admin:navigate` —el mismo que usan el buscador global y
+ * las notificaciones— en vez de un `<a href>`: el panel es una SPA y recargar
+ * pierde la conversación. Nunca navega solo; el usuario decide cuándo.
+ */
+function BotonesDeAccion({ acciones }: { acciones?: AccionNavegar[] }) {
+  if (!acciones || acciones.length === 0) return null;
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {acciones.map((a) => (
+        <button
+          key={a.url}
+          type="button"
+          onClick={() => {
+            if (a.filtro) {
+              // El módulo destino levanta el filtro al montar. sessionStorage y
+              // no el evento: los módulos son lazy y pueden no estar montados
+              // cuando se dispara.
+              try { sessionStorage.setItem("admin-buscar", a.filtro); } catch { /* modo privado */ }
+            }
+            window.dispatchEvent(
+              new CustomEvent("admin:navigate", { detail: { tab: a.tab, vista: a.vista ?? undefined } }),
+            );
+          }}
+          className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--surface-sunken)] transition-colors"
+        >
+          <ArrowRight className="h-4 w-4" aria-hidden />
+          Abrir {a.label}
+          {a.filtro && <span className="font-normal text-[var(--text-tertiary)]">· {a.filtro}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function MarkdownContent({ text }: { text: string }) {
   // Render minimalista inspirado en prose. Soporta:

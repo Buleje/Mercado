@@ -45,7 +45,7 @@ export function BirthdayCard() {
               <a
                 href={`https://wa.me/${b.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Feliz cumpleanos ${b.name}! De parte de Buleje.`)}`}
                 target="_blank" rel="noopener noreferrer"
-                className="shrink-0 px-2 py-1 rounded-lg bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold hover:bg-[var(--accent-soft)] transition-colors"
+                className="shrink-0 px-2 py-1 rounded-lg bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold hover:bg-primary/10 transition-colors"
               >
                 Felicitar
               </a>

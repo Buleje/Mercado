@@ -13,8 +13,10 @@ import {
   Filter, ChevronDown, ChevronUp, Trash2, AlertCircle, Bell,
   RotateCcw, History, Scale, FileDown } from "@buleje/design-system/icons";
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
-import { CardTitle, LoadingState, PageTitle, SectionTitle, WarningAlert } from "@buleje/design-system";
+import { CardTitle, LoadingState, SectionTitle, WarningAlert } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
+import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
 import PrestamoTimeline from "@/components/admin/prestamos/PrestamoTimeline";
@@ -94,21 +96,21 @@ type Resumen = {
 
 const STATUS_META: Record<PrestamoStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
   ACTIVO:    { label: "Activo",    color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)]",   icon: Clock },
-  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", icon: CheckCircle2 },
+  PAGADO:    { label: "Pagado",    color: "text-[var(--data-success-500)]", bg: "bg-primary/10", icon: CheckCircle2 },
   VENCIDO:   { label: "Vencido",   color: "text-[var(--data-error-500)]",       bg: "bg-[var(--data-error-100)]",       icon: XCircle },
-  CANCELADO: { label: "Cancelado", color: "text-[var(--text-secondary)]",     bg: "bg-gray-100",     icon: Ban },
+  CANCELADO: { label: "Cancelado", color: "text-[var(--text-secondary)]",     bg: "bg-[var(--surface-sunken)]",     icon: Ban },
 };
 
 const TIPO_META: Record<PrestamoTipo, { label: string; color: string; bg: string; icon: typeof Landmark }> = {
-  PERSONAL:  { label: "Personal",  color: "text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)]",     icon: User },
+  PERSONAL:  { label: "Personal",  color: "text-[var(--data-success-500)]",     bg: "bg-primary/10",     icon: User },
   BANCARIO:  { label: "Bancario",  color: "text-[var(--text-secondary)]", bg: "bg-[var(--surface-sunken)]", icon: Building2 },
   TERCERO:   { label: "Tercero",   color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-100)]", icon: ArrowUpDown },
-  PROVEEDOR: { label: "Proveedor", color: "text-[var(--data-success-500)]",     bg: "bg-[var(--accent-soft)]",     icon: Coins },
+  PROVEEDOR: { label: "Proveedor", color: "text-[var(--data-success-500)]",     bg: "bg-primary/10",     icon: Coins },
 };
 
 const DIRECCION_META: Record<PrestamoDireccion, { label: string; shortLabel: string; color: string; bg: string; icon: typeof ArrowDownToLine }> = {
   DADO:     { label: "Préstamo Dado",     shortLabel: "Dado",     color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)]",     icon: ArrowUpFromLine },
-  RECIBIDO: { label: "Préstamo Recibido", shortLabel: "Recibido", color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", icon: ArrowDownToLine },
+  RECIBIDO: { label: "Préstamo Recibido", shortLabel: "Recibido", color: "text-[var(--data-success-500)]", bg: "bg-primary/10", icon: ArrowDownToLine },
 };
 
 const SISTEMA_LABELS: Record<SistemaAmortizacion, string> = {
@@ -148,13 +150,10 @@ function EmptyChartPrestamos({ message }: { message: string }) {
 }
 
 // ── Sparkline KPI Card (mejora #1) ───────────────────────────────────────────
-
-function genSparkData(base: number): { v: number }[] {
-  const seed = Math.abs(base) || 100;
-  return Array.from({ length: 6 }, (_, i) => ({
-    v: Math.max(0, seed * (0.65 + Math.sin(i + seed * 0.01) * 0.2 + Math.cos(i * 1.5) * 0.15) * (1 + i * 0.04)),
-  }));
-}
+// El sparkline sólo se pinta cuando hay una serie mensual REAL detrás (ver
+// `areaData`/`spark1`/`spark2` más abajo) — mostrar ruido sintético como si
+// fuera tendencia real viola la regla de no presentar un derivado como dato
+// real. Sin `sparkData`, la tarjeta se ve igual pero sin el trazo decorativo.
 
 function SparklineKPICard({
   title, value, sub, accentColor, iconColor, valueColor, icon: Icon, sparkData,
@@ -169,7 +168,8 @@ function SparklineKPICard({
   /** Valor numérico — default neutro; usa warning/error sólo si es crítico. */
   valueColor?: string;
   icon: React.ElementType;
-  sparkData: { v: number }[];
+  /** Serie mensual real (6 puntos). Omitir si no hay un histórico real disponible. */
+  sparkData?: { v: number }[];
 }) {
   const gradId = `sp-${title.replace(/\W+/g, "")}`;
   const resolvedIconColor = iconColor ?? "var(--text-secondary)";
@@ -182,19 +182,21 @@ function SparklineKPICard({
       </div>
       <p className="text-2xl font-extrabold font-mono leading-tight" style={{ color: resolvedValueColor }}>{value}</p>
       {sub && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{sub}</p>}
-      <div className="absolute bottom-0 right-0 w-20 h-10 opacity-40 pointer-events-none">
-        <ResponsiveContainer minWidth={0} width={80} height={40}>
-          <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={accentColor} stopOpacity={0.35} />
-                <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <Area type="monotone" dataKey="v" stroke={accentColor} strokeWidth={1.5} fill={`url(#${gradId})`} dot={false} />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+      {sparkData && sparkData.length > 0 && (
+        <div className="absolute bottom-0 right-0 w-20 h-10 opacity-40 pointer-events-none">
+          <ResponsiveContainer minWidth={0} width={80} height={40}>
+            <AreaChart data={sparkData} margin={{ top: 2, right: 2, bottom: 0, left: 0 }}>
+              <defs>
+                <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={accentColor} stopOpacity={0.35} />
+                  <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area type="monotone" dataKey="v" stroke={accentColor} strokeWidth={1.5} fill={`url(#${gradId})`} dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
@@ -260,21 +262,29 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
   const totalDados = resumen?.totalDados ?? prestamos.filter(p => p.direccion === "DADO").reduce((s, p) => s + p.monto, 0);
   const totalRecibidos = resumen?.totalRecibidos ?? prestamos.filter(p => p.direccion === "RECIBIDO").reduce((s, p) => s + p.monto, 0);
   const maxDireccion = Math.max(totalDados, totalRecibidos, 1);
-  // Sparkline data (mejora 1)
-  const spark1 = genSparkData(totalDados); const spark2 = genSparkData(totalRecibidos);
-  const spark3 = genSparkData(porCobrar); const spark4 = genSparkData(cuotasVencidas * 200);
-  const spark5 = genSparkData(moraAcumulada); const spark6 = genSparkData(tasaRecuperacion * 50);
 
-  // Area chart: cobros vs nuevos prestamos (6 meses)
-  const areaData: { mes: string; cobrado: number; nuevos: number }[] = [];
+  // Area chart: cobros vs nuevos prestamos (6 meses) + split por dirección
+  // para los sparklines de Dados/Recibidos (mismo dato, sin recalcular).
+  const areaData: { mes: string; cobrado: number; nuevos: number; nuevosDados: number; nuevosRecibidos: number }[] = [];
   for (let i = 5; i >= 0; i--) {
     const d = new Date(); d.setMonth(d.getMonth() - i);
     const mesKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const label = d.toLocaleDateString("es-PE", { month: "short" });
     const cobrado = activosAll.reduce((s, p) => s + p.cuotas.filter(c => c.pagadoEn && c.pagadoEn.startsWith(mesKey)).reduce((ss, c) => ss + (c.montoPagado || c.monto), 0), 0);
-    const nuevos = prestamos.filter(p => p.createdAt.startsWith(mesKey)).reduce((s, p) => s + p.monto, 0);
-    areaData.push({ mes: label, cobrado, nuevos });
+    const prestamosDelMes = prestamos.filter(p => p.createdAt.startsWith(mesKey));
+    const nuevos = prestamosDelMes.reduce((s, p) => s + p.monto, 0);
+    const nuevosDados = prestamosDelMes.filter(p => p.direccion === "DADO").reduce((s, p) => s + p.monto, 0);
+    const nuevosRecibidos = prestamosDelMes.filter(p => p.direccion === "RECIBIDO").reduce((s, p) => s + p.monto, 0);
+    areaData.push({ mes: label, cobrado, nuevos, nuevosDados, nuevosRecibidos });
   }
+
+  // Sparklines: sólo para las 2 métricas que son flujo mensual real (altas
+  // nuevas por dirección, ya agregadas arriba). El resto de las tarjetas
+  // (por cobrar/vencidas/mora/recuperación) son saldos o ratios puntuales
+  // sin una serie mensual fiel y barata de construir — se muestran sin
+  // sparkline en vez de fabricar una tendencia (antes: ruido seno/coseno).
+  const spark1 = areaData.map(m => ({ v: m.nuevosDados }));
+  const spark2 = areaData.map(m => ({ v: m.nuevosRecibidos }));
 
   // Top 5 deudores (horizontal bar)
   const deudorMap = new Map<string, number>();
@@ -328,10 +338,10 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <SparklineKPICard title="Dados" value={formatCurrency(totalDados)} sub={`${resumen?.activosDados ?? prestamos.filter(p=>p.direccion==="DADO"&&p.status==="ACTIVO").length} activos`} accentColor="var(--text-tertiary)" iconColor="var(--text-secondary)" icon={ArrowUpFromLine} sparkData={spark1} />
           <SparklineKPICard title="Recibidos" value={formatCurrency(totalRecibidos)} sub={`${resumen?.activosRecibidos ?? prestamos.filter(p=>p.direccion==="RECIBIDO"&&p.status==="ACTIVO").length} activos`} accentColor="var(--accent)" iconColor="var(--text-secondary)" icon={ArrowDownToLine} sparkData={spark2} />
-          <SparklineKPICard title="Por cobrar" value={formatCurrency(resumen?.saldoDados ?? porCobrar)} accentColor="var(--text-tertiary)" iconColor="var(--text-secondary)" icon={DollarSign} sparkData={spark3} />
-          <SparklineKPICard title="Cuotas vencidas" value={String(cuotasVencidas)} valueColor={cuotasVencidas > 0 ? "var(--data-warning)" : undefined} accentColor="var(--text-tertiary)" iconColor={cuotasVencidas > 0 ? "var(--data-warning)" : "var(--text-secondary)"} icon={XCircle} sparkData={spark4} />
-          <SparklineKPICard title="Mora acumulada" value={formatCurrency(moraAcumulada)} valueColor={moraAcumulada > 0 ? "var(--data-warning)" : undefined} accentColor="var(--text-tertiary)" iconColor={moraAcumulada > 0 ? "var(--data-warning)" : "var(--text-secondary)"} icon={AlertTriangle} sparkData={spark5} />
-          <SparklineKPICard title="Recuperación" value={`${tasaRecuperacion.toFixed(1)}%`} accentColor="var(--accent)" iconColor="var(--text-secondary)" icon={TrendingUp} sparkData={spark6} />
+          <SparklineKPICard title="Por cobrar" value={formatCurrency(resumen?.saldoDados ?? porCobrar)} accentColor="var(--text-tertiary)" iconColor="var(--text-secondary)" icon={DollarSign} />
+          <SparklineKPICard title="Cuotas vencidas" value={String(cuotasVencidas)} valueColor={cuotasVencidas > 0 ? "var(--data-warning)" : undefined} accentColor="var(--text-tertiary)" iconColor={cuotasVencidas > 0 ? "var(--data-warning)" : "var(--text-secondary)"} icon={XCircle} />
+          <SparklineKPICard title="Mora acumulada" value={formatCurrency(moraAcumulada)} valueColor={moraAcumulada > 0 ? "var(--data-warning)" : undefined} accentColor="var(--text-tertiary)" iconColor={moraAcumulada > 0 ? "var(--data-warning)" : "var(--text-secondary)"} icon={AlertTriangle} />
+          <SparklineKPICard title="Recuperación" value={`${tasaRecuperacion.toFixed(1)}%`} accentColor="var(--accent)" iconColor="var(--text-secondary)" icon={TrendingUp} />
         </div>
       </m.div>
 
@@ -365,7 +375,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
 
       {/* AreaChart: cobros vs nuevos */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Cobros vs Nuevos préstamos (6 meses)</CardTitle>
           {areaData.some(d => d.cobrado > 0 || d.nuevos > 0) ? (
             <ResponsiveContainer minWidth={0} width="100%" height={250}>
@@ -399,7 +409,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Mejora 3: Top 5 deudores */}
-          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
               <User className="h-4 w-4 text-secondary" /> Top 5 deudores
             </CardTitle>
@@ -412,7 +422,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
                   <Tooltip formatter={((v: number) => [formatCurrency(Number(v)), "Saldo"]) as never} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
                   <Bar dataKey="monto" radius={[0, 6, 6, 0]}>
                     {topDeudores.map((_, i) => (
-                      <Cell key={i} fill={i === 0 ? "#ef4444" : i === 1 ? "#f97316" : "#f97316"} />
+                      <Cell key={i} fill={i === 0 ? "#ef4444" : i === 1 ? "#ff6b5b" : "#ff6b5b"} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -423,7 +433,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
           </div>
 
           {/* Mejora 4: Donut de riesgo con 4 estados semáforo */}
-          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
               <Shield className="h-4 w-4 text-[var(--text-secondary)]" /> Distribución por estado
             </CardTitle>
@@ -452,7 +462,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
           </div>
 
           {/* Mejora 6: Resumen por dirección con barras comparativas */}
-          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6 ">
+          <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
               <Scale className="h-4 w-4 text-[var(--data-success-500)]" /> Dado vs Recibido
             </CardTitle>
@@ -465,7 +475,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
                   </div>
                   <span className="text-xs font-bold font-mono text-[var(--data-error-500)]">{formatCurrency(totalDados)}</span>
                 </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                   <m.div className="h-full bg-[var(--data-error-500)] rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalDados / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.3 }} />
                 </div>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{prestamos.filter(p=>p.direccion==="DADO").length} préstamos</p>
@@ -478,8 +488,8 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
                   </div>
                   <span className="text-xs font-bold font-mono text-[var(--data-success-500)]">{formatCurrency(totalRecibidos)}</span>
                 </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <m.div className="h-full bg-[var(--accent-soft)] rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
+                <div className="h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
+                  <m.div className="h-full bg-primary/10 rounded-full" initial={{ width: 0 }} animate={{ width: `${(totalRecibidos / maxDireccion) * 100}%` }} transition={{ duration: 0.8, delay: 0.5 }} />
                 </div>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{prestamos.filter(p=>p.direccion==="RECIBIDO").length} préstamos</p>
               </div>
@@ -497,6 +507,18 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
     </div>
   );
 }
+
+// Sub-tabs coherentes con el resto del admin: AdminTabBar da reorden por drag,
+// persistencia del orden y registro en el sidebar. El badge de "Cobros" se
+// inyecta en el render (depende de cobrosData, no es estático).
+const PRESTAMOS_MODULE_ID = "prestamos";
+const PRESTAMOS_TAB_ITEMS: AdminTab[] = [
+  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+  { id: "activos", label: "Préstamos Activos" },
+  { id: "cobros", label: "Cobros", icon: Bell },
+  { id: "calculadora", label: "Calculadora" },
+  { id: "historial", label: "Historial" },
+];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -996,6 +1018,7 @@ export default function PrestamosModule() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <AdminModuleHeader
+        as="h2"
         icon={DollarSign}
         eyebrow="Finanzas · Créditos y cuotas"
         title="Préstamos"
@@ -1003,33 +1026,16 @@ export default function PrestamosModule() {
       />
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-[var(--rule-base)] -mx-1 px-1 overflow-x-auto">
-        {([
-          { id: "dashboard" as const, label: "Dashboard" },
-          { id: "activos" as const, label: "Préstamos Activos" },
-          { id: "cobros" as const, label: "Cobros", badge: cobrosData ? cobrosData.vencidas.length : undefined },
-          { id: "calculadora" as const, label: "Calculadora" },
-          { id: "historial" as const, label: "Historial" },
-        ]).map(t => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            className={cn(
-              "shrink-0 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5",
-              activeTab === t.id
-                ? "border-[var(--accent)] text-[var(--accent)]"
-                : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            {t.id === "dashboard" && <BarChart3 className="h-3.5 w-3.5" />}
-            {t.id === "cobros" && <Bell className="h-3.5 w-3.5" />}
-            {t.label}
-            {"badge" in t && t.badge != null && t.badge > 0 && (
-              <span className="ml-0.5 bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold rounded-full px-1.5 py-0.5 leading-none">{t.badge}</span>
-            )}
-          </button>
-        ))}
-      </div>
+      <AdminTabBar
+        moduleId={PRESTAMOS_MODULE_ID}
+        tabs={PRESTAMOS_TAB_ITEMS.map((t) =>
+          t.id === "cobros" && cobrosData && cobrosData.vencidas.length > 0
+            ? { ...t, badge: cobrosData.vencidas.length }
+            : t
+        )}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as "dashboard" | "activos" | "cobros" | "calculadora" | "historial")}
+      />
 
       {/* ── Tab: Dashboard ────────────────────────────────────────────────── */}
       {activeTab === "dashboard" && !loading && <PrestamosDashboard prestamos={prestamos} resumen={resumen} />}
@@ -1063,21 +1069,21 @@ export default function PrestamosModule() {
           <div className="space-y-6">
             {/* KPI Cards — mejorado con iconos prominentes */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl hover:shadow-[var(--shadow-sm)] transition-shadow p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <Landmark className="h-4 w-4 text-[var(--data-info-500)]" />
                   <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Total prestado</p>
                 </div>
                 <p className="text-2xl font-extrabold font-mono text-[var(--text-primary)]">{formatCurrency(totalPrestado)}</p>
               </div>
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl hover:shadow-[var(--shadow-sm)] transition-shadow p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <DollarSign className="h-4 w-4 text-secondary" />
                   <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Por cobrar</p>
                 </div>
                 <p className={cn("text-2xl font-extrabold font-mono", porCobrar > totalPrestado * 0.5 ? "text-secondary" : "text-[var(--data-error-500)]")}>{formatCurrency(porCobrar)}</p>
               </div>
-              <div className={cn("bg-white dark:bg-[var(--color-card)] border rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3", cuotasVencidas > 3 ? "border-[var(--data-error-500)]" : "border-[var(--rule-base)]")}>
+              <div className={cn("bg-[var(--surface-raised)] border rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3", cuotasVencidas > 3 ? "border-[var(--data-error-500)]" : "border-[var(--rule-base)]")}>
                 <div className="flex items-center gap-2 mb-1">
                   <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />
                   <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Cuotas vencidas</p>
@@ -1086,7 +1092,7 @@ export default function PrestamosModule() {
                   {cuotasVencidas}
                 </p>
               </div>
-              <div className={cn("bg-white dark:bg-[var(--color-card)] border rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3", tasaRecuperacion > 80 ? "border-[var(--data-success-500)]/30" : "border-[var(--rule-base)]")}>
+              <div className={cn("bg-[var(--surface-raised)] border rounded-xl  hover:shadow-[var(--shadow-sm)] transition-shadow p-3", tasaRecuperacion > 80 ? "border-[var(--data-success-500)]/30" : "border-[var(--rule-base)]")}>
                 <div className="flex items-center gap-2 mb-1">
                   <TrendingUp className="h-4 w-4 text-[var(--data-success-500)]" />
                   <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Tasa recuperacion</p>
@@ -1099,7 +1105,7 @@ export default function PrestamosModule() {
 
             {/* Grafica mensual */}
             {monthData.some(d => d.cobrado > 0 || d.nuevos > 0) && (
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 ">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
                 <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-3 flex items-center gap-1.5">
                   <TrendingUp className="h-3.5 w-3.5" /> Movimiento mensual (6 meses)
                 </h4>
@@ -1142,29 +1148,29 @@ export default function PrestamosModule() {
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-              <input type="text" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(1); }} placeholder="Buscar por cliente, entidad, N° operación..." className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+              <input type="text" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(1); }} placeholder="Buscar por cliente, entidad, N° operación..." className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
             </div>
-            <button onClick={() => setShowFilters(f => !f)} className={cn("flex items-center gap-1.5 px-4 py-2.5 rounded-lg border text-sm font-semibold transition-colors", showFilters ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]" : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)]")}>
+            <button onClick={() => setShowFilters(f => !f)} className={cn("flex items-center gap-1.5 px-4 py-2.5 rounded-lg border text-sm font-semibold transition-colors", showFilters ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]" : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)]")}>
               <Filter className="h-4 w-4" />
               Filtros {activeFilterCount > 0 && <span className="bg-secondary text-white rounded-full text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5">{activeFilterCount}</span>}
             </button>
-            <button onClick={() => { fetchPrestamos(); fetchResumen(); }} title="Recargar" className="p-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-gray-50 transition-colors">
+            <button onClick={() => { fetchPrestamos(); fetchResumen(); }} title="Recargar" className="p-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors">
               <RotateCcw className="h-4 w-4 text-[var(--text-tertiary)]" />
             </button>
           </div>
           <AnimatePresence>
             {showFilters && (
               <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                <div className="bg-gray-50 rounded-xl border border-[var(--rule-base)] p-4">
+                <div className="bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)] p-4">
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Desde</label><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Hasta</label><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Monto mín.</label><input type="number" value={filterMontoMin} onChange={e => { setFilterMontoMin(e.target.value); setPage(1); }} placeholder="0" className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Monto máx.</label><input type="number" value={filterMontoMax} onChange={e => { setFilterMontoMax(e.target.value); setPage(1); }} placeholder="∞" className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Tipo</label><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Dirección</label><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></div>
-                    <div><label className="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1">Sistema amort.</label><select value={filterSistema} onChange={e => { setFilterSistema(e.target.value as ""|SistemaAmortizacion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></div>
-                    <div className="flex items-end"><button onClick={clearFilters} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--data-error-500)] bg-gray-100 hover:bg-[var(--data-error-50)] transition-colors"><Trash2 className="h-3.5 w-3.5" /> Limpiar</button></div>
+                    <Field label="Desde" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Hasta" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Monto mín." labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="number" value={filterMontoMin} onChange={e => { setFilterMontoMin(e.target.value); setPage(1); }} placeholder="0" className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Monto máx." labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="number" value={filterMontoMax} onChange={e => { setFilterMontoMax(e.target.value); setPage(1); }} placeholder="∞" className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Tipo" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></Field>
+                    <Field label="Dirección" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></Field>
+                    <Field label="Sistema amort." labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><select value={filterSistema} onChange={e => { setFilterSistema(e.target.value as ""|SistemaAmortizacion); setPage(1); }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></Field>
+                    <div className="flex items-end"><button onClick={clearFilters} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--data-error-500)] bg-[var(--surface-sunken)] hover:bg-[var(--data-error-50)] transition-colors"><Trash2 className="h-3.5 w-3.5" /> Limpiar</button></div>
                   </div>
                 </div>
               </m.div>
@@ -1177,11 +1183,11 @@ export default function PrestamosModule() {
       {(activeTab === "activos" || activeTab === "historial") && !loading && prestamos.length > 0 && (() => {
         const counts = { ACTIVO: prestamos.filter(p => p.status === "ACTIVO").length, PAGADO: prestamos.filter(p => p.status === "PAGADO").length, VENCIDO: prestamos.filter(p => p.status === "VENCIDO").length, CANCELADO: prestamos.filter(p => p.status === "CANCELADO").length };
         const pills = [
-          { id: "" as "" | PrestamoStatus, label: "Todos", count: prestamos.length, activeBg: "bg-[var(--accent-600,var(--accent))] text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)]" },
-          { id: "ACTIVO" as PrestamoStatus, label: "Activos", count: counts.ACTIVO, activeBg: "bg-[var(--accent-soft)] text-white", inactiveClass: "bg-[var(--accent-soft)] text-[var(--data-success-500)] border border-[var(--data-success-500)]/30" },
-          { id: "PAGADO" as PrestamoStatus, label: "Pagados", count: counts.PAGADO, activeBg: "bg-gray-500 text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)] border border-[var(--rule-base)]" },
-          { id: "VENCIDO" as PrestamoStatus, label: "Vencidos", count: counts.VENCIDO, activeBg: "bg-[var(--data-error-500)] text-white", inactiveClass: "bg-red-50 text-[var(--data-error-700)] border border-red-200" },
-          { id: "CANCELADO" as PrestamoStatus, label: "Cancelados", count: counts.CANCELADO, activeBg: "bg-gray-700 text-white", inactiveClass: "bg-gray-100 text-[var(--text-secondary)] border border-[var(--rule-base)]" },
+          { id: "" as "" | PrestamoStatus, label: "Todos", count: prestamos.length, activeBg: "bg-[var(--accent-600,var(--accent))] text-white", inactiveClass: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
+          { id: "ACTIVO" as PrestamoStatus, label: "Activos", count: counts.ACTIVO, activeBg: "bg-primary/10 text-white", inactiveClass: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30" },
+          { id: "PAGADO" as PrestamoStatus, label: "Pagados", count: counts.PAGADO, activeBg: "bg-[var(--text-tertiary)] text-white", inactiveClass: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]" },
+          { id: "VENCIDO" as PrestamoStatus, label: "Vencidos", count: counts.VENCIDO, activeBg: "bg-[var(--data-error-500)] text-white", inactiveClass: "bg-[var(--data-error-50)] text-[var(--data-error-700)] border border-[var(--data-error-500)]/30 dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]" },
+          { id: "CANCELADO" as PrestamoStatus, label: "Cancelados", count: counts.CANCELADO, activeBg: "bg-[var(--surface-sunken)] text-white", inactiveClass: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]" },
         ];
         return (
           <div className="flex flex-wrap gap-2 items-center">
@@ -1191,7 +1197,7 @@ export default function PrestamosModule() {
               </button>
             ))}
             {selectedIds.size > 0 && (
-              <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--accent-soft)] border border-[var(--accent)]/20">
+              <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-[var(--accent)]/20">
                 <span className="text-xs font-bold text-[var(--accent)]">{selectedIds.size} selec.</span>
                 <button onClick={() => {
                   const sel = prestamos.filter(p => selectedIds.has(p.id));
@@ -1207,7 +1213,7 @@ export default function PrestamosModule() {
         );
       })()}
       {(activeTab === "activos" || activeTab === "historial") && (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
           {loading ? (
             <LoadingState />
           ) : error ? (
@@ -1258,12 +1264,12 @@ export default function PrestamosModule() {
                       const rowNow = new Date(); const rowSemana = new Date(); rowSemana.setDate(rowNow.getDate() + 7);
                       const tieneVenc = p.cuotas.some(c => !c.pagadoEn && new Date(c.fechaVence) < rowNow);
                       const venceSemana = !tieneVenc && p.cuotas.some(c => !c.pagadoEn && new Date(c.fechaVence) <= rowSemana);
-                      const riskDot = tieneVenc ? "bg-[var(--data-error-500)]" : venceSemana ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]";
+                      const riskDot = tieneVenc ? "bg-[var(--data-error-500)]" : venceSemana ? "bg-[var(--data-warning-500)]" : "bg-primary/10";
                       // Mejora 12: Badge de sistema de amortización
                       const sisBadge = p.sistemaAmortizacion === "FRANCES" ? "F" : p.sistemaAmortizacion === "ALEMAN" ? "A" : "AM";
-                      const sisBg = p.sistemaAmortizacion === "FRANCES" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]" : p.sistemaAmortizacion === "ALEMAN" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]";
+                      const sisBg = p.sistemaAmortizacion === "FRANCES" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : p.sistemaAmortizacion === "ALEMAN" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]";
                       return (
-                        <tr key={p.id} className={cn("border-b border-gray-50 hover:bg-gray-50 transition-colors", selectedIds.has(p.id) && "bg-[var(--accent-soft)]")}>
+                        <tr key={p.id} className={cn("border-b border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)] transition-colors", selectedIds.has(p.id) && "bg-primary/10")}>
                           <td className="px-3 py-3 w-8" onClick={e => e.stopPropagation()}>
                             <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded accent-blue-600 cursor-pointer" />
                           </td>
@@ -1275,7 +1281,7 @@ export default function PrestamosModule() {
                               </div>
                               <div className="min-w-0">
                                 <p className="font-medium text-[var(--text-primary)] truncate">{p.entidadNombre || p.customerId}</p>
-                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                <div className="w-full bg-[var(--surface-sunken)] rounded-full h-1.5 mt-1">
                                   <div className="bg-[var(--accent)] h-1.5 rounded-full" style={{ width: `${p.numeroCuotas > 0 ? (cuotasPagadas / p.numeroCuotas) * 100 : 0}%` }} />
                                 </div>
                                 <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{cuotasPagadas}/{p.numeroCuotas} cuotas</span>
@@ -1310,10 +1316,10 @@ export default function PrestamosModule() {
                 <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                   <p className="text-xs text-[var(--text-secondary)]">{displayList.length} préstamo{displayList.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}</p>
                   <div className="flex gap-1">
-                    <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30">
+                    <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30">
                       <ChevronLeft className="h-4 w-4" />
                     </button>
-                    <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30">
+                    <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30">
                       <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
@@ -1352,7 +1358,7 @@ export default function PrestamosModule() {
           {!cobrosLoading && cobrosData && (
             <>
               {/* Vencidas */}
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--data-error-500)] rounded-xl  overflow-hidden">
+              <div className="bg-[var(--surface-raised)] border border-[var(--data-error-500)] rounded-xl overflow-hidden">
                 <div className="bg-[var(--data-error-50)] px-4 py-3 flex items-center gap-2 border-b border-[var(--data-error-500)]">
                   <XCircle className="h-4 w-4 text-[var(--data-error-500)]" />
                   <span className="text-sm font-bold text-[var(--data-error-500)]">
@@ -1392,7 +1398,7 @@ export default function PrestamosModule() {
                               href={waLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition"
+                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-white text-xs font-bold hover:bg-primary/10 transition"
                               title="Enviar recordatorio por WhatsApp"
                             >
                               <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -1407,7 +1413,7 @@ export default function PrestamosModule() {
               </div>
 
               {/* Próximas */}
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--data-warning-500)] rounded-xl  overflow-hidden">
+              <div className="bg-[var(--surface-raised)] border border-[var(--data-warning-500)] rounded-xl overflow-hidden">
                 <div className="bg-[var(--data-warning-50)] px-4 py-3 flex items-center gap-2 border-b border-[var(--data-warning-500)]">
                   <Clock className="h-4 w-4 text-[var(--data-warning-500)]" />
                   <span className="text-sm font-bold text-[var(--data-warning-500)]">
@@ -1436,7 +1442,7 @@ export default function PrestamosModule() {
                                 "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap",
                                 isUrgent
                                   ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
-                                  : "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                                  : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                               )}>
                                 {c.diasRestantes}d restantes
                               </span>
@@ -1453,7 +1459,7 @@ export default function PrestamosModule() {
                               href={waLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--accent-soft)] text-white text-xs font-bold hover:bg-[var(--accent-soft)] transition"
+                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-white text-xs font-bold hover:bg-primary/10 transition"
                               title="Enviar recordatorio por WhatsApp"
                             >
                               <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -1480,10 +1486,9 @@ export default function PrestamosModule() {
       {/* ── Tab: Calculadora ──────────────────────────────────────────────────── */}
       {activeTab === "calculadora" && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6  space-y-4">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto (S/)</label>
+              <Field label="Monto (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <input
                   type="number"
                   step="0.01"
@@ -1491,11 +1496,10 @@ export default function PrestamosModule() {
                   value={calcMonto}
                   onChange={e => setCalcMonto(e.target.value)}
                   placeholder="1000"
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tasa de interés (%)</label>
+              </Field>
+              <Field label="Tasa de interés (%)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <input
                   type="number"
                   step="0.1"
@@ -1504,28 +1508,26 @@ export default function PrestamosModule() {
                   value={calcTasa}
                   onChange={e => setCalcTasa(e.target.value)}
                   placeholder="12"
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° cuotas</label>
-                <input type="number" min="1" max="60" value={calcCuotas} onChange={e => setCalcCuotas(e.target.value)} placeholder="12" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
-              </div>
+              </Field>
+              <Field label="N° cuotas" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                <input type="number" min="1" max="60" value={calcCuotas} onChange={e => setCalcCuotas(e.target.value)} placeholder="12" className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+              </Field>
               {/* Mejora 19: Sistema selector */}
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Sistema amortización</label>
-                <select value={calcSistema} onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30">
+              <Field label="Sistema amortización" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                <select value={calcSistema} onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30">
                   {Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
-              </div>
+              </Field>
             </div>
             <div className="flex flex-wrap gap-2">
               {amortizacion.length > 0 && (
                 <>
-                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)]  transition-colors">
+                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] transition-colors">
                     <Plus className="h-4 w-4" /> Crear Préstamo con estos datos
                   </button>
-                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold  transition-colors border", showComparador ? "bg-[var(--accent-soft)] text-white border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success-500)]/30 hover:text-[var(--data-success-500)]")}>
+                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold  transition-colors border", showComparador ? "bg-primary/10 text-white border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success-500)]/30 hover:text-[var(--data-success-500)]")}>
                     <Scale className="h-4 w-4" /> Comparar sistemas
                   </button>
                 </>
@@ -1535,7 +1537,7 @@ export default function PrestamosModule() {
 
           {/* Amortization table */}
           {amortizacion.length > 0 && (
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-[var(--rule-soft)]">
                 <p className="text-sm font-bold text-[var(--text-primary)]">Tabla de amortización</p>
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
@@ -1546,7 +1548,7 @@ export default function PrestamosModule() {
               </div>
               <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-white dark:bg-[var(--color-card)]">
+                  <thead className="sticky top-0 bg-[var(--surface-raised)]">
                     <tr className="border-b border-[var(--rule-soft)] text-left">
                       <th className="px-4 py-2 font-semibold text-[var(--text-secondary)] text-center">#</th>
                       <th className="px-4 py-2 font-semibold text-[var(--text-secondary)] text-right">Cuota</th>
@@ -1557,7 +1559,7 @@ export default function PrestamosModule() {
                   </thead>
                   <tbody>
                     {amortizacion.map(r => (
-                      <tr key={r.num} className="border-b border-gray-50">
+                      <tr key={r.num} className="border-b border-[var(--rule-soft)]">
                         <td className="px-4 py-2 text-center text-[var(--text-secondary)]">{r.num}</td>
                         <td className="px-4 py-2 text-right font-medium text-[var(--text-primary)]">{formatCurrency(r.cuota)}</td>
                         <td className="px-4 py-2 text-right text-[var(--data-error-500)]">{formatCurrency(r.interes)}</td>
@@ -1573,7 +1575,7 @@ export default function PrestamosModule() {
 
           {/* Mejora 20: Gráfico capital vs interés */}
           {amortizacion.length > 0 && (
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 ">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
               <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-[var(--data-info-500)]" /> Evolución Capital vs Interés ({calcSistema})
               </CardTitle>
@@ -1601,7 +1603,7 @@ export default function PrestamosModule() {
             return (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[{ label: "Total a pagar", value: formatCurrency(totalPagar), color: "text-[var(--text-primary)]" }, { label: "Total intereses", value: formatCurrency(totalInt), color: "text-[var(--data-error-500)]" }, { label: "Cuota promedio", value: formatCurrency(cuotaProm), color: "text-[var(--accent)]" }, { label: "Costo / capital", value: montoBase > 0 ? `${((totalInt / montoBase) * 100).toFixed(1)}%` : "—", color: "text-[var(--data-warning-500)]" }].map(kpi => (
-                  <div key={kpi.label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3  text-center">
+                  <div key={kpi.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 text-center">
                     <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">{kpi.label}</p>
                     <p className={cn("text-lg font-extrabold font-mono", kpi.color)}>{kpi.value}</p>
                   </div>
@@ -1615,7 +1617,7 @@ export default function PrestamosModule() {
             const sistemas = Object.entries(amortizacionAll) as [SistemaAmortizacion, { num: number; cuota: number; interes: number; capital: number; saldo: number }[]][];
             const colores: Record<SistemaAmortizacion, string> = { FRANCES: "var(--data-success)", ALEMAN: "var(--text-secondary)", AMERICANO: "var(--text-tertiary)" };
             return (
-              <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6  space-y-4">
+              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 space-y-4">
                 <CardTitle className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                   <Scale className="h-4 w-4 text-[var(--data-success-500)]" /> Comparador — mismo monto, tasa y plazo
                 </CardTitle>
@@ -1659,18 +1661,18 @@ export default function PrestamosModule() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-[var(--color-card)] border-l border-[var(--rule-base)] overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Detalle Préstamo</CardTitle>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
 
                 {/* Info */}
-                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <div className="bg-[var(--surface-sunken)] rounded-xl p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-secondary/20 flex items-center justify-center">
                       <User className="h-5 w-5 text-secondary" />
@@ -1708,7 +1710,7 @@ export default function PrestamosModule() {
                     return (
                       <div className="mt-3 pt-3 border-t border-[var(--rule-base)] grid grid-cols-2 gap-2">
                         {[{ label: "Pagado", val: formatCurrency(totalPagado), col: "text-[var(--data-success-500)]" }, { label: "Pendiente", val: formatCurrency(totalPendiente), col: "text-secondary" }, { label: "Intereses pag.", val: formatCurrency(interesesPag), col: "text-[var(--data-error-500)]" }, { label: "Mora acum.", val: formatCurrency(moraAcum), col: moraAcum > 0 ? "text-[var(--data-warning-600)]" : "text-[var(--text-tertiary)]" }].map(item => (
-                          <div key={item.label} className="bg-gray-50 rounded-lg p-2 text-center">
+                          <div key={item.label} className="bg-[var(--surface-sunken)] rounded-lg p-2 text-center">
                             <p className="text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)]">{item.label}</p>
                             <p className={cn("text-sm font-extrabold font-mono", item.col)}>{item.val}</p>
                           </div>
@@ -1719,7 +1721,7 @@ export default function PrestamosModule() {
                 </div>
 
                 {/* Datos del préstamo (tipo, entidad, sistema, etc.) */}
-                <div className="bg-gray-50 rounded-xl p-3 space-y-2">
+                <div className="bg-[var(--surface-sunken)] rounded-xl p-3 space-y-2">
                   <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">Información del préstamo</p>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
                     <div className="flex justify-between">
@@ -1793,16 +1795,16 @@ export default function PrestamosModule() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-bold text-[var(--text-primary)]">Cronograma de cuotas</h4>
-                    <div className="flex bg-gray-100 rounded-lg p-0.5">
+                    <div className="flex bg-[var(--surface-sunken)] rounded-lg p-0.5">
                       <button
                         onClick={() => setDetailView("timeline")}
-                        className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-colors", detailView === "timeline" ? "bg-white dark:bg-[var(--color-card)] text-[var(--accent)] " : "text-[var(--text-secondary)]")}
+                        className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-colors", detailView === "timeline" ? "bg-[var(--surface-raised)] text-[var(--accent)] " : "text-[var(--text-secondary)]")}
                       >
                         Timeline
                       </button>
                       <button
                         onClick={() => setDetailView("amortizacion")}
-                        className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-colors", detailView === "amortizacion" ? "bg-white dark:bg-[var(--color-card)] text-[var(--accent)] " : "text-[var(--text-secondary)]")}
+                        className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-colors", detailView === "amortizacion" ? "bg-[var(--surface-raised)] text-[var(--accent)] " : "text-[var(--text-secondary)]")}
                       >
                         Tabla
                       </button>
@@ -1848,7 +1850,7 @@ export default function PrestamosModule() {
                               </thead>
                               <tbody>
                                 {rows.map(c => (
-                                  <tr key={c.id} className={cn("border-b border-[var(--rule-soft)]", c.pagadoEn ? "bg-[var(--accent-soft)]/50" : !c.pagadoEn && new Date(c.fechaVence) < new Date() ? "bg-[var(--data-error-50)]/50" : "")}>
+                                  <tr key={c.id} className={cn("border-b border-[var(--rule-soft)]", c.pagadoEn ? "bg-primary/10" : !c.pagadoEn && new Date(c.fechaVence) < new Date() ? "bg-[var(--data-error-50)]/50" : "")}>
                                     <td className="py-1.5 px-1 font-mono text-[var(--text-secondary)]">{c.numeroCuota}</td>
                                     <td className="py-1.5 px-1 text-[var(--text-secondary)]">{new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</td>
                                     <td className="py-1.5 px-1 text-right font-mono text-[var(--text-primary)]">{formatCurrency(c.capital)}</td>
@@ -1857,7 +1859,7 @@ export default function PrestamosModule() {
                                     <td className="py-1.5 px-1 text-right font-mono text-[var(--data-success-500)]">{formatCurrency(c.saldo)}</td>
                                     <td className="py-1.5 px-1 text-center">
                                       {c.pagadoEn ? (
-                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] px-1.5 py-0.5 rounded">PAGADA</span>
+                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 px-1.5 py-0.5 rounded">PAGADA</span>
                                       ) : new Date(c.fechaVence) < new Date() ? (
                                         <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1.5 py-0.5 rounded">VENCIDA</span>
                                       ) : (
@@ -1892,7 +1894,7 @@ export default function PrestamosModule() {
                         const pagoAnticipado = capitalPendiente + (pendientes[0]?.interes || 0);
                         const ahorro = totalPendiente - pagoAnticipado;
                         return (
-                          <div className="mt-3 bg-[var(--accent-soft)] rounded-xl p-3 border border-[var(--data-success-500)]/30">
+                          <div className="mt-3 bg-primary/10 rounded-xl p-3 border border-[var(--data-success-500)]/30">
                             <button
                               onClick={() => setShowPagoAnticipado(!showPagoAnticipado)}
                               className="w-full flex items-center justify-between"
@@ -1921,7 +1923,7 @@ export default function PrestamosModule() {
                                   <span className="font-extrabold font-mono text-[var(--data-success-500)]">{formatCurrency(pagoAnticipado)}</span>
                                 </div>
                                 {ahorro > 0 && (
-                                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold bg-[var(--accent-soft)] rounded-lg px-2 py-1 text-center">
+                                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold bg-primary/10 rounded-lg px-2 py-1 text-center">
                                     Ahorro de {formatCurrency(ahorro)} en intereses futuros
                                   </p>
                                 )}
@@ -1953,7 +1955,7 @@ export default function PrestamosModule() {
   td { padding: 6px 8px; border-bottom: 1px solid #eee; }
   tr:nth-child(even) { background: #f9f9f9; }
   .paid { color: var(--accent); font-weight: bold; }
-  .pending { color: #d97706; }
+  .pending { color: #f0503f; }
   .total-row { background: #f0fdf4 !important; font-weight: bold; }
   .right { text-align: right; }
   .footer { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px; display: flex; justify-content: space-between; font-size: 12px; }
@@ -1994,7 +1996,7 @@ ${cuotas.map(c => { const row = `<tr>
                             w.document.close();
                             setTimeout(() => w.print(), 300);
                           }}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors"
                         >
                           <Printer className="h-3.5 w-3.5" /> Cronograma
                         </button>
@@ -2021,7 +2023,7 @@ ${cuotas.map(c => { const row = `<tr>
   th { background: #f0f0f0; padding: 6px; text-align: left; border: 1px solid #ddd; }
   td { padding: 5px 6px; border: 1px solid #eee; }
   .paid { color: var(--accent); }
-  .pend { color: #d97706; }
+  .pend { color: #f0503f; }
   .right { text-align: right; }
   .firma-section { margin-top: 50px; }
   .firma-line { border-top: 1px solid #333; width: 250px; margin-top: 40px; padding-top: 4px; text-align: center; font-size: 11px; }
@@ -2071,7 +2073,7 @@ ${cuotas.map(c => { const row = `<tr>
                             w.document.close();
                             setTimeout(() => w.print(), 300);
                           }}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--accent)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)]/80 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-[var(--accent)] bg-primary/10 hover:bg-primary/10 transition-colors"
                         >
                           <FileText className="h-3.5 w-3.5" /> Resumen Deuda
                         </button>
@@ -2091,7 +2093,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   key={c.id}
                                   className={cn(
                                     "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all",
-                                    isSelected ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--rule-base)] hover:border-gray-300",
+                                    isSelected ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)] hover:border-[var(--rule-base)]",
                                     isOverdue && !isSelected && "border-[var(--data-error-500)] bg-[var(--data-error-50)]/50"
                                   )}
                                 >
@@ -2121,7 +2123,7 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 onClick={handlePagoMultiple}
                                 disabled={payingMultiple}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50 transition-colors"
                               >
                                 {payingMultiple ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                                 Pagar {selectedCuotaIds.size} cuota{selectedCuotaIds.size > 1 ? "s" : ""} ({formatCurrency(selected.cuotas.filter(c => selectedCuotaIds.has(c.id)).reduce((s, c) => s + c.monto, 0))})
@@ -2132,7 +2134,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   const next = selected.cuotas.find(c => !c.pagadoEn);
                                   if (next) { setPagoCuotaId(next.id); setPagoMonto(String(next.monto)); setPagoError(null); setShowPago(true); }
                                 }}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)]  transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] transition-colors"
                               >
                                 <DollarSign className="h-4 w-4" /> Pagar siguiente cuota
                               </button>
@@ -2142,14 +2144,14 @@ ${cuotas.map(c => { const row = `<tr>
                                 const all = new Set(selected.cuotas.filter(c => !c.pagadoEn).map(c => c.id));
                                 setSelectedCuotaIds(selectedCuotaIds.size === all.size ? new Set() : all);
                               }}
-                              className="px-3 py-2.5 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                              className="px-3 py-2.5 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors"
                               title={selectedCuotaIds.size > 0 ? "Deseleccionar todas" : "Seleccionar todas"}
                             >
                               {selectedCuotaIds.size > 0 ? <X className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                             </button>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30">
+                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30">
                               <RotateCcw className="h-3.5 w-3.5" /> Refinanciar
                             </button>
                             <button onClick={() => setShowCancelConfirm(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error-500)]">
@@ -2168,7 +2170,7 @@ ${cuotas.map(c => { const row = `<tr>
                         {selected.documentos && selected.documentos.length > 0 ? (
                           <div className="space-y-1.5">
                             {selected.documentos.map(doc => (
-                              <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg border border-[var(--rule-soft)] hover:bg-gray-50 transition-colors">
+                              <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg border border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)] transition-colors">
                                 <FileText className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
                                 <span className="text-xs text-[var(--text-primary)] flex-1 truncate">{doc.nombre}</span>
                                 <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{formatDate(doc.createdAt)}</span>
@@ -2176,10 +2178,10 @@ ${cuotas.map(c => { const row = `<tr>
                             ))}
                           </div>
                         ) : <p className="text-xs text-[var(--text-tertiary)] py-1">Sin documentos adjuntos</p>}
-                        <label className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[var(--rule-base)] cursor-pointer hover:bg-gray-50">
+                        <label className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[var(--rule-base)] cursor-pointer hover:bg-[var(--surface-sunken)]">
                           <input type="file" className="hidden" onChange={async (e) => {
                             const file = e.target.files?.[0]; if (!file) return; setUploadingDoc(true);
-                            try { const form = new FormData(); form.append("file", file); form.append("nombre", file.name); await fetch(`/api/prestamos/${selected.id}/documentos`, { method: "POST", body: form }); await openDetail(selected); } catch { /* silent */ } finally { setUploadingDoc(false); e.target.value = ""; }
+                            try { const form = new FormData(); form.append("file", file); form.append("nombre", file.name); await fetch(`/api/prestamos/${selected.id}/documentos`, { method: "POST", headers: csrfHeaders(), body: form }); await openDetail(selected); } catch { /* silent */ } finally { setUploadingDoc(false); e.target.value = ""; }
                           }} />
                           {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--accent)]" /> : <Plus className="h-3.5 w-3.5 text-[var(--data-info-500)]" />}
                           <span className="text-xs text-[var(--text-secondary)]">Subir documento</span>
@@ -2197,7 +2199,7 @@ ${cuotas.map(c => { const row = `<tr>
                             </h4>
                             <div className="space-y-2 max-h-52 overflow-y-auto">
                               {pagadas.map(c => (
-                                <div key={c.id} className="flex items-center justify-between py-2 px-3 bg-[var(--accent-soft)] rounded-xl">
+                                <div key={c.id} className="flex items-center justify-between py-2 px-3 bg-primary/10 rounded-xl">
                                   <div>
                                     <p className="text-xs font-bold text-[var(--text-primary)]">Cuota #{c.numeroCuota}</p>
                                     <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{formatDate(c.pagadoEn!)}</p>
@@ -2227,21 +2229,21 @@ ${cuotas.map(c => { const row = `<tr>
           <>
             <m.div key="ref-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 60 }} onClick={() => setShowRefinanciar(false)} />
             <m.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowRefinanciar(false)}>
-              <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+              <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2"><RotateCcw className="h-5 w-5 text-[var(--data-success-500)]" /> Refinanciar Préstamo</CardTitle>
                   <button onClick={() => setShowRefinanciar(false)}><X className="h-4 w-4 text-[var(--text-secondary)]" /></button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nuevo monto (S/)</label><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></div>
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nueva tasa (%)</label><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></div>
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° cuotas</label><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></div>
-                  <div><label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Sistema</label><select value={refSistema} onChange={e => setRefSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none">{Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+                  <Field label="Nuevo monto (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1"><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
+                  <Field label="Nueva tasa (%)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1"><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
+                  <Field label="N° cuotas" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1"><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
+                  <Field label="Sistema" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1"><select value={refSistema} onChange={e => setRefSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none">{Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
                 </div>
                 {refinanciarError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{refinanciarError}</p>}
                 <div className="flex gap-2">
-                  <button onClick={() => setShowRefinanciar(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200">Cancelar</button>
-                  <button onClick={handleRefinanciar} disabled={refinancing} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50">
+                  <button onClick={() => setShowRefinanciar(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+                  <button onClick={handleRefinanciar} disabled={refinancing} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50">
                     {refinancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Refinanciar
                   </button>
                 </div>
@@ -2257,7 +2259,7 @@ ${cuotas.map(c => { const row = `<tr>
           <>
             <m.div key="cancel-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 60 }} onClick={() => setShowCancelConfirm(false)} />
             <m.div key="cancel-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowCancelConfirm(false)}>
-              <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+              <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
                 <div className="flex items-center gap-3 p-3 bg-[var(--data-error-50)] rounded-xl border border-[var(--data-error-500)]">
                   <AlertCircle className="h-6 w-6 text-[var(--data-error-500)] shrink-0" />
                   <div>
@@ -2267,7 +2269,7 @@ ${cuotas.map(c => { const row = `<tr>
                 </div>
                 <p className="text-sm text-[var(--text-primary)]">Préstamo: <strong>{selected.entidadNombre || selected.customerId}</strong> — {formatCurrency(selected.monto)}</p>
                 <div className="flex gap-2">
-                  <button onClick={() => setShowCancelConfirm(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200">Volver</button>
+                  <button onClick={() => setShowCancelConfirm(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)]">Volver</button>
                   <button onClick={handleCancelPrestamo} disabled={canceling} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50">
                     {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Sí, cancelar
                   </button>
@@ -2298,28 +2300,27 @@ ${cuotas.map(c => { const row = `<tr>
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowPago(false)}
             >
-              <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+              <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
                 <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Pagar Cuota</CardTitle>
-                <div>
-                  <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto del pago (S/)</label>
+                <Field label="Monto del pago (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                   <input
                     type="number"
                     step="0.01"
                     min="0.01"
                     value={pagoMonto}
                     onChange={e => setPagoMonto(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                   />
-                </div>
+                </Field>
                 {pagoError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{pagoError}</p>}
                 <div className="flex gap-2">
-                  <button onClick={() => setShowPago(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
+                  <button onClick={() => setShowPago(false)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors">
                     Cancelar
                   </button>
                   <button
                     onClick={handlePago}
                     disabled={paying}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50 transition-colors"
                   >
                     {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                     Pagar
@@ -2351,24 +2352,24 @@ ${cuotas.map(c => { const row = `<tr>
               className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
               onClick={e => e.target === e.currentTarget && (() => { setShowCreate(false); resetCreateForm(); })()}
             >
-              <div className="w-full max-w-2xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 my-4">
+              <div className="w-full max-w-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 my-4">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Crear Préstamo</CardTitle>
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                       Paso {createStep} de 2
                     </span>
                   </div>
-                  <button onClick={() => { setShowCreate(false); resetCreateForm(); }} className="p-1.5 rounded-lg hover:bg-gray-100">
+                  <button onClick={() => { setShowCreate(false); resetCreateForm(); }} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)]">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>
 
                 {/* Step indicator */}
                 <div className="flex gap-2">
-                  <div className={`flex-1 h-1 rounded-full transition-colors ${createStep >= 1 ? "bg-[var(--accent)]" : "bg-gray-200"}`} />
-                  <div className={`flex-1 h-1 rounded-full transition-colors ${createStep >= 2 ? "bg-[var(--accent)]" : "bg-gray-200"}`} />
+                  <div className={`flex-1 h-1 rounded-full transition-colors ${createStep >= 1 ? "bg-[var(--accent)]" : "bg-[var(--surface-sunken)]"}`} />
+                  <div className={`flex-1 h-1 rounded-full transition-colors ${createStep >= 2 ? "bg-[var(--accent)]" : "bg-[var(--surface-sunken)]"}`} />
                 </div>
 
                 {/* ── STEP 1: Tipo, Dirección, Entidad ──────────── */}
@@ -2376,7 +2377,7 @@ ${cuotas.map(c => { const row = `<tr>
                   <div className="space-y-6">
                     {/* Dirección: DADO / RECIBIDO */}
                     <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">¿Prestas o te prestan?</label>
+                      <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">¿Prestas o te prestan?</span>
                       <div className="grid grid-cols-2 gap-2">
                         {(["DADO", "RECIBIDO"] as const).map(dir => {
                           const meta = DIRECCION_META[dir];
@@ -2386,7 +2387,7 @@ ${cuotas.map(c => { const row = `<tr>
                             <button
                               key={dir}
                               onClick={() => setCreateDireccion(dir)}
-                              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300"}`}
+                              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition-all ${active ? "border-[var(--accent)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-base)]"}`}
                             >
                               <Icon className="h-4 w-4" />
                               {meta.label}
@@ -2399,7 +2400,7 @@ ${cuotas.map(c => { const row = `<tr>
 
                     {/* Tipo de préstamo */}
                     <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">Tipo de préstamo</label>
+                      <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">Tipo de préstamo</span>
                       <div className="grid grid-cols-2 gap-2">
                         {(["PERSONAL", "BANCARIO", "TERCERO", "PROVEEDOR"] as const).map(tipo => {
                           const meta = TIPO_META[tipo];
@@ -2414,7 +2415,7 @@ ${cuotas.map(c => { const row = `<tr>
                                 if (tipo === "BANCARIO") setCreateEntidadTipo("BANCO");
                                 if (tipo === "PROVEEDOR") setCreateEntidadTipo("PROVEEDOR");
                               }}
-                              className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${active ? `border-current bg-current/5` : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-gray-300"}`}
+                              className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${active ? `border-current bg-current/5` : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-base)]"}`}
                               style={active ? { color: meta.color, borderColor: meta.color, backgroundColor: meta.color + "10" } : undefined}
                             >
                               <Icon className="h-3.5 w-3.5" />
@@ -2428,7 +2429,7 @@ ${cuotas.map(c => { const row = `<tr>
                     {/* Bancos rápidos — solo si tipo BANCARIO */}
                     {createTipo === "BANCARIO" && (
                       <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">Seleccionar banco (tasa referencial)</label>
+                        <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">Seleccionar banco (tasa referencial)</span>
                         <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                           {BANK_PRESETS.map(preset => {
                             const active = createEntidadNombre === preset.nombre;
@@ -2436,7 +2437,7 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 key={preset.nombre}
                                 onClick={() => applyBankPreset(preset)}
-                                className={`px-2 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-bold transition-all border ${active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50"}`}
+                                className={`px-2 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-bold transition-all border ${active ? "border-[var(--accent)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50"}`}
                               >
                                 <span className="block">{preset.nombre}</span>
                                 <span className="block text-[length:var(--ts-2xs)] opacity-60">TEA ~{preset.teaRef}%</span>
@@ -2450,77 +2451,78 @@ ${cuotas.map(c => { const row = `<tr>
                     {/* Entidad (para no-personal) */}
                     {createTipo !== "PERSONAL" && (
                       <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Nombre de entidad</label>
+                        <Field label="Nombre de entidad" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <input
                             type="text"
                             value={createEntidadNombre}
                             onChange={e => setCreateEntidadNombre(e.target.value)}
                             placeholder={createTipo === "BANCARIO" ? "Ej: BCP" : createTipo === "PROVEEDOR" ? "Ej: Distribuidora Lima" : "Ej: Juan Pérez"}
-                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                           />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tipo de entidad</label>
+                        </Field>
+                        <Field label="Tipo de entidad" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                           <select
                             value={createEntidadTipo}
                             onChange={e => setCreateEntidadTipo(e.target.value as PrestamoEntidadTipo)}
-                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                           >
                             <option value="">Seleccionar...</option>
                             {(Object.entries(ENTIDAD_LABELS) as [PrestamoEntidadTipo, string][]).map(([k, v]) => (
                               <option key={k} value={k}>{v}</option>
                             ))}
                           </select>
-                        </div>
+                        </Field>
                       </div>
                     )}
 
                     {/* Cliente — solo si DADO */}
                     {createDireccion === "DADO" && (
                       <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">¿A quién le prestas? (teléfono del cliente)</label>
-                        <div className="flex gap-1">
-                          <input
-                            type="text"
-                            value={createCustomerId}
-                            onChange={e => setCreateCustomerId(e.target.value)}
-                            placeholder="Ej: 987654321"
-                            className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowQuickClient(true)}
-                            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--accent)] hover:text-white hover:border-[var(--accent)] text-[var(--text-secondary)] transition-colors"
-                            title="Crear cliente rápido"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </button>
-                        </div>
+                        <Field label="¿A quién le prestas? (teléfono del cliente)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                          {(id) => (
+                            <div className="flex gap-1">
+                              <input
+                                id={id}
+                                type="text"
+                                value={createCustomerId}
+                                onChange={e => setCreateCustomerId(e.target.value)}
+                                placeholder="Ej: 987654321"
+                                className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowQuickClient(true)}
+                                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--accent)] hover:text-white hover:border-[var(--accent)] text-[var(--text-secondary)] transition-colors"
+                                title="Crear cliente rápido"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+                        </Field>
                       </div>
                     )}
 
                     {/* Nro Operación */}
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° de operación (opcional)</label>
+                    <Field label="N° de operación (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input
                         type="text"
                         value={createNroOperacion}
                         onChange={e => setCreateNroOperacion(e.target.value)}
                         placeholder="Ej: OP-2025-001234"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                       />
-                    </div>
+                    </Field>
 
                     {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
                     <div className="flex gap-2 pt-1">
-                      <button onClick={() => { setShowCreate(false); resetCreateForm(); }} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
+                      <button onClick={() => { setShowCreate(false); resetCreateForm(); }} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors">
                         Cancelar
                       </button>
                       <button
                         onClick={() => { setCreateError(null); setCreateStep(2); }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)]  transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] transition-colors"
                       >
                         Siguiente
                         <ChevronRight className="h-4 w-4" />
@@ -2533,7 +2535,7 @@ ${cuotas.map(c => { const row = `<tr>
                 {createStep === 2 && (
                   <div className="space-y-6">
                     {/* Resumen de paso 1 */}
-                    <div className="bg-gray-50 rounded-xl p-3 flex items-center justify-between">
+                    <div className="bg-[var(--surface-sunken)] rounded-xl p-3 flex items-center justify-between">
                       <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                         <span className="font-bold">{DIRECCION_META[createDireccion].label}</span>
                         <span>·</span>
@@ -2545,19 +2547,17 @@ ${cuotas.map(c => { const row = `<tr>
 
                     {/* Moneda + Monto */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Moneda</label>
+                      <Field label="Moneda" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <select
                           value={createMoneda}
                           onChange={e => setCreateMoneda(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         >
                           <option value="PEN">S/ Soles</option>
                           <option value="USD">$ Dólares</option>
                         </select>
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto total</label>
+                      </Field>
+                      <Field label="Monto total" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1" className="col-span-2">
                         <input
                           type="number"
                           step="0.01"
@@ -2565,15 +2565,14 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcMonto}
                           onChange={e => setCalcMonto(e.target.value)}
                           placeholder="10000"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
+                      </Field>
                     </div>
 
                     {/* Tasa mensual + TEA + Mora */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Tasa mensual %</label>
+                      <Field label="Tasa mensual %" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="number"
                           step="0.01"
@@ -2582,11 +2581,10 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcTasa}
                           onChange={e => setCalcTasa(e.target.value)}
                           placeholder="1.5"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">TEA % <span className="font-normal opacity-60">(anual)</span></label>
+                      </Field>
+                      <Field label={<>TEA % <span className="font-normal opacity-60">(anual)</span></>} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="number"
                           step="0.01"
@@ -2595,11 +2593,10 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createTea}
                           onChange={e => setCreateTea(e.target.value)}
                           placeholder="19.56"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Mora % <span className="font-normal opacity-60">(penalidad)</span></label>
+                      </Field>
+                      <Field label={<>Mora % <span className="font-normal opacity-60">(penalidad)</span></>} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="number"
                           step="0.1"
@@ -2608,15 +2605,14 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createMoraInteres}
                           onChange={e => setCreateMoraInteres(e.target.value)}
                           placeholder="15"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
+                      </Field>
                     </div>
 
                     {/* Cuotas + Sistema + Periodo gracia */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">N° cuotas</label>
+                      <Field label="N° cuotas" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="number"
                           min="1"
@@ -2624,23 +2620,21 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcCuotas}
                           onChange={e => setCalcCuotas(e.target.value)}
                           placeholder="12"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Amortización</label>
+                      </Field>
+                      <Field label="Amortización" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <select
                           value={calcSistema}
                           onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)}
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         >
                           {(Object.entries(SISTEMA_LABELS) as [SistemaAmortizacion, string][]).map(([k, v]) => (
                             <option key={k} value={k}>{v}</option>
                           ))}
                         </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Gracia <span className="font-normal opacity-60">(meses)</span></label>
+                      </Field>
+                      <Field label={<>Gracia <span className="font-normal opacity-60">(meses)</span></>} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="number"
                           min="0"
@@ -2648,56 +2642,53 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createPeriodoGracia}
                           onChange={e => setCreatePeriodoGracia(e.target.value)}
                           placeholder="0"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
+                      </Field>
                     </div>
 
                     {/* Fecha desembolso + Garantía */}
                     <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Fecha de desembolso</label>
+                      <Field label="Fecha de desembolso" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="date"
                           value={createFechaDesembolso}
                           onChange={e => setCreateFechaDesembolso(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Garantía <span className="font-normal opacity-60">(opcional)</span></label>
+                      </Field>
+                      <Field label={<>Garantía <span className="font-normal opacity-60">(opcional)</span></>} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input
                           type="text"
                           value={createGarantia}
                           onChange={e => setCreateGarantia(e.target.value)}
                           placeholder="Ej: Título de propiedad"
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
-                      </div>
+                      </Field>
                     </div>
 
                     {/* Notas */}
-                    <div>
-                      <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas (opcional)</label>
+                    <Field label="Notas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                       <input
                         type="text"
                         value={createNotas}
                         onChange={e => setCreateNotas(e.target.value)}
                         placeholder="Motivo del préstamo, condiciones especiales..."
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                       />
-                    </div>
+                    </Field>
 
                     {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
                     <div className="flex gap-2 pt-1">
-                      <button onClick={() => setCreateStep(1)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors">
+                      <button onClick={() => setCreateStep(1)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors">
                         <ChevronLeft className="h-4 w-4 inline -mt-0.5" /> Atrás
                       </button>
                       <button
                         onClick={handleCreate}
                         disabled={creating}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50  transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50 transition-colors"
                       >
                         {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                         Crear Préstamo

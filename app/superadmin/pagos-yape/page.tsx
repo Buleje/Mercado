@@ -1,9 +1,11 @@
 import "server-only";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { Metadata } from "next";
 import { Smartphone } from "@buleje/design-system/icons";
 import { requirePlatformPage } from "@/lib/superadmin-auth";
 import { PaymentApprovalDb } from "@/lib/db/payment-approval.db";
 import PagosYapeClient from "./PagosYapeClient";
+import { SuperAdminModuleTabs, FINANZAS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import {
   SUPERADMIN_PAGE,
   SUPERADMIN_HERO,
@@ -30,6 +32,7 @@ export default async function PagosYapePage() {
 
   return (
     <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={FINANZAS_TABS} />
       <header className={SUPERADMIN_HERO}>
         <div className={SUPERADMIN_HERO_INNER}>
           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -45,9 +48,11 @@ export default async function PagosYapePage() {
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Plataforma · Yape
                 </p>
-                <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
                   Pagos Yape pendientes
-                </h1>
+                
+            <InfoTip side="bottom" title="Pagos Yape pendientes" what="Bandeja de comprobantes Yape que esperan tu aprobación manual." affects="Aprobar un comprobante confirma el pago del pedido o suscripción correspondiente." example="Un cliente paga por Yape y sube su captura → la revisás acá y la aprobás para liberar el pedido." />
+          </h1>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
                   Capturas extraídas por IA. Compará monto/operación detectados
                   vs. esperados y aprobá o rechazá. Atajos:{" "}
@@ -67,11 +72,11 @@ export default async function PagosYapePage() {
               </div>
             </div>
             {initialCount > 0 && (
-              <div className="rounded-xl border-2 border-amber-300/60 bg-amber-50/80 px-3.5 py-2 min-w-[100px] dark:border-amber-700/40 dark:bg-amber-950/30">
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300 leading-none">
+              <div className="rounded-xl border-2 border-teal-300/60 bg-teal-50/80 px-3.5 py-2 min-w-[100px] dark:border-teal-700/40 dark:bg-teal-950/30">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:text-teal-300 leading-none">
                   Pendientes
                 </p>
-                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-amber-700 dark:text-amber-300">
+                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-teal-700 dark:text-teal-300">
                   {initialCount}
                 </p>
               </div>

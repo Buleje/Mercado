@@ -2,6 +2,8 @@
  * Reporte de campaña de cacao imprimible (ADR-128). Client-safe (window.print).
  * Resume acopio + calidad + productores para imprimir/compartir/archivar.
  */
+import { openPrintable } from "./cacao-print";
+
 export interface ReporteStats {
   lotes: number; productoresActivos: number; kgAcopiados: number; valorPagado: number;
   indiceFermentacionProm: number; pctHumedadEnNorma: number;
@@ -69,7 +71,5 @@ export function printCacaoReporte(stats: ReporteStats, trends: ReporteTrends | n
   <div class="foot">Índice de fermentación promedio: ${stats.indiceFermentacionProm}% · Reporte interno de acopio.</div>
 </div><script>window.onload=function(){window.print()}</script></body></html>`;
 
-  const w = window.open("", "_blank", "width=860,height=900");
-  if (!w) return;
-  w.document.write(html); w.document.close(); w.focus();
+  openPrintable(html);
 }

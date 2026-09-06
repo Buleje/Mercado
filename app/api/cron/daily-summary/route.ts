@@ -4,6 +4,7 @@ import { withCronRetry } from "@/lib/cron-retry";
 import { SalesDB, CashRegistersDB } from "@/lib/db/sales.db";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { ProductsDB } from "@/lib/db/products.db";
+import { PorCobrarDB } from "@/lib/db/por-cobrar.db";
 import { logger } from "@/lib/logger";
 import { enqueueActivityLog } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
@@ -238,9 +239,16 @@ export async function GET(req: NextRequest) {
         const aiSummaryText = aiInsights?.summary ?? null;
         const trendEmoji = aiInsights?.emoji ?? "📊";
 
+        // Brandon 2026-06-17: "te deben Y" — agrega el total por cobrar (fiados)
+        // al resumen diario. PorCobrarDB es tenant-scoped; fallback null si falla.
+        const porCobrar = await PorCobrarDB.getSummary(tenant.id).catch(() => null);
+
         const rawLines = [
           `💰 Ventas: S/ ${totalVentas.toFixed(2)} (${totalPedidos} transacciones)`,
           `🧾 Ticket promedio: S/ ${ticketPromedio.toFixed(2)}`,
+          porCobrar && porCobrar.fiados.total > 0
+            ? `🤝 Te deben: S/ ${porCobrar.fiados.total.toFixed(2)} (${porCobrar.fiados.count} fiados)`
+            : null,
           `📦 Stock bajo: ${productosStockBajo.length} productos`,
           diferenciaCaja !== null ? `💵 Diferencia caja: S/ ${diferenciaCaja.toFixed(2)}` : null,
           top5Productos.length > 0 ? `🏆 Top: ${top5Productos.slice(0, 3).map((p, i) => `${i + 1}. ${p.nombre} (${p.cantidad})`).join(" | ")}` : null,

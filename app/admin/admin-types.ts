@@ -184,10 +184,10 @@ export const STATUS_LABELS: Record<OrderStatus, string> = {
 
 export const STATUS_COLORS: Record<OrderStatus, string> = {
   pendiente: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
-  confirmado: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  confirmado: "bg-primary/10 text-[var(--data-success-500)]",
   preparando: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]",
   en_camino: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  entregado: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  entregado: "bg-primary/10 text-[var(--data-success-500)]",
   cancelado: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
 };
 

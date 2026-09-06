@@ -1,7 +1,8 @@
 "use client";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import { StickyNote, Plus, Trash2, Pin, PinOff, Edit3, Check, X, Search } from "@buleje/design-system/icons";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -21,16 +22,16 @@ type NoteColor = "yellow" | "green" | "blue" | "pink" | "purple" | "orange";
 
 const COLOR_MAP: Record<NoteColor, { bg: string; border: string; darkBg: string; darkBorder: string }> = {
   yellow: { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning-500)]", darkBg: "dark:bg-yellow-950/20", darkBorder: "dark:border-yellow-800" },
-  green:  { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success-500)]/30", darkBg: "dark:bg-[var(--accent-muted)]", darkBorder: "dark:border-[var(--data-success-500)]/30" },
-  blue:   { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success-500)]/30", darkBg: "dark:bg-[var(--accent-muted)]", darkBorder: "dark:border-[var(--data-success-500)]/30" },
+  green:  { bg: "bg-primary/10", border: "border-[var(--data-success-500)]/30", darkBg: "dark:bg-primary/15", darkBorder: "dark:border-[var(--data-success-500)]/30" },
+  blue:   { bg: "bg-primary/10", border: "border-[var(--data-success-500)]/30", darkBg: "dark:bg-primary/15", darkBorder: "dark:border-[var(--data-success-500)]/30" },
   pink:   { bg: "bg-[var(--surface-sunken)]", border: "border-[var(--data-info-500)]", darkBg: "dark:bg-pink-950/20", darkBorder: "dark:border-pink-800" },
-  purple: { bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]", darkBg: "dark:bg-[var(--accent-muted)]/20", darkBorder: "dark:border-[var(--rule-base)]" },
+  purple: { bg: "bg-[var(--surface-sunken)]", border: "border-[var(--rule-base)]", darkBg: "dark:bg-primary/15", darkBorder: "dark:border-[var(--rule-base)]" },
   orange: { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning-500)]", darkBg: "dark:bg-orange-950/20", darkBorder: "dark:border-orange-800" },
 };
 
 const COLOR_DOTS: Record<NoteColor, string> = {
-  yellow: "bg-[var(--data-warning-500)]", green: "bg-[var(--accent-soft)]", blue: "bg-[var(--accent-soft)]",
-  pink: "bg-[var(--data-info-500)]", purple: "bg-[var(--accent-soft)]", orange: "bg-[var(--data-warning-500)]",
+  yellow: "bg-[var(--data-warning-500)]", green: "bg-primary/10", blue: "bg-primary/10",
+  pink: "bg-[var(--data-info-500)]", purple: "bg-primary/10", orange: "bg-[var(--data-warning-500)]",
 };
 
 /* ── seed notes ─────────────────────────────────────────────── */
@@ -85,35 +86,56 @@ export default function QuickNotesTab() {
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ title: newTitle.trim(), content: newContent.trim(), color: newColor, pinned: false }),
       });
-      if (res.ok) {
-        const n = await res.json();
-        setNotes(prev => [{ ...n, createdAt: n.createdAt.slice(0, 16).replace("T", " "), updatedAt: n.updatedAt.slice(0, 16).replace("T", " ") }, ...prev]);
-        toast.success("Nota creada");
-      } else { toast.error("Error al crear la nota"); }
-    } catch { toast.error("Error al crear la nota"); }
-    setNewTitle(""); setNewContent(""); setNewColor("yellow"); setShowNew(false);
+      if (!res.ok) {
+        toast.error(`No se pudo crear la nota (error ${res.status})`);
+        return;
+      }
+      const n = await res.json();
+      setNotes(prev => [{ ...n, createdAt: n.createdAt.slice(0, 16).replace("T", " "), updatedAt: n.updatedAt.slice(0, 16).replace("T", " ") }, ...prev]);
+      toast.success("Nota creada");
+      setNewTitle(""); setNewContent(""); setNewColor("yellow"); setShowNew(false);
+    } catch {
+      toast.error("Error al crear la nota — revisá tu conexión.");
+    }
   };
 
   const handleDelete = async (id: string) => {
+    const previous = notes;
     setNotes(prev => prev.filter(n => n.id !== id));
     try {
-      await fetch(`/api/notes?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/notes?id=${id}`, { method: "DELETE", headers: csrfHeaders() });
+      if (!res.ok) {
+        setNotes(previous);
+        toast.error(`No se pudo eliminar la nota (error ${res.status})`);
+        return;
+      }
       toast.success("Nota eliminada");
-    } catch { toast.error("Error al eliminar la nota"); }
+    } catch {
+      setNotes(previous);
+      toast.error("Error al eliminar la nota — revisá tu conexión.");
+    }
   };
 
   const handlePin = async (id: string) => {
     const note = notes.find(n => n.id === id);
     if (!note) return;
     const newPinned = !note.pinned;
+    const previous = notes;
     setNotes(prev => prev.map(n => n.id === id ? { ...n, pinned: newPinned } : n));
     try {
-      await fetch(`/api/notes?id=${id}`, {
+      const res = await fetch(`/api/notes?id=${id}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ pinned: newPinned }),
       });
-    } catch { toast.error("Error al actualizar la nota"); }
+      if (!res.ok) {
+        setNotes(previous);
+        toast.error(`No se pudo actualizar la nota (error ${res.status})`);
+      }
+    } catch {
+      setNotes(previous);
+      toast.error("Error al actualizar la nota — revisá tu conexión.");
+    }
   };
 
   const startEdit = (note: Note) => {
@@ -123,26 +145,36 @@ export default function QuickNotesTab() {
   const saveEdit = async () => {
     if (!editingId || !editTitle.trim()) return;
     const now = new Date().toISOString().slice(0, 16).replace("T", " ");
+    const previous = notes;
     setNotes(prev => prev.map(n => n.id === editingId ? { ...n, title: editTitle.trim(), content: editContent.trim(), color: editColor, updatedAt: now } : n));
     try {
-      await fetch(`/api/notes?id=${editingId}`, {
+      const res = await fetch(`/api/notes?id=${editingId}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ title: editTitle.trim(), content: editContent.trim(), color: editColor }),
       });
+      if (!res.ok) {
+        setNotes(previous);
+        toast.error(`No se pudo guardar la nota (error ${res.status})`);
+        return;
+      }
       toast.success("Nota guardada");
-    } catch { toast.error("Error al guardar la nota"); }
-    setEditingId(null);
+      setEditingId(null);
+    } catch {
+      setNotes(previous);
+      toast.error("Error al guardar la nota — revisá tu conexión.");
+    }
   };
 
   return (
     <div className="space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-        <div>
-          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Notas Rápidas</SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Apuntes, recordatorios y pendientes del día a día</p>
-        </div>
+      <AdminModuleHeader
+        title="Notas Rápidas"
+        description="Apuntes, recordatorios y pendientes del día a día"
+        icon={StickyNote}
+        noBorder
+      >
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
@@ -152,7 +184,7 @@ export default function QuickNotesTab() {
             <Plus className="h-4 w-4" /> Nueva nota
           </button>
         </div>
-      </div>
+      </AdminModuleHeader>
 
       {/* Stats */}
       <div className="flex flex-wrap items-center gap-6 text-sm">

@@ -101,7 +101,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 function CategoryCard({
   category,
   count,
-  zoneName,
+  zoneName: _zoneName,
   zoneSlug,
 }: {
   category: { id: string; label: string; emoji: string };

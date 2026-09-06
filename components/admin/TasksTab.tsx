@@ -1,11 +1,12 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useState, useEffect, useCallback } from "react";
-import { ListChecks, Plus, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2, X } from "@buleje/design-system/icons";
+import { ClipboardList, ListChecks, Plus, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2, X } from "@buleje/design-system/icons";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 
 type Priority = "baja" | "media" | "alta" | "urgente";
 type TaskStatus = "pendiente" | "en_progreso" | "completada" | "cancelada";
@@ -25,7 +26,7 @@ interface Task {
 
 const PRIORITY_META: Record<Priority, { label: string; color: string; bg: string }> = {
   baja:     { label: "Baja",    color: "text-[var(--text-secondary)]",   bg: "bg-gray-100" },
-  media:    { label: "Media",   color: "text-[var(--data-success-500)]",   bg: "bg-[var(--accent-soft)]" },
+  media:    { label: "Media",   color: "text-[var(--data-success-500)]",   bg: "bg-primary/10" },
   alta:     { label: "Alta",    color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)]" },
   urgente:  { label: "Urgente", color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-50)]" },
 };
@@ -94,7 +95,7 @@ export default function TasksTab() {
   };
 
   const deleteTask = async (id: string) => {
-    await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+    await fetch(`/api/tasks/${id}`, { method: "DELETE", headers: csrfHeaders() });
     setTasks(prev => prev.filter(t => t.id !== id));
   };
 
@@ -103,15 +104,19 @@ export default function TasksTab() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-foreground">Tareas & Asignaciones</SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Coordina el trabajo del equipo</p>
-        </div>
+      {/* El título de la pantalla vive acá (antes era un h2 y el hub tenía que
+          poner el suyo): AdminModuleHeader ya resuelve el responsive del
+          encabezado + acciones. */}
+      <AdminModuleHeader
+        title="Tareas & Asignaciones"
+        description="Coordina el trabajo del equipo"
+        icon={ClipboardList}
+        noBorder
+      >
         <button onClick={openCreate} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
           <Plus className="h-4 w-4" /> Nueva Tarea
         </button>
-      </div>
+      </AdminModuleHeader>
 
       {/* Status filter tabs */}
       <div className="flex items-center gap-1.5">
@@ -155,7 +160,7 @@ export default function TasksTab() {
                   <button
                     onClick={() => changeStatus(t.id, t.status === "completada" ? "pendiente" : "completada")}
                     className={cn("mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all",
-                      t.status === "completada" ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]" : "border-[var(--rule-base)] dark:border-card-border hover:border-[var(--data-success-500)]/30"
+                      t.status === "completada" ? "border-[var(--data-success-500)]/30 bg-primary/10" : "border-[var(--rule-base)] dark:border-card-border hover:border-[var(--data-success-500)]/30"
                     )}
                   >
                     {t.status === "completada" && <Check className="h-3 w-3 text-white" />}
@@ -184,7 +189,7 @@ export default function TasksTab() {
                           <User className="h-3 w-3" />{t.assignedTo}
                         </span>
                       )}
-                      {t.module && <span className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-semibold">{t.module}</span>}
+                      {t.module && <span className="text-[length:var(--ts-2xs)] bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-semibold">{t.module}</span>}
                       {t.dueDate && (
                         <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)]", new Date(t.dueDate) < new Date() && t.status !== "completada" ? "text-[var(--data-error-500)] font-bold" : "text-[var(--text-tertiary)] dark:text-muted")}>
                           <Clock className="h-3 w-3" />{new Date(t.dueDate).toLocaleDateString("es-PE")}
@@ -217,29 +222,25 @@ export default function TasksTab() {
           <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Título de la tarea" className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
           <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción (opcional)" rows={2} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">Prioridad</label>
+            <Field label="Prioridad" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">
               <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all">
                 {Object.entries(PRIORITY_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">Módulo</label>
+            </Field>
+            <Field label="Módulo" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">
               <select value={form.module} onChange={e => setForm(f => ({ ...f, module: e.target.value }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all">
                 <option value="">Sin módulo</option>
                 {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
-            </div>
+            </Field>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">Asignado a</label>
+            <Field label="Asignado a" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">
               <input type="text" value={form.assignedTo} onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value }))} placeholder="Nombre del encargado" className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">Fecha límite</label>
+            </Field>
+            <Field label="Fecha límite" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">
               <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border bg-gray-50 dark:bg-surface text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all" />
-            </div>
+            </Field>
           </div>
           <div className="flex flex-wrap gap-3 pt-1">
             <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground text-sm font-semibold hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>

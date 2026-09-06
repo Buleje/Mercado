@@ -1,0 +1,57 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Reglas de confianza (2026-08-03): cada ignoreDependency lleva el POR QUÉ.
+  // Un reporte con falsos positivos conocidos no se lee nunca más — la meta es
+  // que "unused" signifique borrable.
+  "ignore": [
+    ".claude/**",
+    "scripts/**",
+    "playground/**",
+    "design-system/**",
+    "stories/**",
+    "**/*.stories.{ts,tsx}",
+    "**/*.test.{ts,tsx}",
+    "**/*.spec.{ts,tsx}",
+    "tests/**",
+    "__tests__/**",
+    "e2e/**",
+    "lib/generated/**",
+    "packages/design-system/.storybook/**",
+    "instrumentation*.ts"
+  ],
+  "ignoreDependencies": [
+    // Se carga con `import("gsap")` DINÁMICO (Benefits/HowItWorks): ni knip ni
+    // un grep de `from "gsap"` lo ven, y el tsgo incremental tampoco re-visita
+    // esos archivos. Lo atrapó el build-gate. NO borrar sin build verde.
+    "gsap",
+    // next.config `optimizeCss: true` hace `require('critters')` EN RUNTIME
+    // (node_modules/next/dist/server/post-process.js:16) — ningún grep de
+    // imports lo ve. Desinstalarlo rompe el prerender. NO borrar.
+    "critters",
+    "@prisma/client",
+    "@capacitor/core",
+    "@capacitor/geolocation",
+    "@playwright/mcp",
+    // Los pide .storybook/main.ts en su config webpack (knip no sigue esa cadena):
+    "@babel/core",
+    "@babel/preset-env",
+    "@babel/preset-react",
+    "@babel/preset-typescript",
+    "babel-loader",
+    "css-loader",
+    "style-loader",
+    "postcss-loader",
+    "react-docgen-typescript",
+    // Los usan scripts/ (visual-diff), que está en `ignore`:
+    "pixelmatch",
+    "pngjs",
+    // Cliente RUM: su provider (components/providers/PostHogProvider.tsx) hoy está
+    // HUÉRFANO — nadie lo monta. Pendiente decidir si re-montarlo o borrarlo
+    // (improvement-radar 2026-08-03); mientras tanto no es "borrable".
+    "posthog-js",
+    // Lo importa FeaturedStoresCarousel vía una cadena que knip poda como muerta;
+    // misma decisión pendiente que posthog-js.
+    "embla-carousel-react"
+  ],
+  "ignoreBinaries": ["cap", "k6", "del"]
+}

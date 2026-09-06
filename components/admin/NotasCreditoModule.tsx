@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
@@ -30,13 +31,14 @@ type NCStatus = "BORRADOR" | "EMITIDA" | "ANULADA";
 
 type NotaCredito = {
   id: string;
-  número: string;
+  /** Ya viene formateado del backend (ej. "NC01-0001"). */
+  numero: string;
   tenantId: string;
   orderId?: string;
   saleId?: string;
   orderNumero?: string;
-  codigoMotivo: string;
-  descripcionMotivo: string;
+  motivoCodigo: string;
+  motivoDesc: string;
   monto: number;
   igv: number;
   total: number;
@@ -75,7 +77,7 @@ type SaleDoc = {
 
 type PickerDocType = "all" | "factura" | "boleta" | "ticket";
 type DocType = "all" | "factura" | "boleta" | "nota_credito";
-type SortField = "número" | "total" | "createdAt" | "status";
+type SortField = "numero" | "total" | "createdAt" | "status";
 type SortDir = "asc" | "desc";
 type ViewMode = "table" | "cards" | "kanban";
 
@@ -90,13 +92,13 @@ type NCTemplate = {
 
 const STATUS_META: Record<NCStatus, { label: string; color: string; bg: string; dot: string }> = {
   BORRADOR: { label: "Borrador", color: "text-[var(--text-primary)]", bg: "bg-[var(--surface-sunken)]", dot: "bg-[var(--rule-mid)]" },
-  EMITIDA:  { label: "Emitida",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]", dot: "bg-[var(--accent-soft)]" },
+  EMITIDA:  { label: "Emitida",  color: "text-[var(--data-success-500)]", bg: "bg-primary/10", dot: "bg-primary/10" },
   ANULADA:  { label: "Anulada",  color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-100)]", dot: "bg-[var(--data-error-500)]" },
 };
 
 const DOC_STYLE: Record<string, { bg: string; border: string; icon: string; badge: string; label: string; accent: string }> = {
-  factura: { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success-500)]/30", icon: "\u{1F4CB}", badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", label: "Factura", accent: "text-[var(--data-success-500)]" },
-  boleta:  { bg: "bg-[var(--accent-soft)]", border: "border-[var(--data-success-500)]/30", icon: "\u{1F4C4}", badge: "bg-[var(--accent-soft)] text-[var(--data-success-500)]", label: "Boleta", accent: "text-[var(--data-success-500)]" },
+  factura: { bg: "bg-primary/10", border: "border-[var(--data-success-500)]/30", icon: "\u{1F4CB}", badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", label: "Factura", accent: "text-[var(--data-success-500)]" },
+  boleta:  { bg: "bg-primary/10", border: "border-[var(--data-success-500)]/30", icon: "\u{1F4C4}", badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", label: "Boleta", accent: "text-[var(--data-success-500)]" },
   ticket:  { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning-500)]", icon: "\u{1F3AB}", badge: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", label: "Ticket", accent: "text-[var(--data-warning-500)]" },
 };
 
@@ -173,7 +175,7 @@ function StatusTimeline({ nc }: { nc: NotaCredito }) {
       {steps.map((step, i) => (
         <div key={i} className="relative flex items-start gap-3">
           <div className={cn("absolute -left-3.25 w-4 h-4 rounded-full border-2 flex items-center justify-center",
-            step.done ? "bg-primary border-primary" : "bg-white dark:bg-[var(--color-card)] border-[var(--rule-base)]")}>
+            step.done ? "bg-primary border-primary" : "bg-[var(--surface-raised)] border-[var(--rule-base)]")}>
             {step.done && <span className="text-white text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
           </div>
           <div>
@@ -193,7 +195,7 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
   const meta = STATUS_META[nc.status];
   return (
     <m.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-      className={cn("bg-white dark:bg-[var(--color-card)] border rounded-xl p-4 cursor-pointer transition-all hover:shadow-[var(--shadow-sm)]",
+      className={cn("bg-[var(--surface-raised)] border rounded-xl p-4 cursor-pointer transition-all hover:shadow-[var(--shadow-sm)]",
         selected ? "border-primary ring-2 ring-primary/20" : "border-[var(--rule-base)]")}>
       <div className="flex items-start gap-3">
         <button onClick={(e) => { e.stopPropagation(); onToggle(); }}
@@ -204,18 +206,18 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
         <div className="flex-1 min-w-0" onClick={onSelect}>
           <div className="flex items-center justify-between mb-1">
             <span className="flex items-center gap-1.5">
-              <span className="text-lg">{getDocIcon(nc.número)}</span>
-              <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.número}</span>
+              <span className="text-lg">{getDocIcon(nc.numero)}</span>
+              <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.numero}</span>
             </span>
             <span className={cn("flex items-center gap-1 px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", meta.bg, meta.color)}>
               <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />
               {meta.label}
             </span>
           </div>
-          <p className="text-xs text-[var(--text-secondary)] truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
+          <p className="text-xs text-[var(--text-secondary)] truncate mb-1">[{nc.motivoCodigo}] {nc.motivoDesc}</p>
           {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-1">{nc.clienteNombre}</p>}
           {nc.orderNumero && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] mb-2">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] mb-2">
               {"\u{1F517}"} {nc.orderNumero}
             </span>
           )}
@@ -258,7 +260,7 @@ function WizardProgress({ step }: { step: number }) {
         <div key={i} className="flex items-center gap-2 flex-1">
           <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-[var(--dur-base)]",
             i < step ? "bg-primary text-white " :
-            i === step ? "bg-primary/10 text-primary border-2 border-primary" :
+            i === step ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-primary" :
             "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]")}>
             {i < step ? "\u2713" : i + 1}
           </div>
@@ -290,7 +292,7 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
       )}>
       {/* Color accent strip */}
       <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-primary" :
-        doc.comprobanteTipo === "factura" ? "bg-[var(--accent-soft)]" : doc.comprobanteTipo === "boleta" ? "bg-[var(--accent-soft)]" : "bg-[var(--data-warning-500)]"
+        doc.comprobanteTipo === "factura" ? "bg-primary/10" : doc.comprobanteTipo === "boleta" ? "bg-primary/10" : "bg-[var(--data-warning-500)]"
       )} />
       <div className="flex items-start gap-3 pl-2">
         <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 ",
@@ -336,7 +338,7 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
         </div>
         {isSelected && (
           <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center shrink-0 ">
+            className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center shrink-0">
             <span className="text-xs font-bold">{"\u2713"}</span>
           </m.div>
         )}
@@ -354,7 +356,7 @@ function MotivoCard({ motivo, selected, onClick }: { motivo: typeof MOTIVOS_SUNA
         "text-left p-3 rounded-xl border-2 transition-all duration-[var(--dur-base)]",
         selected
           ? "border-primary bg-primary/5 ring-1 ring-primary/20 "
-          : "border-[var(--rule-base)] hover:border-gray-300 hover:bg-[var(--surface-alt)]"
+          : "border-[var(--rule-base)] hover:border-[var(--rule-base)] hover:bg-[var(--surface-alt)]"
       )}>
       <div className="flex items-center gap-2 mb-1">
         <span className="text-lg">{motivo.icon}</span>
@@ -587,7 +589,7 @@ export default function NotasCreditoModule() {
     if (maxAmount) list = list.filter(nc => nc.total <= parseFloat(maxAmount));
     list.sort((a, b) => {
       let cmp = 0;
-      if (sortField === "número") cmp = a.número.localeCompare(b.número);
+      if (sortField === "numero") cmp = a.numero.localeCompare(b.numero);
       else if (sortField === "total") cmp = a.total - b.total;
       else if (sortField === "createdAt") cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       else if (sortField === "status") cmp = a.status.localeCompare(b.status);
@@ -623,7 +625,7 @@ export default function NotasCreditoModule() {
   const exportCSV = () => {
     const items = someChecked ? filteredNotas.filter(nc => checkedIds.has(nc.id)) : filteredNotas;
     const header = "Número,Motivo,Codigo,Monto,IGV,Total,Status,Fecha\n";
-    const rows = items.map(nc => `${nc.número},"${nc.descripcionMotivo}",${nc.codigoMotivo},${nc.monto},${nc.igv},${nc.total},${nc.status},${nc.createdAt.slice(0, 10)}`).join("\n");
+    const rows = items.map(nc => `${nc.numero},"${nc.motivoDesc}",${nc.motivoCodigo},${nc.monto},${nc.igv},${nc.total},${nc.status},${nc.createdAt.slice(0, 10)}`).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `notas-credito-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
@@ -667,7 +669,7 @@ export default function NotasCreditoModule() {
   };
 
   const handleDuplicate = (nc: NotaCredito) => {
-    setForm({ orderId: nc.saleId ?? nc.orderId ?? "", codigoMotivo: nc.codigoMotivo, descripcionMotivo: nc.descripcionMotivo, monto: String(nc.monto), notasText: nc.notas ?? "" });
+    setForm({ orderId: nc.saleId ?? nc.orderId ?? "", codigoMotivo: nc.motivoCodigo, descripcionMotivo: nc.motivoDesc, monto: String(nc.monto), notasText: nc.notas ?? "" });
     setShowNew(true); setWizardStep(1); setSelected(null);
   };
 
@@ -734,7 +736,7 @@ export default function NotasCreditoModule() {
     doc.setTextColor(60, 60, 60);
     const col1 = 20, col2 = 120;
     const rows = [
-      ["N° Documento:", nc.número],
+      ["N° Documento:", nc.numero],
       ["Fecha:", formatDate(nc.createdAt)],
       ["Estado:", STATUS_META[nc.status].label],
       ["Cliente:", nc.clienteNombre ?? "—"],
@@ -748,9 +750,9 @@ export default function NotasCreditoModule() {
       y += 8;
     });
     y += 4;
-    doc.setFont("helvetica", "bold"); doc.text(`[${nc.codigoMotivo}] Motivo:`, col1, y);
+    doc.setFont("helvetica", "bold"); doc.text(`[${nc.motivoCodigo}] Motivo:`, col1, y);
     doc.setFont("helvetica", "normal");
-    doc.text(nc.descripcionMotivo, col2, y);
+    doc.text(nc.motivoDesc, col2, y);
     y += 12;
     doc.line(15, y, 195, y); y += 8;
     doc.setFontSize(12);
@@ -764,12 +766,12 @@ export default function NotasCreditoModule() {
     if (nc.notas) { doc.setFontSize(10); doc.setTextColor(120, 120, 120); doc.setFont("helvetica", "italic"); doc.text(`Notas: ${nc.notas}`, col1, y + 8); }
     doc.setFontSize(8); doc.setTextColor(160, 160, 160);
     doc.text("Documento generado por Buleje", 105, 285, { align: "center" });
-    doc.save(`NC-${nc.número}-${nc.createdAt.slice(0, 10)}.pdf`);
+    doc.save(`NC-${nc.numero}-${nc.createdAt.slice(0, 10)}.pdf`);
   };
 
   // ── Enviar por WhatsApp ───────────────────────────────────────────────────
   const sendWhatsApp = (nc: NotaCredito) => {
-    const text = `*Nota de Crédito ${nc.número}*\nMotivo: [${nc.codigoMotivo}] ${nc.descripcionMotivo}\nCliente: ${nc.clienteNombre ?? "—"}\nTotal: ${formatCurrency(nc.total)}\nEstado: ${STATUS_META[nc.status].label}\nFecha: ${formatDate(nc.createdAt)}`;
+    const text = `*Nota de Crédito ${nc.numero}*\nMotivo: [${nc.motivoCodigo}] ${nc.motivoDesc}\nCliente: ${nc.clienteNombre ?? "—"}\nTotal: ${formatCurrency(nc.total)}\nEstado: ${STATUS_META[nc.status].label}\nFecha: ${formatDate(nc.createdAt)}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -785,7 +787,7 @@ export default function NotasCreditoModule() {
     const prevTotal = ncMesAnt.reduce((s, nc) => s + nc.total, 0);
     const trend = prevTotal > 0 ? ((total - prevTotal) / prevTotal) * 100 : 0;
     const motivoCounts: Record<string, number> = {};
-    for (const nc of ncMes) { const m = MOTIVOS_SUNAT.find(x => x.code === nc.codigoMotivo)?.label ?? nc.codigoMotivo; motivoCounts[m] = (motivoCounts[m] ?? 0) + 1; }
+    for (const nc of ncMes) { const m = MOTIVOS_SUNAT.find(x => x.code === nc.motivoCodigo)?.label ?? nc.motivoCodigo; motivoCounts[m] = (motivoCounts[m] ?? 0) + 1; }
     const topMotivo = Object.entries(motivoCounts).sort((a, b) => b[1] - a[1])[0];
     return { count, total, trend, topMotivo };
   }, [notas]);
@@ -810,22 +812,22 @@ export default function NotasCreditoModule() {
     const ncMes = notas.filter(nc => nc.createdAt.startsWith(mesActual));
     const motivoMap = new Map<string, { desc: string; count: number }>();
     for (const nc of ncMes) {
-      const desc = MOTIVOS_SUNAT.find(m => m.code === nc.codigoMotivo)?.label || nc.descripcionMotivo || "Otro";
-      const existing = motivoMap.get(nc.codigoMotivo);
-      if (existing) existing.count++; else motivoMap.set(nc.codigoMotivo, { desc, count: 1 });
+      const desc = MOTIVOS_SUNAT.find(m => m.code === nc.motivoCodigo)?.label || nc.motivoDesc || "Otro";
+      const existing = motivoMap.get(nc.motivoCodigo);
+      if (existing) existing.count++; else motivoMap.set(nc.motivoCodigo, { desc, count: 1 });
     }
     const motivoColors: Record<string, string> = { "01": "var(--data-error)", "06": "var(--data-warning)", "07": "var(--data-warning)", "02": "var(--text-secondary)", "03": "var(--text-secondary)", "04": "var(--text-tertiary)", "05": "var(--text-tertiary)" };
-    return Array.from(motivoMap.entries()).map(([code, { desc, count }]) => ({ name: desc, value: count, color: motivoColors[code] || "#9ca3af" }));
+    return Array.from(motivoMap.entries()).map(([code, { desc, count }]) => ({ name: desc, value: count, color: motivoColors[code] || "var(--text-tertiary)" }));
   }, [notas]);
 
   const activeFilterCount = [statusFilter, dateFrom, dateTo, minAmount, maxAmount].filter(Boolean).length;
 
   // ── Semáforo de salud ─────────────────────────────────────────────────────
   const semaforo = useMemo(() => {
-    if (kpis.count === 0) return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" };
+    if (kpis.count === 0) return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-[var(--data-success-500)]", bg: "bg-primary/10" };
     if (kpis.trend > 50) return { nivel: "rojo", label: "Alto", Icon: ShieldX, color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-50)]" };
     if (kpis.trend > 20) return { nivel: "amarillo", label: "Atención", Icon: ShieldAlert, color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)]" };
-    return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]" };
+    return { nivel: "verde", label: "Normal", Icon: ShieldCheck, color: "text-[var(--data-success-500)]", bg: "bg-primary/10" };
   }, [kpis]);
 
   // ── Distribución por día de semana (mes actual) ───────────────────────────
@@ -876,7 +878,7 @@ export default function NotasCreditoModule() {
 
       {/* ── Keyboard Shortcuts Panel ───────────────────────────────────── */}
       {showShortcuts && (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3 text-xs text-[var(--text-secondary)]">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 text-xs text-[var(--text-secondary)]">
           <div className="grid grid-cols-3 gap-2">
             <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono text-[length:var(--ts-2xs)]">N</kbd> Nueva NC</div>
             <div className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono text-[length:var(--ts-2xs)]">F</kbd> Buscar</div>
@@ -905,17 +907,17 @@ export default function NotasCreditoModule() {
             </span>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">NC este mes</p>
               <p className="text-2xl font-extrabold text-[var(--text-primary)]">{kpis.count}</p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{notas.filter(nc => nc.status === "BORRADOR").length} borradores pendientes</p>
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">Monto devuelto</p>
               <p className="text-2xl font-extrabold text-[var(--data-error-500)]">{formatCurrency(kpis.total)}</p>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">solo NCs emitidas este mes</p>
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">vs Mes anterior</p>
               <div className="flex items-center gap-1">
                 {kpis.trend > 0 ? <TrendingUp className="h-4 w-4 text-[var(--data-error-500)]" /> : <TrendingDown className="h-4 w-4 text-[var(--data-success-500)]" />}
@@ -923,7 +925,7 @@ export default function NotasCreditoModule() {
               </div>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{kpis.trend > 0 ? "subió" : "bajó"} respecto al mes pasado</p>
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">Top motivo</p>
               <p className="text-sm font-bold text-[var(--text-primary)] truncate">{kpis.topMotivo ? kpis.topMotivo[0] : "\u2014"}</p>
               {kpis.topMotivo && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{kpis.topMotivo[1]} casos este mes</p>}
@@ -962,7 +964,7 @@ export default function NotasCreditoModule() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
             <input ref={searchRef} type="text" placeholder="Buscar por número, cliente, RUC/DNI..."
               aria-label="Buscar documentos" value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
           <div className="flex gap-1 items-center">
             {(["", "BORRADOR", "EMITIDA", "ANULADA"] as const).map(s => {
@@ -985,7 +987,7 @@ export default function NotasCreditoModule() {
               {([["table", LayoutList], ["cards", LayoutGrid], ["kanban", Kanban]] as const).map(([mode, Icon]) => (
                 <button key={mode} onClick={() => setViewMode(mode)}
                   title={mode === "table" ? "Tabla" : mode === "cards" ? "Tarjetas" : "Kanban"}
-                  className={cn("p-1.5 rounded-lg transition-colors", viewMode === mode ? "bg-white dark:bg-[var(--color-card)] text-primary " : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>
+                  className={cn("p-1.5 rounded-lg transition-colors", viewMode === mode ? "bg-[var(--surface-raised)] text-primary " : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>
                   <Icon className="h-3.5 w-3.5" />
                 </button>
               ))}
@@ -997,26 +999,22 @@ export default function NotasCreditoModule() {
           {showAdvFilters && (
             <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[var(--surface-alt)] rounded-xl p-3">
-                <div>
-                  <label className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">Desde</label>
+                <Field label="Desde" labelClassName="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">
                   <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)]" />
-                </div>
-                <div>
-                  <label className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">Hasta</label>
+                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)]" />
+                </Field>
+                <Field label="Hasta" labelClassName="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">
                   <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)]" />
-                </div>
-                <div>
-                  <label className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">Monto min</label>
+                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)]" />
+                </Field>
+                <Field label="Monto min" labelClassName="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">
                   <input type="number" value={minAmount} onChange={e => setMinAmount(e.target.value)} placeholder="0"
-                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)]" />
-                </div>
-                <div>
-                  <label className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">Monto max</label>
+                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)]" />
+                </Field>
+                <Field label="Monto max" labelClassName="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">
                   <input type="number" value={maxAmount} onChange={e => setMaxAmount(e.target.value)} placeholder={"\u221e"}
-                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)]" />
-                </div>
+                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)]" />
+                </Field>
               </div>
             </m.div>
           )}
@@ -1032,11 +1030,11 @@ export default function NotasCreditoModule() {
               <span className="text-sm font-bold text-primary">{checkedIds.size} seleccionado{checkedIds.size !== 1 ? "s" : ""}</span>
               <div className="flex-1" />
               {filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR").length > 0 && (
-                <button onClick={handleBulkEmit} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] transition-colors">
+                <button onClick={handleBulkEmit} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary/10 text-white hover:bg-primary/10 transition-colors">
                   <Send className="h-3.5 w-3.5" />Emitir {filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR").length} NC
                 </button>
               )}
-              <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors">
+              <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors">
                 <Download className="h-3.5 w-3.5" />Exportar CSV
               </button>
               <button onClick={() => setCheckedIds(new Set())} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">Deseleccionar</button>
@@ -1067,19 +1065,19 @@ export default function NotasCreditoModule() {
                   ) : col.map(nc => (
                     <m.div key={nc.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                       onClick={() => setSelected(nc)}
-                      className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-lg p-3 cursor-pointer hover:shadow-[var(--shadow-sm)] hover:border-primary/40 transition-all">
+                      className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg p-3 cursor-pointer hover:shadow-[var(--shadow-sm)] hover:border-primary/40 transition-all">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{nc.número}</span>
+                        <span className="font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">{nc.numero}</span>
                         <span className="text-sm font-extrabold text-[var(--text-primary)]">{formatCurrency(nc.total)}</span>
                       </div>
-                      <p className="text-xs text-[var(--text-secondary)] truncate mb-1">[{nc.codigoMotivo}] {nc.descripcionMotivo}</p>
+                      <p className="text-xs text-[var(--text-secondary)] truncate mb-1">[{nc.motivoCodigo}] {nc.motivoDesc}</p>
                       {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{nc.clienteNombre}</p>}
                       <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--rule-soft)]">
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{formatDate(nc.createdAt)}</span>
                         <div className="flex gap-1">
                           {nc.status === "BORRADOR" && (
                             <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }}
-                              className="p-1 rounded hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]" title="Emitir">
+                              className="p-1 rounded hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" title="Emitir">
                               <Send className="h-3 w-3" />
                             </button>
                           )}
@@ -1100,7 +1098,7 @@ export default function NotasCreditoModule() {
 
       {/* ── Table / Cards View ─────────────────────────────────────────── */}
       {viewMode !== "kanban" && (
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
         {loading ? (
           <LoadingState />
         ) : error ? (
@@ -1138,8 +1136,8 @@ export default function NotasCreditoModule() {
                         {allChecked && <span className="text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
                       </button>
                     </th>
-                    <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] cursor-pointer select-none" onClick={() => toggleSort("número")}>
-                      <span className="flex items-center gap-1">Documento <SortIcon field="número" /></span>
+                    <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] cursor-pointer select-none" onClick={() => toggleSort("numero")}>
+                      <span className="flex items-center gap-1">Documento <SortIcon field="numero" /></span>
                     </th>
                     <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">Referencia</th>
                     <th className="px-3 py-3 font-semibold text-[var(--text-secondary)]">Motivo</th>
@@ -1159,7 +1157,7 @@ export default function NotasCreditoModule() {
                   {paginated.map(nc => {
                     const meta = STATUS_META[nc.status];
                     return (
-                      <tr key={nc.id} className="border-b border-gray-50 hover:bg-[var(--surface-alt)] transition-colors group">
+                      <tr key={nc.id} className="border-b border-[var(--rule-soft)] hover:bg-[var(--surface-alt)] transition-colors group">
                         <td className="px-3 py-3">
                           <button onClick={() => toggleCheck(nc.id)} className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
                             checkedIds.has(nc.id) ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
@@ -1168,21 +1166,21 @@ export default function NotasCreditoModule() {
                         </td>
                         <td className="px-3 py-3 cursor-pointer" onClick={() => setSelected(nc)}>
                           <span className="flex items-center gap-2">
-                            <span className="text-base">{getDocIcon(nc.número)}</span>
-                            <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.número}</span>
+                            <span className="text-base">{getDocIcon(nc.numero)}</span>
+                            <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.numero}</span>
                           </span>
                           {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{nc.clienteNombre}</p>}
                         </td>
                         <td className="px-3 py-3 hidden sm:table-cell">
                           {nc.orderNumero ? (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                               {"\u{1F517}"} {nc.orderNumero}
                             </span>
                           ) : <span className="text-[var(--text-tertiary)]">{"\u2014"}</span>}
                         </td>
                         <td className="px-3 py-3 text-[var(--text-primary)] truncate max-w-45">
-                          <span className="text-xs text-[var(--text-tertiary)] mr-1">[{nc.codigoMotivo}]</span>
-                          {nc.descripcionMotivo}
+                          <span className="text-xs text-[var(--text-tertiary)] mr-1">[{nc.motivoCodigo}]</span>
+                          {nc.motivoDesc}
                         </td>
                         <td className="px-3 py-3 text-right font-bold text-[var(--text-primary)]">{formatCurrency(nc.total)}</td>
                         <td className="px-3 py-3">
@@ -1195,7 +1193,7 @@ export default function NotasCreditoModule() {
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {nc.status === "BORRADOR" && (
-                              <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="p-1 rounded-lg hover:bg-[var(--accent-soft)] text-[var(--data-success-500)]" title="Emitir">
+                              <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="p-1 rounded-lg hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" title="Emitir">
                                 <Send className="h-3.5 w-3.5" />
                               </button>
                             )}
@@ -1237,13 +1235,13 @@ export default function NotasCreditoModule() {
           <>
             <m.div key="nc-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 40 }} onClick={() => setSelected(null)} />
             <m.div key="nc-panel" initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white dark:bg-[var(--color-card)] border-l border-[var(--rule-base)] overflow-y-auto">
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto">
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
-                      <span className="text-xl">{getDocIcon(selected.número)}</span>
-                      NC {selected.número}
+                      <span className="text-xl">{getDocIcon(selected.numero)}</span>
+                      NC {selected.numero}
                     </CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">Creada {formatDateTime(selected.createdAt)}</p>
                   </div>
@@ -1257,13 +1255,13 @@ export default function NotasCreditoModule() {
                     {STATUS_META[selected.status].label}
                   </span>
                   {selected.orderNumero && (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)]">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                       {"\u{1F517}"} Vinculada a {selected.orderNumero}
                     </span>
                   )}
                   <div className="flex-1" />
                   {selected.status === "BORRADOR" && (
-                    <button onClick={() => handleEmitSunat(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-white hover:bg-[var(--accent-soft)] transition-colors">
+                    <button onClick={() => handleEmitSunat(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary/10 text-white hover:bg-primary/10 transition-colors">
                       <Send className="h-3.5 w-3.5" />Emitir a SUNAT
                     </button>
                   )}
@@ -1275,16 +1273,16 @@ export default function NotasCreditoModule() {
                   <button onClick={() => handleDuplicate(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] transition-colors">
                     <Copy className="h-3.5 w-3.5" />Duplicar
                   </button>
-                  <button onClick={() => sendWhatsApp(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors" title="Enviar por WhatsApp">
+                  <button onClick={() => sendWhatsApp(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors" title="Enviar por WhatsApp">
                     <MessageCircle className="h-3.5 w-3.5" />WhatsApp
                   </button>
-                  <button onClick={() => exportPDF(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors" title="Descargar PDF">
+                  <button onClick={() => exportPDF(selected)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors" title="Descargar PDF">
                     <FileDown className="h-3.5 w-3.5" />PDF
                   </button>
                 </div>
 
                 <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-3">
-                  <p className="text-sm font-bold text-[var(--text-primary)]">[{selected.codigoMotivo}] {selected.descripcionMotivo}</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)]">[{selected.motivoCodigo}] {selected.motivoDesc}</p>
                   {selected.clienteNombre && (
                     <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                       <span>Cliente: <strong className="text-[var(--text-primary)]">{selected.clienteNombre}</strong></span>
@@ -1373,7 +1371,7 @@ export default function NotasCreditoModule() {
             <m.div key="nnc-modal" initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && resetWizard()}>
               <div className={cn(
-                "w-full bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden",
+                "w-full bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden",
                 wizardStep === 0 ? "max-w-3xl" : "max-w-xl"
               )}>
                 {/* Wizard Header */}
@@ -1408,7 +1406,7 @@ export default function NotasCreditoModule() {
                           <button key={tab.id} onClick={() => setPickerDocType(tab.id)}
                             className={cn("flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
                               pickerDocType === tab.id
-                                ? "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] "
+                                ? "bg-[var(--surface-raised)] text-[var(--text-primary)] "
                                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>
                             <span>{tab.icon}</span>
                             <span>{tab.label}</span>
@@ -1425,7 +1423,7 @@ export default function NotasCreditoModule() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                         <input type="text" value={pickerSearch} onChange={e => setPickerSearch(e.target.value)}
                           placeholder="Buscar por número, cliente, RUC/DNI..."
-                          className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                          className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                         {pickerLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--text-tertiary)]" />}
                       </div>
 
@@ -1503,7 +1501,7 @@ export default function NotasCreditoModule() {
                     <div className="space-y-6">
                       {/* ── Templates guardados ─────────────────────────── */}
                       {templates.length > 0 && (
-                        <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3">
+                        <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-3">
                           <button onClick={() => setShowTemplates(s => !s)} className="flex items-center gap-2 w-full text-xs font-bold text-[var(--data-success-500)]">
                             <Bookmark className="h-3.5 w-3.5" />
                             Mis templates guardados ({templates.length})
@@ -1514,7 +1512,7 @@ export default function NotasCreditoModule() {
                               <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                                 <div className="mt-2 space-y-1">
                                   {templates.map(t => (
-                                    <div key={t.id} className="flex items-center gap-2 bg-white dark:bg-[var(--color-card)] rounded-lg px-3 py-2">
+                                    <div key={t.id} className="flex items-center gap-2 bg-[var(--surface-raised)] rounded-lg px-3 py-2">
                                       <span className="flex-1 text-xs text-[var(--text-primary)]">
                                         <strong>{t.name}</strong> — [{t.codigoMotivo}] {t.descripcionMotivo}
                                       </span>
@@ -1532,7 +1530,7 @@ export default function NotasCreditoModule() {
                       {/* Visual Motivo Picker Cards */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <label className="block text-xs font-bold text-[var(--text-secondary)]">Motivo SUNAT {"\u2014"} {"\u00bfPor qu\u00e9"} se emite la NC?</label>
+                          <span className="block text-xs font-bold text-[var(--text-secondary)]">Motivo SUNAT {"\u2014"} {"\u00bfPor qu\u00e9"} se emite la NC?</span>
                           {form.codigoMotivo && (
                             <button onClick={saveTemplate} className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] hover:underline">
                               <BookmarkPlus className="h-3 w-3" />Guardar template
@@ -1552,19 +1550,18 @@ export default function NotasCreditoModule() {
                       </div>
 
                       {/* Description */}
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Descripci{"\u00f3"}n del motivo</label>
+                      <Field label={"Descripci\u00f3n del motivo"} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <textarea value={form.descripcionMotivo} onChange={e => setForm(p => ({ ...p, descripcionMotivo: e.target.value }))} placeholder="Detalle del motivo..." rows={2}
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
-                      </div>
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+                      </Field>
 
                       {/* Item Quantity Picker (if linked to a sale) */}
                       {selectedVenta && selectedVenta.items.length > 0 && (
                         <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-2">
+                          <span className="block text-xs font-bold text-[var(--text-secondary)] mb-2">
                             Items a incluir en la NC {"\u2014"} ajusta cantidades para devoluci{"\u00f3"}n parcial
-                          </label>
-                          <div className="border border-[var(--rule-base)] rounded-xl divide-y divide-gray-100 overflow-hidden">
+                          </span>
+                          <div className="border border-[var(--rule-base)] rounded-xl divide-y divide-[var(--rule-soft)] overflow-hidden">
                             {selectedVenta.items.map((item, idx) => (
                               <div key={idx} className={cn("flex items-center gap-3 p-3 transition-colors", item.selected ? "bg-primary/5" : "hover:bg-[var(--surface-alt)]")}>
                                 <button type="button" onClick={() => handleItemToggle(idx)}
@@ -1604,14 +1601,15 @@ export default function NotasCreditoModule() {
 
                       {/* Manual amount (if no linked sale or override) */}
                       {!selectedVenta && (
-                        <div>
-                          <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Monto a acreditar (S/)</label>
-                          <div className="relative">
-                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-                            <input type="number" step="0.01" min="0.01" value={form.monto} onChange={e => setForm(p => ({ ...p, monto: e.target.value }))} placeholder="0.00"
-                              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                          </div>
-                        </div>
+                        <Field label="Monto a acreditar (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                          {(id) => (
+                            <div className="relative">
+                              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                              <input id={id} type="number" step="0.01" min="0.01" value={form.monto} onChange={e => setForm(p => ({ ...p, monto: e.target.value }))} placeholder="0.00"
+                                className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                            </div>
+                          )}
+                        </Field>
                       )}
 
                       {/* Amount Preview */}
@@ -1620,11 +1618,10 @@ export default function NotasCreditoModule() {
                       )}
 
                       {/* Notes */}
-                      <div>
-                        <label className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Notas internas (opcional)</label>
+                      <Field label="Notas internas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input type="text" value={form.notasText} onChange={e => setForm(p => ({ ...p, notasText: e.target.value }))} placeholder="Observaciones..."
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                      </div>
+                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                      </Field>
 
                       {/* Return stock toggle */}
                       {esDevolucion && (
@@ -1633,7 +1630,7 @@ export default function NotasCreditoModule() {
                             <button type="button" onClick={() => setDevolverStock(!devolverStock)}
                               className={cn("relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
                                 devolverStock ? "bg-primary" : "bg-[var(--rule-base)]")}>
-                              <span className={cn("inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] transition-transform", devolverStock ? "translate-x-4" : "translate-x-0")} />
+                              <span className={cn("inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] transition-transform", devolverStock ? "translate-x-4" : "translate-x-0")} />
                             </button>
                             <span className="text-xs font-bold text-[var(--data-warning-500)]">{"\u{1F4E6}"} Devolver items al stock</span>
                           </div>
@@ -1652,7 +1649,7 @@ export default function NotasCreditoModule() {
                           if (!form.descripcionMotivo.trim()) { setCreateError("Completa la descripci\u00f3n"); return; }
                           if (montoNum <= 0) { setCreateError("El monto debe ser mayor a 0"); return; }
                           setCreateError(null); setWizardStep(2);
-                        }} className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
+                        }} className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors">
                           Siguiente {"\u2192"}
                         </button>
                       </div>
@@ -1724,7 +1721,7 @@ export default function NotasCreditoModule() {
                           {"\u2190"} Atr{"\u00e1"}s
                         </button>
                         <button onClick={handleCreate} disabled={creating}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-all">
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-all">
                           {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                           Crear Nota de Cr{"\u00e9"}dito
                         </button>

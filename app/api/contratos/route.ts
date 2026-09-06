@@ -1,159 +1,77 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { NotesDB } from "@/lib/db/notes.db";
+import { ContractsDB } from "@/lib/db/contracts.db";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { CONTRACT_TIPOS, CONTRACT_ESTADOS, estadoVisible } from "@/lib/types/contracts";
+import type { DbContract } from "@/lib/types/contracts";
 
 // ── Schemas ─────────────────────────────────────────────────────────────────
 
-const TIPOS_CONTRATO = [
-  "VENTA", "SERVICIO", "TRABAJO", "PROVEEDOR",
-  "DISTRIBUCION", "ALQUILER", "COMPRAVENTA", "SUMINISTRO",
-] as const;
-
-const _ESTADOS_CONTRATO = [
-  "BORRADOR", "ACTIVO", "VENCIDO", "ANULADO", "RENOVADO",
-] as const;
-
 const CreateContratoSchema = z.object({
-  tipo: z.enum(TIPOS_CONTRATO),
-  clienteNombre: z.string().min(1, "Nombre del cliente requerido").max(200),
-  clienteDoc: z.string().min(1, "Documento del cliente requerido").max(20),
-  descripcion: z.string().min(1, "Descripcion requerida").max(2000),
-  monto: z.number().nonnegative("Monto debe ser positivo"),
+  tipo: z.enum(CONTRACT_TIPOS),
+  estado: z.enum(CONTRACT_ESTADOS).optional(),
+  clienteNombre: z.string().min(1, "Nombre de la contraparte requerido").max(200),
+  clienteDoc: z.string().max(20).default(""),
+  descripcion: z.string().max(2000).default(""),
+  resumen: z.string().max(2000).default(""),
+  monto: z.number().nonnegative("El monto debe ser positivo").default(0),
   moneda: z.enum(["PEN", "USD"]).default("PEN"),
   fecha: z.string().min(10, "Fecha requerida"),
-  fechaVencimiento: z.string().optional(),
-  clausulas: z.array(z.string().max(1000)).optional(),
-  plantillaId: z.string().optional(),
-  condiciones: z.string().max(2000).optional(),
-  lugarFirma: z.string().max(200).optional(),
-  // Parte 2 (contraparte de la bodega)
-  parte2Nombre: z.string().max(200).optional(),
-  parte2Doc: z.string().max(20).optional(),
+  fechaVencimiento: z.string().min(10).nullish(),
+  clausulas: z.array(z.string().max(4000)).max(40).default([]),
+  contenido: z.string().max(120_000).default(""),
+  datos: z.record(z.string(), z.string()).nullish(),
+  plantillaId: z.string().max(80).nullish(),
+  condiciones: z.string().max(2000).default(""),
+  lugarFirma: z.string().max(200).default("Pucallpa"),
+  customerId: z.string().max(40).nullish(),
+  supplierId: z.string().max(40).nullish(),
+  renovadoDeId: z.string().max(40).nullish(),
 });
-
-// ── Plantillas disponibles (estático) ───────────────────────────────────────
-
-const PLANTILLAS_CONTRATO = [
-  {
-    id: "tpl-compraventa",
-    nombre: "Compraventa de Productos",
-    tipo: "COMPRAVENTA",
-    descripcion: "Contrato estandar de compraventa de mercancias y productos",
-    clausulasDefault: [
-      "DEL OBJETO: El vendedor se compromete a entregar los productos descritos al comprador.",
-      "DEL PRECIO: El precio pactado es el indicado, pagadero segun las condiciones establecidas.",
-      "DE LA ENTREGA: Los productos seran entregados en el lugar y fecha acordados.",
-      "DE LA GARANTIA: El vendedor garantiza la calidad de los productos por 30 dias.",
-      "DE LA RESOLUCION: El contrato podra resolverse por incumplimiento de cualquiera de las partes.",
-    ],
-  },
-  {
-    id: "tpl-servicio",
-    nombre: "Prestacion de Servicios",
-    tipo: "SERVICIO",
-    descripcion: "Contrato para prestacion de servicios profesionales o tecnicos",
-    clausulasDefault: [
-      "DEL OBJETO: El prestador se compromete a brindar los servicios descritos.",
-      "DEL PLAZO: El servicio sera prestado en el plazo indicado.",
-      "DE LA RETRIBUCION: El monto acordado sera pagado segun las condiciones pactadas.",
-      "DE LAS OBLIGACIONES: Ambas partes se comprometen al cumplimiento de lo estipulado.",
-      "DE LA CONFIDENCIALIDAD: Las partes mantendran reserva sobre la informacion compartida.",
-    ],
-  },
-  {
-    id: "tpl-alquiler",
-    nombre: "Alquiler de Local o Espacio",
-    tipo: "ALQUILER",
-    descripcion: "Contrato de arrendamiento de local comercial o espacio",
-    clausulasDefault: [
-      "DEL OBJETO: Se arrienda el inmueble/espacio descrito en las condiciones indicadas.",
-      "DE LA RENTA: La renta mensual es la indicada, pagadera los primeros 5 dias de cada mes.",
-      "DEL PLAZO: El arrendamiento tendra la duracion indicada, renovable por acuerdo.",
-      "DEL USO: El arrendatario usara el bien exclusivamente para el fin acordado.",
-      "DE LA DEVOLUCION: Al termino, el bien sera devuelto en las mismas condiciones.",
-    ],
-  },
-  {
-    id: "tpl-distribucion",
-    nombre: "Distribucion de Productos",
-    tipo: "DISTRIBUCION",
-    descripcion: "Contrato de distribucion exclusiva o no exclusiva de productos",
-    clausulasDefault: [
-      "DEL OBJETO: El productor otorga derechos de distribucion al distribuidor.",
-      "DEL TERRITORIO: La distribucion se limita al territorio acordado.",
-      "DE LOS PRECIOS: Los precios de distribucion seran los del catalogo vigente.",
-      "DEL INVENTARIO: El distribuidor mantendra un stock minimo acordado.",
-      "DE LA VIGENCIA: El contrato tendra la duracion indicada con renovacion automatica.",
-    ],
-  },
-  {
-    id: "tpl-trabajo",
-    nombre: "Contrato de Trabajo",
-    tipo: "TRABAJO",
-    descripcion: "Contrato laboral para empleados de la bodega",
-    clausulasDefault: [
-      "DEL OBJETO: El trabajador prestara servicios en el cargo y funciones indicadas.",
-      "DE LA JORNADA: La jornada laboral sera de 8 horas diarias, 48 horas semanales.",
-      "DE LA REMUNERACION: El empleador pagara la remuneracion indicada mensualmente.",
-      "DE LOS BENEFICIOS: El trabajador gozara de todos los beneficios de ley.",
-      "DEL PERIODO DE PRUEBA: Los primeros 3 meses constituyen periodo de prueba.",
-    ],
-  },
-  {
-    id: "tpl-proveedor",
-    nombre: "Acuerdo con Proveedor",
-    tipo: "PROVEEDOR",
-    descripcion: "Contrato marco con proveedor para suministro recurrente",
-    clausulasDefault: [
-      "DEL OBJETO: El proveedor se compromete al suministro regular de los productos indicados.",
-      "DE LOS PRECIOS: Los precios se mantendran estables por el periodo acordado.",
-      "DE LA ENTREGA: Las entregas se realizaran segun el cronograma establecido.",
-      "DE LA CALIDAD: Los productos cumpliran los estandares de calidad acordados.",
-      "DE LAS PENALIDADES: El incumplimiento generara penalidades segun lo estipulado.",
-    ],
-  },
-  {
-    id: "tpl-suministro",
-    nombre: "Suministro Periodico",
-    tipo: "SUMINISTRO",
-    descripcion: "Contrato de suministro periodico de mercaderias",
-    clausulasDefault: [
-      "DEL OBJETO: El suministrante se obliga a entregar periodicamente los bienes acordados.",
-      "DEL PRECIO: El precio unitario sera el vigente al momento de cada entrega.",
-      "DE LA PERIODICIDAD: Las entregas se realizaran con la frecuencia establecida.",
-      "DE LA CANTIDAD: Las cantidades podran variar dentro del rango acordado.",
-      "DE LA DURACION: El contrato tendra vigencia por el periodo indicado.",
-    ],
-  },
-];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function generarResumen(data: z.infer<typeof CreateContratoSchema>, numero: string): string {
-  const tipoLabel = data.tipo.charAt(0) + data.tipo.slice(1).toLowerCase();
-  const monedaSymbol = data.moneda === "USD" ? "US$" : "S/";
-  return `Contrato ${numero} de ${tipoLabel} con ${data.clienteNombre} (${data.clienteDoc}) por ${monedaSymbol}${data.monto.toFixed(2)}. ${data.descripcion.substring(0, 100)}${data.descripcion.length > 100 ? "..." : ""}`;
+/** Una fecha `AAAA-MM-DD` se ancla al mediodía UTC para que no se corra un día en Perú. */
+export function fechaValida(v: string): Date | null {
+  const d = new Date(v.length === 10 ? `${v}T12:00:00.000Z` : v);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
-async function generarNumeroCorrelativo(tenantId: string): Promise<string> {
-  const year = new Date().getFullYear();
-  const prefix = `CONT-${year}-`;
-  // Audit project-wide 2026-05-19: migrado a NotesDB.count + countWithBothFilters.
-  const count = await NotesDB.countWithBothFilters(
-    tenantId,
-    "CONTRATO:",
-    `"numero":"${prefix}`,
-  );
-  const totalCount = await NotesDB.count(tenantId, { titleStartsWith: "CONTRATO:" });
-  const nextNum = Math.max(count, totalCount) + 1;
-  return `${prefix}${String(nextNum).padStart(4, "0")}`;
+function calcularKpis(contratos: DbContract[]) {
+  let vigentes = 0;
+  let porVencer = 0;
+  let vencidos = 0;
+  let pendientesFirma = 0;
+  let montoVigente = 0;
+
+  for (const c of contratos) {
+    const visible = estadoVisible(c);
+    if (visible === "VIGENTE") vigentes++;
+    if (visible === "POR_VENCER") porVencer++;
+    if (visible === "VENCIDO") vencidos++;
+    if (visible === "PENDIENTE_FIRMA") pendientesFirma++;
+    // El monto comprometido cuenta lo que sigue en pie, no lo anulado ni lo vencido.
+    if (visible === "VIGENTE" || visible === "POR_VENCER" || visible === "PENDIENTE_FIRMA") {
+      montoVigente += c.monto;
+    }
+  }
+
+  return {
+    total: contratos.length,
+    vigentes,
+    porVencer,
+    vencidos,
+    pendientesFirma,
+    anulados: contratos.filter((c) => c.estado === "ANULADO").length,
+    montoVigente,
+    montoTotal: contratos.reduce((s, c) => s + c.monto, 0),
+  };
 }
 
-// ── GET — List contracts with filters ────────────────────────────────────────
+// ── GET — Listado + KPIs ─────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
@@ -161,82 +79,26 @@ export async function GET(req: NextRequest) {
 
   try {
     const url = req.nextUrl;
-    const tipo = url.searchParams.get("tipo");
-    const estado = url.searchParams.get("estado");
-    const search = url.searchParams.get("search");
-    const from = url.searchParams.get("from");
-    const to = url.searchParams.get("to");
-    const plantillas = url.searchParams.get("plantillas");
-
-    // Endpoint to list available templates
-    if (plantillas === "true") {
-      return NextResponse.json({ plantillas: PLANTILLAS_CONTRATO });
-    }
-
-    // Audit project-wide 2026-05-19: migrado a NotesDB.listByTitlePrefix.
-    const notas = await NotesDB.listByTitlePrefix(auth.tenantId, "CONTRATO:", {
-      search: search ?? undefined,
-      from: from ? new Date(`${from}T00:00:00Z`) : undefined,
-      to: to ? new Date(`${to}T23:59:59Z`) : undefined,
+    const contratos = await ContractsDB.list(auth.tenantId, {
+      tipo: url.searchParams.get("tipo") ?? undefined,
+      estado: url.searchParams.get("estado") ?? undefined,
+      search: url.searchParams.get("search") ?? undefined,
+      from: url.searchParams.get("from") ?? undefined,
+      to: url.searchParams.get("to") ?? undefined,
     });
 
-    let contratos = notas
-      .map((n) => {
-        try {
-          const data = JSON.parse(n.content);
-          return {
-            id: n.id,
-            ...data,
-            createdAt: n.createdAt.toISOString(),
-            updatedAt: n.updatedAt.toISOString(),
-          };
-        } catch {
-          return null;
-        }
-      })
-      .filter(Boolean);
-
-    // In-memory filters for JSON fields
-    if (tipo) {
-      contratos = contratos.filter(
-        (c: Record<string, unknown>) => c.tipo === tipo.toUpperCase()
-      );
-    }
-    if (estado) {
-      contratos = contratos.filter(
-        (c: Record<string, unknown>) => c.estado === estado.toUpperCase()
-      );
-    }
-
-    // KPIs
-    const now = new Date();
-    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 86_400_000);
-    const kpis = {
-      total: contratos.length,
-      activos: contratos.filter((c: Record<string, unknown>) => c.estado === "ACTIVO").length,
-      porVencer: contratos.filter((c: Record<string, unknown>) => {
-        if (!c.fechaVencimiento || c.estado !== "ACTIVO") return false;
-        const venc = new Date(c.fechaVencimiento as string);
-        return venc > now && venc <= thirtyDaysFromNow;
-      }).length,
-      vencidos: contratos.filter((c: Record<string, unknown>) => c.estado === "VENCIDO").length,
-      anulados: contratos.filter((c: Record<string, unknown>) => c.estado === "ANULADO").length,
-      montoTotal: contratos
-        .filter((c: Record<string, unknown>) => c.estado === "ACTIVO")
-        .reduce((sum: number, c: Record<string, unknown>) => sum + (Number(c.monto) || 0), 0),
-    };
-
-    return NextResponse.json({ contratos, kpis });
+    return NextResponse.json({ contratos, kpis: calcularKpis(contratos) });
   } catch (e) {
     logger.error("[contratos] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
 
-// ── POST — Create new contract ───────────────────────────────────────────────
+// ── POST — Crear ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  const _rl = await applyRateLimit(req, "MODERATE", "contratos"); if (_rl) return _rl;
+  const _rl = await applyRateLimit(req, "MODERATE", "contratos");
+  if (_rl) return _rl;
   const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -249,68 +111,69 @@ export async function POST(req: NextRequest) {
 
   const parsed = CreateContratoSchema.safeParse(raw);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.flatten().fieldErrors },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
   const data = parsed.data;
 
+  const inicio = fechaValida(data.fecha);
+  if (!inicio) {
+    return NextResponse.json({ error: { fecha: ["Fecha inválida"] } }, { status: 400 });
+  }
+  const vencimiento = data.fechaVencimiento ? fechaValida(data.fechaVencimiento) : null;
+  if (data.fechaVencimiento && !vencimiento) {
+    return NextResponse.json({ error: { fechaVencimiento: ["Fecha inválida"] } }, { status: 400 });
+  }
+  if (vencimiento && vencimiento < inicio) {
+    return NextResponse.json(
+      { error: { fechaVencimiento: ["El vencimiento no puede ser anterior al inicio"] } },
+      { status: 400 },
+    );
+  }
+
   try {
-    const numero = await generarNumeroCorrelativo(auth.tenantId);
-    const resumen = generarResumen(data, numero);
-
-    // If a template was referenced, load its default clauses if none provided
-    let clausulas = data.clausulas ?? [];
-    if (clausulas.length === 0 && data.plantillaId) {
-      const plantilla = PLANTILLAS_CONTRATO.find((p) => p.id === data.plantillaId);
-      if (plantilla) {
-        clausulas = plantilla.clausulasDefault;
-      }
-    }
-
-    const contratoData = {
-      numero,
+    const simbolo = data.moneda === "USD" ? "US$" : "S/";
+    const contrato = await ContractsDB.create(auth.tenantId, {
       tipo: data.tipo,
-      estado: "ACTIVO" as const,
+      estado: data.estado ?? "VIGENTE",
       clienteNombre: data.clienteNombre,
       clienteDoc: data.clienteDoc,
+      customerId: data.customerId ?? null,
+      supplierId: data.supplierId ?? null,
       descripcion: data.descripcion,
+      resumen: data.resumen,
       monto: data.monto,
       moneda: data.moneda,
-      fecha: data.fecha,
-      fechaVencimiento: data.fechaVencimiento || null,
-      clausulas,
-      condiciones: data.condiciones || "",
-      lugarFirma: data.lugarFirma || "Pucallpa",
-      parte2Nombre: data.parte2Nombre || "",
-      parte2Doc: data.parte2Doc || "",
-      plantillaId: data.plantillaId || null,
-      resumen,
+      fechaInicio: inicio.toISOString(),
+      fechaVencimiento: vencimiento ? vencimiento.toISOString() : null,
+      plantillaId: data.plantillaId ?? null,
+      contenido: data.contenido,
+      datos: data.datos ?? null,
+      clausulas: data.clausulas,
+      lugarFirma: data.lugarFirma,
+      condiciones: data.condiciones,
+      renovadoDeId: data.renovadoDeId ?? null,
       creadoPor: auth.username,
-    };
-
-    const nota = await NotesDB.create(auth.tenantId, {
-      title: `CONTRATO: ${numero} — ${data.tipo} — ${data.clienteNombre}`,
-      content: JSON.stringify(contratoData),
-      color: "blue",
-      pinned: false,
     });
+
+    await ContractsDB.addEvent(
+      auth.tenantId,
+      contrato.id,
+      data.renovadoDeId ? "RENOVADO" : "CREADO",
+      `Contrato ${contrato.numero} por ${simbolo}${data.monto.toFixed(2)} con ${data.clienteNombre}`,
+      auth.username,
+    );
 
     logAudit({
       req,
       action: "CREATE",
       entity: "Order",
-      entityId: nota.id,
-      detail: `Contrato ${numero} creado (${data.tipo}) para ${data.clienteNombre} por ${data.moneda === "USD" ? "US$" : "S/"}${data.monto.toFixed(2)}`,
+      entityId: contrato.id,
+      detail: `Contrato ${contrato.numero} creado (${data.tipo}) para ${data.clienteNombre} por ${simbolo}${data.monto.toFixed(2)}`,
       user: auth.username,
       tenantId: auth.tenantId,
     });
 
-    return NextResponse.json(
-      { id: nota.id, ...contratoData, createdAt: nota.createdAt.toISOString() },
-      { status: 201 }
-    );
+    return NextResponse.json(contrato, { status: 201 });
   } catch (e) {
     logger.error("[contratos] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });

@@ -133,7 +133,7 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
                   editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-zinc-600 focus:border-primary",
                 )}
               />
-              <button onClick={handleSave} aria-label="Guardar" className="p-1 rounded-lg hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] text-[var(--data-success-500)]">
+              <button onClick={handleSave} aria-label="Guardar" className="p-1 rounded-lg hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                 <Check className="w-3.5 h-3.5" />
               </button>
               <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="p-1 rounded-lg hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
@@ -166,7 +166,7 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
           </span>
         </p>
         {exceeded && (
-          <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-2 py-1 rounded-full">
+          <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-2 py-1 rounded-full">
             <Trophy className="w-3.5 h-3.5" />
             Meta alcanzada! +S/{extra.toFixed(2)}
           </span>

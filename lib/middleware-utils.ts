@@ -68,6 +68,19 @@ const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 60;
 
 /**
+ * Presupuesto aparte para la LECTURA del drive (`GET /api/admin/documents/*`).
+ *
+ * Mirar una carpeta del panel gasta muchas requests baratas: la miniatura de
+ * cada archivo, el archivo servido en la vista previa, la ficha, las versiones.
+ * Con el techo general de 60/min, revisar una carpeta de 300 documentos moría a
+ * los pocos archivos con un 429 — y el visor lo dibujaba como si fuera el
+ * contenido del archivo. Sólo aplica a GET: las mutaciones (subir, borrar,
+ * compartir) siguen con el techo general.
+ */
+const DRIVE_READ_MAX_REQUESTS = 300;
+const DRIVE_READ_PREFIX = "/api/admin/documents";
+
+/**
  * Legacy alias — kept so existing unit tests that import `RateLimitEntry`
  * from this module keep compiling. New code should not reference it.
  */
@@ -96,6 +109,23 @@ function getEdgeLimiter(): DistributedRateLimiter {
     windowMs: WINDOW_MS,
   });
   return _edgeLimiter;
+}
+
+/** Limitador propio de la lectura del drive — namespace y cupo aparte. */
+let _driveReadLimiter: DistributedRateLimiter | null = null;
+function getDriveReadLimiter(): DistributedRateLimiter {
+  if (_driveReadLimiter) return _driveReadLimiter;
+  _driveReadLimiter = createDistributedRateLimiter({
+    key: "mw:drive-read",
+    maxRequests: DRIVE_READ_MAX_REQUESTS,
+    windowMs: WINDOW_MS,
+  });
+  return _driveReadLimiter;
+}
+
+/** ¿Es una lectura del drive (le corresponde el cupo grande)? */
+export function esLecturaDeDrive(req: NextRequest): boolean {
+  return req.method === "GET" && req.nextUrl.pathname.startsWith(DRIVE_READ_PREFIX);
 }
 
 export function getIP(req: NextRequest): string {
@@ -148,7 +178,7 @@ export async function checkRateLimit(req: NextRequest): Promise<NextResponse | n
   const tenantId = req.headers.get("x-tenant-id") ?? "global";
   const identifier = `${tenantId}:${ip}`;
 
-  const limiter = getEdgeLimiter();
+  const limiter = esLecturaDeDrive(req) ? getDriveReadLimiter() : getEdgeLimiter();
   const allowed = await limiter.check(identifier);
   if (allowed) return null;
 
@@ -167,6 +197,7 @@ export async function checkRateLimit(req: NextRequest): Promise<NextResponse | n
  */
 export function __resetEdgeLimiterForTests(): void {
   _edgeLimiter = null;
+  _driveReadLimiter = null;
   rlStore.clear();
 }
 
@@ -205,11 +236,11 @@ export function buildCSP(pathname: string, nonce?: string): string {
      En prod: nonce + strict-dynamic para máxima seguridad. */
   let scriptSrc: string;
   if (isDev) {
-    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
+    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com`;
   } else if (nonce) {
-    scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
+    scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com`;
   } else {
-    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
+    scriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://us-assets.i.posthog.com`;
   }
 
   // SECURITY 2026-05-12 (audit defensivo P1-1): `img-src *` permitía cargar
@@ -222,8 +253,14 @@ export function buildCSP(pathname: string, nonce?: string): string {
     "style-src":                 "'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src":                   "'self' data: blob: https:",
     "font-src":                  "'self' data: https://fonts.gstatic.com",
-    "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com",
+    "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com https://us.i.posthog.com https://us-assets.i.posthog.com",
     "media-src":                 "'self'",
+    // frame-src: sin declararlo hereda `default-src 'self'`, que NO incluye
+    // blob: — y la vista previa del drive arma un blob con el archivo para
+    // poder leer el status antes de mostrarlo. Resultado: el navegador
+    // bloqueaba el PDF con "Este contenido está bloqueado" (Brandon 2026-07-27).
+    // blob:/data: son de la propia app: no agregan superficie externa.
+    "frame-src":                 "'self' blob: data:",
     "object-src":                "'none'",
     "base-uri":                  "'self'",
     "form-action":               "'self'",

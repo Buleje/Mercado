@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
+import { Field } from "@/components/admin/shared/Field";
 
 type GoalPeriod = "diario" | "semanal" | "mensual";
 // FIX 2026-05-07 (C): nuevas categorías auto-trackeables.
@@ -33,12 +34,12 @@ interface Goal {
 }
 
 const CATEGORY_META: Record<GoalCategory, { label: string; color: string; bg: string; icon: React.ElementType; trackable: boolean }> = {
-  ventas:           { label: "Ventas",           color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: TrendingUp, trackable: true  },
+  ventas:           { label: "Ventas",           color: "text-[var(--data-success-500)]", bg: "bg-primary/10",     icon: TrendingUp, trackable: true  },
   pedidos:          { label: "Pedidos",          color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)]", icon: BarChart3,  trackable: true  },
   clientes:         { label: "Clientes",         color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]",  icon: Users,      trackable: true  },
-  productos:        { label: "Productos",        color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: Package,    trackable: false },
+  productos:        { label: "Productos",        color: "text-[var(--data-success-500)]", bg: "bg-primary/10",     icon: Package,    trackable: false },
   caja:             { label: "Caja",             color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]",  icon: Coins,      trackable: false },
-  ticket_promedio:  { label: "Ticket promedio",  color: "text-[var(--data-success-500)]", bg: "bg-[var(--accent-soft)]",     icon: Coins,      trackable: true  },
+  ticket_promedio:  { label: "Ticket promedio",  color: "text-[var(--data-success-500)]", bg: "bg-primary/10",     icon: Coins,      trackable: true  },
   retencion:        { label: "Retención",        color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]",  icon: Users,      trackable: true  },
 };
 
@@ -710,7 +711,6 @@ export default function GoalsTab() {
           {visible.map(({ goal: g, status }) => {
             const meta = CATEGORY_META[g.category];
             const Icon = meta.icon;
-            const pct  = Math.min(100, g.target > 0 ? Math.round((g.current / g.target) * 100) : 0);
             const dueInfo = g.dueDate ? formatDaysRemaining(g.dueDate) : null;
             const forecast = computeForecast(g);
             const autoValue = pickAutoCurrent(g.category, g.period, autoStats);
@@ -791,7 +791,7 @@ export default function GoalsTab() {
                     <button
                       onClick={() => void syncFromData(g)}
                       title={`Auto-actualizar a ${formatNumber(Math.round(autoValue ?? 0), g.unit)}`}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold hover:bg-primary/20 transition-colors"
                     >
                       <RefreshCw className="h-3 w-3" />
                       Sync
@@ -857,8 +857,7 @@ export default function GoalsTab() {
       {/* Create/Edit Modal */}
       <AdminModal open={showForm} onClose={() => setShowForm(false)} title={editId ? "Editar meta" : "Nueva meta"} variant="default">
         <div className="p-5 space-y-4">
-          <div>
-            <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Nombre de la meta</label>
+          <Field label="Nombre de la meta" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                 <input
                   type="text"
                   value={form.name}
@@ -866,10 +865,9 @@ export default function GoalsTab() {
                   placeholder="ej. Ventas del mes"
                   className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                 />
-              </div>
+              </Field>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Categoría</label>
+                <Field label="Categoría" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <select
                     value={form.category}
                     onChange={e => setForm(f => ({ ...f, category: e.target.value as GoalCategory }))}
@@ -879,9 +877,8 @@ export default function GoalsTab() {
                       <option key={k} value={k}>{v.label}</option>
                     ))}
                   </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Período</label>
+                </Field>
+                <Field label="Período" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <select
                     value={form.period}
                     onChange={e => setForm(f => ({ ...f, period: e.target.value as GoalPeriod }))}
@@ -891,11 +888,10 @@ export default function GoalsTab() {
                       <option key={k} value={k}>{v}</option>
                     ))}
                   </select>
-                </div>
+                </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Meta (cantidad)</label>
+                <Field label="Meta (cantidad)" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <input
                     type="number"
                     min={0}
@@ -904,9 +900,8 @@ export default function GoalsTab() {
                     placeholder="5000"
                     className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Unidad</label>
+                </Field>
+                <Field label="Unidad" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <input
                     type="text"
                     value={form.unit}
@@ -914,7 +909,7 @@ export default function GoalsTab() {
                     placeholder="S/ ó pedidos"
                     className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
-                </div>
+                </Field>
               </div>
 
               {suggestedTargets.length > 0 && (
@@ -926,7 +921,7 @@ export default function GoalsTab() {
                         key={s.label}
                         type="button"
                         onClick={() => setForm(f => ({ ...f, target: String(s.value) }))}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 transition-colors"
                       >
                         <Sparkles className="h-3 w-3" />
                         {s.label}: {formatNumber(s.value, form.unit || "S/")}
@@ -936,19 +931,17 @@ export default function GoalsTab() {
                 </div>
               )}
 
-              <div>
-                <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Fecha límite (opcional)</label>
+              <Field label="Fecha límite (opcional)" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                 <input
                   type="date"
                   value={form.dueDate}
                   onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
                   className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                 />
-              </div>
+              </Field>
 
               {editId && (
-                <div>
-                  <label className="text-xs font-bold text-[var(--text-secondary)] mb-1 block">Progreso actual</label>
+                <Field label="Progreso actual" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                   <input
                     type="number"
                     min={0}
@@ -956,7 +949,7 @@ export default function GoalsTab() {
                     onChange={e => setForm(f => ({ ...f, current: e.target.value }))}
                     className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
-                </div>
+                </Field>
               )}
 
           <div className="flex gap-3 pt-1">

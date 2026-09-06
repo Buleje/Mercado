@@ -424,7 +424,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
           <button
             type="button"
             onClick={() => setDraftRow({ name: "", attr: "", priceModifier: 0, stock: null, image: null, sku: null })}
-            className="flex-1 min-w-[160px] flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors text-sm font-bold"
+            className="flex-1 min-w-[160px] flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-primary/40 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors text-sm font-bold"
           >
             <Plus className="h-4 w-4" />
             Agregar variante

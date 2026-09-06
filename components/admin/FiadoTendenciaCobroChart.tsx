@@ -12,8 +12,9 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, TrendingDown, Activity } from "@buleje/design-system/icons";
+import { TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 
 type ChartRow = {
   mes: string;    // ISO "2026-05" (raw)
@@ -109,13 +110,11 @@ export default function FiadoTendenciaCobroChart() {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-6 flex flex-col items-center justify-center gap-2">
-        <Activity className="h-8 w-8 text-[var(--text-tertiary)]" strokeWidth={1.5} />
-        <p className="text-sm font-semibold text-[var(--text-secondary)]">Sin historial de cobros aún</p>
-        <p className="text-xs text-[var(--text-tertiary)] text-center max-w-sm">
-          Cuando empieces a registrar fiados y cobros, aquí verás la tendencia mes a mes.
-        </p>
-      </div>
+      <ChartsEmptyState
+        title="Sin historial de cobros aún"
+        description="Cuando empieces a registrar fiados y cobros, acá vas a ver la tendencia mes a mes."
+        className="rounded-xl"
+      />
     );
   }
 
@@ -149,7 +148,7 @@ export default function FiadoTendenciaCobroChart() {
                 className={cn(
                   "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold",
                   header.deltaCobrado >= 0
-                    ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                    ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                     : "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
                 )}
               >

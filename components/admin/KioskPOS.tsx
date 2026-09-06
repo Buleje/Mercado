@@ -12,7 +12,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Search, Plus, Minus, X, ShoppingCart,
-  Package, Loader2, CheckCircle2,
+  Package, CheckCircle2,
   Banknote, Smartphone, Users,
   ScanBarcode, Clock,
 } from "@buleje/design-system/icons";
@@ -532,7 +532,7 @@ export default function KioskPOS() {
                 active={paymentMethod === "efectivo"}
                 label="Efectivo"
                 icon={<Banknote className="h-5 w-5" />}
-                color="bg-[var(--accent-soft)]"
+                color="bg-primary/10"
                 onClick={() => setPaymentMethod("efectivo")}
               />
               <PayBtn

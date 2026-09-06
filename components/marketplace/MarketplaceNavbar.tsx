@@ -17,7 +17,6 @@ import dynamic from "next/dynamic";
 import {
   Search,
   Menu,
-  X,
   UserCircle,
   ChevronDown,
   Heart,
@@ -49,6 +48,8 @@ import { useCustomer } from "@/contexts/customer-context";
 import { useAuthModal } from "@/components/auth/AuthModal";
 import { cn } from "@/lib/utils";
 import { BulejeWordmark } from "@/components/ui-system/illustrations";
+import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
+import { LIGHT_SEARCH_VARS } from "@/components/marketplace/navbar/nav-theme";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
 import { BRAND_GEO } from "@/lib/geo";
 // NotificationsMenu lazy — framer-motion pesado + solo aparece al click.
@@ -85,6 +86,7 @@ const SharedMobileNavDrawer = dynamic(
 import NavbarSearchAutocomplete from "@/components/marketplace/NavbarSearchAutocomplete";
 import DeliveryLocationMenu from "@/components/marketplace/DeliveryLocationMenu";
 import ClienteFrecuenteBadge from "@/components/marketplace/ClienteFrecuenteBadge";
+import { LoginRoleMenu } from "@/components/marketplace/navbar/LoginRoleMenu";
 import OrderTrackerNavBadge from "@/components/marketplace/order-success/OrderTrackerNavBadge";
 import { useNavVisibility } from "@/hooks/use-nav-visibility";
 import { useHasActiveOffers } from "@/hooks/use-active-offers";
@@ -286,18 +288,6 @@ function useActiveLivePoll(): boolean {
   return hasActive;
 }
 
-/** Sticky: surface token + blur + shadow cuando scroll > 40px. */
-function useScrolledPastThreshold(px: number = 40): boolean {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > px);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [px]);
-  return scrolled;
-}
-
 // Brandon 2026-05-20 v7 — logo dinámico en storefront:
 // Cuando el usuario navega a /marketplace/[slug] (storefront de una tienda
 // específica), el search pill del navbar debe mostrar el logo de ESA tienda
@@ -436,15 +426,8 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
   // usaba `useNavScrollHide(80)` para esconderse al scrollear hacia abajo,
   // pero Brandon prefiere acceso constante a buscador/carrito/cuenta. El
   // hook se sigue usando en otros lugares (sticky bars de subcategorías).
-  const hasActiveLive = useActiveLivePoll();
+  useActiveLivePoll();
   const { brand } = usePlatformBrand();
-  // Logo: si superadmin subió logos.logoLight (o logoDark en dark mode), úsalo;
-  // si no, fallback al wordmark Buleje (SVG inline).
-  const brandLogo =
-    themeResolved === "dark"
-      ? brand?.logos.logoDark ?? brand?.logos.logoLight ?? null
-      : brand?.logos.logoLight ?? null;
-  const brandName = brand?.identity.name ?? "Buleje";
   const platformCity = brand?.identity.city ?? BRAND_GEO.city;
   // Visibilidad de enlaces controlada desde superadmin/stores → Navegación
   const navVisibility = useNavVisibility("marketplace");
@@ -556,10 +539,21 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
     return false;
   };
 
+  // Hide-on-scroll (Brandon 2026-06-24): el nav (y el sub-nav, que usa el mismo
+  // hook) se ocultan al bajar y reaparecen al subir, con transición suave.
+  const navHidden = useHideOnScroll();
+
   return (
     <>
       <nav
         aria-label="Navegación del marketplace"
+        style={{
+          transform: navHidden ? "translateY(-100%)" : "translateY(0)",
+          opacity: navHidden ? 0 : 1,
+          transition:
+            "transform 0.7s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.45s ease",
+          willChange: "transform, opacity",
+        }}
         className={cn(
           "nav-smooth-transition sticky top-0 z-50",
           // Minimalista/ejecutivo (Brandon 2026-06-07): superficie sólida +
@@ -568,6 +562,9 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
           // Brandon 2026-06-14: en desktop (md+) el sub-nav va pegado abajo →
           // sin border-b para que NO se vea la línea entre nav y sub-nav (leen
           // como un solo bloque). En mobile (sin sub-nav) conserva el hairline.
+          // Brandon 2026-06-25: nav CLARO (revertido del oscuro Amazon, vuelta a
+          // "como antes") — superficie raised del DS + hairline soft. Texto e
+          // iconos oscuros por los tokens light; el buscador ya era blanco.
           "bg-[var(--surface-raised)] border-b border-[var(--rule-soft)] md:border-b-0",
         )}
       >
@@ -667,7 +664,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                 vuelven pegados al logo (arriba). Solo modo tiendas, md+. */}
             {isTiendasOnly && (
               <div className="hidden md:flex flex-1 justify-center min-w-0 px-2">
-                <div className="group flex items-center w-full max-w-[680px] h-12 rounded-full border-2 border-[var(--text-primary)]/20 bg-[var(--surface-raised)] transition-all hover:border-[var(--text-primary)]/35 focus-within:border-[var(--text-primary)] focus-within:bg-[var(--surface-canvas)]">
+                <div className="group flex items-center w-full max-w-[680px] h-12 rounded-full border-2 border-[var(--text-primary)]/20 bg-[var(--surface-raised)] transition-all hover:border-[var(--text-primary)]/35 focus-within:border-[var(--text-primary)] focus-within:bg-[var(--surface-canvas)]" style={LIGHT_SEARCH_VARS}>
                   {/* Segmento ubicación */}
                   <div className="flex items-center gap-1.5 pl-4 pr-3 h-full shrink-0 text-[var(--accent)]">
                     <MapPin className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden="true" />
@@ -696,7 +693,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
               >
                 {/* Buscador largo y centrado — protagonista del nav (Brandon
                     2026-06-07). Recto (la card del input ya es rounded-none). */}
-                <div className="mx-auto w-full max-w-[760px]">
+                <div className="mx-auto w-full max-w-[760px]" style={LIGHT_SEARCH_VARS}>
                   <NavbarSearchAutocomplete
                     className="block"
                     storesOnly={false}
@@ -907,17 +904,7 @@ export default function MarketplaceNavbar({ modeOverride }: MarketplaceNavbarPro
                   )}
                 </div>
               ) : (
-                <button
-                  onClick={openAuthModal}
-                  data-tour="user-menu"
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full bg-[var(--text-primary)] px-5 h-10 text-sm font-extrabold text-[var(--surface-raised)]",
-                    "hover:opacity-90 active:scale-[0.98] transition-all duration-200",
-                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
-                  )}
-                >
-                  {t("nav.login")}
-                </button>
+                <LoginRoleMenu onClienteLogin={openAuthModal} loginLabel={t("nav.login")} />
               )}
             </div>
 

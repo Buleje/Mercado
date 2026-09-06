@@ -3,7 +3,7 @@
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
-  X, Loader2, CreditCard, Banknote, Star, ShoppingBag,
+  X, CreditCard, Banknote, Star, ShoppingBag,
   MessageCircle, Printer, AlertCircle,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -223,7 +223,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                   <p className="text-base font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{data.resumen.puntosLealtad}</p>
                   <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]/70 capitalize">{data.resumen.tierLealtad}</p>
                 </div>
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
+                <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <ShoppingBag className="h-3.5 w-3.5 text-[var(--data-success-500)]" />
                     <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)]/70 uppercase">Últ. compra</p>
@@ -319,7 +319,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                         <span className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(c.fecha)}</span>
                         <span className="text-[var(--text-secondary)] dark:text-muted capitalize">{c.metodoPago ?? "efectivo"}</span>
                         <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full",
-                          c.status === "entregado" ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" :
+                          c.status === "entregado" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" :
                           c.status === "cancelado" ? "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-red-950/30 dark:text-[var(--data-error-500)]" :
                           "bg-[var(--data-warning-50)] text-[var(--data-warning-500)] dark:bg-amber-950/30 dark:text-[var(--data-warning-500)]"
                         )}>

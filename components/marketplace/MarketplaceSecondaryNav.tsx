@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { cachedJson } from "@/lib/client-cache-fetch";
 import CategoryMegaMenu from "@/components/marketplace/CategoryMegaMenu";
 import { FreeShippingIndicator } from "@/components/marketplace/MarketplaceFreeShippingBar";
+import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 
 // Cantidad de categorías inline en el sub-nav (el resto vive en el mega-menú
 // "Categorías"). Vienen ordenadas por popularidad (lo que más se compra) desde
@@ -42,6 +43,8 @@ export default function MarketplaceSecondaryNav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const hoverCloseTimer = useRef<number | null>(null);
+  // Se oculta/aparece en sincronía con el navbar (mismo hook de dirección).
+  const hidden = useHideOnScroll();
 
   // Categorías reales del catálogo, por POPULARIDAD (lo que más se compra), que
   // ya es una señal de "lo que le interesa a la mayoría". Mismo endpoint que el
@@ -75,6 +78,18 @@ export default function MarketplaceSecondaryNav() {
       hoverCloseTimer.current = null;
     }
     setMenuOpen(true);
+    // Audit #4b: al abrir el mega-menú, cerrar otros popovers (selector de ubicación).
+    window.dispatchEvent(new CustomEvent("buleje:popover-open", { detail: "megamenu" }));
+  }, []);
+
+  // Audit #4b (Brandon 2026-07-05): si se abre OTRO popover (ubicación), cerrar
+  // el mega-menú — antes quedaban ambos superpuestos en pantalla.
+  useEffect(() => {
+    const onOther = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== "megamenu") setMenuOpen(false);
+    };
+    window.addEventListener("buleje:popover-open", onOther);
+    return () => window.removeEventListener("buleje:popover-open", onOther);
   }, []);
 
   const closeMenu = useCallback(() => {
@@ -112,12 +127,23 @@ export default function MarketplaceSecondaryNav() {
     // (<md) la sub-nav de categorías de PRODUCTO la aporta MarketplaceCategoriesBar
     // (no duplicar). Acá los filtros scrollean en horizontal si no caben en
     // tablet; "Categorías" queda SIEMPRE fijo a la derecha.
-    <div className="hidden md:block w-full border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] sticky top-16 z-40">
+    <div
+      style={{
+        transform: hidden ? "translateY(-8rem)" : "translateY(0)",
+        opacity: hidden ? 0 : 1,
+        transition:
+          "transform 0.7s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.45s ease",
+        willChange: "transform, opacity",
+      }}
+      className="hidden md:block w-full border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] sticky top-16 z-40"
+    >
       {/* Brandon 2026-06-14: contenido centrado al MISMO ancho que el catálogo
           y las secciones (max-w-[1760px]) para que nav, sub-nav y contenido
           queden alineados. El mega-menú full-width es hermano (queda full). */}
       <div className="relative mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2 lg:gap-4 h-12">
+        {/* Brandon 2026-06-25: sub-nav CLARO (revertido del oscuro). Fila de
+            contenido sin `dark` → chips/trigger usan tokens light del DS. */}
+        <div className="flex items-center gap-2 lg:gap-4 h-9">
           {/* ── Chips de CATEGORÍAS populares — scrolleables si no caben.
                Filtran el catálogo de la home vía /?category=<id>#catalogo
                (CatalogUrlSync aplica el filtro y baja a #catalogo). ── */}
@@ -130,7 +156,7 @@ export default function MarketplaceSecondaryNav() {
               <Link
                 key={cat.id}
                 href={`/?category=${encodeURIComponent(cat.id)}#catalogo`}
-                className="shrink-0 whitespace-nowrap inline-flex items-center border-b-2 border-transparent px-2 sm:px-2.5 h-9 text-[13px] sm:text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                className="shrink-0 whitespace-nowrap inline-flex items-center border-b-2 border-transparent px-2 sm:px-2.5 h-7 text-[13px] sm:text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
               >
                 {prettyCategoryLabel(cat.id)}
               </Link>
@@ -155,17 +181,22 @@ export default function MarketplaceSecondaryNav() {
               aria-haspopup="true"
               aria-expanded={menuOpen}
               aria-controls="category-mega-menu"
+              aria-label="Ver todas las categorías"
               onClick={() => setMenuOpen((o) => !o)}
               onFocus={openMenu}
               className={cn(
-                "inline-flex items-center gap-1.5 sm:gap-2 rounded-full px-3 sm:px-3.5 h-9 text-[13px] sm:text-sm font-bold tracking-tight transition-colors",
+                "inline-flex items-center gap-1.5 sm:gap-2 rounded-full px-3 sm:px-3.5 h-7 text-[13px] sm:text-sm font-bold tracking-tight transition-colors",
                 menuOpen
                   ? "bg-[var(--accent)] text-white"
                   : "bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
               )}
             >
+              {/* Brandon 2026-07-05 (audit navegación): "Categorías" → "Ver todas".
+                  Los chips de la izquierda YA son categorías; un botón también
+                  rotulado "Categorías" al lado se leía redundante. "Ver todas"
+                  deja claro que abre el listado completo. */}
               <LayoutGrid className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />
-              <span className="hidden sm:inline">Categorías</span>
+              <span className="hidden sm:inline">Ver todas</span>
               <ChevronDown
                 className={cn(
                   "h-3.5 w-3.5 shrink-0 transition-transform duration-150",
@@ -177,8 +208,15 @@ export default function MarketplaceSecondaryNav() {
             </button>
           </div>
 
-          {/* ── Envío gratis — solo desktop (ahorra espacio en móvil/tablet). ── */}
-          <div className="hidden lg:block shrink-0">
+          {/* ── Envío gratis — solo desktop (ahorra espacio en móvil/tablet).
+               Brandon 2026-07-05 (audit navegación): divisor propio + `pl-1`
+               para que se lea como un módulo aparte y no apretado contra el
+               botón de categorías (antes se veía exprimido al extremo). ── */}
+          <div
+            className="hidden lg:block h-5 w-px bg-[var(--rule-soft)] shrink-0"
+            aria-hidden="true"
+          />
+          <div className="hidden lg:block shrink-0 pl-1">
             <FreeShippingIndicator />
           </div>
         </div>

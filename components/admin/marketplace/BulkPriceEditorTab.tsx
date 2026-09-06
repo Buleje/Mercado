@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState } from "@buleje/design-system";
+import { DataTable, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,7 +35,7 @@ function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
     <div className={cn(
       "fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold",
-      type === "success" ? "bg-[var(--accent-soft)] text-white" : "bg-[var(--data-error)] text-white"
+      type === "success" ? "bg-primary/10 text-white" : "bg-[var(--data-error)] text-white"
     )}>
       {type === "success" ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
       {msg}
@@ -207,7 +208,7 @@ export default function BulkPriceEditorTab() {
       const updates = Array.from(changes.entries()).map(([id, ch]) => ({ id, ...ch }));
       const res = await fetch("/api/marketplace/products/bulk-edit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ updates }),
       });
       setProgress(90);
@@ -335,7 +336,7 @@ export default function BulkPriceEditorTab() {
 
       {/* Tabla */}
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-        <table className="min-w-full text-sm">
+        <DataTable className="min-w-full text-sm">
           <thead>
             <tr className="bg-[var(--surface-canvas)] border-b border-[var(--rule-base)]">
               <th className="px-4 py-3 text-left">
@@ -461,7 +462,7 @@ export default function BulkPriceEditorTab() {
               })
             )}
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <p className="text-xs text-[var(--text-tertiary)]">

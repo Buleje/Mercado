@@ -1,0 +1,270 @@
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><meta content="" name="description"/><meta content="" name="author"/><title>INSPECCION DE GTF</title><link rel="stylesheet" type="text/css" href="/control/gtf/resources-1.0/css/jquery-ui-1.9.2.css"/><link rel="stylesheet" type="text/css" href="/control/gtf/resources-1.0/css/bootstrap.min.css"/><link rel="stylesheet" type="text/css" href="/control/gtf/resources-1.0/css/bootstrap-table.min.css"/><link rel="stylesheet" type="text/css" href="/control/gtf/resources-1.0/css/font-awesome.min.css"/><link rel="stylesheet" type="text/css" href="/control/gtf/resources-1.0/css/main.css?v=1.0"/><link rel="stylesheet" type="text/css" href="/control/gtf/resources-1.0/js/select2/select2.css"/><link rel="stylesheet" type="text/css" href="/control/gtf/resources-1.0/js/select2/select2-bootstrap.css"/><link rel="stylesheet" type="text/css" href="/control/gtf/resources-1.0/css/jquery.multiselect.css"/><link href="/control/gtf/resources-1.0/img/16x16.png" rel="shortcut icon"/><link rel="stylesheet" type="text/css" href="/control/gtf/resources-1.0/js/bootstrap_select/bootstrap-select.css"/><link rel="stylesheet" type="text/css" href="/control/gtf/resources-1.0/css/dataTables.bootstrap.min.css"/><link href="/control/gtf/resources-1.0/css/site-validate.css" rel="stylesheet"/><link type="text/css" rel="stylesheet" href="/control/gtf/resources-1.0/css/pnotify.core.css"/><link type="text/css" rel="stylesheet" href="/control/gtf/resources-1.0/css/pnotify.buttons.css"/><link type="text/css" rel="stylesheet" href="/control/gtf/resources-1.0/css/tautocomplete.css"/><link type="text/css" rel="stylesheet" href="/control/gtf/resources-1.0/css/jquery-confirm.min.css"/><link type="text/css" rel="stylesheet" href="/control/gtf/resources-1.0/css/wickedpicker.min.css"/><link type="text/css" rel="stylesheet" href="http://fonts.googleapis.com/css?family=Oswald"/><script type="text/javascript" src="/control/gtf/resources-1.0/js/jquery-1.10.2.min.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/jquery-ui-1.9.2.min.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/jquery.form.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/bootstrap.min.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/bootstrap-table.min.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/unobtrusiveXRequest-0.1-SNAPSHOT.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/jquery.blockUI.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/main.js?v=1.6"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/ul-paginate.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/jquery.inputmask.bundle.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/jquery.inputmask.custom.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/jquery.multiselect.min.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/select2/select2.min.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/select2/select2_locale_es.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/systeminfo.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/bootstrap_select/bootstrap-select.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/jquery.autocomplete.min.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/jqBootstrapValidation.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/jquery.dataTables.min.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/dataTables.bootstrap.min.js"></script><script src="/control/gtf/resources-1.0/js/jquery.validate.min.js"></script><script src="/control/gtf/resources-1.0/js/additional-methods.min.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/pnotify.core.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/pnotify.buttons.js"></script><script src="/control/gtf/resources-1.0/js/utiles.js"></script><script src="/control/gtf/resources-1.0/js/tautocomplete.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/bootstrap-filestyle.min.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/validator.js"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/jquery-confirm.min.js"></script><script src="/control/gtf/resources-1.0/js/wickedpicker.js" type="text/javascript"></script><script type="text/javascript" src="/control/gtf/resources-1.0/js/bootstrap-confirmation.min.js"></script><script src="/control/gtf/resources-1.0/js/export/FileSaver.min.js" type="text/javascript"></script><script src="/control/gtf/resources-1.0/js/export/xlsx.core.min.js" type="text/javascript"></script><script src="/control/gtf/resources-1.0/js/export/tableExport.min.js" type="text/javascript"></script><text lang="EN"><div id="wrap"><script>
+        $(document).ready(function(){              
+            $(document).ajaxStart(function () {
+                cargar();
+                var navMain = $(".navbar-collapse");
+                navMain.collapse('hide');
+            });
+            $(document).ajaxStop(function () {
+                mostrar();
+            });
+        });
+        function cargar(){
+            $('#div_carga').show();
+        }
+        function mostrar(){
+            $('#div_carga').fadeOut(400);
+        }
+    </script><div class="row" id="main-header"><div class="header2 col-lg-12 col-md-12 col-sm-12 col-xs-12"><div class="container"><div class="logo pull-left"><img height="40px" src="/control/gtf/resources-1.0/img/logo-minagri.png"/><img height="40px" src="/control/gtf/resources-1.0/img/logo-serfor-1.png"/></div></div></div></div><div class="row"><div class="col-lg-1"></div><div class="col-lg-10 col-md-12"><div class="row" id="menu-principal"></div><div class="row"><div id="main-content"><style>
+        .title-black{
+            background-color: #000000;
+            color: #ffffff;
+        }
+        
+        #main-header {
+            /*background: #333;
+            color: white;
+            height: 80px;*/
+            z-index: 1000;
+            width: 100%; /* hacemos que la cabecera ocupe el ancho completo de la página */
+            left: 0; /* Posicionamos la cabecera al lado izquierdo */
+            top: 0; /* Posicionamos la cabecera pegada arriba */
+            position: fixed; /* Hacemos que la cabecera tenga una posición fija */
+        }
+        #content-gtf {
+            margin-top: 40px;
+        }
+        #tableListTrozas{
+            font-size: 13px;
+        }
+        .boton-margin-10{
+            margin-bottom: 5px;
+            margin-top: 5px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+    </style><div class="row" id="content-gtf"><div class="col-lg-12 col-md-12 col-sm-12 col-xs-12"><div class="row"><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12"><a class="btn btn-success noAjax form-control boton-margin-10" href="/control/gtf/inspeccionar.do/7dc6f068-a147-40a2-877a-6110c39db6cb"><span class="glyphicon glyphicon-ok"></span> Inspeccionar </a></div><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12"><a class="btn btn-success noAjax form-control boton-margin-10" href="/control/gtf/inspecciones/verSeguimiento.do/7dc6f068-a147-40a2-877a-6110c39db6cb/S"><span class="glyphicon glyphicon-map-marker"></span> Ver mapa del recorrido </a></div><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12"><a class="btn btn-success noAjax form-control boton-margin-10" href="/control/gtf/inspecciones/verSeguimiento.do/7dc6f068-a147-40a2-877a-6110c39db6cb/T"><span class="glyphicon glyphicon-list-alt"></span> Ver detalle del recorrido </a></div></div><div class="row"><div class="col-lg-12"><h1>DATOS DEL REGISTRO</h1></div></div><div class="row"><div class="col-lg-3 col-md-6 col-sm-6 col-xs-12 panel panel-success"><div class="panel-heading">Registrado por:</div><div class="panel-body">
+                        Autoemitida por el Titular
+                    </div></div><div class="col-lg-3 col-md-6 col-sm-6 col-xs-12 panel panel-success"><div class="panel-heading">Fecha de Registro</div><div class="panel-body">
+                        17/12/2024
+                    </div></div><div class="col-lg-3 col-md-6 col-sm-6 col-xs-12 panel panel-danger"><div class="panel-heading">GUIA DE TRANSPORTE N°</div><div class="panel-body">
+                        019-0000003
+                    </div></div><div class="col-lg-3 col-md-6 col-sm-6 col-xs-12 panel panel-danger"><div class="panel-heading">Estado de la GTF</div><div class="panel-body">
+                        Activa
+                    </div></div></div><div class="row"><div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 panel panel-success"><div class="panel-heading">N° DE CONSTANCIA DE REGISTRO</div><div class="panel-body">
+                        1-19-0313629
+                    </div></div><div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 panel panel-success"><div class="panel-heading">RUC de la Instancia que Registra</div><div class="panel-body">
+                        20156701263
+                    </div></div><div class="col-lg-8 col-md-8 col-sm-12 col-xs-12 panel panel-success"><div class="panel-heading">Instancia que Registra</div><div class="panel-body">
+                        COMUNIDAD NATIVA SAN LUIS DE CHINCHIHUANI<br/>
+                        
+                    </div></div></div><div class="row"><div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 panel panel-success"><div class="panel-heading">Fecha de Expedición</div><div class="panel-body">
+                        17/12/2024
+                    </div></div><div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 panel panel-success"><div class="panel-heading">Fecha de Vencimiento</div><div class="panel-body">
+                        24/12/2024
+                    </div></div><div class="col-lg-2 col-md-2 col-sm-6 col-xs-12 panel panel-success"><div class="panel-heading">Origen del Recurso</div><div class="panel-body">
+                        PERMISO                                           
+                    </div></div><div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 panel panel-success"><div class="panel-heading">Numero</div><div class="panel-body"> 19-SEC/PER-FMC-2024-008                            
+                       </div></div></div><div class="row"><div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 panel panel-success"><div class="panel-heading"><label>Nombre del titular</label></div><div class="panel-body"> COMUNIDAD NATIVA SAN LUIS DE CHINCHIHUANI
+                        </div></div><div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 panel panel-success"><div class="panel-heading"><label>Dirección del titular</label></div><div class="panel-body">
+                        CC.NN SAN LUIS DE CHINCHIHUANI
+                    </div></div></div><div class="row"><div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 panel panel-success"><div class="panel-heading"><label>N° de Resolucion</label></div><div class="panel-body"><a onclick="verDetalleGtf(&apos;PO&apos;,313629);" href="#"> R.A N° D000485-2024-MIDAGRI-SERFOR-ATFFS SELVA CENTRAL
+                        <span class="glyphicon glyphicon-modal-window"/></a></div></div><div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 panel panel-success"><div class="panel-heading"><label>Representante Legal</label></div><div class="panel-body">
+                        REPRESENTANTE DE PRUEBA
+                    </div></div></div><div class="row"><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-success"><div class="panel-heading"><label>Departamento</label></div><div class="panel-body">
+                        PASCO
+                    </div></div><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-success"><div class="panel-heading"><label>Provincia</label></div><div class="panel-body">
+                        OXAPAMPA
+                    </div></div><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-success"><div class="panel-heading"><label>Distrito</label></div><div class="panel-body">
+                        PUERTO BERMUDEZ
+                    </div></div></div><div class="row"><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-warning"><div class="panel-heading"><label>PROPIETARIO DEL PRODUCTO</label></div><div class="panel-body"><a onclick="verDetalleGtf(&apos;PROP&apos;,313629);" href="#"> COMUNIDAD NATIVA SAN LUIS DE CHINCHIHUANI          
+                        <span class="glyphicon glyphicon-modal-window"/></a></div></div><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-warning"><div class="panel-heading"><label>N° RUC/DNI</label></div><div class="panel-body">
+                        20156701263
+                    </div></div><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-warning"><div class="panel-heading"><label>Dirección</label></div><div class="panel-body">
+                        CC.NN SAN LUIS DE CHINCHIHUANI
+                    </div></div></div><div class="row"><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-warning"><div class="panel-heading"><label>Departamento</label></div><div class="panel-body">
+                        PASCO
+                    </div></div><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-warning"><div class="panel-heading"><label>Provincia</label></div><div class="panel-body">
+                        OXAPAMPA
+                    </div></div><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-warning"><div class="panel-heading"><label>Distrito</label></div><div class="panel-body">
+                        PUERTO BERMUDEZ
+                    </div></div></div><div class="row"><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-success"><div class="panel-heading"><label>DESTINATARIO</label></div><div class="panel-body"><a onclick="verDetalleGtf(&apos;DEST&apos;,313629);" href="#"> INVERSIONES AGROFORESTALES BLAS SAC 
+                        <span class="glyphicon glyphicon-modal-window"/></a></div></div><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-success"><div class="panel-heading"><label>N° RUC/DNI</label></div><div class="panel-body">
+                        20605859438 / 00000002  
+                    </div></div><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-success"><div class="panel-heading"><label>Dirección</label></div><div class="panel-body">
+                        JR. JOSE MARIA ARGUEDAS MZA. 24 LOTE. 04 (4TA ETAPA) 
+                    </div></div></div><div class="row"><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-success"><div class="panel-heading"><label>Departamento</label></div><div class="panel-body">
+                        PASCO
+                    </div></div><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-success"><div class="panel-heading"><label>Provincia</label></div><div class="panel-body">
+                        OXAPAMPA
+                    </div></div><div class="col-lg-4 col-md-4 col-sm-4 col-xs-12 panel panel-success"><div class="panel-heading"><label>Distrito</label></div><div class="panel-body">
+                        CONSTITUCION
+                    </div></div></div><div class="row"><div class="col-lg-4 col-md-4 col-sm-6 col-xs-12 panel panel-info"><div class="panel-heading"><label>TRANSPORTISTA</label></div><div class="panel-body">
+                        CONDUCTOR DE PRUEBA
+                    </div></div><div class="col-lg-4 col-md-4 col-sm-3 col-xs-12 panel panel-info"><div class="panel-heading"><label>N° DNI</label></div><div class="panel-body">
+                        00000001
+                    </div></div><div class="col-lg-4 col-md-4 col-sm-3 col-xs-12 panel panel-info"><div class="panel-heading"><label>N° de Licencia</label></div><div class="panel-body">
+                        Q00000001
+                    </div></div><div class="col-lg-3 col-md-3 col-sm-6 col-xs-12 panel panel-info"><div class="panel-heading"><label>Guia Remisión</label></div><div class="panel-body">
+                        -----------
+                    </div></div><div class="col-lg-3 col-md-3 col-sm-6 col-xs-12 panel panel-info"><div class="panel-heading"><label>Tipo de Transporte</label></div><div class="panel-body">
+                        Terrestre
+                    </div></div><div class="col-lg-3 col-md-3 col-sm-6 col-xs-12 panel panel-info"><div class="panel-heading"><label>Tipo Vehiculo</label></div><div class="panel-body">
+                        Camión / Carreta
+                    </div></div><div class="col-lg-3 col-md-3 col-sm-6 col-xs-12 panel panel-info"><div class="panel-heading"><label>N° Placa Vehiculo</label></div><div class="panel-body">
+                        V2H-901
+                        
+                                 / ----------
+                             </div></div></div><div class="row"><div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 panel panel-info"><div class="panel-heading"><label>Lista de Trozas / Productos Transformados</label></div><div class="panel-body">
+                        L-19-0313629
+                    </div></div></div><div class="row"><div class="col-lg-12"><h1>DETALLE DEL PRODUCTO</h1></div></div><div class="row table-responsive"><div class="col-lg-12 col-md-12 col-sm-12 col-xs-12"><form id="form_lista_trozas"><table class="table" id="tableListTrozas"><thead><tr><th><strong>Nombre cientifico</strong></th><th><strong>Nombre comun</strong></th><th><strong>Tipo de producto</strong></th><th><strong>Presentacion</strong></th><th><strong>Cantidad</strong></th><th><strong>Unidad Medida</strong></th><th><strong>Volumen</strong></th></tr></thead><tbody><tr><td>
+                                            Copaifera reticulata Ducke
+                                        </td><td>Copaiba                                           </td><td>MADERA EN ROLLO</td><td>TROZAS    </td><td>2.0</td><td>Metros Cúbicos                </td><td>9.065</td></tr><tr><td>
+                                            Matisia bicolor Ducke
+                                        </td><td>Sapotillo                                         </td><td>MADERA EN ROLLO</td><td>TROZAS    </td><td>2.0</td><td>Metros Cúbicos                </td><td>4.874</td></tr><tr><td colspan="5"/><td><label>TOTAL VOLUMEN:</label></td><td><label>13.939</label></td></tr></tbody></table></form></div></div><div class="row"><div class="col-lg-12"><h1>LISTA DE TROZAS</h1></div></div><div class="row table-responsive"><div class="col-lg-12 col-md-12 col-sm-12 col-xs-12"><form id="form_lista_trozas"><table class="table" id="tableListTrozas"><thead><tr><th><strong>Nombre cientifico</strong></th><th><strong>Nombre comun</strong></th><th><strong>Tipo de producto</strong></th><th><strong>Presentacion</strong></th><th><strong>Codificacion</strong></th><th><strong>Dimensiones</strong></th><th><strong>Cantidad</strong></th><th><strong>Unidad Medida</strong></th><th><strong>Volumen</strong></th></tr></thead><tbody><tr><td>
+                                            Copaifera reticulata Ducke
+                                        </td><td>Copaiba                                           </td><td>MADERA EN ROLLO</td><td>TROZAS    </td><td>106/C               </td><td>100.0 X 96.0 X 6.5</td><td>1.0</td><td>Metros Cúbicos                </td><td>4.903</td></tr><tr><td>
+                                            Matisia bicolor Ducke
+                                        </td><td>Sapotillo                                         </td><td>MADERA EN ROLLO</td><td>TROZAS    </td><td>13/A (0000008)</td><td>55.0 X 51.0 X 7.28</td><td>1.0</td><td>Metros Cúbicos                </td><td>1.606</td></tr><tr><td>
+                                            Copaifera reticulata Ducke
+                                        </td><td>Copaiba                                           </td><td>MADERA EN ROLLO</td><td>TROZAS    </td><td>26/A                </td><td>93.0 X 90.0 X 6.33</td><td>1.0</td><td>Metros Cúbicos                </td><td>4.162</td></tr><tr><td>
+                                            Matisia bicolor Ducke
+                                        </td><td>Sapotillo                                         </td><td>MADERA EN ROLLO</td><td>TROZAS    </td><td>52/A                </td><td>73.0 X 58.0 X 9.7</td><td>1.0</td><td>Metros Cúbicos                </td><td>3.268</td></tr></tbody></table></form></div></div><div class="row table-responsive"><div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 panel panel-info"><div class="panel-heading"><label>Observaciones</label></div><div class="panel-body">
+                        
+                    </div></div></div><div class="col-lg-6 col-md-6 col-sm-6 col-xs-6"><a class="btn btn-success noAjax form-control boton-margin-10" href="/control/gtf/inspeccionar.do/7dc6f068-a147-40a2-877a-6110c39db6cb"><span class="glyphicon glyphicon-ok"></span> Inspeccionar </a></div><div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 panel panel-info"><div class="panel-heading"><label>Codigo de control</label></div><div class="panel-body"><br/>
+                    6110c39db6cb
+                </div></div></div></div><div aria-labelledby="myModalLabel" role="dialog" id="myModalDetalleDatosGTF" class="modal fade"><div role="detalle_documentos" class="modal-dialog modal-dialog-lg"><div class="modal-content"><div class="modal-header alert alert-success"><button aria-label="Close" data-dismiss="modal" class="close" type="button"><span aria-hidden="true">X</span></button><h4 id="titleDetalleDatosGTF" class="modal-title">Detalle del Documento(Datos de la GTF):</h4></div><div class="modal-body"><div id="modal_detalle_gtf"></div></div><div class="modal-footer alert alert-success"><button onclick="volver();" class="btn btn-info btn-atras" type="button">Volver</button><button data-dismiss="modal" class="btn btn-danger" type="button">Cerrar</button></div></div></div></div><script>
+            html =  '<div class="row" id="header-gtf-info">'+
+                    '    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 text-center title-black">'+
+                    '        <label>Registro de Guias de Transporte Forestal</label><br/>'+
+                    '        Resolución de Dirección Ejecutiva N° 198-2017-SERFOR-DE'+
+                    '    </div>'+
+                    '</div>';
+            $('#main-header').append(html);
+        </script><script>
+        var parentGuiaId = '313629';
+        var inicio = 'G';
+        var retornar;
+        
+        function movilizarTodo(guiaid,estado){
+            $.confirm({
+                    confirmButton: 'Aceptar',
+                    cancelButton: 'Cancelar',
+                    title: 'Confirmar!',
+                    content: '¿Desea Realizar Esta Operacion, se marcaran toda las trozas para movilización?',
+                    confirm: function(){
+                    $.ajax({
+                        url: '/control/gtf/guias/marcarRecepcionarTodo.do/'+guiaid+'/'+estado,
+                        type: 'GET', 
+                        async: true, 
+                        cache: false, 
+                        dataType: 'json', success: function(data) {
+                            if(data.resultado==='OK'){
+                                $('#btn_movall_'+guiaid).html('');
+                                location.reload();
+                            }
+                        }, error: function(e, f, g) {
+                            mostrarNotificacion("error", "¡Atencion!", "Ocurrio un error al momento de realizar la operación");
+                        }
+                    });
+                },
+                cancel: function(){
+                    mostrar();
+                }
+            });
+        }
+        
+        function movilizarTroza(guiadetalleid,estado){
+            //alert(url);
+            $(document).ready(function() {
+                $.ajax({
+                    type: "GET",  
+                    url: '/control/gtf/guias/marcarRecepcionarTroza.do/'+guiadetalleid+'/'+estado,
+                    async: true, 
+                    cache: false, 
+                    dataType: 'JSON', success: function(data) {
+                        if(data.resultado==='OK'){
+                            if(estado==1){
+                                btnHtml = '<';
+                                btnHtml = btnHtml+'button ';
+                                btnHtml = btnHtml+'type="button" ';
+                                btnHtml = btnHtml+'class="btn btn-warning" ';
+                                btnHtml = btnHtml+'id="btn_on_'+guiadetalleid+'" ';
+                                btnHtml = btnHtml+'onclick="movilizarTroza('+guiadetalleid+',0);" >';
+                                btnHtml = btnHtml+'Retornar';
+                                btnHtml = btnHtml+'</button>';
+                                $("#td-btn-"+guiadetalleid).html(btnHtml);
+                            }else{
+                                btnHtml = '<';
+                                btnHtml = btnHtml+'button ';
+                                btnHtml = btnHtml+'type="button" ';
+                                btnHtml = btnHtml+'class="btn btn-success" ';
+                                btnHtml = btnHtml+'id="btn_on_'+guiadetalleid+'" ';
+                                btnHtml = btnHtml+'onclick="movilizarTroza('+guiadetalleid+',1);" >';
+                                btnHtml = btnHtml+'Movilizar';
+                                btnHtml = btnHtml+'</button>';
+                                $("#td-btn-"+guiadetalleid).html(btnHtml);
+                            }
+                        }
+                    },
+                    error: function(XMLHttpRequest, textStatus, errorThrown) { 
+                        alert("Status: " + textStatus); alert("Error: " + errorThrown); 
+                    }       
+                });
+            });
+            return false;
+            
+         }
+        
+        function verDetalleConsultaGuiaOrigen(localkey){
+            //$('#detalle_inspeccion').load('$ {baseUrl}/reportes/consultaIntervencion.do/'+idEvento);
+            //$('#myModalDetalleInspeccion').modal('show'); 
+            popitup('/control/gtf/guias/check.do/'+localkey);
+        }
+        
+        function verDetalleGtfPlan(tipodetalle,guiaId,planId){
+            $('.btn-atras').hide();
+            switch(tipodetalle){
+                case "PO":
+                    $('#modal_detalle_gtf').load('/control/gtf/guias/detallePoId.do/'+guiaId+'/'+planId,function(){
+                        $('#titleDetalleDatosGTF').html("DETALLE DEL PLAN OPERATIVO / TITULO HABILITANTE / CENTRO DE TRANSFORMACION PRIMARIA");
+                    });
+                break;
+                default:
+                    $('#titleDetalleDatosGTF').html("Datos no identificados");
+            }
+            $('#myModalDetalleDatosGTF').modal('show');
+        }
+        function verDetalleGtf(tipodetalle,guiaId){
+            $('.btn-atras').hide();
+            switch(tipodetalle){
+                case "PO":   
+                    $('#modal_detalle_gtf').load('/control/gtf/guias/detallePo.do/'+guiaId,function(){
+                        $('#titleDetalleDatosGTF').html("DETALLE DEL PLAN OPERATIVO / TITULO HABILITANTE / CENTRO DE TRANSFORMACION PRIMARIA");
+                    });
+                    break;
+                case "TH":
+                    $('#modal_detalle_gtf').load('/control/gtf/guias/detalleTh.do/'+guiaId,function(){
+                        $('#titleDetalleDatosGTF').html("DETALLE DEL TITULO HABILITANTE");
+                    });
+                    break;
+                case "PROP":
+                    $('#modal_detalle_gtf').load('/control/gtf/guias/detallePropietario.do/'+guiaId,function(){
+                        $('#titleDetalleDatosGTF').html("DETALLE DEL PROPIETARIO DE LA GTF");
+                    });
+                    break;
+                case "DEST":
+                    $('#modal_detalle_gtf').load('/control/gtf/guias/detalleDestinatario.do/'+guiaId,function(){
+                        $('#titleDetalleDatosGTF').html("DETALLE DEL DESTINATARIO DE LA GTF");
+                    });
+                    break;
+                default:
+                    $('#titleDetalleDatosGTF').html("Datos no identificados");
+            }
+            $('#myModalDetalleDatosGTF').modal('show');  
+        }
+        
+        function volverListaGtf(){
+            $('#main-content').load('/control/gtf/guias/consultarGtf.do');
+        }
+        </script></div></div></div><div class="col-lg-1"></div></div><div class="row"><div class="footer col-lg-12 col-md-12 col-sm-12 col-xs-12"><div class="container"><span>2026 Servicio Nacional Forestal y de Fauna Silvestre - SERFOR</span><span>DCGPFFS V2.5.6</span></div></div></div><div id="div_carga"><img src="/control/gtf/resources-1.0/img/loading.gif" alt="Cargando" id="cargador"/></div></div></text>

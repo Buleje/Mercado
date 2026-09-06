@@ -5,7 +5,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Menu, X, ShoppingCart, Store,
-  ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
+  ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle,
   Search, Trophy, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList,
   Home, Zap, RotateCw, Star, Phone, ShoppingBag, Tag, MapPin, Compass, Wallet,
   Bell, AlertCircle, CheckCheck, ArrowRight, Info,
@@ -360,7 +360,7 @@ export default function Header() {
 
   const _markAllRead = async () => {
     if (!customer?.phone) return;
-    await fetch(`/api/customer-notifications?phone=${encodeURIComponent(customer.phone!)}&all=1`, { method: "PATCH" });
+    await fetch(`/api/customer-notifications?phone=${encodeURIComponent(customer.phone!)}&all=1`, { method: "PATCH", headers: csrfHeaders() });
     setNotifs(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
   };
@@ -646,7 +646,7 @@ export default function Header() {
 
   const navLinkCls = cn(
     "px-4 py-2.5 rounded-lg text-base font-semibold transition-all",
-    scrolled ? "text-[var(--text-primary)] hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10"
+    scrolled ? "text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10"
   );
 
   // Helper: resuelve active state basado en el pathname actual.
@@ -684,8 +684,8 @@ export default function Header() {
               aria-haspopup="true"
               className={cn(
                 "flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-base font-semibold",
-                scrolled ? "text-[var(--text-primary)] hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10",
-                inicioOpen && (scrolled ? "text-primary bg-primary/8" : "text-white bg-white/15")
+                scrolled ? "text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10",
+                inicioOpen && (scrolled ? "text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/8" : "text-white bg-white/15")
               )}
             >
               Inicio
@@ -754,7 +754,7 @@ export default function Header() {
               </div>
               <div className="px-3 py-2.5 bg-linear-to-r from-primary/5 to-primary/5 border-t border-gray-100">
                 <Link href={tenantPath("/tienda")} onClick={() => setActiveDropdown(null)}
-                  className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-sm font-bold text-primary hover:bg-primary/8">
+                  className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/8">
                   Ver todos los productos →
                 </Link>
               </div>
@@ -850,7 +850,7 @@ export default function Header() {
   };
 
   const renderMobileNavItem = (id: string) => {
-    const cls = "block px-4 py-3 rounded-xl text-[var(--text-primary)] font-medium hover:bg-primary/5 hover:text-primary transition-colors";
+    const cls = "block px-4 py-3 rounded-xl text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] font-medium hover:bg-primary/5 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors";
     switch (id) {
       case "inicio":
         if (isTenantStore) return null;
@@ -859,7 +859,7 @@ export default function Header() {
             <button
               onClick={() => setMobileInicioOpen((o) => !o)}
               aria-expanded={mobileInicioOpen}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[var(--text-primary)] font-medium hover:bg-primary/5 hover:text-primary transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] font-medium hover:bg-primary/5 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors"
             >
               <span>Inicio</span>
               <span className={cn("transition-transform duration-[var(--dur-fast)] inline-block", mobileInicioOpen && "rotate-180")}>
@@ -912,7 +912,7 @@ export default function Header() {
                     <Link
                       href={tenantPath("/tienda")}
                       onClick={() => { setMobileOpen(false); setMobileInicioOpen(false); }}
-                      className="flex items-center justify-center gap-1.5 mt-2 py-2.5 rounded-xl bg-primary/8 text-sm font-bold text-primary"
+                      className="flex items-center justify-center gap-1.5 mt-2 py-2.5 rounded-xl bg-primary/8 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     >
                       Ver todos los productos →
                     </Link>
@@ -1103,7 +1103,7 @@ export default function Header() {
                         <button
                           key={item.id}
                           onMouseDown={() => { handleSearchSelect(item.name); setInlineSearchFocused(false); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-primary/5 text-left transition-colors"
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/5 text-left transition-colors"
                         >
                           {item.image ? (
                             <Image src={item.image} alt="" width={40} height={40} className="h-10 w-10 rounded-xl object-cover bg-gray-100 dark:bg-surface shrink-0 border border-[var(--rule-base)]" unoptimized={item.image.startsWith("data:")} />
@@ -1142,7 +1142,7 @@ export default function Header() {
                               <button
                                 key={term}
                                 onMouseDown={() => { handleSearchSelect(term); setInlineSearchFocused(false); }}
-                                className="px-2.5 py-1 rounded-full bg-primary/5 text-xs font-semibold text-primary hover:bg-primary/15 transition-colors"
+                                className="px-2.5 py-1 rounded-full bg-primary/5 text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/15 transition-colors"
                               >
                                 {term}
                               </button>
@@ -1187,7 +1187,7 @@ export default function Header() {
                               <button
                                 key={p.id}
                                 onMouseDown={() => { handleSearchSelect(p.name); setInlineSearchFocused(false); }}
-                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--text-primary)] hover:bg-primary/8 hover:text-primary text-left"
+                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/8 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] text-left"
                               >
                                 {p.image && (
                                   <Image src={p.image} alt="" width={40} height={40} className="h-10 w-10 rounded-xl object-cover bg-gray-100 shrink-0" unoptimized={p.image.startsWith("data:")} />
@@ -1217,7 +1217,7 @@ export default function Header() {
                 hasActiveOrder
                   ? "h-11 w-11 bg-amber-100 dark:bg-amber-900/40 text-[var(--data-warning-600)] dark:text-amber-400 shadow-[var(--shadow-lg)] shadow-md/30 hover:bg-amber-200"
                   : scrolled
-                    ? "h-9 w-9 bg-primary/10 text-primary hover:bg-primary/20"
+                    ? "h-9 w-9 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20"
                     : "h-9 w-9 bg-white/15 text-white hover:bg-white/25"
               )}
             >
@@ -1240,8 +1240,8 @@ export default function Header() {
                   "flex items-center gap-2 rounded-full text-sm font-semibold transition-all duration-[var(--dur-fast)] px-3 py-2 ml-1",
                   scrolled
                     ? customer
-                      ? "bg-primary/10 text-primary hover:bg-primary/20"
-                      : "bg-gray-100 text-[var(--text-primary)] hover:bg-primary/10 hover:text-primary"
+                      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20"
+                      : "bg-gray-100 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "bg-white/15 backdrop-blur-sm text-white border border-white/20 hover:bg-white/25"
                 )}
                 aria-label="Menú de usuario"
@@ -1260,7 +1260,7 @@ export default function Header() {
                     <a
                       href={tenantPath("/mi-panel")}
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-[var(--text-primary)] hover:bg-primary/5 hover:text-primary transition-colors"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/5 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors"
                     >
                       <User className="h-4 w-4" />
                       <span className="flex-1">Mi panel</span>
@@ -1276,7 +1276,7 @@ export default function Header() {
                     </a>
                     <button
                       onClick={() => { openAccountModal(); setUserMenuOpen(false); }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-muted hover:bg-primary/5 hover:text-primary transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-muted hover:bg-primary/5 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors text-left"
                     >
                       <UserCircle className="h-4 w-4" />
                       <span>Editar mis datos</span>
@@ -1284,7 +1284,7 @@ export default function Header() {
                     <a
                       href={tenantPath("/mis-pedidos")}
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-primary/5 hover:text-primary transition-colors"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/5 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors"
                     >
                       <ClipboardList className="h-4 w-4" />
                       <span>Mis pedidos</span>
@@ -1293,12 +1293,12 @@ export default function Header() {
                       <a
                         href={tenantPath("/puntos")}
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-primary/5 hover:text-primary transition-colors"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/5 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors"
                       >
                         <Trophy className="h-4 w-4 text-[var(--data-warning-500)]" />
                         <span className="flex-1">Mis puntos</span>
                         {loyalty && (
-                          <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full tabular-nums">
+                          <span className="text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 px-2 py-0.5 rounded-full tabular-nums">
                             {loyalty.loyaltyPoints ?? 0}
                           </span>
                         )}
@@ -1310,7 +1310,7 @@ export default function Header() {
                         "w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left",
                         hasActiveOrder
                           ? "bg-amber-50 dark:bg-amber-900/10 text-[var(--data-warning-700)] dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/20"
-                          : "text-muted hover:bg-primary/5 hover:text-primary"
+                          : "text-muted hover:bg-primary/5 hover:text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       )}
                     >
                       <div className="relative">
@@ -1356,7 +1356,7 @@ export default function Header() {
               className={cn(
                 "lg:hidden flex h-11 w-11 items-center justify-center rounded-full transition-all duration-[var(--dur-fast)]",
                 scrolled
-                  ? "text-[var(--text-primary)] hover:bg-primary/10 hover:text-primary"
+                  ? "text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "text-white/70 hover:text-white hover:bg-white/15"
               )}
               aria-label="Buscar productos"
@@ -1656,7 +1656,7 @@ export default function Header() {
                 scrolled
                   ? hasActiveOrder
                     ? "text-[var(--data-warning-600)] hover:bg-amber-50 dark:hover:bg-amber-900/20"
-                    : "text-[var(--text-primary)] hover:bg-primary/10 hover:text-primary"
+                    : "text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : hasActiveOrder
                     ? "text-amber-300 hover:bg-white/15"
                     : "text-white/70 hover:text-white hover:bg-white/15"
@@ -1729,7 +1729,7 @@ export default function Header() {
               className={cn(
                 "flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
                 scrolled
-                  ? "bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"
+                  ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white"
                   : "bg-white/12 text-white hover:bg-white/20 border border-white/20 backdrop-blur-sm"
               )}
             >
@@ -1789,7 +1789,7 @@ export default function Header() {
                       <button
                         key={item.id}
                         onMouseDown={() => { handleSearchSelect(item.name); setMobileOpen(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-primary/5 text-left transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/5 text-left transition-colors"
                       >
                         {item.image ? (
                           <Image src={item.image} alt="" width={36} height={36} className="h-9 w-9 rounded-lg object-cover bg-gray-100 shrink-0" unoptimized={item.image.startsWith("data:")} />
@@ -1816,7 +1816,7 @@ export default function Header() {
                     "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-colors",
                     hasActiveOrder
                       ? "bg-amber-50 dark:bg-amber-900/10 text-[var(--data-warning-700)] dark:text-amber-400 hover:bg-amber-100"
-                      : "bg-primary/5 text-primary hover:bg-primary/10"
+                      : "bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10"
                   )}
                 >
                   <PackageCheck className="h-5 w-5 shrink-0" />
@@ -1825,7 +1825,7 @@ export default function Header() {
                 </button>
                 <button
                   onClick={() => { openCustomerModal("profile"); setMobileOpen(false); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-primary)] font-medium hover:bg-primary/5 hover:text-primary transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] font-medium hover:bg-primary/5 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors"
                 >
                   <UserCircle className="h-5 w-5" />
                   <span>{customer ? `Mi cuenta \u2014 ${customer.name?.split(" ")[0] ?? "Mi cuenta"}` : "Mi cuenta"}</span>
@@ -1833,7 +1833,7 @@ export default function Header() {
                 <a
                   href={tenantPath("/mis-pedidos")}
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-primary)] font-medium hover:bg-primary/5 hover:text-primary transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] font-medium hover:bg-primary/5 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors"
                 >
                   <ClipboardList className="h-5 w-5" />
                   <span>Mis pedidos</span>
@@ -1932,7 +1932,7 @@ export default function Header() {
                     <button
                       key={item.id}
                       onClick={() => handleSearchSelect(item.name)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--text-primary)] hover:bg-primary/5 transition-colors text-left"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/5 transition-colors text-left"
                     >
                       {item.image ? (
                         <Image src={item.image} alt="" width={36} height={36} className="h-9 w-9 rounded-lg object-cover bg-gray-100 shrink-0" unoptimized={item.image.startsWith("data:")} />
@@ -1982,7 +1982,7 @@ export default function Header() {
                       <button
                         key={term}
                         onClick={() => handleSearchSelect(term)}
-                        className="px-3 py-1.5 rounded-full bg-primary/5 dark:bg-primary/10 text-xs font-semibold text-primary hover:bg-primary/15 transition-colors"
+                        className="px-3 py-1.5 rounded-full bg-primary/5 dark:bg-primary/10 text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/15 transition-colors"
                       >
                         {term}
                       </button>
@@ -2002,7 +2002,7 @@ export default function Header() {
                       <button
                         key={p.id}
                         onClick={() => handleSearchSelect(p.name)}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[var(--text-primary)] hover:bg-primary/5 hover:text-primary transition-colors text-left"
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/5 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors text-left"
                       >
                         {p.image && (
                           <Image src={p.image} alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover bg-gray-100 shrink-0" unoptimized={p.image.startsWith("data:")} />

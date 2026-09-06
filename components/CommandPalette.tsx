@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, type KeyboardEvent } from "react";
-import { Search, ArrowRight, Clock, X, Command, Settings, Package, Users, Zap, DollarSign, Receipt, ShoppingCart, BarChart2, Inbox, Star, FlaskConical, TrendingUp, RefreshCw, Tag, FileText, UserPlus, LogIn, AlertTriangle, LayoutDashboard, Truck } from "@buleje/design-system/icons";
-import { useRouter } from "next/navigation";
+import { Search, ArrowRight, Clock, X, Command, Settings, Package, Users, Zap, DollarSign, Receipt, ShoppingCart, BarChart2, Inbox, TrendingUp, UserPlus } from "@buleje/design-system/icons";
+import { useRouter, usePathname } from "next/navigation";
 
 // ── Tipos admin quick-actions ────────────────────────────────────────────────
 export type AdminRole = "admin" | "cajero" | "almacenero" | "vendedor" | "superadmin";
@@ -106,9 +106,26 @@ export default function CommandPalette() {
   const [selected, setSelected] = useState(0);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const router = useRouter();
+  const pathname = usePathname();
+  /**
+   * En el panel manda la búsqueda del panel.
+   *
+   * Esta paleta se monta en el layout RAÍZ (para toda la web) y escuchaba
+   * Ctrl+K en todas partes — incluido /admin, donde ya hay un buscador propio
+   * (`GlobalSearch`) que también lo escucha. Resultado: el atajo abría las DOS,
+   * y la que quedaba encima era ésta, con una lista de ~10 destinos escrita a
+   * mano contra los 133 módulos + sub-vistas que indexa la del panel. El botón
+   * del encabezado decía «atajo Ctrl+K» y abría otra cosa distinta.
+   *
+   * (Es el mismo choque que se resolvió en 2026-08-02 desmontando
+   * AdminCommandPalette; esta tercera paleta se pasó por alto porque no vive
+   * bajo app/admin.)
+   */
+  const enElPanel = pathname?.includes("/admin") ?? false;
 
   // Cmd+K / Ctrl+K shortcut
   useEffect(() => {
+    if (enElPanel) return;
     const down = (e: globalThis.KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -120,7 +137,7 @@ export default function CommandPalette() {
     };
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, []);
+  }, [enElPanel]);
 
   // Load recent searches
   useEffect(() => {
@@ -280,10 +297,10 @@ export default function CommandPalette() {
             const config = CATEGORY_CONFIG[category];
             return (
               <div key={category} className="py-1">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-5 py-2 flex items-center gap-2">
+                <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-5 py-2 flex items-center gap-2">
                   {config?.icon}
                   {config?.label ?? category}
-                </p>
+                </div>
                 {items.map((item) => {
                   const currentFlatIdx = flatIdx++;
                   return (

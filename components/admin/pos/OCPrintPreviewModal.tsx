@@ -1,6 +1,7 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
+import { AlertTriangle } from "@buleje/design-system/icons";
 import { useCallback } from "react";
 
 interface OCPrintPreviewModalProps {
@@ -168,13 +169,18 @@ export default function OCPrintPreviewModal({
           {/* Proveedor */}
           <div className="bg-[var(--surface-sunken)] rounded-xl p-3">
             <p className="text-xs font-semibold text-[var(--text-tertiary)] uppercase">Proveedor</p>
-            <p className="font-bold text-[var(--text-primary)]">{selectedSupplier?.name || "---"}</p>
+            {/* Reporte QA Compras 2026-08-12: el papel salía con "PROVEEDOR: ---"
+                aunque crear la orden sí exige proveedor. Un documento a medias que
+                se imprime y se manda es peor que uno que no se deja generar. */}
+            <p className={selectedSupplier ? "font-bold text-[var(--text-primary)]" : "font-bold text-[var(--data-error-500)]"}>
+              {selectedSupplier?.name || "Falta elegir el proveedor"}
+            </p>
             {selectedSupplier?.ruc && <p className="text-sm text-[var(--text-secondary)]">RUC: {selectedSupplier.ruc}</p>}
             {selectedSupplier?.phone && <p className="text-sm text-[var(--text-secondary)]">Tel: {selectedSupplier.phone}</p>}
           </div>
 
           {/* Tabla de items */}
-          <table className="w-full text-sm">
+          <DataTable className="w-full text-sm">
             <thead>
               <tr className="border-b-2 border-[var(--rule-base)]">
                 <th className="text-left py-2 font-semibold text-[var(--text-secondary)]">Producto</th>
@@ -199,7 +205,7 @@ export default function OCPrintPreviewModal({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
 
           {/* Totales */}
           <div className="border-t-2 border-[var(--rule-base)] pt-3 space-y-1">
@@ -238,6 +244,17 @@ export default function OCPrintPreviewModal({
           </div>
         </div>
 
+        {/* Mismo criterio que crear la orden: sin proveedor no hay documento. */}
+        {!selectedSupplier && (
+          <div role="alert" className="mx-4 mb-1 flex items-start gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2.5">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-warning-500)]" aria-hidden />
+            <p className="text-sm text-[var(--text-secondary)]">
+              Elegí el proveedor para imprimir o descargar. Sin él es una lista de precios,
+              no una orden de compra que alguien pueda aceptar.
+            </p>
+          </div>
+        )}
+
         {/* Botones del modal */}
         <div className="flex gap-2 p-4 border-t dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] rounded-b-2xl">
           <button
@@ -266,14 +283,16 @@ export default function OCPrintPreviewModal({
                 }
               }
             }}
-            className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+            disabled={!selectedSupplier}
+            className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Imprimir
           </button>
           <button
             type="button"
             onClick={handleDownloadPDF}
-            className="flex-1 py-2 bg-[var(--accent-soft)] text-white rounded-lg text-sm font-medium hover:bg-[var(--accent-soft)] transition-colors"
+            disabled={!selectedSupplier}
+            className="flex-1 py-2 bg-primary/10 text-white rounded-lg text-sm font-medium hover:bg-primary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Descargar PDF
           </button>

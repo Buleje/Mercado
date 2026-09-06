@@ -1,12 +1,11 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Camera,
   Upload,
   X,
-  Loader2,
   AlertCircle,
   RotateCcw,
   ShoppingCart,
@@ -284,7 +283,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors group"
+                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors group"
                 >
                   <Camera className="h-8 w-8 text-[var(--text-tertiary)] group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-primary">
@@ -294,7 +293,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-[var(--accent-soft)] dark:hover:bg-[var(--accent-muted)] transition-colors group"
+                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors group"
                 >
                   <Upload className="h-8 w-8 text-[var(--text-tertiary)] group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-primary">
@@ -386,7 +385,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
           {state === "results" && invoiceData && (
             <div className="space-y-6">
               {/* Proveedor info */}
-              <div className="p-3 rounded-xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+              <div className="p-3 rounded-xl bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                 <p className="text-sm font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                   {invoiceData.proveedor.nombre}
                   {invoiceData.proveedor.ruc && (
@@ -404,7 +403,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
 
               {/* Items table */}
               <div className="border border-[var(--rule-base)] rounded-xl overflow-hidden">
-                <table className="w-full text-sm">
+                <DataTable className="w-full text-sm">
                   <thead>
                     <tr className="bg-[var(--surface-sunken)]">
                       <th className="text-left px-3 py-2 text-xs font-medium text-[var(--text-tertiary)]">
@@ -485,7 +484,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
 
                 {/* Total row */}
                 <div className="flex items-center justify-between px-3 py-2.5 bg-[var(--surface-sunken)] border-t border-[var(--rule-base)]">

@@ -2,6 +2,7 @@
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useCallback } from "react";
 import {
   AlertOctagon,
@@ -229,7 +230,7 @@ export default function ExpiredBatchesWidget() {
         </div>
 
         {/* Sin vencidos */}
-        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3">
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15 px-4 py-3">
           <Package className="h-4 w-4 text-[var(--data-success-500)] dark:text-[var(--data-success-500)] shrink-0" />
           <span className="text-xs font-medium text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
             No hay lotes vencidos con stock
@@ -457,7 +458,7 @@ export default function ExpiredBatchesWidget() {
             className={cn(
               "mt-2 rounded-xl border px-4 py-2.5 text-xs font-medium",
               modal.toast.type === "success"
-                ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                 : "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )}
           >
@@ -542,10 +543,11 @@ export default function ExpiredBatchesWidget() {
               </div>
 
               {/* Motivo */}
-              <div className="px-5 py-3">
-                <label className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted block mb-1.5">
-                  Motivo
-                </label>
+              <Field
+                label="Motivo"
+                labelClassName="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] dark:text-muted block mb-1.5"
+                className="px-5 py-3"
+              >
                 <select
                   value={modal.reason}
                   onChange={(e) => setModal((prev) => ({ ...prev, reason: e.target.value as MermaReason }))}
@@ -556,7 +558,7 @@ export default function ExpiredBatchesWidget() {
                   <option value="deterioro">Deterioro / Daño</option>
                   <option value="rotura">Rotura</option>
                 </select>
-              </div>
+              </Field>
 
               {/* Toast inline (errores mientras el modal está abierto) */}
               <AnimatePresence>

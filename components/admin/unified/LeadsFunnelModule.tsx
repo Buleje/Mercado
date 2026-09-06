@@ -27,7 +27,7 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import KPICard from "@/components/admin/shared/KPICard";
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 
 interface FunnelStats {
@@ -187,7 +187,7 @@ export default function LeadsFunnelModule() {
       </AdminModuleHeader>
 
       {error && (
-        <div className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-900)] border border-[var(--data-error-500)] text-[var(--data-error-700)] dark:text-[var(--data-error-300)] rounded-xl p-4 text-base">
+        <div className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-700)] border border-[var(--data-error-500)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] rounded-xl p-4 text-base">
           {error}
         </div>
       )}
@@ -304,7 +304,7 @@ export default function LeadsFunnelModule() {
 
           {/* Lead list */}
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-2xl overflow-hidden">
-            <table className="w-full">
+            <DataTable className="w-full">
               <thead className="bg-[var(--surface-base)] border-b border-[var(--rule-soft)]">
                 <tr className="text-left text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide">
                   <th className="px-4 py-3">Nombre</th>
@@ -388,7 +388,7 @@ export default function LeadsFunnelModule() {
                   })
                 )}
               </tbody>
-            </table>
+            </DataTable>
           </div>
 
           {/* Hint */}

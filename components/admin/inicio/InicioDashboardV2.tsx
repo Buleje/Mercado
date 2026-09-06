@@ -263,7 +263,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
   // está concentrado únicamente en medianoche.
   const allOrdersForPeak = (sharedRaw?.data?.orders ?? []) as Array<{ createdAt: string; status: string }>;
   const allSalesForPeak = (sharedRaw?.data?.sales ?? []) as Array<{ createdAt: string }>;
-  const hourCount = new Array(24).fill(0);
+  const hourCount = Array.from({ length: 24 }, () => 0);
   allOrdersForPeak.forEach((o) => {
     if (o.status === "cancelado") return;
     hourCount[new Date(o.createdAt).getHours()] += 1;

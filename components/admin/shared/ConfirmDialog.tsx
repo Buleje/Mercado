@@ -60,7 +60,7 @@ const INTENT_STYLES: Record<Intent, { icon: typeof AlertTriangle; color: string;
   info: {
     icon: Info,
     color: "text-[var(--accent)]",
-    bg: "bg-[var(--accent-soft)]",
+    bg: "bg-primary/10",
     btn: "bg-[var(--accent)] hover:opacity-90",
   },
 };

@@ -15,9 +15,9 @@ function parseStatValue(str: string): { value: number; suffix: string; decimals?
 
 const statMeta = [
   { icon: ShoppingBag, label: "Productos disponibles", accent: "var(--accent)", accentGradient: "linear-gradient(to bottom, rgba(45,106,79,0.12), transparent)" },
-  { icon: Users, label: "Clientes satisfechos", accent: "#f97316", accentGradient: "linear-gradient(to bottom, rgba(244,162,97,0.12), transparent)" },
+  { icon: Users, label: "Clientes satisfechos", accent: "#ff6b5b", accentGradient: "linear-gradient(to bottom, rgba(244,162,97,0.12), transparent)" },
   { icon: Truck, label: "Pedidos entregados", accent: "#60a5fa", accentGradient: "linear-gradient(to bottom, rgba(96,165,250,0.12), transparent)" },
-  { icon: Star, label: "Calificación promedio", accent: "#fbbf24", accentGradient: "linear-gradient(to bottom, rgba(251,191,36,0.12), transparent)" },
+  { icon: Star, label: "Calificación promedio", accent: "#ff8676", accentGradient: "linear-gradient(to bottom, rgba(251,191,36,0.12), transparent)" },
 ];
 
 function AnimatedNumber({ target, decimals = 0, started }: { target: number; decimals?: number; started: boolean }) {
@@ -93,7 +93,7 @@ export default function StatsCounter() {
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12 sm:mb-16">
-          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--accent-ink)] dark:text-[var(--accent)] mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             Nuestros números
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[var(--text-primary)]">

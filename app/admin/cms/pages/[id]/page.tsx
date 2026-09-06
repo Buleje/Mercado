@@ -248,7 +248,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
     try {
       const res = await fetch(
         `/api/cms/pages/${params.id}/blocks?blockId=${blockId}`,
-        { method: "DELETE" }
+        { method: "DELETE", headers: csrfHeaders() }
       );
 
       if (res.ok) {
@@ -348,7 +348,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
           <button
             onClick={savePage}
             disabled={saving}
-            className="px-4 py-2 bg-[var(--accent-soft)] text-white rounded-lg hover:bg-[var(--accent-soft)] flex items-center gap-2"
+            className="px-4 py-2 bg-primary/10 text-white rounded-lg hover:bg-primary/10 flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
             {saving ? "Guardando..." : "Guardar"}
@@ -366,7 +366,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                 <button
                   key={block.type}
                   onClick={() => addBlock(block.type)}
-                  className="w-full p-3 bg-white border rounded-lg hover:bg-[var(--accent-soft)] hover:border-[var(--data-success-500)]/30 text-left flex items-center gap-2"
+                  className="w-full p-3 bg-white border rounded-lg hover:bg-primary/10 hover:border-[var(--data-success-500)]/30 text-left flex items-center gap-2"
                 >
                   <block.icon className="h-5 w-5 text-[var(--data-success-500)]" />
                   <span className="font-medium">{block.name}</span>
@@ -385,7 +385,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                     key={block.id}
                     className={`p-2 bg-white border rounded cursor-pointer ${
                       selectedBlock === block.id
-                        ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)]"
+                        ? "border-[var(--data-success-500)]/30 bg-primary/10"
                         : ""
                     }`}
                     onClick={() => setSelectedBlock(block.id)}
@@ -476,7 +476,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                 <button
                   onClick={saveBlockProps}
                   disabled={savingProps}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--accent-soft)] text-white text-xs font-bold rounded-lg hover:bg-[var(--accent-soft)] disabled:opacity-60 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-white text-xs font-bold rounded-lg hover:bg-primary/10 disabled:opacity-60 transition-colors"
                 >
                   <Save className="w-3.5 h-3.5" />
                   {savingProps ? "Guardando..." : "Guardar"}
@@ -503,10 +503,10 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                           <button
                             onClick={() => setDraftProps((p) => ({ ...p, [field.key]: !val }))}
                             className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-                              val ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] text-[var(--data-success-500)]" : "border-[var(--rule-base)] bg-gray-50 text-[var(--text-secondary)]"
+                              val ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] bg-gray-50 text-[var(--text-secondary)]"
                             }`}
                           >
-                            <span className={`w-9 h-5 rounded-full transition-colors relative ${val ? "bg-[var(--accent-soft)]" : "bg-gray-300"}`}>
+                            <span className={`w-9 h-5 rounded-full transition-colors relative ${val ? "bg-primary/10" : "bg-gray-300"}`}>
                               <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${val ? "left-4" : "left-0.5"}`} />
                             </span>
                             {val ? "Activado" : "Desactivado"}
@@ -562,7 +562,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                 <button
                   onClick={saveBlockProps}
                   disabled={savingProps}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-[var(--accent-soft)] text-white text-sm font-bold rounded-lg hover:bg-[var(--accent-soft)] disabled:opacity-60 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary/10 text-white text-sm font-bold rounded-lg hover:bg-primary/10 disabled:opacity-60 transition-colors"
                 >
                   <Save className="w-4 h-4" />
                   {savingProps ? "Guardando cambios..." : "Guardar cambios"}

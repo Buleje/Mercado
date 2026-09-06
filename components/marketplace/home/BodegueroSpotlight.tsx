@@ -168,7 +168,7 @@ export default function BodegueroSpotlight() {
 
             <div className="mt-6 flex items-center justify-between gap-4 flex-wrap pt-6 border-t border-[var(--rule-soft)]">
               <div className="flex items-center gap-3 min-w-0">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <StoreIcon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                 </span>
                 <div className="min-w-0">

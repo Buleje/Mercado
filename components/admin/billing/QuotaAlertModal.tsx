@@ -39,15 +39,15 @@ export interface QuotaAlertModalProps {
 // ─── Colores por semáforo ─────────────────────────────────────────────────────
 
 const BAR_COLORS = {
-  green:  "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]",
-  yellow: "bg-amber-400   dark:bg-amber-300",
-  red:    "bg-[var(--data-error-500)]     dark:bg-red-400",
+  green:  "bg-primary/10 dark:bg-primary/10",
+  yellow: "bg-[var(--data-warning-500)]   dark:bg-[var(--data-warning-500)]",
+  red:    "bg-[var(--data-error-500)]     dark:bg-[var(--data-error-500)]",
 } as const;
 
 const TEXT_COLORS = {
   green:  "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-  yellow: "text-[var(--data-warning-700)]   dark:text-amber-300",
-  red:    "text-[var(--data-error-700)]     dark:text-red-400",
+  yellow: "text-[var(--data-warning-700)]   dark:text-[var(--data-warning-500)]",
+  red:    "text-[var(--data-error-700)]     dark:text-[var(--data-error-500)]",
 } as const;
 
 const STATUS_LABELS = {
@@ -76,7 +76,7 @@ function MetricRow({ event, snapshot }: MetricRowProps) {
         <span className="text-sm font-medium text-[var(--text-primary)]">{label}</span>
         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
           light === "green"
-            ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
             : light === "yellow"
               ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
               : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"

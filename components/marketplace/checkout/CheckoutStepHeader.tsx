@@ -37,7 +37,7 @@ export default function CheckoutStepHeader({
         <ArrowLeft className="h-4 w-4" strokeWidth={2.25} aria-hidden />
         {backLabel}
       </Link>
-      <h1 className="text-2xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none">
+      <h1 className="text-xl sm:text-3xl font-bold tracking-[-0.02em] text-[var(--text-primary)] leading-tight">
         {title}
       </h1>
       <p className="mt-1.5 sm:mt-2 text-[length:var(--ts-xs)] sm:text-base text-[var(--text-secondary)] leading-snug">

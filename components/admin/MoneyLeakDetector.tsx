@@ -157,7 +157,7 @@ export default function MoneyLeakDetector() {
       )}
 
       {!loading && leakCount === 0 && !error && (
-        <div className="rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-4 py-3 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-2">
+        <div className="rounded-xl border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15 px-4 py-3 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-2">
           <Search className="w-4 h-4" />
           Sin fugas detectadas — los gastos estan dentro del rango normal.
         </div>

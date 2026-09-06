@@ -1,10 +1,11 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertCircle, CheckCircle, ChevronDown, ClipboardList, Clock, DollarSign, Plus, Truck, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
+import { Field } from "@/components/admin/shared/Field";
 
 interface DeliveryAssignment {
   id: string;
@@ -21,9 +22,9 @@ interface DeliveryAssignment {
 
 const ASSIGNMENT_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   assigned:    { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" },
-  picked_up:   { label: "Recogido",   className: "bg-primary/10 text-primary" },
-  in_transit:  { label: "En camino",  className: "bg-primary/10 text-primary" },
-  delivered:   { label: "Entregado",  className: "bg-[var(--accent-soft)] text-[var(--data-success-500)]" },
+  picked_up:   { label: "Recogido",   className: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
+  in_transit:  { label: "En camino",  className: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
+  delivered:   { label: "Entregado",  className: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
   cancelled:   { label: "Cancelado",  className: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
 };
 // Permisos canónicos sincronizados con /api/store-permissions
@@ -153,7 +154,7 @@ export function AsignacionesTab() {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <ClipboardList className="h-5 w-5" />
             </span>
             <div>
@@ -214,7 +215,7 @@ export function AsignacionesTab() {
             </div>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                   <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
                 </span>
               </div>
@@ -228,7 +229,7 @@ export function AsignacionesTab() {
             </div>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                   <DollarSign className="h-5 w-5 text-[var(--data-success-500)]" />
                 </span>
               </div>
@@ -277,7 +278,7 @@ export function AsignacionesTab() {
             </p>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-6 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
@@ -311,7 +312,7 @@ export function AsignacionesTab() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-sm font-extrabold shrink-0">
+                          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-extrabold shrink-0">
                             {initial}
                           </div>
                           <span className="font-bold text-[var(--text-primary)]">
@@ -347,7 +348,7 @@ export function AsignacionesTab() {
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
           {canceladas > 0 && (
             <div className="px-6 py-3 border-t border-[var(--rule-base)] bg-[var(--surface-sunken)]/50">
@@ -372,7 +373,7 @@ export function AsignacionesTab() {
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <Plus className="h-5 w-5" />
                 </span>
                 <CardTitle className="font-display text-xl font-extrabold text-[var(--text-primary)]">
@@ -388,10 +389,7 @@ export function AsignacionesTab() {
               </button>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                ID de orden (opcional)
-              </label>
+            <Field className="space-y-2" label="ID de orden (opcional)" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               <input
                 type="text"
                 value={assignModal.orderId ?? ""}
@@ -399,34 +397,36 @@ export function AsignacionesTab() {
                 placeholder="Ej: ORD-12345"
                 className="w-full px-4 h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
-            </div>
+            </Field>
 
-            <div className="space-y-2">
-              <label className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Repartidor *
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedPartner}
-                  onChange={(e) => setSelectedPartner(e.target.value)}
-                  className="w-full px-4 h-12 pr-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
-                >
-                  <option value="">Seleccionar repartidor...</option>
-                  {partners.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} — {p.zone} — S/{toNum(p.fee).toFixed(2)}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
-              </div>
-              {partners.length === 0 && (
-                <p className="text-sm text-[var(--data-warning-500)] font-bold flex items-center gap-1.5 mt-2">
-                  <AlertCircle className="h-4 w-4" />
-                  No hay repartidores activos. Activá uno desde la pestaña Repartidores.
-                </p>
+            <Field className="space-y-2" label="Repartidor *" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              {(id) => (
+                <>
+                  <div className="relative">
+                    <select
+                      id={id}
+                      value={selectedPartner}
+                      onChange={(e) => setSelectedPartner(e.target.value)}
+                      className="w-full px-4 h-12 pr-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                    >
+                      <option value="">Seleccionar repartidor...</option>
+                      {partners.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} — {p.zone} — S/{toNum(p.fee).toFixed(2)}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
+                  </div>
+                  {partners.length === 0 && (
+                    <p className="text-sm text-[var(--data-warning-500)] font-bold flex items-center gap-1.5 mt-2">
+                      <AlertCircle className="h-4 w-4" />
+                      No hay repartidores activos. Activá uno desde la pestaña Repartidores.
+                    </p>
+                  )}
+                </>
               )}
-            </div>
+            </Field>
 
             <div className="flex gap-3 pt-2">
               <button

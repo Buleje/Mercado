@@ -80,8 +80,10 @@ export async function POST(req: NextRequest) {
   const itemsSig = createHash("sha256")
     .update(
       JSON.stringify(
+        // Solo productId+quantity: unitPrice del cliente se ignora (el precio es
+        // del backend), así que no debe influir en la dedup.
         data.items
-          .map((i) => [i.productId, i.quantity, i.unitPrice])
+          .map((i) => [i.productId, i.quantity])
           .sort((a, b) => a[0] - b[0]),
       ),
     )
@@ -112,18 +114,39 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // 7. Resolver names + units reales de productos (regla #6: nombres del backend).
+  // 7. Resolver PRECIOS + names + units REALES desde DB.
+  //
+  // CRITICAL FIX 2026-06-28 (money-integrity): antes el subtotal y el precio
+  // persistido salían de `item.unitPrice` (controlado por el cliente) — un guest
+  // anónimo podía postear unitPrice=0.01 y la orden se guardaba a ese precio,
+  // corrompiendo el ledger/COGS/SUNAT (viola regla #6). Ahora se replica el
+  // patrón serverPriceMap/HOTFIX-001 de /api/orders: el precio autoritativo es
+  // Product.price (misma fuente que el checkout autenticado), keyed por productId.
   const productIds = data.items.map((i) => i.productId);
   const tx = prismaForTenant(tenantId);
   const productRows = await tx.product.findMany({
     where: { id: { in: productIds }, tenantId },
-    select: { id: true, name: true, unit: true, price: true },
+    select: { id: true, name: true, unit: true, price: true, stock: true },
   });
   const productMap = new Map(productRows.map((p) => [p.id, p]));
 
-  // 8. Totales backend (regla #6 — nunca confiar en cliente).
+  // Rechazar si algún producto no existe / no pertenece a este tenant: evita
+  // persistir ítems a precio 0 (o cross-tenant) en vez de cobrar lo real.
+  const missingIds = productIds.filter((id) => !productMap.has(id));
+  if (missingIds.length > 0) {
+    return NextResponse.json(
+      { error: "Uno o más productos no están disponibles en esta tienda" },
+      { status: 404 },
+    );
+  }
+
+  // Precio del servidor (DB), NUNCA el del cliente.
+  const serverUnitPrice = (productId: number): number =>
+    Number(productMap.get(productId)?.price ?? 0);
+
+  // 8. Totales backend desde precios de DB (regla #6 — nunca confiar en cliente).
   const subtotal = data.items.reduce(
-    (sum, item) => sum + item.unitPrice * item.quantity,
+    (sum, item) => sum + serverUnitPrice(item.productId) * item.quantity,
     0,
   );
   const deliveryFee = 3.5;
@@ -158,41 +181,83 @@ export async function POST(req: NextRequest) {
     // No abortamos — el Order puede crearse sin Customer (FK setNull).
   }
 
-  // 10. Crear Order + OrderItems.
+  // 10. Decremento ATÓMICO de stock + creación de Order en UNA transacción.
+  //
+  // CRITICAL FIX 2026-06-28 (oversell): antes el guest creaba la orden SIN
+  // validar ni decrementar stock → dos compradores podían llevarse la última
+  // unidad (TOCTOU). Replica el patrón RED-005 de /api/orders: un UPDATE
+  // condicional `stock >= quantity` por ítem (atómico a nivel fila en Postgres);
+  // si afecta 0 filas, lanza insufficient_stock y la tx ENTERA rollbackea
+  // (incluida la orden). Ítems con stock NULL = ilimitado, se saltean.
   // Round 17 M004: audit log de Order.create con phone del guest como actor.
   try {
     await runWithAuditContext(req, normalizedPhone || "guest-anonymous", () =>
-    tx.order.create({
-      data: {
-        id: orderId,
-        tenantId,
-        customerName: data.name,
-        customerPhone: normalizedPhone,
-        customerLocation: data.address.line1,
-        customerReference: data.address.reference ?? "",
-        total,
-        status: "pendiente",
-        notes: data.notes ?? null,
-        paymentMethod: data.paymentMethod,
-        idempotencyKey,
-        source: "guest",
-        estimatedDeliveryAt: etaIso,
-        items: {
-          create: data.items.map((item) => {
-            const p = productMap.get(item.productId);
-            return {
-              productId: item.productId,
-              name: p?.name ?? `Producto ${item.productId}`,
-              price: item.unitPrice,
-              quantity: item.quantity,
-              unit: p?.unit ?? "unidad",
+      tx.$transaction(async (txn) => {
+        for (const item of data.items) {
+          const stk = productMap.get(item.productId)?.stock;
+          if (stk == null) continue; // stock ilimitado — no decrementar
+          const affected: number = await txn.$executeRaw`
+            UPDATE "Product"
+               SET "stock" = "stock" - ${item.quantity}
+             WHERE "id" = ${item.productId}
+               AND "tenantId" = ${tenantId}
+               AND "stock" IS NOT NULL
+               AND "stock" >= ${item.quantity}
+          `;
+          if (affected === 0) {
+            const e = new Error("insufficient_stock") as Error & {
+              code?: string; productId?: number; productName?: string;
             };
-          }),
-        },
-      },
-    }),
+            e.code = "INSUFFICIENT_STOCK";
+            e.productId = item.productId;
+            e.productName = productMap.get(item.productId)?.name;
+            throw e;
+          }
+        }
+
+        await txn.order.create({
+          data: {
+            id: orderId,
+            tenantId,
+            customerName: data.name,
+            customerPhone: normalizedPhone,
+            customerLocation: data.address.line1,
+            customerReference: data.address.reference ?? "",
+            total,
+            status: "pendiente",
+            notes: data.notes ?? null,
+            paymentMethod: data.paymentMethod,
+            idempotencyKey,
+            source: "guest",
+            estimatedDeliveryAt: etaIso,
+            items: {
+              create: data.items.map((item) => {
+                const p = productMap.get(item.productId);
+                return {
+                  productId: item.productId,
+                  name: p?.name ?? `Producto ${item.productId}`,
+                  price: serverUnitPrice(item.productId), // DB, no el del cliente
+                  quantity: item.quantity,
+                  unit: p?.unit ?? "unidad",
+                };
+              }),
+            },
+          },
+        });
+      }),
     );
   } catch (err) {
+    const code = (err as { code?: string }).code;
+    if (code === "INSUFFICIENT_STOCK") {
+      const e = err as Error & { productId?: number; productName?: string };
+      logger.warn("[guest/orders/create] insufficient stock", {
+        orderId, tenantId, productId: e.productId,
+      });
+      return NextResponse.json(
+        { error: "Stock insuficiente para uno o más productos", productId: e.productId, productName: e.productName },
+        { status: 409 },
+      );
+    }
     logger.error("[guest/orders/create] order create failed", {
       orderId,
       tenantId,

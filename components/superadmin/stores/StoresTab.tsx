@@ -1,7 +1,17 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { ShoppingBag, Package, Star, DollarSign, Search, RefreshCw, Eye, EyeOff, Loader2 } from "@buleje/design-system/icons";
+import {
+  ShoppingBag,
+  Package,
+  Star,
+  DollarSign,
+  Search,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  Loader2,
+} from "@buleje/design-system/icons";
 import { SADataTable } from "@/components/superadmin/_shared/SADataTable";
 import { TableSkeleton } from "@/components/superadmin/_shared/SASkeleton";
 import { PlanBadge } from "@/components/superadmin/_shared/SABadge";
@@ -11,7 +21,11 @@ import type { StoreRow } from "./types";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(d).toLocaleDateString("es-PE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function buildColumns(
@@ -19,135 +33,143 @@ function buildColumns(
   onTogglePublish: (row: StoreRow) => void,
 ): SAColumn<StoreRow>[] {
   return [
-  {
-    key: "tenant",
-    label: "Tienda (Tenant)",
-    render: (row) => (
-      <div>
-        <div className="font-medium text-[var(--text-primary)] text-sm">{row.tenant.name}</div>
-        <div className="text-xs text-[var(--text-tertiary)] font-mono mt-0.5">{row.tenant.slug}</div>
-      </div>
-    ),
-  },
-  {
-    key: "name",
-    label: "Store",
-    render: (row) => (
-      <div>
-        <div className="text-sm text-[var(--text-primary)]">{row.name}</div>
-        <div className="text-xs text-[var(--text-tertiary)] font-mono mt-0.5">{row.slug}</div>
-      </div>
-    ),
-  },
-  {
-    key: "plan",
-    label: "Plan",
-    render: (row) => (
-      <PlanBadge plan={row.tenant.plan as "free" | "pro" | "business" | "enterprise"} />
-    ),
-  },
-  {
-    key: "isPublished",
-    label: "Estado",
-    render: (row) => (
-      <span
-        className={[
-          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
-          row.isPublished
-            ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]"
-            : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]",
-        ].join(" ")}
-      >
+    {
+      key: "tenant",
+      label: "Tienda (Tenant)",
+      render: (row) => (
+        <div>
+          <div className="font-medium text-[var(--text-primary)] text-sm">{row.tenant.name}</div>
+          <div className="text-xs text-[var(--text-tertiary)] font-mono mt-0.5">
+            {row.tenant.slug}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "name",
+      label: "Store",
+      render: (row) => (
+        <div>
+          <div className="text-sm text-[var(--text-primary)]">{row.name}</div>
+          <div className="text-xs text-[var(--text-tertiary)] font-mono mt-0.5">{row.slug}</div>
+        </div>
+      ),
+    },
+    {
+      key: "plan",
+      label: "Plan",
+      render: (row) => (
+        <PlanBadge plan={row.tenant.plan as "free" | "pro" | "business" | "enterprise"} />
+      ),
+    },
+    {
+      key: "isPublished",
+      label: "Estado",
+      render: (row) => (
         <span
           className={[
-            "h-1 w-1 rounded-full",
-            row.isPublished ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]",
-          ].join(" ")}
-        />
-        {row.isPublished ? "Publicado" : "Borrador"}
-      </span>
-    ),
-  },
-  {
-    key: "category",
-    label: "Categoría",
-    render: (row) => (
-      <span className="text-xs text-[var(--text-secondary)] capitalize">{row.category}</span>
-    ),
-  },
-  {
-    key: "rating",
-    label: "Rating",
-    sortable: true,
-    render: (row) => (
-      <span className="inline-flex items-center gap-1 text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold">
-        <Star className="w-3.5 h-3.5 fill-current" />
-        {Number(row.rating).toFixed(1)}
-        <span className="text-[var(--text-tertiary)] font-normal text-xs">({row.reviewCount})</span>
-      </span>
-    ),
-  },
-  {
-    key: "commission",
-    label: "Comisión",
-    sortable: true,
-    render: (row) => (
-      <span className="text-sm font-bold text-[var(--accent)] tabular-nums">{row.commission}%</span>
-    ),
-  },
-  {
-    key: "products",
-    label: "Productos",
-    sortable: true,
-    render: (row) => (
-      <span className="text-sm text-[var(--text-secondary)] tabular-nums">
-        {row._count.products}
-      </span>
-    ),
-  },
-  {
-    key: "createdAt",
-    label: "Creado",
-    render: (row) => (
-      <span className="text-xs text-[var(--text-tertiary)] tabular-nums">{fmtDate(row.createdAt)}</span>
-    ),
-  },
-  {
-    key: "actions",
-    label: "Acción",
-    render: (row) => {
-      const busy = togglingId === row.id;
-      return (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!busy) onTogglePublish(row);
-          }}
-          disabled={busy}
-          className={[
-            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors disabled:opacity-50",
+            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider",
             row.isPublished
-              ? "border-rose-200 bg-rose-50 text-[var(--data-error-500)] hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-[var(--data-error-500)]"
-              : "border-emerald-200 bg-emerald-50 text-[var(--data-success-700)] hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
+              ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]"
+              : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]",
           ].join(" ")}
-          title={row.isPublished ? "Ocultar del marketplace" : "Publicar en marketplace"}
         >
-          {busy ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : row.isPublished ? (
-            <>
-              <EyeOff className="h-3.5 w-3.5" /> Ocultar
-            </>
-          ) : (
-            <>
-              <Eye className="h-3.5 w-3.5" /> Publicar
-            </>
-          )}
-        </button>
-      );
+          <span
+            className={[
+              "h-1 w-1 rounded-full",
+              row.isPublished ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]",
+            ].join(" ")}
+          />
+          {row.isPublished ? "Publicado" : "Borrador"}
+        </span>
+      ),
     },
-  },
+    {
+      key: "category",
+      label: "Categoría",
+      render: (row) => (
+        <span className="text-xs text-[var(--text-secondary)] capitalize">{row.category}</span>
+      ),
+    },
+    {
+      key: "rating",
+      label: "Rating",
+      sortable: true,
+      render: (row) => (
+        <span className="inline-flex items-center gap-1 text-sm text-[#0d9488] dark:text-[#0d9488] font-semibold">
+          <Star className="w-3.5 h-3.5 fill-current" />
+          {Number(row.rating).toFixed(1)}
+          <span className="text-[var(--text-tertiary)] font-normal text-xs">
+            ({row.reviewCount})
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: "commission",
+      label: "Comisión",
+      sortable: true,
+      render: (row) => (
+        <span className="text-sm font-bold text-[var(--accent)] tabular-nums">
+          {row.commission}%
+        </span>
+      ),
+    },
+    {
+      key: "products",
+      label: "Productos",
+      sortable: true,
+      render: (row) => (
+        <span className="text-sm text-[var(--text-secondary)] tabular-nums">
+          {row._count.products}
+        </span>
+      ),
+    },
+    {
+      key: "createdAt",
+      label: "Creado",
+      render: (row) => (
+        <span className="text-xs text-[var(--text-tertiary)] tabular-nums">
+          {fmtDate(row.createdAt)}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      label: "Acción",
+      render: (row) => {
+        const busy = togglingId === row.id;
+        return (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!busy) onTogglePublish(row);
+            }}
+            disabled={busy}
+            className={[
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors disabled:opacity-50",
+              row.isPublished
+                ? "border-rose-200 bg-rose-50 text-[var(--data-error-500)] hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-[var(--data-error-500)]"
+                : "border-emerald-200 bg-emerald-50 text-[var(--data-success-700)] hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
+            ].join(" ")}
+            title={row.isPublished ? "Ocultar del marketplace" : "Publicar en marketplace"}
+          >
+            {busy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : row.isPublished ? (
+              <>
+                <EyeOff className="h-3.5 w-3.5" /> Ocultar
+              </>
+            ) : (
+              <>
+                <Eye className="h-3.5 w-3.5" /> Publicar
+              </>
+            )}
+          </button>
+        );
+      },
+    },
   ];
 }
 
@@ -164,25 +186,28 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
   const [filter, setFilter] = useState<"all" | "published" | "draft">("all");
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  const handleTogglePublish = useCallback(async (row: StoreRow) => {
-    setTogglingId(row.id);
-    try {
-      const res = await fetch("/api/superadmin/stores", {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify({ storeId: row.id, isPublished: !row.isPublished }),
-      });
-      if (res.ok) {
-        // Refresh la lista para reflejar el nuevo estado.
-        onRefresh();
+  const handleTogglePublish = useCallback(
+    async (row: StoreRow) => {
+      setTogglingId(row.id);
+      try {
+        const res = await fetch("/api/superadmin/stores", {
+          method: "PATCH",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          credentials: "include",
+          body: JSON.stringify({ storeId: row.id, isPublished: !row.isPublished }),
+        });
+        if (res.ok) {
+          // Refresh la lista para reflejar el nuevo estado.
+          onRefresh();
+        }
+      } catch {
+        // silent
+      } finally {
+        setTogglingId(null);
       }
-    } catch {
-      // silent
-    } finally {
-      setTogglingId(null);
-    }
-  }, [onRefresh]);
+    },
+    [onRefresh],
+  );
 
   const columns = useMemo(
     () => buildColumns(togglingId, handleTogglePublish),
@@ -347,16 +372,20 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
                     )}
                   </div>
                   <div className="shrink-0 flex flex-col items-end gap-1.5">
-                    <PlanBadge plan={row.tenant.plan as "free" | "pro" | "business" | "enterprise"} />
+                    <PlanBadge
+                      plan={row.tenant.plan as "free" | "pro" | "business" | "enterprise"}
+                    />
                     <span
                       className={[
-                        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider",
+                        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-extrabold uppercase tracking-wider",
                         row.isPublished
                           ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]"
                           : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]",
                       ].join(" ")}
                     >
-                      <span className={`h-1 w-1 rounded-full ${row.isPublished ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]"}`} />
+                      <span
+                        className={`h-1 w-1 rounded-full ${row.isPublished ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]"}`}
+                      />
                       {row.isPublished ? "Publicado" : "Borrador"}
                     </span>
                   </div>
@@ -365,11 +394,11 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
                 {/* Mini-stats 3 cols: rating, productos, comisión */}
                 <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-[var(--rule-soft)]">
                   <div>
-                    <div className="inline-flex items-center gap-1 text-sm font-bold text-[var(--data-warning-500)]">
+                    <div className="inline-flex items-center gap-1 text-sm font-bold text-[#0d9488]">
                       <Star className="w-3 h-3 fill-current" />
                       {Number(row.rating).toFixed(1)}
                     </div>
-                    <div className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
+                    <div className="text-xs uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
                       Rating
                     </div>
                   </div>
@@ -377,7 +406,7 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
                     <div className="text-sm font-bold text-[var(--text-primary)]">
                       {row._count.products}
                     </div>
-                    <div className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
+                    <div className="text-xs uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
                       Productos
                     </div>
                   </div>
@@ -385,7 +414,7 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
                     <div className="text-sm font-bold text-[var(--accent)] tabular-nums">
                       {row.commission}%
                     </div>
-                    <div className="text-[10px] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
+                    <div className="text-xs uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
                       Comisión
                     </div>
                   </div>
@@ -411,14 +440,22 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
                       ? "border-rose-200 bg-rose-50 text-[var(--data-error-500)] hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30"
                       : "border-emerald-200 bg-emerald-50 text-[var(--data-success-700)] hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
                   ].join(" ")}
-                  aria-label={row.isPublished ? `Ocultar ${row.name} del marketplace` : `Publicar ${row.name} en marketplace`}
+                  aria-label={
+                    row.isPublished
+                      ? `Ocultar ${row.name} del marketplace`
+                      : `Publicar ${row.name} en marketplace`
+                  }
                 >
                   {busy ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : row.isPublished ? (
-                    <><EyeOff className="h-4 w-4" /> Ocultar del marketplace</>
+                    <>
+                      <EyeOff className="h-4 w-4" /> Ocultar del marketplace
+                    </>
                   ) : (
-                    <><Eye className="h-4 w-4" /> Publicar en marketplace</>
+                    <>
+                      <Eye className="h-4 w-4" /> Publicar en marketplace
+                    </>
                   )}
                 </button>
               </div>

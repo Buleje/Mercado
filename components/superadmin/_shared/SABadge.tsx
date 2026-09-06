@@ -6,7 +6,7 @@ const PLAN_STYLES: Record<PlanId, string> = {
   free:       "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
   pro:        "bg-teal-100 text-[var(--accent-dark)] dark:bg-teal-900/40 dark:text-teal-300",
   business:   "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  enterprise: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
+  enterprise: "bg-teal-600 text-white dark:bg-teal-500 dark:text-white",
 };
 
 const PLAN_LABEL: Record<PlanId, string> = {
@@ -56,7 +56,7 @@ const STATUS_STYLES: Record<StatusVariant, string> = {
   active:    "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]",
   inactive:  "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/40 dark:text-[var(--data-error-500)]",
   trial:     "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]",
-  pending:   "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
+  pending:   "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
   settled:   "bg-teal-100 text-[var(--accent-dark)] dark:bg-teal-900/40 dark:text-teal-300",
   cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
 };

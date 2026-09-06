@@ -246,7 +246,7 @@ export default function POSCustomerSearch({
   if (selectedPhone) {
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-3 p-3 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl">
+        <div className="flex items-center gap-3 p-3 bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl">
           <div className="h-10 w-10 rounded-full bg-[var(--data-success-500)]/15 flex items-center justify-center shrink-0">
             <User className="h-5 w-5 text-[var(--data-success-500)]" />
           </div>
@@ -289,7 +289,7 @@ export default function POSCustomerSearch({
               </span>
               <button
                 onClick={() => { setShowAbonoRapido(!showAbonoRapido); setAbonoMonto(fiadoSaldo.toFixed(2)); }}
-                className="text-sm font-bold text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] hover:bg-[var(--accent-soft)] px-2 py-1 rounded transition-colors"
+                className="text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 hover:bg-primary/10 px-2 py-1 rounded transition-colors"
               >
                 Abonar
               </button>
@@ -358,7 +358,7 @@ export default function POSCustomerSearch({
                 {loyaltyPoints} puntos (= S/{(loyaltyPoints * POINTS_RATE).toFixed(2)} en descuento)
               </span>
               {loyaltyPoints >= 100 && (
-                <span className="ml-auto text-sm font-bold px-1.5 py-1 rounded-full bg-[var(--accent-soft)] text-[var(--data-success-500)]">Canjeable</span>
+                <span className="ml-auto text-sm font-bold px-1.5 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">Canjeable</span>
               )}
             </div>
             {loyaltyPoints >= 100 && !showRedeemSlider && (
@@ -370,7 +370,7 @@ export default function POSCustomerSearch({
               </button>
             )}
             {showRedeemSlider && (
-              <div className="px-3 py-2 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg space-y-1">
+              <div className="px-3 py-2 bg-primary/10 dark:bg-primary/15 rounded-lg space-y-1">
                 <p className="text-sm text-[var(--text-secondary)] font-medium">
                   Canjear {redeemAmount} pts = S/{(redeemAmount * POINTS_RATE).toFixed(2)} de descuento
                 </p>
@@ -392,7 +392,7 @@ export default function POSCustomerSearch({
                   </button>
                   <button
                     onClick={() => setShowRedeemSlider(false)}
-                    className="flex-1 text-sm py-1 rounded bg-[var(--accent-soft)] text-white font-bold"
+                    className="flex-1 text-sm py-1 rounded bg-primary/10 text-white font-bold"
                   >
                     Aplicar -{" "}S/{(redeemAmount * POINTS_RATE).toFixed(2)}
                   </button>
@@ -418,7 +418,7 @@ export default function POSCustomerSearch({
           </div>
         )}
         {lastPurchase === null && !loadingLastPurchase && paymentHistory.length === 0 && (
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-lg">
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-primary/10 dark:bg-primary/15 rounded-lg">
             <ShoppingBag className="h-3 w-3 text-[var(--data-success-500)] shrink-0" />
             <span className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">Primera compra de este cliente</span>
           </div>
@@ -524,7 +524,7 @@ export default function POSCustomerSearch({
                     Fiado S/{Number(c.creditBalance).toFixed(2)}
                   </span>
                 ) : (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] shrink-0">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] shrink-0">
                     Sin deuda
                   </span>
                 )}
@@ -538,7 +538,7 @@ export default function POSCustomerSearch({
               setShowResults(false);
               setShowCreateModal(true);
             }}
-            className="w-full flex items-center gap-2.5 px-4 py-3.5 hover:bg-primary/5 transition-colors text-left border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-primary font-semibold"
+            className="w-full flex items-center gap-2.5 px-4 py-3.5 hover:bg-primary/5 transition-colors text-left border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold"
           >
             <UserPlus className="h-5 w-5" />
             <span className="text-base">Crear nuevo cliente</span>

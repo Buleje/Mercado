@@ -100,7 +100,7 @@ export default function NotificationsEnableCard() {
   ) {
     if (justEnabled) {
       return (
-        <section className="rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent-soft)] p-4 flex items-center gap-3">
+        <section className="rounded-2xl border border-[var(--accent)]/30 bg-primary/10 p-4 flex items-center gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
             <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
           </span>
@@ -142,7 +142,7 @@ export default function NotificationsEnableCard() {
       </button>
 
       <div className="flex items-start gap-3 mb-3 pr-8">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
           <BellRing className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </span>
         <div className="flex-1">

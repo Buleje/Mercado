@@ -46,11 +46,20 @@ function AdminMainContentInner({
   swipeHandlers,
   tabRouter,
 }: AdminMainContentProps) {
+  /*
+   * El <main> va SIN `role="tabpanel"`.
+   *
+   * Estaba puesto como si el sidebar fuera una barra de pestañas, y no lo es:
+   * es navegación. Eso daba dos problemas a la vez — un tabpanel huérfano
+   * (ningún `role="tab"` lo apunta) y, peor, el rol pisaba el landmark
+   * implícito de `<main>`, así que la página se quedaba SIN landmark principal
+   * justo donde apunta el skip-link «Ir al contenido». Las pestañas de verdad
+   * (AdminTabBar) arman su par tab/tabpanel adentro.
+   */
   return (
     <main
       id="main-content"
-      role="tabpanel"
-      aria-label="Contenido del modulo activo"
+      aria-label="Contenido del módulo activo"
       className={cn(
         "flex-1 mx-auto w-full pb-[calc(88px+env(safe-area-inset-bottom))] sm:pb-8",
         presentationMode

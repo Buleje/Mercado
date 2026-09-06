@@ -72,7 +72,7 @@ export default function GananciasPage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-6 lg:py-10 space-y-6">
         <header className="flex items-start justify-between gap-3 earnings-print-hide">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
+            <div className="h-12 w-12 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center">
               <CashIcon className="h-6 w-6" />
             </div>
             <div>
@@ -132,7 +132,7 @@ export default function GananciasPage() {
             {/* Hero total */}
             <div
               data-print-card
-              className="rounded-3xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-6 lg:p-8"
+              className="rounded-3xl border-2 border-[var(--accent)] bg-primary/10 p-6 lg:p-8"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -229,7 +229,7 @@ function BreakdownCard({
   amount: number;
   accent: "accent" | "amber";
 }) {
-  const ring = accent === "accent" ? "bg-[var(--accent-soft)]" : "bg-[var(--brand-secondary)]/10";
+  const ring = accent === "accent" ? "bg-primary/10" : "bg-[var(--brand-secondary)]/10";
   return (
     <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 lg:p-6">
       <div className="flex items-center gap-3 mb-2">

@@ -11,6 +11,7 @@
  *  - Tabla de comisiones con tokens DS + status pills consistentes
  */
 
+import { SAMetricCard } from "@/components/superadmin/_shared/SAMetricCard";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -23,7 +24,6 @@ import {
   Loader2,
   BarChart3,
   Calendar,
-  ChevronDown,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import type { TenantRow, CommissionRow, PlanId } from "@/lib/superadmin-types";
@@ -31,6 +31,7 @@ import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
 import { AdminTabShell } from "../_components/_shared";
 import { ARPUMiniChart } from "@/components/superadmin/dashboard/ARPUMiniChart";
 import ExecutiveAnalytics from "@/components/superadmin/analytics/ExecutiveAnalytics";
+import { SuperAdminModuleTabs, ANALYTICS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 const RevenueCharts = dynamic(() => import("@/components/RevenueCharts"), { ssr: false });
 
@@ -179,7 +180,7 @@ const PLAN_LABELS: Record<PlanId, { label: string; cls: string }> = {
   },
   enterprise: {
     label: "Business",
-    cls: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+    cls: "bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300",
   },
 };
 
@@ -280,9 +281,7 @@ export default function AnalyticsPage() {
   const commThisPeriod = commissions
     .filter((c) => c.status !== "paid")
     .reduce((s, c) => s + c.amount, 0);
-  const commPaid = commissions
-    .filter((c) => c.status === "paid")
-    .reduce((s, c) => s + c.amount, 0);
+  const commPaid = commissions.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
   const commPending = commissions
     .filter((c) => c.status === "pending")
     .reduce((s, c) => s + c.amount, 0);
@@ -299,311 +298,312 @@ export default function AnalyticsPage() {
   );
 
   return (
-    <AdminTabShell
-      title="Analytics de plataforma"
-      description="Métricas globales de todos los tenants — ingresos, registros, conversión, churn."
-      icon={BarChart3}
-      kicker="Plataforma · Analytics"
-      stats={
-        <>
-          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
-            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-              Periodo
-            </p>
-            <p className="font-display text-sm font-extrabold tracking-tight mt-1 leading-none text-[var(--accent)] inline-flex items-center gap-1.5">
-              <Calendar className="h-3 w-3" aria-hidden />
-              {fmtPeriodShortLabel(period)}
-            </p>
-          </div>
-          {analytics && (
+    <>
+      <SuperAdminModuleTabs tabs={ANALYTICS_TABS} />
+      <AdminTabShell
+        info={{
+          what: "Muestra MRR, ARR, crecimiento de tenants, pedidos, comisiones y tiendas en riesgo consolidados de toda la plataforma.",
+          affects:
+            "Solo visible en el superadmin. Las métricas reflejan datos reales de todos los tenants activos.",
+          example:
+            "Si una tienda cancela su plan, aparece en 'Tiendas en riesgo' y su MRR deja de sumarse al total del mes.",
+        }}
+        title="Analytics de plataforma"
+        description="Métricas globales de todos los tenants — ingresos, registros, conversión, churn."
+        icon={BarChart3}
+        kicker="Plataforma · Analytics"
+        stats={
+          <>
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-                MRR
+                Periodo
               </p>
-              <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--text-primary)]">
-                {fmtAmount(analytics.overview.mrr)}
+              <p className="font-display text-sm font-extrabold tracking-tight mt-1 leading-none text-[var(--accent)] inline-flex items-center gap-1.5">
+                <Calendar className="h-3 w-3" aria-hidden />
+                {fmtPeriodShortLabel(period)}
               </p>
             </div>
-          )}
-        </>
-      }
-    >
-      {/* ─── Date filter toolbar (sticky) ──────────────────────── */}
-      <PeriodToolbar period={period} onChange={setPeriod} />
-
-      {/* Loading overlay */}
-      {loading && (
-        <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-3 text-sm text-[var(--text-secondary)]">
-          <Loader2 className="h-4 w-4 animate-spin text-[var(--accent)]" />
-          Cargando analytics para {fmtPeriodLabel(period)}…
-        </div>
-      )}
-
-      {error && (
-        <div
-          role="alert"
-          className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]"
-        >
-          <span>{error}</span>
-          <button
-            type="button"
-            onClick={() => void loadData()}
-            className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:brightness-110"
-          >
-            Reintentar
-          </button>
-        </div>
-      )}
-
-      {analytics && (
-        <>
-          {/* ─── Growth KPIs (canonical) ─────────────────────────── */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <KpiCard
-              icon={TrendingUp}
-              label="Nuevos tenants"
-              value={analytics.growth.tenantsThisMonth}
-              sub={`${analytics.growth.tenantGrowthPct > 0 ? "+" : ""}${analytics.growth.tenantGrowthPct}% vs periodo anterior`}
-              tone={analytics.growth.tenantGrowthPct >= 0 ? "success" : "danger"}
-              periodHint={fmtPeriodShortLabel(period)}
-            />
-            <KpiCard
-              icon={CheckCircle2}
-              label="Pedidos"
-              value={analytics.growth.ordersThisMonth}
-              sub={`${analytics.growth.orderGrowthPct > 0 ? "+" : ""}${analytics.growth.orderGrowthPct}% vs periodo anterior`}
-              tone={analytics.growth.orderGrowthPct >= 0 ? "success" : "danger"}
-              periodHint={fmtPeriodShortLabel(period)}
-            />
-            <KpiCard
-              icon={DollarSign}
-              label="MRR"
-              value={fmtAmount(analytics.overview.mrr)}
-              sub={`ARR: ${fmtAmount(analytics.overview.arr)}`}
-              tone="accent"
-            />
-            <KpiCard
-              icon={AlertTriangle}
-              label="Tiendas en riesgo"
-              value={analytics.atRiskCount}
-              sub="Cancelando o trial vencido"
-              tone={analytics.atRiskCount > 0 ? "warning" : "neutral"}
-            />
-          </div>
-
-          {/* ─── Charts (revenue + signups + orders) ─────────────── */}
-          <RevenueCharts
-            from={fmtISODate(period.from)}
-            to={fmtISODate(period.to)}
-            periodLabel={fmtPeriodLabel(period)}
-          />
-
-          <ExecutiveAnalytics
-            from={fmtISODate(period.from)}
-            to={fmtISODate(period.to)}
-            periodLabel={fmtPeriodLabel(period)}
-          />
-
-          {arpuSeries.length > 0 && (
-            <ARPUMiniChart data={arpuSeries} currentARPU={analytics.overview.arpu} />
-          )}
-
-          {/* ─── Comisiones ────────────────────────────────────── */}
-          <SectionHeading
-            icon={DollarSign}
-            title="Comisiones"
-            subtitle={`Liquidaciones del marketplace · ${fmtPeriodLabel(period)}`}
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <CommissionStat
-              icon={DollarSign}
-              label="Comisiones del periodo"
-              value={fmtAmount(commThisPeriod)}
-              sub="No liquidadas aún"
-              loading={commLoading}
-              tone="accent"
-            />
-            <CommissionStat
-              icon={CheckCircle2}
-              label="Pagadas"
-              value={fmtAmount(commPaid)}
-              sub="Status: paid"
-              loading={commLoading}
-              tone="success"
-            />
-            <CommissionStat
-              icon={Clock}
-              label="Pendientes"
-              value={fmtAmount(commPending)}
-              sub="Status: pending"
-              loading={commLoading}
-              tone="warning"
-            />
-          </div>
-
-          {/* Tabla comisiones */}
-          <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
-            <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
-              <div>
-                <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-                  Comisiones recientes
-                </h3>
-                <p className="text-xs text-[var(--text-tertiary)]">
-                  Últimas 20 del periodo seleccionado
+            {analytics && (
+              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
+                  MRR
                 </p>
-              </div>
-              <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
-                {commissions.length}
-              </span>
-            </header>
-            {commLoading ? (
-              <div className="flex items-center justify-center gap-3 py-12 text-[var(--text-tertiary)]">
-                <Loader2 className="w-5 h-5 animate-spin" /> Cargando…
-              </div>
-            ) : commissions.length === 0 ? (
-              <div className="px-5 py-12 text-center">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
-                  <DollarSign
-                    className="h-5 w-5 text-[var(--text-tertiary)]"
-                    aria-hidden
-                  />
-                </div>
-                <p className="font-display text-sm font-extrabold text-[var(--text-primary)]">
-                  Sin comisiones en el periodo
+                <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--text-primary)]">
+                  {fmtAmount(analytics.overview.mrr)}
                 </p>
-                <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                  Probá cambiar el filtro de fechas o ampliar el rango.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">
-                      <th className="px-5 py-3 font-extrabold">Orden</th>
-                      <th className="px-4 py-3 font-extrabold">Tienda</th>
-                      <th className="px-4 py-3 font-extrabold">Tipo</th>
-                      <th className="px-4 py-3 font-extrabold text-right">Monto</th>
-                      <th className="px-4 py-3 font-extrabold text-right">Tasa</th>
-                      <th className="px-4 py-3 font-extrabold">Estado</th>
-                      <th className="px-5 py-3 font-extrabold">Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--rule-soft)]">
-                    {commissions.map((c) => (
-                      <tr key={c.id} className="transition hover:bg-[var(--surface-sunken)]/50">
-                        <td className="px-5 py-3 font-mono text-xs text-[var(--text-secondary)] truncate max-w-32">
-                          {c.orderId}
-                        </td>
-                        <td className="px-4 py-3 font-mono text-xs text-[var(--text-tertiary)]">
-                          {c.storeId ?? "—"}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">
-                          {c.type}
-                        </td>
-                        <td className="px-4 py-3 text-right font-mono font-semibold text-[var(--text-primary)]">
-                          {fmtAmount(c.amount)}
-                        </td>
-                        <td className="px-4 py-3 text-right text-xs text-[var(--text-tertiary)]">
-                          {(c.rate * 100).toFixed(1)}%
-                        </td>
-                        <td className="px-4 py-3">
-                          <CommissionStatusPill status={c.status} />
-                        </td>
-                        <td className="px-5 py-3 text-xs text-[var(--text-tertiary)]">
-                          {fmtDate(c.createdAt)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
             )}
-          </section>
+          </>
+        }
+      >
+        {/* ─── Date filter toolbar (sticky) ──────────────────────── */}
+        <PeriodToolbar period={period} onChange={setPeriod} />
 
-          {/* ─── Tiendas en riesgo ──────────────────────────────── */}
-          <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
-            <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
-                  <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                </span>
+        {/* Loading overlay */}
+        {loading && (
+          <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+            <Loader2 className="h-4 w-4 animate-spin text-[var(--accent)]" />
+            Cargando analytics para {fmtPeriodLabel(period)}…
+          </div>
+        )}
+
+        {error && (
+          <div
+            role="alert"
+            className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]"
+          >
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={() => void loadData()}
+              className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:brightness-110"
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
+
+        {analytics && (
+          <>
+            {/* ─── Growth KPIs (canonical) ─────────────────────────── */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <SAMetricCard
+                icon={TrendingUp}
+                label="Nuevos tenants"
+                value={analytics.growth.tenantsThisMonth}
+                sub={`${analytics.growth.tenantGrowthPct > 0 ? "+" : ""}${analytics.growth.tenantGrowthPct}% vs periodo anterior`}
+                tone={analytics.growth.tenantGrowthPct >= 0 ? "success" : "danger"}
+                periodHint={fmtPeriodShortLabel(period)}
+              />
+              <SAMetricCard
+                icon={CheckCircle2}
+                label="Pedidos"
+                value={analytics.growth.ordersThisMonth}
+                sub={`${analytics.growth.orderGrowthPct > 0 ? "+" : ""}${analytics.growth.orderGrowthPct}% vs periodo anterior`}
+                tone={analytics.growth.orderGrowthPct >= 0 ? "success" : "danger"}
+                periodHint={fmtPeriodShortLabel(period)}
+              />
+              <SAMetricCard
+                icon={DollarSign}
+                label="MRR"
+                value={fmtAmount(analytics.overview.mrr)}
+                sub={`ARR: ${fmtAmount(analytics.overview.arr)}`}
+                tone="accent"
+              />
+              <SAMetricCard
+                icon={AlertTriangle}
+                label="Tiendas en riesgo"
+                value={analytics.atRiskCount}
+                sub="Cancelando o trial vencido"
+                tone={analytics.atRiskCount > 0 ? "warning" : "neutral"}
+              />
+            </div>
+
+            {/* ─── Charts (revenue + signups + orders) ─────────────── */}
+            <RevenueCharts
+              from={fmtISODate(period.from)}
+              to={fmtISODate(period.to)}
+              periodLabel={fmtPeriodLabel(period)}
+            />
+
+            <ExecutiveAnalytics
+              from={fmtISODate(period.from)}
+              to={fmtISODate(period.to)}
+              periodLabel={fmtPeriodLabel(period)}
+            />
+
+            {arpuSeries.length > 0 && (
+              <ARPUMiniChart data={arpuSeries} currentARPU={analytics.overview.arpu} />
+            )}
+
+            {/* ─── Comisiones ────────────────────────────────────── */}
+            <SectionHeading
+              icon={DollarSign}
+              title="Comisiones"
+              subtitle={`Liquidaciones del marketplace · ${fmtPeriodLabel(period)}`}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <CommissionStat
+                icon={DollarSign}
+                label="Comisiones del periodo"
+                value={fmtAmount(commThisPeriod)}
+                sub="No liquidadas aún"
+                loading={commLoading}
+                tone="accent"
+              />
+              <CommissionStat
+                icon={CheckCircle2}
+                label="Pagadas"
+                value={fmtAmount(commPaid)}
+                sub="Status: paid"
+                loading={commLoading}
+                tone="success"
+              />
+              <CommissionStat
+                icon={Clock}
+                label="Pendientes"
+                value={fmtAmount(commPending)}
+                sub="Status: pending"
+                loading={commLoading}
+                tone="warning"
+              />
+            </div>
+
+            {/* Tabla comisiones */}
+            <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
+              <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
                 <div>
                   <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-                    Tiendas en riesgo
+                    Comisiones recientes
                   </h3>
                   <p className="text-xs text-[var(--text-tertiary)]">
-                    Tiendas que cancelarán pronto, tienen trial vencido o están suspendidas
+                    Últimas 20 del periodo seleccionado
                   </p>
                 </div>
-              </div>
-              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
-                {riskTenants.length}
-              </span>
-            </header>
-            <div className="p-4">
-              {riskTenants.length === 0 ? (
-                <div className="py-10 text-center">
+                <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+                  {commissions.length}
+                </span>
+              </header>
+              {commLoading ? (
+                <div className="flex items-center justify-center gap-3 py-12 text-[var(--text-tertiary)]">
+                  <Loader2 className="w-5 h-5 animate-spin" /> Cargando…
+                </div>
+              ) : commissions.length === 0 ? (
+                <div className="px-5 py-12 text-center">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
+                    <DollarSign className="h-5 w-5 text-[var(--text-tertiary)]" aria-hidden />
+                  </div>
                   <p className="font-display text-sm font-extrabold text-[var(--text-primary)]">
-                    No hay tiendas en riesgo
+                    Sin comisiones en el periodo
                   </p>
                   <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                    Todas las tiendas están activas y sin trial vencido.
+                    Probá cambiar el filtro de fechas o ampliar el rango.
                   </p>
                 </div>
               ) : (
-                <ul className="space-y-2">
-                  {riskTenants.map((t) => (
-                    <li
-                      key={t.id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-3"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="min-w-0">
-                          <p className="font-bold text-sm text-[var(--text-primary)] truncate">
-                            {t.name}
-                          </p>
-                          <p className="font-mono text-xs text-[var(--text-tertiary)]">
-                            {t.slug}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap shrink-0">
-                        <PlanBadge plan={t.plan} />
-                        {t.cancelAtPeriodEnd && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
-                            <Clock className="h-2.5 w-2.5" />
-                            Cancela
-                          </span>
-                        )}
-                        {!t.active && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
-                            <XCircle className="h-2.5 w-2.5" />
-                            Suspendida
-                          </span>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">
+                        <th className="px-5 py-3 font-extrabold">Orden</th>
+                        <th className="px-4 py-3 font-extrabold">Tienda</th>
+                        <th className="px-4 py-3 font-extrabold">Tipo</th>
+                        <th className="px-4 py-3 font-extrabold text-right">Monto</th>
+                        <th className="px-4 py-3 font-extrabold text-right">Tasa</th>
+                        <th className="px-4 py-3 font-extrabold">Estado</th>
+                        <th className="px-5 py-3 font-extrabold">Fecha</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--rule-soft)]">
+                      {commissions.map((c) => (
+                        <tr key={c.id} className="transition hover:bg-[var(--surface-sunken)]/50">
+                          <td className="px-5 py-3 font-mono text-xs text-[var(--text-secondary)] truncate max-w-32">
+                            {c.orderId}
+                          </td>
+                          <td className="px-4 py-3 font-mono text-xs text-[var(--text-tertiary)]">
+                            {c.storeId ?? "—"}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">
+                            {c.type}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono font-semibold text-[var(--text-primary)]">
+                            {fmtAmount(c.amount)}
+                          </td>
+                          <td className="px-4 py-3 text-right text-xs text-[var(--text-tertiary)]">
+                            {(c.rate * 100).toFixed(1)}%
+                          </td>
+                          <td className="px-4 py-3">
+                            <CommissionStatusPill status={c.status} />
+                          </td>
+                          <td className="px-5 py-3 text-xs text-[var(--text-tertiary)]">
+                            {fmtDate(c.createdAt)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
-            </div>
-          </section>
-        </>
-      )}
-    </AdminTabShell>
+            </section>
+
+            {/* ─── Tiendas en riesgo ──────────────────────────────── */}
+            <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
+              <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
+                    <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                  </span>
+                  <div>
+                    <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                      Tiendas en riesgo
+                    </h3>
+                    <p className="text-xs text-[var(--text-tertiary)]">
+                      Tiendas que cancelarán pronto, tienen trial vencido o están suspendidas
+                    </p>
+                  </div>
+                </div>
+                <span className="rounded-full bg-teal-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
+                  {riskTenants.length}
+                </span>
+              </header>
+              <div className="p-4">
+                {riskTenants.length === 0 ? (
+                  <div className="py-10 text-center">
+                    <p className="font-display text-sm font-extrabold text-[var(--text-primary)]">
+                      No hay tiendas en riesgo
+                    </p>
+                    <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                      Todas las tiendas están activas y sin trial vencido.
+                    </p>
+                  </div>
+                ) : (
+                  <ul className="space-y-2">
+                    {riskTenants.map((t) => (
+                      <li
+                        key={t.id}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-3"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm text-[var(--text-primary)] truncate">
+                              {t.name}
+                            </p>
+                            <p className="font-mono text-xs text-[var(--text-tertiary)]">
+                              {t.slug}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap shrink-0">
+                          <PlanBadge plan={t.plan} />
+                          {t.cancelAtPeriodEnd && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-teal-300/60 bg-teal-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300">
+                              <Clock className="h-2.5 w-2.5" />
+                              Cancela
+                            </span>
+                          )}
+                          {!t.active && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
+                              <XCircle className="h-2.5 w-2.5" />
+                              Suspendida
+                            </span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
+          </>
+        )}
+      </AdminTabShell>
+    </>
   );
 }
 
 /* ═══════════════════════════ components ═══════════════════════════ */
 
-function PeriodToolbar({
-  period,
-  onChange,
-}: {
-  period: Period;
-  onChange: (p: Period) => void;
-}) {
+function PeriodToolbar({ period, onChange }: { period: Period; onChange: (p: Period) => void }) {
   const [showRange, setShowRange] = useState(false);
   const [showCustom, setShowCustom] = useState(false);
 
@@ -749,55 +749,8 @@ function PeriodToolbar({
         Mostrando datos del{" "}
         <strong className="text-[var(--text-primary)]">{fmtPeriodLabel(period)}</strong>
         <span className="text-[var(--text-tertiary)]">·</span>
-        <span>
-          {Math.ceil((period.to.getTime() - period.from.getTime()) / 86_400_000)} días
-        </span>
+        <span>{Math.ceil((period.to.getTime() - period.from.getTime()) / 86_400_000)} días</span>
       </div>
-    </div>
-  );
-}
-
-function KpiCard({
-  icon: Icon,
-  label,
-  value,
-  sub,
-  tone,
-  periodHint,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string | number;
-  sub: string;
-  tone: "accent" | "success" | "warning" | "danger" | "neutral";
-  periodHint?: string;
-}) {
-  const iconBg = {
-    accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
-    success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-    danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
-    neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-  }[tone];
-  return (
-    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex items-start justify-between gap-3">
-        <span className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}>
-          <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-        </span>
-        {periodHint && (
-          <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-            {periodHint}
-          </span>
-        )}
-      </div>
-      <p className="mt-4 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-        {label}
-      </p>
-      <p className="mt-1 font-display text-3xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">{sub}</p>
     </div>
   );
 }
@@ -820,7 +773,7 @@ function CommissionStat({
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
   }[tone];
   return (
     <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5">
@@ -855,8 +808,8 @@ function CommissionStatusPill({ status }: { status: CommissionRow["status"] }) {
       : status === "pending"
         ? {
             label: "Pendiente",
-            cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
-            dot: "bg-amber-500",
+            cls: "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300",
+            dot: "bg-teal-500",
           }
         : {
             label: status,

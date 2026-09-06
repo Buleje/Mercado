@@ -2,11 +2,24 @@
 
 import { useState } from "react";
 import {
-  ExternalLink, Mail, XCircle, CheckCircle2, Loader2,
-  ArrowDownRight, ArrowUpRight,
-  Package, Users, Store, ShoppingBag,
-  BarChart3, Trash2, Eraser, LogIn,
-  Clock, AlertTriangle, Bell,
+  ExternalLink,
+  Mail,
+  XCircle,
+  CheckCircle2,
+  Loader2,
+  ArrowDownRight,
+  ArrowUpRight,
+  Package,
+  Users,
+  Store,
+  ShoppingBag,
+  BarChart3,
+  Trash2,
+  Eraser,
+  LogIn,
+  Clock,
+  AlertTriangle,
+  Bell,
 } from "@buleje/design-system/icons";
 import type { TenantRow } from "@/lib/superadmin-types";
 import { ProductBadge, StatCard, WarningAlert, SuccessAlert } from "@buleje/design-system";
@@ -93,7 +106,7 @@ export function TenantCard({
           (pctFn(t.usage.products, t.limits.maxProducts) +
             pctFn(t.usage.users, t.limits.maxUsers) +
             pctFn(t.usage.ordersThisMonth, t.limits.maxOrdersPerMonth)) /
-            3
+            3,
         )
       : 0;
 
@@ -142,9 +155,9 @@ export function TenantCard({
     if (daysLeft <= 7) {
       return {
         text: `${daysLeft} día${daysLeft === 1 ? "" : "s"} restantes`,
-        bg: "bg-amber-50 dark:bg-amber-950/40",
-        border: "border-amber-300 dark:border-amber-800",
-        fg: "text-[var(--data-warning-700)] dark:text-amber-300",
+        bg: "bg-teal-50 dark:bg-teal-950/40",
+        border: "border-teal-300 dark:border-teal-800",
+        fg: "text-teal-700 dark:text-teal-300",
         Icon: Clock,
       };
     }
@@ -174,11 +187,11 @@ export function TenantCard({
           </span>
           {healthProp && (
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1 ${
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider ring-1 ${
                 healthProp === "healthy"
                   ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-500/30"
                   : healthProp === "warning"
-                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-amber-500/30"
+                    ? "bg-teal-500/15 text-teal-700 dark:text-teal-300 ring-teal-500/30"
                     : "bg-rose-500/15 text-rose-700 dark:text-rose-300 ring-rose-500/30"
               }`}
               title={
@@ -191,7 +204,11 @@ export function TenantCard({
             >
               <span
                 className={`h-1.5 w-1.5 rounded-full ${
-                  healthProp === "healthy" ? "bg-emerald-500 animate-pulse" : healthProp === "warning" ? "bg-amber-500" : "bg-rose-500"
+                  healthProp === "healthy"
+                    ? "bg-emerald-500 animate-pulse"
+                    : healthProp === "warning"
+                      ? "bg-teal-500"
+                      : "bg-rose-500"
                 }`}
                 aria-hidden
               />
@@ -224,7 +241,9 @@ export function TenantCard({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <div className="font-bold text-[var(--text-primary)] text-base truncate">{t.name}</div>
+              <div className="font-bold text-[var(--text-primary)] text-base truncate">
+                {t.name}
+              </div>
               <span
                 className={`w-2 h-2 rounded-full shrink-0 ${t.active ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]"}`}
                 title={t.active ? "Activo" : "Suspendido"}
@@ -264,8 +283,8 @@ export function TenantCard({
                 onClick={async () => {
                   const input = window.prompt(
                     `Extender trial de "${t.name}"\n` +
-                    `Vence: ${trialEnds ? trialEnds.toLocaleDateString("es-PE") : "—"}\n\n` +
-                    `Cuántos días sumar? (negativo = restar)`,
+                      `Vence: ${trialEnds ? trialEnds.toLocaleDateString("es-PE") : "—"}\n\n` +
+                      `Cuántos días sumar? (negativo = restar)`,
                     "15",
                   );
                   if (input == null) return;
@@ -283,7 +302,7 @@ export function TenantCard({
                       body: JSON.stringify({ days }),
                     });
                     if (!r.ok) {
-                      const data = await r.json().catch(() => null);
+                      const data = await r.json().catch((_e) => null);
                       window.alert(`Error: ${data?.error ?? r.statusText}`);
                       return;
                     }
@@ -301,14 +320,18 @@ export function TenantCard({
             )}
             {isOnMarketplace && (
               <ProductBadge intent="fresh">
-                <ShoppingBag className="w-2.5 h-2.5 mr-1 inline" />Marketplace
+                <ShoppingBag className="w-2.5 h-2.5 mr-1 inline" />
+                Marketplace
               </ProductBadge>
             )}
-            {health.isAdmin && (
-              <ProductBadge intent="premium">Admin</ProductBadge>
-            )}
+            {health.isAdmin && <ProductBadge intent="premium">Admin</ProductBadge>}
             {!health.ok && (
-              <ProductBadge intent="offer">
+              /* Brandon 2026-06-17: "problema" es alerta (rojo), no "oferta" (ámbar).
+                 intent="new" (neutro) + override rojo de la familia --data-error. */
+              <ProductBadge
+                intent="new"
+                className="!bg-[var(--data-error-50,#fef2f2)] !text-[var(--data-error-600,#dc2626)] !border-transparent dark:!bg-red-950/30 dark:!text-red-400"
+              >
                 {health.issues.length} problema{health.issues.length !== 1 ? "s" : ""}
               </ProductBadge>
             )}
@@ -331,9 +354,27 @@ export function TenantCard({
             con gap-1.5, los labels usan text-xs centered). */}
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
           {[
-            { val: t.usage?.products ?? 0, lbl: "Productos", icon: Package, max: t.limits?.maxProducts ?? -1, clickable: true },
-            { val: t._count.AdminUser, lbl: "Usuarios", icon: Users, max: t.limits?.maxUsers ?? -1, clickable: false },
-            { val: storeInfo?._count.products ?? 0, lbl: "En Marketplace", icon: Store, max: -1, clickable: false },
+            {
+              val: t.usage?.products ?? 0,
+              lbl: "Productos",
+              icon: Package,
+              max: t.limits?.maxProducts ?? -1,
+              clickable: true,
+            },
+            {
+              val: t._count.AdminUser,
+              lbl: "Usuarios",
+              icon: Users,
+              max: t.limits?.maxUsers ?? -1,
+              clickable: false,
+            },
+            {
+              val: storeInfo?._count.products ?? 0,
+              lbl: "En Marketplace",
+              icon: Store,
+              max: -1,
+              clickable: false,
+            },
           ].map(({ val, lbl, icon: Icon, max, clickable }) => {
             const usagePct = max === -1 ? 0 : Math.min(100, Math.round((val / max) * 100));
             const isEmpty = val === 0 && lbl !== "Usuarios";
@@ -342,7 +383,16 @@ export function TenantCard({
               <div
                 key={lbl}
                 onClick={canClick ? () => onViewProducts?.(t) : undefined}
-                onKeyDown={canClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onViewProducts?.(t); } } : undefined}
+                onKeyDown={
+                  canClick
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onViewProducts?.(t);
+                        }
+                      }
+                    : undefined
+                }
                 role={canClick ? "button" : undefined}
                 tabIndex={canClick ? 0 : undefined}
                 className={`rounded-lg p-2.5 text-center bg-[var(--surface-sunken)] border border-[var(--rule-soft)] ${
@@ -352,7 +402,9 @@ export function TenantCard({
                 }`}
               >
                 <Icon className="w-3.5 h-3.5 mx-auto mb-1 text-[var(--text-secondary)]" />
-                <div className={`text-base font-bold ${isEmpty ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]"}`}>
+                <div
+                  className={`text-base font-bold ${isEmpty ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]"}`}
+                >
                   {val}
                 </div>
                 <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
@@ -368,7 +420,7 @@ export function TenantCard({
                           usagePct >= 100
                             ? "var(--data-error)"
                             : usagePct >= 80
-                              ? "var(--data-warning)"
+                              ? "#0d9488"
                               : "var(--accent)",
                       }}
                     />
@@ -407,7 +459,7 @@ export function TenantCard({
                   totalUsagePct >= 100
                     ? "text-[var(--data-error-500)]"
                     : totalUsagePct >= 80
-                      ? "text-[var(--data-warning-500)]"
+                      ? "text-teal-500"
                       : "text-[var(--text-secondary)]"
                 }
               >
@@ -423,7 +475,7 @@ export function TenantCard({
                     totalUsagePct >= 100
                       ? "var(--data-error)"
                       : totalUsagePct >= 80
-                        ? "var(--data-warning)"
+                        ? "#0d9488"
                         : "var(--accent)",
                 }}
               />
@@ -441,7 +493,10 @@ export function TenantCard({
         <div className="flex gap-2 pt-1 border-t border-[var(--rule-base)]">
           <a
             href={`/tienda`}
-            onClick={(e) => { e.preventDefault(); window.open(`/t/${t.slug}/tienda`, "_blank"); }}
+            onClick={(e) => {
+              e.preventDefault();
+              window.open(`/t/${t.slug}/tienda`, "_blank");
+            }}
             className="flex-1 inline-flex items-center justify-center gap-1.5 h-11 rounded-lg text-xs font-semibold border border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-secondary)] transition-colors cursor-pointer"
             title="Abrir el storefront público del tenant en otra pestaña"
           >
@@ -452,7 +507,8 @@ export function TenantCard({
             onClick={() => onImpersonate(t.slug)}
             className="flex-[1.5] inline-flex items-center justify-center gap-2 h-11 rounded-lg text-sm font-extrabold text-white transition-all active:scale-[0.98] shadow-[0_4px_12px_-4px_color-mix(in_oklab,var(--accent)_55%,transparent)] hover:shadow-[0_6px_16px_-4px_color-mix(in_oklab,var(--accent)_70%,transparent)]"
             style={{
-              background: "linear-gradient(135deg, var(--accent), color-mix(in oklab, var(--accent) 75%, black))",
+              background:
+                "linear-gradient(135deg, var(--accent), color-mix(in oklab, var(--accent) 75%, black))",
             }}
             title="Impersonar el panel admin de este tenant"
             aria-label={`Abrir panel admin de ${t.name}`}
@@ -466,7 +522,7 @@ export function TenantCard({
           <button
             type="button"
             onClick={() => onAddProduct(t)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold border-2 border-dashed border-[var(--accent)]/40 text-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold border-2 border-dashed border-[var(--accent)]/40 text-[var(--accent)] hover:bg-primary/10 transition-colors"
           >
             <Package className="w-4 h-4" /> Agregar producto a esta tienda
           </button>
@@ -483,11 +539,17 @@ export function TenantCard({
             {actionLoading === `${t.slug}-marketplace` ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : isOnMarketplace ? (
-              <><ArrowDownRight className="w-3.5 h-3.5" /> Dar de baja</>
+              <>
+                <ArrowDownRight className="w-3.5 h-3.5" /> Dar de baja
+              </>
             ) : hasStore ? (
-              <><ArrowUpRight className="w-3.5 h-3.5" /> Subir a Marketplace</>
+              <>
+                <ArrowUpRight className="w-3.5 h-3.5" /> Subir a Marketplace
+              </>
             ) : (
-              <><ShoppingBag className="w-3.5 h-3.5" /> Sin tienda</>
+              <>
+                <ShoppingBag className="w-3.5 h-3.5" /> Sin tienda
+              </>
             )}
           </button>
           <button
@@ -521,12 +583,17 @@ export function TenantCard({
               className="sm:flex-1 inline-flex items-center justify-center gap-1.5 h-10 sm:h-9 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
               aria-label={t.active ? "Suspender tienda" : "Activar tienda"}
             >
-              {actionLoading === `${t.slug}-active`
-                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                : t.active
-                ? <><XCircle className="w-3.5 h-3.5" /> Suspender</>
-                : <><CheckCircle2 className="w-3.5 h-3.5" /> Activar</>
-              }
+              {actionLoading === `${t.slug}-active` ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : t.active ? (
+                <>
+                  <XCircle className="w-3.5 h-3.5" /> Suspender
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Activar
+                </>
+              )}
             </button>
           </div>
           {/* Sub-fila 2: 3 icon-only botones — tap targets h-10 mobile */}
@@ -539,17 +606,27 @@ export function TenantCard({
               title="Limpiar datos de esta tienda (productos, pedidos, movimientos)"
               aria-label="Limpiar datos"
             >
-              {actionLoading === `${t.slug}-purge` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eraser className="w-3.5 h-3.5" />}
+              {actionLoading === `${t.slug}-purge` ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Eraser className="w-3.5 h-3.5" />
+              )}
             </button>
             <button
               type="button"
               onClick={() => onDelete(t.slug, t.name)}
               disabled={actionLoading === `${t.slug}-delete` || t.slug === "main"}
               className="inline-flex items-center justify-center h-10 w-full sm:w-10 sm:h-9 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-500)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              title={t.slug === "main" ? "No se puede eliminar la tienda principal" : "Eliminar tienda"}
+              title={
+                t.slug === "main" ? "No se puede eliminar la tienda principal" : "Eliminar tienda"
+              }
               aria-label="Eliminar tienda"
             >
-              {actionLoading === `${t.slug}-delete` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              {actionLoading === `${t.slug}-delete` ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5" />
+              )}
             </button>
             <button
               type="button"

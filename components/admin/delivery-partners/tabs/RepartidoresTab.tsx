@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertCircle, CheckCircle, ChevronDown, Download, Edit2, MapPin, MessageCircle, Phone, Plus, Save, Search, Star, Trash2, Truck, Users, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, VehicleIcon, vehicleKind, vehicleLabel, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
+import { Field } from "@/components/admin/shared/Field";
 
 const NetworkToggleCard = dynamic(
   () => import("@/components/admin/delivery/NetworkToggleCard"),
@@ -115,66 +116,77 @@ function PartnerModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Nombre completo *</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                placeholder="Juan Pérez"
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                autoFocus
-              />
+              <Field label="Nombre completo *" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  placeholder="Juan Pérez"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  autoFocus
+                />
+              </Field>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Teléfono</label>
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-                placeholder="987654321"
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-              />
+              <Field label="Teléfono" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                  placeholder="987654321"
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+              </Field>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Tarifa base (S/)</label>
-              <input
-                type="number"
-                min={0}
-                step={0.5}
-                value={form.fee}
-                onChange={(e) => setForm((p) => ({ ...p, fee: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-              />
+              <Field label="Tarifa base (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
+                <input
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={form.fee}
+                  onChange={(e) => setForm((p) => ({ ...p, fee: parseFloat(e.target.value) || 0 }))}
+                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+              </Field>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Zona</label>
-              <div className="relative">
-                <select
-                  value={form.zone}
-                  onChange={(e) => setForm((p) => ({ ...p, zone: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
-                >
-                  {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-              </div>
+              <Field label="Zona" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
+                {(id) => (
+                  <div className="relative">
+                    <select
+                      id={id}
+                      value={form.zone}
+                      onChange={(e) => setForm((p) => ({ ...p, zone: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                    >
+                      {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+                  </div>
+                )}
+              </Field>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[var(--text-secondary)]">Vehículo</label>
-              <div className="relative">
-                <select
-                  value={form.vehicleType}
-                  onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
-                >
-                  {VEHICLE_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-              </div>
+              <Field label="Vehículo" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
+                {(id) => (
+                  <div className="relative">
+                    <select
+                      id={id}
+                      value={form.vehicleType}
+                      onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                    >
+                      {VEHICLE_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
+                  </div>
+                )}
+              </Field>
             </div>
           </div>
 
@@ -452,7 +464,7 @@ export function RepartidoresTab() {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
         <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
               <Users className="h-5 w-5" />
             </span>
             <div>
@@ -494,7 +506,7 @@ export function RepartidoresTab() {
             </div>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)]">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
                   <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
                 </span>
               </div>
@@ -618,7 +630,7 @@ export function RepartidoresTab() {
 
       {/* ── 1.6 Bulk action bar ────────────────────────────────────── */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[var(--accent-soft)] border-2 border-[var(--accent)]/40">
+        <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-primary/10 border-2 border-[var(--accent)]/40">
           <p className="text-sm font-extrabold text-[var(--accent)]">
             {selectedIds.size} {selectedIds.size === 1 ? "repartidor seleccionado" : "repartidores seleccionados"}
           </p>
@@ -693,7 +705,7 @@ export function RepartidoresTab() {
       ) : (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <DataTable className="w-full">
               <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-3 py-4 w-10">
@@ -726,7 +738,7 @@ export function RepartidoresTab() {
                     key={p.id}
                     className={cn(
                       "transition-colors",
-                      isSelected ? "bg-[var(--accent-soft)]/40" : "hover:bg-[var(--surface-sunken)]",
+                      isSelected ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]",
                     )}
                   >
                     <td className="px-3 py-4">
@@ -784,7 +796,7 @@ export function RepartidoresTab() {
                       <span className={cn(
                         "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold",
                         p.isActive
-                          ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                          ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                           : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
                       )}>
                         <span className={cn("h-1.5 w-1.5 rounded-full", p.isActive ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]")} />
@@ -808,7 +820,7 @@ export function RepartidoresTab() {
                         <button
                           type="button"
                           onClick={() => setModal({ open: true, partner: p })}
-                          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-colors"
+                          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:bg-primary/10 hover:border-primary/30 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors"
                         >
                           <Edit2 className="h-4 w-4" />
                           Editar
@@ -828,7 +840,7 @@ export function RepartidoresTab() {
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
           {filtered.length === 0 && (
             <div className="px-6 py-10 text-center">

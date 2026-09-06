@@ -24,6 +24,7 @@ const { mockGetOrSet } = vi.hoisted(() => ({
   mockGetOrSet: vi.fn(async (_k: string, _t: number, fn: () => Promise<unknown>) => fn()),
 }));
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: mockGetOrSet,
   invalidate: vi.fn(),
   invalidateByPrefix: vi.fn(),

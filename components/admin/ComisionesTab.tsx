@@ -1,5 +1,6 @@
 "use client";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { Field } from '@/components/admin/shared/Field';
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import {
@@ -138,7 +139,7 @@ export default function ComisionesTab() {
   }
 
   async function handleDeleteTier(id: string) {
-    await fetch(`/api/commission-rules?id=${id}`, { method: "DELETE" }).catch((err) => console.warn("[ComisionesTab] delete rule failed:", err));
+    await fetch(`/api/commission-rules?id=${id}`, { method: "DELETE", headers: csrfHeaders() }).catch((err) => console.warn("[ComisionesTab] delete rule failed:", err));
     setDbRules(prev => prev.filter(r => r.id !== id));
     showToast("Regla eliminada");
   }
@@ -246,7 +247,7 @@ export default function ComisionesTab() {
     <div className="space-y-3 sm:space-y-6">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-[var(--accent-soft)] text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold flex flex-wrap items-center gap-2">
+        <div className="fixed top-4 right-4 z-50 bg-primary/10 text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg text-sm font-bold flex flex-wrap items-center gap-2">
           <CheckCircle2 className="h-4 w-4" /> {toast}
         </div>
       )}
@@ -279,7 +280,7 @@ export default function ComisionesTab() {
           <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] shrink-0">Período:</span>
           <div className="flex gap-2 flex-wrap">
             {PERIOD_OPTIONS.map(p => (
-              <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all", period === p.id ? "border-primary bg-primary/10 text-primary" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-400")}>
+              <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all", period === p.id ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-400")}>
                 {p.label}
               </button>
             ))}
@@ -344,30 +345,25 @@ export default function ComisionesTab() {
           <div className="border-t border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 pt-4">
             <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mb-3">Nueva regla</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Cajero ID</label>
+              <Field label="Cajero ID" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                 <select value={newTier.cashierId} onChange={e => setNewTier(v => ({ ...v, cashierId: e.target.value }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                   <option value="">Seleccionar cajero…</option>
                   {stats.map(s => <option key={s.cashierId} value={s.cashierId}>{s.cashierName} ({s.cashierId})</option>)}
                 </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Etiqueta (opcional)</label>
+              </Field>
+              <Field label="Etiqueta (opcional)" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                 <input value={newTier.label} onChange={e => setNewTier(v => ({ ...v, label: e.target.value }))} placeholder="ej: Objetivo Q1" className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Ingresos mín. (S/)</label>
+              </Field>
+              <Field label="Ingresos mín. (S/)" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                 <input type="number" min={0} value={newTier.minSales} onChange={e => setNewTier(v => ({ ...v, minSales: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Ingresos máx. (S/, vacío = sin límite)</label>
+              </Field>
+              <Field label="Ingresos máx. (S/, vacío = sin límite)" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
                 <input type="number" min={0} value={newTier.maxSales} onChange={e => setNewTier(v => ({ ...v, maxSales: e.target.value }))} placeholder="Sin límite" className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-              </div>
+              </Field>
               <div className="sm:col-span-2 flex flex-wrap items-end gap-3">
-                <div className="flex-1">
-                  <label className="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Tasa (%)</label>
+                <Field label="Tasa (%)" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1" className="flex-1">
                   <input type="number" min={0} max={20} step={0.5} value={newTier.rate} onChange={e => setNewTier(v => ({ ...v, rate: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
-                </div>
+                </Field>
                 <button onClick={handleAddTier} disabled={savingRule || !newTier.cashierId || newTier.rate <= 0} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   {savingRule ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Guardar
                 </button>
@@ -435,7 +431,7 @@ export default function ComisionesTab() {
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(s.commission)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-all", s.paid ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
+                        <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-all", s.paid ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
                           {s.paid ? "Pagado" : "Pendiente"}
                         </button>
                       </td>
@@ -466,7 +462,7 @@ export default function ComisionesTab() {
                       <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.cashierName}</p>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ROLE_LABEL[s.role] ?? s.role}</p>
                     </div>
-                    <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold", s.paid ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
+                    <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold", s.paid ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
                       {s.paid ? "Pagado" : "Pendiente"}
                     </button>
                   </div>
@@ -483,7 +479,7 @@ export default function ComisionesTab() {
       </div>
 
       {/* Info note */}
-      <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4">
+      <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-4">
         <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
           <strong>ℹ️ Nota:</strong> Las comisiones se calculan sobre los ingresos brutos de cada cajero en el POS. Los datos se cargan desde <code className="font-mono">/api/commissions</code>. Para que aparezcan ventas reales, cada venta del POS debe registrar el <code className="font-mono">cashierId</code> del cajero activo.
         </p>

@@ -23,15 +23,22 @@ interface SupplierScorecardProps {
   supplierId: string;
 }
 
+/**
+ * Órdenes que exige el backend para calificar a un proveedor.
+ * Espeja el `totalOC < 3` de `app/api/proveedores/[id]/scorecard/route.ts`:
+ * si allá cambia, acá también.
+ */
+const MIN_OC_EVALUACION = 3;
+
 const GRADE_COLORS: Record<string, string> = {
-  A: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-  B: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  A: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
+  B: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   C: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]",
   D: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
 };
 
 function MetricBar({ label, value, icon: Icon }: { label: string; value: number; icon: React.ElementType }) {
-  const color = value > 70 ? "bg-[var(--accent-soft)]" : value > 55 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]";
+  const color = value > 70 ? "bg-primary/10" : value > 55 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]";
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
@@ -90,14 +97,35 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
   if (!data) return null;
 
   if (data.insufficient) {
+    // Reporte QA Compras 2026-08-12: "sin datos" no dice cuánto falta ni si
+    // depende de vos. Con la barra, la espera tiene final visible.
+    const hechas = Math.min(data.totalOC, MIN_OC_EVALUACION);
     return (
       <div className="bg-gray-50 dark:bg-accent/50 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
         <AlertTriangle className="h-6 w-6 text-[var(--text-tertiary)] mx-auto mb-2" />
         <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
-          Sin historial suficiente para evaluar (min. 3 OC)
+          Todavía no alcanza para calificarlo
         </p>
-        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
-          Actualmente: {data.totalOC} orden{data.totalOC !== 1 ? "es" : ""}
+        <p className="text-xs font-bold text-[var(--text-primary)] mt-1 tabular-nums">
+          {data.totalOC} de {MIN_OC_EVALUACION} órdenes registradas
+        </p>
+        <div
+          className="mt-2 h-2 w-full max-w-[220px] mx-auto rounded-full bg-[var(--surface-sunken)] overflow-hidden"
+          role="progressbar"
+          aria-valuenow={hechas}
+          aria-valuemin={0}
+          aria-valuemax={MIN_OC_EVALUACION}
+          aria-label="Órdenes registradas para poder evaluar"
+        >
+          <div
+            className="h-full rounded-full bg-primary transition-[width] duration-500"
+            style={{ width: `${(hechas / MIN_OC_EVALUACION) * 100}%` }}
+          />
+        </div>
+        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">
+          {MIN_OC_EVALUACION - data.totalOC === 1
+            ? "Falta 1 orden para ver puntaje, cumplimiento y demoras."
+            : `Faltan ${MIN_OC_EVALUACION - data.totalOC} órdenes para ver puntaje, cumplimiento y demoras.`}
         </p>
       </div>
     );

@@ -27,6 +27,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { DataTable } from "@buleje/design-system";
 import {
   Upload,
   Search,
@@ -50,7 +51,7 @@ import {
   X,
   CheckCircle,
   Tag,
-} from "lucide-react";
+} from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
@@ -333,7 +334,7 @@ export default function DocumentosModule() {
           label="Espacio usado"
           value={formatBytes(totalSize)}
           icon={HardDrive}
-          tint="text-blue-500"
+          tint="text-[var(--data-info)]"
           progress={usagePct}
         />
         <StatBlock
@@ -366,7 +367,7 @@ export default function DocumentosModule() {
                     className={cn(
                       "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors",
                       active
-                        ? "bg-primary/10 text-primary"
+                        ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                         : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                     )}
                   >
@@ -441,7 +442,7 @@ export default function DocumentosModule() {
             </div>
           ) : (
             <div className="bg-white border border-[var(--rule-base)] rounded-2xl overflow-hidden">
-              <table className="w-full text-sm">
+              <DataTable className="w-full text-sm">
                 <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                   <tr>
                     <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Nombre</th>
@@ -474,7 +475,7 @@ export default function DocumentosModule() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="inline-flex items-center gap-1">
-                            <button onClick={() => setPreview(doc)} className="p-1.5 rounded-md hover:bg-primary/10 hover:text-primary text-[var(--text-tertiary)] transition-colors" title="Ver"><Eye className="h-4 w-4" /></button>
+                            <button onClick={() => setPreview(doc)} className="p-1.5 rounded-md hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] text-[var(--text-tertiary)] transition-colors" title="Ver"><Eye className="h-4 w-4" /></button>
                             <button onClick={() => toggleFav(doc.id)} className="p-1.5 rounded-md hover:bg-[var(--data-warning)]/10 hover:text-[var(--data-warning)] text-[var(--text-tertiary)] transition-colors" title="Favorito"><Star className={cn("h-4 w-4", doc.favorite && "fill-[var(--data-warning)] text-[var(--data-warning)]")} /></button>
                             <button onClick={() => removeDoc(doc.id)} className="p-1.5 rounded-md hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] text-[var(--text-tertiary)] transition-colors" title="Eliminar"><Trash2 className="h-4 w-4" /></button>
                           </div>
@@ -483,7 +484,7 @@ export default function DocumentosModule() {
                     );
                   })}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           )}
         </div>
@@ -612,7 +613,7 @@ function DocCard({
         {doc.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {doc.tags.slice(0, 2).map((t) => (
-              <span key={t} className="text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">#{t}</span>
+              <span key={t} className="text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold">#{t}</span>
             ))}
             {doc.tags.length > 2 && (
               <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums font-bold">+{doc.tags.length - 2}</span>
@@ -754,7 +755,7 @@ function PreviewModal({
                   <span className="text-xs text-[var(--text-tertiary)] italic">Sin etiquetas</span>
                 ) : (
                   doc.tags.map((t) => (
-                    <span key={t} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-bold">
+                    <span key={t} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold">
                       #{t}
                       <button
                         onClick={() => onRemoveTag(t)}
@@ -820,7 +821,7 @@ function EmptyState({ category, onUpload }: { category: DocCategory; onUpload: (
   const isFiltered = category !== "all";
   return (
     <div className="bg-white border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
-      <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 text-primary mb-4">
+      <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
         <Upload className="h-7 w-7" />
       </div>
       <p className="text-lg font-extrabold text-[var(--text-primary)]">

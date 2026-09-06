@@ -60,7 +60,7 @@ function stockBadge(stock: number | undefined) {
       </span>
     );
   return (
-    <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)]">
+    <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
       {stock}
     </span>
   );
@@ -68,10 +68,71 @@ function stockBadge(stock: number | undefined) {
 
 // ── Component ──────────────────────────────────────────────────────────
 
+/**
+ * El cursor arranca acá.
+ *
+ * El mostrador se opera tecleando o pasando el lector de código de barras, y el
+ * lector escribe donde esté el foco: si el cajero no hacía clic primero, los
+ * dígitos se perdían en la página. Sólo se toma el foco en pantallas grandes —
+ * en un teléfono abrir el teclado de entrada tapa media pantalla sin que nadie
+ * lo haya pedido.
+ */
+/**
+ * El tecleo cae en el buscador, tenga o no el foco.
+ *
+ * Primero intenté tomar el foco al montar y salió intermitente: el POS carga
+ * diferido y algo se lo llevaba después, así que a veces el cajero tecleaba y
+ * no pasaba nada. Perseguir el foco en el ciclo de montaje es pelear contra una
+ * carrera; **redirigir la tecla** resuelve el caso real —el lector de código de
+ * barras, que escribe donde esté el foco, y el cajero que empieza a tipear sin
+ * hacer clic— y funciona aunque el foco se pierda más tarde.
+ *
+ * No se mete cuando ya se está escribiendo en otro campo, ni con atajos
+ * (Ctrl/Alt/Meta), ni con teclas de función: esas tienen dueño.
+ */
+function useFocoAlEntrar() {
+  const ref = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || window.innerWidth < 768) return;
+    // Intento amable al entrar; si no prende, el redirect de abajo cubre.
+    const t = window.setTimeout(() => {
+      if (document.activeElement === document.body) ref.current?.focus();
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      const el = ref.current;
+      if (!el || e.ctrlKey || e.altKey || e.metaKey) return;
+      if (e.key.length !== 1) return; // sólo caracteres imprimibles
+      const activo = document.activeElement as HTMLElement | null;
+      const escribiendo =
+        activo &&
+        (activo.tagName === "INPUT" || activo.tagName === "TEXTAREA" || activo.tagName === "SELECT" || activo.isContentEditable);
+      if (escribiendo) return; // ya tiene dueño
+      el.focus();
+      // El carácter que disparó esto todavía no se escribió: se agrega a mano.
+      el.value = "";
+      e.preventDefault();
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+      setter?.call(el, e.key);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  return ref;
+}
+
 export default function POSSearchBar({
   products,
   onAddToCart,
 }: POSSearchBarProps) {
+  const inputRef = useFocoAlEntrar();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
@@ -145,6 +206,7 @@ export default function POSSearchBar({
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] dark:text-muted" />
         <input
+          ref={inputRef}
           data-pos-search
           type="text"
           value={query}

@@ -10,6 +10,7 @@
  *   - Stat pills (estado + último scan) + botón refrescar a la derecha
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Shield, Clock, RefreshCw } from "@buleje/design-system/icons";
 
 export interface SecurityHeroProps {
@@ -35,8 +36,8 @@ const STATUS_CONFIG: Record<
   },
   warning: {
     label: "Requiere atención",
-    cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
-    dot: "bg-amber-500",
+    cls: "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300",
+    dot: "bg-teal-500",
   },
   critical: {
     label: "Crítico",
@@ -64,9 +65,11 @@ export function SecurityHero({
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                 Plataforma · Seguridad
               </p>
-              <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+              <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
                 Security Center
-              </h1>
+              
+            <InfoTip side="bottom" title="Security Center" what="Monitorea la seguridad del superadmin: sesiones activas, accesos, auditoría y credenciales." affects="Solo el superadmin. Acá detectás y cortás accesos sospechosos a la plataforma." example="Si hay un login raro desde otra IP, lo ves acá y cerrás esa sesión." />
+          </h1>
               <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
                 Estado consolidado de seguridad de la plataforma — sesiones, permisos,
                 vulnerabilidades, compliance y registro de auditoría.

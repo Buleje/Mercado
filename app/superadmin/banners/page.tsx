@@ -16,7 +16,9 @@
  * API: GET/PUT /api/superadmin/banners.
  */
 
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useEffect, useMemo, useState } from "react";
+import { SUPERADMIN_PAGE, SUPERADMIN_HERO } from "@/lib/superadmin-layout";
 import {
   Save,
   Plus,
@@ -42,7 +44,9 @@ import {
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import ImageUploader from "@/components/superadmin/_shared/ImageUploader";
-import PromoBannerRenderer, { type PromoBanner } from "@/components/marketplace/PromoBannerRenderer";
+import PromoBannerRenderer, {
+  type PromoBanner,
+} from "@/components/marketplace/PromoBannerRenderer";
 import BannerPreviewStudio from "@/components/superadmin/banners/BannerPreviewStudio";
 import type { ImageAdjust } from "@/lib/promo-banners";
 
@@ -249,14 +253,14 @@ function getSlotMeta(id: Slot): SlotMeta | undefined {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const COLOR_PRESETS: Array<{ id: string; label: string; from: string; to: string }> = [
-  { id: "teal",    label: "Buleje",     from: "#ccfbf1", to: "#5eead4" },
-  { id: "sky",     label: "Cielo",      from: "#dbeafe", to: "#bfdbfe" },
-  { id: "amber",   label: "Calidez",    from: "#fef3c7", to: "#fde68a" },
-  { id: "rose",    label: "Promo",      from: "#fce7f3", to: "#fbcfe8" },
-  { id: "emerald", label: "Frescura",   from: "#d1fae5", to: "#a7f3d0" },
-  { id: "violet",  label: "Premium",    from: "#ede9fe", to: "#ddd6fe" },
-  { id: "lime",    label: "Naturaleza", from: "#ecfccb", to: "#d9f99d" },
-  { id: "slate",   label: "Editorial",  from: "#e2e8f0", to: "#cbd5e1" },
+  { id: "teal", label: "Buleje", from: "#ccfbf1", to: "#5eead4" },
+  { id: "sky", label: "Cielo", from: "#dbeafe", to: "#bfdbfe" },
+  { id: "amber", label: "Calidez", from: "#0d9488", to: "#0d9488" },
+  { id: "rose", label: "Promo", from: "#fce7f3", to: "#fbcfe8" },
+  { id: "emerald", label: "Frescura", from: "#d1fae5", to: "#a7f3d0" },
+  { id: "violet", label: "Premium", from: "#ede9fe", to: "#ddd6fe" },
+  { id: "lime", label: "Naturaleza", from: "#ecfccb", to: "#d9f99d" },
+  { id: "slate", label: "Editorial", from: "#e2e8f0", to: "#cbd5e1" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -267,12 +271,16 @@ const COLOR_PRESETS: Array<{ id: string; label: string; from: string; to: string
 // (3090 LOC, herramientas tipo Photoshop) no es viable en mobile/tablet.
 // DesktopOnlyGate detecta viewport <1024px y muestra warning UX claro.
 import DesktopOnlyGate from "@/components/superadmin/banners/DesktopOnlyGate";
+import { SuperAdminModuleTabs, MARCA_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 export default function SuperadminBannersPage() {
   return (
-    <DesktopOnlyGate>
-      <SuperadminBannersPageInner />
-    </DesktopOnlyGate>
+    <>
+      <SuperAdminModuleTabs tabs={MARCA_TABS} />
+      <DesktopOnlyGate>
+        <SuperadminBannersPageInner />
+      </DesktopOnlyGate>
+    </>
   );
 }
 
@@ -355,7 +363,7 @@ function SuperadminBannersPageInner() {
     if (!data) return;
     const orig = data[slot][idx];
     if (!orig) return;
-     
+
     const newId = `${slot}-${Date.now()}`;
     const copy: Banner = {
       ...orig,
@@ -401,10 +409,11 @@ function SuperadminBannersPageInner() {
             ? firstIssue
             : `${firstIssue.path || "?"}: ${firstIssue.message || firstIssue.code || "inválido"}`
           : "";
-        const text = detail ? `${err.error ?? `Error ${res.status}`} — ${detail}` : err.error ?? `Error ${res.status}`;
+        const text = detail
+          ? `${err.error ?? `Error ${res.status}`} — ${detail}`
+          : (err.error ?? `Error ${res.status}`);
         setSavedMsg({ kind: "err", text });
         if (process.env.NODE_ENV !== "production") {
-           
           console.error("[banners save] 400 issues", issues);
         }
       } else {
@@ -479,9 +488,9 @@ function SuperadminBannersPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--surface-canvas)]">
+    <div className={SUPERADMIN_PAGE}>
       {/* ── Hero header ────────────────────────────────────────────────── */}
-      <header className="border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <header className={SUPERADMIN_HERO}>
         <div className="w-full">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-3.5">
@@ -492,8 +501,15 @@ function SuperadminBannersPageInner() {
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Centro de banners
                 </p>
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] inline-flex items-center gap-2 flex-wrap">
                   Banners del Marketplace
+                  <InfoTip
+                    side="bottom"
+                    title="Banners del Marketplace"
+                    what="Administra los banners promocionales que se muestran en el marketplace público."
+                    affects="Se ven en la home del marketplace que visitan los clientes."
+                    example="Creás un banner '2x1 en gaseosas' y queda arriba en el marketplace para todos los visitantes."
+                  />
                 </h1>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
                   Editá los banners promocionales que aparecen rotativos en cada página.
@@ -567,7 +583,7 @@ function SuperadminBannersPageInner() {
                                 </p>
                                 {isDirty && (
                                   <span
-                                    className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)] shrink-0"
+                                    className="inline-block h-1.5 w-1.5 rounded-full bg-teal-500 shrink-0"
                                     title="Cambios sin guardar"
                                     aria-label="Cambios sin guardar"
                                   />
@@ -584,7 +600,7 @@ function SuperadminBannersPageInner() {
                                   ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                                   : activeCount === count
                                     ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]"
-                                    : "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]",
+                                    : "bg-teal-500/15 text-teal-500",
                               )}
                             >
                               {activeCount}/{count}
@@ -611,8 +627,8 @@ function SuperadminBannersPageInner() {
                 Consejo
               </p>
               <p className="text-xs text-[var(--text-secondary)] leading-snug">
-                Los banners rotan cada 8 segundos. Más de 5 por slot puede saturar al usuario.
-                Usá <strong>imágenes 1600×400 (4:1)</strong> para que se vean nítidas.
+                Los banners rotan cada 8 segundos. Más de 5 por slot puede saturar al usuario. Usá{" "}
+                <strong>imágenes 1600×400 (4:1)</strong> para que se vean nítidas.
               </p>
             </div>
           </aside>
@@ -630,7 +646,9 @@ function SuperadminBannersPageInner() {
                     <h2 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)] mb-1">
                       {meta.label}
                     </h2>
-                    <p className="text-sm text-[var(--text-secondary)] max-w-2xl">{meta.description}</p>
+                    <p className="text-sm text-[var(--text-secondary)] max-w-2xl">
+                      {meta.description}
+                    </p>
                   </div>
                   <a
                     href={meta.pageHref}
@@ -720,7 +738,7 @@ function SuperadminBannersPageInner() {
               />
             ) : (
               <div className="space-y-3">
-                {filteredBanners.map((b, idx) => {
+                {filteredBanners.map((b) => {
                   const realIdx = banners.indexOf(b);
                   const isExpanded = expanded.has(b.id);
                   return (
@@ -747,14 +765,12 @@ function SuperadminBannersPageInner() {
               <div
                 className={cn(
                   "flex items-center justify-between gap-3 rounded-2xl border bg-[var(--surface-raised)] px-5 py-3.5 shadow-lg",
-                  dirtySlots.has(activeSlot)
-                    ? "border-[var(--data-warning-500)]/40"
-                    : "border-[var(--rule-base)]",
+                  dirtySlots.has(activeSlot) ? "border-teal-500/40" : "border-[var(--rule-base)]",
                 )}
               >
                 <div className="flex items-center gap-2 min-w-0">
                   {dirtySlots.has(activeSlot) ? (
-                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-warning-500)]">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-teal-500">
                       <AlertCircle className="h-4 w-4" aria-hidden />
                       Cambios sin guardar
                     </span>
@@ -776,7 +792,8 @@ function SuperadminBannersPageInner() {
                     </span>
                   ) : (
                     <span className="text-sm text-[var(--text-tertiary)]">
-                      Editando <strong className="text-[var(--text-primary)]">{meta?.label}</strong> · {banners.length} banner{banners.length === 1 ? "" : "s"}
+                      Editando <strong className="text-[var(--text-primary)]">{meta?.label}</strong>{" "}
+                      · {banners.length} banner{banners.length === 1 ? "" : "s"}
                     </span>
                   )}
                 </div>
@@ -864,7 +881,7 @@ function EmptyState({
 }) {
   return (
     <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 px-6 text-center">
-      <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)]/40 text-[var(--accent)]">
+      <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent)]">
         <ImageIcon className="h-7 w-7" strokeWidth={1.5} aria-hidden />
       </span>
       <p className="font-display text-lg font-bold text-[var(--text-primary)] mt-3">
@@ -950,7 +967,7 @@ function BannerCard({
             {banner.title || "(sin título)"}
           </button>
           {inactive && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0">
+            <span className="inline-flex items-center gap-1 rounded-full bg-teal-500/15 text-teal-500 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shrink-0">
               <EyeOff className="h-3 w-3" aria-hidden />
               Oculto
             </span>
@@ -989,7 +1006,7 @@ function BannerCard({
               "inline-flex h-7 items-center gap-1 px-2 rounded-md text-xs font-bold transition-colors",
               banner.active
                 ? "text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/10"
-                : "text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/10",
+                : "text-teal-500 hover:bg-teal-500/10",
             )}
           >
             {banner.active ? (
@@ -1037,23 +1054,42 @@ function BannerCard({
       {expanded && (
         <div className="border-t border-[var(--rule-soft)] p-5 sm:p-6 space-y-5 bg-[var(--surface-canvas)]">
           {/* ── Type switch — define qué campos se muestran abajo ── */}
-          <Field
-            label="Tipo de banner"
-            hint="Definí cómo se ve y qué hace al hacer click"
-          >
+          <Field label="Tipo de banner" hint="Definí cómo se ve y qué hace al hacer click">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {([
-                { id: "classic", label: "Clásico", desc: "Texto + botón hacia otra página", Icon: TypeIcon },
-                { id: "image",   label: "Imagen",  desc: "Solo imagen (1600×400 · 4:1)",     Icon: Layout },
-                { id: "promo",   label: "Promo",   desc: "Producto/combo con compra directa", Icon: ShoppingBag },
-              ] as Array<{ id: BannerType; label: string; desc: string; Icon: typeof TypeIcon }>).map((opt) => {
+              {(
+                [
+                  {
+                    id: "classic",
+                    label: "Clásico",
+                    desc: "Texto + botón hacia otra página",
+                    Icon: TypeIcon,
+                  },
+                  {
+                    id: "image",
+                    label: "Imagen",
+                    desc: "Solo imagen (1600×400 · 4:1)",
+                    Icon: Layout,
+                  },
+                  {
+                    id: "promo",
+                    label: "Promo",
+                    desc: "Producto/combo con compra directa",
+                    Icon: ShoppingBag,
+                  },
+                ] as Array<{ id: BannerType; label: string; desc: string; Icon: typeof TypeIcon }>
+              ).map((opt) => {
                 const active = (banner.type ?? "classic") === opt.id;
                 const Icon = opt.Icon;
                 return (
                   <button
                     key={opt.id}
                     type="button"
-                    onClick={() => onPatch({ type: opt.id, ...(opt.id === "promo" && !banner.promo ? { promo: DEFAULT_PROMO } : {}) })}
+                    onClick={() =>
+                      onPatch({
+                        type: opt.id,
+                        ...(opt.id === "promo" && !banner.promo ? { promo: DEFAULT_PROMO } : {}),
+                      })
+                    }
                     aria-pressed={active}
                     className={cn(
                       "rounded-xl border-2 p-3 text-left transition-all",
@@ -1073,12 +1109,21 @@ function BannerCard({
                       >
                         <Icon className="h-3 w-3" />
                       </span>
-                      <p className={cn("text-sm font-extrabold", active ? "text-[var(--accent)]" : "text-[var(--text-primary)]")}>
+                      <p
+                        className={cn(
+                          "text-sm font-extrabold",
+                          active ? "text-[var(--accent)]" : "text-[var(--text-primary)]",
+                        )}
+                      >
                         {opt.label}
                       </p>
-                      {active && <CheckCircle2 className="h-3.5 w-3.5 text-[var(--accent)] ml-auto" />}
+                      {active && (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-[var(--accent)] ml-auto" />
+                      )}
                     </div>
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">{opt.desc}</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">
+                      {opt.desc}
+                    </p>
                   </button>
                 );
               })}
@@ -1119,10 +1164,7 @@ function BannerCard({
           {/* ── CTA (visible en classic + image · oculto en promo, que usa su propio buyHref) ── */}
           {banner.type !== "promo" && (
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-3">
-              <Field
-                label="Link al hacer click"
-                hint="Empezá con / (interno) o https:// (externo)"
-              >
+              <Field label="Link al hacer click" hint="Empezá con / (interno) o https:// (externo)">
                 <input
                   value={banner.ctaHref}
                   onChange={(e) => onPatch({ ctaHref: e.target.value })}
@@ -1149,7 +1191,9 @@ function BannerCard({
           {/* ── Imagen (visible en classic + image · oculta en promo, que usa productImage) ── */}
           {banner.type !== "promo" && (
             <Field
-              label={banner.type === "image" ? "Imagen del banner (obligatoria)" : "Imagen del banner"}
+              label={
+                banner.type === "image" ? "Imagen del banner (obligatoria)" : "Imagen del banner"
+              }
               hint={
                 banner.type === "image"
                   ? "Resolución recomendada: 1600×400 (4:1) · subí PNG/JPG/WebP de buena calidad"
@@ -1173,7 +1217,7 @@ function BannerCard({
                     placeholder="O pegá una URL: https://…"
                     className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-mono focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
                   />
-                  <div className="rounded-md bg-[var(--accent-soft)]/30 border border-[var(--rule-soft)] px-2.5 py-1.5">
+                  <div className="rounded-md bg-primary/10 border border-[var(--rule-soft)] px-2.5 py-1.5">
                     <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">
                       <span className="text-[var(--accent)]">Recomendado:</span>{" "}
                       <span className="font-mono">1600 × 400 px</span> · 4:1 · &lt;200 KB
@@ -1196,13 +1240,16 @@ function BannerCard({
           {/* ── Encuadre y previsualización avanzada ── */}
           {banner.type !== "promo" && banner.imageUrl && (
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 flex items-center gap-3">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Monitor className="h-4 w-4" />
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-extrabold text-[var(--text-primary)]">Encuadre, recorte, color y previsualización</p>
+                <p className="text-xs font-extrabold text-[var(--text-primary)]">
+                  Encuadre, recorte, color y previsualización
+                </p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">
-                  Abrí el Estudio para reposicionar la imagen, hacer zoom, cambiar tipo, color y vista en presentación.
+                  Abrí el Estudio para reposicionar la imagen, hacer zoom, cambiar tipo, color y
+                  vista en presentación.
                 </p>
               </div>
             </div>
@@ -1210,89 +1257,97 @@ function BannerCard({
 
           {/* ── Color presets (oculto en type=image puro, visible en classic+promo cuando NO hay imagen) ── */}
           {banner.type !== "image" && !banner.imageUrl && (
-          <Field
-            label="Colores de fondo"
-            hint="Solo se usan cuando NO hay imagen. Elegí un preset o personalizá."
-          >
-            <div className="space-y-2.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                {COLOR_PRESETS.map((p) => {
-                  const active = banner.bgFrom === p.from && banner.bgTo === p.to;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => onPatch({ bgFrom: p.from, bgTo: p.to })}
-                      title={p.label}
-                      aria-pressed={active}
-                      aria-label={`Preset de color: ${p.label}`}
-                      className={cn(
-                        "h-12 w-20 rounded-lg border-2 transition-all relative overflow-hidden",
-                        active
-                          ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/30 scale-105"
-                          : "border-[var(--rule-base)] hover:border-[var(--accent)]/50",
-                      )}
-                      style={{
-                        background: `linear-gradient(135deg, ${p.from}, ${p.to})`,
-                      }}
-                    >
-                      <span className="absolute bottom-0.5 left-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[#0c1015]/70">
-                        {p.label}
-                      </span>
-                      {active && (
-                        <CheckCircle2 className="absolute top-1 right-1 h-3.5 w-3.5 text-[var(--accent)]" aria-hidden />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              <details className="group">
-                <summary className="text-xs font-bold text-[var(--text-secondary)] cursor-pointer hover:text-[var(--accent)] inline-flex items-center gap-1">
-                  Personalizar
-                  <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90" aria-hidden />
-                </summary>
-                <div className="grid grid-cols-2 gap-2 mt-2 max-w-md">
-                  <div>
-                    <label className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
-                      Desde
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={banner.bgFrom}
-                        onChange={(e) => onPatch({ bgFrom: e.target.value })}
-                        className="h-9 w-12 rounded cursor-pointer border border-[var(--rule-base)]"
-                      />
-                      <input
-                        type="text"
-                        value={banner.bgFrom}
-                        onChange={(e) => onPatch({ bgFrom: e.target.value })}
-                        className="flex-1 px-2 py-1.5 rounded border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-mono uppercase"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
-                      Hasta
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={banner.bgTo}
-                        onChange={(e) => onPatch({ bgTo: e.target.value })}
-                        className="h-9 w-12 rounded cursor-pointer border border-[var(--rule-base)]"
-                      />
-                      <input
-                        type="text"
-                        value={banner.bgTo}
-                        onChange={(e) => onPatch({ bgTo: e.target.value })}
-                        className="flex-1 px-2 py-1.5 rounded border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-mono uppercase"
-                      />
-                    </div>
-                  </div>
+            <Field
+              label="Colores de fondo"
+              hint="Solo se usan cuando NO hay imagen. Elegí un preset o personalizá."
+            >
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {COLOR_PRESETS.map((p) => {
+                    const active = banner.bgFrom === p.from && banner.bgTo === p.to;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => onPatch({ bgFrom: p.from, bgTo: p.to })}
+                        title={p.label}
+                        aria-pressed={active}
+                        aria-label={`Preset de color: ${p.label}`}
+                        className={cn(
+                          "h-12 w-20 rounded-lg border-2 transition-all relative overflow-hidden",
+                          active
+                            ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/30 scale-105"
+                            : "border-[var(--rule-base)] hover:border-[var(--accent)]/50",
+                        )}
+                        style={{
+                          background: `linear-gradient(135deg, ${p.from}, ${p.to})`,
+                        }}
+                      >
+                        <span className="absolute bottom-0.5 left-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[#0c1015]/70">
+                          {p.label}
+                        </span>
+                        {active && (
+                          <CheckCircle2
+                            className="absolute top-1 right-1 h-3.5 w-3.5 text-[var(--accent)]"
+                            aria-hidden
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
-              </details>
-            </div>
-          </Field>
+                <details className="group">
+                  <summary className="text-xs font-bold text-[var(--text-secondary)] cursor-pointer hover:text-[var(--accent)] inline-flex items-center gap-1">
+                    Personalizar
+                    <ChevronRight
+                      className="h-3 w-3 transition-transform group-open:rotate-90"
+                      aria-hidden
+                    />
+                  </summary>
+                  <div className="grid grid-cols-2 gap-2 mt-2 max-w-md">
+                    <div>
+                      {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                      <label className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+                        Desde
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={banner.bgFrom}
+                          onChange={(e) => onPatch({ bgFrom: e.target.value })}
+                          className="h-9 w-12 rounded cursor-pointer border border-[var(--rule-base)]"
+                        />
+                        <input
+                          type="text"
+                          value={banner.bgFrom}
+                          onChange={(e) => onPatch({ bgFrom: e.target.value })}
+                          className="flex-1 px-2 py-1.5 rounded border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-mono uppercase"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                      <label className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+                        Hasta
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={banner.bgTo}
+                          onChange={(e) => onPatch({ bgTo: e.target.value })}
+                          className="h-9 w-12 rounded cursor-pointer border border-[var(--rule-base)]"
+                        />
+                        <input
+                          type="text"
+                          value={banner.bgTo}
+                          onChange={(e) => onPatch({ bgTo: e.target.value })}
+                          className="flex-1 px-2 py-1.5 rounded border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-mono uppercase"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </Field>
           )}
         </div>
       )}
@@ -1309,11 +1364,14 @@ function BannerPreview({ banner }: { banner: Banner }) {
   // El borde redondeado lo aporta el card; desactivamos el del renderer interno.
   return (
     <div className="relative overflow-hidden">
-      <PromoBannerRenderer banner={banner as PromoBanner} asLink={false} className="[&>div]:rounded-none [&>div]:border-0" />
+      <PromoBannerRenderer
+        banner={banner as PromoBanner}
+        asLink={false}
+        className="[&>div]:rounded-none [&>div]:border-0"
+      />
     </div>
   );
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PromoEmbedFields — form para promos embebidas (banner type=promo)
@@ -1335,7 +1393,9 @@ function PromoEmbedFields({
           <ShoppingBag className="h-3.5 w-3.5" />
         </span>
         <div>
-          <p className="text-sm font-extrabold text-[var(--text-primary)]">Datos de la promo embebida</p>
+          <p className="text-sm font-extrabold text-[var(--text-primary)]">
+            Datos de la promo embebida
+          </p>
           <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">
             El cliente verá este combo dentro del banner y podrá comprar directamente
           </p>
@@ -1367,7 +1427,9 @@ function PromoEmbedFields({
                 step="0.10"
                 min="0"
                 value={promo.price ?? ""}
-                onChange={(e) => onChange({ price: e.target.value === "" ? null : Number(e.target.value) })}
+                onChange={(e) =>
+                  onChange({ price: e.target.value === "" ? null : Number(e.target.value) })
+                }
                 placeholder="0.00"
                 className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
               />
@@ -1378,7 +1440,9 @@ function PromoEmbedFields({
                 step="0.10"
                 min="0"
                 value={promo.oldPrice ?? ""}
-                onChange={(e) => onChange({ oldPrice: e.target.value === "" ? null : Number(e.target.value) })}
+                onChange={(e) =>
+                  onChange({ oldPrice: e.target.value === "" ? null : Number(e.target.value) })
+                }
                 placeholder="0.00"
                 className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm tabular-nums focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
               />
@@ -1403,7 +1467,7 @@ function PromoEmbedFields({
                   "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-sm font-mono focus:ring-1 outline-none",
                   promo.buyHref.startsWith("/") || promo.buyHref.startsWith("http")
                     ? "border-[var(--rule-base)] focus:border-[var(--accent)] focus:ring-[var(--accent)]/30"
-                    : "border-[var(--data-warning-500)] focus:border-[var(--data-warning-500)] focus:ring-[var(--data-warning-500)]/30",
+                    : "border-teal-500 focus:border-teal-500 focus:ring-teal-500/30",
                 )}
               />
             </Field>
@@ -1435,10 +1499,13 @@ function Field({
     <div>
       <label className="block mb-1.5">
         <span className="text-xs font-extrabold text-[var(--text-primary)]">{label}</span>
-        {hint && <span className="block text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] mt-0.5">{hint}</span>}
+        {hint && (
+          <span className="block text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)] mt-0.5">
+            {hint}
+          </span>
+        )}
       </label>
       {children}
     </div>
   );
 }
-

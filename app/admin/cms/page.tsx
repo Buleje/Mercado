@@ -171,7 +171,7 @@ export default function CMSDashboard() {
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                             page.status === "PUBLISHED"
-                              ? "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                              ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                               : page.status === "DRAFT"
                               ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                               : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cookies } from "next/headers";
 import {
   ImageIcon,
@@ -15,6 +16,8 @@ import {
 } from "@buleje/design-system/icons";
 import { MarketplaceAdminDB } from "@/lib/db/marketplace-public.db";
 import { SupplierSignupDB } from "@/lib/db/supplier-signup.db";
+import { SUPERADMIN_PAGE } from "@/lib/superadmin-layout";
+import { SuperAdminModuleTabs, MARKETPLACE_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 /**
  * /superadmin/marketplace — Hub multi-vendor.
@@ -149,7 +152,9 @@ export default async function SuperadminMarketplaceHubPage() {
   const live = SECTIONS.filter((s) => s.status === "live");
   const soon = SECTIONS.filter((s) => s.status === "soon");
 
-  const cardMetric = (key?: Section["metricKey"]): { value: string; label: string; tone: "warn" | "accent" | "neutral" } | null => {
+  const cardMetric = (
+    key?: Section["metricKey"],
+  ): { value: string; label: string; tone: "warn" | "accent" | "neutral" } | null => {
     if (!key) return null;
     if (key === "pending") {
       return {
@@ -172,7 +177,8 @@ export default async function SuperadminMarketplaceHubPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--surface-canvas)]">
+    <div className={SUPERADMIN_PAGE}>
+      <SuperAdminModuleTabs tabs={MARKETPLACE_TABS} />
       {/* ── HERO envolvente con accent strip y KPIs grandes ─────────────── */}
       <header className="relative overflow-hidden border-b border-[var(--rule-base)] bg-[var(--surface-raised)]">
         {/* Accent strip superior */}
@@ -203,12 +209,19 @@ export default async function SuperadminMarketplaceHubPage() {
                     Live
                   </span>
                 </div>
-                <h1 className="mt-1 font-display text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl">
+                <h1 className="mt-1 font-display text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl inline-flex items-center gap-2 flex-wrap">
                   Marketplace
+                  <InfoTip
+                    side="bottom"
+                    title="Marketplace"
+                    what="Centro de control del marketplace multi-vendor: aprobar vendors, gestionar categorías y monitorear el revenue cross-store."
+                    affects="Cambia el marketplace público (qué vendors y categorías aparecen) que ven todos los clientes."
+                    example="Apruebas un vendor nuevo → su tienda empieza a aparecer en el marketplace para los compradores."
+                  />
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)] sm:text-base">
-                  Centro de control cross-store. Aprueba vendors, gestiona categorías y monitorea
-                  el revenue del marketplace multi-tenant desde un solo lugar.
+                  Centro de control cross-store. Aprueba vendors, gestiona categorías y monitorea el
+                  revenue del marketplace multi-tenant desde un solo lugar.
                 </p>
               </div>
             </div>
@@ -216,13 +229,17 @@ export default async function SuperadminMarketplaceHubPage() {
             {m.pendingSuppliers > 0 && (
               <Link
                 href="/superadmin/marketplace/suppliers"
-                className="group inline-flex items-center gap-2.5 rounded-2xl border border-[var(--data-warning-500,#f59e0b)]/30 bg-[var(--data-warning-500,#f59e0b)]/10 px-4 py-2.5 text-sm font-bold text-[var(--data-warning-700,#b45309)] transition hover:border-[var(--data-warning-500,#f59e0b)]/50 hover:bg-[var(--data-warning-500,#f59e0b)]/15 dark:text-[var(--data-warning-300,#fbbf24)]"
+                className="group inline-flex items-center gap-2.5 rounded-2xl border border-[#0d9488]/30 bg-[#0d9488]/10 px-4 py-2.5 text-sm font-bold text-[#0d9488] transition hover:border-[#0d9488]/50 hover:bg-[#0d9488]/15 dark:text-[#0d9488]"
               >
                 <AlertCircle className="h-4 w-4" strokeWidth={2} aria-hidden />
                 <span>
-                  {m.pendingSuppliers} {m.pendingSuppliers === 1 ? "proveedor espera" : "proveedores esperan"} revisión
+                  {m.pendingSuppliers}{" "}
+                  {m.pendingSuppliers === 1 ? "proveedor espera" : "proveedores esperan"} revisión
                 </span>
-                <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
+                <ArrowUpRight
+                  className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  aria-hidden
+                />
               </Link>
             )}
           </div>
@@ -319,7 +336,7 @@ function KpiTile({
       : tone === "success"
         ? "border-[var(--data-success-500)]/25 bg-[var(--data-success-500)]/[0.05]"
         : tone === "warn"
-          ? "border-[var(--data-warning-500,#f59e0b)]/30 bg-[var(--data-warning-500,#f59e0b)]/[0.06]"
+          ? "border-[#0d9488]/30 bg-[#0d9488]/[0.06]"
           : "border-[var(--rule-base)] bg-[var(--surface-canvas)]";
 
   const valueClass =
@@ -328,7 +345,7 @@ function KpiTile({
       : tone === "success"
         ? "text-[var(--data-success-500)]"
         : tone === "warn"
-          ? "text-[var(--data-warning-700,#b45309)] dark:text-[var(--data-warning-300,#fbbf24)]"
+          ? "text-[#0d9488] dark:text-[#0d9488]"
           : "text-[var(--text-primary)]";
 
   return (
@@ -337,11 +354,17 @@ function KpiTile({
         {label}
       </p>
       <div className="mt-2 flex items-baseline gap-2">
-        <p className={`font-display text-2xl font-extrabold tabular-nums tracking-tight leading-none sm:text-3xl ${valueClass}`}>
+        <p
+          className={`font-display text-2xl font-extrabold tabular-nums tracking-tight leading-none sm:text-3xl ${valueClass}`}
+        >
           {value}
         </p>
         {trending && (
-          <TrendingUp className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={2.25} aria-hidden />
+          <TrendingUp
+            className="h-3.5 w-3.5 text-[var(--text-tertiary)]"
+            strokeWidth={2.25}
+            aria-hidden
+          />
         )}
       </div>
       <p className="mt-2 text-xs text-[var(--text-tertiary)] leading-tight">{hint}</p>
@@ -396,7 +419,7 @@ function LiveCard({
   const hasPulse = metric?.tone === "warn";
   const metricColor =
     metric?.tone === "warn"
-      ? "text-[var(--data-warning-700,#b45309)] dark:text-[var(--data-warning-300,#fbbf24)]"
+      ? "text-[#0d9488] dark:text-[#0d9488]"
       : metric?.tone === "accent"
         ? "text-[var(--accent)]"
         : "text-[var(--text-primary)]";
@@ -422,11 +445,13 @@ function LiveCard({
           <div className="relative text-right">
             {hasPulse && (
               <span aria-hidden className="absolute -right-1 -top-1 inline-flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-warning-500,#f59e0b)]/50" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--data-warning-500,#f59e0b)]" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#0d9488]/50" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#0d9488]" />
               </span>
             )}
-            <p className={`font-display text-2xl font-extrabold tabular-nums leading-none ${metricColor}`}>
+            <p
+              className={`font-display text-2xl font-extrabold tabular-nums leading-none ${metricColor}`}
+            >
               {metric.value}
             </p>
             <p className="mt-1 text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
@@ -443,9 +468,7 @@ function LiveCard({
         <h3 className="mt-1 font-display text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
           {section.title}
         </h3>
-        <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
-          {section.desc}
-        </p>
+        <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">{section.desc}</p>
       </div>
 
       <div className="mt-4 flex items-center justify-between border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]/40 px-5 py-3 text-sm font-bold text-[var(--text-primary)] transition group-hover:bg-[var(--accent)]/5 group-hover:text-[var(--accent)]">
@@ -496,9 +519,7 @@ function SoonCard({ section }: { section: Section }) {
         <h3 className="mt-1 font-display text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
           {section.title}
         </h3>
-        <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
-          {section.desc}
-        </p>
+        <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">{section.desc}</p>
       </div>
 
       <div className="relative mt-4 flex items-center justify-between border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)]/30 px-5 py-3 text-sm font-bold text-[var(--text-tertiary)]">

@@ -35,6 +35,9 @@ const NO_TABS_MODULES = [
   // Añadidos en commits posteriores al estándar — opt-out documentado.
   "DocumentosModule.tsx",
   "LeadsFunnelModule.tsx",
+  // DropshipModule (ADR-298): vista única (tabla de fulfillments al proveedor),
+  // sin sub-tabs → no necesita AdminTabBar/MODULE_ID.
+  "DropshipModule.tsx",
 ];
 // Módulos con header custom (no usan AdminModuleHeader, patrón legítimo documentado)
 const CUSTOM_HEADER_MODULES = [
@@ -48,32 +51,26 @@ const CUSTOM_HEADER_MODULES = [
   // Brandon 2026-05-17: LeadsFunnelModule usa wrapper space-y-6 (más spacing
   // por densidad de KPIs + filtros + tabla). Patrón legítimo opt-out.
   "LeadsFunnelModule.tsx",
-];
-// Módulos que legítimamente usan dark: classes (dark mode habilitado).
-// Round 15 (2026-05-09): expandida tras audit. La regla era restrictiva pero
-// la realidad es que TODOS los módulos del unified DS ya soportan dark mode.
-// Esta lista refleja el estado actual; la convención cambió de "force light"
-// a "dark mode habilitado por default" tras ADR-076 (Bodega al Mes UI).
-const DARK_MODE_MODULES = [
-  "AnalyticsBIModule.tsx",
-  "AsistenteIAModule.tsx",
-  "CRMClientesModule.tsx",
-  "CatalogoTiendaModule.tsx",
-  "ChatIAModule.tsx",
-  "ComprasModule.tsx",
-  "DeliveryPartnersModule.tsx",
-  "FinanzasModule.tsx",
-  "GiftCardsAdminModule.tsx",
-  "InventarioAlmacenesModule.tsx",
-  "LeadsFunnelModule.tsx",
-  "LivesAdminModule.tsx",
-  "MarketplaceModule.tsx",
-  "MetasLogrosModule.tsx",
-  "POSCajaModule.tsx",
+  // Brandon 2026-07-04 (rework RUM): RendimientoModule usa wrapper space-y-6
+  // por el gauge de score + historial RUM (necesita más aire). Mismo opt-out
+  // legítimo que LeadsFunnelModule. Usa AdminModuleHeader estándar.
   "RendimientoModule.tsx",
-  "SocioMembersAdminModule.tsx",
-  "SubscriptionsModule.tsx",
-  "VendorDashboardModule.tsx",
+  // Hubs de consolidación (24→7, commit 8f9a3e99): son routers de sub-tabs;
+  // cada sub-módulo trae su PROPIO AdminModuleHeader, así que el hub NO pone
+  // header para evitar el doble. Tienen AdminTabBar + MODULE_ID propios.
+  "AnalisisHubModule.tsx",
+  "AsistenteIAHubModule.tsx",
+  "DocumentosHubModule.tsx",
+  "MiTiendaHubModule.tsx",
+  // Hubs de la misma tanda (Brandon 2026-06-20) que nacieron después de la
+  // lista y nadie sumó. Son idénticos a los de arriba: AdminBreadcrumb +
+  // AdminTabBar + MODULE_ID, montando sub-tabs que YA traen su header
+  // (TasksTab, QuickNotesTab…). Ponerles uno propio duplicaría el título,
+  // que es justo lo que la excepción de arriba evita.
+  "CrecimientoHubModule.tsx",
+  "EquipoHubModule.tsx",
+  "MensajesHubModule.tsx",
+  "SistemaHubModule.tsx",
 ];
 
 function getModuleFiles(): string[] {
@@ -135,23 +132,34 @@ describe("Admin Modules — Estándares de estructura", () => {
 
       it(`${file} tiene MODULE_ID definido`, () => {
         const content = readModule(file);
-        expect(content).toMatch(/const _?MODULE_ID\s*=\s*"/);
+        // Acepta declaración local `const MODULE_ID = "..."` o MODULE_ID
+        // importado desde el shared del módulo (patrón tras descomposición,
+        // ej. MarketplaceModule importa MODULE_ID de marketplace/shared).
+        const hasLocal = /const _?MODULE_ID\s*=\s*"/.test(content);
+        const hasImported = /import\s*\{[^}]*\bMODULE_ID\b[^}]*\}/.test(content);
+        expect(hasLocal || hasImported).toBe(true);
       });
     }
   });
 
-  describe("No dark: classes — modo claro forzado (excepto módulos con dark mode habilitado)", () => {
-    for (const file of moduleFiles) {
-      if (DARK_MODE_MODULES.includes(file)) continue;
-
-      it(`${file} no contiene clases dark: de Tailwind`, () => {
-        const content = readModule(file);
-        // Busca dark: seguido de caracteres de clase CSS (patrón Tailwind)
-        const darkMatches = content.match(/\bdark:[a-zA-Z0-9[\]_/.-]+/g);
-        expect(darkMatches ?? []).toEqual([]);
-      });
-    }
-  });
+  // ── REGLA RETIRADA: "no usar clases dark:" ──────────────────────────────
+  //
+  // Afirmaba lo contrario de la convención vigente. Su propia lista de
+  // excepciones lo decía: «la realidad es que TODOS los módulos del unified DS
+  // ya soportan dark mode; la convención cambió de force-light a dark mode
+  // habilitado por default». Y `.claude/rules/ui-components.md` va más lejos:
+  // «gray-* siempre con variante dark:» y «toda UI nueva funciona en light Y
+  // dark».
+  //
+  // Con la regla puesta, agregar soporte dark —lo correcto— rompía el test
+  // hasta que alguien sumara el módulo a un allowlist. Fue justo lo que pasó
+  // con DocumentosModule y DropshipModule en `f22ef6e5` («el modo oscuro deja
+  // de llenarse de manchas claras»): el arreglo bueno fallaba el test.
+  //
+  // Un test que castiga el trabajo correcto entrena a editar el test. No se
+  // reemplaza por "sin hex hardcodeado" —que sería la regla real del repo—
+  // porque hoy fallaría en 8 módulos: esa deuda merece su propio trabajo, no
+  // un gate rojo permanente que nadie va a mirar.
 
   describe("Estructura wrapper consistente", () => {
     for (const file of moduleFiles) {

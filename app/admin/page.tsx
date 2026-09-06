@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
+import { useSessionKeepAlive } from "@/hooks/use-session-keepalive";
+import { SessionExpiryGuard } from "@/components/shared/SessionExpiryGuard";
 import { useAdminPrefetch } from "@/hooks/use-admin-prefetch";
 import { useTenantCacheGuard } from "@/hooks/use-tenant-cache-guard";
 import { LoadingState } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { useTheme } from "@/contexts/theme-context";
 import type { Tab } from "./_lib/tabs.types";
 import { ALL_TABS } from "./_lib/tab-data";
@@ -19,15 +22,14 @@ import {
   useAdminTabs, useAdminModals, useKeyboardShortcuts, useAdminLayout,
   useFavoritesAndRecent, useImpersonation, useDemoCleanup, useAdminAuth,
   useWebhookPendingCount, useChangelogBadge, useHiddenTabs, useCategoryOrder,
-  useOnboardingTrigger, useAdminAlerts, useNewOrderNotification,
+  useOnboardingTrigger, useAdminAlerts, useNewOrderNotification, useNewWaMessageNotification,
   useNotificationPermissionPrompt, useMobileTableCards, useOnboardingTourTrigger,
   useDocumentTitle, useSwipeNavigation, useAdminNavigateEvent, useSidebarShortcuts,
-  useClearDataFlow, useCustomShortcuts, useCommandItems, useAdminTabsDerived,
+  useClearDataFlow, useCustomShortcuts, useAdminTabsDerived,
   useAdminPageState, useAdminTenantPath, useFuzzyMatch, useVisibleCategories,
 } from "./_hooks";
 
-import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
-import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
+import { LastLoginToast } from "@/components/admin/LastLoginToast";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
 // TrialExpiredGuard se mantiene estático: es un gate de negocio que bloquea el
 // panel cuando el trial expiró; lazy-loadear introduciría flash sin guard.
@@ -42,15 +44,17 @@ import { AdminNavigation } from "./_components/AdminNavigation";
 import { AdminMainContent } from "./_components/AdminMainContent";
 
 // ── Deferred chrome (sessions 4-7) ─────────────────────────────────────────────
-// AdminCommandPalette, AdminGlobalModals and AdminOverlaysLayer are not on the
-// critical first-paint path. They are only visible on explicit user actions
-// (Ctrl+K, opening a modal, activating presentation/onboarding). Loading them
-// via next/dynamic removes their code from the initial admin chunk.
+// AdminGlobalModals and AdminOverlaysLayer are not on the critical first-paint
+// path. They are only visible on explicit user actions (Ctrl+K, opening a
+// modal, activating presentation/onboarding). Loading them via next/dynamic
+// removes their code from the initial admin chunk.
 // TASK-003 — companion tab wrappers live in @/components/admin/tabs/*.
-const AdminCommandPalette = dynamic(
-  () => import("@/components/admin/shared/AdminCommandPalette"),
-  { loading: () => null, ssr: false },
-);
+//
+// AdminCommandPalette se desmontó (Brandon 2026-08-02): el panel tenía DOS
+// paletas y las dos escuchaban Ctrl+K, así que el atajo abría las dos apiladas
+// —cada una con su propio buscador y las mismas acciones repetidas—. Queda
+// GlobalSearch, que es la que abre el botón del encabezado y además busca
+// productos, clientes y pedidos, no sólo módulos.
 const AdminGlobalModals = dynamic(
   () =>
     import("./_components/AdminGlobalModals").then((mod) => ({
@@ -71,6 +75,7 @@ function AdminPage() {
   const { handleLogout, onUnauth } = useAdminTenantPath(router);
 
   useTokenRefresh();
+  useSessionKeepAlive("admin"); // "modo mantener sesión" (switch en Ajustes · Seguridad)
   const onboarding = useOnboarding();
 
   const {
@@ -80,9 +85,7 @@ function AdminPage() {
   } = useAdminLayout();
 
   const {
-    selectedCategory, setSelectedCategory,
-    categoryDropdownOpen, setCategoryDropdownOpen,
-    sidebarSearch, setShowModuleHelp,
+    sidebarSearch, setSidebarSearch, setShowModuleHelp,
     recentCollapsed, setRecentCollapsed,
     openAccordionCategories, setOpenAccordionCategories,
     sidebarFlyout, setSidebarFlyout, flyoutTimerRef,
@@ -139,7 +142,7 @@ function AdminPage() {
 
   const {
     isSuperAdminImpersonating, activeTenantName, activeTenantSlug,
-    activeTenantLogo, handleExit: handleExitImpersonation,
+    activeTenantLogo,
   } = useImpersonation();
 
   const { toggle: toggleTheme, resolved: resolvedTheme, theme: themeMode, setTheme } = useTheme();
@@ -186,6 +189,7 @@ function AdminPage() {
   const { alerts, quickStats } = useAdminAlerts(authReady);
 
   useNewOrderNotification(quickStats, permission, sendNotification);
+  useNewWaMessageNotification(quickStats, permission, sendNotification);
   useNotificationPermissionPrompt(authReady, hasAsked, permission, requestPermission);
   useMobileTableCards(authReady, tab);
 
@@ -196,17 +200,13 @@ function AdminPage() {
 
   const visibleCategories = useVisibleCategories(categoryOrder);
 
-  const { allowedTabs, filteredTabs, visibleTabs, favoriteTabItems, recentTabItems } = useAdminTabsDerived({
-    userRole, savedRolePerms, hiddenTabs, selectedCategory, visibleCategories,
+  const { allowedTabs, filteredTabs, favoriteTabItems, recentTabItems } = useAdminTabsDerived({
+    userRole, savedRolePerms, hiddenTabs, visibleCategories,
     sidebarSearch, favoriteTabs, recentTabs, currentTab: tab, fuzzyMatch,
   });
 
-  // Set de módulos actuales del negocio para el Command Palette (solo busca
-  // estos — sin historial). Brandon 2026-05-29.
-  const visibleTabIdSet = React.useMemo(
-    () => new Set(visibleTabs.map((t) => t.id as string)),
-    [visibleTabs],
-  );
+  // (visibleTabIdSet alimentaba al AdminCommandPalette, que se desmontó — ver
+  // el comentario del import arriba.)
 
   const customShortcutItems = useCustomShortcuts(ALL_TABS);
 
@@ -217,8 +217,6 @@ function AdminPage() {
     resolvedShortcuts, availableForShortcut,
   } = useSidebarShortcuts(ALL_TABS, allowedTabs);
 
-  const commandItems = useCommandItems(navigateTab, visibleTabIdSet);
-
   // Find active category based on current tab — drives the sub-sidebar
   const activeCategory = visibleCategories.find(cat => cat.tabs.includes(tab));
   const hasSubSidebar = !focusMode && !presentationMode && activeCategory && activeCategory.tabs.length > 1;
@@ -228,17 +226,18 @@ function AdminPage() {
         .filter(Boolean)
         .map(t => ({ id: t!.id, label: t!.label, icon: t!.icon }))
     : [];
-  const [subSidebarMobileOpen, setSubSidebarMobileOpen] = React.useState(false);
 
   // Sub-tabs now render inline inside the main sidebar — no more collapsing
   const effectiveFocusMode = focusMode;
-  const mainSidebarWidth = effectiveFocusMode ? 64 : 260; // px
 
   // Keyboard: Arrow Up/Down navigate sub-tabs, Escape closes sub-sidebar
   React.useEffect(() => {
     if (!hasSubSidebar || subSidebarTabs.length === 0) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      // FIX 2026-07-08 (reporte QA Compras): guard robusto — no navegar si el
+      // usuario escribe (input/textarea/select/contenteditable) ni si hay un
+      // modal abierto.
+      if (isEditableTarget(e.target) || isModalOpen()) return;
       const idx = subSidebarTabs.findIndex(t => t.id === tab);
       if (e.key === "ArrowDown" && e.altKey && idx < subSidebarTabs.length - 1) {
         e.preventDefault();
@@ -246,9 +245,11 @@ function AdminPage() {
       } else if (e.key === "ArrowUp" && e.altKey && idx > 0) {
         e.preventDefault();
         navigateTab(subSidebarTabs[idx - 1].id as Tab);
-      } else if (e.key === "Escape" && hasSubSidebar) {
-        navigateTab("asistente-ia" as Tab);
       }
+      // Escape ya NO navega. Antes hacía `navigateTab("asistente-ia")`, lo que
+      // sacaba al usuario de su sección al presionar Escape para cerrar un modal
+      // → pérdida de trabajo sin aviso. Cerrar overlays es responsabilidad de
+      // cada modal (todos escuchan su propio Escape).
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -267,13 +268,91 @@ function AdminPage() {
     [storeMode, setStoreModeState, visibleCategories, saveCategoryOrder, onboarding],
   );
 
+  /**
+   * Brandon 2026-08-17 (perf shell): mismo problema que arriba pero para
+   * AdminSidebar (1529 líneas) / AdminMobileDrawer / AdminTopHeader — los
+   * tres SIEMPRE están montados y visibles, y no tenían memo. Estos handlers
+   * se escribían inline en el JSX de abajo (una función nueva por render), lo
+   * que rompía cualquier memo() aguas abajo: cualquier cambio de estado en
+   * esta página — incluidos los polls de 60s de alertas/webhooks — repintaba
+   * el sidebar entero. Estabilizados acá; los objetos que los agrupan van
+   * en useMemo más abajo.
+   */
+  const onToggleRecentCollapsed = useCallback(() => {
+    setRecentCollapsed((c) => {
+      const next = !c;
+      try { localStorage.setItem("admin-recientes-plegado", next ? "true" : "false"); } catch { /* modo privado: no persiste, no rompe */ }
+      return next;
+    });
+  }, [setRecentCollapsed]);
+  // setEditingShortcuts/setShowAddShortcut sólo aceptan un boolean (no updater
+  // funcional, ver UseSidebarShortcutsResult) — leen el valor actual, así que
+  // sólo cambian de identidad cuando ESE valor cambia (correcto: si no, el
+  // toggle leería un `editingShortcuts` viejo).
+  const onToggleEditingShortcuts = useCallback(() => setEditingShortcuts(!editingShortcuts), [setEditingShortcuts, editingShortcuts]);
+  const onToggleShowAddShortcut = useCallback(() => setShowAddShortcut(!showAddShortcut), [setShowAddShortcut, showAddShortcut]);
+  const onToggleAccordion = useCallback((categoryId: string) => {
+    setOpenAccordionCategories((prev) => (prev.has(categoryId) ? new Set() : new Set([categoryId])));
+  }, [setOpenAccordionCategories]);
+  const onCloseMobileNav = useCallback(() => setMobileNavOpen(false), [setMobileNavOpen]);
+  const onOpenMobileNav = useCallback(() => setMobileNavOpen(true), [setMobileNavOpen]);
+  const onOpenCierreDiario = useCallback(() => setShowCierreDiario(true), [setShowCierreDiario]);
+  const onOpenSearch = useCallback(() => setSearchOpen(true), [setSearchOpen]);
+  const onTogglePresentationOn = useCallback(() => setPresentationMode(true), [setPresentationMode]);
+  const onExitPresentation = useCallback(() => setPresentationMode(false), [setPresentationMode]);
+  const onNavigateFromHeader = useCallback((t: string) => navigateTab(t as Tab), [navigateTab]);
+
+  const sharedNav = useMemo(() => ({
+    activeTenantName, tab, navigateTab, filteredTabs, allowedTabs,
+    visibleCategories, favoriteTabItems, customShortcutItems, recentTabItems,
+    recentCollapsed, onToggleRecentCollapsed,
+    favoriteTabs, onToggleFavorite: toggleFavorite,
+    resolvedShortcuts, editingShortcuts, onToggleEditingShortcuts,
+    showAddShortcut, onToggleShowAddShortcut,
+    availableForShortcut, onAddShortcut: addShortcut,
+    onRemoveShortcut: removeShortcut, onMoveShortcut: moveShortcut,
+    clearedDemoTabs, alerts,
+  }), [
+    activeTenantName, tab, navigateTab, filteredTabs, allowedTabs,
+    visibleCategories, favoriteTabItems, customShortcutItems, recentTabItems,
+    recentCollapsed, onToggleRecentCollapsed,
+    favoriteTabs, toggleFavorite,
+    resolvedShortcuts, editingShortcuts, onToggleEditingShortcuts,
+    showAddShortcut, onToggleShowAddShortcut,
+    availableForShortcut, addShortcut, removeShortcut, moveShortcut,
+    clearedDemoTabs, alerts,
+  ]);
+
+  const drawerNav = useMemo(() => ({
+    open: mobileNavOpen,
+    onClose: onCloseMobileNav,
+    sidebarSearch, onSidebarSearchChange: setSidebarSearch,
+    demoDataModules: DEMO_DATA_MODULES,
+    onOpenCierreDiario,
+    onLogout: handleLogout,
+  }), [mobileNavOpen, onCloseMobileNav, sidebarSearch, setSidebarSearch, onOpenCierreDiario, handleLogout]);
+
+  const sidebarNav = useMemo(() => ({
+    focusMode: effectiveFocusMode, presentationMode, isSuperAdminImpersonating,
+    activeTenantLogo, activeTenantSlug, userName, userRole, openAccordionCategories,
+    onToggleAccordion,
+    sidebarFlyout, onSidebarFlyoutChange: setSidebarFlyout, flyoutTimerRef,
+    hiddenTabs, allTabs: ALL_TABS,
+  }), [
+    effectiveFocusMode, presentationMode, isSuperAdminImpersonating,
+    activeTenantLogo, activeTenantSlug, userName, userRole, openAccordionCategories,
+    onToggleAccordion, sidebarFlyout, setSidebarFlyout, flyoutTimerRef, hiddenTabs,
+  ]);
+
   if (!authReady) {
     return <LoadingState variant="fullscreen" message="" />;
   }
 
   return (
-    <TrialExpiredGuard>
+    <TrialExpiredGuard activeTab={tab}>
     <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-[var(--surface-canvas)]" data-admin-shell="true" data-dark-fallback>
+      {/* B3: aviso "Último acceso" al entrar (lee sessionStorage del login) */}
+      <LastLoginToast />
       {/* ADR-084: cuenta regresiva del trial — visible solo si plan=free + trial activo */}
       <TrialCountdownBannerLoader />
 
@@ -288,51 +367,26 @@ function AdminPage() {
       {/* AdminTenantBar removido — el chip tenant ahora vive dentro del
           AdminTopHeader al lado de la busqueda global (mas compacto). */}
 
-      <AdminNavigation
-        shared={{
-          activeTenantName, tab, navigateTab, filteredTabs, allowedTabs,
-          visibleCategories, favoriteTabItems, customShortcutItems, recentTabItems,
-          recentCollapsed, onToggleRecentCollapsed: () => setRecentCollapsed(c => !c),
-          favoriteTabs, onToggleFavorite: toggleFavorite,
-          resolvedShortcuts, editingShortcuts,
-          onToggleEditingShortcuts: () => setEditingShortcuts(!editingShortcuts),
-          showAddShortcut, onToggleShowAddShortcut: () => setShowAddShortcut(!showAddShortcut),
-          availableForShortcut, onAddShortcut: addShortcut,
-          onRemoveShortcut: removeShortcut, onMoveShortcut: moveShortcut,
-          clearedDemoTabs, alerts,
-        }}
-        drawer={{
-          open: mobileNavOpen,
-          onClose: () => setMobileNavOpen(false),
-          selectedCategory, onSelectCategory: setSelectedCategory,
-          categoryDropdownOpen,
-          onToggleCategoryDropdown: () => setCategoryDropdownOpen(!categoryDropdownOpen),
-          demoDataModules: DEMO_DATA_MODULES,
-          onOpenCierreDiario: () => setShowCierreDiario(true),
-          onLogout: handleLogout,
-        }}
-        sidebar={{
-          focusMode: effectiveFocusMode, presentationMode, isSuperAdminImpersonating,
-          activeTenantLogo, activeTenantSlug, userName, userRole, openAccordionCategories,
-          onToggleAccordion: (categoryId) =>
-            setOpenAccordionCategories(prev =>
-              prev.has(categoryId) ? new Set() : new Set([categoryId])
-            ),
-          sidebarFlyout, onSidebarFlyoutChange: setSidebarFlyout, flyoutTimerRef,
-          hiddenTabs, sidebarSearch, allTabs: ALL_TABS,
-        }}
-      />
+      <AdminNavigation shared={sharedNav} drawer={drawerNav} sidebar={sidebarNav} />
 
       <div
         data-dark-fallback
         className={cn(
         "flex flex-col min-h-screen transition-[margin] duration-[var(--dur-base)]",
-        presentationMode ? "sm:ml-0"
-          : focusMode ? "sm:ml-16"
-          : sidebarCompact ? "sm:ml-[60px]"
+        /* El margin debe alinearse con el breakpoint REAL del sidebar fixed
+           (`hidden md:flex` → aparece en md/768px). Antes usaba `sm:` (640px),
+           reservando 260px de gutter fantasma en el rango 640–767px donde el
+           sidebar aún no existe → contenido empujado y aplastado en tablets. */
+        presentationMode ? "md:ml-0"
+          : focusMode ? "md:ml-16"
+          : sidebarCompact ? "md:ml-[60px]"
           /* configMode: sidebar (260px) + config panel (400px) = 660px */
-          : sidebarConfigMode ? "sm:ml-[660px]"
-          : "sm:ml-[260px]",
+          : sidebarConfigMode ? "md:ml-[660px]"
+          /* Un solo valor: el sidebar ya no se auto-compacta por ancho (ver
+             AdminSidebar), así que entre 768 y 1023px el margen coincide con
+             sus 260px reales. Antes reservaba 260px para un sidebar que ahí
+             medía 60px → 200px de hueco muerto y el contenido descentrado. */
+          : "md:ml-[260px]",
       )}>
         {/* ADR-087: alertas operativas — adentro del shell para respetar
             el margin del sidebar fixed (260px / 60px compact / 660px config).
@@ -353,22 +407,18 @@ function AdminPage() {
           userName={userName}
           userRole={userRole}
           tenantSlug={activeTenantSlug}
-          tenantName={activeTenantName}
-          tenantLogoUrl={activeTenantLogo}
-          onOpenMobileNav={() => setMobileNavOpen(true)}
-          onOpenSearch={() => setSearchOpen(true)}
-          onOpenCierreDiario={() => setShowCierreDiario(true)}
+          onOpenMobileNav={onOpenMobileNav}
+          onOpenSearch={onOpenSearch}
+          onOpenCierreDiario={onOpenCierreDiario}
           onToggleFocus={toggleFocusMode}
-          onTogglePresentation={() => setPresentationMode(true)}
+          onTogglePresentation={onTogglePresentationOn}
           onToggleTheme={toggleTheme}
           onSetTheme={setTheme}
-          onNavigate={(t) => navigateTab(t as Tab)}
+          onNavigate={onNavigateFromHeader}
           onLogout={handleLogout}
         />
 
         {/* Breadcrumb removed — already shown in module headers */}
-
-        <AdminCommandPalette items={commandItems} />
 
         <AdminGlobalModals
           clearData={{
@@ -415,7 +465,7 @@ function AdminPage() {
           focusMode={focusMode}
           presentationMode={presentationMode}
           onToggleFocus={toggleFocusMode}
-          onExitPresentation={() => setPresentationMode(false)}
+          onExitPresentation={onExitPresentation}
           showShortcuts={showShortcuts}
           onCloseShortcuts={() => setShowShortcuts(false)}
           userRole={userRole}
@@ -423,13 +473,18 @@ function AdminPage() {
           filteredTabs={filteredTabs}
           alerts={alerts}
           navigateTab={navigateTab}
-          onOpenMobileNav={() => setMobileNavOpen(true)}
+          onOpenMobileNav={onOpenMobileNav}
           showOnboarding={showOnboarding}
           setShowOnboarding={setShowOnboarding}
           activeTenantSlug={activeTenantSlug}
           onboarding={onboarding}
         />
       </div>
+
+      {/* Aviso amable antes de cerrar por inactividad (30 min). Se re-arma con
+          la actividad del usuario y con el "modo mantener sesión activa" (switch
+          en Ajustes · Seguridad), así que con ese modo ON no aparece. */}
+      <SessionExpiryGuard panel="admin" onExpire={handleLogout} onLogout={handleLogout} />
     </div>
     </TrialExpiredGuard>
   );

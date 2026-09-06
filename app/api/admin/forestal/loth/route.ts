@@ -7,6 +7,7 @@ import { ForestPlanDB } from "@/lib/db/forest-plan.db";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
+import { lothErrorResponse, lothValidationResponse } from "@/lib/forestal/loth-api-errors";
 
 /**
  * /api/admin/forestal/loth — Libro de Operaciones Títulos Habilitantes (ADR-125)
@@ -50,6 +51,8 @@ const createSchema = z.object({
   discarded: z.boolean().optional(),
   consumoInterno: z.boolean().optional(),
   observations: z.string().trim().max(1000).nullable().optional(),
+  // T8: motivo para talar un árbol bajo el DMC de su especie (queda en el libro).
+  justificacionDmc: z.string().trim().max(500).nullable().optional(),
 
   correctsLineNo: z.coerce.number().int().positive().nullable().optional(),
   correctionNote: z.string().trim().max(500).nullable().optional(),
@@ -97,6 +100,10 @@ export const GET = withApiHandler("forestal-loth-get", async (req: NextRequest) 
       return NextResponse.json({ items: await ForestLothDB.despachablesResueltos(auth.tenantId) });
     }
 
+    if (url.searchParams.get("trozaCodes") === "1") {
+      return NextResponse.json({ codes: await ForestLothDB.trozaCodesRegistrados(auth.tenantId) });
+    }
+
     const availableFor = url.searchParams.get("available");
     if (availableFor && (LOTH_SECTIONS as readonly string[]).includes(availableFor)) {
       const items = await ForestLothDB.availableSource(
@@ -105,6 +112,12 @@ export const GET = withApiHandler("forestal-loth-get", async (req: NextRequest) 
         url.searchParams.get("planId") ?? undefined,
       );
       return NextResponse.json({ items });
+    }
+
+    // Cadena de custodia de un árbol/troza por su código (drill-in desde la tabla).
+    const traceCode = url.searchParams.get("trace");
+    if (traceCode) {
+      return NextResponse.json({ trace: await ForestLothDB.traceByCode(auth.tenantId, traceCode) });
     }
 
     const sectionParam = url.searchParams.get("section");
@@ -146,12 +159,7 @@ export const POST = withApiHandler("forestal-loth-post", async (req: NextRequest
   }
 
   const parsed = createSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "validation_error", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
+  if (!parsed.success) return lothValidationResponse(parsed.error);
 
   try {
     const entry = await ForestLothDB.create(auth.tenantId, {
@@ -167,7 +175,7 @@ export const POST = withApiHandler("forestal-loth-post", async (req: NextRequest
     }
     return NextResponse.json({ entry }, { status: 201 });
   } catch (err) {
-    logger.error("[loth.POST] failed", { error: String(err), tenantId: auth.tenantId });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    // Una invariante T1–T5 violada es dato del operador (422), no fallo del server.
+    return lothErrorResponse(err, "loth.POST", auth.tenantId);
   }
 });

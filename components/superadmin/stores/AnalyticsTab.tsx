@@ -292,7 +292,11 @@ export function AnalyticsTab({ stores }: AnalyticsTabProps) {
     const peak = { dow: 0, hour: 0, count: 0 };
     for (let d = 0; d < 7; d++) {
       for (let h = 0; h < 24; h++) {
-        if (grid[d][h] > peak.count) peak.count = grid[d][h], (peak.dow = d), (peak.hour = h);
+        if (grid[d][h] > peak.count) {
+          peak.count = grid[d][h];
+          peak.dow = d;
+          peak.hour = h;
+        }
       }
     }
     return { grid, max, peak };
@@ -765,7 +769,7 @@ function KpiCard({
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
     danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
     neutral: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
   }[tone];
@@ -809,7 +813,7 @@ function ChartCard({
   const iconBg = {
     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
     success: "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
-    warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+    warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
   }[iconTone];
   return (
     <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">

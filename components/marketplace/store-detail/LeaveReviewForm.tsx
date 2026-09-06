@@ -229,7 +229,7 @@ export default function LeaveReviewForm({ storeSlug, storeName }: Props) {
           </div>
         ) : success ? (
           <div className="flex flex-col items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-10 text-center">
-            <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <CheckCircle2 className="h-7 w-7" strokeWidth={2} aria-hidden />
             </span>
             <p className="text-lg font-black text-[var(--text-primary)]">¡Gracias por tu opinión!</p>
@@ -240,7 +240,7 @@ export default function LeaveReviewForm({ storeSlug, storeName }: Props) {
         ) : !data?.loggedIn ? (
           /* No logueado */
           <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-10 text-center">
-            <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <LogIn className="h-7 w-7" strokeWidth={2} aria-hidden />
             </span>
             <div>
@@ -261,7 +261,7 @@ export default function LeaveReviewForm({ storeSlug, storeName }: Props) {
         ) : data.orders.length === 0 ? (
           /* Logueado pero sin compra elegible */
           <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-10 text-center">
-            <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <ShoppingBag className="h-7 w-7" strokeWidth={2} aria-hidden />
             </span>
             <div>
@@ -376,7 +376,7 @@ export default function LeaveReviewForm({ storeSlug, storeName }: Props) {
                         className={cn(
                           "rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
                           active
-                            ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                            ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                             : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
                         )}
                       >

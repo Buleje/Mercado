@@ -6,13 +6,13 @@ import { ShoppingCart, Star, Package, Truck } from "@buleje/design-system/icons"
 
 const ACTIVITIES = [
   { Icon: ShoppingCart, color: "var(--accent)", msg: "Ana M. de Yarinacocha acaba de pedir Arroz Costeño 5 kg" },
-  { Icon: Star, color: "#f59e0b", msg: 'Rosa A. reseñó con ⭐⭐⭐⭐⭐: "¡Llegó rapidísimo!"' },
+  { Icon: Star, color: "#ff6b5b", msg: 'Rosa A. reseñó con ⭐⭐⭐⭐⭐: "¡Llegó rapidísimo!"' },
   { Icon: ShoppingCart, color: "var(--accent)", msg: "Luis T. agregó Aceite Primor 1L al carrito" },
   { Icon: Truck, color: "#10b981", msg: "Pedido #1852 está en camino" },
   { Icon: ShoppingCart, color: "var(--accent)", msg: "Carmen V. realizó su pedido por WhatsApp" },
   { Icon: Package, color: "#10b981", msg: "14 pedidos entregados hoy" },
   { Icon: ShoppingCart, color: "var(--accent)", msg: "Pedro G. pidió 3 Gaseosas Inca Kola 1.5 L" },
-  { Icon: Star, color: "#f59e0b", msg: "Marco R. reseñó con ⭐⭐⭐⭐⭐ su último pedido" },
+  { Icon: Star, color: "#ff6b5b", msg: "Marco R. reseñó con ⭐⭐⭐⭐⭐ su último pedido" },
   { Icon: ShoppingCart, color: "var(--accent)", msg: "María P. acaba de comprar Pan de molde + Mantequilla" },
   { Icon: Truck, color: "#10b981", msg: "Entrega completada en Jr. Ucayali 340 ✓" },
 ];

@@ -9,12 +9,12 @@
  */
 
 import {
-  AreaChart, Area, BarChart, Bar, ComposedChart, Line,
+  Area, BarChart, Bar, ComposedChart,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell,
 } from "recharts";
 import {
   TrendingUp, Package, ShoppingCart, CreditCard, Target,
-  AlertTriangle, Users, Truck, Layers, BarChart3,
+  AlertTriangle, Truck, Layers, BarChart3,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DashboardData } from "./InicioDashboard";
@@ -192,7 +192,7 @@ export default function InicioCharts({ data }: { data: DashboardData }) {
                       <div
                         className={cn(
                           "h-full rounded-full",
-                          p.diasRestantes < 7 ? "bg-[var(--data-error-500)]" : p.diasRestantes < 14 ? "bg-[var(--data-warning-500)]" : "bg-[var(--accent-soft)]",
+                          p.diasRestantes < 7 ? "bg-[var(--data-error-500)]" : p.diasRestantes < 14 ? "bg-[var(--data-warning-500)]" : "bg-primary/10",
                         )}
                         style={{ width: `${Math.min((p.stock / Math.max(p.mínimo * 3, 1)) * 100, 100)}%` }}
                       />

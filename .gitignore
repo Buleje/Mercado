@@ -131,8 +131,20 @@ build-output.txt
 /*.png
 /*.jpg
 /*.jpeg
+/*.pdf
+# Scratch de sesión en la raíz (mediciones, snaps sueltos, one-liners de debug)
+/_*.mjs
+/.*.mjs
+/snap-*.mjs
 # Playwright MCP working directory (exploration artifacts)
 /.playwright-mcp/
+# Snapshots de accesibilidad volcados a mano durante debug con Playwright
+/snap*.md
+# Directorios de scratch de sesión (fixtures de subida, corridas de prueba)
+/.scratch-*/
+# Scripts de un solo uso: se escriben para una corrida y no se vuelven a correr
+/*.tmp.ts
+/scripts/tmp-*.ts
 # Vitest JSON reports (local per-session debugging)
 /vitest-result*.json
 /vitest-full.json
@@ -168,20 +180,13 @@ lint-compact.txt
 lint-output.txt
 tsc-errors.log
 check-tenants.sql
-reports/smoke-test/
-reports/footer-redesign/
-reports/baseline/2026-04-17-ds-sprint-c/lint-design-tokens-pre.txt
-
-# Visual verify artifacts (transient — solo baselines se commitean)
-reports/visual-verify/
-reports/a11y/
-reports/browser-tour/
-# Audit / snapshot outputs from scripts/audit-*.mjs and scripts/snap-*.mjs.
-# Solo `reports/visual-baselines/` se versiona (referencia para regresiones).
-reports/audit-final/
-reports/i18n-audit/
-reports/sidebar-buleje/
-reports/forecasting/
+# reports/ = artefactos transitorios de verificación (screenshots, audits, snaps de
+# scripts/visual-verify-*.mjs y scripts/audit-*.mjs). Se regeneran corriendo el script;
+# no se versionan. La única excepción son los baselines de regresión visual.
+# Lo ya trackeado antes de esta regla sigue trackeado (git ignora .gitignore para el índice).
+reports/**
+!reports/visual-baselines/
+!reports/visual-baselines/**
 
 # Claude Code session metrics — JSON regenerado en cada agente run.
 .claude/agent-metrics.json
@@ -225,3 +230,39 @@ docs/security/vercel-env-backups/
 /.next.bak*
 # .claude anidados dentro de app/ no son del plugin root (cruft de agentes).
 app/**/.claude/
+scripts/.backup-base64-images.json
+scripts/dev-helpers/_measure-nav-heights.mjs
+
+# ── Artefactos del sandbox / accidentes (2026-06-24) ─────────────────────────
+# Mounts read-only que el sandbox de Claude Code deja en el working tree (no se
+# pueden borrar desde dentro del sandbox). Se ignoran para que no se commiteen:
+#  • ${CLAUDE_PROJECT_DIR}/ = dir con nombre de variable sin expandir (.env→/dev/null)
+#  • dotfiles 0-byte en la raíz = bind-mounts (los reales viven en $HOME, no acá)
+${CLAUDE_PROJECT_DIR}/
+/.bashrc
+/.bash_profile
+/.zshrc
+/.zprofile
+/.profile
+/.ripgreprc
+/.gitconfig
+/.idea
+# Backup de prune de settings (.bak-prune no lo cubría /.claude/*.bak).
+/.claude/*.bak-*
+
+# credenciales temporales IBKR (se shredean tras el setup)
+.ibkr-stdin
+.ibkr-creds.env
+
+# log runtime de qdrant local
+.qdrant-runtime.log
+
+# attachments de vitest browser mode (diffs de VRT fallidos)
+.vitest-attachments/
+
+# Config del agente de sync de escritorio (ADR-307): contiene la API key
+tools/buleje-sync/buleje-sync.config.json
+.tmp-qa/
+
+# Capturas del hook post-edit-ui-screenshot (regenerables, ~1 GB/mes)
+reports/visual-verify/

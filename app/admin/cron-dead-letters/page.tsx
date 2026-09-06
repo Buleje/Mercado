@@ -16,6 +16,7 @@ import {
 import AdminTabShell from "@/app/admin/_components/_shared/AdminTabShell";
 import AdminEmptyState from "@/app/admin/_components/_shared/AdminEmptyState";
 import { ADMIN_TOKENS } from "@/app/admin/_components/_shared/admin-tokens";
+import { DataTable } from "@buleje/design-system";
 
 interface DeadLetter {
   id: string;
@@ -202,7 +203,7 @@ export default function CronDeadLettersPage() {
               <h3 className={ADMIN_TOKENS.headingH3}>Salud de Crons (24h)</h3>
             </header>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <DataTable className="w-full text-left text-sm">
                 <thead className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60 text-xs font-semibold uppercase text-[var(--text-tertiary)]">
                   <tr>
                     <th className="px-4 py-3">Job</th>
@@ -239,7 +240,7 @@ export default function CronDeadLettersPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           </section>
         )}
@@ -305,7 +306,7 @@ export default function CronDeadLettersPage() {
           ) : (
             <div className={`overflow-hidden ${ADMIN_TOKENS.card}`}>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
+                <DataTable className="w-full text-left text-sm">
                   <thead className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60 text-xs font-semibold uppercase text-[var(--text-tertiary)]">
                     <tr>
                       <th className="px-4 py-3">Job</th>
@@ -344,7 +345,7 @@ export default function CronDeadLettersPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             </div>
           )}

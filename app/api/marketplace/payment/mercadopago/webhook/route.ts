@@ -261,7 +261,7 @@ async function mpWebhookHandler(req: NextRequest): Promise<NextResponse> {
             const store = await MarketplaceStoresDB.getBySlug(storeSlug);
             if (store) {
               const tenant = await prisma.tenant.findUnique({
-                where: { slug: store.tenantId },
+                where: { id: store.tenantId },
                 select: { ownerPhone: true },
               });
               if (tenant?.ownerPhone) {

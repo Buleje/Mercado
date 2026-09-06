@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import QRCode from "qrcode";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 import {
   X,
   Plus,
@@ -26,6 +27,7 @@ import {
   Volume2,
   VolumeX,
 } from "@buleje/design-system/icons";
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import POSCustomerSearch from "./POSCustomerSearch";
 import POSSplitPayment from "./POSSplitPayment";
@@ -221,9 +223,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
       {/* Lista */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <div className="flex items-center justify-center h-48 text-[var(--text-tertiary)] dark:text-muted">
-            <Loader2 className="h-7 w-7 animate-spin" />
-          </div>
+          <LoadingState message={null} size="lg" className="h-48 py-0" />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-[var(--text-tertiary)] dark:text-muted gap-2">
             <User className="h-10 w-10 opacity-40" />
@@ -253,7 +253,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {c.categoria && (
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 dark:bg-primary/15 text-primary">
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 dark:bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                       {c.categoria}
                     </span>
                   )}
@@ -514,7 +514,7 @@ export default function POSPaymentModal({
       variant="pos"
       hideCloseButton
     >
-      <div className="relative flex flex-col h-full bg-gradient-to-br from-[var(--surface-sunken)] to-[var(--surface-raised)] dark:from-surface dark:to-[var(--surface-raised)]">
+      <div className="relative flex flex-col h-full bg-linear-to-br from-[var(--surface-sunken)] to-[var(--surface-raised)] dark:from-surface dark:to-[var(--surface-raised)]">
         {/* Customer list overlay */}
         {showCustomerList && (
           <CustomerListPanel
@@ -532,7 +532,7 @@ export default function POSPaymentModal({
           Fondo surface elegante + primary teal para el acento + glow
           radial sutil del primary. Total display gigante intacto.
         */}
-        <div className="shrink-0 relative overflow-hidden border-b border-[var(--rule-base)] bg-gradient-to-b from-[var(--surface-raised)] to-[var(--surface-sunken)] dark:from-[var(--surface-raised)] dark:to-surface">
+        <div className="shrink-0 relative overflow-hidden border-b border-[var(--rule-base)] bg-linear-to-b from-[var(--surface-raised)] to-[var(--surface-sunken)] dark:from-[var(--surface-raised)] dark:to-surface">
           {/* Glow decorativo de fondo (sutil, primary del proyecto) */}
           <div className="absolute inset-0 pointer-events-none opacity-60 bg-[radial-gradient(ellipse_at_top_left,rgba(0, 160, 160,0.10),transparent_60%)] dark:bg-[radial-gradient(ellipse_at_top_left,rgba(20, 194, 194,0.10),transparent_60%)]" />
 
@@ -549,7 +549,7 @@ export default function POSPaymentModal({
 
             {/* Centro: label + total + chip items */}
             <div className="flex-1 min-w-0 flex flex-col">
-              <p className="text-[10px] font-extrabold text-primary uppercase tracking-[0.18em] mb-0.5">
+              <p className="text-[length:var(--ts-2xs)] font-extrabold text-primary uppercase tracking-[var(--tracking-eyebrow)] mb-0.5">
                 Total a cobrar
               </p>
               <div className="flex items-baseline gap-3 flex-wrap">
@@ -557,7 +557,7 @@ export default function POSPaymentModal({
                   {fmt(total)}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20 shadow-sm">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold border border-primary/20 shadow-sm">
                     <Receipt className="h-3.5 w-3.5" />
                     {cartCount} {cartCount === 1 ? "articulo" : "articulos"}
                   </span>
@@ -582,10 +582,10 @@ export default function POSPaymentModal({
                   if (uniq.length === 0) return null;
                   return (
                     <div className="hidden lg:flex items-center gap-1">
-                      <span className="text-[10px] text-[var(--text-tertiary)] font-bold uppercase tracking-wide">Redondear:</span>
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold uppercase tracking-wide">Redondear:</span>
                       {uniq.map(o => (
                         <button key={o.val} onClick={() => { setDiscountValue(String((total - o.val).toFixed(2))); setDiscountMode("fixed"); setShowDiscount(true); }}
-                          className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-[var(--surface-raised)] border border-[var(--rule-soft)] hover:bg-primary hover:text-white hover:border-primary shadow-sm transition-colors">
+                          className="px-2 py-0.5 rounded-md text-xs font-extrabold bg-[var(--surface-raised)] border border-[var(--rule-soft)] hover:bg-primary hover:text-white hover:border-primary shadow-sm transition-colors">
                           S/{o.val}
                         </button>
                       ))}
@@ -621,10 +621,10 @@ export default function POSPaymentModal({
             {/* COL 1 — Card Pago */}
             <div className="lg:col-span-5 min-w-0 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b border-[var(--rule-soft)] flex items-center gap-2.5">
-                <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <Banknote className="h-4 w-4" />
                 </span>
-                <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Pago</h3>
+                <CardTitle as="h3" className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Pago</CardTitle>
               </div>
               <div className="px-4 py-3 space-y-3 min-w-0">
 
@@ -710,7 +710,7 @@ export default function POSPaymentModal({
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors",
                         Number(discountValue) === q
-                          ? "border-primary bg-primary/10 text-primary"
+                          ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100"
                       )}
                     >
@@ -779,7 +779,7 @@ export default function POSPaymentModal({
                           className={cn(
                             "group relative flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border-2 text-xs font-extrabold transition-all overflow-hidden",
                             selected
-                              ? "border-primary bg-primary/10 text-primary shadow-[0_4px_12px_-4px_rgba(0, 160, 160,0.4)]"
+                              ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shadow-md"
                               : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:border-primary/40 hover:bg-[var(--surface-raised)] hover:-translate-y-0.5"
                           )}
                         >
@@ -787,7 +787,7 @@ export default function POSPaymentModal({
                             "h-9 w-9 rounded-full flex items-center justify-center transition-colors",
                             selected
                               ? "bg-primary text-white"
-                              : "bg-[var(--surface-raised)] text-[var(--text-secondary)] group-hover:bg-primary/10 group-hover:text-primary",
+                              : "bg-[var(--surface-raised)] text-[var(--text-secondary)] group-hover:bg-primary/10 group-hover:text-[var(--accent-ink)] dark:text-[var(--accent)]",
                           )}>
                             <m.icon className="h-4 w-4" />
                           </span>
@@ -984,7 +984,7 @@ export default function POSPaymentModal({
                             className={cn(
                               "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
                               paymentLines[0].amount === a
-                                ? "border-primary bg-primary/10 text-primary"
+                                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                                 : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                             )}
                           >
@@ -996,7 +996,7 @@ export default function POSPaymentModal({
                         className={cn(
                           "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
                           paymentLines[0].amount === total
-                            ? "border-primary bg-primary/10 text-primary"
+                            ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                             : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                         )}
                       >
@@ -1118,8 +1118,8 @@ export default function POSPaymentModal({
                 <span className="h-8 w-8 rounded-full bg-[var(--data-success-500)]/15 flex items-center justify-center text-[var(--data-success-500)]">
                   <User className="h-4 w-4" />
                 </span>
-                <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Cliente</h3>
-                {isFiado && <span className="ml-auto text-[10px] font-extrabold text-[var(--data-error-500)] uppercase">Requerido</span>}
+                <CardTitle as="h3" className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Cliente</CardTitle>
+                {isFiado && <span className="ml-auto text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-error-500)] uppercase">Requerido</span>}
               </div>
               <div className="px-4 py-3 space-y-3 min-w-0">
 
@@ -1148,7 +1148,7 @@ export default function POSPaymentModal({
                 </button>
                 <button
                   onClick={() => setShowCustomerList(true)}
-                  className="text-sm font-semibold text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+                  className="text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
                 >
                   <ClipboardList className="h-4 w-4" />
                   Ver clientes
@@ -1170,10 +1170,7 @@ export default function POSPaymentModal({
                 </div>
 
                 <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
-                      Nombre completo
-                    </label>
+                  <Field label="Nombre completo" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
                     <input
                       type="text"
                       value={newCustName}
@@ -1181,12 +1178,12 @@ export default function POSPaymentModal({
                       placeholder="Ej: Maria Rodriguez"
                       className="w-full px-4 py-3 text-base border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] transition-all"
                     />
-                  </div>
-                  <div>
-                    <label className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
-                      Celular (9 dígitos)
-                    </label>
+                  </Field>
+                  <Field label="Celular (9 dígitos)" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
+                    {(id) => (
+                    <>
                     <input
+                      id={id}
                       type="tel"
                       value={newCustPhone}
                       onChange={e => setNewCustPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
@@ -1196,7 +1193,9 @@ export default function POSPaymentModal({
                     {newCustPhone.length > 0 && newCustPhone.length < 9 && (
                       <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Faltan {9 - newCustPhone.length} dígitos</p>
                     )}
-                  </div>
+                    </>
+                    )}
+                  </Field>
                 </div>
 
                 <div className="flex gap-3 pt-1">
@@ -1268,7 +1267,7 @@ export default function POSPaymentModal({
                 <span className="h-8 w-8 rounded-full bg-[var(--data-warning-500)]/15 flex items-center justify-center text-[var(--data-warning-500)]">
                   <Receipt className="h-4 w-4" />
                 </span>
-                <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Comprobante</h3>
+                <CardTitle as="h3" className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Comprobante</CardTitle>
               </div>
               <div className="px-4 py-3 space-y-3 min-w-0">
 
@@ -1306,7 +1305,7 @@ export default function POSPaymentModal({
                       className={cn(
                         "py-2 rounded-lg text-xs font-semibold border transition-all truncate",
                         comprobanteTipo === tipo
-                          ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/20"
+                          ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-primary/20"
                           : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 hover:text-[var(--text-primary)]"
                       )}
                     >
@@ -1380,8 +1379,8 @@ export default function POSPaymentModal({
             className={cn(
               "group relative w-full py-4 rounded-2xl font-extrabold text-base transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-between px-6 text-white overflow-hidden",
               isFiado
-                ? "bg-[var(--data-warning-500)] hover:brightness-110 shadow-[0_8px_24px_-8px_var(--data-warning-500)]"
-                : "bg-gradient-to-r from-primary to-[var(--color-primary-dark)] hover:brightness-110 shadow-[0_8px_24px_-8px_rgba(0, 160, 160,0.6)]"
+                ? "bg-[var(--data-warning-500)] hover:brightness-110 shadow-lg"
+                : "bg-linear-to-r from-primary to-[var(--color-primary-dark)] hover:brightness-110 shadow-lg"
             )}
           >
             <span className="flex items-center gap-2.5">

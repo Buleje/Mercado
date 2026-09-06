@@ -11,6 +11,7 @@ vi.mock("@/lib/logger", () => ({
 
 const cacheMap = new Map<string, unknown>();
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   cacheStore: {
     get: vi.fn((key: string) => cacheMap.get(key) ?? null),
     set: vi.fn((key: string, value: unknown) => {

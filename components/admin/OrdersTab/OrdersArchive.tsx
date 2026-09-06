@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Search, MapPin, Trash2 } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
+import { activateProps } from "@/components/admin/shared/a11y";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { cn } from "@/lib/utils";
 import type { DbOrder } from "@/lib/jsondb";
@@ -74,7 +76,7 @@ export function OrdersArchive({
             <>
               {/* Desktop table */}
               <div className="hidden sm:block rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
-                <table className="w-full text-sm">
+                <DataTable className="w-full text-sm">
                   <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
                     <tr>
                       <th className="text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
@@ -110,7 +112,7 @@ export function OrdersArchive({
                               href={googleMapsUrl(o.customer.location)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-[var(--accent-soft)] transition-colors"
+                              className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
                               title="Ver en Maps"
                             >
                               <MapPin className="h-4 w-4" />
@@ -127,7 +129,7 @@ export function OrdersArchive({
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
 
               {/* Mobile cards */}
@@ -136,7 +138,7 @@ export function OrdersArchive({
                   <div
                     key={o.id}
                     className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
-                    onClick={() => { onSelectOrder(o); onClose(); }}
+                    {...activateProps(() => { onSelectOrder(o); onClose(); })}
                   >
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 min-w-0">
@@ -159,7 +161,7 @@ export function OrdersArchive({
                         href={googleMapsUrl(o.customer.location)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 transition-colors"
                       >
                         <MapPin className="h-4 w-4" /> Maps
                       </a>

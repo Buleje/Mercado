@@ -94,7 +94,7 @@ export default function OrderTimeline({
                     isCancelled
                       ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30"
                       : isCompleted
-                        ? "border-[var(--data-success-500)]/30 bg-[var(--accent-soft)] text-white"
+                        ? "border-[var(--data-success-500)]/30 bg-primary/10 text-white"
                         : isCurrent
                           ? "border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)]"
                           : "border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
@@ -145,7 +145,7 @@ export default function OrderTimeline({
                       isCancelled
                         ? "bg-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30"
                         : isCompleted
-                          ? "bg-[var(--accent-soft)]"
+                          ? "bg-primary/10"
                           : "bg-gray-200 dark:bg-gray-700"
                     )}
                     style={{

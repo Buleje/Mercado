@@ -11,7 +11,7 @@
  * ver docs/refactor-giant-files-plan.md).
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ALL_TABS } from "../_lib/tab-data";
 import type { Tab } from "../_lib/tabs.types";
 import type { TabCategory } from "../_lib/tab-categories";
@@ -24,7 +24,6 @@ type Params = {
   userRole: string;
   savedRolePerms: Record<string, string[]> | null;
   hiddenTabs: Set<Tab>;
-  selectedCategory: string | null;
   visibleCategories: TabCategory[];
   sidebarSearch: string;
   favoriteTabs: Set<Tab>;
@@ -38,8 +37,6 @@ export function useAdminTabsDerived(params: Params) {
     userRole,
     savedRolePerms,
     hiddenTabs,
-    selectedCategory,
-    visibleCategories,
     sidebarSearch,
     favoriteTabs,
     recentTabs,
@@ -53,6 +50,15 @@ export function useAdminTabsDerived(params: Params) {
   // automáticamente — el sidebar se actualiza sin recargar.
   const { definition: planDefinition } = usePlanTier();
   const planUnlockedTabs = planDefinition.unlockedTabs;
+
+  // Override DEV-ONLY (localStorage admin_mode_dev_unlock="1"): bypasea el plan
+  // gate para que el equipo vea TODOS los módulos al verificar Modo Avanzado.
+  // Nunca afecta a un tenant que no haya puesto la key manualmente. Requiere
+  // reload para cambiar (alineado con useAdminMode).
+  const [devUnlock] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem("admin_mode_dev_unlock") === "1"; } catch { return false; }
+  });
 
   // ── Plantilla del superadmin (overlay) ──────────────────────────────────
   // Sobreescribe labels y filtra módulos marcados como no-visibles.
@@ -104,10 +110,11 @@ export function useAdminTabsDerived(params: Params) {
     // aparecerían NUNCA porque no están en ningún unlockedTabs de planes
     // genéricos. El gating real lo hace `enabledSpecModuleIds` abajo.
     return baseTabs.filter((tab) => {
+      if (devUnlock) return true; // override dev-only: bypasea el plan gate
       if (SPEC_GATED_MODULE_IDS.has(tab)) return true;
       return planUnlockedTabs.has(tab);
     });
-  }, [userRole, savedRolePerms, planUnlockedTabs]);
+  }, [userRole, savedRolePerms, planUnlockedTabs, devUnlock]);
 
   // Set base de módulos VISIBLES del negocio (rol + plan + ocultos + plantilla +
   // specs), SIN el narrowing por categoría/búsqueda del sidebar. Es "los módulos
@@ -127,12 +134,9 @@ export function useAdminTabsDerived(params: Params) {
   const filteredTabs = useMemo(() => {
     let result = visibleTabs;
 
-    // Filtra por categoría seleccionada en el sidebar
-    if (selectedCategory) {
-      const categoryTabs =
-        visibleCategories.find(c => c.id === selectedCategory)?.tabs ?? [];
-      result = result.filter(t => categoryTabs.includes(t.id));
-    }
+    // (El filtro por categoría se retiró junto con el selector "Todas las
+    // categorías" del drawer: era el único que lo seteaba, así que quedaba
+    // siempre en null y el filtro no hacía nada. Ahora se filtra por búsqueda.)
 
     // Fuzzy search en el sidebar
     if (sidebarSearch.trim()) {
@@ -140,7 +144,7 @@ export function useAdminTabsDerived(params: Params) {
     }
 
     return result;
-  }, [visibleTabs, selectedCategory, visibleCategories, sidebarSearch, fuzzyMatch]);
+  }, [visibleTabs, sidebarSearch, fuzzyMatch]);
 
   const favoriteTabItems = useMemo(
     () =>

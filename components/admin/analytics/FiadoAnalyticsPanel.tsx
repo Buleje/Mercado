@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   PieChart,
@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { RefreshCw, AlertTriangle, TrendingDown, TrendingUp, DollarSign } from "@buleje/design-system/icons";
+import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -166,7 +167,7 @@ export default function FiadoAnalyticsPanel() {
     // Donut by aging
     const buckets = [
       { rango: "0-7 dias", monto: 0, count: 0, color: "var(--accent)" },
-      { rango: "8-30 dias", monto: 0, count: 0, color: "#f97316" },
+      { rango: "8-30 dias", monto: 0, count: 0, color: "#ff6b5b" },
       { rango: "31-60 dias", monto: 0, count: 0, color: "#f77f00" },
       { rango: "+60 dias", monto: 0, count: 0, color: "#e63946" },
     ];
@@ -253,9 +254,11 @@ export default function FiadoAnalyticsPanel() {
   // ── Empty ──
   if (!totales) {
     return (
-      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 flex items-center justify-center h-64">
-        <p className="text-sm text-[var(--text-tertiary)]">No hay datos de fiados registrados</p>
-      </div>
+      <ChartsEmptyState
+        title="Todavía no hay fiados registrados"
+        description="Cuando empieces a registrar fiados, acá vas a ver el análisis de deuda, antigüedad y tendencia de cobro."
+        className="rounded-xl"
+      />
     );
   }
 
@@ -299,7 +302,8 @@ export default function FiadoAnalyticsPanel() {
 
       {/* Charts row */}
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Donut */}
+        {/* Donut — se oculta el bloque completo si no hay datos */}
+        {donutData.length > 0 && (
         <div className="flex-1">
           <h4 className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
             Distribucion por antiguedad
@@ -337,11 +341,7 @@ export default function FiadoAnalyticsPanel() {
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="h-48 flex items-center justify-center text-xs text-[var(--text-tertiary)]">
-              Sin datos
-            </div>
-          )}
+          ) : null}
           {/* Legend */}
           <div className="flex flex-wrap gap-3 justify-center mt-2">
             {donutData.map((seg) => (
@@ -352,8 +352,10 @@ export default function FiadoAnalyticsPanel() {
             ))}
           </div>
         </div>
+        )}
 
-        {/* Recovery trend */}
+        {/* Tendencia — se oculta el bloque completo si no hay datos */}
+        {(tendencia && tendencia.length > 0) && (
         <div className="flex-1">
           <h4 className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
             Tendencia de recuperacion
@@ -407,12 +409,9 @@ export default function FiadoAnalyticsPanel() {
                 />
               </AreaChart>
             </ResponsiveContainer>
-          ) : (
-            <div className="h-48 flex items-center justify-center text-xs text-[var(--text-tertiary)]">
-              Sin datos de tendencia
-            </div>
-          )}
+          ) : null}
         </div>
+        )}
       </div>
 
       {/* Top deudores */}
@@ -421,7 +420,7 @@ export default function FiadoAnalyticsPanel() {
           Top deudores
         </h4>
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <DataTable className="w-full text-xs">
             <thead>
               <tr className="border-b border-[var(--rule-base)]">
                 <th className="text-left py-2 text-[var(--text-tertiary)] font-medium">Cliente</th>
@@ -450,7 +449,7 @@ export default function FiadoAnalyticsPanel() {
                       "text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full font-medium",
                       d.status === "vencido" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
                         : d.status === "riesgo" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
-                        : "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+                        : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
                     )}>
                       {d.status === "vencido" ? "Vencido" : d.status === "riesgo" ? "Riesgo" : "Al dia"}
                     </span>
@@ -463,7 +462,7 @@ export default function FiadoAnalyticsPanel() {
                 </tr>
               )}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </div>
     </div>

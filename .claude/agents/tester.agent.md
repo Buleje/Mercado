@@ -16,7 +16,7 @@ mcpServers:
   - playwright:
       type: stdio
       command: npx
-      args: ["-y", "@playwright/mcp@latest"]
+      args: ["playwright-mcp", "--headless"]  # resuelve el del repo, no @latest
 ---
 
 # Tester — Hub QUALITY Test Engineer

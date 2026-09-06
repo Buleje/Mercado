@@ -98,6 +98,15 @@ function fmtSoles(v: number): string {
   return `S/ ${v.toFixed(2)}`;
 }
 
+/** Luminancia relativa aproximada — decide texto claro u oscuro sobre el
+ *  gradiente del banner (los colores vienen libres del editor de superadmin). */
+function isDarkColor(hex: string): boolean {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex ?? "");
+  if (!m) return false;
+  const n = parseInt(m[1]!, 16);
+  return 0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255) < 140;
+}
+
 function clampSize(v: number): number {
   return Math.max(10, Math.min(60, v));
 }
@@ -222,6 +231,8 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
   }
 
   // ── CLASSIC (default): texto + CTA chip ───────────────────────────────────
+  // Texto claro si hay foto (overlay oscuro) o si el gradiente del editor es oscuro.
+  const lightText = hasImage || isDarkColor(banner.bgFrom);
   return (
     <div
       className="relative overflow-hidden rounded-2xl aspect-[16/9] sm:aspect-auto sm:h-[240px] lg:h-[290px] xl:h-[320px] flex items-center justify-between px-6 sm:px-10 border border-[var(--rule-soft)]"
@@ -245,12 +256,38 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
           />
         </>
       )}
+      {/* Capa decorativa SOLO sin imagen: profundidad radial + greca amazónica +
+          brillo diagonal (mismo lenguaje del carnet Socio Buleje). Neutros
+          rgba() para funcionar sobre cualquier par de colores del editor. */}
+      {!hasImage && (
+        <div aria-hidden className="absolute inset-0 pointer-events-none">
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,0.20), transparent 55%), radial-gradient(circle at 82% -12%, rgba(255,255,255,0.16), transparent 32%), radial-gradient(circle at 94% 112%, rgba(0,0,0,0.14), transparent 38%), linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.10))",
+            }}
+          />
+          <svg
+            className={"absolute inset-0 h-full w-full " + (lightText ? "text-white" : "text-[#0c1015]")}
+            style={{ opacity: 0.06 }}
+          >
+            <defs>
+              <pattern id="promo-greca" width="26" height="26" patternUnits="userSpaceOnUse">
+                <path d="M0 13h8V5h10v8h8M13 26v-8" stroke="currentColor" strokeWidth="1.5" fill="none" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#promo-greca)" />
+          </svg>
+          <div className="absolute -inset-y-10 left-[58%] w-1/4 rotate-12 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+        </div>
+      )}
       <div className="relative z-10 flex items-center justify-between gap-3 w-full">
       <div className="flex-1 min-w-0 max-w-[60%] sm:max-w-[60%]">
         <h3
           className={
             "font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight leading-[1.1] " +
-            (banner.imageUrl ? "text-white drop-shadow-md" : "text-[#0c1015]")
+            (lightText ? "text-white drop-shadow-md" : "text-[#0c1015]")
           }
         >
           {banner.title}
@@ -259,7 +296,7 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
           <p
             className={
               "text-sm sm:text-sm lg:text-base font-medium mt-1.5 leading-snug line-clamp-2 sm:line-clamp-none " +
-              (banner.imageUrl ? "text-white/90 drop-shadow" : "text-[#0c1015]/70")
+              (lightText ? "text-white/90 drop-shadow" : "text-[#0c1015]/70")
             }
           >
             {banner.subtitle}
@@ -269,7 +306,7 @@ function BannerInner({ banner, type }: { banner: PromoBanner; type: BannerType }
       <span
         className={
           "shrink-0 inline-flex items-center gap-1 rounded-full px-3.5 sm:px-4 h-9 sm:h-10 text-sm font-extrabold whitespace-nowrap shadow-md " +
-          (banner.imageUrl ? "bg-white text-[#0c1015]" : "bg-[#0c1015] text-white")
+          (lightText ? "bg-white text-[#0c1015]" : "bg-[#0c1015] text-white")
         }
       >
         {banner.ctaLabel}

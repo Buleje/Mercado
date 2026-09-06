@@ -12,8 +12,7 @@
  */
 
 import { SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useRef, useMemo, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useMemo, type FormEvent, type KeyboardEvent } from "react";
 import {
   Loader2, LogIn, User, Lock, Eye, EyeOff, AlertTriangle,
   Store, ArrowRight, ShieldCheck,
@@ -21,6 +20,7 @@ import {
   TrendingUp, ShoppingBag, Wallet, Clock,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { getKeepAlive, setKeepAlive } from "@/lib/session-keepalive";
 
 // Brandon mayo 14 2026 v3: layout editorial con dashboard preview.
 //   - Lado izquierdo: form de login dentro de una card flotante, brand
@@ -32,7 +32,6 @@ import { cn } from "@/lib/utils";
 //   - Tipografía: italic serif para el headline, sans-serif tight para datos.
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const fromRef = useRef<string | null>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
 
@@ -71,29 +70,76 @@ export default function AdminLoginPage() {
   const [pw, setPw] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  // B2 "confiar en este equipo": activa el keep-alive (sesión no se cae mientras
+  // trabajás en ESTE dispositivo). Reusa lib/session-keepalive — NO debilita
+  // tokens ni saltea 2FA. Pre-marcado si ya estaba activo.
+  const [trustDevice, setTrustDevice] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [bypassLoading, setBypassLoading] = useState(false);
-  const [activeTenant, setActiveTenant] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
+  // Tras autenticar arrancamos la navegación DURA (ver hardRedirect). Este flag
+  // mantiene el botón deshabilitado y en estado "Entrando…" mientras el browser
+  // recarga — evita que el usuario re-submitee y que el botón parpadee a activo.
+  const [redirecting, setRedirecting] = useState(false);
   // ADR-120 login unificado: si la credencial existe en varias tiendas, el
   // backend devuelve la lista y mostramos un selector en vez de adivinar.
   const [tenantChoices, setTenantChoices] = useState<Array<{ slug: string; name: string }> | null>(null);
+  // Bloq Mayús activado — causa #1 de "puse bien la clave y no me deja".
+  const [capsLock, setCapsLock] = useState(false);
+  // Segundos restantes tras un 429 (rate limit / lockout). Mientras >0, el
+  // submit se deshabilita y mostramos una cuenta regresiva: recargar NO ayuda.
+  const [retryAfter, setRetryAfter] = useState(0);
+  // Motivo por el que llegó al login (sesión expirada / ruta protegida).
+  const [reason, setReason] = useState<string | null>(null);
+  // Resumen silencioso (Brandon 2026-08-30): "confiar en este equipo" arranca
+  // en true — mientras se intenta, ocultamos el form para no mostrar un login
+  // que va a desaparecer solo. Si no hay keep-alive activo, o el refresh token
+  // ya venció/fue revocado (logout manual, "cerrar todas las sesiones"), cae
+  // al form normal — nunca se guarda contraseña, sólo se reusa el refresh
+  // cookie HttpOnly que YA existe para el keep-alive en pestaña abierta.
+  const [resuming, setResuming] = useState(true);
+
+  useEffect(() => {
+    let cancelado = false;
+    (async () => {
+      if (!getKeepAlive()) { setResuming(false); return; }
+      try {
+        const res = await fetch("/api/auth/refresh", { method: "POST", credentials: "include" });
+        if (!cancelado && res.ok) {
+          const params = new URLSearchParams(window.location.search);
+          const match = window.location.pathname.match(/^(\/t\/[^/]+)\/admin/);
+          const prefix = match ? match[1] : "";
+          hardRedirect(safeRedirectPath(params.get("from"), `${prefix}/admin`));
+          return;
+        }
+      } catch {
+        // sin red — mostrar el form, no dejar la pantalla colgada en "Entrando…"
+      }
+      if (!cancelado) setResuming(false);
+    })();
+    return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     fromRef.current = params.get("from");
+    // Banner de contexto: si lo redirigieron desde una ruta protegida.
+    const r = params.get("reason");
+    if (r === "expired") setReason("Tu sesión expiró. Ingresá de nuevo.");
+    else if (fromRef.current) setReason("Inicia sesión para continuar.");
 
+    // Login universal (ADR-120): el backend resuelve el tenant por la
+    // credencial. Si vino ?tenant= (desde un /t/{slug} o el superadmin) lo
+    // guardamos SOLO como hint para el header x-tenant-id y el redirect
+    // post-login — el usuario nunca ve "entrando a (tienda)": siempre es
+    // usuario + contraseña.
     const tenantParam = params.get("tenant");
-
     if (tenantParam) {
       localStorage.setItem("active-tenant-slug", tenantParam);
       sessionStorage.setItem("active-tenant-slug", tenantParam);
-      setActiveTenant(tenantParam);
       if (!fromRef.current) fromRef.current = `/t/${tenantParam}/admin`;
-    } else {
-      const slug = localStorage.getItem("active-tenant-slug");
-      if (slug && slug !== "main") setActiveTenant(slug);
     }
 
     const saved = localStorage.getItem("login-remember-username");
@@ -101,6 +147,9 @@ export default function AdminLoginPage() {
       setUsername(saved);
       setRememberMe(true);
     }
+
+    // Pre-marcar "confiar en este equipo" si el keep-alive ya estaba activo.
+    setTrustDevice(getKeepAlive());
 
     // SECURITY 2026-05-16 (P0 fix): eliminado el flujo de auto-login con
     // password desde localStorage. Antes leía `sa-cred-${tenantParam}` con
@@ -122,9 +171,33 @@ export default function AdminLoginPage() {
     }
   }, [error]);
 
+  // Cuenta regresiva del bloqueo por rate limit / lockout (429). Tick 1s.
+  useEffect(() => {
+    if (retryAfter <= 0) return;
+    const t = setInterval(() => setRetryAfter((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, [retryAfter]);
+
   const showError = (msg: string) => {
     setError(msg);
     setTimeout(() => setError(null), 3500);
+  };
+
+  /**
+   * FIX 2026-07-19 (Brandon: "me logueo y no entra, recargo el login y recién
+   * funciona"). Causa: tras autenticar, la cookie de sesión ya está seteada,
+   * pero `router.push()` es una navegación SOFT del App Router que puede servir
+   * el RSC de `/admin` cacheado/prefetcheado de ANTES del login (cuando el
+   * middleware redirigía a /login) → rebota a login EN SILENCIO. Un reload duro
+   * funcionaba porque hace un request nuevo y el middleware lee la cookie fresca.
+   *
+   * Solución: cruzar la frontera de auth con navegación DURA
+   * (`window.location.assign`), que fuerza un documento nuevo. Es la corrección
+   * estándar para transiciones no-autenticado → autenticado con cookies HttpOnly.
+   */
+  const hardRedirect = (path: string) => {
+    setRedirecting(true);
+    window.location.assign(path);
   };
 
   const handleSubmit = async (e?: FormEvent, chosenSlug?: string) => {
@@ -152,7 +225,9 @@ export default function AdminLoginPage() {
         method: "POST",
         headers,
         body: JSON.stringify({
-          username: username || undefined,
+          // trim: espacios pegados desde copy-paste o el teclado móvil hacían
+          // fallar un usuario correcto ("no me deja entrar").
+          username: username.trim() || undefined,
           password: pw,
           ...(chosenSlug ? { tenantSlug: chosenSlug } : {}),
         }),
@@ -169,6 +244,8 @@ export default function AdminLoginPage() {
           tenantId?: string;
           tenantSlug?: string;
           mustChangePassword?: boolean;
+          lastLoginAt?: string | null;
+          lastLoginIp?: string | null;
         };
 
         // ── Credencial en varias tiendas: mostrar selector ──────────────
@@ -180,44 +257,98 @@ export default function AdminLoginPage() {
 
         // ── 2FA requerido: redirigir sin mostrar error ──────────────────
         if (data.requires2FA) {
-          if (rememberMe) localStorage.setItem("login-remember-username", username);
+          if (rememberMe) localStorage.setItem("login-remember-username", username.trim());
           else localStorage.removeItem("login-remember-username");
-          // Preservar `from` para post-2FA redirect
+          // Preservar `from` para post-2FA redirect. Nav dura: la página 2FA
+          // lee la cookie pending-totp recién seteada (mismo race que /admin).
           const dest = fromRef.current
             ? `/admin/login/2fa?from=${encodeURIComponent(fromRef.current)}`
             : "/admin/login/2fa";
-          router.push(dest);
+          hardRedirect(dest);
           return;
         }
 
-        if (rememberMe) localStorage.setItem("login-remember-username", username);
+        if (rememberMe) localStorage.setItem("login-remember-username", username.trim());
         else localStorage.removeItem("login-remember-username");
+
+        // B2: aplicar "confiar en este equipo" a la sesión recién creada
+        // (keep-alive proactivo mientras trabajás; nada de saltar 2FA).
+        setKeepAlive(trustDevice);
 
         if (data.tenantSlug) {
           localStorage.setItem("active-tenant-slug", data.tenantSlug);
           sessionStorage.setItem("active-tenant-slug", data.tenantSlug);
         }
+        // B3 "último acceso": guardamos el ingreso anterior para que el panel
+        // lo muestre al entrar (un solo aviso, se limpia al mostrarse).
+        if (data.lastLoginAt) {
+          try {
+            sessionStorage.setItem(
+              "bsm-last-login",
+              JSON.stringify({ at: data.lastLoginAt, ip: data.lastLoginIp ?? null }),
+            );
+          } catch {
+            // sessionStorage puede fallar (modo privado): sin aviso, sin bug.
+          }
+        }
         // ── Contraseña temporal (reset del superadmin): forzar cambio (ADR-133) ──
         if (data.mustChangePassword) {
-          router.push("/admin/cambiar-clave");
+          hardRedirect("/admin/cambiar-clave");
           return;
         }
         if (data.onboardingPending && !fromRef.current) {
-          router.push("/onboarding");
+          hardRedirect("/onboarding");
         } else if (data.role === "owner" || data.role === "platform_admin") {
-          router.push("/superadmin/login");
+          hardRedirect("/superadmin/login");
         } else {
-          router.push(safeRedirectPath(fromRef.current, adminPath("/admin")));
+          hardRedirect(safeRedirectPath(fromRef.current, adminPath("/admin")));
         }
+      } else if (res.status === 429) {
+        // Rate limit o lockout: recargar NO ayuda (es por tiempo del servidor).
+        // Mostramos cuenta regresiva para que el usuario sepa cuánto esperar.
+        const ra = Number(res.headers.get("Retry-After")) || 60;
+        setRetryAfter(ra);
+        setError(null);
+      } else if (res.status === 400) {
+        showError("Completá tu usuario y contraseña.");
+      } else if (res.status === 401) {
+        const body = await res.json().catch(() => ({}));
+        const left = body?.attemptsLeft;
+        let msg = capsLock
+          ? "Usuario o contraseña incorrectos. Ojo: Bloq Mayús está activado."
+          : "Usuario o contraseña incorrectos.";
+        if (typeof left === "number" && left >= 0 && left <= 2) {
+          msg +=
+            left === 0
+              ? " Cuenta bloqueada 15 min por seguridad."
+              : ` Te queda${left === 1 ? "" : "n"} ${left} intento${left === 1 ? "" : "s"}.`;
+        }
+        showError(msg);
+      } else if (res.status >= 500) {
+        showError("El servidor tuvo un problema. Reintentá en unos segundos.");
       } else {
-        showError("Usuario o contraseña incorrectos");
+        showError("No se pudo iniciar sesión.");
       }
     } catch {
-      showError("No se pudo iniciar sesión");
+      showError(
+        typeof navigator !== "undefined" && !navigator.onLine
+          ? "Sin conexión. Revisá tu internet e intentá de nuevo."
+          : "No se pudo conectar con el servidor. Reintentá.",
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  /** Detecta Bloq Mayús en teclado físico para avisar en el form. */
+  const detectCapsLock = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (typeof e.getModifierState === "function") {
+      setCapsLock(e.getModifierState("CapsLock"));
+    }
+  };
+
+  const mmss = (s: number) =>
+    `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   const handleBypass = async () => {
     setBypassLoading(true);
@@ -225,7 +356,7 @@ export default function AdminLoginPage() {
     try {
       const res = await fetch("/api/auth/bypass", { method: "POST" });
       if (res.ok) {
-        router.push(safeRedirectPath(fromRef.current, adminPath("/admin")));
+        hardRedirect(safeRedirectPath(fromRef.current, adminPath("/admin")));
         return;
       }
       showError(
@@ -241,6 +372,19 @@ export default function AdminLoginPage() {
 
   const isDev =
     typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+
+  // Mientras se intenta el resumen silencioso no se muestra el form — se
+  // vería un parpadeo de login que desaparece solo apenas responde el refresh.
+  if (resuming) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--surface-canvas)]">
+        <div className="flex flex-col items-center gap-3 text-[var(--text-tertiary)]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm font-medium">Entrando…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">
@@ -295,36 +439,16 @@ export default function AdminLoginPage() {
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
             Iniciar sesión
           </p>
-          <SectionTitle className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
+          <SectionTitle className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-tight text-[var(--text-primary)] leading-[1.02]">
             Bienvenido
             <br />
             <span className="italic font-serif text-[var(--accent)]">
               de vuelta.
             </span>
           </SectionTitle>
-          {activeTenant ? (
-            <p className="text-sm text-[var(--text-secondary)] mt-4">
-              Entrando a{" "}
-              <strong className="text-[var(--text-primary)]">
-                {activeTenant}
-              </strong>
-              .{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTenant(null);
-                  localStorage.removeItem("active-tenant-slug");
-                }}
-                className="text-[var(--accent)] hover:underline font-semibold"
-              >
-                cambiar
-              </button>
-            </p>
-          ) : (
-            <p className="text-sm text-[var(--text-secondary)] mt-4 max-w-sm">
-              Usuario y contraseña te llevan a tu panel.
-            </p>
-          )}
+          <p className="text-sm text-[var(--text-secondary)] mt-4 max-w-sm">
+            Usuario y contraseña te llevan a tu panel.
+          </p>
 
           {/* ADR-120: selector de tienda cuando la credencial existe en varias */}
           {tenantChoices ? (
@@ -336,7 +460,7 @@ export default function AdminLoginPage() {
                 <button
                   key={t.slug}
                   type="button"
-                  disabled={loading}
+                  disabled={loading || redirecting}
                   onClick={() => handleSubmit(undefined, t.slug)}
                   className="w-full flex items-center justify-between gap-3 h-14 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-left font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--accent)]/8 disabled:opacity-50 transition-all"
                 >
@@ -361,6 +485,9 @@ export default function AdminLoginPage() {
               >
                 Usuario
               </label>
+              {/* Móvil "sin trabas": el username NO capitaliza la 1ª letra
+                  ("Qaadmin") ni autocorrige — era causa #1 de "puse bien todo
+                  y no me deja". El trim de espacios va en el submit. */}
               <div className="relative group">
                 <User
                   className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] group-focus-within:text-[var(--accent)] transition-colors"
@@ -375,10 +502,9 @@ export default function AdminLoginPage() {
                   className="w-full h-14 pl-12 pr-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/12 hover:border-[var(--accent)]/40 transition-all"
                   placeholder="qaadmin"
                   autoComplete="username"
-                  data-bwignore="true"
-                  data-1p-ignore="true"
-                  data-lpignore="true"
-                  data-form-type="other"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                 />
               </div>
             </div>
@@ -400,13 +526,12 @@ export default function AdminLoginPage() {
                   type={showPassword ? "text" : "password"}
                   value={pw}
                   onChange={(e) => setPw(e.target.value)}
+                  onKeyDown={detectCapsLock}
+                  onKeyUp={detectCapsLock}
+                  aria-describedby={capsLock ? "caps-lock-warn" : undefined}
                   className="w-full h-14 pl-12 pr-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/12 hover:border-[var(--accent)]/40 transition-all"
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  data-bwignore="true"
-                  data-1p-ignore="true"
-                  data-lpignore="true"
-                  data-form-type="other"
                   required
                 />
                 <button
@@ -424,6 +549,16 @@ export default function AdminLoginPage() {
                   )}
                 </button>
               </div>
+              {capsLock && (
+                <p
+                  id="caps-lock-warn"
+                  role="status"
+                  className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]"
+                >
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  Bloq Mayús está activado
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-between text-sm pt-1">
@@ -448,6 +583,42 @@ export default function AdminLoginPage() {
               </a>
             </div>
 
+            {/* B2: confiar en este equipo → mantiene la sesión activa mientras
+                trabajás (keep-alive). No debilita seguridad ni saltea 2FA. */}
+            <label className="flex items-start gap-2.5 cursor-pointer select-none pt-0.5">
+              <input
+                type="checkbox"
+                checked={trustDevice}
+                onChange={(e) => setTrustDevice(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--rule-base)] text-[var(--accent)] focus:ring-[var(--accent)]/30 cursor-pointer"
+              />
+              <span className="text-sm text-[var(--text-secondary)]">
+                <span className="font-semibold text-[var(--text-primary)]">Confiar en este equipo</span>
+                {" "}— no te saca del panel por estar ausente. Seguís adentro hasta que lo apagues
+                en Ajustes › Seguridad.
+              </span>
+            </label>
+
+            {reason && !error && retryAfter === 0 && (
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[var(--accent)]/8 border border-[var(--accent)]/20 text-sm font-semibold text-[var(--text-secondary)]">
+                <ShieldCheck className="h-5 w-5 shrink-0 mt-0.5 text-[var(--accent)]" aria-hidden />
+                {reason}
+              </div>
+            )}
+
+            {retryAfter > 0 && (
+              <div
+                role="alert"
+                className="flex items-start gap-3 p-4 rounded-2xl bg-[var(--data-warning-500)]/10 border-2 border-[var(--data-warning-500)]/25 text-sm font-bold text-[var(--data-warning-700)]"
+              >
+                <Clock className="h-5 w-5 shrink-0 mt-0.5" aria-hidden />
+                <span>
+                  Demasiados intentos. Esperá{" "}
+                  <span className="tabular-nums">{mmss(retryAfter)}</span> — recargar no ayuda.
+                </span>
+              </div>
+            )}
+
             {error && (
               <div
                 role="alert"
@@ -460,13 +631,23 @@ export default function AdminLoginPage() {
 
             <button
               type="submit"
-              disabled={loading || !pw}
+              disabled={loading || redirecting || !pw || retryAfter > 0}
               className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white text-base font-extrabold tracking-tight shadow-lg shadow-[var(--accent)]/30 hover:scale-[1.01] hover:shadow-xl hover:shadow-[var(--accent)]/40 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              {loading ? (
+              {redirecting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Entrando al panel…
+                </>
+              ) : loading ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
                   Verificando…
+                </>
+              ) : retryAfter > 0 ? (
+                <>
+                  <Clock className="h-5 w-5" strokeWidth={2.25} />
+                  Esperá {mmss(retryAfter)}
                 </>
               ) : (
                 <>
@@ -600,7 +781,7 @@ function DashboardPreview() {
         />
 
         {/* Card principal con shadow profunda */}
-        <div className="relative rounded-[28px] bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-2xl overflow-hidden">
+        <div className="relative rounded-[28px] bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden">
           {/* Header del dashboard mock */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--rule-soft)]">
             <div className="flex items-center gap-2">
@@ -613,7 +794,7 @@ function DashboardPreview() {
                 buleje.pe/admin
               </p>
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider">
               <span aria-hidden className="relative inline-flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-70 animate-ping" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
@@ -633,7 +814,7 @@ function DashboardPreview() {
                 +18%
               </span>
             </div>
-            <p className="text-5xl font-black tracking-[-0.04em] tabular-nums leading-none text-[var(--text-primary)]">
+            <p className="text-5xl font-black tracking-tighter tabular-nums leading-none text-[var(--text-primary)]">
               S/ <span className="text-[var(--accent)]">2,887</span>
             </p>
             <p className="mt-2 text-sm text-[var(--text-secondary)]">
@@ -706,7 +887,7 @@ function DashboardPreview() {
                         o.status === "paid"
                           ? "bg-[var(--data-success-500,var(--accent))]/15 text-[var(--data-success-600,var(--accent))]"
                           : o.status === "confirmed"
-                          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                          ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-600,var(--data-warning-500))]",
                       )}
                     >
@@ -777,10 +958,10 @@ function SwitchChip({
   return (
     <a
       href={href}
-      className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/30 transition-all group"
+      className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:bg-primary/10 transition-all group"
     >
       <div className="flex items-center gap-3 min-w-0">
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] shrink-0 group-hover:bg-[var(--accent-600,var(--accent))] group-hover:text-white transition-colors">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0 group-hover:bg-[var(--accent-600,var(--accent))] group-hover:text-white transition-colors">
           {icon}
         </span>
         <div className="min-w-0">

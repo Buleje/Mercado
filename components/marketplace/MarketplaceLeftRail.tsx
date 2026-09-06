@@ -73,7 +73,7 @@ export default function MarketplaceLeftRail() {
 
   const itemBase =
     "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors text-left";
-  const itemActive = "bg-[var(--accent-soft)] text-[var(--accent)]";
+  const itemActive = "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
   const itemIdle =
     "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
 
@@ -131,7 +131,7 @@ export default function MarketplaceLeftRail() {
             className={cn(
               "rounded-full border-2 px-3 py-1.5 text-xs font-bold transition-colors",
               priceKey === ""
-                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
             )}
           >
@@ -148,7 +148,7 @@ export default function MarketplaceLeftRail() {
                 className={cn(
                   "rounded-full border-2 px-3 py-1.5 text-xs font-bold transition-colors",
                   isActive
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                    ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
                 )}
               >

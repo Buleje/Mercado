@@ -1,6 +1,7 @@
 "use client";
 
 import { CardTitle } from "@buleje/design-system";
+import { Field } from "@/components/admin/shared/Field";
 import { X, Search } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { OrderFilters, FiltersAction, OrderSource } from "./types";
@@ -53,7 +54,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors",
                     filters.statuses.has(status)
-                      ? "border-primary bg-primary/10 text-primary"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface"
                   )}
                 >
@@ -85,7 +86,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   className={cn(
                     "flex-1 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
                     filters.source === src
-                      ? "border-primary bg-primary/10 text-primary"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface"
                   )}
                 >
@@ -109,7 +110,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   className={cn(
                     "flex-1 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors",
                     filters.paymentMethod === method
-                      ? "border-primary bg-primary/10 text-primary"
+                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface"
                   )}
                 >
@@ -188,30 +189,40 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
 
           {/* Checkboxes */}
           <div className="space-y-2">
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.hasDebt}
-                onChange={(e) => dispatch({ type: "SET_HAS_DEBT", value: e.target.checked })}
-                className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
-              />
-              <div>
-                <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Tiene deuda pendiente</p>
-                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Solo pedidos con deuda sin cobrar</p>
-              </div>
-            </label>
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filters.hasAdminNotes}
-                onChange={(e) => dispatch({ type: "SET_HAS_ADMIN_NOTES", value: e.target.checked })}
-                className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
-              />
-              <div>
-                <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Tiene notas internas</p>
-                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Solo pedidos con comentarios del equipo</p>
-              </div>
-            </label>
+            <Field label="Tiene deuda pendiente" className="flex items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface cursor-pointer" labelClassName="sr-only">
+              {(id) => (
+                <>
+                  <input
+                    id={id}
+                    type="checkbox"
+                    checked={filters.hasDebt}
+                    onChange={(e) => dispatch({ type: "SET_HAS_DEBT", value: e.target.checked })}
+                    className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Tiene deuda pendiente</p>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Solo pedidos con deuda sin cobrar</p>
+                  </div>
+                </>
+              )}
+            </Field>
+            <Field label="Tiene notas internas" className="flex items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface cursor-pointer" labelClassName="sr-only">
+              {(id) => (
+                <>
+                  <input
+                    id={id}
+                    type="checkbox"
+                    checked={filters.hasAdminNotes}
+                    onChange={(e) => dispatch({ type: "SET_HAS_ADMIN_NOTES", value: e.target.checked })}
+                    className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Tiene notas internas</p>
+                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Solo pedidos con comentarios del equipo</p>
+                  </div>
+                </>
+              )}
+            </Field>
           </div>
         </div>
 

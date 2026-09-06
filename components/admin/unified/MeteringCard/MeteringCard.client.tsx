@@ -72,7 +72,7 @@ interface QuotaBarProps {
 }
 
 const LIGHT_COLORS: Record<TrafficLight, string> = {
-  green:  "bg-[var(--accent-soft)] dark:bg-[var(--accent-soft)]",
+  green:  "bg-primary/10 dark:bg-primary/10",
   yellow: "bg-[var(--data-warning-500)]  dark:bg-[var(--data-warning-500)]",
   red:    "bg-[var(--data-error-500)]    dark:bg-[var(--data-error-500)]",
 };
@@ -126,7 +126,7 @@ function MetricCell({ event, snapshot }: MetricCellProps) {
 
   const SPARKLINE_COLORS: Record<TrafficLight, string> = {
     green:  "#10b981",
-    yellow: "#f59e0b",
+    yellow: "#ff6b5b",
     red:    "#ef4444",
   };
 
@@ -164,8 +164,8 @@ interface PlanBadgeProps {
 
 const PLAN_BADGE_STYLES: Record<MeteringSnapshot["plan"], string> = {
   free:       "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]",
-  starter:    "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
-  pro:        "bg-primary-dark/10 text-primary-dark dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]",
+  starter:    "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
+  pro:        "bg-primary-dark/10 text-primary-dark dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   enterprise: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
 };
 

@@ -126,7 +126,7 @@ export default function PeriodComparatorTab() {
           <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><GitCompareArrows className="h-6 w-6 text-primary" /> Comparador de Periodos</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Compara métricas clave entre dos rangos de fecha</p>
         </div>
-        <button onClick={() => exportToCSV(data.map(m => ({ metrica: m.label, [current.aLabel]: fmtNum(m.periodA, m.format), [current.bLabel]: fmtNum(m.periodB, m.format), cambio: `${((m.periodA - m.periodB) / m.periodB * 100).toFixed(1)}%` })), `comparador-${preset}`)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors"><Download className="h-3.5 w-3.5" /> Exportar CSV</button>
+        <button onClick={() => exportToCSV(data.map(m => ({ metrica: m.label, [current.aLabel]: fmtNum(m.periodA, m.format), [current.bLabel]: fmtNum(m.periodB, m.format), cambio: `${((m.periodA - m.periodB) / m.periodB * 100).toFixed(1)}%` })), `comparador-${preset}`)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"><Download className="h-3.5 w-3.5" /> Exportar CSV</button>
       </div>
 
       {/* Preset selector */}
@@ -183,7 +183,7 @@ export default function PeriodComparatorTab() {
                     <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmtNum(m.periodA, m.format)}</span>
                   </div>
                   <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                    <div className="h-full bg-[var(--accent-soft)] rounded-full transition-all" style={{ width: `${(m.periodA / maxVal) * 100}%` }} />
+                    <div className="h-full bg-primary/10 rounded-full transition-all" style={{ width: `${(m.periodA / maxVal) * 100}%` }} />
                   </div>
                 </div>
                 <div>

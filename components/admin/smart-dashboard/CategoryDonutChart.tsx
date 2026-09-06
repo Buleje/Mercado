@@ -12,7 +12,7 @@ import {
 const DONUT_COLORS = [
   "var(--color-primary)",
   "#8b5cf6",
-  "#f97316",
+  "#ff6b5b",
   "#264653",
   "#e76f51",
   "#00BDBD",
@@ -27,7 +27,7 @@ interface Props {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function renderActiveShape(props: any) {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value, percent } = props;
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
   return (
     <g>
       <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 6} startAngle={startAngle} endAngle={endAngle} fill={fill} />

@@ -3,12 +3,11 @@ import TiendasClient from "./TiendasClient";
 import { JoinUsSection } from "@/components/marketing/JoinUsSection";
 import { getInitialMarketplaceStores } from "@/lib/marketplace/initial-stores";
 import { getStoreShowcaseByCategory } from "@/lib/db/marketplace-featured.db";
+import { precioVigente } from "@/lib/marketplace/precio-vigente";
 import type { PremiumProduct } from "@/components/marketplace/PremiumStoreCard";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 import { BRAND_GEO } from "@/lib/geo";
-import { getBannersForSlot } from "@/lib/promo-banners";
-import HomeHeroBanner from "@/components/marketplace/home/HomeHeroBanner";
 
 const BASE_URL = "https://www.buleje.pe";
 
@@ -123,14 +122,6 @@ export const metadata: Metadata = {
 export default async function TiendasPage() {
   const initialStores = await getInitialMarketplaceStores();
 
-  // Banner promocional al tope, IGUAL que la home (mismo slot "tiendas-hero" →
-  // banners idénticos). Resuelto en el server (getBannersForSlot es síncrono)
-  // y pasado como initialBanners → se pinta en el primer byte, sin cascada
-  // hidratar→fetch→pintar. Brandon 2026-06-13: re-añadido a /tiendas.
-  const heroBanners = getBannersForSlot("tiendas-hero")
-    .filter((b) => b.active)
-    .sort((a, b) => a.order - b.order);
-
   // Productos para las cards Premium (beneficio superadmin): solo se necesitan
   // para las tiendas con displayTier "premium". Reusa el helper que ya embebe
   // productos; mapeamos por slug. Si falla, premium muestra su card sin preview
@@ -170,6 +161,7 @@ export default async function TiendasPage() {
         image: p.image,
         retailPrice: p.retailPrice,
         discountPrice: p.discountPrice,
+        discountUntil: p.discountUntil,
         category: p.category,
       })),
     ]),
@@ -286,7 +278,10 @@ export default async function TiendasPage() {
               ...(p.category ? { category: p.category } : {}),
               offers: {
                 "@type": "Offer",
-                price: Number(p.discountPrice ?? p.retailPrice).toFixed(2),
+                // Structured data: el precio que se publica a Google tiene que
+                // ser el que se cobra. Una oferta vencida acá es una
+                // discrepancia de precio que el buscador penaliza.
+                price: precioVigente(p).precio.toFixed(2),
                 priceCurrency: "PEN",
                 availability: "https://schema.org/InStock",
                 url: `${BASE_URL}/marketplace/${p.storeSlug}`,
@@ -327,15 +322,18 @@ export default async function TiendasPage() {
       <h1 className="sr-only">
         {`Tiendas y bodegas en ${BRAND_GEO.city} con delivery — Buleje Marketplace`}
       </h1>
-      {/* Banner promocional full-width, igual que el inicio (slot tiendas-hero) */}
-      <HomeHeroBanner initialBanners={heroBanners} />
+      {/* Banner promocional REMOVIDO de /tiendas (Brandon 2026-08-03).
+          El mismo banner sigue viviendo en la home y en /marketplace; acá
+          —directorio donde se viene a BUSCAR una tienda— empujaba la lista
+          hacia abajo. El slot "tiendas-hero" queda igual en el panel: dejar de
+          pintarlo no borra los banners cargados. */}
       <TiendasClient initialStores={initialStores} premiumProducts={productsBySlug} />
 
       {/* Trabajá con nosotros — reclutamiento (tiendas/comercios/repartidores),
           mismo componente que la home (single source). Brandon 2026-05-31:
           reemplaza el CTA de dueño que vivía acá; el funnel de vendors se
           centraliza en este bloque. */}
-      <JoinUsSection />
+      <JoinUsSection maxWidthClass="max-w-[1760px]" />
     </>
   );
 }

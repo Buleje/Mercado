@@ -3,7 +3,7 @@
 import { StatCard } from "@buleje/design-system";
 import { useMemo } from "react";
 import {
-  Package, ShoppingCart, TrendingUp, AlertTriangle, Timer,
+  Package, ShoppingCart, AlertTriangle, Timer,
   RefreshCw, Layers,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -67,7 +67,7 @@ export interface ProductosData {
 function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
 
 const CAT_LABELS: Record<string, string> = { "frutas-verduras": "Frutas y Verduras", abarrotes: "Abarrotes", carnes: "Carnes", lacteos: "Lácteos", bebidas: "Bebidas", limpieza: "Limpieza" };
-const CAT_COLORS: Record<string, string> = { "frutas-verduras": "#10b981", abarrotes: "#f59e0b", carnes: "#ef4444", lacteos: "#3b82f6", bebidas: "#8b5cf6", limpieza: "#06b6d4" };
+const CAT_COLORS: Record<string, string> = { "frutas-verduras": "#10b981", abarrotes: "#ff6b5b", carnes: "#ef4444", lacteos: "#3b82f6", bebidas: "#8b5cf6", limpieza: "#06b6d4" };
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
@@ -275,8 +275,8 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
         </div>
         {data.claseA > 0 && (
           <div className="hidden sm:flex items-center gap-3 text-[length:var(--ts-xs)]">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--accent-soft)]" />A: {data.claseA}</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[var(--accent-soft)]" />B: {data.claseB}</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary/10" />A: {data.claseA}</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary/10" />B: {data.claseB}</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400" />C: {data.claseC}</span>
           </div>
         )}
@@ -287,29 +287,6 @@ export default function ProductosDashboard({ dateRange, onChangeRange }: { dateR
 
       {/* ── Charts especializados (BCG, rotación/margen, top-5 evolution, comparativa, heatmap, margen cat) ── */}
       <ProductosAdvancedCharts />
-    </div>
-  );
-}
-
-// ── Skeleton ─────────────────────────────────────────────────────────────────
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-5 animate-pulse">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28" />
-        ))}
-      </div>
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-[420px]" />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />)}
-      </div>
     </div>
   );
 }

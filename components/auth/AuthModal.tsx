@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { X, User, Phone, Shield, Loader2, Search } from "lucide-react";
+import { X, User, Phone, Shield, Loader2 } from "lucide-react";
 import {
   getSupabaseBrowser,
   isSupabaseAuthConfigured,
@@ -143,8 +143,8 @@ export function AuthModal({ open, onClose, initialName }: AuthModalProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialName]);
   const [dni, setDni] = useState("");
-  const [dniLoading, setDniLoading] = useState(false);
-  const [dniError, setDniError] = useState<string | null>(null);
+  const [, setDniLoading] = useState(false);
+  const [, setDniError] = useState<string | null>(null);
   const [dniVerified, setDniVerified] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [loading, setLoading] = useState(false);

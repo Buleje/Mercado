@@ -1,11 +1,12 @@
 "use client";
 import { CardTitle } from "@buleje/design-system";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Users, Star, Layers, MapPin, MessageSquare,
-  Maximize2, Minimize2,
+  Maximize2, Minimize2, UserPlus,
 } from "@buleje/design-system/icons";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
@@ -17,21 +18,22 @@ const NPSTab = dynamic(() => import("@/components/admin/NPSTab"), { loading: S }
 const AutoSegments = dynamic(() => import("@/components/admin/AutoSegments"), { loading: S });
 const CustomerGeoMap = dynamic(() => import("@/components/admin/CustomerGeoMap"), { ssr: false, loading: () => <div className="flex items-center justify-center h-96"><div className="h-6 w-6 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div> });
 const MassMessageSender = dynamic(() => import("@/components/admin/MassMessageSender"), { loading: S });
+// Funnel de leads consolidado como sub-tab (era entrada top-level "leads-funnel")
+const LeadsFunnelModule = dynamic(() => import("@/components/admin/unified/LeadsFunnelModule"), { loading: S });
 
 const MODULE_ID = "clientes";
 
 const TABS = [
   { id: "crm" as const, label: "Mis clientes", icon: Users },
+  { id: "leads" as const, label: "Leads", icon: UserPlus },
   { id: "resenas" as const, label: "Opiniones", icon: Star },
   { id: "segmentos" as const, label: "Segmentos", icon: Layers },
   { id: "mapa" as const, label: "Mapa", icon: MapPin },
   { id: "mensajes" as const, label: "Mensajes masivos", icon: MessageSquare },
 ];
 
-function normalizeClientesTab(savedTab: string | null): typeof TABS[number]["id"] {
-  if (savedTab === "dashboard" || savedTab === "rfm") return TABS[0].id;
-  return TABS.some((tab) => tab.id === savedTab) ? savedTab as typeof TABS[number]["id"] : TABS[0].id;
-}
+/** Los ids, estables: el hook los usa como dependencia. */
+const TAB_IDS = TABS.map((t) => t.id);
 
 /* ─── Mapa expandible con GeoMap ─── */
 function ExpandableMapSection() {
@@ -58,12 +60,11 @@ function ExpandableMapSection() {
   );
 }
 
-export default function CRMClientesModule() {
-  const [sub, setSub] = useState(() => {
-    if (typeof window === "undefined") return TABS[0].id;
-    return normalizeClientesTab(localStorage.getItem(`admin-last-tab-${MODULE_ID}`));
-  });
-  useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
+export default function CRMClientesModule({ initialTab }: { initialTab?: string } = {}) {
+  // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
+  // destino del buscador global. `initialTab` gana cuando el módulo se abre
+  // desde un tab alias (ver useVistaModulo).
+  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab);
 
   return (
     <div className="space-y-6">
@@ -81,6 +82,7 @@ export default function CRMClientesModule() {
         moduleId="crm"
       >
         {sub === "crm" && <CRMTab />}
+        {sub === "leads" && <LeadsFunnelModule />}
         {sub === "resenas" && <NPSTab />}
         {sub === "segmentos" && <AutoSegments />}
         {sub === "mapa" && <ExpandableMapSection />}

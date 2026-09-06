@@ -24,6 +24,21 @@ export type RentabilidadSaleItemRaw = {
   productCostPrice: number | null;
 };
 
+/**
+ * Una línea vendida, ya normalizada, venga de POS o de una orden online.
+ * `costPrice` es el costo congelado al momento de la venta; cuando falta se
+ * cae al costo actual del producto (`productCostPrice`).
+ */
+export type RentabilidadProductLineRaw = {
+  productId: number;
+  name: string;
+  category: string | null;
+  price: number;
+  quantity: number;
+  costPrice: number | null;
+  productCostPrice: number | null;
+};
+
 export const AnalyticsRentabilidadDB = {
   /**
    * Carga ventas POS del tenant en un rango de fechas.
@@ -73,5 +88,95 @@ export const AnalyticsRentabilidadDB = {
       productCostPrice:
         r.product.costPrice !== null ? Number(r.product.costPrice) : null,
     }));
+  },
+
+  /**
+   * Líneas vendidas por POS en el rango, con nombre y categoría del producto.
+   * Filtra por tenantId via relación Sale → tenantId.
+   *
+   * Cap defensivo de 50k como en analytics-abc.db: evita OOM si el tenant
+   * acumuló cientos de miles de líneas.
+   *
+   * @param tenantId — Scope multi-tenant obligatorio.
+   * @param since    — Fecha de inicio (inclusive).
+   */
+  async getSaleLinesByProduct(
+    tenantId: string,
+    since: Date
+  ): Promise<RentabilidadProductLineRaw[]> {
+    const rows = await prisma.saleItem.findMany({
+      where: { sale: { tenantId, createdAt: { gte: since } } },
+      select: {
+        productId: true,
+        name: true,
+        price: true,
+        quantity: true,
+        costPrice: true,
+        product: { select: { category: true, costPrice: true } },
+      },
+      orderBy: { id: "desc" },
+      take: 50_000,
+    });
+
+    return rows.map((r) => ({
+      productId: r.productId,
+      name: r.name,
+      category: r.product.category,
+      price: Number(r.price),
+      quantity: r.quantity,
+      costPrice: r.costPrice !== null ? Number(r.costPrice) : null,
+      productCostPrice:
+        r.product.costPrice !== null ? Number(r.product.costPrice) : null,
+    }));
+  },
+
+  /**
+   * Líneas vendidas por órdenes online (no canceladas) en el rango.
+   * Filtra por tenantId via relación Order → tenantId.
+   *
+   * Se excluyen las líneas sin `productId` (producto borrado): sin producto no
+   * hay costo con el que calcular margen, y contar solo el ingreso inflaría la
+   * ganancia.
+   *
+   * @param tenantId — Scope multi-tenant obligatorio.
+   * @param since    — Fecha de inicio (inclusive).
+   */
+  async getOrderLinesByProduct(
+    tenantId: string,
+    since: Date
+  ): Promise<RentabilidadProductLineRaw[]> {
+    const rows = await prisma.orderItem.findMany({
+      where: {
+        productId: { not: null },
+        order: { tenantId, status: { not: "cancelado" }, createdAt: { gte: since } },
+      },
+      select: {
+        productId: true,
+        name: true,
+        price: true,
+        quantity: true,
+        costPrice: true,
+        product: { select: { category: true, costPrice: true } },
+      },
+      orderBy: { id: "desc" },
+      take: 50_000,
+    });
+
+    return rows.flatMap((r) =>
+      r.productId === null
+        ? []
+        : [
+            {
+              productId: r.productId,
+              name: r.name,
+              category: r.product?.category ?? null,
+              price: Number(r.price),
+              quantity: r.quantity,
+              costPrice: r.costPrice !== null ? Number(r.costPrice) : null,
+              productCostPrice:
+                r.product?.costPrice != null ? Number(r.product.costPrice) : null,
+            },
+          ]
+    );
   },
 };

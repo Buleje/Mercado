@@ -18,7 +18,7 @@ const DEMO_STORE = `/t/${DEMO_SLUG}`;
 const DEMO_LINKS = [
   { label: "Panel Admin", desc: "Dashboard, ventas, inventario, reportes, IA", icon: <LayoutDashboard className="h-4 w-4" />, href: DEMO_ADMIN, color: "bg-emerald-50 dark:bg-emerald-950/30 text-[var(--data-success-600)]" },
   { label: "Tienda Online", desc: "La tienda que ven tus clientes con delivery", icon: <Store className="h-4 w-4" />, href: DEMO_STORE, color: "bg-emerald-50 dark:bg-emerald-950/30 text-[var(--data-success-600)]" },
-  { label: "POS / Caja", desc: "Punto de venta con Yape, efectivo y Plin", icon: <ShoppingCart className="h-4 w-4" />, href: `${DEMO_ADMIN}`, color: "bg-teal-50 dark:bg-teal-950/30 text-[var(--accent-dark)]" },
+  { label: "POS / Caja", desc: "Punto de venta con Yape, efectivo y Plin", icon: <ShoppingCart className="h-4 w-4" />, href: `${DEMO_ADMIN}`, color: "bg-teal-50 dark:bg-teal-950/30 text-[var(--accent-dark)] dark:text-[var(--accent)]" },
   { label: "Catalogo", desc: "30 productos en 10 categorias con precios", icon: <Package className="h-4 w-4" />, href: `/t/${DEMO_SLUG}/tienda`, color: "bg-orange-50 dark:bg-orange-950/30 text-orange-600" },
 ];
 

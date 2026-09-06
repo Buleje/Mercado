@@ -1,5 +1,5 @@
 "use client";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, SectionTitle } from "@buleje/design-system";
 import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils";
 import type { Sale, Customer } from "@/types/erp";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import ChartManager, { type ChartDefinition } from "@/components/admin/shared/ChartManager";
+import ChartManager, { type ChartDefinition, useReportChartEmpty } from "@/components/admin/shared/ChartManager";
+import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -61,9 +62,9 @@ const MODULE_ID = "analytics-bi";
 const SECTIONS: { id: SectionId; label: string; icon: typeof LayoutDashboard; description: string }[] = [
   { id: "resumen",   label: "Resumen",   icon: LayoutDashboard, description: "Vista general de tu negocio" },
   { id: "ventas",    label: "Ventas",    icon: TrendingUp,      description: "Tendencias, horarios y patrones de venta" },
-  { id: "productos", label: "Productos", icon: Package,         description: "Clasificacion ABC, BCG y margenes" },
+  { id: "productos", label: "Productos", icon: Package,         description: "Clasificación ABC, BCG y márgenes" },
   { id: "clientes",  label: "Clientes",  icon: Users,           description: "Segmentación RFM (Recencia, Frecuencia, Monetario — clasifica clientes por comportamiento de compra), ranking y fidelidad" },
-  { id: "predicciones", label: "Predicciones", icon: Target,          description: "Pronosticos y alertas basados en historial" },
+  { id: "predicciones", label: "Predicciones", icon: Target,          description: "Pronósticos y alertas basados en tu historial" },
 ];
 
 // ── AnalyticsCard — wrapper profesional para cada grafico ────────────────────
@@ -76,7 +77,7 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
 }) {
   return (
     <div className={cn(
-      "bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
+      "bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-6 transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-5">
@@ -125,6 +126,19 @@ async function fetchKpisV2(): Promise<Record<string, unknown>> {
   }
 }
 
+/**
+ * kpis-v2 devuelve cada KPI como objeto `{ valor, cambio?, estado?, ... }`, no un
+ * número plano. El código previo hacía `Number(d.ingresosHoy)` sobre el objeto →
+ * NaN → 0, dejando TODOS los KPI en cero. Extrae `.valor` (o el número si ya viene
+ * plano, por compatibilidad con las claves de fallback).
+ */
+function kpiVal(v: unknown): number {
+  if (v && typeof v === "object" && "valor" in v) {
+    return Number((v as { valor: unknown }).valor) || 0;
+  }
+  return Number(v) || 0;
+}
+
 // ── InlineKPIStrip — compact KPI bar embedded in Resumen ─────────────────────
 function InlineKPIStrip() {
   const [kpis, setKpis] = useState<{
@@ -136,21 +150,28 @@ function InlineKPIStrip() {
       const d = await fetchKpisV2();
       if (!d || Object.keys(d).length === 0) return;
       setKpis({
-        ventasHoy: Number(d.ingresosHoy ?? d.ventasHoy ?? d.salesDay ?? 0) || 0,
-        ticketPromedio: Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0,
-        margen: Number(d.margenOperativo ?? d.marginPct ?? 0) || 0,
-        clientesHoy: Number(d.clientesActivos ?? d.clientesHoy ?? d.customersToday ?? 0) || 0,
-        fiadoPendiente: Number(d.fiadoPendiente ?? d.fiadoTotal ?? 0) || 0,
-        rotacion: Number(d.rotacionInventario ?? d.inventoryTurnover ?? 0) || 0,
+        ventasHoy: kpiVal(d.ingresosHoy ?? d.ventasHoy ?? d.salesDay),
+        ticketPromedio: kpiVal(d.ticketPromedio ?? d.avgTicket),
+        margen: kpiVal(d.margenOperativo ?? d.marginPct),
+        clientesHoy: kpiVal(d.clientesActivos ?? d.clientesHoy ?? d.customersToday),
+        fiadoPendiente: kpiVal(d.fiadoPendiente ?? d.fiadoTotal),
+        rotacion: kpiVal(d.rotacionInventario ?? d.inventoryTurnover),
       });
     })();
   }, []);
 
+  // Reporta vacío si TODOS los KPI están en cero (sin datos reales) → se oculta.
+  const allZero = kpis
+    ? kpis.ventasHoy === 0 && kpis.ticketPromedio === 0 && kpis.margen === 0 &&
+      kpis.clientesHoy === 0 && kpis.fiadoPendiente === 0 && kpis.rotacion === 0
+    : false;
+  useReportChartEmpty(allZero, kpis !== null);
+
   if (!kpis) {
     return (
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+          <div key={i} className="h-[86px] bg-[var(--surface-sunken)] rounded-2xl animate-pulse" />
         ))}
       </div>
     );
@@ -166,14 +187,18 @@ function InlineKPIStrip() {
   ];
 
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
+    // Mismo molde de tarjeta que "Por cobrar" y "Scoring": rounded-2xl sobre
+    // --surface-raised, rótulo arriba a la izquierda y cifra grande debajo.
+    // Antes eran cajitas centradas con `bg-[var(--surface-raised)]` crudo (sin variante dark) —
+    // el único KPI con esa forma en todo el panel.
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2.5  text-center"
+          className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3"
         >
-          <p className="text-xs font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
-          <p className={cn("text-lg font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
+          <p className="text-xs font-bold text-[var(--text-tertiary)]">{item.label}</p>
+          <p className={cn("mt-1 text-2xl font-extrabold tabular-nums", item.color)}>{item.value}</p>
         </div>
       ))}
     </div>
@@ -214,11 +239,17 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
       })();
   }, [section]);
 
+  // Reporta vacío si todos los valores son cero/N-A (sin datos reales) → se oculta.
+  const allZero = items
+    ? items.every(it => !parseFloat(it.value.replace(/[^0-9.]/g, "")))
+    : false;
+  useReportChartEmpty(allZero, items !== null);
+
   if (!items) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />
+          <div key={i} className="h-14 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
         ))}
       </div>
     );
@@ -227,7 +258,7 @@ function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clien
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
       {items.map((item) => (
-        <div key={item.label} className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-2  text-center">
+        <div key={item.label} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2  text-center">
           <p className="text-xs font-bold text-[var(--text-tertiary)] mb-0.5">{item.label}</p>
           <p className={cn("text-base font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
         </div>
@@ -247,7 +278,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   return (
     <div className={cn(
-      "bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6  transition-shadow hover:shadow-sm",
+      "bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-6 transition-shadow hover:shadow-sm",
       className,
     )}>
       <div className="mb-4">
@@ -270,7 +301,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
               className={cn(
                 "px-3 py-2 text-xs font-semibold rounded-t-lg transition-colors",
                 activeTab === t.id
-                  ? "bg-primary/10 text-primary border-b-2 border-primary"
+                  ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-b-2 border-primary"
                   : "text-[var(--text-secondary)] hover:bg-gray-50"
               )}
             >
@@ -287,7 +318,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
 }
 
 // ── Top 10 Clientes ─────────────────────────────────────────────────────────
-function Top10Clientes({ refreshKey }: { refreshKey: number }) {
+function Top10Clientes({ refreshKey, reportEmpty = true }: { refreshKey: number; reportEmpty?: boolean }) {
   const [customers, setCustomers] = useState<Array<{
     id: string; nombre: string; gastoTotal: number; compras: number; ticketPromedio: number; tendencia: number;
   }>>([]);
@@ -315,11 +346,17 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
     })();
   }, [refreshKey]);
 
+  // Vacío si no hay clientes o ninguno tiene gasto real → se oculta el gráfico.
+  // Solo reporta cuando es slot standalone (en TabbedCard se pasa reportEmpty=false
+  // para no ocultar toda la card al cambiar de pestaña).
+  const noRealData = customers.every(c => (c.gastoTotal ?? 0) === 0);
+  useReportChartEmpty(reportEmpty && noRealData, !loading);
+
   if (loading) {
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
+          <div key={i} className="h-12 bg-[var(--surface-sunken)] rounded-xl animate-pulse" />
         ))}
       </div>
     );
@@ -333,7 +370,7 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
       {customers.length === 0 ? (
         <p className="text-sm text-[var(--text-tertiary)] text-center py-8">No hay datos de clientes disponibles</p>
       ) : (
-        <table className="w-full text-sm">
+        <DataTable className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--rule-base)] text-left">
               <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-xs">#</th>
@@ -368,7 +405,7 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </DataTable>
       )}
     </div>
   );
@@ -424,6 +461,10 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
     })();
   }, [refreshKey]);
 
+  // StarProductCard SIEMPRE va anidado dentro de un TabbedCard, así que NO
+  // reporta vacío (ocultaría toda la card incluyendo la otra pestaña). Conserva
+  // su propio mensaje "Aun no hay ventas esta semana".
+
   if (loading) {
     return (
       <div className="animate-pulse">
@@ -448,7 +489,7 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
     <div className="rounded-xl bg-[var(--surface-sunken)] p-4 border border-[var(--rule-base)]">
       <div className="flex items-start gap-3">
         {star.imageUrl && (
-          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white dark:bg-[var(--color-card)] shrink-0 border border-[var(--rule-base)]">
+          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-[var(--surface-raised)] shrink-0 border border-[var(--rule-base)]">
             <Image src={star.imageUrl} alt={star.name} fill className="object-cover" sizes="64px" />
           </div>
         )}
@@ -501,7 +542,7 @@ function AnomalyDetectorWrapper({ refreshKey }: { refreshKey: number }) {
   if (sales.length === 0 && orders.length === 0) {
     return (
       <div className="text-center py-8">
-        <div className="w-10 h-10 rounded-full bg-[var(--accent-soft)] flex items-center justify-center mx-auto mb-3">
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
           <svg className="w-5 h-5 text-[var(--data-success-500)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
@@ -560,6 +601,28 @@ export default function AnalyticsBIModule() {
   const _handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1);
   }, []);
+
+  // ── Gate de datos a nivel módulo (mismo patrón que Inicio) ─────────────────
+  // Si el negocio no tiene NINGUNA venta ni pedido, en vez del muro de gráficos
+  // en cero mostramos el empty-state unificado. Brandon 2026-06-21.
+  const [dataState, setDataState] = useState<"loading" | "empty" | "has">("loading");
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [salesRaw, ordersRaw] = await Promise.all([
+          fetch("/api/sales?limit=1", { credentials: "include" }).then(r => (r.ok ? r.json() : [])).catch(() => []),
+          fetch("/api/orders?limit=1", { credentials: "include" }).then(r => (r.ok ? r.json() : [])).catch(() => []),
+        ]);
+        const sales = Array.isArray(salesRaw) ? salesRaw : salesRaw.sales ?? [];
+        const orders = Array.isArray(ordersRaw) ? ordersRaw : ordersRaw.orders ?? [];
+        if (!cancelled) setDataState(sales.length > 0 || orders.length > 0 ? "has" : "empty");
+      } catch {
+        if (!cancelled) setDataState("empty");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [refreshKey]);
 
   // ── Section content renderer ───────────────────────────────────────────────
   const renderSection = () => {
@@ -726,7 +789,7 @@ export default function AnalyticsBIModule() {
               <TabbedCard title="Inteligencia de Clientes" subtitle="Segmentación por comportamiento de compra · Ranking de los mejores" icon={Users}
                 tabs={[
                   { id: "rfm", label: "Segmentación RFM", content: <RFMWrapper refreshKey={refreshKey} /> },
-                  { id: "top10", label: "Top 10 Ranking", content: <Top10Clientes refreshKey={refreshKey} /> },
+                  { id: "top10", label: "Top 10 Ranking", content: <Top10Clientes refreshKey={refreshKey} reportEmpty={false} /> },
                 ]}
               />
             ),
@@ -778,30 +841,43 @@ export default function AnalyticsBIModule() {
 
   return (
     <div className="space-y-4">
+      {/* La descripción era «analítica avanzada de ventas, productos, clientes y
+          predicciones»: la lista de las pestañas que vienen justo abajo. */}
+      {/* `as="h2"`: el hub de Análisis ya puso el h1. Y título en español con
+          descripción, como el resto del panel — "Analytics BI" era el único
+          nombre en inglés y el único header sin una línea que lo explique. */}
       <AdminModuleHeader
-        title="Analytics BI"
-        description="Analítica avanzada de ventas, productos, clientes y predicciones"
+        as="h2"
+        title="Métricas del negocio"
+        description="Ventas, productos, clientes y predicciones, en una sola vista."
         icon={BarChart3}
       />
-      <AdminTabBar
-        tabs={SECTIONS.map(s => ({ id: s.id, label: s.label, icon: s.icon }))}
-        activeTab={activeSection}
-        onTabChange={(id) => setActiveSection(id as SectionId)}
-        moduleId={MODULE_ID}
-      >
-        {/* ── Section content with AnimatePresence ── */}
-        <AnimatePresence mode="wait">
-          <m.div
-            key={activeSection}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-          >
-            {renderSection()}
-          </m.div>
-        </AnimatePresence>
-      </AdminTabBar>
+      {dataState === "empty" ? (
+        <ChartsEmptyState
+          title="Todavía no hay datos para analizar"
+          description="Cuando registres tus primeras ventas, acá vas a ver tendencias, productos top, clientes y predicciones — todo automático. No te mostramos gráficos vacíos."
+        />
+      ) : (
+        <AdminTabBar
+          tabs={SECTIONS.map(s => ({ id: s.id, label: s.label, icon: s.icon }))}
+          activeTab={activeSection}
+          onTabChange={(id) => setActiveSection(id as SectionId)}
+          moduleId={MODULE_ID}
+        >
+          {/* ── Section content with AnimatePresence ── */}
+          <AnimatePresence mode="wait">
+            <m.div
+              key={activeSection}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              {renderSection()}
+            </m.div>
+          </AnimatePresence>
+        </AdminTabBar>
+      )}
     </div>
   );
 }

@@ -16,7 +16,7 @@ const STATUS_LABELS: Record<StopStatus, string> = {
 const STATUS_COLORS: Record<StopStatus, string> = {
   pending: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
   arrived: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
-  delivered: "bg-[var(--accent-soft)] text-[var(--data-success-500)]",
+  delivered: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
   failed: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
   skipped: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
 };

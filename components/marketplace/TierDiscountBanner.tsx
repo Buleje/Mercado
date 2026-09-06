@@ -23,8 +23,8 @@ const ICON_MAP = {
 
 const COLOR_MAP = {
   frecuente: { bg: "var(--accent-soft)", border: "var(--accent)", text: "var(--accent)" },
-  vip: { bg: "#FED7AA", border: "#EA580C", text: "#92400E" },
-  embajador: { bg: "#FEF3C7", border: "#F59E0B", text: "#B45309" },
+  vip: { bg: "#ffe1dd", border: "#f0503f", text: "#842e25" },
+  embajador: { bg: "#fff1ef", border: "#ff6b5b", text: "#c93b2c" },
 } as const;
 
 interface TierDiscountBannerProps {

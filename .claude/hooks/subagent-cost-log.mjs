@@ -57,7 +57,9 @@ async function readStdin() {
     process.stdin.setEncoding("utf-8");
     process.stdin.on("data", (chunk) => (data += chunk));
     process.stdin.on("end", () => resolve(data));
-    setTimeout(() => resolve(data), 40);
+    // 40ms truncaba el payload bajo carga → 1503 entradas "unknown" en el
+    // jsonl. El hook corre async con timeout 2s; 1500ms deja margen.
+    setTimeout(() => resolve(data), 1500);
   });
 }
 
@@ -86,6 +88,52 @@ function readAgg() {
   }
 }
 
+/**
+ * El payload de SubagentStop (verificado empíricamente 2026-06-29) NO trae tokens
+ * ni duración: trae `agent_transcript_path` (el JSONL del subagente). Lo parseamos
+ * para sacar tokens (input no-cacheado + cache_creation + output), tool_uses y
+ * duración (timestamp último − primero). Best-effort: si falla, devolvemos null.
+ */
+function parseAgentTranscript(path) {
+  try {
+    if (!path || !existsSync(path)) return null;
+    const lines = readFileSync(path, "utf-8").trim().split("\n");
+    let tokensIn = 0;
+    let tokensOut = 0;
+    let toolUses = 0;
+    let first = null;
+    let last = null;
+    for (const line of lines) {
+      let o;
+      try {
+        o = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      if (o.timestamp) {
+        last = o.timestamp;
+        if (!first) first = o.timestamp;
+      }
+      const u = o.message?.usage;
+      if (o.type === "assistant" && u) {
+        // input_tokens = entrada nueva no-cacheada; cache_creation = tokens nuevos
+        // escritos al cache (costo real). Excluimos cache_read (re-lecturas baratas)
+        // para no inflar la métrica que /evolve usa para evaluar eficiencia.
+        tokensIn += (u.input_tokens || 0) + (u.cache_creation_input_tokens || 0);
+        tokensOut += u.output_tokens || 0;
+        if (Array.isArray(o.message.content)) {
+          toolUses += o.message.content.filter((c) => c?.type === "tool_use").length;
+        }
+      }
+    }
+    const durationMs =
+      first && last ? new Date(last).getTime() - new Date(first).getTime() : null;
+    return { tokensIn, tokensOut, toolUses, durationMs };
+  } catch {
+    return null;
+  }
+}
+
 try {
   const raw = await readStdin();
   let parsed = {};
@@ -95,12 +143,30 @@ try {
     /* parsed stays {} */
   }
 
-  const tokensIn = parsed.tokens_in ?? parsed.input_tokens ?? 0;
-  const tokensOut = parsed.tokens_out ?? parsed.output_tokens ?? 0;
+  // El nombre del agente viene en `agent_type` (no `agent_name`). Los tokens/
+  // duración se leen del transcript del subagente (no están en el payload).
+  const tx = parseAgentTranscript(parsed.agent_transcript_path);
+
+  const tokensIn = parsed.tokens_in ?? parsed.input_tokens ?? tx?.tokensIn ?? 0;
+  const tokensOut = parsed.tokens_out ?? parsed.output_tokens ?? tx?.tokensOut ?? 0;
   const tokens = (tokensIn || 0) + (tokensOut || 0);
-  const success = parsed.success ?? null;
-  const agent = parsed.agent_name ?? parsed.agent ?? "unknown";
-  const durationMs = parsed.duration_ms ?? null;
+  const success =
+    parsed.success ?? (parsed.stop_reason ? parsed.stop_reason === "completed" : null);
+  // `agent_type` puede venir como string VACÍO (?? no cae al fallback con "")
+  // → 95 líneas {"agent":""} en el jsonl + bucket "" en los agregados.
+  const agent =
+    [parsed.agent_type, parsed.agent_name, parsed.agent, parsed.subagent_type]
+      .map((v) => (typeof v === "string" ? v.trim() : ""))
+      .find(Boolean) || "unknown";
+  const durationMs = parsed.duration_ms ?? tx?.durationMs ?? null;
+  const toolUses = parsed.tool_uses ?? tx?.toolUses ?? null;
+
+  // Payload fantasma (sin nombre, sin transcript legible, sin tokens): descartar
+  // la línea y dejar muestra del raw en el errors.log para diagnóstico.
+  if (agent === "unknown" && !tx && !tokens && durationMs == null) {
+    logErr("payload sin datos, línea descartada", raw.slice(0, 400));
+    process.exit(0);
+  }
 
   const entry = {
     ts: new Date().toISOString(),
@@ -109,12 +175,26 @@ try {
     duration_ms: durationMs,
     tokens_in: tokensIn || null,
     tokens_out: tokensOut || null,
-    tool_uses: parsed.tool_uses ?? null,
+    tool_uses: toolUses,
     success,
   };
 
-  // 1) JSONL append-only
+  // 1) JSONL append-only (rotación: >1MB → conservar últimas 1500 líneas)
   mkdirSync(metricsDir, { recursive: true });
+  try {
+    if (existsSync(jsonlFile)) {
+      const prev = readFileSync(jsonlFile, "utf-8");
+      if (prev.length > 1_000_000) {
+        writeFileSync(
+          jsonlFile,
+          prev.trim().split("\n").slice(-1500).join("\n") + "\n",
+          "utf-8",
+        );
+      }
+    }
+  } catch (err) {
+    logErr("rotate jsonl", err);
+  }
   appendFileSync(jsonlFile, JSON.stringify(entry) + "\n", "utf-8");
 
   // 2) Aggregated JSON for skills

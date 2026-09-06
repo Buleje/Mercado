@@ -20,7 +20,7 @@ interface HoldedKPIProps {
 }
 
 const DOT_COLORS: Record<string, string> = {
-  emerald: "bg-[var(--accent-soft)]",
+  emerald: "bg-primary/10",
   red: "bg-[var(--data-error-500)]",
   amber: "bg-[var(--data-warning-500)]",
   blue: "bg-[var(--text-secondary)]",

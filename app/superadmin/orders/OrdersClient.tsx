@@ -15,6 +15,7 @@
  *  - Tonos rose-700/dark:rose-300 correctos (sustituye var(--data-error-700))
  */
 
+import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ShoppingBag,
@@ -42,7 +43,6 @@ import {
   BarChart3,
   CheckSquare,
   Square,
-  Users,
   TrendingUp,
 } from "@buleje/design-system/icons";
 import { AdminTabShell } from "../_components/_shared";
@@ -88,7 +88,7 @@ type SortKey = "recent" | "oldest" | "total_desc" | "total_asc";
 type ViewMode = "compact" | "comfort";
 
 const STATUS_META: Record<OrderStatus, { label: string; tone: string; icon: typeof CheckCircle2 }> = {
-  pendiente: { label: "Pendiente", tone: "var(--data-warning-500)", icon: Clock },
+  pendiente: { label: "Pendiente", tone: "#0d9488", icon: Clock },
   confirmado: { label: "Confirmado", tone: "var(--data-info-500)", icon: CheckCircle2 },
   preparando: { label: "Preparando", tone: "var(--accent)", icon: Sparkles },
   en_camino: { label: "En camino", tone: "var(--accent)", icon: Truck },
@@ -195,7 +195,7 @@ function customerWaLink(phone: string | null | undefined, message?: string): str
 
 const SLA_CLS: Record<"good" | "warn" | "bad", string> = {
   good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-  warn: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  warn: "bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
   bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
 };
 
@@ -304,11 +304,7 @@ export function OrdersClient() {
   }, [search, load]);
 
   // Auto-refresh OPT-IN cada 30s
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const t = setInterval(() => void load(true), 30_000);
-    return () => clearInterval(t);
-  }, [autoRefresh, load]);
+  useVisiblePolling(() => void load(true), 30_000, autoRefresh);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -483,7 +479,7 @@ export function OrdersClient() {
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
               Pendientes
             </p>
-            <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-amber-600 dark:text-amber-400">
+            <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-teal-600 dark:text-teal-400">
               {kpis.grouped.pendiente}
             </p>
           </div>
@@ -502,7 +498,7 @@ export function OrdersClient() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-5">
-        <KpiCard label="Pendientes" value={loading ? "—" : kpis.grouped.pendiente} tone="var(--data-warning-500)" icon={Clock} />
+        <KpiCard label="Pendientes" value={loading ? "—" : kpis.grouped.pendiente} tone="#0d9488" icon={Clock} />
         <KpiCard label="Confirmados" value={loading ? "—" : kpis.grouped.confirmado} tone="var(--data-info-500)" icon={CheckCircle2} />
         <KpiCard label="Preparando" value={loading ? "—" : kpis.grouped.preparando} tone="var(--accent)" icon={Sparkles} />
         <KpiCard label="En camino" value={loading ? "—" : kpis.grouped.en_camino} tone="var(--accent)" icon={Truck} />

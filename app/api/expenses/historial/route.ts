@@ -22,7 +22,7 @@ import { logger } from "@/lib/logger";
 const QuerySchema = z.object({
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
-  source: z.enum(["all", "expense", "purchase"]).optional().default("all"),
+  source: z.enum(["all", "expense", "purchase", "flete", "adelanto", "caja"]).optional().default("all"),
 });
 
 export async function GET(req: NextRequest) {
@@ -50,24 +50,44 @@ export async function GET(req: NextRequest) {
       source: parsed.data.source,
     });
 
-    // KPIs agregados
-    const totalGastado = items.reduce((s, i) => s + i.amount, 0);
-    const porCategoria = items.reduce<Record<string, number>>((acc, i) => {
-      acc[i.category] = (acc[i.category] ?? 0) + i.amount;
+    // KPIs agregados. Los totales se calculan acá, en el backend: el cliente
+    // sólo los muestra (regla #6 del proyecto).
+    //
+    // «Total gastado» cuenta SÓLO la clase `gasto`. Los adelantos al personal
+    // salen de la caja pero vuelven (son un derecho a cobrar) y los retiros de
+    // caja suelen ser la otra cara de un gasto ya registrado: sumarlos sería
+    // el mismo error que arregló el ADR-374 por otro camino.
+    const redondear = (n: number) => Math.round(n * 100) / 100;
+    const gastos = items.filter((i) => i.clase === "gasto");
+    const totalGastado = gastos.reduce((s, i) => s + i.amount, 0);
+    // Cuánto de eso ya salió de la caja: una OC recibida y sin pagar es gasto
+    // devengado, no plata que se fue.
+    const totalPagado = gastos.reduce((s, i) => s + i.montoPagado, 0);
+    const porCategoria = gastos.reduce<Record<string, number>>((acc, i) => {
+      acc[i.category] = redondear((acc[i.category] ?? 0) + i.amount);
       return acc;
     }, {});
-    const porSource = {
-      expense: items.filter((i) => i.source === "expense").reduce((s, i) => s + i.amount, 0),
-      purchase: items.filter((i) => i.source === "purchase").reduce((s, i) => s + i.amount, 0),
-    };
+    const sumaDe = (pred: (i: (typeof items)[number]) => boolean) =>
+      redondear(items.filter(pred).reduce((s, i) => s + i.amount, 0));
 
     return NextResponse.json({
       items,
       kpis: {
-        totalGastado: Math.round(totalGastado * 100) / 100,
-        cantidadGastos: items.length,
+        totalGastado: redondear(totalGastado),
+        totalPagado: redondear(totalPagado),
+        totalPorPagar: redondear(totalGastado - totalPagado),
+        cantidadGastos: gastos.length,
         porCategoria,
-        porSource,
+        porSource: {
+          expense: sumaDe((i) => i.source === "expense"),
+          purchase: sumaDe((i) => i.source === "purchase"),
+          flete: sumaDe((i) => i.source === "flete"),
+          adelanto: sumaDe((i) => i.source === "adelanto"),
+          caja: sumaDe((i) => i.source === "caja"),
+        },
+        // Fuera del total, para que se vean sin contaminarlo.
+        totalAnticipos: sumaDe((i) => i.clase === "anticipo"),
+        totalRetirosCaja: sumaDe((i) => i.clase === "caja"),
       },
     });
   } catch (err) {

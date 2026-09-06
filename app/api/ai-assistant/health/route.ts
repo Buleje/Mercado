@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
-  const rateLimited = applyRateLimit(req, "MODERATE", "ai-health");
+  const rateLimited = applyRateLimit(req, "SHELL_POLL", "ai-health");
   if (rateLimited) return rateLimited;
 
   const checks: SubsystemCheck[] = [];

@@ -24,7 +24,6 @@ import {
   ShoppingBag,
   BarChart3,
   HeartPulse,
-  Wrench,
   Activity,
   Settings,
   Moon,
@@ -48,18 +47,95 @@ interface Command {
 }
 
 const NAV_COMMANDS: Command[] = [
-  { id: "nav-dashboard",       label: "Dashboard",          icon: LayoutDashboard, category: "navegación", href: "/superadmin/dashboard",      keywords: ["home", "inicio"] },
-  { id: "nav-control",         label: "Centro de Control",  icon: Gauge,           category: "navegación", href: "/superadmin/control-center", keywords: ["panel", "control"] },
-  { id: "nav-tenants",         label: "Tiendas",            icon: Building2,       category: "navegación", href: "/superadmin/tenants",        keywords: ["clientes", "empresas", "tenants"] },
-  { id: "nav-marketplace",     label: "Marketplace (hub)",  icon: ShoppingBag,     category: "navegación", href: "/superadmin/marketplace",                  keywords: ["mercado", "vendor", "multi-tienda"] },
-  { id: "nav-mkt-suppliers",   label: "Marketplace · Proveedores", icon: ShoppingBag, category: "navegación", href: "/superadmin/marketplace/suppliers",   keywords: ["proveedor", "supplier", "aplicacion", "aprobacion"] },
-  { id: "nav-mkt-cat-images",  label: "Marketplace · Imágenes de categorías", icon: ShoppingBag, category: "navegación", href: "/superadmin/marketplace/category-images", keywords: ["categoria", "imagen", "foto", "marketplace grid"] },
-  { id: "nav-stores",          label: "Tiendas publicadas", icon: ShoppingBag,     category: "navegación", href: "/superadmin/stores",         keywords: ["tiendas", "mercado"] },
-  { id: "nav-analytics",       label: "Analytics",          icon: BarChart3,       category: "navegación", href: "/superadmin/analytics",      keywords: ["reportes", "metricas", "kpi"] },
-  { id: "nav-health",          label: "Salud del Sistema",  icon: HeartPulse,      category: "navegación", href: "/superadmin/health",         keywords: ["estado", "monitoreo"] },
+  {
+    id: "nav-dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    category: "navegación",
+    href: "/superadmin/dashboard",
+    keywords: ["home", "inicio"],
+  },
+  {
+    id: "nav-control",
+    label: "Centro de Control",
+    icon: Gauge,
+    category: "navegación",
+    href: "/superadmin/control-center",
+    keywords: ["panel", "control"],
+  },
+  {
+    id: "nav-tenants",
+    label: "Tiendas",
+    icon: Building2,
+    category: "navegación",
+    href: "/superadmin/tenants",
+    keywords: ["clientes", "empresas", "tenants"],
+  },
+  {
+    id: "nav-marketplace",
+    label: "Marketplace (hub)",
+    icon: ShoppingBag,
+    category: "navegación",
+    href: "/superadmin/marketplace",
+    keywords: ["mercado", "vendor", "multi-tienda"],
+  },
+  {
+    id: "nav-mkt-suppliers",
+    label: "Marketplace · Proveedores",
+    icon: ShoppingBag,
+    category: "navegación",
+    href: "/superadmin/marketplace/suppliers",
+    keywords: ["proveedor", "supplier", "aplicacion", "aprobacion"],
+  },
+  {
+    id: "nav-mkt-cat-images",
+    label: "Marketplace · Imágenes de categorías",
+    icon: ShoppingBag,
+    category: "navegación",
+    href: "/superadmin/marketplace/category-images",
+    keywords: ["categoria", "imagen", "foto", "marketplace grid"],
+  },
+  {
+    id: "nav-stores",
+    label: "Tiendas publicadas",
+    icon: ShoppingBag,
+    category: "navegación",
+    href: "/superadmin/stores",
+    keywords: ["tiendas", "mercado"],
+  },
+  {
+    id: "nav-analytics",
+    label: "Analytics",
+    icon: BarChart3,
+    category: "navegación",
+    href: "/superadmin/analytics",
+    keywords: ["reportes", "metricas", "kpi"],
+  },
+  {
+    id: "nav-health",
+    label: "Salud del Sistema",
+    icon: HeartPulse,
+    category: "navegación",
+    href: "/superadmin/health",
+    keywords: ["estado", "monitoreo"],
+  },
   // Brandon 2026-05-21 audit fix #4: "Setup Pendiente" eliminado (redirect a dashboard).
-  { id: "nav-activity",        label: "Actividad",          icon: Activity,        category: "navegación", href: "/superadmin/activity",       keywords: ["log", "historial"] },
-  { id: "nav-settings",        label: "Config",             icon: Settings,        category: "navegación", href: "/superadmin/settings",       keywords: ["ajustes", "preferencias"] },
+  {
+    id: "nav-activity",
+    label: "Actividad",
+    icon: Activity,
+    category: "navegación",
+    href: "/superadmin/activity",
+    keywords: ["log", "historial"],
+  },
+  {
+    id: "nav-settings",
+    label: "Config",
+    icon: Settings,
+    category: "navegación",
+    href: "/superadmin/settings",
+    keywords: ["ajustes", "preferencias"],
+  },
 ];
 
 // ─── Props ──────────────────────────────────────────────────────────────────
@@ -140,7 +216,17 @@ export default function CommandPalette({
       }
     };
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    // Permite abrirlo programáticamente (botón "Buscar módulos" del sidebar).
+    const openHandler = () => {
+      setOpen(true);
+      setQuery("");
+      setSelectedIndex(0);
+    };
+    window.addEventListener("superadmin:open-command-palette", openHandler);
+    return () => {
+      window.removeEventListener("keydown", handler);
+      window.removeEventListener("superadmin:open-command-palette", openHandler);
+    };
   }, [open]);
 
   // ── Focus input when opening ────────────────────────────────────────────
@@ -188,8 +274,8 @@ export default function CommandPalette({
   // ── Group by category for rendering ─────────────────────────────────────
   const grouped = useMemo(() => {
     const groups: Record<Command["category"], Command[]> = {
-      "navegación": [],
-      "acciones": [],
+      navegación: [],
+      acciones: [],
     };
     filtered.forEach((cmd) => groups[cmd.category].push(cmd));
     return groups;
@@ -205,6 +291,9 @@ export default function CommandPalette({
     <div
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-start justify-center pt-20 px-4"
       onClick={(e) => e.target === e.currentTarget && setOpen(false)}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setOpen(false);
+      }}
       role="dialog"
       aria-modal="true"
       aria-label="Command palette"
@@ -276,15 +365,21 @@ export default function CommandPalette({
         {/* Footer */}
         <div className="flex items-center gap-3 px-4 py-2 border-t border-[var(--rule-base)] text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
           <span className="flex items-center gap-1">
-            <kbd className="font-mono bg-[var(--surface-sunken)] px-1 py-0.5 rounded border border-[var(--rule-base)]">↑↓</kbd>
+            <kbd className="font-mono bg-[var(--surface-sunken)] px-1 py-0.5 rounded border border-[var(--rule-base)]">
+              ↑↓
+            </kbd>
             navegar
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="font-mono bg-[var(--surface-sunken)] px-1 py-0.5 rounded border border-[var(--rule-base)]">↵</kbd>
+            <kbd className="font-mono bg-[var(--surface-sunken)] px-1 py-0.5 rounded border border-[var(--rule-base)]">
+              ↵
+            </kbd>
             seleccionar
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="font-mono bg-[var(--surface-sunken)] px-1 py-0.5 rounded border border-[var(--rule-base)]">Esc</kbd>
+            <kbd className="font-mono bg-[var(--surface-sunken)] px-1 py-0.5 rounded border border-[var(--rule-base)]">
+              Esc
+            </kbd>
             cerrar
           </span>
           <span className="ml-auto">

@@ -38,16 +38,20 @@ vi.mock("@/lib/whatsapp", () => ({
 }));
 
 // ── Mock: api-error ───────────────────────────────────────────────────────────
-vi.mock("@/lib/api-error", () => ({
-  toErrorPayload: vi.fn((err: unknown) => ({
-    payload: { error: err instanceof Error ? err.message : "Internal error" },
-    status:  500,
-  })),
-  newTraceId: vi.fn(() => "trace-test-apply"),
-  NotFoundError: class extends Error {
-    constructor(m: string) { super(m); this.name = "NotFoundError"; }
-  },
-}));
+vi.mock("@/lib/api-error", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api-error")>();
+  return {
+    ...actual,
+    toErrorPayload: vi.fn((err: unknown) => ({
+      payload: { error: err instanceof Error ? err.message : "Internal error" },
+      status:  500,
+    })),
+    newTraceId: vi.fn(() => "trace-test-apply"),
+    NotFoundError: class extends Error {
+      constructor(m: string) { super(m); this.name = "NotFoundError"; }
+    },
+  };
+});
 
 // ── Mock: prisma — transaction + tenant/store CRUD ───────────────────────────
 const {
@@ -83,6 +87,7 @@ vi.mock("@/lib/prisma", () => ({
 
 // ── Mock: cache — no-op para evitar side-effects en tests ─────────────────────
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet:           vi.fn(async (_k: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
   invalidate:         vi.fn(),
   invalidateByPrefix: vi.fn(),

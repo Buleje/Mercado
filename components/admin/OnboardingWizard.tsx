@@ -82,7 +82,7 @@ function ConfettiOverlay() {
   const tones = [
     "bg-[var(--accent)]",
     "bg-[var(--data-success-600)]",
-    "bg-[var(--accent-muted)]",
+    "bg-primary/15",
     "bg-[var(--data-success-100)]",
   ];
   return (
@@ -143,7 +143,7 @@ function StepRow({
         "group relative w-full text-left flex items-center gap-3 p-3 rounded-xl border transition-all",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-raised)]",
         done
-          ? "bg-[var(--accent-soft)] border-[var(--accent)]/30 cursor-default"
+          ? "bg-primary/10 border-[var(--accent)]/30 cursor-default"
           : "bg-[var(--surface-raised)] border-[var(--rule-base)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-sunken)]/40 active:scale-[0.99]"
       )}
       style={{ animation: `step-in 280ms ease-out ${index * 50}ms backwards` }}
@@ -153,7 +153,7 @@ function StepRow({
           "flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
           done
             ? "bg-[var(--accent-600,var(--accent))] text-white"
-            : "bg-[var(--accent-soft)] text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white"
+            : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white"
         )}
         aria-hidden="true"
       >

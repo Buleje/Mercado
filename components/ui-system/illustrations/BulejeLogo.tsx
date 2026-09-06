@@ -124,7 +124,10 @@ export function BulejeWordmark({
     // bug). dark:text-white sigue funcionando vía className override.
     <span
       className={cn("inline-flex items-center gap-2", className)}
-      style={{ color: "var(--accent-600, var(--accent))" }}
+      // forceDark = fondo oscuro fijo (footer): el texto debe heredar el color
+      // del className (text-white) en vez del accent-600 oscuro, que sobre negro
+      // no contrasta (fix Brandon 2026-06-15: "Buleje" negro sobre negro).
+      style={forceDark ? undefined : { color: "var(--accent-600, var(--accent))" }}
       {...rest}
     >
       <BulejeMark size={size} forceDark={forceDark} />

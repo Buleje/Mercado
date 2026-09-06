@@ -1,7 +1,8 @@
 "use client";
  
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { DollarSign, Download, Loader2, AlertTriangle, Settings, RefreshCw, Users } from "@buleje/design-system/icons";
+import { Field } from "@/components/admin/shared/Field";
+import { Download, Loader2, AlertTriangle, Settings, RefreshCw, Users } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 
 /* ── Helpers ── */
@@ -14,8 +15,9 @@ const STORAGE_KEY = "commission_rates";
 type SaleRecord = {
   id: string;
   total: number;
-  cashierId: string;
-  cashierName: string;
+  cashierId: string | null;
+  // `/api/sales` no incluye el nombre — se resuelve desde /api/admin-users.
+  cashierName?: string;
   createdAt: string;
 };
 
@@ -37,6 +39,12 @@ export default function CommissionCalculator() {
   const [customRates, setCustomRates] = useState<Record<string, number>>({});
   const [showSettings, setShowSettings] = useState(false);
   const [period, setPeriod] = useState<"month" | "week">("month");
+  // FIX 2026-07-08 (reporte ventas-caja bug "Sin cajero"): `/api/sales` NO
+  // devuelve `cashierName` — solo `cashierId`, que guarda el username del
+  // cajero (ver app/api/sales POST). Sin resolución, el detalle mostraba
+  // "Sin cajero" para TODAS las ventas aunque el total salía bien. Resolvemos
+  // username→nombre desde /api/admin-users (misma fuente que TurnosModule).
+  const [cashierNames, setCashierNames] = useState<Record<string, string>>({});
 
   /* Cargar tasas desde localStorage */
   useEffect(() => {
@@ -95,13 +103,34 @@ export default function CommissionCalculator() {
     load();
   }, [load]);
 
+  /* Resolver username→nombre del equipo (una vez). El cashierId de cada venta
+     es el username; sin este mapa el detalle caía a "Sin cajero". */
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin-users")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((users: { username: string; name?: string }[]) => {
+        if (cancelled || !Array.isArray(users)) return;
+        const map: Record<string, string> = {};
+        for (const u of users) if (u.username) map[u.username] = u.name || u.username;
+        setCashierNames(map);
+      })
+      .catch((e) => console.warn("[CommissionCalculator] admin-users load failed:", e));
+    return () => { cancelled = true; };
+  }, []);
+
   /* ── Calculos ── */
   const { summaries, totalCommissions } = useMemo(() => {
     const byId: Record<string, { name: string; total: number; count: number }> = {};
 
     for (const s of sales) {
+      const hasCashier = !!s.cashierId;
       const id = s.cashierId || "unknown";
-      const name = s.cashierName || "Sin cajero";
+      // Prioridad: cashierName del payload (si existe) → nombre del equipo por
+      // username → el propio username. Solo ventas SIN cajero → "Sin cajero".
+      const name = hasCashier
+        ? (s.cashierName || cashierNames[id] || id)
+        : "Sin cajero";
       if (!byId[id]) byId[id] = { name, total: 0, count: 0 };
       byId[id].total += s.total;
       byId[id].count++;
@@ -125,7 +154,7 @@ export default function CommissionCalculator() {
     const totalCommissions = summaries.reduce((s, c) => s + c.commission, 0);
 
     return { summaries, totalCommissions };
-  }, [sales, defaultRate, customRates]);
+  }, [sales, defaultRate, customRates, cashierNames]);
 
   /* ── Export CSV ── */
   const handleExport = () => {
@@ -159,7 +188,7 @@ export default function CommissionCalculator() {
             className={cn(
               "p-1.5 rounded-lg border transition-colors",
               showSettings
-                ? "border-primary bg-primary/10 text-primary"
+                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750"
             )}
           >
@@ -181,23 +210,23 @@ export default function CommissionCalculator() {
           <p className="text-sm font-medium text-[var(--text-secondary)]">
             Configuracion de comisiones
           </p>
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-[var(--text-secondary)] w-40">
-              Porcentaje por defecto
-            </label>
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                step={0.5}
-                value={defaultRate}
-                onChange={(e) => setDefaultRate(Number(e.target.value))}
-                className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <span className="text-sm text-[var(--text-secondary)]">%</span>
-            </div>
-          </div>
+          <Field className="flex items-center gap-3" label="Porcentaje por defecto" labelClassName="text-sm text-[var(--text-secondary)] w-40">
+            {(id) => (
+              <div className="flex items-center gap-1.5">
+                <input
+                  id={id}
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  value={defaultRate}
+                  onChange={(e) => setDefaultRate(Number(e.target.value))}
+                  className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <span className="text-sm text-[var(--text-secondary)]">%</span>
+              </div>
+            )}
+          </Field>
 
           {summaries.length > 0 && (
             <div className="space-y-2">
@@ -358,7 +387,26 @@ export default function CommissionCalculator() {
             <Users className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
           </div>
           <p className="text-base font-semibold text-[var(--text-primary)] mb-1">Sin ventas en el periodo</p>
-          <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">Las comisiones se calculan a partir de las ventas registradas. Genera tu primera venta desde POS para ver el desglose.</p>
+          <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
+            Las comisiones se calculan a partir de las ventas registradas. Generá tu primera venta desde el POS para ver el desglose.
+          </p>
+          {/* El empty state decía sólo «no hay ventas» y escondía lo único
+              accionable: la regla con la que se van a calcular. Dejarla lista
+              ANTES de vender es justamente lo que se quiere hacer acá. */}
+          <p className="mt-4 text-sm text-[var(--text-secondary)]">
+            Regla actual: <b className="font-mono text-[var(--text-primary)]">{defaultRate}%</b> sobre el total vendido por cada
+            vendedor.
+            {Object.keys(customRates).length > 0 && (
+              <> Hay {Object.keys(customRates).length} vendedor(es) con porcentaje propio.</>
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowSettings(true)}
+            className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+          >
+            <Settings className="h-4 w-4" /> Ajustar el porcentaje
+          </button>
         </div>
       )}
     </div>

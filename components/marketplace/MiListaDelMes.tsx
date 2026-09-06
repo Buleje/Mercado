@@ -191,7 +191,7 @@ export default function MiListaDelMes({
       {/* Header editorial */}
       <div className="px-5 pt-5 pb-4">
         <div className="flex items-start gap-3">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Calendar className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <div className="flex-1">
@@ -219,7 +219,7 @@ export default function MiListaDelMes({
               className={cn(
                 "relative flex items-center gap-3 rounded-xl border p-3 text-left transition-all",
                 isSelected
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                  ? "border-[var(--accent)] bg-primary/10"
                   : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] hover:border-[var(--accent)]/40",
               )}
             >

@@ -6,9 +6,9 @@ import Link from "next/link";
 import { m as motion, AnimatePresence } from "framer-motion";
 import {
   Search, SearchX, Clock, Users, ChefHat, ShoppingCart, Flame,
-  X, Sparkles, ArrowRight, Star, Eye, LayoutGrid, List,
+  Sparkles, ArrowRight, Star, Eye, LayoutGrid, List,
   Send, Utensils, Salad, Soup, Cake, GlassWater, Zap,
-  Trophy, MapPin, CheckCircle2, AlertTriangle,
+  Trophy, CheckCircle2, AlertTriangle,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import SectionHeading from "@/components/marketplace/home/SectionHeading";
@@ -17,7 +17,8 @@ import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
 import { RecipeImagePlaceholder } from "@buleje/design-system";
 import RecipePreviewModal from "@/components/marketplace/RecipePreviewModal";
-import PromoBannerCarousel from "@/components/marketplace/PromoBannerCarousel";
+import HomeHeroBanner from "@/components/marketplace/home/HomeHeroBanner";
+import type { PromoBanner } from "@/components/marketplace/PromoBannerRenderer";
 
 // ── Types ──────────────────────────────────────────────────
 type Ingrediente = {
@@ -51,6 +52,7 @@ type Receta = {
   costoTotal?: number;
   colorFrom?: string;
   colorTo?: string;
+  emoji?: string | null;
   imageUrl?: string | null;
   ingredientes: Ingrediente[];
   totalIngredientes: number;
@@ -73,6 +75,15 @@ const CATEGORIAS: { id: string; label: string; Icon: LucideIcon }[] = [
 ];
 
 import { CATEGORIA_GRADIENTS } from "@/lib/recipe-gradients";
+
+// Ícono grande por categoría para el hero de la card (sobre el gradiente).
+const CAT_ICON: Record<string, LucideIcon> = {
+  "Entradas": Salad,
+  "Platos de fondo": ChefHat,
+  "Sopas": Soup,
+  "Postres": Cake,
+  "Bebidas": GlassWater,
+};
 
 const DIFICULTAD_LABELS: Record<string, { label: string; Icon: LucideIcon }> = {
   "Facil": { label: "Fácil", Icon: Star },
@@ -153,14 +164,14 @@ function RecetaCard({
         "rounded-xl overflow-hidden bg-[var(--surface-raised)] border transition-[border-color,box-shadow,transform] duration-[var(--dur-fast)]",
         cookable
           ? "border-[var(--rule-soft)] hover:border-[var(--accent)]/40 hover:shadow-md"
-          : "border-[var(--data-warning-200,#fde68a)]/60 hover:shadow-md"
+          : "border-[var(--data-warning-200,#ffe1dd)]/60 hover:shadow-md"
       )}>
         {/* Banda superior de cocinabilidad — siempre visible */}
         <div className={cn(
           "px-4 py-2 flex items-center gap-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
           cookable
             ? "bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-700,#047857)] dark:bg-emerald-950/40 dark:text-emerald-300"
-            : "bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)] dark:bg-amber-950/40 dark:text-amber-300"
+            : "bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#c93b2c)] dark:bg-amber-950/40 dark:text-amber-300"
         )}>
           {cookable ? (
             <>
@@ -193,13 +204,28 @@ function RecetaCard({
                 className="object-cover group-hover:scale-105 transition-transform duration-[var(--dur-slow)]"
               />
             ) : (
-              /* Placeholder más grande con icono y texto visible */
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-linear-to-br from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)] text-[var(--text-tertiary)] gap-3">
-                <ChefHat className="h-14 w-14" strokeWidth={1.25} aria-hidden />
-                <span className="text-[length:var(--ts-xs)] uppercase tracking-wider font-bold">
-                  {receta.categoria ?? "Receta"}
-                </span>
-              </div>
+              /* Ícono de categoría grande en blanco sobre el gradiente de la
+                 categoría — vibrante, único por tipo de plato y confiable en
+                 todo browser (Brandon 2026-07-04). */
+              (() => {
+                const CatIcon = CAT_ICON[receta.categoria ?? ""] ?? Utensils;
+                return (
+                  <div
+                    className="absolute inset-0 flex items-center justify-center overflow-hidden"
+                    style={{
+                      backgroundImage: `linear-gradient(135deg, ${receta.colorFrom ?? "#f97316"}, ${receta.colorTo ?? "#ef4444"})`,
+                    }}
+                  >
+                    <div aria-hidden className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/15 blur-xl" />
+                    <div aria-hidden className="pointer-events-none absolute -bottom-8 -left-6 h-28 w-28 rounded-full bg-black/10 blur-xl" />
+                    <CatIcon
+                      className="h-20 w-20 text-white/95 drop-shadow-[0_6px_16px_rgba(0,0,0,0.25)] transition-transform duration-[var(--dur-slow)] group-hover:scale-110 sm:h-24 sm:w-24"
+                      strokeWidth={1.4}
+                      aria-hidden
+                    />
+                  </div>
+                );
+              })()
             )}
 
             {/* Subtle bottom gradient solo si hay imagen real */}
@@ -282,12 +308,23 @@ function RecetaCard({
               </p>
               <p className={cn(
                 "text-base font-bold tabular-nums",
-                cookable ? "text-[var(--text-primary)]" : "text-[var(--data-warning-700,#b45309)]"
+                cookable ? "text-[var(--text-primary)]" : "text-[var(--data-warning-700,#c93b2c)]"
               )}>
                 {availIngs}<span className="text-[var(--text-tertiary)] font-medium">/{totalIngs}</span>
               </p>
             </div>
           </div>
+
+          {/* CTA: agregar los ingredientes disponibles al carrito (1 click) */}
+          <button
+            type="button"
+            onClick={() => onAddAll(receta)}
+            disabled={availIngs === 0}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ShoppingCart className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            Agregar ingredientes
+          </button>
         </div>
       </div>
     </motion.div>
@@ -332,7 +369,13 @@ function CategoriaCard({
 }
 
 // ── Main Component ─────────────────────────────────────────
-export default function RecetarioClient() {
+export default function RecetarioClient({
+  heroBanners,
+}: {
+  /** Banners del slot "recetas" resueltos en el server (page.tsx) — se pintan
+   *  en el primer byte, sin cascada hidratar→fetch→pintar. */
+  heroBanners?: PromoBanner[];
+} = {}) {
   const [recetas, setRecetas] = useState<Receta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -340,10 +383,12 @@ export default function RecetarioClient() {
   const [catFilter, setCatFilter] = useState("todas");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [suggestion, setSuggestion] = useState("");
-  // Filtro de cocinabilidad — solo mostrar recetas que se pueden cocinar HOY
-  // (todos los ingredientes esenciales tienen stock en al menos 1 tienda).
-  // Default ON: el cliente quiere ver lo que puede pedir ya.
-  const [cookableOnly, setCookableOnly] = useState(true);
+  // Filtro de cocinabilidad — solo recetas cocinables HOY. Default OFF para que
+  // el recetario muestre TODO el catálogo (con banda de estado por card); el
+  // cliente puede acotar a "solo cocinables" con el toggle. Brandon 2026-07-04.
+  const [cookableOnly, setCookableOnly] = useState(false);
+  // Filtro por dificultad (nuevo): "" = todas.
+  const [difFilter, setDifFilter] = useState<"" | "Facil" | "Media" | "Dificil">("");
   // Vista previa de receta — reemplaza la pagina dedicada /recetas/[id]
   const [previewRecipe, setPreviewRecipe] = useState<Receta | null>(null);
   const { addItem } = useCart();
@@ -395,8 +440,12 @@ export default function RecetarioClient() {
       list = list.filter(r => r.cookable !== false);
     }
 
+    if (difFilter) {
+      list = list.filter(r => r.dificultad === difFilter);
+    }
+
     return list;
-  }, [recetas, search, catFilter, cookableOnly]);
+  }, [recetas, search, catFilter, cookableOnly, difFilter]);
 
   // Conteo total de no-cocinables para el toggle (independiente de filtros)
   const hiddenByCookability = useMemo(
@@ -466,23 +515,29 @@ export default function RecetarioClient() {
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)]">
-      {/* Banner promocional rotativo (3 slides cada 8s) */}
-      <PromoBannerCarousel slot="recetas" />
+      {/* Hero full-bleed IGUAL que el inicio y /tiendas (mismo HomeHeroBanner:
+          carrusel bold, swipe, flechas, dots). Slot "recetas" resuelto en el
+          server vía heroBanners; si llega vacío, cae al fetch client + fallback
+          de marca del propio componente. */}
+      <HomeHeroBanner slot="recetas" initialBanners={heroBanners} />
 
-      {/* ═══════════════════ HERO INTRO ═══════════════════ */}
+      {/* ═══════════════════ TÍTULO DE SECCIÓN ═══════════════════
+          Patrón de /tiendas: eyebrow + H2 compacto con acento teal en la
+          keyword. El H1 único y canónico es el sr-only del server (page.tsx). */}
       <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-6">
         <div className="flex items-start gap-4 flex-wrap">
-          <div className="hidden sm:inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+          <div className="hidden sm:inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
             <ChefHat className="h-7 w-7" strokeWidth={1.75} aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
               Recetario peruano
             </p>
-            <h1 className="mt-1 font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-              Cocina rico con lo que hay en tu bodega
-            </h1>
-            <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] max-w-2xl">
+            <h2 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+              Cocina rico con lo que hay en tu{" "}
+              <span className="text-[var(--accent)]">bodega</span>
+            </h2>
+            <p className="mt-2 text-base text-[var(--text-secondary)] max-w-2xl leading-snug">
               Te mostramos solo las recetas que <strong className="text-[var(--text-primary)]">puedes
               preparar hoy</strong>. Si un ingrediente esencial falta en todas
               las tiendas, escondemos el plato hasta que vuelva a haber stock.
@@ -601,6 +656,34 @@ export default function RecetarioClient() {
             </label>
           </div>
 
+          {/* Row 3: filtro por dificultad (nuevo) */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+              Dificultad
+            </span>
+            {([
+              { v: "", label: "Todas" },
+              { v: "Facil", label: "Fácil" },
+              { v: "Media", label: "Media" },
+              { v: "Dificil", label: "Difícil" },
+            ] as const).map((d) => (
+              <button
+                key={d.v || "all"}
+                type="button"
+                onClick={() => setDifFilter(d.v)}
+                aria-pressed={difFilter === d.v}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-[length:var(--ts-xs)] font-bold transition-colors",
+                  difFilter === d.v
+                    ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+                    : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]",
+                )}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+
           {/* Mobile count */}
           <div className="sm:hidden flex items-center justify-between text-sm">
             <span className="text-[var(--text-tertiary)] tabular-nums">
@@ -636,7 +719,7 @@ export default function RecetarioClient() {
           >
             <span
               aria-hidden
-              className="mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#b45309)] dark:bg-amber-950/40 dark:text-amber-300"
+              className="mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-700,#c93b2c)] dark:bg-amber-950/40 dark:text-amber-300"
             >
               <AlertTriangle className="h-8 w-8" strokeWidth={1.75} />
             </span>

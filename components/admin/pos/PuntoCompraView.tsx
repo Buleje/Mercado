@@ -1,11 +1,11 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
 import {
   useState,
   useEffect,
   useMemo,
   useCallback,
+  useRef,
 } from "react";
 import dynamic from "next/dynamic";
 import { useLocalStorageDraft } from "@/hooks/use-local-storage-draft";
@@ -22,12 +22,13 @@ import {
   ScanLine,
   Tag,
   Camera,
-  ShoppingCart,
+  Users,
   Plus,
   X as XIcon,
   Check as CheckIcon,
   Trash2,
 } from "@buleje/design-system/icons";
+import { SectionTitle, CardTitle, DataTable } from "@buleje/design-system";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { usePOSSound } from "./usePOSSound";
@@ -40,9 +41,11 @@ import {
   PurchaseSortBy as SortBy,
   PurchaseViewMode as ViewMode,
   calculateSuggestedQty,
+  needsReorder,
 } from "@/lib/types/purchases";
 import { buildPurchaseWhatsAppUrl } from "@/lib/whatsapp-client";
 import { csrfHeaders } from "@/lib/csrf-client";
+import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 
 const OCPrintPreviewModal = dynamic(() => import("./OCPrintPreviewModal"), { ssr: false });
 const InvoiceScannerModal = dynamic(() => import("./InvoiceScannerModal"), { ssr: false });
@@ -53,7 +56,7 @@ const PuntoCompraLotSelector = dynamic(() => import("./PuntoCompraLotSelector"),
 const RecurringExpenseModal = dynamic(() => import("./RecurringExpenseModal"), { ssr: false });
 
 // Helpers para parsear metadata extra de gastos recurrentes (encoded en `description`).
-import { decodeExpenseDescription, summarizeMeta } from "@/lib/expense-meta";
+import { agruparDuplicados, decodeExpenseDescription, proximoVencimiento, summarizeMeta, yaPagadoEnPeriodo } from "@/lib/expense-meta";
 import { findCategory, CATEGORY_COLOR_CLASSES } from "@/lib/expense-categories";
 import { getCategoryIcon } from "@/lib/expense-icons";
 
@@ -124,6 +127,14 @@ function promoMeetsCondition(promo: ActivePromo, baseSubtotal: number, totalQty:
 
 const ITEMS_PER_PAGE = 24;
 
+const PUNTOCOMPRA_MODULE_ID = "punto-compra";
+
+const CART_TAB_ITEMS: AdminTab[] = [
+  { id: "carrito", label: "Carrito" },
+  { id: "frecuentes", label: "Frecuentes" },
+  { id: "paquetes", label: "Paquetes" },
+];
+
 export default function PuntoCompraView() {
   // ── Hooks de contexto y sonido ───────────────────────────────────────────────
   const { playDing } = usePOSSound();
@@ -178,6 +189,12 @@ export default function PuntoCompraView() {
   const [expenseError, setExpenseError] = useState<string | null>(null);
   const [executingTemplateId, setExecutingTemplateId] = useState<string | null>(null);
   const [showIGV, setShowIGV] = useState(false);
+  /** Identifica el intento de compra: dos clicks comparten clave, no crean dos OCs. */
+  const idempotencyKeyRef = useRef<string>(
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `poc-${Math.random().toString(36).slice(2)}`,
+  );
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [discount, setDiscount] = useState(0);
@@ -198,6 +215,9 @@ export default function PuntoCompraView() {
   const [appliedPromo, setAppliedPromo] = useState<ActivePromo | null>(null);
   const [showInvoiceScanner, setShowInvoiceScanner] = useState(false);
   const [showOrderCreator, setShowOrderCreator] = useState(false);
+  // Bloqueo por trial/plan expirado al crear OC (402). Muestra un aviso claro
+  // con CTA en vez del error genérico (reporte QA Compras).
+  const [planBlockedMsg, setPlanBlockedMsg] = useState<string | null>(null);
   const [lotSelectorProduct, setLotSelectorProduct] = useState<Product | null>(null);
   const [cartTab, setCartTab] = useState<"carrito" | "frecuentes" | "paquetes">("carrito");
   // ── Modal "Nuevo proveedor" inline ──
@@ -336,6 +356,43 @@ export default function PuntoCompraView() {
   }, []);
 
   useEffect(() => { fetchExpenseCatalog(); }, [fetchExpenseCatalog]);
+
+  /**
+   * Los gastos YA registrados. Sin esto la tarjeta ofrecía «Pagar» igual
+   * hubieras pagado o no — la misma trampa que los duplicados, por otro camino.
+   */
+  const [pagosHechos, setPagosHechos] = useState<{ description: string; amount: number; date: string; templateId?: string | null }[]>([]);
+  useEffect(() => {
+    fetch("/api/expenses", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d) => {
+        const arr = Array.isArray(d) ? d : [];
+        setPagosHechos(
+          arr
+            .filter((e: { recurring?: boolean }) => !e.recurring)
+            .map((e: { description?: string; amount?: number; date?: string; createdAt?: string; templateId?: string | null }) => ({
+              description: e.description ?? "",
+              amount: Number(e.amount ?? 0),
+              date: e.date ?? e.createdAt ?? "",
+              templateId: e.templateId ?? null,
+            })),
+        );
+      })
+      .catch((err) => console.warn("[PuntoCompraView] pagos hechos fetch failed", err));
+  }, [expenseCatalog]);
+
+  /**
+   * El catálogo real del tenant trae SEIS tarjetas para tres gastos: el alquiler
+   * de S/850 aparecía dos veces, cada una con su botón «Pagar». El riesgo no es
+   * visual — es pagar dos veces. Se muestra uno por gasto y se avisa del resto.
+   */
+  /** Una sola fecha de referencia por montaje: si cada render creara la suya,
+   *  el «vence en N días» podría cambiar entre repintados. */
+  const [hoyRef] = useState(() => new Date());
+  const { unicos: expenseCatalogUnico, duplicados: expenseDuplicados } = useMemo(
+    () => agruparDuplicados(expenseCatalog, (g) => ({ description: g.description ?? "", amount: Number(g.amount ?? 0) })),
+    [expenseCatalog],
+  );
 
   // Ejecuta un gasto a partir de un template recurring
   const executeExpenseFromTemplate = useCallback(async (template: ExpenseTemplate) => {
@@ -477,7 +534,7 @@ export default function PuntoCompraView() {
   const filtered = useMemo(() => {
     let list = [...products];
     if (soloReponer)
-      list = list.filter((p) => (p.stock ?? 0) <= (p.stockMin ?? 0));
+      list = list.filter((p) => needsReorder(p));
     if (category !== "Todos")
       list = list.filter((p) => p.category === category);
     if (debouncedSearch) {
@@ -552,6 +609,17 @@ export default function PuntoCompraView() {
     };
   }, [cart, selectedSupplier, discount, paymentMethod, deliveryDate, notes, saveDraftHook]);
 
+  // Autosave del borrador ante CUALQUIER cambio del carrito/config (reporte QA
+  // Compras): antes solo se guardaba en `offline`/`beforeunload`, pero cambiar
+  // de pestaña admin DESMONTA esta vista sin disparar `beforeunload` → el
+  // carrito se perdía al volver. Guardando en cada cambio, el borrador siempre
+  // está al día y `loadDraft()` lo restaura al remontar. Solo guarda con items
+  // (no pisa con vacío; el borrador se limpia explícito al crear la orden).
+  useEffect(() => {
+    if (cart.length === 0) return;
+    saveDraftHook({ cart, selectedSupplier, discount, paymentMethod, deliveryDate, notes });
+  }, [cart, selectedSupplier, discount, paymentMethod, deliveryDate, notes, saveDraftHook]);
+
   // ── Atajo F2 para toggle escáner ─────────────────────────────────────────────
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -603,12 +671,16 @@ export default function PuntoCompraView() {
     [subtotal, discountAmount],
   );
 
-  const igvAmount = useMemo(() => total * 0.18, [total]);
-
-  const totalWithIGV = useMemo(() => total + igvAmount, [total, igvAmount]);
+  // El IGV va CONTENIDO en el costo, no encima. El precio de lista que pasa el
+  // proveedor ya lo incluye (ADR-377, `igvIncluded` por defecto true), así que
+  // sumarle 18% inventaba plata: el toggle mostraba un total que la orden no
+  // guardaba y —peor— ese número inflado era el que viajaba por WhatsApp al
+  // proveedor. Ahora desglosa cuánto IGV hay adentro, que es lo que sirve para
+  // sustentar el crédito fiscal.
+  const igvAmount = useMemo(() => total - total / 1.18, [total]);
 
   const needsReorderCount = useMemo(
-    () => products.filter((p) => (p.stock ?? 0) <= (p.stockMin ?? 0)).length,
+    () => products.filter((p) => needsReorder(p)).length,
     [products],
   );
 
@@ -617,7 +689,9 @@ export default function PuntoCompraView() {
     [cart],
   );
 
-  const displayTotal = showIGV ? totalWithIGV : total;
+  // Uno solo: el que se le paga al proveedor, el que guarda la orden y el que
+  // se manda por WhatsApp. El toggle sólo abre o cierra el desglose.
+  const displayTotal = total;
 
   // Mapa de carrito para lookup O(1) en vez de O(n) por producto
   const cartMap = useMemo(
@@ -691,13 +765,31 @@ export default function PuntoCompraView() {
           paymentMethod,
           deliveryDate: deliveryDate || undefined,
           discount,
+          // Dos clicks (o un reintento por conexión lenta, que en Pucallpa
+          // pasa) creaban dos órdenes iguales al mismo proveedor.
+          idempotencyKey: idempotencyKeyRef.current,
         }),
       });
-      if (!res.ok) throw new Error("Error al crear OC");
+      if (!res.ok) {
+        // 402 = trial/plan expirado (requireActiveSubscription). El backend ya
+        // manda `detail` + `upgradeUrl`; mostramos la causa REAL y un CTA en vez
+        // del genérico "No se pudo crear la OC" (reporte QA Compras).
+        if (res.status === 402) {
+          const body = await res.json().catch(() => ({} as { detail?: string; error?: string }));
+          setPlanBlockedMsg(body.detail ?? body.error ?? "Tu periodo de prueba terminó. Activá un plan para crear órdenes de compra.");
+          return;
+        }
+        throw new Error("Error al crear OC");
+      }
+      setPlanBlockedMsg(null);
       const oc = await res.json() as { id: string | number };
       const ocId = String(oc.id);
       setToastMsg(`Orden de Compra creada — ID: ${ocId}`);
       setLastOC({ id: ocId, total, items: cart.length });
+      idempotencyKeyRef.current =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `poc-${Math.random().toString(36).slice(2)}`;
       setCart([]);
       setNotes("");
       setDiscount(0);
@@ -836,13 +928,22 @@ export default function PuntoCompraView() {
             type="button"
             onClick={() => { setSoloReponer(true); setPage(1); }}
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 bg-[var(--surface-raised)] hover:bg-[var(--data-error-500)]/5 px-2.5 py-1 rounded-full transition-colors"
-            title="Ver solo los productos que necesitan reponerse"
+            title="Productos con stock en o por debajo del mínimo que fijaste. La pestaña Sugerencias cuenta distinto: mira cuánto se vendió, no el mínimo."
           >
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-error-500)]" />
             {needsReorderCount} a reponer
           </button>
         )}
       </div>
+
+      {/* Reporte QA Compras 2026-08-12: acá decía "2 a reponer" y Sugerencias
+          "Nada que reponer" con los mismos datos. No es una contradicción: son
+          dos preguntas distintas y conviene decirlo donde aparece el número. */}
+      {needsReorderCount > 0 && (
+        <p className="-mt-2 mb-3 text-xs text-[var(--text-tertiary)] text-right">
+          Contados por stock mínimo. Sugerencias mira la venta de los últimos días, así que puede darte otro número.
+        </p>
+      )}
 
       {/* Aviso reposición destacado */}
       {needsReorderCount > 5 && !soloReponer && (
@@ -869,7 +970,7 @@ export default function PuntoCompraView() {
             }}
             disabled={processing}
             aria-label="Seleccionar proveedor"
-            className="flex-1 sm:flex-none min-h-11 sm:min-h-0 px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
+            className="flex-1 sm:flex-none min-h-11 sm:min-h-0 px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
           >
             <option value="">Todos los proveedores</option>
             {suppliers.map((s) => (
@@ -883,7 +984,7 @@ export default function PuntoCompraView() {
             onClick={() => setShowNewSupplier(true)}
             disabled={processing}
             title="Crear nuevo proveedor"
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="h-3.5 w-3.5" />
             Nuevo
@@ -899,7 +1000,7 @@ export default function PuntoCompraView() {
             "px-3 py-1.5 min-h-11 sm:min-h-0 rounded-xl text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
             soloReponer
               ? "bg-[var(--data-error-500)] text-white"
-              : "bg-gray-100 text-[var(--text-secondary)]",
+              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
           )}
         >
           Solo reponer
@@ -912,14 +1013,14 @@ export default function PuntoCompraView() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar producto..."
           aria-label="Buscar producto por nombre o código"
-          className="flex-1 min-w-full sm:min-w-36 min-h-11 sm:min-h-0 px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="flex-1 min-w-full sm:min-w-36 min-h-11 sm:min-h-0 px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         />
 
         {/* Botón escáner de código de barras */}
         <button
           type="button"
           onClick={() => setShowScanner(!showScanner)}
-          className={cn("flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors", showScanner ? "bg-primary text-white" : "bg-gray-100 text-[var(--text-secondary)]")}
+          className={cn("flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors", showScanner ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}
           title="Buscar por código de barras (F2)"
         >
           <ScanLine className="h-3.5 w-3.5 shrink-0" /> Código
@@ -929,7 +1030,7 @@ export default function PuntoCompraView() {
         <button
           type="button"
           onClick={() => setShowInvoiceScanner(true)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--data-success-500)] transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-primary/10 hover:text-[var(--data-success-500)] transition-colors"
           title="Escanear factura con cámara"
         >
           <Camera className="h-3.5 w-3.5 shrink-0" /> Factura
@@ -940,7 +1041,7 @@ export default function PuntoCompraView() {
           type="button"
           onClick={() => setViewMode((v) => (v === "grid" ? "list" : "grid"))}
           aria-label={viewMode === "grid" ? "Cambiar a vista lista" : "Cambiar a vista cuadrícula"}
-          className="p-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:bg-gray-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="p-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           {viewMode === "grid" ? (
             <List className="h-4 w-4" />
@@ -954,7 +1055,7 @@ export default function PuntoCompraView() {
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as SortBy)}
           aria-label="Ordenar por"
-          className="px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           <option value="stock">Stock ↑</option>
           <option value="price">Precio</option>
@@ -983,11 +1084,14 @@ export default function PuntoCompraView() {
             <Tag className="h-5 w-5 text-[var(--data-warning-500)]" strokeWidth={2.2} />
           </span>
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-extrabold text-[var(--text-primary)] truncate">
-              Artículos para Comprar
-            </h2>
+            {/* El rótulo decía «Artículos para Comprar» sobre un bloque de
+                gastos fijos: combustible, internet y alquiler no son artículos,
+                y el propio subtítulo lo desmentía. */}
+            <SectionTitle as="h2" className="text-base font-extrabold text-[var(--text-primary)] truncate">
+              Gastos fijos del negocio
+            </SectionTitle>
             <p className="text-sm text-[var(--text-secondary)]">
-              Gastos fijos del negocio. Click en una card para registrar el gasto del mes.
+              Lo que se paga todos los meses: alquiler, servicios, combustible. Tocá una tarjeta para registrar el pago del período.
             </p>
           </div>
           <button
@@ -1005,7 +1109,7 @@ export default function PuntoCompraView() {
           {expenseCatalogLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-32 rounded-2xl bg-gray-100 dark:bg-white/5 animate-pulse" />
+                <div key={i} className="h-32 rounded-2xl bg-[var(--surface-sunken)] dark:bg-white/5 animate-pulse" />
               ))}
             </div>
           ) : expenseCatalog.length === 0 ? (
@@ -1028,7 +1132,24 @@ export default function PuntoCompraView() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {expenseCatalog.map((tpl) => {
+              {expenseDuplicados.length > 0 && (
+                <div className="col-span-full rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-3 py-2.5 text-sm">
+                  <p className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                    {expenseDuplicados.length === 1
+                      ? "1 gasto está cargado más de una vez"
+                      : `${expenseDuplicados.length} gastos están cargados más de una vez`}
+                  </p>
+                  <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                    Se muestra uno de cada uno para que no se pague dos veces:{" "}
+                    {expenseDuplicados
+                      .map((g) => decodeExpenseDescription(g.items[0].description ?? "").description)
+                      .join(", ")}
+                    . Para borrar los repetidos, usá el botón de eliminar de cada tarjeta acá mismo: el Historial de Gastos sólo
+                    lista los pagos ya registrados, no estas plantillas.
+                  </p>
+                </div>
+              )}
+              {expenseCatalogUnico.map((tpl) => {
                 const { description: humanDesc, meta } = decodeExpenseDescription(tpl.description || "");
                 const catDef = findCategory(tpl.category, "global");
                 const colorKey = meta.colorKey ?? catDef.color;
@@ -1037,12 +1158,16 @@ export default function PuntoCompraView() {
                 const Icon = getCategoryIcon(iconKey);
                 const isExecuting = executingTemplateId === tpl.id;
                 const metaSummary = summarizeMeta(meta);
+                const venc = proximoVencimiento(meta, hoyRef);
+                // `id`: el pago sabe de qué plantilla salió (ADR-374), y ese
+                // vínculo sobrevive a que el importe del mes venga distinto.
+                const pago = yaPagadoEnPeriodo({ id: tpl.id, description: tpl.description ?? "", amount: Number(tpl.amount ?? 0) }, pagosHechos, hoyRef);
                 const isDeleting = deletingTemplateId === tpl.id;
                 return (
                   <div
                     key={tpl.id}
                     className={cn(
-                      "group relative rounded-2xl border-2 bg-white dark:bg-[var(--color-card)] hover:-translate-y-0.5 hover:shadow-lg transition-all",
+                      "group relative rounded-2xl border-2 bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:shadow-lg transition-all",
                       cls.border,
                       (isExecuting || isDeleting) && cn("ring-2", cls.ring),
                       isDeleting && "opacity-60",
@@ -1083,10 +1208,39 @@ export default function PuntoCompraView() {
                               {meta.supplierName}
                             </p>
                           )}
+                          {/* «Mensual · Día 5» dejaba la cuenta al lector: para
+                              saber si vence mañana había que mirar el calendario. */}
+                          {pago.pagado ? (
+                            <p className="text-xs mt-0.5 font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                              ya pagado este período
+                            </p>
+                          ) : venc.estado !== "sin_fecha" && (
+                            <p
+                              className={cn(
+                                "text-xs mt-0.5 font-bold",
+                                venc.estado === "vencido" || venc.estado === "hoy"
+                                  ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                                  : venc.estado === "pronto"
+                                    ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                                    : "text-[var(--text-tertiary)]",
+                              )}
+                            >
+                              {venc.texto}
+                            </p>
+                          )}
                         </div>
                         <span className={cn(
                           "inline-flex items-center gap-1 h-8 px-3 rounded-xl text-xs font-bold border-2 transition-all",
-                          cls.iconBg, cls.text, cls.border,
+                          // El color salía de `colorKey`, que es decorativo: tres
+                          // botones «Pagar» en verde, rojo y violeta sin que la
+                          // diferencia significara nada. Ahora lo dice el vencimiento.
+                          pago.pagado
+                            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] border-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
+                            : venc.estado === "vencido" || venc.estado === "hoy"
+                            ? "bg-[var(--data-error-500)]/12 text-[var(--data-error-700)] border-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
+                            : venc.estado === "pronto"
+                              ? "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] border-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
+                              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-[var(--rule-base)]",
                           "group-hover:scale-105"
                         )}>
                           {isExecuting ? (
@@ -1161,7 +1315,7 @@ export default function PuntoCompraView() {
         >
           <span
             className={cn(
-              "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform",
+              "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-[var(--surface-raised)] transition-transform",
               showInventario ? "translate-x-6" : "translate-x-0",
             )}
           />
@@ -1187,7 +1341,7 @@ export default function PuntoCompraView() {
                 "shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                 category === cat
                   ? "bg-primary text-white"
-                  : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200",
+                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
               )}
             >
               {cat} <span className="opacity-60">({count})</span>
@@ -1217,12 +1371,12 @@ export default function PuntoCompraView() {
             }}
             placeholder="Escanea o escribe el código de barras..."
             autoFocus
-            className="flex-1 px-3 py-2 border border-primary rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus:ring-2 focus:ring-primary"
+            className="flex-1 px-3 py-2 border border-primary rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:ring-2 focus:ring-primary"
           />
           <button
             type="button"
             onClick={() => { setShowScanner(false); setBarcodeInput(""); }}
-            className="px-3 py-2 bg-gray-200 rounded-xl text-xs"
+            className="px-3 py-2 bg-[var(--surface-sunken)] rounded-xl text-xs"
           >
             Cerrar
           </button>
@@ -1271,7 +1425,7 @@ export default function PuntoCompraView() {
                   "text-xs px-2 py-1 rounded-lg font-medium border transition-all",
                   appliedPromo?.id === promo.id
                     ? "bg-[var(--data-warning-500)] text-white border-[var(--data-warning-500)]"
-                    : "bg-white dark:bg-[var(--color-card)] text-[var(--data-warning-500)] border-[var(--data-warning-500)] hover:bg-[var(--data-warning-100)]",
+                    : "bg-[var(--surface-raised)] text-[var(--data-warning-500)] border-[var(--data-warning-500)] hover:bg-[var(--data-warning-100)]",
                 )}
               >
                 {promo.tipo === "porcentaje" ? `${promo.valor}% OFF` :
@@ -1323,12 +1477,35 @@ export default function PuntoCompraView() {
             <div className="bg-[var(--surface-sunken)] border border-dashed border-[var(--rule-base)] rounded-xl p-6 text-center">
               <Package className="h-8 w-8 mx-auto text-[var(--text-tertiary)] mb-2" strokeWidth={1.5} />
               <p className="text-sm font-semibold text-[var(--text-primary)]">
-                Productos de inventario ocultos
+                {needsReorderCount > 0
+                  ? `${needsReorderCount} producto${needsReorderCount === 1 ? "" : "s"} por debajo del stock mínimo`
+                  : "Productos de inventario ocultos"}
               </p>
               <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-sm mx-auto">
-                Encendé el toggle <strong>&quot;Usar artículos de mi inventario&quot;</strong> arriba
-                para ver y agregar productos de reposición al carrito.
+                {needsReorderCount > 0
+                  ? "Esta pantalla abre mostrando sólo los gastos fijos. Traé el inventario para armar la reposición."
+                  : "Esta pantalla abre mostrando sólo los gastos fijos. Traé el inventario para agregar productos al carrito."}
               </p>
+              {/* Antes esto mandaba a buscar un toggle que estaba en otra parte
+                  de la pantalla. La acción va acá, donde se necesita. */}
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                {needsReorderCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { setShowInventario(true); setSoloReponer(true); }}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white hover:bg-primary-dark transition-colors"
+                  >
+                    Ver los {needsReorderCount} que faltan
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowInventario(true)}
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors"
+                >
+                  Ver todo el inventario
+                </button>
+              </div>
             </div>
           ) : loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -1336,7 +1513,7 @@ export default function PuntoCompraView() {
                 <div
                   key={i}
                   aria-hidden="true"
-                  className="h-40 rounded-xl bg-gray-100 animate-pulse"
+                  className="h-40 rounded-xl bg-[var(--surface-sunken)] animate-pulse"
                 />
               ))}
             </div>
@@ -1365,8 +1542,8 @@ export default function PuntoCompraView() {
             /* Vista lista */
             <div className="overflow-x-auto -mx-1">
             <div className="border border-[var(--rule-base)] rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50">
+              <DataTable className="w-full text-sm">
+                <thead className="bg-[var(--surface-sunken)]">
                   <tr>
                     <th className="text-left p-3 font-medium text-[var(--text-secondary)]">
                       Producto
@@ -1385,12 +1562,12 @@ export default function PuntoCompraView() {
                 </thead>
                 <tbody>
                   {paginatedProducts.map((p) => {
-                    const needs = (p.stock ?? 0) <= (p.stockMin ?? 0);
+                    const needs = needsReorder(p);
                     const sug = calculateSuggestedQty(p);
                     return (
                       <tr
                         key={p.id}
-                        className="border-t border-[var(--rule-soft)] hover:bg-gray-50"
+                        className="border-t border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]"
                       >
                         <td className="p-3">
                           <div className="flex items-center gap-2">
@@ -1429,7 +1606,7 @@ export default function PuntoCompraView() {
                     );
                   })}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
             </div>
           )}
@@ -1445,13 +1622,15 @@ export default function PuntoCompraView() {
             </div>
           )}
 
-          {/* Paginación */}
-          {totalPages > 1 && (
+          {/* Paginación — sólo si de verdad hay productos en pantalla. Antes se
+              renderizaba igual con el inventario oculto: el cuerpo decía
+              «productos ocultos» y el pie «Página 1 de 3 · 56 productos». */}
+          {showInventario && totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 mt-4">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-[var(--text-secondary)] disabled:opacity-40 hover:bg-gray-200 transition-colors"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] disabled:opacity-40 hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 ← Anterior
               </button>
@@ -1461,7 +1640,7 @@ export default function PuntoCompraView() {
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-[var(--text-secondary)] disabled:opacity-40 hover:bg-gray-200 transition-colors"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] disabled:opacity-40 hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 Siguiente →
               </button>
@@ -1499,7 +1678,7 @@ export default function PuntoCompraView() {
           aria-label="Canasta de compra"
           className="w-full lg:w-80 xl:w-96 shrink-0"
         >
-          <div className="sticky top-4 bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
+          <div className="sticky top-4 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
             {/* Header carrito */}
             <div className="p-4 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -1537,29 +1716,13 @@ export default function PuntoCompraView() {
             </div>
 
             {/* Tabs: Carrito | Frecuentes | Paquetes */}
-            <div className="flex border-b border-[var(--rule-soft)]" role="tablist" aria-label="Secciones del carrito">
-              {([
-                { key: "carrito" as const, label: "Carrito" },
-                { key: "frecuentes" as const, label: "Frecuentes" },
-                { key: "paquetes" as const, label: "Paquetes" },
-              ]).map((tab) => (
-                <button
-                  key={tab.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={cartTab === tab.key}
-                  onClick={() => setCartTab(tab.key)}
-                  className={cn(
-                    "flex-1 py-2 text-xs font-semibold transition-colors",
-                    cartTab === tab.key
-                      ? "text-primary border-b-2 border-primary"
-                      : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]",
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            <AdminTabBar
+              tabs={CART_TAB_ITEMS}
+              activeTab={cartTab}
+              onTabChange={(id) => setCartTab(id as "carrito" | "frecuentes" | "paquetes")}
+              moduleId={PUNTOCOMPRA_MODULE_ID}
+              draggable={false}
+            />
 
             {/* Tab: Frecuentes */}
             {cartTab === "frecuentes" && (
@@ -1620,12 +1783,12 @@ export default function PuntoCompraView() {
                 cart.map((item) => (
                   <div
                     key={item.product.id}
-                    className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl animate-in fade-in slide-in-from-left-2 duration-[var(--dur-base)]"
+                    className="flex items-center gap-2 p-2 bg-[var(--surface-sunken)] rounded-xl animate-in fade-in slide-in-from-left-2 duration-[var(--dur-base)]"
                   >
                     {/* Miniatura */}
                     <div
                       aria-hidden="true"
-                      className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold text-sm overflow-hidden relative"
+                      className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold text-sm overflow-hidden relative"
                     >
                       <span className="absolute inset-0 flex items-center justify-center">
                         {(item.product.name || "?")[0].toUpperCase()}
@@ -1658,7 +1821,7 @@ export default function PuntoCompraView() {
                             "text-xs font-bold px-1 rounded",
                             (item.product.costPrice ?? item.product.price) > priceHistory[item.product.id]
                               ? "bg-[var(--data-error-100)] text-[var(--data-error-500)]"
-                              : "bg-[var(--accent-soft)] text-[var(--data-success-500)]"
+                              : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                           )}>
                             {(item.product.costPrice ?? item.product.price) > priceHistory[item.product.id] ? "↑" : "↓"}
                             {Math.abs(((item.product.costPrice ?? item.product.price) - priceHistory[item.product.id]) / priceHistory[item.product.id] * 100).toFixed(0)}%
@@ -1681,7 +1844,7 @@ export default function PuntoCompraView() {
                         onClick={() => updateQty(item.product.id, -1)}
                         disabled={processing}
                         aria-label={`Reducir cantidad de ${item.product.name}`}
-                        className="h-6 w-6 rounded-lg bg-gray-200 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="h-6 w-6 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center text-xs hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         -
                       </button>
@@ -1696,7 +1859,7 @@ export default function PuntoCompraView() {
                         onClick={() => updateQty(item.product.id, 1)}
                         disabled={processing}
                         aria-label={`Aumentar cantidad de ${item.product.name}`}
-                        className="h-6 w-6 rounded-lg bg-gray-200 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="h-6 w-6 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center text-xs hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         +
                       </button>
@@ -1759,7 +1922,7 @@ export default function PuntoCompraView() {
                         Math.min(100, Math.max(0, Number(e.target.value))),
                       )
                     }
-                    className="flex-1 px-2 py-1 border border-[var(--rule-base)] rounded-lg text-sm text-right bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className="flex-1 px-2 py-1 border border-[var(--rule-base)] rounded-lg text-sm text-right bg-[var(--surface-raised)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   />
                 </div>
 
@@ -1784,11 +1947,11 @@ export default function PuntoCompraView() {
                       aria-pressed={showIGV}
                       className="text-xs underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary rounded"
                     >
-                      IGV 18%
+                      IGV 18% incluido
                     </button>
                     {showIGV && (
                       <span className="font-mono ml-auto">
-                        +S/{igvAmount.toFixed(2)}
+                        S/{igvAmount.toFixed(2)}
                       </span>
                     )}
                   </div>
@@ -1805,7 +1968,7 @@ export default function PuntoCompraView() {
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
                   aria-label="Método de pago"
-                  className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   <option value="contado">Contado</option>
                   <option value="credito_7">Crédito 7 días</option>
@@ -1825,7 +1988,7 @@ export default function PuntoCompraView() {
                     value={deliveryDate}
                     onChange={(e) => setDeliveryDate(e.target.value)}
                     min={todayStr}
-                    className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   />
                 </div>
 
@@ -1841,12 +2004,12 @@ export default function PuntoCompraView() {
                     disabled={processing}
                     rows={2}
                     placeholder="Notas al proveedor..."
-                    className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] placeholder-gray-400 resize-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] resize-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
 
                 {lastOC && (
-                  <div className="bg-[var(--accent-soft)] rounded-xl p-3 space-y-2">
+                  <div className="bg-primary/10 rounded-xl p-3 space-y-2">
                     <p className="text-xs font-bold text-[var(--data-success-500)]">✓ OC Creada</p>
                     <p className="text-xs text-[var(--data-success-500)]">ID: {lastOC.id}</p>
                     <p className="text-xs text-[var(--data-success-500)]">{lastOC.items} productos — S/{Number(lastOC.total).toFixed(2)}</p>
@@ -1857,7 +2020,7 @@ export default function PuntoCompraView() {
                         const event = new CustomEvent("compras-navigate-tab", { detail: "ordenes-compra" });
                         window.dispatchEvent(event);
                       }}
-                      className="w-full text-center text-xs font-semibold text-[var(--data-success-500)] bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] rounded-lg py-1.5 transition-colors"
+                      className="w-full text-center text-xs font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 rounded-lg py-1.5 transition-colors"
                     >
                       Ver en Órdenes →
                     </button>
@@ -1876,7 +2039,7 @@ export default function PuntoCompraView() {
                   {savedTemplates.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
                       {savedTemplates.map((tpl, idx) => (
-                        <div key={idx} className="flex items-center gap-1 bg-gray-100 rounded-lg px-2 py-1">
+                        <div key={idx} className="flex items-center gap-1 bg-[var(--surface-sunken)] rounded-lg px-2 py-1">
                           <button type="button" onClick={() => loadTemplate(tpl)} className="text-xs font-medium text-[var(--text-primary)] hover:text-primary">
                             {tpl.name}
                           </button>
@@ -1889,13 +2052,28 @@ export default function PuntoCompraView() {
                   )}
                 </div>
 
+                {/* Aviso de trial/plan expirado (402 al crear OC) — causa real
+                    + acción clara, en vez del error genérico. */}
+                {planBlockedMsg && (
+                  <div role="alert" className="mb-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 p-3">
+                    <p className="text-xs font-bold text-[var(--data-warning-500)] flex items-center gap-1.5">
+                      <ClipboardList className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      No se pudo crear la orden — plan/prueba vencido
+                    </p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1">{planBlockedMsg}</p>
+                    <a href="/admin?tab=plan" className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-primary hover:underline">
+                      Ver planes →
+                    </a>
+                  </div>
+                )}
+
                 {/* Botones de acción */}
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={generateWhatsApp}
                     disabled={processing}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--data-success)]"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--data-success-500)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--data-success-500)]"
                   >
                     <MessageCircle aria-hidden="true" className="h-3.5 w-3.5" />
                     WhatsApp
@@ -1905,7 +2083,7 @@ export default function PuntoCompraView() {
                     type="button"
                     onClick={() => setShowPrintPreview(true)}
                     disabled={processing}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)] rounded-lg text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)] rounded-lg text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
                     <FileDown aria-hidden="true" className="h-3.5 w-3.5" />
                     PDF
@@ -1915,7 +2093,7 @@ export default function PuntoCompraView() {
                     type="button"
                     onClick={handleSaveDraft}
                     disabled={processing}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)] rounded-lg text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)] rounded-lg text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
                     <BookmarkIcon aria-hidden="true" className="h-3.5 w-3.5" />
                     Borrador
@@ -1925,10 +2103,11 @@ export default function PuntoCompraView() {
                     type="button"
                     onClick={() => setShowOrderCreator(true)}
                     disabled={processing}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--data-success)]"
+                    title="Flujo DISTINTO: crea un pedido de VENTA a un cliente con estos productos (no es la compra al proveedor)."
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-secondary)] rounded-lg text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
-                    <ShoppingCart aria-hidden="true" className="h-3.5 w-3.5" />
-                    Crear pedido
+                    <Users aria-hidden="true" className="h-3.5 w-3.5" />
+                    Vender a cliente
                   </button>
 
                   <button
@@ -1969,7 +2148,7 @@ export default function PuntoCompraView() {
       {/* Modal preview de impresión / PDF */}
       {/* Toast flotante */}
       {toastMsg && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-base)]">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[var(--surface-sunken)] text-white px-4 py-2.5 rounded-lg text-sm font-medium animate-in fade-in slide-in-from-bottom-4 duration-[var(--dur-base)]">
           {toastMsg}
         </div>
       )}
@@ -2046,10 +2225,10 @@ export default function PuntoCompraView() {
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white dark:bg-[var(--color-card)] rounded-xl w-full max-w-md p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-extrabold text-[var(--text-primary)]">Nuevo proveedor</h3>
+                <CardTitle as="h3" className="text-lg font-extrabold text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                   Se guarda en tu lista de proveedores y se selecciona en esta orden.
                 </p>
@@ -2058,7 +2237,7 @@ export default function PuntoCompraView() {
                 type="button"
                 onClick={() => !creatingSupplier && setShowNewSupplier(false)}
                 aria-label="Cerrar"
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>
@@ -2084,7 +2263,7 @@ export default function PuntoCompraView() {
                     inputMode="numeric"
                     autoFocus
                     placeholder="20XXXXXXXXX"
-                    className="w-full pl-3 pr-10 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono"
+                    className="w-full pl-3 pr-10 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono"
                   />
                   {rucLookup.status === "loading" && (
                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
@@ -2117,7 +2296,7 @@ export default function PuntoCompraView() {
                   onChange={(e) => setNewSupplier((s) => ({ ...s, name: e.target.value }))}
                   onKeyDown={(e) => e.key === "Enter" && newSupplier.name.trim() && void handleCreateSupplier()}
                   placeholder="ej. Distribuidora ABC"
-                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                 />
               </div>
 
@@ -2131,7 +2310,7 @@ export default function PuntoCompraView() {
                     type="text"
                     value={newSupplier.razonSocial}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, razonSocial: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--accent-soft)]/30 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
               )}
@@ -2146,7 +2325,7 @@ export default function PuntoCompraView() {
                     type="text"
                     value={newSupplier.address}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, address: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--accent-soft)]/30 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
               )}
@@ -2162,7 +2341,7 @@ export default function PuntoCompraView() {
                     value={newSupplier.phone}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, phone: e.target.value }))}
                     placeholder="+51 9XX XXX XXX"
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
                 <div>
@@ -2175,7 +2354,7 @@ export default function PuntoCompraView() {
                     value={newSupplier.email}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, email: e.target.value }))}
                     placeholder="ventas@proveedor.com"
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-gray-50 text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
               </div>
@@ -2189,7 +2368,7 @@ export default function PuntoCompraView() {
                 type="button"
                 onClick={() => !creatingSupplier && setShowNewSupplier(false)}
                 disabled={creatingSupplier}
-                className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>

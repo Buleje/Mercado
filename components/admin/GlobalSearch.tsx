@@ -1,13 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useId, useRef, useCallback } from "react";
+import { ALL_TABS } from "@/app/admin/_lib/tab-data";
+import { ANIDADAS_POR_MODULO, CTP_VISTAS, LOTH_VISTAS, VISTAS_POR_MODULO } from "@/lib/admin/subvistas-modulos";
 import {
-  Search, X, Package, Users, ShoppingCart, FileText,
-  ShoppingBasket, Tag, AlertTriangle, TrendingUp, Loader2,
-  LayoutDashboard, Monitor, Boxes, Truck, MapPin, RotateCcw,
-  BarChart3, DollarSign, UserCog, MessageSquare, Bell, Shield,
-  Settings, Bot, Star, Zap, Heart, ClipboardList, Target,
-  BookOpen, Calculator, ArrowRight,
+  Search, X, Package, Users, ShoppingCart, FileText, ShoppingBasket, Tag, AlertTriangle, TrendingUp, Loader2, LayoutDashboard, Monitor, Boxes, Shield, Zap, ArrowRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +27,10 @@ interface SearchResult {
   tab?: string;
   /** Para módulos: navegar directo al tab */
   navigateTo?: string;
+  /** Sub-vista dentro del módulo destino (`?vista=`). */
+  vista?: string;
+  /** Sub-vista del módulo ANIDADO dentro del destino (ver navigateTab). */
+  sub?: string;
   /** Para acciones: callback directo */
   action?: () => void;
   /** Texto original para highlight */
@@ -44,7 +45,12 @@ interface GroupedResults {
   acciones: SearchResult[];
 }
 
-// ── Índice de módulos y tabs (hardcoded) ──────────────────────────────────────
+// ── Índice de módulos ─────────────────────────────────────────────────────────
+// Se DERIVA de ALL_TABS (el catálogo que arma el sidebar), no de una lista
+// aparte. La lista hardcodeada anterior había quedado vieja: sus 20 entradas
+// apuntaban a tabs que ya no existen —pos-caja, crm-clientes,
+// inventario-almacenes, precios-promos…— así que el buscador no encontraba
+// medio panel y lo que encontraba no llevaba a ningún lado.
 
 interface ModuleEntry {
   tab: string;
@@ -52,243 +58,89 @@ interface ModuleEntry {
   icon: React.ElementType;
   keywords: string[];
   subtabs?: { id: string; label: string; keywords?: string[] }[];
+  /** Destinos que además necesitan abrir una vista del hub (ver ANIDADAS_INDEX). */
+  anidadas?: { id: string; vista: string; label: string; keywords: string[] }[];
 }
 
-const MODULE_INDEX: ModuleEntry[] = [
-  {
-    tab: "panel-principal",
-    label: "Panel Principal",
-    icon: LayoutDashboard,
-    keywords: ["panel", "dashboard", "inicio", "principal", "ejecutivo", "resumen", "kpi", "métricas", "agentes", "changelog"],
-    subtabs: [
-      { id: "panel-principal", label: "Panel principal", keywords: ["dashboard", "inicio", "ventas"] },
-      { id: "panel-principal", label: "Ejecutivo", keywords: ["ejecutivo", "gerencia", "resumen"] },
-      { id: "panel-principal", label: "Agentes IA", keywords: ["agentes", "ia", "inteligencia"] },
-      { id: "panel-principal", label: "Changelog", keywords: ["changelog", "versiones", "cambios"] },
-    ],
-  },
-  {
-    tab: "pos-caja",
-    label: "POS & Caja",
-    icon: Monitor,
-    keywords: ["pos", "caja", "punto de venta", "venta", "turno", "arqueo", "registradora", "cobro"],
-    subtabs: [
-      { id: "pos-caja", label: "Caja", keywords: ["pos", "venta", "cobrar"] },
-      { id: "pos-caja", label: "Caja registradora", keywords: ["caja", "registradora"] },
-      { id: "pos-caja", label: "Turnos", keywords: ["turno", "apertura", "cierre"] },
-      { id: "pos-caja", label: "Arqueo de caja", keywords: ["arqueo", "conteo", "efectivo"] },
-    ],
-  },
-  {
-    tab: "inventario-almacenes",
-    label: "Inventario & Almacenes",
-    icon: Boxes,
-    keywords: ["inventario", "stock", "almacén", "almacenes", "kardex", "lotes", "mermas", "ubicaciones", "transferencias", "reorden", "predicción"],
-    subtabs: [
-      { id: "inventario-almacenes", label: "Mi stock", keywords: ["stock", "existencias"] },
-      { id: "inventario-almacenes", label: "Kardex", keywords: ["kardex", "movimientos"] },
-      { id: "inventario-almacenes", label: "Vencimientos", keywords: ["lotes", "batch", "vencimiento", "fefo"] },
-      { id: "inventario-almacenes", label: "Perdidas", keywords: ["mermas", "pérdidas", "desperdicios"] },
-      { id: "inventario-almacenes", label: "Almacenes", keywords: ["almacenes", "bodega"] },
-      { id: "inventario-almacenes", label: "Ubicaciones", keywords: ["ubicaciones", "pasillo", "estante"] },
-      { id: "inventario-almacenes", label: "Transferencias", keywords: ["transferencias", "traslado"] },
-      { id: "inventario-almacenes", label: "Reorden", keywords: ["reorden", "reposición", "mínimo"] },
-      { id: "inventario-almacenes", label: "Prediccion IA", keywords: ["predicción", "demanda", "forecast"] },
-      { id: "inventario-almacenes", label: "Conteo fisico", keywords: ["conteo", "físico", "inventario físico"] },
-    ],
-  },
-  {
-    tab: "reposicion",
-    label: "Reposición Inteligente",
-    icon: RotateCcw,
-    keywords: ["reposición", "reorden", "auto-reorden", "reabastecimiento"],
-  },
-  {
-    tab: "pedidos",
-    label: "Pedidos",
-    icon: ShoppingCart,
-    keywords: ["pedidos", "órdenes", "orders", "entrega", "delivery", "pendiente", "confirmado"],
-  },
-  {
-    tab: "catalogo-tienda",
-    label: "Catálogo & Tienda",
-    icon: BookOpen,
-    keywords: ["catálogo", "tienda", "categorías", "combos", "kits", "bundles", "página inicio"],
-    subtabs: [
-      { id: "catalogo-tienda", label: "Categorías", keywords: ["categorías", "clasificación"] },
-      { id: "catalogo-tienda", label: "Combos & Kits", keywords: ["combos", "kits", "bundles", "paquetes"] },
-      { id: "catalogo-tienda", label: "Página de Inicio", keywords: ["página inicio", "home", "banner"] },
-    ],
-  },
-  {
-    tab: "precios-promos",
-    label: "Precios & Promociones",
-    icon: Tag,
-    keywords: ["precios", "promociones", "cupones", "descuentos", "benchmark", "ab test", "historial precios"],
-    subtabs: [
-      { id: "precios-promos", label: "Benchmark", keywords: ["benchmark", "competencia"] },
-      { id: "precios-promos", label: "Historial de Precios", keywords: ["historial", "precio"] },
-      { id: "precios-promos", label: "Promociones", keywords: ["promociones", "ofertas"] },
-      { id: "precios-promos", label: "Cupones", keywords: ["cupones", "descuentos", "código"] },
-      { id: "precios-promos", label: "A/B Tests", keywords: ["ab test", "experimento"] },
-    ],
-  },
-  {
-    tab: "compras",
-    label: "Compras",
-    icon: ShoppingBasket,
-    keywords: ["compras", "órdenes de compra", "cotizaciones", "rfq", "recepción", "aprobación"],
-    subtabs: [
-      { id: "compras", label: "Plan de compras", keywords: ["plan compras"] },
-      { id: "compras", label: "Cotizaciones", keywords: ["cotizaciones", "rfq"] },
-      { id: "compras", label: "Aprobacion", keywords: ["aprobación", "aprobar"] },
-      { id: "compras", label: "Recepci\u00f3n", keywords: ["recepción", "recibir"] },
-    ],
-  },
-  {
-    tab: "compras",
-    label: "Mis proveedores",
-    icon: Truck,
-    keywords: ["proveedores", "proveedor", "portal proveedor", "evaluación", "calidad proveedor", "pagos proveedor"],
-  },
-  {
-    tab: "logística",
-    label: "Logística",
-    icon: MapPin,
-    keywords: ["logística", "delivery", "entregas", "rutas", "flota", "envíos", "tracking", "costos envío"],
-    subtabs: [
-      { id: "logística", label: "Calendario de entregas", keywords: ["calendario", "entregas"] },
-      { id: "logística", label: "Rutas de delivery", keywords: ["rutas", "delivery"] },
-      { id: "logística", label: "Seguimiento de envios", keywords: ["seguimiento", "tracking"] },
-      { id: "logística", label: "Flota", keywords: ["flota", "vehículos", "moto"] },
-    ],
-  },
-  {
-    tab: "devoluciones-calidad",
-    label: "Devoluciones & Calidad",
-    icon: RotateCcw,
-    keywords: ["devoluciones", "calidad", "anomalías", "retorno", "reclamo"],
-  },
-  {
-    tab: "ventas-marketing",
-    label: "Ventas & Marketing",
-    icon: TrendingUp,
-    keywords: ["ventas", "marketing", "forecast", "campañas", "referidos", "conversión"],
-  },
-  {
-    tab: "crm-clientes",
-    label: "Mis clientes",
-    icon: Users,
-    keywords: ["crm", "clientes", "segmentos", "clv", "cliente 360", "segmentación"],
-    subtabs: [
-      { id: "crm-clientes", label: "Mis clientes", keywords: ["crm", "clientes"] },
-      { id: "crm-clientes", label: "Vista 360°", keywords: ["cliente 360", "360"] },
-      { id: "crm-clientes", label: "Segmentos", keywords: ["segmentos", "grupos"] },
-    ],
-  },
-  {
-    tab: "fidelizacion",
-    label: "Clientes frecuentes",
-    icon: Heart,
-    keywords: ["fidelización", "puntos", "loyalty", "wish list", "recompensas", "frecuentes"],
-  },
-  {
-    tab: "encuestas-soporte",
-    label: "Opiniones & Soporte",
-    icon: Star,
-    keywords: ["encuestas", "soporte", "nps", "tickets", "satisfacción", "reseñas", "opiniones"],
-  },
-  {
-    tab: "analytics-bi",
-    label: "Reportes avanzados",
-    icon: BarChart3,
-    keywords: ["analytics", "bi", "análisis", "mapa calor", "abc", "pareto", "bcg", "kpi", "cesta", "reportes"],
-  },
-  {
-    tab: "proyecciones",
-    label: "Proyecciones",
-    icon: TrendingUp,
-    keywords: ["proyecciones", "simulador", "estacionalidad", "períodos", "escenarios"],
-  },
-  {
-    tab: "finanzas",
-    label: "Finanzas",
-    icon: DollarSign,
-    keywords: ["finanzas", "p&g", "balance", "flujo caja", "presupuestos", "rentabilidad", "márgenes", "plata que entra", "ganancias"],
-  },
-  {
-    tab: "finanzas",
-    label: "Tesoreria",
-    icon: Calculator,
-    keywords: ["tesorería", "liquidez", "cheques", "conciliación", "cuentas cobrar", "me deben"],
-  },
-  {
-    tab: "finanzas",
-    label: "Facturacion",
-    icon: FileText,
-    keywords: ["facturación", "e-factura", "impuestos", "cuentas pagar", "les debo"],
-  },
-  {
-    tab: "finanzas",
-    label: "Gastos y activos",
-    icon: DollarSign,
-    keywords: ["gastos", "centros costo", "activos fijos", "seguros", "egresos"],
-  },
-  {
-    tab: "rrhh",
-    label: "Mi equipo",
-    icon: UserCog,
-    keywords: ["rrhh", "recursos humanos", "nómina", "sucursales", "personal", "empleados", "equipo"],
-  },
-  {
-    tab: "proyectos-tareas",
-    label: "Proyectos & Tareas",
-    icon: Target,
-    keywords: ["proyectos", "tareas", "kanban", "metas", "tablero"],
-  },
-  {
-    tab: "comunicaciones",
-    label: "Comunicaciones",
-    icon: MessageSquare,
-    keywords: ["comunicaciones", "chat", "plantillas", "notificaciones", "hub"],
-  },
-  {
-    tab: "alertas-automatizacion",
-    label: "Alertas y automatizacion",
-    icon: Bell,
-    keywords: ["alertas", "automatización", "recordatorios", "flujos", "reglas negocio"],
-  },
-  {
-    tab: "reportes-documentos",
-    label: "Reportes y documentos",
-    icon: FileText,
-    keywords: ["reportes", "documentos", "exportar", "importar", "informe"],
-  },
-  {
-    tab: "agenda-utilidades",
-    label: "Agenda y utilidades",
-    icon: ClipboardList,
-    keywords: ["agenda", "calendario", "notas", "filtros guardados"],
-  },
-  {
-    tab: "seguridad",
-    label: "Seguridad y auditoria",
-    icon: Shield,
-    keywords: ["seguridad", "usuarios", "roles", "permisos", "auditoría", "logs", "cumplimiento"],
-  },
-  {
-    tab: "sistema",
-    label: "Ajustes del sistema",
-    icon: Settings,
-    keywords: ["sistema", "backups", "webhooks", "salud sistema", "restaurar", "ajustes", "configuracion"],
-  },
-  {
-    tab: "agentes",
-    label: "Agentes IA",
-    icon: Bot,
-    keywords: ["agentes", "ia", "inteligencia artificial", "automatización ia", "orquestador"],
-  },
-];
+/** "Análisis" → "analisis": así "analisis" sin tilde también encuentra. */
+function sinTildes(t: string): string {
+  return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+/** Sinónimos de negocio que nadie deduce del label ("plata" → dinero, caja…). */
+const SINONIMOS: Record<string, string[]> = {
+  "vendor-dashboard": ["dashboard", "panel", "resumen", "home"],
+  "ventas-caja": ["pos", "punto de venta", "cobrar", "arqueo", "turno", "vender"],
+  inventario: ["stock", "almacen", "existencias", "merma", "vencimiento"],
+  productos: ["precios", "promos", "ofertas", "descuentos", "catalogo"],
+  plata: ["dinero", "finanzas", "gastos", "ingresos", "caja chica", "utilidad"],
+  clientes: ["crm", "compradores", "contactos"],
+  fiados: ["credito", "deuda", "prestado", "debe"],
+  pedidos: ["ordenes", "delivery", "envios"],
+  compras: ["proveedores", "abastecimiento", "reposicion"],
+  facturacion: ["sunat", "boleta", "factura", "comprobante", "electronica"],
+  documentos: ["drive", "archivos", "contratos", "licencias", "papeles"],
+  config: ["ajustes", "configuracion", "preferencias"],
+  "whatsapp-inbox": ["wa", "mensajes", "chat", "bot"],
+  "analytics-pro": ["metricas", "reportes", "bi", "estadisticas"],
+  auditoria: ["logs", "actividad", "historial", "seguridad"],
+  plan: ["suscripcion", "facturacion buleje", "limites", "upgrade"],
+};
+
+/**
+ * Sub-vistas buscables por módulo.
+ *
+ * `subtabs` existía en la interfaz y el buscador ya lo leía, pero NADA lo
+ * llenaba: con el Libro CTP (18 vistas) o el de Títulos Habilitantes, la mayor
+ * parte de los destinos reales del panel no aparecía al buscar. Se derivan de
+ * las MISMAS constantes que dibujan la cabina de cada módulo, así que agregar
+ * una vista allá la hace buscable acá sin tocar este archivo.
+ *
+ * Sólo tiene sentido para módulos cuya vista es direccionable por `?vista=`
+ * (los que usan `useVistaModulo`); el resto no tendría a dónde navegar.
+ */
+const aSubtabs = (vistas: readonly { key: string; label: string; hint: string }[]) =>
+  vistas.map((v) => ({
+    id: v.key,
+    label: v.label,
+    keywords: [sinTildes(v.label), ...sinTildes(v.hint).split(/[^a-z0-9]+/).filter((w) => w.length > 3)],
+  }));
+
+const SUBTABS_POR_MODULO: Record<string, { id: string; label: string; keywords?: string[] }[]> = {
+  "ctp-libro-operaciones": aSubtabs(CTP_VISTAS),
+  "loth-libro-operaciones": aSubtabs(LOTH_VISTAS),
+  ...Object.fromEntries(Object.entries(VISTAS_POR_MODULO).map(([id, v]) => [id, aSubtabs(v)])),
+};
+
+/**
+ * Los destinos de segundo nivel, aplanados por módulo. Llevan `vista` además de
+ * `id`: el buscador tiene que abrir la vista del hub Y la sub-vista de adentro,
+ * o aterriza en la puerta del módulo equivocado.
+ */
+const ANIDADAS_INDEX: Record<string, { id: string; vista: string; label: string; keywords: string[] }[]> =
+  Object.fromEntries(
+    Object.entries(ANIDADAS_POR_MODULO).map(([id, vistas]) => [
+      id,
+      vistas.map((v) => ({
+        id: v.key,
+        vista: v.vista,
+        label: v.label,
+        keywords: [sinTildes(v.label), ...sinTildes(v.hint).split(/[^a-z0-9]+/).filter((w) => w.length > 3)],
+      })),
+    ]),
+  );
+
+const MODULE_INDEX: ModuleEntry[] = ALL_TABS.map((t) => {
+  const base = sinTildes(t.label).split(/[^a-z0-9]+/).filter((w) => w.length > 2);
+  return {
+    tab: t.id as string,
+    label: t.label,
+    icon: t.icon,
+    keywords: [...new Set([...base, ...(SINONIMOS[t.id as string] ?? [])])],
+    subtabs: SUBTABS_POR_MODULO[t.id as string],
+    anidadas: ANIDADAS_INDEX[t.id as string],
+  };
+});
 
 // ── Acciones rápidas ──────────────────────────────────────────────────────────
 
@@ -301,14 +153,14 @@ interface QuickAction {
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
-  { id: "nuevo-producto",  label: "Nuevo producto",    icon: Package,      navigateTo: "inventario-almacenes", keywords: ["nuevo producto", "agregar producto", "crear producto"] },
-  { id: "nueva-orden",     label: "Nueva orden",       icon: ShoppingCart, navigateTo: "pos-caja",             keywords: ["nueva orden", "nueva venta", "crear pedido", "nuevo pedido"] },
-  { id: "cerrar-caja",     label: "Cerrar caja",       icon: Monitor,      navigateTo: "pos-caja",             keywords: ["cerrar caja", "arqueo", "cierre turno"] },
-  { id: "hacer-backup",    label: "Hacer backup",      icon: Shield,       navigateTo: "sistema",              keywords: ["backup", "respaldo", "copia seguridad"] },
+  { id: "nuevo-producto",  label: "Nuevo producto",    icon: Package,      navigateTo: "inventario", keywords: ["nuevo producto", "agregar producto", "crear producto"] },
+  { id: "nueva-orden",     label: "Nueva orden",       icon: ShoppingCart, navigateTo: "ventas-caja",             keywords: ["nueva orden", "nueva venta", "crear pedido", "nuevo pedido"] },
+  { id: "cerrar-caja",     label: "Cerrar caja",       icon: Monitor,      navigateTo: "ventas-caja",             keywords: ["cerrar caja", "arqueo", "cierre turno"] },
+  { id: "hacer-backup",    label: "Hacer backup",      icon: Shield,       navigateTo: "auditoria",              keywords: ["backup", "respaldo", "copia seguridad"] },
   { id: "nueva-compra",    label: "Nueva orden compra", icon: ShoppingBasket, navigateTo: "compras",           keywords: ["nueva compra", "orden compra"] },
-  { id: "registrar-merma", label: "Registrar merma",   icon: Zap,          navigateTo: "inventario-almacenes", keywords: ["merma", "pérdida", "registro merma"] },
-  { id: "nuevo-cliente",   label: "Nuevo cliente",     icon: Users,        navigateTo: "crm-clientes",         keywords: ["nuevo cliente", "agregar cliente", "crear cliente"] },
-  { id: "nuevo-cupon",     label: "Nuevo cupón",       icon: Tag,          navigateTo: "precios-promos",       keywords: ["nuevo cupón", "crear cupón", "descuento"] },
+  { id: "registrar-merma", label: "Registrar merma",   icon: Zap,          navigateTo: "inventario", keywords: ["merma", "pérdida", "registro merma"] },
+  { id: "nuevo-cliente",   label: "Nuevo cliente",     icon: Users,        navigateTo: "clientes",         keywords: ["nuevo cliente", "agregar cliente", "crear cliente"] },
+  { id: "nuevo-cupon",     label: "Nuevo cupón",       icon: Tag,          navigateTo: "productos",       keywords: ["nuevo cupón", "crear cupón", "descuento"] },
 ];
 
 // ── Highlight de texto coincidente ───────────────────────────────────────────
@@ -382,9 +234,33 @@ function searchModules(q: string): SearchResult[] {
             id: `subtab-${mod.tab}-${sub.label}`,
             type: "modulo",
             title: sub.label,
-            subtitle: `Tab en ${mod.label}`,
-            navigateTo: sub.id,
-            tab: sub.id,
+            subtitle: `En ${mod.label}`,
+            // El destino es el MÓDULO; la vista viaja en la URL (useVistaModulo
+            // la lee al montar). Antes se mandaba el id de la sub-vista como si
+            // fuera un tab de primer nivel — un destino que no existe.
+            navigateTo: mod.tab,
+            tab: mod.tab,
+            vista: sub.id,
+          });
+        }
+      }
+    }
+
+    // Y los de segundo nivel: mismo criterio, pero el destino lleva las DOS
+    // coordenadas (la vista del hub y la sub-vista del módulo de adentro).
+    if (mod.anidadas) {
+      for (const a of mod.anidadas) {
+        const match = a.label.toLowerCase().includes(lower) || a.keywords.some((k) => k.includes(lower));
+        if (match && !labelMatch) {
+          results.push({
+            id: `anidada-${mod.tab}-${a.vista}-${a.id}`,
+            type: "modulo",
+            title: a.label,
+            subtitle: `En ${mod.label}`,
+            navigateTo: mod.tab,
+            tab: mod.tab,
+            vista: a.vista,
+            sub: a.id,
           });
         }
       }
@@ -419,7 +295,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onOpen?: () => void;
-  onNavigate: (tab: string) => void;
+  onNavigate: (tab: string, vista?: string, sub?: string) => void;
 }
 
 // ── Metadatos de grupos ───────────────────────────────────────────────────────
@@ -438,16 +314,18 @@ const GROUP_ORDER: (keyof GroupedResults)[] = ["modulos", "productos", "clientes
 
 const QUICK_ACCESS = [
   { label: "Nuevo pedido",    tab: "pedidos",              icon: ShoppingCart,   color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
-  { label: "Mi stock",        tab: "inventario-almacenes", icon: Boxes,          color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
-  { label: "Mis clientes",    tab: "crm-clientes",         icon: Users,          color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
-  { label: "Caja",            tab: "pos-caja",             icon: Monitor,        color: "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]" },
+  { label: "Mi stock",        tab: "inventario", icon: Boxes,          color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
+  { label: "Mis clientes",    tab: "clientes",         icon: Users,          color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
+  { label: "Caja",            tab: "ventas-caja",             icon: Monitor,        color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
   { label: "Reportes",        tab: "reportes-documentos",  icon: FileText,       color: "text-[var(--text-secondary)] bg-[var(--surface-alt)] dark:bg-surface" },
-  { label: "Promociones",     tab: "precios-promos",       icon: TrendingUp,     color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
+  { label: "Promociones",     tab: "productos",       icon: TrendingUp,     color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
 ];
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Props) {
+  /** Para atar el diálogo con su título. */
+  const idBase = useId();
   const [query, setQuery]       = useState("");
   const [grouped, setGrouped]   = useState<GroupedResults>({ modulos: [], productos: [], clientes: [], pedidos: [], acciones: [] });
   const [loading, setLoading]   = useState(false);
@@ -455,6 +333,22 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
 
   const inputRef    = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Offset vertical del popover. Estaba fijo en `top-14` (56px), que asume que
+  // el header arranca en y=0 — pero arriba puede haber una barra de alertas o
+  // el banner de impersonación, así que el popover terminaba TAPANDO el header
+  // y su propio botón de búsqueda. Se mide el borde inferior real del header.
+  const [anchorTop, setAnchorTop] = useState(56);
+  useEffect(() => {
+    if (!open) return;
+    const measure = () => {
+      const header = document.querySelector<HTMLElement>("[data-admin-header]");
+      setAnchorTop(header ? Math.round(header.getBoundingClientRect().bottom + 8) : 56);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [open]);
 
   // Atajo global Ctrl+K / Cmd+K
   useEffect(() => {
@@ -538,7 +432,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
       if (e.key === "Enter" && flatResults[selected]) {
         const r = flatResults[selected];
         if (r.action) { r.action(); }
-        else if (r.navigateTo) { onNavigate(r.navigateTo); onClose(); }
+        else if (r.navigateTo) { onNavigate(r.navigateTo, r.vista, r.sub); onClose(); }
       }
       if (e.key === "Escape") { onClose(); }
     };
@@ -549,7 +443,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
 
   const handleSelect = (r: SearchResult) => {
     if (r.action) { r.action(); }
-    else if (r.navigateTo) { onNavigate(r.navigateTo); onClose(); }
+    else if (r.navigateTo) { onNavigate(r.navigateTo, r.vista, r.sub); onClose(); }
   };
 
   if (!open) return null;
@@ -562,25 +456,47 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
 
   return (
     <>
-      {/* Backdrop transparente — captura click-fuera sin oscurecer la página */}
+      {/* Backdrop oscurecido (Brandon 2026-08-28): antes era transparente y
+          dejaba el pill "Buscar módulos, productos, clientes…" del header
+          totalmente visible justo encima de este popover — dos cajas de
+          búsqueda casi idénticas a la vista a la vez. Con el fondo atenuado,
+          el pill del header queda claramente de fondo/inactivo y este input
+          se lee como el único foco. */}
       <div
-        className="fixed inset-0 z-[9998]"
+        className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm animate-in fade-in duration-[var(--dur-base)]"
         onClick={onClose}
         aria-hidden
       />
-      {/* Popover anclado al search button del topbar (top-14 ~ debajo del header h-14).
-          Mismo ancho max-w-xl + posicionado a la izquierda con margen para alinear
-          con el botón del header. En mobile ocupa todo el ancho. */}
+      {/* Popover anclado al search button del topbar (top-14 ~ debajo del header
+          h-14), alineado a la izquierda con el botón. En mobile ocupa todo el ancho.
+
+          El ancho va en rem EXPLÍCITO, no `max-w-xl`: este repo overridea
+          `--container-xl` a 1440px (globals.css :2071), así que `sm:max-w-xl`
+          hacía que el popover midiera 1200px —casi toda la pantalla— en vez de
+          los ~576px que aparenta. Gotcha del DS: modales y popovers en rem. */}
       <div
-        className="fixed top-14 left-2 sm:left-12 lg:left-[calc(var(--admin-sidebar-w,260px)+1rem)] right-2 sm:right-auto z-[9999] sm:w-[calc(100vw-3rem)] sm:max-w-xl"
+        style={{ top: anchorTop }}
+        className="fixed left-2 sm:left-12 lg:left-[calc(var(--admin-sidebar-w,260px)+1rem)] right-2 sm:right-auto z-[9999] sm:w-[calc(100vw-3rem)] sm:max-w-[36rem] animate-in fade-in zoom-in-95 duration-[var(--dur-base)]"
       >
+        {/* `role="dialog"` + `aria-modal`: el buscador se comportaba como un
+            modal —tapa la página, atrapa Escape, se cierra al click fuera— pero
+            no lo DECÍA, así que un lector de pantalla lo leía como un trozo más
+            de la página y no anunciaba que se había abierto algo.
+            `aria-labelledby` apunta al «Buscar en todo el panel» de adentro, que
+            ya existía: no hace falta un título invisible aparte. */}
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`${idBase}-titulo`}
           className="bg-[var(--surface-raised)] rounded-2xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] shadow-[var(--shadow-xl)]"
           onClick={e => e.stopPropagation()}
         >
         {/* ── Input de búsqueda — más prominente, h-14, con eyebrow ── */}
         <div className="px-5 pt-4 pb-2 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2">
+          <p
+            id={`${idBase}-titulo`}
+            className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-2"
+          >
             Buscar en todo el panel
           </p>
           <div className="flex items-center gap-3">
@@ -666,10 +582,13 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                         key={r.id}
                         onClick={() => handleSelect(r)}
                         className={cn(
-                          "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors border-b border-[var(--rule-base)] last:border-0",
+                          // Separador `--rule-soft`: con `--rule-base` cada fila
+                          // quedaba subrayada y la lista se leía como una tabla
+                          // rayada en vez de una lista de resultados.
+                          "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0",
                           isSelected
-                            ? "bg-primary/5 dark:bg-primary/10"
-                            : "hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+                            ? "bg-primary/10 ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_25%,transparent)]"
+                            : "hover:bg-[var(--surface-sunken)] dark:hover:bg-surface"
                         )}
                       >
                         <div className={cn(
@@ -688,7 +607,9 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                           {r.badge && (
                             <span
                               className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
-                              style={{ background: r.badgeColor ?? "#6b7280" }}
+                              // Fallback al token de la superficie fuerte: antes
+                              // era el hex #6b7280, que no existe en la paleta.
+                              style={{ background: r.badgeColor ?? "var(--rule-strong)" }}
                             >
                               {r.badge}
                             </span>

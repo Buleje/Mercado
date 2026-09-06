@@ -20,6 +20,21 @@ import { getOrSet } from "@/lib/cache";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 import { newTraceId } from "@/lib/api-error";
+import { CATEGORIA_GRADIENTS } from "@/lib/recipe-gradients";
+
+// Emoji por receta — anclaje visual apetitoso en las cards (no hay fotos aún).
+const RECIPE_EMOJI: Record<string, string> = {
+  "Ceviche Clasico": "🐟",
+  "Lomo Saltado": "🥩",
+  "Arroz con Pollo": "🍗",
+  "Aji de Gallina": "🍲",
+  "Papa a la Huancaina": "🥔",
+  "Causa Limena": "🥑",
+  "Tacacho con Cecina": "🍢",
+  "Chicha Morada": "🍹",
+  "Arroz Chaufa": "🍚",
+  "Aguadito de Pollo": "🍜",
+};
 
 // ── Demo recipes (sembrados) ────────────────────────────────────────────────
 //
@@ -376,6 +391,9 @@ type ResolvedReceta = {
   categoria: string;
   videoUrl: string | null;
   imageUrl: string | null;
+  emoji: string;
+  colorFrom: string;
+  colorTo: string;
   pasos: string[];
   ingredientes: ResolvedIngredient[];
   totalIngredientes: number;
@@ -390,7 +408,7 @@ type ResolvedReceta = {
 export async function GET() {
   const traceId = newTraceId();
   try {
-    const data = await getOrSet("marketplace:recetas:v1", 300, async () => {
+    const data = await getOrSet("marketplace:recetas:v2", 300, async () => {
       // 1. Catalogo del marketplace (cross-store)
       // Audit project-wide 2026-05-19: migrado a MarketplaceProductsDB.getStoreProductsCatalog.
       const storeProducts = await MarketplaceProductsDB.getStoreProductsCatalog({ take: 5000 });
@@ -456,6 +474,7 @@ export async function GET() {
           0,
         );
 
+        const grad = CATEGORIA_GRADIENTS[r.categoria] ?? { from: "#f97316", to: "#ef4444" };
         return {
           id: r.id,
           nombre: r.nombre,
@@ -466,6 +485,9 @@ export async function GET() {
           categoria: r.categoria,
           videoUrl: r.videoUrl ?? null,
           imageUrl: r.imageUrl ?? null,
+          emoji: RECIPE_EMOJI[r.nombre] ?? "🍽️",
+          colorFrom: grad.from,
+          colorTo: grad.to,
           pasos: r.pasos,
           ingredientes,
           totalIngredientes: Number(totalIngredientes.toFixed(2)),

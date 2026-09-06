@@ -9,7 +9,6 @@ import {
   Moon,
   UserPlus,
   User,
-  Loader2,
   AlertCircle,
   ChevronDown,
   ChevronRight,
@@ -113,7 +112,7 @@ export default function AutoSegments() {
         description: "Entre S/100 y S/500 al mes",
         icon: ShoppingCart,
         color: "text-primary dark:text-[var(--data-success-500)]",
-        bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+        bg: "bg-primary/10 dark:bg-primary/15",
         border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
       },
       {
@@ -122,7 +121,7 @@ export default function AutoSegments() {
         description: "Menos de S/100 al mes",
         icon: User,
         color: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-        bg: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]",
+        bg: "bg-primary/10 dark:bg-primary/15",
         border: "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30",
       },
       {

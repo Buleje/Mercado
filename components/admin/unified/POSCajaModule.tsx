@@ -2,12 +2,12 @@
 import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { m } from "@/components/admin/providers";
 import {
   ShoppingCart, Wallet, CreditCard, Scale, HandCoins,
   Banknote, History, ArrowRight, Clock, Users,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +24,7 @@ const OfflineIndicator       = dynamic(() => import("@/components/admin/OfflineI
 const CommissionCalculator   = dynamic(() => import("@/components/admin/CommissionCalculator"),   { loading: S });
 
 import { usePOSOffline } from "@/components/admin/pos/usePOSOffline";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 
 // ── Tabs reordenados en flujo lógico del día ──────────────────────────────────
@@ -41,13 +42,8 @@ const _SEPARATOR_AFTER_INDICES = [1, 3, 4]; // Después de Dashboard (idx 1), Tu
 
 type TabId = typeof TABS[number]["id"];
 
-function normalizeVentasCajaTab(savedTab: string | null): TabId {
-  if (savedTab === "resumen" || savedTab === "pedidos" || savedTab === "dashboard") {
-    return "pos";
-  }
-
-  return TABS.some(tab => tab.id === savedTab) ? (savedTab as TabId) : TABS[0].id;
-}
+/** Los ids, estables: el hook los usa como dependencia. */
+const TAB_IDS = TABS.map((t) => t.id);
 
 // ── Shift Close Modal Types ─────────────────────────────────────────────────
 
@@ -117,13 +113,33 @@ function ShiftCloseModal({
 
   const handleConfirm = async () => {
     setConfirming(true);
-    // Attempt to close shift via API (best-effort)
+    setError(null);
+    /**
+     * Cerrar el turno NO es «best-effort»: es el corte del día.
+     *
+     * Antes cualquier fallo —403, 409 de un turno ya cerrado, 503— se tragaba
+     * en el `catch` y la pantalla llamaba a `onConfirm()` igual, así que el
+     * cajero veía «turno cerrado», se iba, y el turno seguía abierto en el
+     * sistema con las ventas del día siguiente cayendo adentro.
+     */
     try {
-      await fetch("/api/cash-registers/close-shift", { method: "POST" });
-    } catch {
-      // ignore — shift close is optional
+      const res = await fetch("/api/cash-registers/close-shift", { method: "POST", headers: csrfHeaders() });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(
+          typeof body?.error === "string"
+            ? body.error
+            : `No se pudo cerrar el turno (error ${res.status}). Volvé a intentar.`,
+        );
+        return;
+      }
+    } catch (err) {
+      console.warn("[POSCajaModule] cerrar turno falló", err);
+      setError("Sin conexión con el servidor — el turno NO se cerró.");
+      return;
+    } finally {
+      setConfirming(false);
     }
-    setConfirming(false);
     onConfirm();
   };
 
@@ -157,7 +173,7 @@ function ShiftCloseModal({
                 <div className="flex items-center justify-center gap-2">
                   <p className="text-4xl font-extrabold text-primary tracking-tight">{fmt(summary.totalVendido)}</p>
                 </div>
-                <div className="inline-flex items-center gap-1.5 mt-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold">
+                <div className="inline-flex items-center gap-1.5 mt-2 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1 rounded-full text-xs font-bold">
                   <History className="h-3.5 w-3.5" />
                   {summary.numVentas} {summary.numVentas === 1 ? "operación" : "operaciones"} de venta
                 </div>
@@ -168,10 +184,10 @@ function ShiftCloseModal({
                 <p className="text-xs font-extrabold text-[var(--text-tertiary)] pl-1">Desglose de ingresos</p>
 
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="col-span-2 bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-4 flex items-center justify-between group relative overflow-hidden">
-                    <div className="absolute -right-4 -top-4 h-16 w-16 bg-[var(--accent-soft)] rounded-full blur-xl group-hover:bg-[var(--accent-soft)] transition-all" />
+                  <div className="col-span-2 bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-4 flex items-center justify-between group relative overflow-hidden">
+                    <div className="absolute -right-4 -top-4 h-16 w-16 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/10 transition-all" />
                     <div className="flex items-center gap-3 relative z-10">
-                      <div className="h-10 w-10 bg-[var(--accent-soft)] rounded-full flex items-center justify-center">
+                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
                         <Banknote className="h-5 w-5 text-[var(--data-success-500)]" />
                       </div>
                       <div>
@@ -189,15 +205,15 @@ function ShiftCloseModal({
                     <p className="text-base sm:text-lg font-extrabold text-[var(--text-secondary)]">{fmt(summary.yape)}</p>
                   </div>
 
-                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3 sm:p-4">
+                  <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="h-2 w-2 rounded-full bg-[var(--accent-soft)]" />
+                      <div className="h-2 w-2 rounded-full bg-primary/10" />
                       <p className="text-xs font-bold text-[var(--data-success-500)]/80">Plin</p>
                     </div>
                     <p className="text-base sm:text-lg font-extrabold text-[var(--data-success-500)]">{fmt(summary.plin)}</p>
                   </div>
 
-                  <div className="bg-[var(--accent-soft)] border border-[var(--data-success-500)]/30 rounded-xl p-3 sm:p-4">
+                  <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <CreditCard className="h-3 w-3 text-[var(--data-success-500)]" />
                       <p className="text-xs font-bold text-[var(--data-success-500)]/80">Tarjeta / POS</p>
@@ -242,12 +258,11 @@ function ShiftCloseModal({
 
 // ── Main Module ─────────────────────────────────────────────────────────────
 
-export default function POSCajaModule() {
-  const [sub, setSub] = useState<TabId>(() => {
-    if (typeof window === "undefined") return TABS[0].id;
-    return normalizeVentasCajaTab(localStorage.getItem(`admin-last-tab-${MODULE_ID}`));
-  });
-  useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
+export default function POSCajaModule({ initialTab }: { initialTab?: string } = {}) {
+  // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
+  // destino del buscador global. `initialTab` gana cuando el módulo se abre
+  // desde un tab alias (ej. `?tab=turnos`).
+  const { vista: sub, irA: setSub } = useVistaModulo<TabId>(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab);
   const [showShiftClose, setShowShiftClose] = useState(false);
   const { pendingCount, isOnline: _isOnline } = usePOSOffline();
 
@@ -278,8 +293,15 @@ export default function POSCajaModule() {
   // "Abrir caja primero" → salta al sub-tab de Caja Registradora.
   useEffect(() => {
     const goCaja = () => setSub("caja-registradora");
+    // Y su gemelo para el turno: el mismo modal ahora también aparece cuando
+    // falta el turno, y ahí lo que hay que abrir está en otra pestaña.
+    const goTurnos = () => setSub("turnos");
     window.addEventListener("buleje:navigate-caja", goCaja);
-    return () => window.removeEventListener("buleje:navigate-caja", goCaja);
+    window.addEventListener("buleje:navigate-turnos", goTurnos);
+    return () => {
+      window.removeEventListener("buleje:navigate-caja", goCaja);
+      window.removeEventListener("buleje:navigate-turnos", goTurnos);
+    };
   }, []);
 
   const handleOpenCloseModal = () => {
@@ -301,7 +323,7 @@ export default function POSCajaModule() {
 
       <AdminModuleHeader
         eyebrow="Operaciones · Punto de venta"
-        title="Ventas y Caja"
+        title="Ventas & Caja"
         description="Vende, cobra, gestiona tu turno y cierra caja. Todo el flujo del mostrador en un solo lugar."
         icon={ShoppingCart}
       />
@@ -335,7 +357,7 @@ export default function POSCajaModule() {
             className={cn(
               "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors",
               turnoAbierto
-                ? "bg-[var(--accent-soft)] text-[var(--data-success-500)] hover:bg-[var(--accent-soft)]/80"
+                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-primary/10"
                 : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200",
             )}
             title={turnoAbierto ? "Turno abierto — click para cerrar" : "Sin turno — click para abrir uno"}
@@ -349,12 +371,15 @@ export default function POSCajaModule() {
         }
       >
 
-      {/* ── Mobile Cerrar/Abrir Turno button — fixed at bottom ───────── */}
-      <div className="sm:hidden fixed bottom-16 right-4 z-40">
+      {/* ── Mobile Cerrar/Abrir Turno button — fixed at bottom ───────────
+          Posicionado POR ENCIMA del bottom-nav (~72px + safe-area): antes con
+          bottom-16 (64px) quedaba detrás del nav (z-50) y tapaba cards sin
+          elevación. Sombra lg para separarlo del contenido que scrollea debajo. */}
+      <div className="sm:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom)+12px)] right-4 z-40">
         {turnoAbierto ? (
           <button
             onClick={handleOpenCloseModal}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] shadow-[var(--shadow-lg)] transition-colors flex items-center gap-1.5"
           >
             <span className="h-2 w-2 rounded-full bg-white/70 animate-pulse" />
             Cerrar Turno
@@ -362,7 +387,7 @@ export default function POSCajaModule() {
         ) : (
           <button
             onClick={() => setSub("turnos")}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-[var(--shadow-lg)] transition-colors flex items-center gap-1.5"
           >
             Abrir Turno
           </button>

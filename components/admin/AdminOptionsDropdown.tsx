@@ -25,6 +25,10 @@ interface Props {
   onToggleFocus: () => void;
   onTogglePresentation: () => void;
   onSetTheme: (t: ThemeMode) => void;
+  /** Fondo oscuro propio del header (temas Buleje/Ejecutivo del sidebar),
+   *  independiente del modo claro/oscuro del sitio — `dark:` no alcanza
+   *  porque `.dark` puede no estar en el `<html>` (Brandon 2026-08-28). */
+  onDarkHeader?: boolean;
 }
 
 /**
@@ -46,6 +50,7 @@ export default function AdminOptionsDropdown({
   onToggleFocus,
   onTogglePresentation,
   onSetTheme,
+  onDarkHeader = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -126,11 +131,17 @@ export default function AdminOptionsDropdown({
           // (mismo lenguaje que hamburguesa + lupa). En md+ vuelve al pill
           // compacto con "Opciones" + chevron.
           "inline-flex items-center justify-center md:justify-start h-11 w-11 md:w-auto md:h-8 md:px-2.5 md:gap-1.5 rounded-xl md:rounded-lg text-xs font-semibold transition-colors shrink-0",
-          "max-md:bg-[var(--accent-soft)] max-md:text-[var(--accent)] max-md:ring-1 max-md:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
-          "md:border md:text-[var(--text-secondary)] md:border-[var(--rule-base)]",
-          "md:dark:text-[var(--text-secondary)] md:dark:border-[var(--rule-base)]",
-          "hover:bg-gray-100 md:dark:hover:bg-[var(--surface-sunken)] md:hover:text-primary",
-          open && "max-md:bg-[color-mix(in_oklab,var(--accent)_15%,var(--surface-raised))] md:bg-gray-100 md:dark:bg-[var(--surface-sunken)] md:text-primary",
+          "max-md:bg-primary/10 max-md:text-[var(--accent)] max-md:ring-1 max-md:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]",
+          onDarkHeader
+            ? "md:border md:border-white/15 md:text-white/70 md:hover:bg-white/10 md:hover:text-white"
+            : cn(
+                "md:border md:text-[var(--text-secondary)] md:border-[var(--rule-base)]",
+                "md:dark:text-[var(--text-secondary)] md:dark:border-[var(--rule-base)]",
+                "hover:bg-gray-100 md:dark:hover:bg-[var(--surface-sunken)] md:hover:text-primary",
+              ),
+          open && (onDarkHeader
+            ? "max-md:bg-[color-mix(in_oklab,var(--accent)_15%,var(--surface-raised))] md:bg-white/10 md:text-white"
+            : "max-md:bg-[color-mix(in_oklab,var(--accent)_15%,var(--surface-raised))] md:bg-gray-100 md:dark:bg-[var(--surface-sunken)] md:text-primary"),
         )}
       >
         <Settings2 className="h-5 w-5 md:h-4 md:w-4" />

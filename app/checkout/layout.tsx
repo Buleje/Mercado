@@ -20,12 +20,14 @@ import MotionProvider from "@/components/MotionProvider";
 import CheckoutShell from "@/components/marketplace/checkout/CheckoutShell";
 import type { CheckoutStep } from "@/components/marketplace/checkout/CheckoutStepper";
 import { CheckoutDataProvider } from "@/contexts/checkout-data-context";
+import { CheckoutSummaryProvider } from "@/contexts/checkout-summary-context";
 
 function pathToStep(pathname: string | null): CheckoutStep {
-  if (!pathname) return "datos";
+  // datos+entrega unificados → /checkout/datos (redirect) y /checkout/entrega
+  // son el MISMO paso "entrega" en el stepper.
+  if (!pathname) return "entrega";
   if (pathname.includes("/confirmar")) return "confirmar";
-  if (pathname.includes("/entrega")) return "entrega";
-  return "datos";
+  return "entrega";
 }
 
 export default function CheckoutLayout({ children }: { children: React.ReactNode }) {
@@ -38,15 +40,17 @@ export default function CheckoutLayout({ children }: { children: React.ReactNode
   return (
     <MarketplaceStoreProviders tenantSlug="main">
       <CheckoutDataProvider>
-        <MotionProvider>
-          <Suspense fallback={null}>
-            {isAuthGate ? (
-              <div className="min-h-screen bg-[var(--surface-canvas)]">{children}</div>
-            ) : (
-              <CheckoutShell current={current}>{children}</CheckoutShell>
-            )}
-          </Suspense>
-        </MotionProvider>
+        <CheckoutSummaryProvider>
+          <MotionProvider>
+            <Suspense fallback={null}>
+              {isAuthGate ? (
+                <div className="min-h-screen bg-[var(--surface-canvas)]">{children}</div>
+              ) : (
+                <CheckoutShell current={current}>{children}</CheckoutShell>
+              )}
+            </Suspense>
+          </MotionProvider>
+        </CheckoutSummaryProvider>
       </CheckoutDataProvider>
     </MarketplaceStoreProviders>
   );

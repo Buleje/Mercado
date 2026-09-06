@@ -8,6 +8,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { Field } from "@/components/admin/shared/Field";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -38,8 +39,8 @@ const TIPO_LABELS: Record<PromoType, string> = {
 };
 
 const TIPO_BADGE: Record<PromoType, string> = {
-  porcentaje: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-  "2x1": "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+  porcentaje: "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+  "2x1": "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
   "3x2": "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
   combo: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
   monto_fijo: "bg-teal-100 dark:bg-teal-900/30 text-[var(--accent-dark)] dark:text-teal-400",
@@ -110,7 +111,7 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
   const statusColor = status === "hoy"
     ? "border-l-[var(--accent)]"
     : status === "futura"
-    ? "border-l-[#f97316]"
+    ? "border-l-[#ff6b5b]"
     : "border-l-gray-300 dark:border-l-gray-600";
 
   return (
@@ -244,7 +245,7 @@ export default function PromocionesModule() {
     setFormError(null);
     setSaving(true);
     try {
-      const res = await fetch(`/api/discount-rules/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/discount-rules/${id}`, { method: "DELETE", headers: csrfHeaders() });
       if (res.ok) {
         setPromos(prev => prev.filter(p => p.id !== id));
         setSuccessMsg("Promoción eliminada");
@@ -312,7 +313,7 @@ export default function PromocionesModule() {
         title="Promociones"
         description="Gestión de descuentos y ofertas activas"
         icon={Tag}
-        iconColor="#f97316"
+        iconColor="#ff6b5b"
       >
         <div className="flex items-center gap-2">
           <button
@@ -346,14 +347,14 @@ export default function PromocionesModule() {
 
       {/* Mensaje de éxito */}
       {successMsg && (
-        <div className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl px-4 py-2.5 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+        <div className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 rounded-xl px-4 py-2.5 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
           ✓ {successMsg}
         </div>
       )}
 
       {/* Stats rápido */}
       <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-xs px-3 py-1.5 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
+        <span className="text-xs px-3 py-1.5 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
           {activeToday} activas hoy
         </span>
         <span className="text-xs px-3 py-1.5 rounded-full bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium">
@@ -379,8 +380,7 @@ export default function PromocionesModule() {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Nombre *</label>
+            <Field label="Nombre *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
               <input
                 type="text"
                 value={form.nombre}
@@ -388,10 +388,9 @@ export default function PromocionesModule() {
                 placeholder="Ej: Descuento fin de semana"
                 className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
-            </div>
+            </Field>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Tipo *</label>
+            <Field label="Tipo *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
               <select
                 value={form.tipo}
                 onChange={e => setForm(f => ({ ...f, tipo: e.target.value as PromoType }))}
@@ -401,13 +400,10 @@ export default function PromocionesModule() {
                   <option key={t} value={t}>{TIPO_LABELS[t]}</option>
                 ))}
               </select>
-            </div>
+            </Field>
 
             {(form.tipo === "porcentaje" || form.tipo === "monto_fijo" || form.tipo === "combo") && (
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-[var(--text-secondary)]">
-                  {form.tipo === "porcentaje" ? "Porcentaje (%)" : "Monto (S/)"}
-                </label>
+              <Field label={form.tipo === "porcentaje" ? "Porcentaje (%)" : "Monto (S/)"} labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
                 <input
                   type="number"
                   min="0"
@@ -417,11 +413,10 @@ export default function PromocionesModule() {
                   placeholder={form.tipo === "porcentaje" ? "20" : "5.00"}
                   className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                 />
-              </div>
+              </Field>
             )}
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Categorías (separadas por coma)</label>
+            <Field label="Categorías (separadas por coma)" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
               <input
                 type="text"
                 value={form.categorias}
@@ -429,32 +424,27 @@ export default function PromocionesModule() {
                 placeholder="Lácteos, Bebidas"
                 className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
-            </div>
+            </Field>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Inicio *</label>
+            <Field label="Inicio *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
               <input
                 type="date"
                 value={form.fechaInicio}
                 onChange={e => setForm(f => ({ ...f, fechaInicio: e.target.value }))}
                 className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
-            </div>
+            </Field>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">Fin *</label>
+            <Field label="Fin *" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1">
               <input
                 type="date"
                 value={form.fechaFin}
                 onChange={e => setForm(f => ({ ...f, fechaFin: e.target.value }))}
                 className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
-            </div>
+            </Field>
 
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-medium text-[var(--text-secondary)]">
-                Condición (opcional)
-              </label>
+            <Field label="Condición (opcional)" labelClassName="text-xs font-medium text-[var(--text-secondary)]" className="space-y-1 sm:col-span-2">
               <input
                 type="text"
                 value={form.condicion}
@@ -462,7 +452,7 @@ export default function PromocionesModule() {
                 placeholder='Ej: "min_cantidad:3" o "min_monto:50"'
                 className="w-full text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
-            </div>
+            </Field>
           </div>
 
           {/* Preview badge */}

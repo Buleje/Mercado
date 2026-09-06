@@ -1,5 +1,6 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
@@ -107,10 +108,14 @@ export async function POST(req: NextRequest) {
         );
       }
       await PlatformSettingsDB.set("plan-prices", priceCheck.data, updatedBy);
+      revalidateTag("platform-config", "max");
       return NextResponse.json({ ok: true, key, value: priceCheck.data });
     }
 
     await PlatformSettingsDB.set(key, value, updatedBy);
+    // Esta ruta escribe las MISMAS keys que /platform-config, así que revalida
+    // el mismo tag: el root layout lee la marca desde ese caché.
+    revalidateTag("platform-config", "max");
     return NextResponse.json({ ok: true, key, value });
   }
 
@@ -132,6 +137,7 @@ export async function POST(req: NextRequest) {
     }
 
     await PlatformSettingsDB.setMany(sanitized, updatedBy);
+    revalidateTag("platform-config", "max");
     return NextResponse.json({ ok: true, keys: Object.keys(sanitized) });
   }
 

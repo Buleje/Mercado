@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState } from "react";
 import {
@@ -20,10 +20,25 @@ type OCItem = {
 
 interface OCRecepcionModalProps {
   ocId: string;
+  /**
+   * Nombre del proveedor. El endpoint lo exige (`supplier`, requerido): sin él
+   * el POST volvía 400 «Datos inválidos» SIEMPRE, así que este botón nunca
+   * llegó a registrar una recepción.
+   */
+  supplier: string;
   items: OCItem[];
   onComplete: () => void;
   onClose: () => void;
 }
+
+/** Los mismos estados que acepta el endpoint y que ya usa Recepción. */
+type CondicionItem = "ok" | "dañado" | "vencido" | "faltante";
+
+const CONDICIONES: Array<{ v: CondicionItem; l: string }> = [
+  { v: "ok", l: "Bien" },
+  { v: "dañado", l: "Dañado" },
+  { v: "vencido", l: "Vencido" },
+];
 
 type ReceivedItem = {
   productId: number;
@@ -34,9 +49,11 @@ type ReceivedItem = {
   originalPrice: number;
   unit: string;
   noLlego: boolean;
+  /** Cómo llegó la mercadería. Lo dañado y lo vencido no entra a stock vendible. */
+  condition: CondicionItem;
 };
 
-export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: OCRecepcionModalProps) {
+export default function OCRecepcionModal({ ocId, supplier, items, onComplete, onClose }: OCRecepcionModalProps) {
   useScrollLock(true);
 
   const [step, setStep] = useState(1);
@@ -50,6 +67,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
       originalPrice: i.unitCost,
       unit: i.unit,
       noLlego: false,
+      condition: "ok",
     })),
   );
   const [notas, setNotas] = useState("");
@@ -85,19 +103,35 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
     setError(null);
 
     try {
+      // El shape es el que valida `RecepcionSchema` en el endpoint, no el que
+      // parecía razonable desde acá: `orderRef` (no `ocId`), `supplier`
+      // requerido, y cada ítem con `product` (el nombre) además del id. Mandar
+      // otra cosa devolvía 400 en cada intento.
       const res = await fetch("/api/compras/recepciones", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
-          ocId,
+          orderRef: ocId,
+          supplier,
           items: receivedItems
-            .filter((i) => i.receivedQty > 0)
+            .filter((i) => i.receivedQty > 0 || i.noLlego)
             .map((i) => ({
+              product: i.name,
               productId: i.productId,
+              expectedQty: i.orderedQty,
               receivedQty: i.receivedQty,
-              unitPrice: i.unitPrice,
+              // Lo que no llegó se declara como faltante: es la diferencia que
+              // el proveedor tiene que responder, no una recepción normal de 0.
+              condition: i.noLlego ? "faltante" : i.condition,
+              notes: "",
             })),
-          notas: notas || undefined,
+          status: receivedItems.some((i) => i.noLlego || i.condition !== "ok" || i.receivedQty !== i.orderedQty)
+            ? "parcial"
+            : "aceptada",
+          nonConformities: receivedItems.filter((i) => i.noLlego || i.condition !== "ok").length,
+          // `notes`, no `notas`: con el nombre en castellano Zod lo descartaba
+          // y la anotación de la recepción se perdía sin decir nada.
+          notes: notas || undefined,
         }),
       });
 
@@ -156,13 +190,14 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                 Verificar cantidades recibidas
               </p>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <DataTable className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-secondary)] dark:text-muted">
                       <th className="text-left py-2 px-2">Producto</th>
                       <th className="text-center py-2 px-1">Pedido</th>
                       <th className="text-center py-2 px-1">Recibido</th>
                       <th className="text-center py-2 px-1">Dif.</th>
+                      <th className="text-center py-2 px-1">Cómo llegó</th>
                       <th className="text-center py-2 px-1">No llego</th>
                     </tr>
                   </thead>
@@ -203,19 +238,39 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                               </span>
                             )}
                           </td>
+                          {/* Lo dañado o vencido llegó, pero no se puede
+                              vender: el backend lo registra como merma en vez
+                              de sumarlo al stock. */}
+                          <td className="py-2 px-1 text-center">
+                            <label className="sr-only" htmlFor={`cond-${item.productId}`}>
+                              Cómo llegó {item.name}
+                            </label>
+                            <select
+                              id={`cond-${item.productId}`}
+                              value={item.condition}
+                              disabled={item.noLlego}
+                              onChange={(e) => updateItem(idx, { condition: e.target.value as CondicionItem })}
+                              className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary disabled:opacity-50"
+                            >
+                              {CONDICIONES.map((c) => (
+                                <option key={c.v} value={c.v}>{c.l}</option>
+                              ))}
+                            </select>
+                          </td>
                           <td className="py-2 px-1 text-center">
                             <input
                               type="checkbox"
                               checked={item.noLlego}
                               onChange={(e) => updateItem(idx, { noLlego: e.target.checked })}
                               className="h-4 w-4 accent-primary"
+                              aria-label={`${item.name} no llegó`}
                             />
                           </td>
                         </tr>
                       );
                     })}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             </>
           )}
@@ -228,7 +283,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                 Ajustar precios segun factura
               </p>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <DataTable className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-secondary)] dark:text-muted">
                       <th className="text-left py-2 px-2">Producto</th>
@@ -283,7 +338,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                         );
                       })}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
               <div className="text-right">
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Total factura:</p>
@@ -303,7 +358,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
               </p>
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Recibidos</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{itemsRecibidos.length}</p>
                 </div>
@@ -311,7 +366,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
                   <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase">Con diferencia</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{itemsConDiferencia.length}</p>
                 </div>
-                <div className="bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
+                <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Total factura</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/ {totalFactura.toFixed(2)}</p>
                 </div>
@@ -372,7 +427,7 @@ export default function OCRecepcionModal({ ocId, items, onComplete, onClose }: O
             <button
               onClick={handleConfirm}
               disabled={saving || itemsRecibidos.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/10 disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Confirmar recepción

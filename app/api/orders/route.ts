@@ -19,6 +19,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { prismaForTenant } from "@/lib/tenant";
 import { InventoryMovementsDB } from "@/lib/db/inventory.db";
 import { CouponsDB as CouponsDBDirect } from "@/lib/db/coupons.db";
+import { MarketplaceStoresDB } from "@/lib/db/marketplace/stores.db";
 import { resolveTenantSlug, resolveTenantSlugToId } from "@/lib/resolve-tenant";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
 import { getOrSet } from "@/lib/cache";
@@ -53,7 +54,8 @@ const OrderPostSchema = z.object({
   }),
   items: z.array(OrderItemSchema).min(1),
   total: z.number().min(0), // client hint; server will recompute
-  paymentMethod: z.enum(["yape", "efectivo"]).optional().default("efectivo"),
+  paymentMethod: z.enum(["yape", "efectivo", "fiado"]).optional().default("efectivo"),
+  juntaCode: z.string().max(40).optional(), // Fase A4: pedido dentro de una Junta del Barrio
   notes: z.string().max(1000).optional(),
   deliverySlot: z.string().max(100).optional(),
   // Discount tracking fields
@@ -197,8 +199,6 @@ export const GET = withApiHandler("orders-list", async (req) => {
       tenantId,
     })
   );
-  const total = orders.length;
-
   return NextResponse.json(orders, {
     headers: { "X-Total-Count": String(orders.length) },
   });
@@ -470,7 +470,18 @@ export const POST = withApiHandler("orders-create", async (req) => {
     if (body.appliedCouponCode) {
       // RED-007: tenant-scoped lookup — tenant B can NOT use a coupon owned
       // by tenant A. Lookup will return null when tenantId doesn't match.
-      const coupon = await CouponsDB.getByCode(tenantId, body.appliedCouponCode);
+      // ADR-380 Fase 1.2: migrado del CouponsDB legacy (ignoraba storeId
+      // por completo) al de lib/db/coupons.db.ts — un cupón creado sólo
+      // para la vidriera de marketplace de OTRA tienda del mismo tenant ya
+      // no se cuela en el checkout de la tienda propia. `own?.id` es la
+      // tienda marketplace de ESTE tenant (si tiene una) — findByCode ya
+      // resuelve "de esa tienda o de todo el tenant" cuando se le pasa.
+      const own = await MarketplaceStoresDB.getByTenant(tenantId).catch(() => null);
+      const coupon = await CouponsDBDirect.findByCode(
+        tenantId,
+        body.appliedCouponCode.toUpperCase().trim(),
+        own?.id,
+      );
       const now = new Date();
       const valid =
         coupon &&
@@ -624,6 +635,40 @@ export const POST = withApiHandler("orders-create", async (req) => {
       };
     });
     const totalCogs = orderItems.reduce((sum, i) => sum + (i.costPrice ?? i.price * 0.7) * i.quantity, 0);
+
+    // ── Fiado: gate de elegibilidad ANTES de crear la orden (anti-fraude).
+    //    El total autoritativo es computedTotal (backend), nunca el del cliente.
+    if (body.paymentMethod === "fiado") {
+      // El crédito (CreditProfile/Fiado) se llavea por phone NORMALIZADO.
+      // Normalizamos acá para que el gate valide la MISMA clave bajo la que
+      // se crea el Fiado (igual que OrdersDB.add), no el phone crudo del body.
+      const { normalizePhone: normalizeFiadoPhone } = await import(
+        "@/lib/db/misc.db"
+      );
+      const fiadoPhone = body.customer.phone
+        ? normalizeFiadoPhone(body.customer.phone)
+        : "";
+      if (!fiadoPhone) {
+        return NextResponse.json(
+          { error: "El fiado requiere un teléfono de cliente" },
+          { status: 400 },
+        );
+      }
+      const { getFiadoCheckoutEligibility } = await import(
+        "@/lib/credit/checkout-fiado"
+      );
+      const elig = await getFiadoCheckoutEligibility(
+        tenantId,
+        fiadoPhone,
+        computedTotal,
+      );
+      if (!elig.eligible) {
+        return NextResponse.json(
+          { error: elig.reason ?? "No elegible para fiado" },
+          { status: 400 },
+        );
+      }
+    }
 
     const order: DbOrder = {
       id: `ord-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -802,6 +847,69 @@ export const POST = withApiHandler("orders-create", async (req) => {
         }
       })().catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
       throw addErr;
+    }
+
+    // ── Fiado: crear el Fiado ligado a la orden ("paga el día de pago").
+    //    La elegibilidad ya se validó arriba con computedTotal (anti-fraude).
+    //    Si la creación del Fiado falla, NO rompemos la orden (ya persistida);
+    //    se loguea para reconciliación. Atomicidad estricta (Fiado en la misma
+    //    tx que la Order) = follow-up checkout-squad con createInTransaction.
+    if (saved.paymentMethod === "fiado" && saved.customer.phone) {
+      try {
+        const [{ createFiadoForOrder }, { normalizePhone: normFiadoPhone }] =
+          await Promise.all([
+            import("@/lib/credit/checkout-fiado-order"),
+            import("@/lib/db/misc.db"),
+          ]);
+        await createFiadoForOrder(tenantId, {
+          orderId: saved.id,
+          // Misma clave normalizada que usó el gate y el resto del crédito.
+          customerId: normFiadoPhone(saved.customer.phone),
+          total: saved.total,
+        });
+      } catch (err) {
+        // Phantom-fiado guard: la orden ya está persistida como fiado. Si el
+        // Fiado no se crea es deuda sin row que cobrar → Sentry para
+        // reconciliación manual (mismo patrón que el inventory drift de este
+        // archivo). Atomicidad estricta (Fiado en la tx de la Order) =
+        // follow-up checkout-squad con FiadosDB.createInTransaction.
+        logger.error("[orders.POST] fiado creation failed", {
+          orderId: saved.id,
+          tenantId,
+          error: String(err),
+        });
+        Sentry.captureException(err, {
+          level: "error",
+          tags: { area: "orders", phase: "fiado-create", tenant: tenantId },
+          extra: { orderId: saved.id, total: saved.total },
+        });
+      }
+    }
+
+    // ── Junta del Barrio: liga el pedido a la junta (Fase A4). Best-effort:
+    //    si falla, el pedido NO se rompe (ya está persistido); se loguea.
+    if (body.juntaCode && saved.customer.phone) {
+      try {
+        const [{ JuntasDB }, { normalizePhone: normJuntaPhone }] =
+          await Promise.all([
+            import("@/lib/db/juntas.db"),
+            import("@/lib/db/misc.db"),
+          ]);
+        const junta = await JuntasDB.getByCode(tenantId, body.juntaCode);
+        if (junta && junta.status !== "EXPIRED") {
+          await JuntasDB.linkMemberOrder(tenantId, {
+            juntaId: junta.id,
+            customerId: normJuntaPhone(saved.customer.phone),
+            orderId: saved.id,
+          });
+        }
+      } catch (err) {
+        logger.error("[orders.POST] junta link failed", {
+          orderId: saved.id,
+          tenantId,
+          error: String(err),
+        });
+      }
     }
 
     // ── FEFO batch decrement (separate from Product.stock — deducts from
@@ -1038,6 +1146,25 @@ export const POST = withApiHandler("orders-create", async (req) => {
     // sin requerir un login adicional. El phone ya viene del input del propio
     // cliente, así que no abrimos nuevo vector de auth — solo evitamos pedirle
     // credenciales repetidas para sus propios datos.
+    // ── Socio Buleje: cashback 5% al confirmar el pedido (fire-and-forget) ──
+    // El socio userId == teléfono (mismo que el customerId de la sesión). Si el
+    // cliente no es socio activo, es no-op. Idempotente por orderId. No bloquea
+    // la respuesta ni rompe el checkout si algo falla (CLAUDE.md #7).
+    if (saved.customer?.phone) {
+      const savedOrderId = saved.id;
+      const savedPhone = saved.customer.phone;
+      void import("@/lib/socio/order-cashback")
+        .then(({ creditOrderCashback }) =>
+          creditOrderCashback(tenantId, savedPhone, savedOrderId, computedTotal),
+        )
+        .catch((err) =>
+          logger.warn("[orders] socio cashback hook failed", {
+            error: err instanceof Error ? err.message : String(err),
+            orderId: savedOrderId,
+          }),
+        );
+    }
+
     const response = NextResponse.json(saved, { status: 201 });
     const customerPhoneForSession = saved.customer?.phone;
     if (customerPhoneForSession) {

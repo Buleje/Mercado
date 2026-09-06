@@ -39,9 +39,11 @@ function dealToCard(d: Deal): UnifiedProductCardProduct {
 
 interface DealsGridProps {
   deals: Deal[];
+  /** "lowest" = sin descuentos reales → copy honesto (no "con descuento"). */
+  source?: "deals" | "lowest";
 }
 
-export default function DealsGrid({ deals }: DealsGridProps) {
+export default function DealsGrid({ deals, source = "deals" }: DealsGridProps) {
   const [page, setPage] = useState(1);
 
   const totalPages = Math.max(1, Math.ceil(deals.length / PAGE_SIZE));
@@ -57,7 +59,7 @@ export default function DealsGrid({ deals }: DealsGridProps) {
           <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] mb-4">
             <Package className="h-9 w-9" strokeWidth={1.25} aria-hidden />
           </div>
-          <p className="text-lg font-black tracking-tight text-[var(--text-primary)]">
+          <p className="text-lg font-bold tracking-tight text-[var(--text-primary)]">
             Sin ofertas con esos filtros
           </p>
           <p className="mt-2 text-sm text-[var(--text-tertiary)] max-w-sm leading-relaxed">
@@ -74,9 +76,13 @@ export default function DealsGrid({ deals }: DealsGridProps) {
       className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8"
     >
       <ExplorarSectionHeader
-        kicker="Catálogo de ofertas"
-        title="Todas las ofertas"
-        subtitle={`${deals.length} ${deals.length === 1 ? "producto con descuento" : "productos con descuento"}. Filtrá por categoría o rebaja mínima arriba.`}
+        kicker={source === "lowest" ? "Catálogo" : "Catálogo de ofertas"}
+        title={source === "lowest" ? "Los precios más bajos" : "Todas las ofertas"}
+        subtitle={
+          source === "lowest"
+            ? `${deals.length} ${deals.length === 1 ? "producto" : "productos"} ordenados de menor a mayor precio. Filtrá por categoría arriba.`
+            : `${deals.length} ${deals.length === 1 ? "producto con descuento" : "productos con descuento"}. Filtrá por categoría o rebaja mínima arriba.`
+        }
       />
 
       <div
@@ -106,7 +112,7 @@ export default function DealsGrid({ deals }: DealsGridProps) {
             className={cn(
               "inline-flex h-10 w-10 items-center justify-center rounded-lg",
               "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
-              "hover:bg-[var(--accent-soft)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
+              "hover:bg-primary/10 hover:border-[var(--accent)] hover:text-[var(--accent)]",
               "disabled:opacity-40 disabled:pointer-events-none transition-colors",
             )}
           >
@@ -139,7 +145,7 @@ export default function DealsGrid({ deals }: DealsGridProps) {
             className={cn(
               "inline-flex h-10 w-10 items-center justify-center rounded-lg",
               "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
-              "hover:bg-[var(--accent-soft)] hover:border-[var(--accent)] hover:text-[var(--accent)]",
+              "hover:bg-primary/10 hover:border-[var(--accent)] hover:text-[var(--accent)]",
               "disabled:opacity-40 disabled:pointer-events-none transition-colors",
             )}
           >

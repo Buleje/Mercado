@@ -15,10 +15,6 @@ import { useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 
 export interface UseAdminPageStateResult {
-  selectedCategory: string | null;
-  setSelectedCategory: Dispatch<SetStateAction<string | null>>;
-  categoryDropdownOpen: boolean;
-  setCategoryDropdownOpen: Dispatch<SetStateAction<boolean>>;
   sidebarSearch: string;
   setSidebarSearch: Dispatch<SetStateAction<string>>;
   showModuleHelp: boolean;
@@ -37,11 +33,15 @@ export interface UseAdminPageStateResult {
 }
 
 export function useAdminPageState(): UseAdminPageStateResult {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState("");
   const [showModuleHelp, setShowModuleHelp] = useState(false);
-  const [recentCollapsed, setRecentCollapsed] = useState(true);
+  // Arranca DESPLEGADA: la sección de recientes estuvo sin pintarse mucho
+  // tiempo y con el default plegado seguiría escondida — su valor es verse
+  // apenas abrís el panel. Se recuerda plegada si el usuario la cierra.
+  const [recentCollapsed, setRecentCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem("admin-recientes-plegado") === "true"; } catch { return false; }
+  });
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [openAccordionCategories, setOpenAccordionCategories] = useState<
     Set<string>
@@ -53,10 +53,6 @@ export function useAdminPageState(): UseAdminPageStateResult {
   const flyoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   return {
-    selectedCategory,
-    setSelectedCategory,
-    categoryDropdownOpen,
-    setCategoryDropdownOpen,
     sidebarSearch,
     setSidebarSearch,
     showModuleHelp,

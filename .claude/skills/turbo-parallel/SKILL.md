@@ -15,7 +15,7 @@ Reemplaza el patron "ejecutar 1 cosa, esperar, ejecutar la siguiente" por **exec
 
 1. **Batch-first ABSOLUTO.** Cada mensaje de Claude debe maximizar tool calls paralelos. Si hay 5 reads pendientes, los 5 van en el MISMO mensaje. Nunca 1+1+1+1+1.
 2. **Multi-Agent en 1 mensaje.** Cuando hay 3+ sub-tareas independientes, los 3+ Agent() se despachan en el mismo bloque con `run_in_background: true` + `isolation: "worktree"`.
-3. **Fork sobre secuencial.** `subagent_type` especializado + `context: fork` es mas rapido que el mismo agente ejecutando N tareas en serie.
+3. **Especializar sobre secuencial.** N Agent() con `subagent_type` especializado en paralelo > el mismo agente ejecutando N tareas en serie. Si cada resultado necesita verificacion (auditorias, migraciones), preferir **Workflow** (`audit-verificado`) sobre agentes sueltos.
 4. **8 max** agentes en paralelo. Mas que eso satura disco/red.
 
 ## Cuando aplicar
@@ -60,7 +60,7 @@ Reemplaza el patron "ejecutar 1 cosa, esperar, ejecutar la siguiente" por **exec
 
 - NO hacer 1 Agent, esperar resultado, hacer otro Agent igual de independiente. Es el anti-patron que desperdicia 40-60% de tiempo.
 - NO leer 1 archivo, pensar, leer otro si ya sabias que ibas a necesitar ambos. Batch el read.
-- NO llamar /luis para sub-tareas — /luis forkea y bloquea. Usa Agent() directo en background.
+- NO revivir skills archivados (luis/parallel-work/multi-agent-bg) — Agent() en background + Workflow los reemplazan.
 
 ## Beneficio medido
 

@@ -250,7 +250,7 @@ export default function RevenueCharts({ from, to, periodLabel }: RevenueChartsPr
                 }}
                 formatter={((value: number) => [value, "Pedidos"]) as never}
               />
-              <Bar dataKey="count" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="count" fill="#ff6b5b" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>

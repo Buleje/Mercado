@@ -1,4 +1,5 @@
 "use client";
+import { SERIE, SERIES } from "@/components/admin/shared/chart-palette";
 import { useState, useEffect, useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Calculator } from "@buleje/design-system/icons";
@@ -33,13 +34,13 @@ export function HealthSemaphore() {
 
   if (loading || !score) {
     return (
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
-        <div className="h-20 w-20 rounded-full bg-gray-200 mx-auto" />
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+        <div className="h-20 w-20 rounded-full bg-[var(--surface-sunken)] mx-auto" />
       </div>
     );
   }
 
-  const color = score.total > 70 ? "var(--accent)" : score.total >= 40 ? "#f59e0b" : "#ef4444";
+  const color = score.total > 70 ? "var(--accent)" : score.total >= 40 ? SERIE.alerta : SERIE.gastos;
   const label = score.total > 70 ? "Saludable" : score.total >= 40 ? "Precaucion" : "Critico";
   const bgRing = score.total > 70 ? "ring-[var(--data-success-500)]/40" : score.total >= 40 ? "ring-amber-200" : "ring-red-200";
 
@@ -50,7 +51,7 @@ export function HealthSemaphore() {
   ];
 
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
       <div className="flex flex-col sm:flex-row items-center gap-4">
         {/* Circulo grande */}
         <div className={`w-20 h-20 rounded-full flex items-center justify-center ring-4 ${bgRing} shrink-0`} style={{ backgroundColor: `${color}20` }}>
@@ -65,10 +66,10 @@ export function HealthSemaphore() {
           {factors.map(f => (
             <div key={f.label} className="flex items-center gap-2">
               <span className="text-xs font-semibold text-[var(--text-secondary)] w-14">{f.label}</span>
-              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="flex-1 h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-[var(--dur-slow)]"
-                  style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts === f.max ? "var(--accent)" : f.pts >= f.max * 0.6 ? "#f59e0b" : "#ef4444" }}
+                  style={{ width: `${(f.pts / f.max) * 100}%`, backgroundColor: f.pts === f.max ? "var(--accent)" : f.pts >= f.max * 0.6 ? SERIE.alerta : SERIE.gastos }}
                 />
               </div>
               <span className="text-xs font-bold text-[var(--text-secondary)] w-10 text-right">{f.detail}</span>
@@ -88,38 +89,27 @@ export function ComparativoMensual() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Brandon 2026-05-16 (audit P1): dedupe + cache 30s.
+    // Ingresos mensuales agregados SERVER-SIDE (Sale + Order, INGRESO_ORDER_STATUSES).
+    // Antes: /api/sales?limit=5000 crudo bucketeado acá (y sumaba SOLO Sale →
+    // inconsistente con el trend de P&L). Reusa /api/finanzas/monthly-summary.
     Promise.all([
       fetchFinanzas<{ totalMonth?: number; monthly?: Array<{ month: string; total: number }> } | null>("/api/expenses/summary", null),
-      fetchFinanzas<Array<{ createdAt?: string; total: number }>>("/api/sales?limit=5000", []),
+      fetchFinanzas<Array<{ month: string; ingresos: number }>>("/api/finanzas/monthly-summary?months=6", []),
     ])
-      .then(([expenses, sales]) => {
-        const now = new Date();
-        const months: Array<{ mes: string; ingresos: number; gastos: number; utilidad: number }> = [];
-
-        for (let i = 5; i >= 0; i--) {
-          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          const monthKey = d.toISOString().slice(0, 7);
-          const label = MESES[d.getMonth()];
-
-          // Ingresos: sum sales in this month
-          const monthSales = Array.isArray(sales)
-            ? sales.filter((s: { createdAt?: string; total: number }) => (s.createdAt ?? "").startsWith(monthKey))
-            : [];
-          const ingresos = monthSales.reduce((sum: number, s: { total: number }) => sum + (s.total ?? 0), 0);
-
-          // Gastos: from monthly breakdown or estimate
+      .then(([expenses, monthly]) => {
+        const series = Array.isArray(monthly) ? monthly : [];
+        const months = series.map(({ month: monthKey, ingresos }) => {
+          const mm = Number(monthKey.split("-")[1]);
+          const label = MESES[(mm || 1) - 1];
           let gastos = 0;
           if (expenses?.monthly && Array.isArray(expenses.monthly)) {
             const m = expenses.monthly.find((e: { month: string; total: number }) => e.month === monthKey);
             gastos = m?.total ?? 0;
-          } else if (expenses?.totalMonth && i === 0) {
+          } else if (expenses?.totalMonth && monthKey === series[series.length - 1]?.month) {
             gastos = expenses.totalMonth;
           }
-
-          months.push({ mes: label, ingresos: Math.round(ingresos), gastos: Math.round(gastos), utilidad: Math.round(ingresos - gastos) });
-        }
-
+          return { mes: label, ingresos: Math.round(ingresos), gastos: Math.round(gastos), utilidad: Math.round(ingresos - gastos) };
+        });
         setChartData(months);
       })
       .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
@@ -128,22 +118,22 @@ export function ComparativoMensual() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
-        <div className="h-75 bg-gray-100 rounded-xl" />
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+        <div className="h-75 bg-[var(--surface-sunken)] rounded-xl" />
       </div>
     );
   }
 
-  if (chartData.length === 0 || chartData.every(d => d.ingresos === 0 && d.gastos === 0)) {
+  if (chartData.every(d => d.ingresos === 0 && d.gastos === 0)) {
     return null;
   }
 
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
       <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Comparativo Mensual</p>
       <ResponsiveContainer minWidth={0} width="100%" height={300}>
         <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-base)" />
           <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
           <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => formatCurrency(v, { decimals: 0 })} />
           <Tooltip
@@ -156,18 +146,18 @@ export function ComparativoMensual() {
           />
           <Legend formatter={(value: unknown) => { const v = String(value); return v === "ingresos" ? "Ingresos" : v === "gastos" ? "Gastos" : "Utilidad"; }} />
           <Bar dataKey="ingresos" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="gastos" fill="#e63946" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="utilidad" fill="#457b9d" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="gastos" fill={SERIE.gastos} radius={[4, 4, 0, 0]} />
+          <Bar dataKey="utilidad" fill={SERIE.utilidad} radius={[4, 4, 0, 0]} />
           {/* Mejora 14: Linea de punto de equilibrio (promedio gastos) */}
           {(() => {
             const avgGastos = chartData.reduce((s, d) => s + d.gastos, 0) / Math.max(chartData.length, 1);
             return avgGastos > 0 ? (
               <ReferenceLine
                 y={avgGastos}
-                stroke="#e63946"
+                stroke={SERIE.gastos}
                 strokeDasharray="5 5"
                 strokeWidth={1.5}
-                label={{ value: `PE: S/${Math.round(avgGastos)}`, position: "right", fill: "#e63946", fontSize: 10 }}
+                label={{ value: `PE: S/${Math.round(avgGastos)}`, position: "right", fill: SERIE.gastos, fontSize: 10 }}
               />
             ) : null;
           })()}
@@ -203,8 +193,8 @@ export function PuntoEquilibrio() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
-        <div className="h-16 bg-gray-100 rounded-xl" />
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+        <div className="h-16 bg-[var(--surface-sunken)] rounded-xl" />
       </div>
     );
   }
@@ -216,21 +206,21 @@ export function PuntoEquilibrio() {
   const pct = Math.min((data.ventasHoy / data.gastoDiario) * 100, 150);
 
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
       <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Punto de Equilibrio Diario</p>
       <div className="flex items-center gap-4">
         <div className="flex-1">
-          <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
+          <div className="relative h-3 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-[var(--dur-slower)]"
               style={{
                 width: `${Math.min(pct, 100)}%`,
-                backgroundColor: cubierto ? "var(--accent)" : "#ef4444",
+                backgroundColor: cubierto ? "var(--accent)" : SERIE.gastos,
               }}
             />
             {/* Linea de punto de equilibrio */}
             <div
-              className="absolute top-0 bottom-0 w-0.5 bg-gray-900"
+              className="absolute top-0 bottom-0 w-0.5 bg-[var(--surface-sunken)]"
               style={{ left: `${Math.min(100 / (pct > 100 ? pct / 100 : 1), 100)}%` }}
             />
           </div>
@@ -241,7 +231,7 @@ export function PuntoEquilibrio() {
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-lg font-extrabold" style={{ color: cubierto ? "var(--accent)" : "#ef4444" }}>
+          <p className="text-lg font-extrabold" style={{ color: cubierto ? "var(--accent)" : SERIE.gastos }}>
             S/{data.ventasHoy}
           </p>
           <p className="text-xs text-[var(--text-secondary)]">vendido hoy</p>
@@ -261,19 +251,19 @@ export function PuntoEquilibrio() {
 const EXPENSE_COLORS: Record<string, string> = {
   "Mercaderia": "var(--color-primary)",
   "mercaderia": "var(--color-primary)",
-  "Alquiler": "#f97316",
-  "alquiler": "#f97316",
-  "Servicios": "#457b9d",
-  "servicios": "#457b9d",
-  "Personal": "#9b5de5",
-  "personal": "#9b5de5",
-  "Transporte": "#e63946",
-  "transporte": "#e63946",
-  "Marketing": "#14C2C2",
-  "marketing": "#14C2C2",
-  "Otros": "#6b7280",
-  "otros": "#6b7280",
-  "limpieza": "#06b6d4",
+  "Alquiler": SERIE.alerta,
+  "alquiler": SERIE.alerta,
+  "Servicios": SERIE.utilidad,
+  "servicios": SERIE.utilidad,
+  "Personal": SERIES[3],
+  "personal": SERIES[3],
+  "Transporte": SERIE.gastos,
+  "transporte": SERIE.gastos,
+  "Marketing": "var(--accent)",
+  "marketing": "var(--accent)",
+  "Otros": "var(--text-secondary)",
+  "otros": "var(--text-secondary)",
+  "limpieza": SERIES[1],
 };
 
  
@@ -328,8 +318,8 @@ export function GastosDonut() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
-        <div className="h-55 bg-gray-100 rounded-xl" />
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+        <div className="h-55 bg-[var(--surface-sunken)] rounded-xl" />
       </div>
     );
   }
@@ -343,10 +333,10 @@ export function GastosDonut() {
     pct: total > 0 ? Math.round((g.total / total) * 100) : 0,
   }));
 
-  const getColor = (category: string) => EXPENSE_COLORS[category] ?? EXPENSE_COLORS[category.toLowerCase()] ?? "#6b7280";
+  const getColor = (category: string) => EXPENSE_COLORS[category] ?? EXPENSE_COLORS[category.toLowerCase()] ?? "var(--text-secondary)";
 
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
       <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Gastos del Mes por Categoria</p>
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="relative w-45 h-45">
@@ -438,8 +428,8 @@ export function ProyeccionCierreMes() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
-        <div className="h-32 bg-gray-100 rounded-xl" />
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+        <div className="h-32 bg-[var(--surface-sunken)] rounded-xl" />
       </div>
     );
   }
@@ -452,7 +442,7 @@ export function ProyeccionCierreMes() {
   const mesNombre = new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" });
 
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp className="h-4 w-4 text-[var(--text-secondary)]" />
         <p className="text-xs font-bold text-[var(--text-secondary)]">
@@ -481,7 +471,7 @@ export function ProyeccionCierreMes() {
           <span>Dia {data.diasTranscurridos} de {data.diasTotales}</span>
           <span>{Math.round(progreso)}% del mes</span>
         </div>
-        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-[var(--dur-slower)] bg-primary"
             style={{ width: `${progreso}%` }}
@@ -518,8 +508,8 @@ export function ResumenFiscal() {
 
   if (loading || !data) {
     return (
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
-        <div className="h-32 bg-gray-100 rounded-xl" />
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+        <div className="h-32 bg-[var(--surface-sunken)] rounded-xl" />
       </div>
     );
   }
@@ -530,7 +520,7 @@ export function ResumenFiscal() {
   const mesActual = new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" });
 
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5 ">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
       <div className="flex items-center gap-2 mb-3">
         <Calculator className="h-4 w-4 text-[var(--data-warning-500)]" />
         <p className="text-xs font-bold text-[var(--text-secondary)]">
@@ -582,7 +572,7 @@ export function GaugeChart({ value, max, label, unit, color }: { value: number; 
     { name: "empty", value: empty },
   ];
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4  flex flex-col items-center">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex flex-col items-center">
       <p className="text-xs font-bold text-[var(--text-secondary)] mb-1">{label}</p>
       <div className="relative w-35 h-20">
         <ResponsiveContainer minWidth={0} width="100%" height={80}>
@@ -599,7 +589,7 @@ export function GaugeChart({ value, max, label, unit, color }: { value: number; 
               stroke="none"
             >
               <Cell fill={color} />
-              <Cell fill="#e5e7eb" className="" />
+              <Cell fill="var(--rule-base)" className="" />
             </Pie>
           </PieChart>
         </ResponsiveContainer>

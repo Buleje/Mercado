@@ -281,13 +281,13 @@ export function VendorIdentityBadge({ dni, ruc, ownerName, onResult }: Props) {
   if (state.kind === "warning") {
     return (
       <div
-        className="flex flex-col gap-1.5 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-100)]/30 p-3"
+        className="flex flex-col gap-1.5 rounded-xl border-2 border-[#0d9488] bg-[#0d9488]/30 p-3"
         role="alert"
         data-testid="identity-warning"
       >
         <div className="flex items-center gap-2">
-          <ShieldAlert className="h-5 w-5 text-[var(--data-warning-500)] shrink-0" aria-hidden />
-          <span className="text-sm font-bold text-[var(--data-warning-500)]">
+          <ShieldAlert className="h-5 w-5 text-[#0d9488] shrink-0" aria-hidden />
+          <span className="text-sm font-bold text-[#0d9488]">
             {state.payload.type} con advertencia
           </span>
           <button

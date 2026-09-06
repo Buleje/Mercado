@@ -336,7 +336,7 @@ export default function RepartidorPage() {
         <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:gap-12">
           {/* Info — izquierda (sticky en desktop) */}
           <div className="lg:sticky lg:top-24">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/25 bg-[var(--accent-soft)] px-3.5 py-1.5 text-sm font-bold text-[var(--accent)]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/25 bg-primary/10 px-3.5 py-1.5 text-sm font-bold text-[var(--accent)]">
               <LiveSignal className="h-2.5 w-2.5" active />
               Repartí con Buleje
             </span>
@@ -356,7 +356,7 @@ export default function RepartidorPage() {
                 ] as const
               ).map(({ Icon, label }) => (
                 <li key={label} className="flex items-center gap-3 text-base font-semibold text-[var(--text-primary)]">
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                     <Icon className="h-5 w-5" />
                   </span>
                   {label}
@@ -371,7 +371,7 @@ export default function RepartidorPage() {
               <h2 className="text-xl font-extrabold tracking-[-0.01em] text-[var(--text-primary)]">
                 Inscribite en 4 pasos
               </h2>
-              <span className="shrink-0 rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-xs font-extrabold text-[var(--accent)]">
+              <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-[var(--accent)]">
                 Gratis · 2 min
               </span>
             </div>
@@ -496,7 +496,7 @@ export default function RepartidorPage() {
                         aria-pressed={active}
                         className={`p-4 rounded-2xl border-2 text-left transition-all ${
                           active
-                            ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                            ? "border-[var(--accent)] bg-primary/10"
                             : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--text-tertiary)]"
                         }`}
                       >
@@ -511,9 +511,9 @@ export default function RepartidorPage() {
                             <v.Icon className="h-5 w-5" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
+                            <div className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
                               {v.label}
-                            </p>
+                            </div>
                             <p className="text-xs font-semibold text-[var(--text-secondary)] leading-tight mt-0.5">
                               {v.desc}
                             </p>
@@ -536,7 +536,7 @@ export default function RepartidorPage() {
                   aria-pressed={form.anyZone}
                   className={`w-full rounded-2xl border-2 p-4 inline-flex items-center gap-4 text-left transition-all mb-3 ${
                     form.anyZone
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                      ? "border-[var(--accent)] bg-primary/10"
                       : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--text-tertiary)]"
                   }`}
                 >
@@ -614,7 +614,7 @@ export default function RepartidorPage() {
                         aria-pressed={active}
                         className={`w-full h-14 px-4 rounded-2xl border-2 inline-flex items-center justify-between gap-3 text-left transition-all ${
                           active
-                            ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                            ? "border-[var(--accent)] bg-primary/10"
                             : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--text-tertiary)]"
                         }`}
                       >
@@ -645,7 +645,7 @@ export default function RepartidorPage() {
           {step === 3 && (
             <div className="space-y-5">
               {!isMotor ? (
-                <div className="rounded-2xl bg-[var(--accent-soft)] border-2 border-[var(--accent)] p-5 flex items-start gap-4">
+                <div className="rounded-2xl bg-primary/10 border-2 border-[var(--accent)] p-5 flex items-start gap-4">
                   <div className="h-12 w-12 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center shrink-0">
                     <CheckBadge className="h-6 w-6" />
                   </div>
@@ -708,13 +708,13 @@ export default function RepartidorPage() {
                                 aria-pressed={active}
                                 className={`h-16 rounded-2xl border-2 px-3 text-left transition-colors ${
                                   active
-                                    ? "bg-[var(--accent-soft)] border-[var(--accent)]"
+                                    ? "bg-primary/10 border-[var(--accent)]"
                                     : "bg-[var(--surface-raised)] border-[var(--rule-base)] hover:border-[var(--text-tertiary)]"
                                 }`}
                               >
-                                <p className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
+                                <div className="text-base font-extrabold text-[var(--text-primary)] leading-tight">
                                   {opt.label}
-                                </p>
+                                </div>
                                 <p className="text-xs font-semibold text-[var(--text-secondary)] mt-0.5 leading-tight">
                                   {opt.hint}
                                 </p>
@@ -957,7 +957,7 @@ export default function RepartidorPage() {
           <ul className="space-y-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6 shadow-[var(--shadow-sm)]">
             {REQUISITOS.map((r) => (
               <li key={r} className="flex gap-3 text-base leading-relaxed text-[var(--text-secondary)]">
-                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <Check className="h-4 w-4" />
                 </span>
                 {r}
@@ -1036,7 +1036,7 @@ function Stepper({
               aria-current={active ? "step" : undefined}
               className={`w-full text-left rounded-2xl border-2 p-2.5 lg:p-3 transition-colors ${
                 active
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                  ? "border-[var(--accent)] bg-primary/10"
                   : done
                   ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/5"
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)]"
@@ -1062,13 +1062,13 @@ function Stepper({
                   <p className="text-[10px] lg:text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] tabular-nums leading-none">
                     Paso {s.id}
                   </p>
-                  <p
+                  <div
                     className={`mt-1 text-sm lg:text-base font-extrabold leading-tight truncate ${
                       active || done ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
                     }`}
                   >
                     {s.label}
-                  </p>
+                  </div>
                 </div>
               </div>
             </button>
@@ -1143,7 +1143,7 @@ function Consent({
     <label
       className={`flex items-start gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-colors ${
         checked
-          ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+          ? "border-[var(--accent)] bg-primary/10"
           : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--text-tertiary)]"
       }`}
     >

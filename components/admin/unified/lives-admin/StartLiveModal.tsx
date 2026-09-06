@@ -8,7 +8,6 @@
 
 import { useState } from "react";
 import {
-  Radio,
   Camera,
   Mic,
   Package,
@@ -19,6 +18,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 
 interface CheckItem {
   id: string;
@@ -94,8 +94,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
     >
       <div className="p-5 space-y-5">
         {/* Título */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-[var(--text-secondary)]">Título de la transmisión *</label>
+        <Field label="Título de la transmisión *" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
           <input
             type="text"
             value={title}
@@ -104,7 +103,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             autoFocus
           />
-        </div>
+        </Field>
 
         {/* Checklist */}
         <div className="space-y-2">
