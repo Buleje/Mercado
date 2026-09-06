@@ -160,7 +160,15 @@ export function resumenConsumos(
   // Corrida huérfana: existe en el período y ninguna arista de consumo llega a
   // ella. Se mira contra el grafo COMPLETO, no contra lo filtrado: esconder un
   // hueco porque el filtro no lo alcanza es justamente lo que no se quiere.
-  const conOrigen = new Set((grafo?.consumos ?? []).map((c) => c.to));
+  /* Una corrida tiene origen si le llega CUALQUIERA de las dos aristas: madera
+     de un ingreso (`consumos`) o producto de otra corrida que volvió a la
+     sierra (`reprocesos`, ADR-316). Contar sólo la primera acusaba de huérfana
+     a la corrida reprocesada, que es justo la que tiene su cadena escrita —su
+     origen es otra línea del mismo libro, con su propia GTF detrás. */
+  const conOrigen = new Set([
+    ...(grafo?.consumos ?? []).map((c) => c.to),
+    ...(grafo?.reprocesos ?? []).map((r) => r.to),
+  ]);
   const corridasSinOrigen = corridas
     .filter((c) => !conOrigen.has(c.id))
     .map((c) => ({

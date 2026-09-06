@@ -42,6 +42,15 @@ export interface CtpEntry {
    */
   mpAtribuidaM3?: number;
   /**
+   * Sólo en producción: m³ de materia prima que entraron desde OTRA corrida por
+   * reproceso (ADR-316) en vez de desde un ingreso con GTF. Separado de
+   * `mpAtribuidaM3` porque ese campo significa «atado a una GTF»; para saber si
+   * la corrida tiene origen se suman los dos. Vale 0 si la corrida se mide en
+   * una unidad distinta de m³ (ahí la conversión no se inventa — lo dice el
+   * chip de reproceso de la fila).
+   */
+  mpReprocesoM3?: number;
+  /**
    * Sólo en despacho: cuánto de lo despachado tiene corrida de origen declarada.
    * Lo agrega el listado para que la fila pueda avisar del faltante sin abrir la
    * ficha de cadena de custodia (ver `lib/forestal/atribucion-despacho.ts`).

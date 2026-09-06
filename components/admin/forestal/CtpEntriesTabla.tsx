@@ -157,9 +157,14 @@ function AtribucionBadge({ entry }: { entry: CtpEntry }) {
  * despacho: el faltante se declara, no se bloquea el guardado.
  */
 function OrigenBadge({ entry }: { entry: CtpEntry }) {
+  /* El origen de una corrida puede venir por dos caminos: madera atada a un
+     ingreso con GTF (`mpAtribuidaM3`) o producto que entró desde otra corrida
+     por reproceso (`mpReprocesoM3`). Los dos son origen declarado, así que se
+     suman antes de preguntar si falta. Cuando el reproceso no se puede
+     expresar en m³, el segundo llega en 0 y abajo se explica con el chip. */
   const estado = origenDeCorrida(
     entry.volumeInputM3 == null ? null : Number(entry.volumeInputM3),
-    entry.mpAtribuidaM3,
+    (entry.mpAtribuidaM3 ?? 0) + (entry.mpReprocesoM3 ?? 0),
   );
   if (!faltaAtribuir(estado)) return null;
 

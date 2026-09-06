@@ -20,6 +20,12 @@ export interface GrafoConsumos {
   ingresos: (IngresoConsumo & { id: string; gtf: string; species: string | null })[];
   corridas: { id: string; lineNo: number; label: string; unit: string | null; fecha?: string; observations?: string | null }[];
   consumos: { from: string; to: string; volumeM3: number }[];
+  /**
+   * corrida → corrida: el producto que volvió a la sierra (ADR-316). Es la
+   * segunda forma de tener origen, y sin ella la corrida reprocesada se cuenta
+   * como huérfana. Opcional porque los fixtures arman grafos sin esta clave.
+   */
+  reprocesos?: { from: string; to: string; quantity: number }[];
 }
 
 /** El ingreso completo: el grafo es un mapa de conexiones, no la fila del libro. */

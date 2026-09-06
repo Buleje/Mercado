@@ -563,7 +563,7 @@ export class ForestCtpDB {
      * Cierra el trío: el ingreso se cuadra contra sus piezas, la corrida contra
      * su materia prima, el despacho contra su corrida.
      */
-    const [salidas, reprocesos, consumos, consumosConOrigen] = await Promise.all([
+    const [salidas, reprocesos, entraPorReproceso, consumos, consumosConOrigen] = await Promise.all([
       prisma.forestCtpDespachoOrigen.groupBy({
         by: ["produccionEntryId"],
         where: { tenantId, produccionEntryId: { in: corridas }, despacho: { deletedAt: null, status: "registrado" } },
@@ -575,6 +575,20 @@ export class ForestCtpDB {
         // madera del origen volvió a estar disponible. Mismo criterio que el
         // despacho de arriba.
         where: { tenantId, origenEntryId: { in: corridas }, destino: { deletedAt: null, status: "registrado" } },
+        _sum: { quantity: true },
+      }),
+      /* La MISMA tabla, mirada al revés: lo que ENTRA a la corrida por
+         reproceso. `reprocesos` (arriba) agrupa por origen y contesta «cuánto
+         de esta corrida se fue a reprocesar»; ésta agrupa por destino y
+         contesta «cuánta materia prima llegó desde otra corrida».
+
+         Sin ella, una corrida nacida de un reproceso tenía `mpAtribuidaM3 = 0`
+         —porque no consumió ningún WoodEntry— y la fila la acusaba de «sin
+         origen declarado» teniendo su cadena completa. Simétrico al filtro de
+         arriba: si el ORIGEN se anuló, ese reproceso no aportó nada. */
+      prisma.forestCtpReproceso.groupBy({
+        by: ["destinoEntryId"],
+        where: { tenantId, destinoEntryId: { in: corridas }, origen: { deletedAt: null, status: "registrado" } },
         _sum: { quantity: true },
       }),
       prisma.forestCtpConsumo.groupBy({
@@ -595,6 +609,7 @@ export class ForestCtpDB {
     const desp = new Map(salidas.map((r) => [r.produccionEntryId, Number(r._sum.quantity ?? 0)]));
     const repro = new Map(reprocesos.map((r) => [r.origenEntryId, Number(r._sum.quantity ?? 0)]));
     const mpAtribuida = new Map(consumos.map((c) => [c.ctpEntryId, Number(c._sum.volumeM3 ?? 0)]));
+    const mpDesdeReproceso = new Map(entraPorReproceso.map((r) => [r.destinoEntryId, Number(r._sum.quantity ?? 0)]));
     const permisoDeCorrida = new Map<string, string[]>();
     for (const c of consumosConOrigen) {
       const codigo = (c.woodEntry?.originCode ?? "").trim();
@@ -611,6 +626,22 @@ export class ForestCtpDB {
               despachadoQty: desp.get(e.id) ?? 0,
               reprocesadoQty: repro.get(e.id) ?? 0,
               mpAtribuidaM3: mpAtribuida.get(e.id) ?? 0,
+              /* Materia prima que llegó desde OTRA corrida (reproceso, ADR-316)
+                 en vez de desde un ingreso con GTF. Va en su propio campo y no
+                 sumada a `mpAtribuidaM3`: ese campo significa «atado a una GTF»
+                 y hay pantallas que lo leen así. Quien evalúa si la corrida
+                 tiene origen suma los dos.
+
+                 SÓLO cuando la unidad es m³. `quantity` está en la unidad del
+                 producto y `volumeInputM3` en metros cúbicos de materia prima;
+                 con la misma unidad son la misma madera —el producto que entra
+                 a la sierra ES la materia prima de la corrida nueva— pero en pt
+                 o kg haría falta una conversión (el pie tablar sale de ÷424) y
+                 un m³ inventado en el libro que se declara ante SERFOR es peor
+                 que un campo en cero. El caso no-m³ se queda sin sumar y la
+                 fila lo dice con su chip de reproceso, igual que un costo sin
+                 factura es `null` y nunca 0. */
+              mpReprocesoM3: (e.unit ?? "").toLowerCase() === "m3" ? (mpDesdeReproceso.get(e.id) ?? 0) : 0,
               /* Varios ingresos con distinto permiso pueden alimentar la
                  misma corrida (dos guías de dos concesiones aserradas
                  juntas): se listan todos, no se elige uno. */
@@ -2204,12 +2235,21 @@ export class ForestCtpDB {
     const corridaIds = corridas.map((c) => c.id);
     const despachoIds = despachos.map((d) => d.id);
 
-    const [consumos, origenes] = await Promise.all([
+    const [consumos, origenes, reprocesos] = await Promise.all([
       corridaIds.length
         ? prisma.forestCtpConsumo.findMany({ where: { tenantId, ctpEntryId: { in: corridaIds } }, select: { woodEntryId: true, ctpEntryId: true, volumeM3: true } })
         : Promise.resolve([]),
       despachoIds.length
         ? prisma.forestCtpDespachoOrigen.findMany({ where: { tenantId, despachoEntryId: { in: despachoIds } }, select: { produccionEntryId: true, despachoEntryId: true, quantity: true } })
+        : Promise.resolve([]),
+      /* La tercera arista de la cadena: corrida → corrida por reproceso
+         (ADR-316). Faltaba, y sin ella una corrida nacida de un reproceso no
+         tiene ninguna arista que llegue: `corridasSinOrigen` (Consumos, Radar)
+         la contaba como huérfana —«producto que apareció de la nada»— cuando su
+         madera vino de otra corrida del mismo libro, con su propio origen atado
+         a GTF. Medido sobre la L95053. */
+      corridaIds.length
+        ? prisma.forestCtpReproceso.findMany({ where: { tenantId, destinoEntryId: { in: corridaIds } }, select: { origenEntryId: true, destinoEntryId: true, quantity: true } })
         : Promise.resolve([]),
     ]);
     const corridaIdSet = new Set(corridaIds);
@@ -2232,6 +2272,10 @@ export class ForestCtpDB {
       origenes: origenes
         .filter((o) => corridaIdSet.has(o.produccionEntryId))
         .map((o) => ({ from: o.produccionEntryId, to: o.despachoEntryId, quantity: Number(o.quantity ?? 0) })),
+      // Misma regla que las otras aristas: sólo si ambos extremos siguen vivos.
+      reprocesos: reprocesos
+        .filter((r) => corridaIdSet.has(r.origenEntryId) && corridaIdSet.has(r.destinoEntryId))
+        .map((r) => ({ from: r.origenEntryId, to: r.destinoEntryId, quantity: Number(r.quantity ?? 0) })),
     };
   }
 
@@ -2702,4 +2746,15 @@ export interface TrazaGrafo {
   consumos: { from: string; to: string; volumeM3: number }[];
   /** corridaId → despachoId (cantidad atribuida). */
   origenes: { from: string; to: string; quantity: number }[];
+  /**
+   * corridaId → corridaId (cantidad reprocesada, ADR-316).
+   *
+   * La tercera arista de la cadena: un producto que vuelve a la sierra. Sin
+   * ella, la corrida que nace del reproceso no recibe ninguna arista y todo lo
+   * que mire "quién no tiene origen" la cuenta como huérfana.
+   *
+   * Opcional en el tipo por los fixtures viejos, que arman grafos sin esta
+   * clave; el endpoint siempre la manda (array vacío si no hubo reprocesos).
+   */
+  reprocesos?: { from: string; to: string; quantity: number }[];
 }
