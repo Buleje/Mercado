@@ -45,6 +45,7 @@ import { gtfDatosDesdeSerfor } from "@/lib/forestal/serfor-gtf-a-datos";
 import CtpGuiaOficialForm from "./CtpGuiaOficialForm";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { tenantCacheKey, getActiveTenantSlug } from "@/lib/tenant-cache";
+import { PROVEEDOR_INVENTARIO_APERTURA } from "@/lib/forestal/ctp-serfor-a-libro";
 
 /** Lo que se copia al duplicar un ingreso: el camión siguiente del mismo
  *  proveedor y la misma concesión. Nunca la GTF ni el volumen. */
@@ -1739,6 +1740,28 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   required
                   className={I}
                 />
+                {/* La madera que ya estaba antes de abrir el libro no tiene
+                    titular que la venda: se declara como existencia de apertura.
+                    Eso YA se podía hacer —el importador SERFOR lo hace— pero a
+                    mano había que escribir la cadena exacta, y el reconocimiento
+                    es por comparación estricta (`CtpGuiasTable`): un typo, una
+                    mayúscula de más, y la guía dejaba de contar como apertura
+                    sin ningún error visible. Acá se pone sola. */}
+                <label className="mt-1.5 flex cursor-pointer items-start gap-2 text-sm text-[var(--text-secondary)]">
+                  <input
+                    type="checkbox"
+                    checked={data.providerName === PROVEEDOR_INVENTARIO_APERTURA}
+                    onChange={(e) =>
+                      update("providerName", e.target.checked ? PROVEEDOR_INVENTARIO_APERTURA : "")
+                    }
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
+                  />
+                  <span>
+                    Es <b className="font-bold text-[var(--text-primary)]">existencia de apertura</b>: madera que ya
+                    estaba en el patio antes de abrir el libro. Su guía y su permiso se cargan igual; lo que no hay es
+                    un titular que la venda.
+                  </span>
+                </label>
               </Field>
                 <Field span={4} label="Tipo doc">
                   <select
