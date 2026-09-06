@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { limaDateKey } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import {
@@ -541,8 +542,12 @@ export const AdelantosDB = {
     });
     if (!b) throw new Error("Persona no encontrada");
 
-    const hoy = new Date().toISOString().slice(0, 10);
-    if (b.ultimoRecordatorio && b.ultimoRecordatorio.toISOString().slice(0, 10) === hoy) return null;
+    /* El día es el de LIMA, no el de UTC. Con `toISOString()` el día cambiaba a
+       las 19:00 hora peruana: un recordatorio mandado a las 18:00 y otro a las
+       20:00 caían en «días» distintos y el segundo pasaba el filtro. Le llegan
+       dos avisos de cobranza la misma tarde a una persona real. */
+    const hoy = limaDateKey();
+    if (b.ultimoRecordatorio && limaDateKey(b.ultimoRecordatorio) === hoy) return null;
 
     const upd = await prisma.adelantoBeneficiario.update({
       where: { id: beneficiarioId },

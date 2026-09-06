@@ -3,7 +3,7 @@
 import { DataTable, PageTitle } from "@buleje/design-system";
 import { useState } from "react";
 import { AlertTriangle, FileText, SlidersHorizontal, Bike, Printer, Package, DollarSign, Search } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
@@ -143,8 +143,9 @@ export default function OrdersTab() {
   const inDeliveryOrders = activeOrders.filter(o => o.status === "en_camino" || o.status === "confirmado" || o.status === "preparando").length;
   const todayDelivered = orders.filter(o => {
     if (o.status !== "entregado") return false;
-    const today = new Date().toISOString().slice(0, 10);
-    return o.createdAt.slice(0, 10) === today;
+    // El día del negocio es el de Lima. Con `toISOString()` el corte caía a las
+    // 19:00 hora peruana: lo vendido de noche contaba como "mañana".
+    return limaDateKey(o.createdAt) === limaDateKey();
   }).length;
 
   return (

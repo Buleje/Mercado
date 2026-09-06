@@ -21,7 +21,7 @@ import {
   Sparkles,
   ArrowRight,
 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 import type { BusinessData } from "../ai-center.types";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -40,22 +40,34 @@ function getGreeting(): string {
   return "Buenas noches";
 }
 
+/*
+ * El día es el de LIMA, no el de UTC: con `toISOString()` el corte caía a las
+ * 19:00 hora peruana y lo de la noche se contaba como del día siguiente.
+ *
+ * Ojo con el otro extremo del mismo problema: un string date-only
+ * («2026-09-06», sin hora) YA viene en el día del negocio. Pasarlo por una
+ * conversión de zona lo lee como medianoche UTC = 19:00 del día anterior en
+ * Lima y lo corre un día para atrás. Por eso `claveDelDia` sólo convierte
+ * cuando el valor trae hora.
+ */
+function claveDelDia(dateStr: string): string {
+  return dateStr.length <= 10 ? dateStr.slice(0, 10) : limaDateKey(dateStr);
+}
+
 function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
+  return limaDateKey();
 }
 
 function yesterdayStr(): string {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
+  return limaDateKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
 }
 
 function isToday(dateStr?: string): boolean {
-  return !!dateStr && dateStr.slice(0, 10) === todayStr();
+  return !!dateStr && claveDelDia(dateStr) === todayStr();
 }
 
 function isYesterday(dateStr?: string): boolean {
-  return !!dateStr && dateStr.slice(0, 10) === yesterdayStr();
+  return !!dateStr && claveDelDia(dateStr) === yesterdayStr();
 }
 
 function trendPct(today: number, yesterday: number): number | null {
