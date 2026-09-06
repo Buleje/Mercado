@@ -35,6 +35,11 @@ const updateFieldsSchema = z.object({
   gtfNumber: z.string().trim().min(1).max(50).optional(),
   gtfDate: z.coerce.date().nullable().optional(),
   gtfSeries: z.string().trim().max(20).nullable().optional(),
+  /* El N° de constancia del SNIFFS: con ese número se consulta la guía en la
+     base pública de SERFOR. Estaba en la tabla y en la ficha —que lo muestra
+     vacío— pero ningún endpoint lo aceptaba, así que no había forma de
+     cargarlo salvo importando. */
+  serforNumeroRegistro: z.string().trim().max(60).nullable().optional(),
   providerName: z.string().trim().min(1).max(200).optional(),
   providerDocument: z.string().trim().max(20).nullable().optional(),
   providerDocumentType: z.enum(["RUC", "DNI", "CE", "PASAPORTE"]).nullable().optional(),

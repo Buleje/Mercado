@@ -446,6 +446,7 @@ export type WoodEntryUpdateInput = Partial<
     | "gtfDate"
     | "fechaRecepcion"
     | "gtfSeries"
+    | "serforNumeroRegistro"
     | "providerName"
     | "providerDocument"
     | "providerDocumentType"
@@ -2829,6 +2830,7 @@ export class WoodEntriesDB {
       ...(input.gtfDate !== undefined ? { gtfDate: input.gtfDate } : {}),
       ...(input.fechaRecepcion !== undefined ? { fechaRecepcion: input.fechaRecepcion } : {}),
       ...(input.gtfSeries !== undefined ? { gtfSeries: input.gtfSeries } : {}),
+      ...(input.serforNumeroRegistro !== undefined ? { serforNumeroRegistro: input.serforNumeroRegistro?.trim() || null } : {}),
       ...(input.docType !== undefined ? { docType: input.docType?.trim() || null } : {}),
       ...(input.providerName !== undefined ? { providerName: input.providerName.trim() } : {}),
       ...(input.providerDocument !== undefined ? { providerDocument: input.providerDocument } : {}),
@@ -2852,6 +2854,34 @@ export class WoodEntriesDB {
       ...(input.defectsNotes !== undefined ? { defectsNotes: input.defectsNotes } : {}),
       ...(input.notes !== undefined ? { notes: input.notes } : {}),
     };
+
+    /*
+     * De dónde salió cada casillero (ADR-392).
+     *
+     * Todo lo que se escribe por acá lo escribió una PERSONA: `update()` es la
+     * corrección manual del libro —la importación y la carga desde SERFOR van
+     * por otros caminos—. Así que cada campo que viaja en `input` queda con su
+     * autor y su fecha, y la ficha puede mostrar distinto lo que dice el papel
+     * y lo que transcribió alguien.
+     *
+     * Se ACUMULA sobre lo que ya había: corregir la serie hoy no borra que el
+     * mes pasado alguien completó la procedencia. Y sólo se anotan los campos
+     * que realmente vinieron: un `update` de un solo campo no declara autoría
+     * sobre los otros 26.
+     */
+    const previa =
+      actual.camposManuales && typeof actual.camposManuales === "object" && !Array.isArray(actual.camposManuales)
+        ? (actual.camposManuales as Record<string, unknown>)
+        : {};
+    const ahora = new Date().toISOString();
+    const procedencia: Record<string, unknown> = { ...previa };
+    for (const campo of Object.keys(input)) {
+      if ((input as Record<string, unknown>)[campo] === undefined) continue;
+      procedencia[campo] = { por: user, el: ahora };
+    }
+    if (Object.keys(procedencia).length > 0) {
+      data.camposManuales = procedencia as Prisma.InputJsonValue;
+    }
 
     const entry = await prisma.woodEntry.update({ where: { id }, data });
 
