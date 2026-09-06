@@ -350,13 +350,26 @@ export function DataTable({
         className={cn(
           "w-full text-[length:var(--ts-sm)] text-[var(--text-primary)]",
           "[&_thead]:bg-[var(--surface-sunken)]",
-          "[&_thead_th]:px-3 [&_thead_th]:py-2.5 [&_thead_th]:text-left",
+          // El default de alineación cede ante un `text-right`/`text-center`
+          // puesto en el propio <th>. Sin el :not(), este selector descendiente
+          // (0,1,2) le gana a la clase simple (0,1,0) y TODO encabezado queda a
+          // la izquierda — incluidos los de columnas numéricas, cuyos valores sí
+          // van a la derecha. Eso era el "descuadre" de las tablas de m³ y
+          // soles: 84 archivos pedían text-right y ninguno lo conseguía.
+          "[&_thead_th:not(.text-right):not(.text-center)]:text-left",
+          "[&_thead_th]:px-3 [&_thead_th]:py-2.5",
           "[&_thead_th]:font-semibold [&_thead_th]:text-[var(--text-secondary)]",
           "[&_thead_th]:text-[length:var(--ts-xs)] [&_thead_th]:uppercase [&_thead_th]:tracking-[var(--ls-wider)]",
           stickyHeader && "[&_thead]:sticky [&_thead]:top-0 [&_thead]:z-10",
           "[&_tbody_tr]:border-t [&_tbody_tr]:border-[var(--rule-soft)]",
           "[&_tbody_tr:hover]:bg-[var(--surface-sunken)]",
           "[&_tbody_td]:px-3 [&_tbody_td]:py-2.5",
+          // El pie llevaba el padding que le pusiera el consumidor (px-4 casi
+          // siempre) mientras cuerpo y cabecera quedaban en px-3: la fila de
+          // totales caía 4px corrida respecto a la columna que suma. En una
+          // tabla de conciliación, que existe para demostrar que la suma cierra,
+          // el total tiene que caer bajo su columna.
+          "[&_tfoot_td]:px-3 [&_tfoot_td]:py-2.5 [&_tfoot_th]:px-3 [&_tfoot_th]:py-2.5",
           zebra && "[&_tbody_tr:nth-child(even)]:bg-[var(--surface-sunken)]/50",
           className,
         )}

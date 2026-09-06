@@ -23,7 +23,7 @@
  */
 
 import { CardTitle, DataTable } from "@buleje/design-system";
-import { History } from "@buleje/design-system/icons";
+import { History, Check, AlertTriangle } from "@buleje/design-system/icons";
 import { Th, n2 } from "../ctp-section-shared";
 import type { Concil } from "@/hooks/use-ctp-saldos";
 
@@ -56,6 +56,21 @@ export default function TablaConciliacion({
   );
   const hayDirecto = total.directo > 0.0001;
 
+  /* La tabla existe para demostrar que apertura + ingreso − salidas = final.
+     Mostrar las cinco columnas y dejar la resta al lector es pedirle que haga
+     a mano justo la cuenta que se le está probando. Acá se hace la cuenta y se
+     dice si cierra.
+
+     Tolerancia 0.01 m³ = 10 litros de madera: así se mide con cinta en el
+     patio. Un epsilon de float (1e-4) convierte cada redondeo de tercer
+     decimal en un rojo falso, y siete rojos falsos enseñan a ignorar la
+     pantalla entera. */
+  const esperado = total.apertura + total.ingreso - total.consumido - total.directo;
+  const desvio = Number((total.final - esperado).toFixed(4));
+  const cuadra = Math.abs(desvio) <= 0.01;
+
+  const negativas = filas.filter((f) => f.negativa);
+
   return (
     <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="border-b-2 border-[var(--rule-base)] px-4 py-3">
@@ -75,13 +90,22 @@ export default function TablaConciliacion({
             <Th className="text-right">+ Ingreso</Th>
             <Th className="text-right">− Consumido</Th>
             {hayDirecto && <Th className="text-right">− Salió sin aserrar</Th>}
-            <Th className="text-right">= Final (m³)</Th>
+            <Th className="text-right bg-[var(--surface-raised)]">= Final (m³)</Th>
             {onKardex && <Th className="text-right">&nbsp;</Th>}
           </tr>
         </thead>
         <tbody>
           {filas.map((s) => (
-            <tr key={s.especie} className="border-t border-[var(--rule-soft)]">
+            <tr
+              key={s.especie}
+              /* Un final negativo es madera que el libro dice haber consumido
+                 sin tener: físicamente imposible, y lo primero que mira un
+                 fiscalizador. Pintar sólo el número en rojo lo deja perdido
+                 entre cinco columnas; la fila entera lo señala. */
+              className={`border-t border-[var(--rule-soft)] ${
+                s.negativa ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : ""
+              }`}
+            >
               <td className="px-4 py-2 text-[var(--text-primary)]">
                 {s.especie}
                 {s.cites && (
@@ -100,9 +124,13 @@ export default function TablaConciliacion({
                   {n2(s.despachadoDirecto ?? 0)}
                 </td>
               )}
+              {/* La columna del resultado se separa del resto con su propia
+                  superficie: es la que se copia al formulario oficial. */}
               <td
                 className={`px-4 py-2 text-right font-mono font-bold tabular-nums ${
-                  s.negativa ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]"
+                  s.negativa
+                    ? "bg-[var(--data-error-500)]/10 text-[var(--data-error-600)] dark:text-[var(--data-error-500)]"
+                    : "bg-[var(--surface-raised)] text-[var(--text-primary)]"
                 }`}
               >
                 {n2(s.final)}
@@ -135,11 +163,53 @@ export default function TablaConciliacion({
             {hayDirecto && (
               <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n2(total.directo)}</td>
             )}
-            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n2(total.final)}</td>
+            <td className="bg-[var(--surface-raised)] px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+              {n2(total.final)}
+            </td>
             {onKardex && <td />}
           </tr>
         </tfoot>
       </DataTable>
+
+      {/* El pie de la tabla: la cuenta hecha, y qué hacer si no cierra o si
+          alguna especie quedó en negativo. */}
+      <div className="border-t-2 border-[var(--rule-base)] px-4 py-3">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] ${
+              cuadra
+                ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                : "bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+            }`}
+          >
+            {cuadra ? <Check className="h-3.5 w-3.5" aria-hidden /> : <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+            {cuadra ? "La conciliación cierra" : "La conciliación no cierra"}
+          </span>
+          <span className="font-mono tabular-nums text-[var(--text-secondary)]">
+            {n2(total.apertura)} + {n2(total.ingreso)} − {n2(total.consumido)}
+            {hayDirecto && ` − ${n2(total.directo)}`} = {n2(esperado)} m³
+          </span>
+          {!cuadra && (
+            <span className="font-mono tabular-nums font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+              · difiere {n2(Math.abs(desvio))} m³ del final declarado
+            </span>
+          )}
+        </p>
+
+        {negativas.length > 0 && (
+          <p className="mt-2 text-xs text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+            <strong>
+              {negativas.length === 1
+                ? `${negativas[0].especie} cierra en negativo`
+                : `${negativas.length} especies cierran en negativo`}
+              :
+            </strong>{" "}
+            el libro consumió madera que todavía no tiene ingreso que la respalde. No es un error de cálculo — es una
+            fecha mal puesta o una guía sin cargar. Abrí el Kardex de la especie y compará la fecha de cada corrida
+            contra la de su guía.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

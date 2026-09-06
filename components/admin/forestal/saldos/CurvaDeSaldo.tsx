@@ -61,6 +61,23 @@ const NOMBRE_PASO: Record<CurvaSaldoData["paso"], string> = {
 };
 
 export default function CurvaDeSaldo({ curva, periodoLabel }: { curva: CurvaSaldoData; periodoLabel: string }) {
+  /* Los días que valen la pena señalar, sacados de los MISMOS puntos que
+     dibuja el gráfico (nada calculado aparte, nada inventado): el día que más
+     madera entró y el día que más se aserró. Son las dos fechas que se buscan
+     cuando algo no cuadra, y hasta ahora había que encontrarlas a ojo sobre 68
+     barras. */
+  const { mayorIngreso, mayorConsumo, movimientos } = useMemo(() => {
+    let mi: PuntoCurva | null = null;
+    let mc: PuntoCurva | null = null;
+    let n = 0;
+    for (const p of curva.puntos) {
+      if (p.ingreso > 0 || p.consumo > 0) n += 1;
+      if (p.ingreso > 0 && (mi === null || p.ingreso > mi.ingreso)) mi = p;
+      if (p.consumo > 0 && (mc === null || p.consumo > mc.consumo)) mc = p;
+    }
+    return { mayorIngreso: mi, mayorConsumo: mc, movimientos: n };
+  }, [curva.puntos]);
+
   const data = useMemo(
     () =>
       curva.puntos.map((p) => ({
@@ -70,8 +87,14 @@ export default function CurvaDeSaldo({ curva, periodoLabel }: { curva: CurvaSald
         Saldo: Number(p.saldo),
         Ingresó: Number(Number(p.ingreso).toFixed(2)),
         Consumió: Number(Number(p.consumo).toFixed(2)),
+        // Flags para el tooltip. Recharts ignora las keys que no son dataKey de
+        // una serie, así que viajan gratis con cada punto.
+        _pico: curva.pico?.fecha === p.fecha,
+        _valle: curva.valle?.fecha === p.fecha,
+        _maxIn: mayorIngreso?.fecha === p.fecha,
+        _maxOut: mayorConsumo?.fecha === p.fecha,
       })),
-    [curva.puntos, curva.paso],
+    [curva.puntos, curva.paso, curva.pico, curva.valle, mayorIngreso, mayorConsumo],
   );
 
   const delta = Number((curva.final - curva.apertura).toFixed(4));
@@ -87,8 +110,6 @@ export default function CurvaDeSaldo({ curva, periodoLabel }: { curva: CurvaSald
   // El valle sólo es noticia si tocó el rojo; un mínimo positivo es sólo el día
   // en que menos había, que no obliga a hacer nada.
   const valleEnRojo = curva.valle != null && curva.valle.saldo < -0.0001;
-
-  const movimientos = curva.puntos.filter((p) => p.ingreso > 0 || p.consumo > 0).length;
 
   if (curva.puntos.length < 2) {
     return (
@@ -107,7 +128,7 @@ export default function CurvaDeSaldo({ curva, periodoLabel }: { curva: CurvaSald
 
       {/* El recorrido en números, antes del dibujo: quien no lee gráficos se
           lleva igual la conclusión. */}
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3 lg:grid-cols-5">
         <Dato
           termino="Arrancó en"
           valor={`${n2(curva.apertura)} m³`}
@@ -128,6 +149,11 @@ export default function CurvaDeSaldo({ curva, periodoLabel }: { curva: CurvaSald
           icono={<Flecha className="h-4 w-4" aria-hidden />}
         />
         <Dato
+          termino="Tocó techo en"
+          valor={curva.pico ? `${n2(curva.pico.saldo)} m³` : "—"}
+          pie={curva.pico ? etiqueta(curva.pico.fecha, curva.paso) : "sin máximo que marcar"}
+        />
+        <Dato
           termino="Tocó fondo en"
           valor={curva.valle ? `${n2(curva.valle.saldo)} m³` : "—"}
           pie={curva.valle ? etiqueta(curva.valle.fecha, curva.paso) : "sin mínimo que marcar"}
@@ -142,6 +168,42 @@ export default function CurvaDeSaldo({ curva, periodoLabel }: { curva: CurvaSald
           respalda. Revisá las fechas de las corridas contra las de sus guías.
         </p>
       )}
+
+      {/* Las dos fechas que se buscan cuando algo no cuadra, dichas con
+          palabras en vez de dejarlas escondidas entre 68 barras. El ritmo
+          («7 de 68 fechas con movimiento») es el dato que explica por qué la
+          línea se ve plana: la sierra no trabajó todos los días. */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-2 text-xs">
+        {mayorIngreso && (
+          <span className="text-[var(--text-secondary)]">
+            <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Más entró
+            </span>{" "}
+            <span className="font-mono font-bold tabular-nums text-[var(--data-success-600)] dark:text-[var(--data-success-500)]">
+              {n2(mayorIngreso.ingreso)} m³
+            </span>{" "}
+            el {etiqueta(mayorIngreso.fecha, curva.paso)}
+          </span>
+        )}
+        {mayorConsumo && (
+          <span className="text-[var(--text-secondary)]">
+            <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Más se aserró
+            </span>{" "}
+            <span className="font-mono font-bold tabular-nums text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              {n2(mayorConsumo.consumo)} m³
+            </span>{" "}
+            el {etiqueta(mayorConsumo.fecha, curva.paso)}
+          </span>
+        )}
+        <span className="text-[var(--text-secondary)]">
+          <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Ritmo</span>{" "}
+          <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
+            {movimientos} de {curva.puntos.length}
+          </span>{" "}
+          {curva.puntos.length === 1 ? "fecha" : "fechas"} con movimiento
+        </span>
+      </div>
 
       <BulejeComposedChart
         className="mt-3"
@@ -169,6 +231,22 @@ export default function CurvaDeSaldo({ curva, periodoLabel }: { curva: CurvaSald
         leftAxisFormat={(v) => `${v}`}
         rightAxisFormat={(v) => `${v}`}
         tooltipFormat={m3}
+        /* El tooltip dice qué tiene de especial esa fecha. Antes había que
+           cruzar a ojo el número de arriba («tocó fondo en 0.07») contra la
+           barra correspondiente para saber cuál era. */
+        tooltipExtras={(e) => {
+          const marcas: string[] = [];
+          if (e._pico) marcas.push("máximo del período");
+          if (e._valle) marcas.push("mínimo del período");
+          if (e._maxIn) marcas.push("el día que más entró");
+          if (e._maxOut) marcas.push("el día que más se aserró");
+          if (marcas.length === 0) return null;
+          return (
+            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
+              {marcas.join(" · ")}
+            </span>
+          );
+        }}
       />
     </div>
   );
