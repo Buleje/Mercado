@@ -44,6 +44,7 @@ import {
 } from "@/lib/forestal/movimiento-libro";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { Btn, VistaHeader } from "./ctp-shared";
+import CtpPuestaEnMarcha from "./CtpPuestaEnMarcha";
 
 const m3 = (n: number) => `${n.toFixed(2)} m³`;
 const NOMBRE_PASO: Record<MovimientoDelLibro["paso"], string> = {
@@ -122,7 +123,7 @@ function Bloque({ titulo, meta, children }: { titulo: string; meta?: string; chi
   );
 }
 
-export default function CtpTableroControl({ period }: { period: CtpPeriod }) {
+export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod; onIr?: (vista: string) => void }) {
   const [mov, setMov] = useState<MovimientoDelLibro | null>(null);
   const [previo, setPrevio] = useState<TotalesMovimiento | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -213,6 +214,14 @@ export default function CtpTableroControl({ period }: { period: CtpPeriod }) {
           <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} /> Recargar
         </Btn>
       </VistaHeader>
+
+      {/* Qué partes del libro están construidas y sin estrenar. Va acá, en la
+          portada del grupo Control, porque es lo único de esta pantalla que se
+          responde UNA vez: el resto del tablero es el movimiento del mes, que se
+          mira siempre. Se dibuja solo si hay algo que decir, y NO mira el
+          período —la pregunta es «¿alguna vez usaste esto?», no «¿lo usaste en
+          julio?»—. */}
+      <CtpPuestaEnMarcha onIr={onIr} />
 
       {error && (
         <p className="rounded-xl bg-[var(--data-error-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">

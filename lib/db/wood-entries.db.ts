@@ -538,6 +538,14 @@ export interface WoodEntryStats {
    */
   sinCostoM3: number;
   /**
+   * Ingresos vigentes que tienen cargada su lista de trozas.
+   *
+   * Es la diferencia entre declarar 24 m³ y poder contarlos palo por palo, que
+   * es como los cuenta un fiscalizador. Sin este número no hay forma de saber
+   * qué parte del patio está registrada pieza por pieza.
+   */
+  conPiezasCount: number;
+  /**
    * Ingresos vigentes SIN constancia del SNIFFS guardada (ADR-386).
    *
    * No dice «SERFOR no la tiene» —eso el libro no lo puede saber, el SNIFFS no
@@ -2640,7 +2648,7 @@ export class WoodEntriesDB {
     // la tabla listar 2.
     const condFueraDePlazo = lateConditions(tenantId, periodFilters);
 
-    const [agg, byStatusRows, speciesRows, citesAgg, lateRows, providerRows, productRows, sinOrigenCount, sinCostoAgg, sinConstanciaCount] = await Promise.all([
+    const [agg, byStatusRows, speciesRows, citesAgg, lateRows, providerRows, productRows, sinOrigenCount, sinCostoAgg, conPiezasCount, sinConstanciaCount] = await Promise.all([
       prisma.woodEntry.aggregate({
         where: whereVigente,
         _sum: { volumeM3: true, pieces: true },
@@ -2688,6 +2696,8 @@ export class WoodEntriesDB {
         _count: { _all: true },
         _sum: { volumeM3: true },
       }),
+      // Con su lista de piezas: el patio contable vs. el patio contable palo a palo.
+      prisma.woodEntry.count({ where: { ...whereVigente, trozas: { some: {} } } }),
       /* Sin constancia del SNIFFS: `null` Y `""`, como `sinOrigenCount`. Un
          string vacío es un campo que alguien abrió y dejó igual — contarlo
          como verificado sería el falso verde más caro del libro. */
@@ -2733,6 +2743,7 @@ export class WoodEntriesDB {
       sinOrigenCount,
       sinCostoCount: sinCostoAgg._count._all,
       sinCostoM3: Number(sinCostoAgg._sum.volumeM3 ?? 0),
+      conPiezasCount,
       sinConstanciaCount,
       byStatus,
       species: faceta(speciesRows, (r) => r.speciesCommonName),

@@ -571,7 +571,7 @@ export default function CTPLibroOperaciones() {
         )}
         {view === "trozas" && <CtpTrozasView />}
         {view === "resumenes" && <CtpResumenesSerfor period={period} />}
-        {view === "tablero" && <CtpTableroControl period={period} />}
+        {view === "tablero" && <CtpTableroControl period={period} onIr={irA} />}
         {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={irA} />}
         {view === "cierre" && (
           <div className="space-y-6">
