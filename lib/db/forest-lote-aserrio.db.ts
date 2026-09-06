@@ -9,6 +9,7 @@ import { vivaLinea } from "./wood-entries.db";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { ORIGEN_LOTE_INVENTARIO } from "@/lib/forestal/lotes-aserrio";
 import { construirHistoriaLote } from "@/lib/forestal/historia-lote";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 
 /**
  * Lote de ASERRÍO (ADR-334): las trozas de una misma especie que van juntas a
@@ -774,9 +775,11 @@ export class ForestLoteAserrioDB {
       const aceptadas: string[] = [];
       for (const t of trozas) {
         const codigo = t.codificacion ?? t.codigoPlanta;
-        /* L-A1: una especie por lote. Comparar normalizado — «Tornillo» y
-           «tornillo » son la misma madera. */
-        if ((t.especieComun ?? "").trim().toLowerCase() !== lote.speciesCommon.trim().toLowerCase()) {
+        /* L-A1: una especie por lote, comparada con `claveEspecie` — la misma
+           función que el resto del libro. Con un `trim().toLowerCase()` propio,
+           «Ishpíngo» y «Ishpingo» eran especies distintas y la troza se
+           rechazaba con un motivo que se lee idéntico al del lote. */
+        if (claveEspecie(t.especieComun) !== claveEspecie(lote.speciesCommon)) {
           rechazadas.push({ id: t.id, codigo, motivo: `es ${t.especieComun ?? "sin especie"} y el lote es de ${lote.speciesCommon}` });
           continue;
         }
@@ -1124,10 +1127,7 @@ export class ForestLoteAserrioDB {
         }
         /* L-A1 llevada a la corrida: un asiento es de UNA especie, o el Cuadro
            Resumen por especie deja de poder armarse. */
-        if (
-          corrida.speciesCommon &&
-          lote.speciesCommon.trim().toLowerCase() !== corrida.speciesCommon.trim().toLowerCase()
-        ) {
+        if (corrida.speciesCommon && claveEspecie(lote.speciesCommon) !== claveEspecie(corrida.speciesCommon)) {
           throw new CtpInvariantError(
             `El lote ${lote.code} es de ${lote.speciesCommon} y la corrida N° ${corrida.lineNo} es de ${corrida.speciesCommon}.`,
             "LOTE_NO_EDITABLE",

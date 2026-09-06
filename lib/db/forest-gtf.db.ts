@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditLoth } from "@/lib/forestal/loth-audit";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 
 const CACHE_PREFIX = "forest-gtf";
 
@@ -96,13 +97,19 @@ export class ForestGtfDB {
         select: { speciesCommon: true },
       });
       if (autorizadas.length > 0) {
-        const set = new Set(autorizadas.map((s) => s.speciesCommon.trim().toLowerCase()));
+        /* `claveEspecie` y NO un `trim().toLowerCase()` propio. Esta comparación
+           decide si se ACUSA a una especie de estar fuera del POA, y un plan que
+           dice «TORNILLO (Cedrelinga cateniformis)» contra una troza que dice
+           «TORNILLO» —o una tilde de diferencia en «Ishpíngo»— daba una
+           infracción forestal que no existe, con la guía bloqueada. Es la misma
+           función que ya usan el balance del plan y `speciesKey`. */
+        const set = new Set(autorizadas.map((s) => claveEspecie(s.speciesCommon)));
         const fuera = [
           ...new Set(
             items
               .map((it) => it.species?.trim())
               .filter((s): s is string => !!s)
-              .filter((s) => !set.has(s.toLowerCase())),
+              .filter((s) => !set.has(claveEspecie(s))),
           ),
         ];
         if (fuera.length > 0) throw new GtfSpeciesNotAuthorizedError(fuera);

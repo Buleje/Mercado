@@ -35,6 +35,7 @@ import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { ForestAnexosDB } from "./forest-anexos.db";
 import { decidirMargen, type MargenMotivo } from "@/lib/forestal/ctp-pnl";
 import { guiaEditable } from "@/lib/forestal/gtf-estado";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 
 const CACHE_PREFIX = "forest-ctp";
 /** 4 decimales — precisión forestal (volúmenes/cantidades). */
@@ -239,10 +240,20 @@ export class ForestCtpDespachoDB {
 
       // 4. Mismo producto y misma unidad: atribuir tablones a un despacho de
       //    leña, o m³ contra kg, sería un número que no significa nada.
+      /* Tres comparaciones y CADA UNA con su criterio, que no es lo mismo:
+         · la ESPECIE va con `claveEspecie` —se tipea a mano y una tilde no la
+           convierte en otra madera—;
+         · el PRODUCTO va crudo (sólo trim+minúsculas): sale de un `<select>` del
+           catálogo oficial, así que no tiene variantes de tipeo, y `claveEspecie`
+           ignora lo que va entre paréntesis — con ella, «MADERA ASERRADA
+           (COMERCIAL)» y «(CORTA)» pasaban a ser el mismo producto y se podía
+           atribuir una corrida de corta a un despacho de comercial;
+         · la UNIDAD, cruda también: «m3» y «pt» no son variantes de escritura,
+           son magnitudes distintas. */
       const distinto = corridas.filter(
         (c) =>
           (c.productType ?? "").trim().toLowerCase() !== (despacho.productType ?? "").trim().toLowerCase() ||
-          (c.speciesCommon ?? "").trim().toLowerCase() !== (despacho.speciesCommon ?? "").trim().toLowerCase() ||
+          claveEspecie(c.speciesCommon) !== claveEspecie(despacho.speciesCommon) ||
           (c.unit ?? "") !== (despacho.unit ?? ""),
       );
       if (distinto.length > 0) {
