@@ -67,7 +67,13 @@ export type PayableRaw = {
   supplier?: { name?: string };
   description?: string;
 };
-export type FiadoRaw = { total?: number; amount?: number };
+/**
+ * `total` es lo que se FIÓ; `saldo`/`balance`, lo que todavía DEBEN. Para
+ * cualquier KPI de deuda va el saldo: el total incluye lo ya cobrado. El tipo
+ * no declaraba los dos últimos aunque `/api/fiados` los manda desde siempre, y
+ * por eso «Mi Plata» venía sumando el total.
+ */
+export type FiadoRaw = { total?: number; amount?: number; saldo?: number; balance?: number };
 export type OrderRaw = { createdAt?: string; total?: number; status?: string };
 
 export const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];

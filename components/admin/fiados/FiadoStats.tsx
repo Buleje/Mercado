@@ -189,13 +189,27 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
 
       {/* Mejora QW-11f: Progreso de cobro del mes — tab Resumen */}
       {showResumen && !loading && (tendenciaMorosidad.cobradoEsteMes > 0 || tendenciaMorosidad.prestadoEsteMes > 0 || totalSaldo > 0) && (() => {
-        const meta = tendenciaMorosidad.prestadoEsteMes + totalSaldo;
+        /*
+         * La meta contaba la misma plata dos veces.
+         *
+         * Era `prestadoEsteMes + totalSaldo`: lo que se fió MÁS lo que falta
+         * cobrar. Pero lo que falta cobrar es el remanente de lo que se fió —
+         * ya está adentro. Medido en datos reales: se fiaron S/496.30, quedan
+         * S/345.50 por cobrar, y la barra pedía cobrar S/841.80. Una meta
+         * inflada 2.4x que deja el avance siempre en rojo («Falta mucho por
+         * cobrar») aunque la cobranza vaya bien.
+         *
+         * Lo cobrable del período es lo que YA entró más lo que todavía se
+         * debe: así el porcentaje es el avance real de la cobranza y no puede
+         * pasar de 100 por construcción.
+         */
         const cobrado = tendenciaMorosidad.cobradoEsteMes;
+        const meta = cobrado + totalSaldo;
         const pct = meta > 0 ? Math.min(100, Math.round((cobrado / meta) * 100)) : 0;
         return (
           <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-bold text-[var(--text-primary)]">Cobro del mes: {formatCurrency(cobrado)} de {formatCurrency(meta)} ({pct}%)</span>
+              <span className="text-sm font-bold text-[var(--text-primary)]">Cobrado este mes: {formatCurrency(cobrado)} de {formatCurrency(meta)} cobrable ({pct}%)</span>
               {pct > 80 ? (
                 <span className="text-xs font-bold text-[var(--data-success-500)]">Casi todo cobrado!</span>
               ) : pct < 30 ? (

@@ -332,7 +332,13 @@ function FinanzasDashboard() {
       const deuda = n(kpisData?.payablesVencidosMonto)
         || (payablesRaw as PayableRaw[]).reduce((s, p) => s + n(p.amount ?? p.total), 0);
       const fiados = n(kpisData?.fiadosPendienteMonto ?? kpisData?.fiadosVencidosMonto)
-        || (fiadosRaw as FiadoRaw[]).reduce((s, f) => s + n(f.total ?? f.amount), 0);
+        /* El fallback sumaba `total` —lo que se fió— cuando el KPI se llama
+           «fiados pendientes». Medido en datos reales: se fiaron S/496.30 a
+           cinco clientes, uno ya pagó y quedan S/345.50 por cobrar; el panel
+           anunciaba S/461 (la suma de los totales de los que siguen activos).
+           33 % de más sobre una cifra que el dueño usa para decidir a quién
+           llamar. Lo que deben es el saldo. */
+        || (fiadosRaw as FiadoRaw[]).reduce((s, f) => s + n(f.saldo ?? f.balance ?? f.total ?? f.amount), 0);
       const igvCobrado = ingresos * 0.18 / 1.18;
       const igvPagado = gastosMes * 0.18 / 1.18;
       const igvNeto = Math.round(igvCobrado - igvPagado);
