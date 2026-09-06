@@ -22,7 +22,7 @@ import { documentosDeFicha } from "@/lib/forestal/ctp-ficha-types";
 const VACIO: DatosPendientes = {
   ingresosPendientes: 0, fueraDePlazo: 0, guiasSinIngresar: 0,
   despachosSinGtf: 0, despachosSinAnexo: 0, corridasSinOrigen: 0, saldosNegativos: 0,
-  trozasVaradas: 0, ingresosSinCosto: 0,
+  trozasVaradas: 0, ingresosSinCosto: 0, m3SinCosto: 0,
 };
 
 /* Deduplicado (ADR-347): estos mismos GET los hace la vista activa en el mismo
@@ -38,7 +38,7 @@ type Respuesta = {
   entries?: unknown;
   gtfs?: unknown;
   anexos?: unknown;
-  stats?: { byStatus?: Record<string, number>; lateCount?: number; sinCostoCount?: number };
+  stats?: { byStatus?: Record<string, number>; lateCount?: number; sinCostoCount?: number; sinCostoM3?: number };
   saldos?: { materiaPrima?: unknown; productos?: unknown };
   /** `?varadas=`: sólo el conteo, para no traerse el patio entero. */
   piezas?: number;
@@ -133,6 +133,7 @@ export function useCtpPendientes(period: CtpPeriod): CtpPendientesState {
             arr<{ negativo?: boolean }>(saldos?.saldos?.productos).filter((s) => s.negativo).length,
           trozasVaradas: varadas?.piezas ?? 0,
           ingresosSinCosto: we?.stats?.sinCostoCount ?? 0,
+          m3SinCosto: we?.stats?.sinCostoM3 ?? 0,
         });
 
         /* ── Lo que se viene ──────────────────────────────────────────────

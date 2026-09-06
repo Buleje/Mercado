@@ -59,3 +59,53 @@ describe("acotar por período sin correr el mes", () => {
     expect(diaDeLimiteLocal(null)).toBe("");
   });
 });
+
+/**
+ * El aviso de costos tiene que decir lo que está en juego.
+ *
+ * Decía «Ingresos sin costo cargado» y el badge un «3». Tres suena a tres
+ * papeles y se posterga; los 32.93 m³ que hay detrás son TODO el patio del
+ * tenant forestal. El aviso existía y estaba cableado de punta a punta —lo que
+ * no hacía era mover a nadie.
+ *
+ * Y lo que el detalle NO hace: estimar cuánto producto terminado queda sin
+ * margen. Haría falta saber qué parte de cada corrida salió de un ingreso sin
+ * costo, y eso no se sabe sin recorrer la atribución. Un derivado presentado
+ * como dato es exactamente lo que este libro no puede permitirse.
+ */
+describe("el aviso de ingresos sin costo", () => {
+  const soloCostos = (m3?: number) =>
+    pendientesDelLibro({
+      ingresosPendientes: 0, fueraDePlazo: 0, guiasSinIngresar: 0,
+      despachosSinGtf: 0, despachosSinAnexo: 0, corridasSinOrigen: 0, saldosNegativos: 0,
+      ingresosSinCosto: 3, ...(m3 != null ? { m3SinCosto: m3 } : {}),
+    }).find((p) => p.clave === "ingresos-sin-costo");
+
+  it("lleva los m³ en el título cuando se conocen", () => {
+    expect(soloCostos(32.933)?.titulo).toBe("Ingresos sin costo · 32.93 m³ sin valorizar");
+  });
+
+  it("sin el volumen vuelve al título de antes — no inventa un cero", () => {
+    expect(soloCostos()?.titulo).toBe("Ingresos sin costo cargado");
+    expect(soloCostos(0)?.titulo).toBe("Ingresos sin costo cargado");
+  });
+
+  it("sigue sin trabar el cierre: es «pendiente», no «bloquea»", () => {
+    // A SERFOR no le interesan los precios. Que el margen sea desconocido es un
+    // problema del dueño, no una infracción — y el orden del aviso lo refleja.
+    expect(soloCostos(32.933)?.urgencia).toBe("pendiente");
+  });
+
+  it("lleva a Rentabilidad, que es donde se cargan", () => {
+    expect(soloCostos(32.933)?.vista).toBe("rentabilidad");
+  });
+
+  it("con todo cargado el aviso desaparece", () => {
+    const sin = pendientesDelLibro({
+      ingresosPendientes: 0, fueraDePlazo: 0, guiasSinIngresar: 0,
+      despachosSinGtf: 0, despachosSinAnexo: 0, corridasSinOrigen: 0, saldosNegativos: 0,
+      ingresosSinCosto: 0, m3SinCosto: 0,
+    });
+    expect(sin.find((p) => p.clave === "ingresos-sin-costo")).toBeUndefined();
+  });
+});

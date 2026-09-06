@@ -52,6 +52,9 @@ export interface DatosPendientes {
    * "bloquea".
    */
   ingresosSinCosto?: number;
+  /** m³ de esos ingresos. El conteo solo subestima lo que está en juego. */
+  m3SinCosto?: number;
+
 }
 
 /** A partir de acá una troza parada empieza a costar. Mismo corte que el patio. */
@@ -168,7 +171,15 @@ export function pendientesDelLibro(d: DatosPendientes): Pendiente[] {
       clave: "ingresos-sin-costo",
       urgencia: "pendiente",
       cantidad: d.ingresosSinCosto ?? 0,
-      titulo: "Ingresos sin costo cargado",
+      /* El título lleva los m³, no sólo el conteo: «3 ingresos» suena a tres
+         papeles y se posterga; «3 · 32.93 m³ sin valorizar» es todo el patio. */
+      titulo: (d.m3SinCosto ?? 0) > 0
+        ? `Ingresos sin costo · ${(d.m3SinCosto ?? 0).toFixed(2)} m³ sin valorizar`
+        : "Ingresos sin costo cargado",
+      /* El detalle NO estima cuánto producto queda sin margen: haría falta
+         saber qué parte de cada corrida salió de un ingreso sin costo, y eso no
+         se sabe sin recorrer la atribución. Un derivado presentado como dato es
+         justo lo que este libro no puede permitirse. */
       detalle: "Sin lo que se pagó no hay margen posible en lo que salga de esa madera.",
       vista: "rentabilidad",
     },

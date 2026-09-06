@@ -529,6 +529,15 @@ export interface WoodEntryStats {
    */
   sinCostoCount: number;
   /**
+   * m³ vigentes sin costo cargado.
+   *
+   * Va junto al conteo porque el conteo SOLO no mueve a nadie: «3 ingresos sin
+   * costo» suena a tres papeles; «3 ingresos · 32.93 m³ sin valorizar» es todo
+   * el patio. Un aviso que subestima lo que está en juego se posterga para
+   * siempre.
+   */
+  sinCostoM3: number;
+  /**
    * Ingresos vigentes SIN constancia del SNIFFS guardada (ADR-386).
    *
    * No dice «SERFOR no la tiene» —eso el libro no lo puede saber, el SNIFFS no
@@ -2631,7 +2640,7 @@ export class WoodEntriesDB {
     // la tabla listar 2.
     const condFueraDePlazo = lateConditions(tenantId, periodFilters);
 
-    const [agg, byStatusRows, speciesRows, citesAgg, lateRows, providerRows, productRows, sinOrigenCount, sinCostoCount, sinConstanciaCount] = await Promise.all([
+    const [agg, byStatusRows, speciesRows, citesAgg, lateRows, providerRows, productRows, sinOrigenCount, sinCostoAgg, sinConstanciaCount] = await Promise.all([
       prisma.woodEntry.aggregate({
         where: whereVigente,
         _sum: { volumeM3: true, pieces: true },
@@ -2672,7 +2681,13 @@ export class WoodEntriesDB {
       }),
       // Ingresos sin valorizar: lo que deja al P&L sin COGS. Vigentes también —
       // el costo de un rechazado no le importa a nadie.
-      prisma.woodEntry.count({ where: { ...whereVigente, costoTotal: null } }),
+      /* `aggregate` y no `count`: hace falta el VOLUMEN además de la cantidad,
+         y son la misma pasada. Ver `sinCostoM3`. */
+      prisma.woodEntry.aggregate({
+        where: { ...whereVigente, costoTotal: null },
+        _count: { _all: true },
+        _sum: { volumeM3: true },
+      }),
       /* Sin constancia del SNIFFS: `null` Y `""`, como `sinOrigenCount`. Un
          string vacío es un campo que alguien abrió y dejó igual — contarlo
          como verificado sería el falso verde más caro del libro. */
@@ -2716,7 +2731,8 @@ export class WoodEntriesDB {
       citesVolumeM3: r4(citesAgg._sum.volumeM3?.toNumber() ?? 0),
       lateCount: Number(lateRows[0]?.count ?? 0),
       sinOrigenCount,
-      sinCostoCount,
+      sinCostoCount: sinCostoAgg._count._all,
+      sinCostoM3: Number(sinCostoAgg._sum.volumeM3 ?? 0),
       sinConstanciaCount,
       byStatus,
       species: faceta(speciesRows, (r) => r.speciesCommonName),
