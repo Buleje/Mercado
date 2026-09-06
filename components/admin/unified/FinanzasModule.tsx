@@ -39,6 +39,7 @@ import { ComparativoMensual, GaugeChart, StaggerItem } from "@/components/admin/
 import {
   fetchFinanzas, n, calcHealthScore, MESES, monthIngresos,
   type SaleRaw, type ExpenseRaw, type PayableRaw, type FiadoRaw, type HealthData, type OrderRaw,
+  ingresosDelMes, gastosDelMes,
 } from "@/components/admin/finanzas/shared";
 
 const PLTab = dynamic(() => import("@/components/admin/PLTab"), { loading: S });
@@ -323,10 +324,36 @@ function FinanzasDashboard() {
       const fiadosRaw = fR.status === "fulfilled" ? (Array.isArray(fR.value) ? fR.value : []) : [];
 
       const now = new Date();
+      const inicioDelMes = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      /*
+       * LOS DOS KPIs QUE MANDAN EN ESTE MÓDULO LEÍAN CAMPOS QUE NADIE MANDA.
+       *
+       * Medido 2026-09-06 en un tenant con datos completos (15 ventas, 25
+       * pedidos y 10 gastos, todos del mes): «Ingresos del mes S/0», «Gastos
+       * del mes S/0», margen 0 %, IGV 0, punto de equilibrio 0. Todo el
+       * módulo en cero teniendo la plata cargada.
+       *
+       *   /api/analytics/kpis-v2 devuelve  ingresosHoy · ticketPromedio ·
+       *     margenOperativo · clientesActivos · fiadoPendiente ·
+       *     rotacionInventario.  NO existe `ventasMes` ni `salesMonth`.
+       *   /api/expenses/summary devuelve un ARRAY [{category,total,count}]
+       *     (agrupado por categoría, sin filtro de fecha). Un array no tiene
+       *     `.totalMonth` ni `.total`, así que la lectura daba undefined.
+       *
+       * Se conserva la lectura del contrato esperado —si algún día el endpoint
+       * manda esos campos, mandan ellos— y se agrega el fallback derivado de
+       * datos que ESTA MISMA carga ya trajo, igual que hacen `deuda` y
+       * `fiados` acá abajo. Un KPI en cero que debería tener plata es peor que
+       * uno ausente: parece un negocio parado.
+       */
+      const itemsGasto = (Array.isArray(expensesRaw)
+        ? expensesRaw
+        : ((expensesRaw as { expenses?: unknown[] } | null)?.expenses ?? [])) as ExpenseRaw[];
 
       // ── KPIs ──
-      const ingresos = n(kpisData?.ventasMes ?? kpisData?.salesMonth);
-      const gastosMes = n(expSummary?.totalMonth ?? expSummary?.total);
+      const ingresos = ingresosDelMes(kpisData, monthlySummary, now);
+      const gastosMes = gastosDelMes(expSummary, itemsGasto, now);
       const utilidad = ingresos - gastosMes;
       const margen = ingresos > 0 ? Math.round(((ingresos - gastosMes) / ingresos) * 100) : 0;
       const deuda = n(kpisData?.payablesVencidosMonto)
@@ -382,11 +409,8 @@ function FinanzasDashboard() {
       setMonthlyData(months);
 
       // ── Expenses by category (donut) ──
-      const itemsRaw = Array.isArray(expensesRaw)
-        ? expensesRaw
-        : ((expensesRaw as { expenses?: unknown[] } | null)?.expenses ?? []);
-      const items = itemsRaw as ExpenseRaw[];
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const items = itemsGasto;
+      const startOfMonth = inicioDelMes;
       const catMap = new Map<string, number>();
       for (const e of items) {
         const eDate = new Date(e.date ?? e.createdAt ?? "");

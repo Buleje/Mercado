@@ -122,3 +122,59 @@ export function calcHealthScore(d: HealthData) {
   const total = margenPts + liquidezPts + deudaPts;
   return { total, margenPts, liquidezPts, deudaPts, margen, liquidez, deudaRatio };
 }
+
+// ── KPIs del mes: por qué existen estas dos funciones ────────────────────────
+/*
+ * Los dos números que mandan en Mi Plata leían campos que sus endpoints no
+ * mandan, y quedaban en cero con la plata cargada (medido 2026-09-06: 15
+ * ventas, 25 pedidos y 10 gastos del mes -> «Ingresos S/0», «Gastos S/0»,
+ * margen 0 %). El contrato real:
+ *
+ *   /api/analytics/kpis-v2  -> { ingresosHoy, ticketPromedio, margenOperativo,
+ *                                clientesActivos, fiadoPendiente, rotacion… }
+ *                              NO trae `ventasMes` ni `salesMonth`.
+ *   /api/expenses/summary   -> ARRAY [{category,total,count}] agrupado por
+ *                              categoría y SIN filtro de fecha.
+ *
+ * Viven acá, fuera del componente, para que un test pueda fijar ese contrato:
+ * el fallback tiene que seguir dando el número correcto aunque el endpoint
+ * cambie de forma otra vez.
+ */
+
+/** `YYYY-MM` del mes de `fecha`, la clave que usa monthly-summary. */
+export const claveDeMes = (fecha: Date): string =>
+  `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}`;
+
+/**
+ * Ingresos del mes en curso. Prefiere el KPI del endpoint; si no vino (hoy es
+ * el caso), los toma del resumen mensual, que sí los trae agregados server-side.
+ */
+export function ingresosDelMes(
+  kpisData: Record<string, unknown> | null | undefined,
+  monthlySummary: ReadonlyArray<{ month: string; ingresos: number }>,
+  ahora: Date,
+): number {
+  const delKpi = n(kpisData?.ventasMes ?? kpisData?.salesMonth);
+  if (delKpi) return delKpi;
+  const clave = claveDeMes(ahora);
+  return n(monthlySummary.find((m) => m.month === clave)?.ingresos);
+}
+
+/**
+ * Gastos del mes en curso. Prefiere el KPI del endpoint; si no vino, suma los
+ * gastos cuya fecha cae dentro del mes — el summary por categoría NO sirve
+ * para esto porque no filtra por fecha.
+ */
+export function gastosDelMes(
+  expSummary: { totalMonth?: number; total?: number } | null | undefined,
+  gastos: ReadonlyArray<ExpenseRaw>,
+  ahora: Date,
+): number {
+  const delKpi = n(expSummary?.totalMonth ?? expSummary?.total);
+  if (delKpi) return delKpi;
+  const inicio = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+  return gastos.reduce((acc, e) => {
+    const f = new Date(e.date ?? e.createdAt ?? "");
+    return Number.isNaN(f.getTime()) || f < inicio ? acc : acc + n(e.amount);
+  }, 0);
+}
