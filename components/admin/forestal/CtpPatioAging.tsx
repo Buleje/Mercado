@@ -79,7 +79,10 @@ export default function CtpPatioAging() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const { filas, totM3, totValor, valorParcial, enRiesgo, tramos } = useMemo(() => {
+  const {
+    filas, totM3, totValor, valorParcial, enRiesgo, tramos,
+    m3ConCosto, m3SinCosto, guiasSinCosto, cobertura, riesgoSinCosto, m3RiesgoSinCosto,
+  } = useMemo(() => {
     const filas = guias
       .map((g) => ({ ...g, dias: diasDesde(g.entryDate), valor: g.costoUnitario != null ? g.disponible * g.costoUnitario : null }))
       .sort((a, b) => b.dias - a.dias);
@@ -88,7 +91,27 @@ export default function CtpPatioAging() {
     const valorParcial = filas.some((f) => f.valor == null);
     const enRiesgo = filas.filter((f) => f.dias > DIAS_RIESGO).length;
     const tramos = bucketsAntiguedad(filas, DIAS_ATENCION, DIAS_RIESGO);
-    return { filas, totM3, totValor, valorParcial, enRiesgo, tramos };
+
+    /* CUÁNTO del patio respalda ese importe. El total sumaba sólo las guías con
+       costo y se mostraba pegado a los m³ totales: en la planta real son S/
+       6.350 al lado de 99.43 m³ cuando el importe cubre 39.79. Se lee como "hay
+       seis mil parados" y la cifra verdadera es desconocida y MAYOR. Una guía
+       sin factura vale «no sé», nunca «S/ 0» — la suma ya lo respeta, faltaba
+       que la pantalla lo dijera. */
+    const m3ConCosto = filas.reduce((a, f) => a + (f.valor != null ? f.disponible : 0), 0);
+    const m3SinCosto = totM3 - m3ConCosto;
+    const guiasSinCosto = filas.filter((f) => f.valor == null).length;
+    const cobertura = totM3 > 0 ? (m3ConCosto / totM3) * 100 : 0;
+    // Lo que está por degradarse Y encima no tiene precio: es la plata que no
+    // se puede ni reclamar porque no se sabe cuánta es.
+    const riesgoSinCosto = filas.filter((f) => f.dias > DIAS_RIESGO && f.valor == null);
+    const m3RiesgoSinCosto = riesgoSinCosto.reduce((a, f) => a + f.disponible, 0);
+
+    return {
+      filas, totM3, totValor, valorParcial, enRiesgo, tramos,
+      m3ConCosto, m3SinCosto, guiasSinCosto, cobertura,
+      riesgoSinCosto: riesgoSinCosto.length, m3RiesgoSinCosto,
+    };
   }, [guias]);
 
   const badge = (dias: number) => {
@@ -111,7 +134,15 @@ export default function CtpPatioAging() {
         <div className="flex items-center gap-3 text-right">
           <div>
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Inmovilizado</p>
-            <p className="font-mono text-sm font-bold text-[var(--text-primary)]">{n2(totM3)} m³{totValor > 0 ? ` · ${money(totValor)}${valorParcial ? "*" : ""}` : ""}</p>
+            {/* El m³ manda: es el único número completo. El importe va abajo y
+                dice sobre cuánto volumen se calculó, para que nadie lo lea como
+                el valor de todo el patio. */}
+            <p className="font-mono text-sm font-bold text-[var(--text-primary)]">{n2(totM3)} m³</p>
+            {totValor > 0 && (
+              <p className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+                {money(totValor)} <span className="text-[var(--text-tertiary)]">sobre {n2(m3ConCosto)} m³</span>
+              </p>
+            )}
           </div>
           <button type="button" onClick={() => void load()} className="grid h-9 w-9 place-items-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]" aria-label="Recargar"><RefreshCw className="h-4 w-4" /></button>
         </div>
@@ -120,6 +151,25 @@ export default function CtpPatioAging() {
       {enRiesgo > 0 && (
         <div className="flex items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--data-error-50)] px-4 py-2 text-xs font-medium text-[var(--data-error-700)] dark:bg-[var(--surface-sunken)] dark:text-[var(--data-error-500)]">
           <AlertCircle className="h-4 w-4 shrink-0" /> {enRiesgo} {enRiesgo === 1 ? "guía lleva" : "guías llevan"} más de {DIAS_RIESGO} días sin procesar — riesgo de degradación.
+        </div>
+      )}
+
+      {m3SinCosto > 0.01 && (
+        <div className="border-b border-[var(--rule-soft)] bg-[var(--data-warning-50)] px-4 py-2 text-xs text-[var(--data-warning-700)] dark:bg-[var(--surface-sunken)] dark:text-[var(--data-warning-500)]">
+          <strong>
+            {n2(m3SinCosto)} m³ del patio ({(100 - cobertura).toFixed(0)} %) no tienen costo cargado
+          </strong>{" "}
+          — {guiasSinCosto} {guiasSinCosto === 1 ? "guía" : "guías"} con factura pendiente.
+          {totValor > 0
+            ? " El importe de arriba es un piso: lo que hay parado vale más, no menos."
+            : " Por eso no hay importe: sin costo no se inventa uno."}
+          {riesgoSinCosto > 0 && (
+            <>
+              {" "}
+              Lo más urgente son {n2(m3RiesgoSinCosto)} m³ que ya pasaron los {DIAS_RIESGO} días{" "}
+              <em>y</em> tampoco tienen precio.
+            </>
+          )}
         </div>
       )}
 
@@ -147,7 +197,7 @@ export default function CtpPatioAging() {
                     {pct.toFixed(0)} %
                   </span>
                   <span className="w-28 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                    {t.valor != null ? `${money(t.valor)}${t.valorParcial ? "*" : ""}` : "sin costo"}
+                    {t.valor != null ? `${money(t.valor)}${t.valorParcial ? "*" : ""}` : "sin costo cargado"}
                   </span>
                 </div>
                 <div className="mt-1 h-2 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
@@ -182,13 +232,13 @@ export default function CtpPatioAging() {
                 <Td className="font-mono text-xs text-[var(--text-secondary)]">{f.code ?? "—"}</Td>
                 <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(f.disponible)}</Td>
                 <Td className="text-right"><span className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold ${b.cls}`}>{b.label}</span></Td>
-                <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{f.valor != null ? money(f.valor, f.moneda) : <span className="text-xs text-[var(--text-tertiary)]">sin costo</span>}</Td>
+                <Td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{f.valor != null ? money(f.valor, f.moneda) : <span className="text-xs text-[var(--text-tertiary)]">sin costo cargado</span>}</Td>
               </tr>
             );
           })}
         </tbody>
       </DataTable>
-      {valorParcial && <p className="px-4 py-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">* Valor parcial: algunas guías no tienen costo cargado (factura pendiente).</p>}
+      {valorParcial && <p className="px-4 py-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">* Valor parcial: cubre sólo las guías con costo cargado. Los m³ sí están completos.</p>}
     </div>
   );
 }

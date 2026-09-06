@@ -103,6 +103,9 @@ export default function CtpSaldosGraficos({
     () =>
       rankingEspecies(porEspecie).map((e) => ({
         especie: e.especie.length > 18 ? `${e.especie.slice(0, 17)}…` : e.especie,
+        // Nombre sin truncar para el detalle de abajo; el eje necesita el corto.
+        // Recharts ignora las keys que no son dataKey de un tramo.
+        especieFull: e.especie,
         Disponible: Number(Math.max(0, e.saldoM3).toFixed(2)),
         Consumido: Number(Math.min(e.consumidoM3, e.ingresoM3).toFixed(2)),
         "Sin validar": Number(Number(e.pendienteM3).toFixed(2)),
@@ -276,6 +279,49 @@ export default function CtpSaldosGraficos({
             {haySinValidar && " «Sin validar» está en el patio pero todavía no cuenta como saldo."}
             {haySobreconsumo && " «Sobreconsumo» es volumen transformado sin ingreso que lo respalde: hay que corregirlo."}
           </p>
+
+          {/* Los dos tramos que obligan a hacer algo, con su cifra y su nombre.
+              En la barra son un color y un largo: para saber que Shihuahuaco
+              tiene 4.77 m³ de sobreconsumo había que medir contra el eje a ojo.
+              Un problema que no se puede citar con un número no se corrige. */}
+          {(haySobreconsumo || haySinValidar) && (
+            <ul className="mt-3 space-y-1 border-t border-[var(--rule-soft)] pt-3 text-xs">
+              {haySobreconsumo && (
+                <li className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                    Sobreconsumo
+                  </span>
+                  {porEstado
+                    .filter((e) => e.Sobreconsumo > 0)
+                    .map((e) => (
+                      <span key={e.especieFull} className="text-[var(--text-secondary)]">
+                        {e.especieFull}{" "}
+                        <span className="font-mono font-bold tabular-nums text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                          {n2(e.Sobreconsumo)} m³
+                        </span>
+                      </span>
+                    ))}
+                </li>
+              )}
+              {haySinValidar && (
+                <li className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                    Sin validar
+                  </span>
+                  {porEstado
+                    .filter((e) => e["Sin validar"] > 0)
+                    .map((e) => (
+                      <span key={e.especieFull} className="text-[var(--text-secondary)]">
+                        {e.especieFull}{" "}
+                        <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                          {n2(e["Sin validar"])} m³
+                        </span>
+                      </span>
+                    ))}
+                </li>
+              )}
+            </ul>
+          )}
           <BulejeStackedBar
             className="mt-3"
             data={porEstado}
