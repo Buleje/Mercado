@@ -44,6 +44,11 @@ export interface Capacidad {
   vista: string;
   /** Qué otras capacidades quedan bloqueadas mientras ésta no arranque. */
   desbloquea?: string[];
+  /**
+   * El detalle fino, cuando la capacidad lo tiene. Hoy sólo la Ficha: qué papel
+   * queda incompleto y por qué campo. Una lista vacía no se dibuja.
+   */
+  detalle?: string[];
 }
 
 export interface DatosPuestaEnMarcha {
@@ -54,7 +59,19 @@ export interface DatosPuestaEnMarcha {
   cierres: number;
   /** Producto terminado disponible: define si «despachar» ya aplica. */
   stockDisponibleM3: number;
-  ficha: { tieneIdentidad: boolean; tieneSerieGtf: boolean };
+  ficha: {
+    tieneIdentidad: boolean;
+    tieneSerieGtf: boolean;
+    /**
+     * Qué papeles quedan incompletos y por qué campo, de `requisitosFaltantes()`.
+     *
+     * «Sin identidad cargada» no le dice a nadie qué tipear. «La GTF de salida
+     * necesita razón social, representante y serie» sí — y esa cuenta ya existía
+     * hecha en `ctp-ficha-types`, sólo que se veía únicamente entrando a la
+     * Ficha, que es justo donde no llega el que no sabe que le falta.
+     */
+    papelesIncompletos?: { documento: string; faltan: string[] }[];
+  };
 }
 
 const pct = (parte: number, total: number) => (total > 0 ? Math.round((parte / total) * 100) : 0);
@@ -90,6 +107,9 @@ export function capacidadesDelLibro(d: DatosPuestaEnMarcha): Capacidad[] {
         : d.ficha.tieneSerieGtf
           ? "identidad y serie de GTF cargadas"
           : "identidad cargada, falta la serie de GTF",
+      /* Qué papel sale roto y por qué campo. Es la diferencia entre saber que
+         algo falta y saber qué tipear. */
+      detalle: (d.ficha.papelesIncompletos ?? []).map((p) => `${p.documento}: falta ${p.faltan.join(", ")}`),
       paso: d.ficha.tieneIdentidad && d.ficha.tieneSerieGtf ? null : "Completá la Ficha: sin la serie autorizada no se puede emitir una guía de salida.",
       vista: "ficha",
       desbloquea: d.ficha.tieneSerieGtf ? undefined : ["Guías de salida"],

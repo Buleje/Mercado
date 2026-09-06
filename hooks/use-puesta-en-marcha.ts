@@ -14,6 +14,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import { normalizeCtpFicha, requisitosFaltantes } from "@/lib/forestal/ctp-ficha-types";
 import { logger } from "@/lib/logger";
 import {
   capacidadesDelLibro,
@@ -54,9 +55,7 @@ export function usePuestaEnMarcha(): EstadoPuestaEnMarcha {
       pedir<{ anexos?: { ctpEntryId?: string }[] }>("/api/admin/forestal/anexos"),
       pedir<{ cierres?: { reabierto?: unknown }[] }>("/api/admin/forestal/ctp/cierre"),
       pedir<{ saldos?: { productos?: { stock?: number }[] } }>("/api/admin/forestal/ctp?saldos=1"),
-      pedir<{ ficha?: { razonSocial?: string | null; codigoCtp?: string | null; gtfSerie?: string | null } }>(
-        "/api/admin/forestal/ctp-ficha",
-      ),
+      pedir<{ ficha?: unknown }>("/api/admin/forestal/ctp-ficha"),
     ]);
 
     const st = we?.stats ?? {};
@@ -64,7 +63,9 @@ export function usePuestaEnMarcha(): EstadoPuestaEnMarcha {
     const corridas = (prod?.entries ?? []).filter((e) => e.status === "registrado");
     const despachos = (desp?.entries ?? []).filter((e) => e.status === "registrado");
     const conAnexo = new Set((anexos?.anexos ?? []).map((a) => a.ctpEntryId).filter(Boolean));
-    const f = ficha?.ficha ?? {};
+    /* La ficha entera, no tres campos sueltos: `requisitosFaltantes` necesita
+       todos para decir qué papel queda roto y por cuál. */
+    const f = normalizeCtpFicha(ficha?.ficha);
 
     const datos: DatosPuestaEnMarcha = {
       ingresos: {
@@ -89,8 +90,12 @@ export function usePuestaEnMarcha(): EstadoPuestaEnMarcha {
       cierres: (cierres?.cierres ?? []).filter((c) => !c.reabierto).length,
       stockDisponibleM3: (saldos?.saldos?.productos ?? []).reduce((a, p) => a + Math.max(0, Number(p.stock ?? 0)), 0),
       ficha: {
-        tieneIdentidad: Boolean((f.razonSocial ?? "").trim() || (f.codigoCtp ?? "").trim()),
-        tieneSerieGtf: Boolean((f.gtfSerie ?? "").trim()),
+        tieneIdentidad: Boolean(f.razonSocial.trim() || f.codigoCtp.trim()),
+        tieneSerieGtf: Boolean(f.gtfSerie.trim()),
+        papelesIncompletos: requisitosFaltantes(f).map((r) => ({
+          documento: r.documento.nombre,
+          faltan: r.faltan,
+        })),
       },
     };
 

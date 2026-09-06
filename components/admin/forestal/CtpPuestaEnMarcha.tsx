@@ -109,6 +109,18 @@ function Fila({ c, onIr }: { c: Capacidad; onIr?: (vista: string) => void }) {
         </p>
         <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{c.queDa}</p>
         {c.paso && <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">{c.paso}</p>}
+        {c.detalle && c.detalle.length > 0 && (
+          /* Qué papel sale roto y por qué campo. Sin esto, «completá la Ficha»
+             manda a un formulario de dieciocho casilleros sin decir cuáles
+             importan para qué. */
+          <ul className="mt-1 space-y-0.5">
+            {c.detalle.map((d) => (
+              <li key={d} className="text-xs text-[var(--text-secondary)]">
+                · {d}
+              </li>
+            ))}
+          </ul>
+        )}
         {c.desbloquea && c.desbloquea.length > 0 && (
           /* Lo que queda trabado por no arrancar esto. Es la diferencia entre
              «te falta cargar costos» y «sin eso ningún despacho puede decir

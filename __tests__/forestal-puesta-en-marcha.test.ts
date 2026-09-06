@@ -136,3 +136,40 @@ describe("el porcentaje no miente para ningún lado", () => {
     expect(resumirPuestaEnMarcha(capacidadesDelLibro(vacio)).pct).toBe(0);
   });
 });
+
+/**
+ * La Ficha dice QUÉ falta, no sólo que falta.
+ *
+ * «Sin identidad cargada» manda a un formulario de dieciocho casilleros sin
+ * decir cuáles importan para qué papel. La cuenta ya existía hecha
+ * (`requisitosFaltantes` en `ctp-ficha-types`), pero sólo se veía entrando a la
+ * Ficha — justo donde no llega el que todavía no sabe que le falta algo.
+ */
+describe("el detalle de la Ficha", () => {
+  const conPapeles = (papeles: { documento: string; faltan: string[] }[]) =>
+    capacidadesDelLibro({
+      ...vacio,
+      ficha: { tieneIdentidad: false, tieneSerieGtf: false, papelesIncompletos: papeles },
+    }).find((c) => c.clave === "ficha");
+
+  it("lista cada papel con los campos que le faltan", () => {
+    const c = conPapeles([
+      { documento: "GTF de salida", faltan: ["Razón social", "Serie GTF autorizada"] },
+      { documento: "Certificado de trazabilidad", faltan: ["RUC"] },
+    ]);
+    expect(c?.detalle).toEqual([
+      "GTF de salida: falta Razón social, Serie GTF autorizada",
+      "Certificado de trazabilidad: falta RUC",
+    ]);
+  });
+
+  it("sin papeles rotos no inventa una lista", () => {
+    expect(conPapeles([])?.detalle).toEqual([]);
+  });
+
+  it("el dato es opcional: una ficha sin el desglose no rompe el panel", () => {
+    const c = capacidadesDelLibro(vacio).find((x) => x.clave === "ficha");
+    expect(c?.detalle).toEqual([]);
+    expect(c?.medida).toBe("sin identidad cargada");
+  });
+});
