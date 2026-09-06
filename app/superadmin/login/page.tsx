@@ -25,12 +25,18 @@ import {
 import { cn } from "@/lib/utils";
 import { useLoginSecurity } from "@/hooks/useLoginSecurity";
 import { getKeepAlive } from "@/lib/session-keepalive";
+import { safeSuperadminNext } from "@/lib/superadmin/safe-next";
 
 export default function SuperAdminLoginPage() {
   const searchParams = useSearchParams();
   const usernameRef = useRef<HTMLInputElement>(null);
   const codeRef = useRef<HTMLInputElement>(null);
   const sessionExpired = searchParams.get("reason") === "expired";
+  // Destino post-login. `fetchSuperadmin` y el guard del edge mandan
+  // `?from=<ruta>` cuando rebotan al usuario; antes se ignoraba y todos
+  // caían en el dashboard, perdiendo la pantalla en la que estaban.
+  // safeSuperadminNext bloquea open-redirect (sólo rutas /superadmin).
+  const destino = safeSuperadminNext(searchParams.get("from"), "/superadmin/dashboard");
 
   // Resumen silencioso (Brandon 2026-08-30): reusa el mismo flag "confiar en
   // este equipo" del login admin (localStorage compartido) — si ya estaba
@@ -48,7 +54,7 @@ export default function SuperAdminLoginPage() {
       try {
         const res = await fetch("/api/superadmin/auth", { method: "GET", credentials: "include" });
         if (!cancelado && res.ok) {
-          window.location.assign("/superadmin/dashboard");
+          window.location.assign(destino);
           return;
         }
       } catch {
@@ -122,7 +128,7 @@ export default function SuperAdminLoginPage() {
         setChallengeId(data.challengeId);
         setTimeout(() => codeRef.current?.focus(), 100);
       } else if (res.ok) {
-        window.location.assign("/superadmin/dashboard");
+        window.location.assign(destino);
       } else if (res.status === 429) {
         // Rate limit / lockout: recargar no ayuda → countdown.
         startRetryFromResponse(res);
@@ -149,7 +155,7 @@ export default function SuperAdminLoginPage() {
         body: JSON.stringify({ challengeId, code }),
       });
       if (res.ok) {
-        window.location.assign("/superadmin/dashboard");
+        window.location.assign(destino);
       } else {
         setError("Código inválido o expirado");
         setTimeout(() => setError(false), 2500);
