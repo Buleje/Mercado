@@ -63,7 +63,7 @@ const diasDesde = (iso: string) => {
   return Math.max(0, Math.floor((Date.now() - d) / 86_400_000));
 };
 
-export default function CtpPatioAging() {
+export default function CtpPatioAging({ onValorizar }: { onValorizar?: () => void } = {}) {
   const [guias, setGuias] = useState<Guia[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -169,6 +169,18 @@ export default function CtpPatioAging() {
               Lo más urgente son {n2(m3RiesgoSinCosto)} m³ que ya pasaron los {DIAS_RIESGO} días{" "}
               <em>y</em> tampoco tienen precio.
             </>
+          )}
+          {/* La pantalla que carga esos costos ya existe (Rentabilidad →
+              Valorizar ingresos). Denunciar el hueco sin decir dónde se tapa
+              obliga a buscarla a mano por 23 vistas del libro. */}
+          {onValorizar && (
+            <button
+              type="button"
+              onClick={onValorizar}
+              className="ml-2 inline-flex items-center gap-1 rounded-lg border-2 border-current px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] transition-colors hover:bg-[var(--data-warning-500)]/15"
+            >
+              Cargar costos
+            </button>
           )}
         </div>
       )}

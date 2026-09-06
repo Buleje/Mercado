@@ -57,12 +57,23 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [verTodos, setVerTodos] = useState(false);
+  /**
+   * Sale del período.
+   *
+   * «Ver todos» sólo alternaba entre "todos los del período" y "los del período
+   * que faltan": el filtro de fechas nunca se soltaba. Pero la madera sin costo
+   * que más pesa es justamente la vieja — en la planta real, las guías paradas
+   * hace 849 días no caen en el trimestre en curso, así que Antigüedad las
+   * denunciaba y acá no había forma de encontrarlas. Un ingreso sin factura no
+   * deja de deberse porque cambió el trimestre.
+   */
+  const [sinPeriodo, setSinPeriodo] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const p = new URLSearchParams({ limit: String(TOPE) });
-      if (period.from) p.set("from", period.from);
-      if (period.to) p.set("to", period.to);
+      if (!sinPeriodo && period.from) p.set("from", period.from);
+      if (!sinPeriodo && period.to) p.set("to", period.to);
       const r = await fetch(`${API}?${p}`, { credentials: "include" });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.message ?? j.error ?? `HTTP ${r.status}`);
@@ -77,7 +88,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
       setError(e instanceof Error ? e.message : String(e));
       setIngresos(null);
     }
-  }, [period.from, period.to]);
+  }, [period.from, period.to, sinPeriodo]);
   useEffect(() => { void load(); }, [load]);
 
   const resumen = useMemo(() => {
@@ -213,20 +224,42 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
       <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <CardTitle as="h3" className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-            Ingresos del período · registrá lo que pagaste
+            {sinPeriodo ? "Todos los ingresos · registrá lo que pagaste" : "Ingresos del período · registrá lo que pagaste"}
           </CardTitle>
-          <button
-            type="button"
-            onClick={() => setVerTodos((v) => !v)}
-            className="inline-flex h-10 items-center rounded-lg border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
-          >
-            {verTodos ? "Ver sólo los que faltan" : `Ver todos (${ingresos.length})`}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Sin este botón, la madera parada hace años queda fuera de alcance:
+                es la que más urge valorizar y la que nunca cae en el período en
+                curso. */}
+            <button
+              type="button"
+              onClick={() => setSinPeriodo((v) => !v)}
+              className={`inline-flex h-10 items-center rounded-lg border-2 px-3 text-sm font-bold transition-colors ${
+                sinPeriodo
+                  ? "border-[var(--accent)] bg-primary/10 text-[var(--text-primary)]"
+                  : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+              }`}
+            >
+              {sinPeriodo ? "Volver al período" : "Todo el patio"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setVerTodos((v) => !v)}
+              className="inline-flex h-10 items-center rounded-lg border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            >
+              {verTodos ? "Ver sólo los que faltan" : `Ver todos (${ingresos.length})`}
+            </button>
+          </div>
         </div>
 
         {visibles.length === 0 ? (
           <p className="text-sm text-[var(--text-tertiary)]">
-            {ingresos.length === 0 ? "No hay ingresos en el período." : "Todos los ingresos del período están valorizados."}
+            {ingresos.length === 0
+              ? sinPeriodo
+                ? "No hay ingresos cargados."
+                : "No hay ingresos en el período."
+              : sinPeriodo
+                ? "Todos los ingresos tienen su costo cargado."
+                : "Todos los ingresos del período están valorizados. Si Antigüedad marca madera sin costo, es más vieja que el período: mirá «Todo el patio»."}
           </p>
         ) : (
           <div className="space-y-2">

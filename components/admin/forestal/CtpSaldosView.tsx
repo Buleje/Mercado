@@ -43,8 +43,12 @@ export function CtpSaldosView({
   period: CtpPeriod;
   /** Atajo "del stock a la guía": lleva a Despacho con producto y especie ya elegidos. */
   onDespachar?: (producto: string, especie: string | null) => void;
-  /** Lleva a la pestaña donde se corrige cada excepción. */
-  onIr?: (vista: NonNullable<Excepcion["ir"]>) => void;
+  /**
+   * Lleva a la pestaña donde se corrige cada excepción. Incluye `rentabilidad`
+   * —que no es una excepción de saldo— porque ahí vive «Valorizar ingresos»,
+   * la pantalla que tapa el hueco de costos que denuncia Antigüedad.
+   */
+  onIr?: (vista: NonNullable<Excepcion["ir"]> | "rentabilidad") => void;
 }) {
   const { data, concil, curva, loading, error, recargar } = useCtpSaldos(period);
   const [reportError, setReportError] = useState<string | null>(null);
@@ -197,7 +201,7 @@ export function CtpSaldosView({
           <TablaProductos productos={data.productos} onDespachar={onDespachar} />
 
           {/* Gemelo del patio: materia prima parada por antigüedad (self-fetch). */}
-          <CtpPatioAging />
+          <CtpPatioAging onValorizar={onIr ? () => onIr("rentabilidad") : undefined} />
         </>
       )}
       {loading && !data && <PanelSkeleton kpis={4} />}
