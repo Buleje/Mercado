@@ -17,7 +17,7 @@
  */
 
 import { DataTable } from "@buleje/design-system";
-import { AlertTriangle, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown, Boxes, Download, FileText, Link2, PackagePlus, Paperclip, Truck, X as XIcon } from "@buleje/design-system/icons";
+import { AlertTriangle, AlertCircle, RefreshCw, ArrowUp, ArrowDown, ArrowUpDown, Boxes, Download, FileText, Link2, PackagePlus, Paperclip, Truck, X as XIcon } from "@buleje/design-system/icons";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
@@ -162,6 +162,51 @@ function OrigenBadge({ entry }: { entry: CtpEntry }) {
     entry.mpAtribuidaM3,
   );
   if (!faltaAtribuir(estado)) return null;
+
+  /*
+   * ROJO FALSO EN LOS REPROCESOS (medido 2026-09-06 sobre la L95053).
+   *
+   * `mpAtribuidaM3` suma `forestCtpConsumo`, que son consumos de madera de
+   * INGRESOS con GTF. Una corrida nacida de un reproceso (ADR-316) no consume
+   * una guía: consume otro producto del libro, y esa relación viaja por otra
+   * tabla (`origenEntryId`/`destino`). Da 0, y la fila acusaba «sin origen
+   * declarado» a una línea cuyo origen está perfectamente trazado —el producto
+   * del que salió—. Un rojo falso enseña a ignorar la lista entera, que es
+   * justo lo que no puede pasar en el libro que se declara ante SERFOR.
+   *
+   * Acá sólo se corrige lo que la fila DICE. El cálculo de fondo sigue igual
+   * —contar la materia prima que entra por reproceso exige convertir unidades
+   * (el reproceso mueve `quantity` en pt/kg/m³ y la atribución compara m³) y
+   * eso se toca en la capa de datos, no en un badge.
+   */
+  if (entry.codigoRaiz) {
+    /* Cuidado con no tapar un faltante de verdad: si la corrida además ató
+       PARTE de su materia prima a ingresos con GTF, lo que quedó suelto sigue
+       siendo un hueco y se dice igual. Sólo cuando no hay NADA atribuido el
+       reproceso explica el total. */
+    const soloReproceso = estado.estado === "sin-atribucion";
+    return (
+      <div className="mt-1 flex flex-wrap items-center gap-1">
+        <span
+          title={`El origen de esta corrida no es un ingreso con GTF sino otro producto del libro: salió de reprocesar ${entry.codigoRaiz}. La cadena se sigue por ahí.`}
+          className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+        >
+          <RefreshCw className="h-3 w-3 shrink-0" aria-hidden />
+          origen: reproceso de {entry.codigoRaiz}
+        </span>
+        {!soloReproceso && (
+          <span
+            title="Parte de la materia prima sí está atada a ingresos con GTF y parte no. Lo que falta se declara igual: el reproceso explica el origen, no el faltante."
+            className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-xs font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+          >
+            <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
+            {estado.aviso}
+          </span>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       title="Esta corrida consumió madera que no está atada a ningún ingreso con GTF. Atribuila desde su ficha: sin origen no se puede certificar la cadena."
