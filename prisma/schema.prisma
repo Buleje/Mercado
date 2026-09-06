@@ -5386,6 +5386,19 @@ model WoodEntry {
   /// guardan enteras y no se consultan campo por campo.
   gtfDatos Json?
 
+  /// De dónde salió cada casillero: qué escribió una PERSONA, quién y cuándo
+  /// (ADR-392). Clave = campo del formato, valor = `{ por, el }`.
+  ///
+  /// El valor del dato sigue viviendo donde siempre —su columna o `gtfDatos`—;
+  /// acá va sólo la procedencia. Existe porque un fiscalizador pregunta de
+  /// dónde sale cada número, y «lo dice la guía» no es lo mismo que «lo
+  /// transcribió el almacenero»: `serforGtf` ya prueba lo primero, esto prueba
+  /// lo segundo.
+  ///
+  /// `null` significa «no se sabe», NO «todo oficial»: los ingresos anteriores
+  /// a esta decisión no declaran procedencia y no se les inventa una.
+  camposManuales Json?
+
   // ── Proveedor / Titular Habilitante ──────────────────
   /// SE QUEDA aunque exista `supplierId`: es el acta de la guía, no un mirror
   /// del maestro de proveedores (ADR-134 D2). Nunca se borra ni se deriva.

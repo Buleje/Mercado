@@ -83,6 +83,7 @@ export default function CtpGuiaFichaModal({
   onClose: () => void;
 }) {
   const [verTodas, setVerTodas] = useState(false);
+  const [vista, setVista] = useState<"documento" | "trozas">("documento");
   const secciones = useMemo(
     () => seccionesDeGuia(guia as unknown as GuiaIngreso<LineaConGuia>),
     [guia],
@@ -190,6 +191,37 @@ export default function CtpGuiaFichaModal({
           </p>
         )}
 
+        {/* ── Las dos vistas ─────────────────────────────────────────────── */}
+        {/* El papel por un lado, la madera por el otro. Son las dos preguntas
+            que se hacen frente a una guía —«¿el documento está completo?» y
+            «¿qué trozas trae?»— y juntas en un scroll de dos metros obligan a
+            pasar por la que no se está mirando. El contador va en la pestaña:
+            se ve qué falta sin entrar. */}
+        <div role="tablist" aria-label="Vistas de la guía" className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
+          {([
+            { id: "documento" as const, label: "El documento", detalle: `${completitud.llenos}/${completitud.total} casilleros` },
+            { id: "trozas" as const, label: "Las trozas", detalle: `${piezas.length} ${piezas.length === 1 ? "pieza" : "piezas"}` },
+          ]).map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={vista === t.id}
+              onClick={() => setVista(t.id)}
+              className={`flex-1 rounded-lg px-3 py-2 text-sm font-bold transition-colors ${
+                vista === t.id
+                  ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              {t.label}{" "}
+              <span className="font-mono text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)]">{t.detalle}</span>
+            </button>
+          ))}
+        </div>
+
+        {vista === "documento" && (
+          <>
         {/* ── Las especies del papel: un asiento por especie (ADR-312) ── */}
         <Seccion titulo={`Detalle del producto · ${guia.especies.length} especie(s)`} rango="casilleros (37a) a (37g)">
           <TablaCtp>
@@ -255,6 +287,11 @@ export default function CtpGuiaFichaModal({
           </Seccion>
         ))}
 
+          </>
+        )}
+
+        {vista === "trozas" && (
+          <>
         {/* ── La lista de trozas ── */}
         <Seccion titulo={`Lista de trozas · ${piezas.length}`} rango="anexo del casillero (35)">
           {cargandoTrozas ? (
@@ -342,6 +379,8 @@ export default function CtpGuiaFichaModal({
             </>
           )}
         </Seccion>
+          </>
+        )}
       </ModalBody>
     </AdminModal>
   );
