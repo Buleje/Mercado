@@ -138,6 +138,8 @@ export interface LoteAserrio {
   /** Programación del lote (ADR-342): los campos del formulario oficial. */
   ordenProduccion?: string | null;
   tipoProductoConsumir?: string | null;
+  /** El título habilitante que este lote consume (ADR-393). `null` = todos. */
+  permiso?: string | null;
   inicioProceso?: string | null;
   finProceso?: string | null;
   fechaApertura: string;

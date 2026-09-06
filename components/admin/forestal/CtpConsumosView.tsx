@@ -472,7 +472,13 @@ export default function CtpConsumosView({
               ? "Declarado por inventario: no tiene trozas que tildar"
               : hay && hay.piezas > 0
                 ? "Listo para cargar la sierra"
-                : "Sin madera de esa especie en el patio",
+                /* Desde ADR-393 un lote puede quedarse sin madera por su
+                   PERMISO, no por su especie: decir «sin madera de esa especie»
+                   con el patio lleno de esa especie manda a buscar el problema
+                   donde no está. El mensaje nombra la causa real. */
+                : l.permiso
+                  ? `Sin ${l.speciesCommon ?? "madera"} del permiso ${l.permiso} en el patio`
+                  : "Sin madera de esa especie en el patio",
         /* Piezas Y m³: el volumen es lo que se declara, y elegir por conteo de
            piezas sin verlo dejaba la decisión a medias. */
         meta: cerrado
