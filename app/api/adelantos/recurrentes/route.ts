@@ -14,6 +14,10 @@ const CreateSchema = z.object({
   moneda: z.string().max(3).optional(),
   frecuencia: z.enum(["semanal", "quincenal", "mensual"]),
   diaMes: z.number().int().min(1).max(28).nullable().optional(),
+  /** 0-6, domingo a sábado. Faltaba: el campo existía en la tabla y no había
+   *  forma de mandarlo, así que un recurrente semanal caía el día en que se
+   *  creó y no en el que se quería. */
+  diaSemana: z.number().int().min(0).max(6).nullable().optional(),
   notas: z.string().max(500).optional(),
 });
 

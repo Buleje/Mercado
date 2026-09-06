@@ -98,6 +98,8 @@ export type DbRecurrente = {
   moneda: string;
   frecuencia: RecurrenteFrecuencia;
   diaMes?: number | null;
+  /** 0-6 (domingo a sábado). Sólo para semanal/quincenal. */
+  diaSemana?: number | null;
   activo: boolean;
   proximaEjecucion?: string | null;
   ultimaEjecucion?: string | null;
@@ -111,6 +113,8 @@ export type RecurrenteInput = {
   moneda?: string;
   frecuencia: RecurrenteFrecuencia;
   diaMes?: number | null;
+  /** 0-6 (domingo a sábado). Sólo para semanal/quincenal. */
+  diaSemana?: number | null;
   notas?: string;
 };
 
@@ -936,7 +940,12 @@ export const AdelantosDB = {
     if (!benef) {
       throw new Error("Esa persona no existe en este negocio. Elegila de la lista de beneficiarios.");
     }
-    const proxima = nextProxima(data.frecuencia, data.diaMes ?? null, new Date());
+    /* El día de semana sólo aplica a semanal/quincenal, igual que `diaMes` sólo
+       a mensual: guardar el de la otra frecuencia dejaría un dato que nadie lee
+       y que la próxima lectura no sabría si creer. */
+    const esSemanal = data.frecuencia === "semanal" || data.frecuencia === "quincenal";
+    const diaSemana = esSemanal ? (data.diaSemana ?? null) : null;
+    const proxima = nextProxima(data.frecuencia, data.diaMes ?? null, new Date(), diaSemana);
     const row = await prisma.adelantoRecurrente.create({
       data: {
         tenantId,
@@ -946,6 +955,7 @@ export const AdelantosDB = {
         moneda: data.moneda ?? "PEN",
         frecuencia: data.frecuencia,
         diaMes: data.frecuencia === "mensual" ? data.diaMes ?? null : null,
+        diaSemana,
         notas: data.notas?.trim() || null,
         proximaEjecucion: proxima,
       },
@@ -990,7 +1000,12 @@ export const AdelantosDB = {
         }),
         prisma.adelantoRecurrente.update({
           where: { id: r.id },
-          data: { ultimaEjecucion: now, proximaEjecucion: nextProxima(r.frecuencia as RecurrenteFrecuencia, r.diaMes, now) },
+          data: {
+            ultimaEjecucion: now,
+            /* Con el día pactado, si no: el ciclo se corría al día en que se
+               ejecutó y «todos los viernes» derivaba solo. */
+            proximaEjecucion: nextProxima(r.frecuencia as RecurrenteFrecuencia, r.diaMes, now, r.diaSemana),
+          },
         }),
       ];
     });
@@ -1015,10 +1030,35 @@ function mapRecurrente(r: {
 }
 
 /** Calcula la próxima ejecución según frecuencia (mensual respeta diaMes 1-28). */
-function nextProxima(frecuencia: RecurrenteFrecuencia, diaMes: number | null, from: Date): Date {
+/**
+ * Cuándo cae la próxima entrega de un adelanto recurrente.
+ *
+ * ⚠️ `diaSemana` existía en la tabla —documentado como «0-6 (semanal/quincenal)»—
+ * y no llegaba hasta acá: el Zod del endpoint no lo aceptaba, `createRecurrente`
+ * no lo persistía y esta función ni lo recibía. O sea que un recurrente semanal
+ * caía el día en que se creó, para siempre: si lo armabas un martes eran todos
+ * los martes, y no había forma de pedir los viernes.
+ *
+ * Exportada para poder testear el calendario sin tocar la base.
+ */
+export function nextProxima(
+  frecuencia: RecurrenteFrecuencia,
+  diaMes: number | null,
+  from: Date,
+  diaSemana: number | null = null,
+): Date {
   const d = new Date(from);
-  if (frecuencia === "semanal") { d.setDate(d.getDate() + 7); return d; }
-  if (frecuencia === "quincenal") { d.setDate(d.getDate() + 14); return d; }
+  if (frecuencia === "semanal" || frecuencia === "quincenal") {
+    const paso = frecuencia === "semanal" ? 7 : 14;
+    /* Sin día elegido se conserva el comportamiento viejo EXACTO: los
+       recurrentes que ya existen no pueden cambiar de fecha por este arreglo. */
+    if (diaSemana == null) { d.setDate(d.getDate() + paso); return d; }
+    /* Con día elegido: al próximo que caiga. Si es hoy, se salta al ciclo
+       siguiente — «cada martes» creado un martes no entrega dos veces hoy. */
+    const delta = (diaSemana - d.getDay() + 7) % 7 || paso;
+    d.setDate(d.getDate() + delta);
+    return d;
+  }
   // mensual: próximo mes, día diaMes (default mismo día, cap 28)
   const dia = Math.min(Math.max(diaMes ?? d.getDate(), 1), 28);
   d.setMonth(d.getMonth() + 1, dia);

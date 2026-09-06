@@ -10,6 +10,7 @@
  */
 
 import { estadoVencimiento, type EstadoVencimiento } from "./ctp-ficha-types";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 
 export { estadoVencimiento };
 export type { EstadoVencimiento };
@@ -50,11 +51,15 @@ export function normalizeLothCites(raw: unknown): LothCitesCatalogo {
  * criterio que el panel Cumplimiento del CTP): "Caoba" ↔ "caoba (Swietenia...)".
  */
 export function permisoParaEspecie(cat: LothCitesCatalogo, especie: string | null | undefined): LothCitesPermiso | null {
-  const e = (especie ?? "").trim().toLowerCase();
+  /* `claveEspecie` ANTES del substring, no en vez de él. El match laxo resuelve
+     «Caoba» ↔ «caoba (Swietenia…)» —el paréntesis— pero no las tildes: con
+     `toLowerCase()` solo, «Ishpíngo» no encontraba el permiso de «Ishpingo» y la
+     especie quedaba declarada sin permiso CITES teniéndolo. */
+  const e = claveEspecie(especie);
   if (!e) return null;
   return (
     cat.permisos.find((p) => {
-      const pe = p.especie.toLowerCase();
+      const pe = claveEspecie(p.especie);
       return pe.length > 0 && (pe.includes(e) || e.includes(pe));
     }) ?? null
   );

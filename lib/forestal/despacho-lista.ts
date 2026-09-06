@@ -16,6 +16,7 @@
  */
 
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 
 /**
  * Tolerancia de volumen, en m³.
@@ -317,7 +318,10 @@ export function enviosDeLista(
 
   const porEspecie = new Map<string, FilaDespacho[]>();
   for (const f of filas.filter((x) => x.trozaId)) {
-    const clave = (f.especie ?? "").trim().toLowerCase() || "sin-especie";
+    /* Agrupar con `claveEspecie`: con la normalización a mano, «Ishpíngo» e
+       «Ishpingo» armaban DOS envíos —o sea dos líneas del libro— para la misma
+       madera del mismo camión. */
+    const clave = claveEspecie(f.especie) || "sin-especie";
     porEspecie.set(clave, [...(porEspecie.get(clave) ?? []), f]);
   }
   for (const grupo of porEspecie.values()) {
