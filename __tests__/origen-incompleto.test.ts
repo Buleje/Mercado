@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { diagnosticar, resumenDeOrigen } from "@/lib/forestal/origen-incompleto";
+import { diagnosticar, esExistenciaDeApertura, resumenDeOrigen } from "@/lib/forestal/origen-incompleto";
 import type { CorridaDisponible, LoteDeCapacidad } from "@/lib/forestal/capacidad-de-planta";
 import { casillerosCambiados } from "@/lib/db/wood-entries.db";
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
@@ -73,6 +73,29 @@ describe("diagnóstico de una corrida", () => {
 });
 
 describe("el resumen", () => {
+  it("la existencia de apertura va aparte y no cuenta como hueco", () => {
+    const r = resumenDeOrigen([
+      corrida({ id: "h", disponible: 6 }),
+      corrida({ id: "imp", disponible: 5, observations: "Inventario de apertura · Lote 15-2026 · Paquete S1" }),
+      corrida({ id: "dec", disponible: 3, aperturaDeclaradaAt: "2026-09-06T10:00:00Z", aperturaDeclaradaPor: "qaadmin", aperturaDeclaradaMotivo: "inventario físico" }),
+    ]);
+    expect(r.corridas.map((c) => c.id)).toEqual(["h"]);
+    expect(r.apertura.map((c) => c.id)).toEqual(["imp", "dec"]);
+    expect(r.m3SinCertificar).toBe(6);
+    expect(r.m3Apertura).toBe(8);
+    // la fracción roja es sólo el hueco corregible: 6 de 14
+    expect(r.fraccion).toBe(0.429);
+    expect(r.apertura[0].apertura).toMatchObject({ importada: true });
+    expect(r.apertura[1].apertura).toMatchObject({ importada: false, por: "qaadmin", motivo: "inventario físico" });
+  });
+
+  it("una corrida con guía atada nunca es apertura, aunque la nota lo diga", () => {
+    const d = diagnosticar(corrida({ id: "g", gtfOrigen: ["G-1"], observations: "Inventario de apertura · x" }), []);
+    expect(d?.motivo).toBe("ingreso_sin_titulo");
+    expect(esExistenciaDeApertura({ aperturaDeclaradaAt: null, observations: "Inventario de apertura" })).toBe(true);
+    expect(esExistenciaDeApertura({ aperturaDeclaradaAt: null, observations: "nota común" })).toBe(false);
+  });
+
   it("suma sólo m³ y da la fracción sobre lo disponible", () => {
     const r = resumenDeOrigen([
       corrida({ id: "1", disponible: 6 }),

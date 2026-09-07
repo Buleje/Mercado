@@ -22,9 +22,16 @@ export interface DdsEmisor {
 }
 
 const esc = (s: unknown): string =>
-  String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+  String(s ?? "").replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string,
+  );
 const coord = (lat: number | null, lng: number | null, poly: boolean): string =>
-  lat != null && lng != null ? `${lat.toFixed(6)}, ${lng.toFixed(6)}` : poly ? "polígono (GeoJSON adjunto)" : "— sin geolocalizar —";
+  lat != null && lng != null
+    ? `${lat.toFixed(6)}, ${lng.toFixed(6)}`
+    : poly
+      ? "polígono (GeoJSON adjunto)"
+      : "— sin geolocalizar —";
 
 /**
  * El DDS como documento autocontenido. Lo usan la impresión y el expediente
@@ -32,9 +39,15 @@ const coord = (lat: number | null, lng: number | null, poly: boolean): string =>
  */
 export function buildDdsHtml(dds: DdsData, emisor?: DdsEmisor): string {
   const negligible = dds.riesgo === "negligible";
-  const fecha = new Date(dds.generadoAt).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
+  const fecha = new Date(dds.generadoAt).toLocaleDateString("es-PE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 
-  const plotsRows = dds.plots.map((p) => `
+  const plotsRows = dds.plots
+    .map(
+      (p) => `
     <tr>
       <td><strong>${esc(p.originCode)}</strong><br><span class="muted">${esc(p.originType)}${p.region ? " · " + esc(p.region) : ""}</span></td>
       <td>${esc(coord(p.lat, p.lng, p.hasPolygon))}</td>
@@ -42,22 +55,36 @@ export function buildDdsHtml(dds: DdsData, emisor?: DdsEmisor): string {
       <td class="center">${p.deforestationFree ? "✓ Sí" : '<span class="bad">✗ No atestado</span>'}</td>
       <td>${esc(p.gtfs.join(", ") || "—")}</td>
       <td>${esc(p.especies.join(", ") || "—")}${p.cites ? ' <span class="cites">CITES</span>' : ""}</td>
-    </tr>`).join("");
+    </tr>`,
+    )
+    .join("");
 
-  const gapsList = dds.gaps.length ? `<ul class="gaps">${dds.gaps.map((g) => `<li>${esc(g)}</li>`).join("")}</ul>` : "";
+  const gapsList = dds.gaps.length
+    ? `<ul class="gaps">${dds.gaps.map((g) => `<li>${esc(g)}</li>`).join("")}</ul>`
+    : "";
 
   const figura = buildEudrMapFigure({
     polygons: dds.plots
       .filter((p) => p.polygonJson)
-      .map((p) => ({ code: p.originCode, ring: geoJsonPolygonToRing(p.polygonJson), color: p.deforestationFree ? "#16a34a" : "#d97706" }))
+      .map((p) => ({
+        code: p.originCode,
+        ring: geoJsonPolygonToRing(p.polygonJson),
+        color: p.deforestationFree ? "#16a34a" : "#d97706",
+      }))
       .filter((p) => p.ring.length >= 3),
     points: dds.plots
       .filter((p) => !p.polygonJson && p.lat != null && p.lng != null)
-      .map((p) => ({ lat: p.lat as number, lng: p.lng as number, label: p.originCode, color: p.deforestationFree ? "#16a34a" : "#d97706" })),
-    caption: "Parcelas de origen del despacho · verde = sin deforestación · satélite Esri World Imagery",
+      .map((p) => ({
+        lat: p.lat as number,
+        lng: p.lng as number,
+        label: p.originCode,
+        color: p.deforestationFree ? "#16a34a" : "#d97706",
+      })),
+    caption:
+      "Parcelas de origen del despacho · verde = sin deforestación · satélite Esri World Imagery",
   });
 
-  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>DDS EUDR — despacho ${esc(dds.gtfSalida ?? dds.despachoId)}</title>
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data: https:; font-src data:"><title>DDS EUDR — despacho ${esc(dds.gtfSalida ?? dds.despachoId)}</title>
   <style>
     *{box-sizing:border-box} body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:32px;line-height:1.5}
     h1{font-size:20px;margin:0 0 2px} h2{font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:#555;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px}
@@ -75,7 +102,7 @@ export function buildDdsHtml(dds: DdsData, emisor?: DdsEmisor): string {
     ${eudrMapFigureCss()}
     @media print{body{margin:12mm} .printbtn{display:none}}
   </style></head><body>
-    <button class="printbtn" onclick="window.print()">Imprimir / Guardar como PDF</button>
+    <button class="printbtn" id="ctp-print">Imprimir / Guardar como PDF</button>
     <div class="hdr">
       <div>
         <h1>Declaración de Diligencia Debida (DDS)</h1>
@@ -125,5 +152,8 @@ export function imprimirDds(dds: DdsData, emisor?: DdsEmisor): void {
   const w = window.open("", "_blank", "width=900,height=1200");
   if (!w) return;
   w.document.write(buildDdsHtml(dds, emisor));
+  /* Sin `onclick` inline: el botón se ata desde afuera (misma razón que
+     `openCtpReport`: el reporte no debe ejecutar script propio). */
   w.document.close();
+  w.document.getElementById("ctp-print")?.addEventListener("click", () => w.print());
 }

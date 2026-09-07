@@ -69,6 +69,7 @@ const ubicacion = (dep?: string, prov?: string, dist?: string): string | null =>
 /** Lo que el ingreso guarda del documento, además de sus asientos. */
 export interface LineaConGuia extends LineaDeGuia {
   gtfDatos?: unknown;
+  libroNro?: number | null;
   originType?: string | null;
   originSourceNumber?: string | null;
   originRegion?: string | null;
@@ -96,6 +97,9 @@ export function seccionesDeGuia(guia: GuiaIngreso<LineaConGuia>): SeccionFicha[]
       titulo: "Documento y origen",
       rango: "casilleros (2) a (12)",
       campos: [
+        /* (1) es el folio del libro: lo asigna el sistema al registrar y no se
+           corrige a mano (renumerar dejaría de casar con lo ya presentado). */
+        { label: "Folio del libro", valor: t(p.libroNro), casillero: "1" },
         {
           label: "N° de guía",
           valor: t(guia.gtfNumber),
@@ -286,6 +290,28 @@ export function seccionesDeGuia(guia: GuiaIngreso<LineaConGuia>): SeccionFicha[]
           casillero: "34",
           manual: quien(p, "gtfDatos.vehiculo.licencia"),
         },
+      ],
+    },
+    {
+      titulo: "Documentos que acompañan y observaciones",
+      rango: "casilleros (35), (36) y (38)",
+      campos: [
+        /* (35) y (36) son los papeles que viajan CON la guía de ingreso: la lista de
+           trozas del titular y, si la madera ya venía de otro CTP, la GTF con la
+           que entró allá. Viven en `gtfDatos.guia`, igual que en la de salida. */
+        {
+          label: "N° de lista de trozas",
+          valor: t(d.guia?.listaTrozasNro),
+          casillero: "35",
+          manual: quien(p, "gtfDatos.guia.listaTrozasNro"),
+        },
+        {
+          label: "GTF de origen",
+          valor: t(d.guia?.gtfOrigenNro),
+          casillero: "36",
+          manual: quien(p, "gtfDatos.guia.gtfOrigenNro"),
+        },
+        { label: "Observaciones", valor: t(p.notes), casillero: "38", manual: quien(p, "notes") },
       ],
     },
   ];

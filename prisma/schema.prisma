@@ -5969,6 +5969,12 @@ model ForestCtpEntry {
   usadoAt     DateTime?
   usadoPor    String?
   usadoMotivo String?
+  /// La existencia de apertura como origen DECLARADO (ADR-394): madera anterior
+  /// al libro, sin guía ni piezas que atar. Quién, cuándo y por qué. No toca
+  /// ningún número; el certificado sigue bloqueado para estas corridas.
+  aperturaDeclaradaAt     DateTime?
+  aperturaDeclaradaPor    String?
+  aperturaDeclaradaMotivo String?
 
   /// Aserrío / secado / mano de obra (ADR-134). Input genuino: sin esto no hay margen.
   /// costoMateriaPrima y costoTotal NO se almacenan — son derivados de `consumos` (D6).

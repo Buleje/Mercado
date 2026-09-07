@@ -103,7 +103,7 @@ export default function CtpIngresoPartesForm({
   datos: GtfDatos;
   onChange: (d: GtfDatos) => void;
 }) {
-  const set = <K extends "propietario" | "destinatario" | "transportista" | "vehiculo">(
+  const set = <K extends "propietario" | "destinatario" | "transportista" | "vehiculo" | "guia">(
     k: K,
     v: Partial<GtfDatos[K]>,
   ) => onChange({ ...datos, [k]: { ...datos[k], ...v } });
@@ -199,6 +199,38 @@ export default function CtpIngresoPartesForm({
           className={`${I} font-mono`}
           value={datos.vehiculo.licencia}
           onChange={(e) => set("vehiculo", { licencia: e.target.value })}
+        />
+      </Field>
+
+      <div className="sm:col-span-12 mt-2">
+        <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          Documentos que acompañan · casilleros (35) y (36)
+        </p>
+      </div>
+      <Field
+        span={6}
+        label="N° de lista de trozas"
+        casillero={35}
+        hint="La del titular, si vino con la guía"
+      >
+        <input
+          type="text"
+          className={`${I} font-mono`}
+          value={datos.guia.listaTrozasNro}
+          onChange={(e) => set("guia", { listaTrozasNro: e.target.value })}
+        />
+      </Field>
+      <Field
+        span={6}
+        label="GTF de origen"
+        casillero={36}
+        hint="Sólo si la madera ya venía de otro CTP"
+      >
+        <input
+          type="text"
+          className={`${I} font-mono`}
+          value={datos.guia.gtfOrigenNro}
+          onChange={(e) => set("guia", { gtfOrigenNro: e.target.value })}
         />
       </Field>
     </>

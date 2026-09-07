@@ -26,14 +26,36 @@ import {
 export default function OrigenIncompleto({
   resumen,
   onAbrirCorrida,
+  onDeclararApertura,
 }: {
   resumen: ResumenOrigen;
   /** Abre la ficha de la corrida, donde se ata la materia prima. */
   onAbrirCorrida: (c: CorridaSinOrigen) => void;
+  /** Declara (o deshace) que la corrida es existencia de apertura (ADR-394). */
+  onDeclararApertura?: (c: CorridaSinOrigen, deshacer: boolean) => void;
 }) {
-  const { corridas, m3SinCertificar, fraccion, porMotivo } = resumen;
-  if (corridas.length === 0) return null;
+  const { corridas, apertura, m3SinCertificar, m3Apertura, fraccion, porMotivo } = resumen;
+  if (corridas.length === 0 && apertura.length === 0) return null;
   const pct = Math.round(fraccion * 100);
+
+  /* Sólo apertura: no hay hueco que corregir; se dice en calma, sin rojo. */
+  if (corridas.length === 0) {
+    return (
+      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+        <CardTitle
+          as="h3"
+          className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"
+        >
+          Origen completo, salvo la existencia de apertura
+        </CardTitle>
+        <ListaApertura
+          apertura={apertura}
+          m3Apertura={m3Apertura}
+          onDeclararApertura={onDeclararApertura}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--surface-raised)] p-5">
@@ -90,11 +112,23 @@ export default function OrigenIncompleto({
             <button
               type="button"
               onClick={() => onAbrirCorrida(c)}
-              className="inline-flex items-center gap-0.5 rounded-lg px-2 py-1 text-xs font-bold text-[var(--accent-dark)] hover:bg-primary/10 dark:hover:bg-primary/20 dark:text-[var(--accent)]"
+              className="inline-flex items-center gap-0.5 rounded-lg px-2 py-1 text-xs font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-primary"
             >
               {c.motivo === "sin_materia_prima" ? "Atar materia prima" : "Abrir corrida"}
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
+            {/* La otra salida honesta cuando no hay qué atar: declarar que la
+                madera es anterior al libro (ADR-394). Sólo para corridas sin
+                consumos — con guía atada tienen origen. */}
+            {onDeclararApertura && c.motivo === "sin_materia_prima" && (
+              <button
+                type="button"
+                onClick={() => onDeclararApertura(c, false)}
+                className="rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              >
+                Es existencia de apertura
+              </button>
+            )}
             {/* El porqué y el remedio, en la misma fila: un aviso sin salida es
                 un aviso que se aprende a ignorar. */}
             <span className="w-full text-xs text-[var(--text-tertiary)]">
@@ -111,6 +145,72 @@ export default function OrigenIncompleto({
                   : c.lote
                     ? ` · el lote ${c.lote} no tiene piezas libres: su madera ya está atada a otra corrida o el lote nació como inventario`
                     : "")}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      {apertura.length > 0 && (
+        <ListaApertura
+          apertura={apertura}
+          m3Apertura={m3Apertura}
+          onDeclararApertura={onDeclararApertura}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Las existencias de apertura: aparte y sin rojo. No son un hueco a corregir,
+ * son madera anterior al libro — pero tampoco se certifican, y se dice.
+ */
+function ListaApertura({
+  apertura,
+  m3Apertura,
+  onDeclararApertura,
+}: {
+  apertura: CorridaSinOrigen[];
+  m3Apertura: number;
+  onDeclararApertura?: (c: CorridaSinOrigen, deshacer: boolean) => void;
+}) {
+  if (apertura.length === 0) return null;
+  return (
+    <div className="mt-4 rounded-xl bg-[var(--surface-sunken)] px-3 py-2.5">
+      <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        Existencia de apertura · {fmtM3(m3Apertura)} m³ en {apertura.length}{" "}
+        {apertura.length === 1 ? "corrida" : "corridas"}
+      </p>
+      <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+        Madera anterior al libro: no hay guía ni piezas que atar. No es un hueco a corregir, pero
+        tampoco se puede certificar desde este libro (ADR-394).
+      </p>
+      <ul className="mt-2 divide-y divide-[var(--rule-soft)]">
+        {apertura.map((c) => (
+          <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-1.5 text-sm">
+            <span className="w-24 shrink-0 text-xs text-[var(--text-tertiary)]">
+              {fechaLegible(c.fecha, true)}
+            </span>
+            <span className="font-mono font-bold text-[var(--text-primary)]">
+              {c.lote ?? "sin lote"}
+            </span>
+            <span className="text-[var(--text-secondary)]">{c.producto ?? "—"}</span>
+            <span className="ml-auto font-mono tabular-nums text-[var(--text-primary)]">
+              {c.unidad === "m3" ? `${fmtM3(c.disponible)} m³` : `${c.disponible} ${c.unidad}`}
+            </span>
+            <span className="w-full text-xs text-[var(--text-tertiary)]">
+              {c.apertura?.importada
+                ? "Importada del libro SNIFFS como inventario de apertura"
+                : `Declarada${c.apertura?.por ? ` por ${c.apertura.por}` : ""}${c.apertura?.el ? ` el ${fechaLegible(c.apertura.el, false)}` : ""}${c.apertura?.motivo ? ` · ${c.apertura.motivo}` : ""}`}
+              {onDeclararApertura && !c.apertura?.importada && (
+                <button
+                  type="button"
+                  onClick={() => onDeclararApertura(c, true)}
+                  className="ml-2 font-bold underline underline-offset-2"
+                >
+                  quitar
+                </button>
+              )}
             </span>
           </li>
         ))}

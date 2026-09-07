@@ -40,6 +40,7 @@ import {
 } from "@/lib/forestal/capacidad-de-planta";
 import { useParamsDeSaldos } from "@/hooks/use-params-de-saldos";
 import OrigenIncompleto from "./saldos/OrigenIncompleto";
+import DeclararAperturaModal from "./saldos/DeclararAperturaModal";
 import CtpNodeDetailLoader, { type DetailTarget } from "./CtpNodeDetailLoader";
 import { resumenDeOrigen } from "@/lib/forestal/origen-incompleto";
 import type { EstadoFuente } from "@/lib/forestal/capacidad-de-planta";
@@ -141,6 +142,12 @@ export function CtpSaldosView({
   );
   /** Ingresos sin validar que NO tienen piezas (los que sí, entran troza por troza). */
   const [pendienteSinPiezasM3, setPendienteSinPiezasM3] = useState(0);
+  /** La corrida que se está declarando (o des-declarando) existencia de apertura. */
+  const [aperturaDe, setAperturaDe] = useState<{
+    id: string;
+    lote: string | null;
+    deshacer: boolean;
+  } | null>(null);
   /** La corrida abierta desde «Origen incompleto», para atarle materia prima. */
   const [corridaAbierta, setCorridaAbierta] = useState<DetailTarget | null>(null);
   /* Lo disponible es una FOTO del depósito, no un movimiento del mes: un
@@ -699,6 +706,9 @@ export function CtpSaldosView({
                   onAbrirCorrida={(c) =>
                     setCorridaAbierta({ kind: "corrida", id: c.id, fecha: c.fecha })
                   }
+                  onDeclararApertura={(c, deshacer) =>
+                    setAperturaDe({ id: c.id, lote: c.lote, deshacer })
+                  }
                 />
 
                 {/* De dónde sale una parte de ese techo, lote por lote. */}
@@ -750,6 +760,19 @@ export function CtpSaldosView({
         </>
       )}
       {loading && !data && <PanelSkeleton kpis={4} />}
+
+      {aperturaDe && (
+        <DeclararAperturaModal
+          corridaId={aperturaDe.id}
+          lote={aperturaDe.lote}
+          deshacer={aperturaDe.deshacer}
+          onClose={() => setAperturaDe(null)}
+          onListo={() => {
+            setAperturaDe(null);
+            void cargarCorridas();
+          }}
+        />
+      )}
 
       {corridaAbierta && (
         <CtpNodeDetailLoader

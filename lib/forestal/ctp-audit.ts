@@ -148,6 +148,9 @@ export type CtpAuditAction =
    *  despacharse ni reprocesarse (Brandon, 2026-09-01). Reversible. */
   | "ctp_linea_marcar_usado"
   | "ctp_linea_desmarcar_usado"
+  /** Existencia de apertura declarada / deshecha (ADR-394). */
+  | "ctp_apertura_declarar"
+  | "ctp_apertura_deshacer"
   // Atribución de origen y costeo — lo más sensible del módulo
   | "ctp_consumos_set"
   /** Qué PIEZAS entraron a la sierra en una corrida (ADR-326). */

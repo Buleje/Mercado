@@ -23,12 +23,13 @@ function linea(over: Partial<LineaConGuia> = {}): LineaConGuia {
 const ficha = (over: Partial<LineaConGuia> = {}) => seccionesDeGuia(resumirGuia([linea(over)]));
 
 describe("seccionesDeGuia", () => {
-  it("arma las cuatro secciones del formato, en orden", () => {
+  it("arma las cinco secciones del formato, en orden", () => {
     expect(ficha().map((s) => s.titulo)).toEqual([
       "Documento y origen",
       "Proveedor / titular del recurso",
       "Destinatario",
       "Transportista y vehículo",
+      "Documentos que acompañan y observaciones",
     ]);
   });
 
@@ -76,6 +77,14 @@ describe("seccionesDeGuia", () => {
 });
 
 describe("completitudFicha", () => {
+  it("trae el folio (1) y los documentos que acompañan (35), (36) y (38)", () => {
+    const campos = ficha().flatMap((s) => s.campos);
+    const casilleros = campos.map((c) => c.casillero).filter(Boolean);
+    for (const n of ["1", "35", "36", "38"]) expect(casilleros).toContain(n);
+    /* El folio lo asigna el sistema: nunca se marca «a mano». */
+    expect(campos.find((c) => c.casillero === "1")?.manual).toBeUndefined();
+  });
+
   it("cuenta los casilleros llenos y nombra los que faltan", () => {
     const c = completitudFicha(ficha());
     expect(c.total).toBeGreaterThan(10);

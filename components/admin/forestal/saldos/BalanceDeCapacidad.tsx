@@ -183,7 +183,7 @@ export default function BalanceDeCapacidad({
                 <button
                   type="button"
                   onClick={() => onDetalle(f)}
-                  className="inline-flex items-center gap-0.5 rounded-lg px-2 py-1 text-xs font-bold text-[var(--accent-dark)] hover:bg-primary/10 dark:hover:bg-primary/20 dark:text-[var(--accent)]"
+                  className="inline-flex items-center gap-0.5 rounded-lg px-2 py-1 text-xs font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-primary"
                 >
                   Detalles ({f.filas})
                   <ChevronRight className="h-3.5 w-3.5" />

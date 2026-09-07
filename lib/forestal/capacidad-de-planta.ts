@@ -133,6 +133,12 @@ export interface CorridaDisponible {
   /** Guías de ingreso de esa madera. */
   gtfOrigen: string[];
   paquetes: { codigo: string; volumenM3: number }[];
+  /** La nota de la corrida: el importador del SNIFFS deja ahí su marca de apertura. */
+  observations?: string | null;
+  /** La existencia de apertura declarada a mano (ADR-394). */
+  aperturaDeclaradaAt?: string | null;
+  aperturaDeclaradaPor?: string | null;
+  aperturaDeclaradaMotivo?: string | null;
 }
 
 export interface EntradaCapacidad {

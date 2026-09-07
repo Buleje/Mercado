@@ -1587,6 +1587,72 @@ export class ForestCtpDB {
     return actualizada;
   }
 
+  /**
+   * Declara (o deshace) que una corrida es EXISTENCIA DE APERTURA (ADR-394):
+   * madera anterior al libro, sin guía ni piezas que atar.
+   *
+   * Calco de `marcarUsado`: exige motivo al declarar, no al deshacer; no toca
+   * ningún número (saldo, libro, cierre y export SERFOR no leen este campo) y
+   * el certificado sigue bloqueado para la corrida — la declaración cambia
+   * cómo se LEE el hueco, no si existe. Una corrida con materia prima atada no
+   * es apertura: tiene origen.
+   */
+  static async declararApertura(
+    tenantId: string,
+    id: string,
+    input: { apertura: boolean; motivo?: string; user: string },
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const { apertura, motivo, user } = input;
+    if (apertura && !motivo?.trim()) {
+      throw new CtpInvariantError(
+        "Poné por qué esta corrida es existencia de apertura.",
+        "MOTIVO_REQUERIDO",
+      );
+    }
+    const e = await prisma.forestCtpEntry.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      include: { _count: { select: { consumos: true } } },
+    });
+    if (!e) throw new CtpInvariantError("Esa línea no existe.", "LOTE_NO_ENCONTRADO");
+    if (e.section !== "produccion") {
+      throw new CtpInvariantError(
+        "Sólo una corrida de producción puede ser existencia de apertura.",
+        "LOTE_NO_EDITABLE",
+      );
+    }
+    if (apertura && e._count.consumos > 0) {
+      throw new CtpInvariantError(
+        `La corrida N° ${e.lineNo} tiene materia prima atada: tiene origen, no es existencia de apertura.`,
+        "LOTE_NO_EDITABLE",
+      );
+    }
+    const actualizada = await prisma.forestCtpEntry.update({
+      where: { id, tenantId },
+      data: apertura
+        ? {
+            aperturaDeclaradaAt: new Date(),
+            aperturaDeclaradaPor: user,
+            aperturaDeclaradaMotivo: motivo!.trim(),
+          }
+        : { aperturaDeclaradaAt: null, aperturaDeclaradaPor: null, aperturaDeclaradaMotivo: null },
+    });
+    auditCtp({
+      tenantId,
+      action: apertura ? "ctp_apertura_declarar" : "ctp_apertura_deshacer",
+      entity: "ForestCtpEntry",
+      entityId: id,
+      detail: apertura
+        ? `Declaró la corrida N° ${e.lineNo} como existencia de apertura (madera anterior al libro) · motivo: ${motivo!.trim()}`
+        : `Deshizo la declaración de existencia de apertura de la corrida N° ${e.lineNo}`,
+      user,
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
+    return actualizada;
+  }
+
   static async softDelete(tenantId: string, id: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
     const curDel = await prisma.forestCtpEntry.findFirst({
@@ -1769,6 +1835,10 @@ export class ForestCtpDB {
           observations: c.observations,
           /** Marcado a mano como "ya usado" (Brandon, 2026-09-01): `null` = sigue disponible como siempre. */
           usadoAt: c.usadoAt ? c.usadoAt.toISOString() : null,
+          /** Existencia de apertura declarada a mano (ADR-394); lo importado se reconoce por su nota. */
+          aperturaDeclaradaAt: c.aperturaDeclaradaAt ? c.aperturaDeclaradaAt.toISOString() : null,
+          aperturaDeclaradaPor: c.aperturaDeclaradaPor,
+          aperturaDeclaradaMotivo: c.aperturaDeclaradaMotivo,
           usadoMotivo: c.usadoMotivo,
           producido: s?.producido ?? 0,
           despachado: s?.despachado ?? 0,

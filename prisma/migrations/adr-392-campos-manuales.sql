@@ -13,6 +13,7 @@
 -- procedencia que nadie registró.
 --
 -- Idempotente. Reversible (DROP COLUMN no toca ningún otro dato).
--- Uso: USE_POOLER=1 node -r dotenv/config scripts/apply-fiados-gestion-migration.mjs dotenv_config_path=.env.local SQL_FILE=prisma/migrations/adr-392-campos-manuales.sql
+-- Uso (SQL_FILE es una VARIABLE DE ENTORNO: va ANTES de `node`; después del script es un argumento que se ignora y corre el SQL por defecto):
+--   USE_POOLER=1 SQL_FILE=prisma/migrations/adr-392-campos-manuales.sql node -r dotenv/config scripts/apply-fiados-gestion-migration.mjs dotenv_config_path=.env.local
 
 ALTER TABLE "WoodEntry" ADD COLUMN IF NOT EXISTS "camposManuales" JSONB;

@@ -28,7 +28,10 @@ export interface CtpReportFicha {
 }
 
 export function esc(s: unknown): string {
-  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+  return String(s ?? "").replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string,
+  );
 }
 
 /** Fila "etiqueta: valor" del bloque de identidad; se omite si el valor está vacío. */
@@ -42,9 +45,15 @@ export function idRow(label: string, value?: string): string {
  * Bloque de identidad del CTP (razón social, RUC, código, registro, ubicación) +
  * las filas extra que cada reporte quiera anexar (ej. "Ingresos evaluados").
  */
-export function ctpIdentityBlock(ficha: CtpReportFicha | null | undefined, extraRows: string[] = []): string {
+export function ctpIdentityBlock(
+  ficha: CtpReportFicha | null | undefined,
+  extraRows: string[] = [],
+): string {
   const f = ficha ?? {};
-  const ubic = [f.distrito, f.provincia, f.region].map((x) => (x ?? "").trim()).filter(Boolean).join(", ");
+  const ubic = [f.distrito, f.provincia, f.region]
+    .map((x) => (x ?? "").trim())
+    .filter(Boolean)
+    .join(", ");
   const rows = [
     idRow("Razón social:", f.razonSocial) || idRow("Establecimiento:", GEO_PLACENAME),
     idRow("RUC:", f.ruc),
@@ -130,14 +139,23 @@ export function openCtpReport(opts: { title: string; css?: string; body: string 
     .print-bar button{cursor:pointer;border:0;border-radius:8px;padding:9px 16px;font:700 13px system-ui;background:#0f5132;color:#fff}
     @media print{.print-bar{display:none}}
   `;
-  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${esc(opts.title)}</title>
+  /* Defensa en profundidad (auditoría 2026-09-06): el reporte es HTML armado a
+     mano en una ventana same-origin. Cada campo ya pasa por `esc()`, pero un
+     olvido en cualquiera de los ~12 reportes sería XSS con la sesión del admin.
+     Con esta CSP el documento no ejecuta script alguno, y el botón de imprimir
+     se ata desde afuera con `addEventListener` (un `onclick` inline también
+     quedaría bloqueado). Estilos inline sí: el reporte es puro CSS. */
+  const csp = `default-src 'none'; style-src 'unsafe-inline'; img-src data: https:; font-src data:`;
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>${esc(opts.title)}</title>
 <style>${CTP_REPORT_BASE_CSS}${barCss}${opts.css ?? ""}</style></head><body>
-<div class="print-bar"><button type="button" onclick="window.print()">Imprimir / Guardar como PDF</button></div>
+<div class="print-bar"><button type="button" id="ctp-print">Imprimir / Guardar como PDF</button></div>
 ${opts.body}
 </body></html>`;
   const w = window.open("", "_blank", "width=980,height=760");
-  if (!w) throw new Error("El navegador bloqueó la ventana. Permití pop-ups para descargar el reporte.");
+  if (!w)
+    throw new Error("El navegador bloqueó la ventana. Permití pop-ups para descargar el reporte.");
   w.document.write(html);
   w.document.close();
+  w.document.getElementById("ctp-print")?.addEventListener("click", () => w.print());
   w.focus();
 }
