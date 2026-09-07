@@ -8,160 +8,141 @@
  * antes de comprometer una venta («¿me alcanza?») había que armarla a mano
  * sumando cuatro pantallas.
  *
- * Las cuatro fuentes, de la más lejana a la más lista:
+ * El cálculo y las cuatro fuentes viven en `lib/forestal/capacidad-de-planta.ts`
+ * —los leen también el Excel y el PDF—; acá va sólo cómo se ven.
  *
- *   1. POR RECEPCIONAR — madera anotada en el libro que todavía no llegó o no
- *      se validó. Es la más incierta: puede no aparecer.
- *   2. TROZAS EN PATIO — rolliza libre, sin lote y sin bloqueo.
- *   3. LOTES — lo que sus corridas todavía admiten declarar bajo el tope.
- *   4. PRODUCTOS TERMINADOS — stock ya aserrado, listo para despachar.
+ * Tres cosas que esta tarjeta hace y conviene no deshacer:
  *
- * ⚠️ LO QUE ESTE NÚMERO NO ES. Las tres primeras son rolliza; la cuarta es
- * producto. Para poder sumarlas, la rolliza se convierte al 56 % (ADR-358), que
- * es el TECHO del rendimiento, no lo que la sierra saca de verdad —el
- * rendimiento real de los lotes de esta planta viene por debajo—. Así que el
- * total es una COTA MÁXIMA: «no más de esto», nunca «esto es lo que va a
- * haber». Se dice en la tarjeta, no en una nota al pie.
+ *  1. **Los filtros se encadenan.** Permiso → especie → guía, y cada opción
+ *     muestra cuánto hay detrás. Elegir un permiso no debería obligar a adivinar
+ *     qué especies tiene.
+ *  2. **Lo que no se puede atribuir queda en cero y lo DICE.** Un cero mudo se
+ *     lee como «no hay»; acá significa «no se puede saber sin recorrer la
+ *     cadena», que es una respuesta distinta.
+ *  3. **El total se declara COTA MÁXIMA.** La rolliza se convierte al 56 %
+ *     (ADR-358), que es el techo del rendimiento, no lo que la sierra saca.
  */
 
 import { CardTitle } from "@buleje/design-system";
+import { ChevronRight } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
+import type {
+  BalanceCapacidad,
+  FiltrosCapacidad,
+  FuenteDeCapacidad,
+  OpcionFiltro,
+} from "@/lib/forestal/capacidad-de-planta";
 
-export interface FuenteDeCapacidad {
-  clave: "porRecepcionar" | "patio" | "lotes" | "productos";
-  label: string;
-  /** m³ tal como están hoy (rolliza o producto, según la fuente). */
-  m3: number;
-  /** m³ de producto que representan. Rolliza convertida al 56 %; producto, igual. */
-  enProducto: number;
-  /** `true` si su valor pasó por la conversión — la tarjeta lo marca. */
-  convertido: boolean;
-  detalle?: string;
-}
+const SELECT =
+  "h-9 min-w-[10rem] max-w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-medium text-[var(--text-primary)]";
 
-export interface BalanceCapacidad {
-  fuentes: FuenteDeCapacidad[];
-  totalProducto: number;
-}
-
-/** Las cuatro fuentes y el techo que suman. Pura: la usan la pantalla y el reporte. */
-export function calcularBalance(input: {
-  porRecepcionarM3: number;
-  patioM3: number;
-  patioPiezas: number;
-  restaLotesM3: number;
-  productosM3: number;
-  productosDetalle?: string;
-  /**
-   * `true` cuando se está mirando UN permiso.
-   *
-   * Los productos terminados no se pueden atribuir a un título habilitante sin
-   * recorrer la cadena corrida→lote→troza→ingreso, así que con un permiso
-   * elegido esa fila queda en cero y lo DICE. Repartirlos por prorrateo sería
-   * inventar de qué permiso salió cada tablón, que es justo lo que el libro
-   * existe para no hacer.
-   */
-  filtrado?: boolean;
-}): BalanceCapacidad {
-  const r4 = (v: number) => Math.round(v * 10000) / 10000;
-  const aProducto = (m3: number) => r4(m3 * RENDIMIENTO_META);
-
-  const fuentes: FuenteDeCapacidad[] = [
-    {
-      clave: "porRecepcionar",
-      label: "Por recepcionar",
-      m3: r4(input.porRecepcionarM3),
-      enProducto: aProducto(input.porRecepcionarM3),
-      convertido: true,
-      detalle: "Anotada en el libro, todavía no llegó o no se validó",
-    },
-    {
-      clave: "patio",
-      label: "Trozas en el patio",
-      m3: r4(input.patioM3),
-      enProducto: aProducto(input.patioM3),
-      convertido: true,
-      detalle: `${input.patioPiezas} ${input.patioPiezas === 1 ? "pieza libre" : "piezas libres"}, sin lote ni bloqueo`,
-    },
-    {
-      clave: "lotes",
-      label: "Lo que los lotes admiten",
-      m3: r4(input.restaLotesM3),
-      /* YA es producto: es cuánto más se puede DECLARAR bajo el tope, no
-         rolliza esperando. Convertirlo otra vez sería aplicar el 56 % dos
-         veces sobre la misma madera. */
-      enProducto: r4(input.restaLotesM3),
-      convertido: false,
-      detalle: "Al 56 % menos lo ya declarado",
-    },
-    {
-      clave: "productos",
-      label: "Productos terminados",
-      m3: input.filtrado ? 0 : r4(input.productosM3),
-      enProducto: input.filtrado ? 0 : r4(input.productosM3),
-      convertido: false,
-      detalle: input.filtrado
-        ? "No se puede atribuir a un permiso sin recorrer la cadena — se cuenta sólo en «todos los permisos»"
-        : (input.productosDetalle ?? "Stock listo para despachar"),
-    },
-  ];
-
-  return { fuentes, totalProducto: r4(fuentes.reduce((a, f) => a + f.enProducto, 0)) };
+/** Un filtro con sus opciones; cada una dice cuánta madera tiene detrás. */
+function Filtro({
+  etiqueta,
+  valor,
+  opciones,
+  todos,
+  onChange,
+}: {
+  etiqueta: string;
+  valor: string;
+  opciones: OpcionFiltro[];
+  todos: string;
+  onChange: (v: string) => void;
+}) {
+  if (opciones.length === 0) return null;
+  return (
+    <label className="flex items-center gap-2 text-xs">
+      <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        {etiqueta}
+      </span>
+      <select value={valor} onChange={(e) => onChange(e.target.value)} className={SELECT}>
+        <option value="">{todos}</option>
+        {opciones.map((o) => (
+          <option key={o.valor} value={o.valor}>
+            {o.valor} · {fmtM3(o.m3)} m³ ({o.piezas})
+          </option>
+        ))}
+      </select>
+    </label>
+  );
 }
 
 export default function BalanceDeCapacidad({
   balance,
-  permisos = [],
-  permiso = "",
-  onPermiso,
+  filtros,
+  opciones,
+  onFiltros,
+  onDetalle,
 }: {
   balance: BalanceCapacidad;
-  /** Los títulos habilitantes que hay en la planta, para acotar la capacidad. */
-  permisos?: string[];
-  permiso?: string;
-  onPermiso?: (p: string) => void;
+  filtros: FiltrosCapacidad;
+  opciones?: { permisos: OpcionFiltro[]; especies: OpcionFiltro[]; guias: OpcionFiltro[] };
+  onFiltros?: (f: FiltrosCapacidad) => void;
+  onDetalle?: (f: FuenteDeCapacidad) => void;
 }) {
   const { fuentes, totalProducto } = balance;
-  if (totalProducto <= 0 && fuentes.every((f) => f.m3 <= 0)) return null;
+  const hayAlgo = totalProducto > 0 || fuentes.some((f) => f.m3 > 0 || f.filas > 0);
+  const conFiltro = Boolean(filtros.permiso || filtros.especie || filtros.guia);
+  if (!hayAlgo && !conFiltro) return null;
 
   return (
     <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         Capacidad de la planta
       </p>
-      <CardTitle as="h3" className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+      <CardTitle
+        as="h3"
+        className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"
+      >
         Cuánto producto puede salir de todo lo que hay hoy
       </CardTitle>
       <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
         Suma las cuatro fuentes de la planta. La rolliza se convierte al{" "}
-        {Math.round(RENDIMIENTO_META * 100)} %, que es el <strong>techo</strong> del rendimiento — el total es un
-        máximo, no una promesa.
+        {Math.round(RENDIMIENTO_META * 100)} %, que es el <strong>techo</strong> del rendimiento —
+        el total es un máximo, no una promesa.
       </p>
 
-      {onPermiso && permisos.length > 0 && (
-        <label className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-          <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-            Título habilitante
-          </span>
-          <select
-            value={permiso}
-            onChange={(e) => onPermiso(e.target.value)}
-            className="h-9 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-medium text-[var(--text-primary)]"
-          >
-            <option value="">Todos los permisos</option>
-            {permisos.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-          {permiso && (
-            <span className="text-[var(--text-tertiary)]">
-              Sólo la madera de este permiso. El producto terminado no entra: no se puede atribuir sin recorrer la
-              cadena.
-            </span>
+      {onFiltros && opciones && (
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          {/* Encadenados: al cambiar el permiso se sueltan especie y guía,
+              porque la especie elegida puede no existir en el permiso nuevo y
+              un filtro que no matchea nada se ve igual que «no hay madera». */}
+          <Filtro
+            etiqueta="Permiso"
+            valor={filtros.permiso ?? ""}
+            opciones={opciones.permisos}
+            todos="Todos los permisos"
+            onChange={(permiso) => onFiltros({ permiso: permiso || undefined })}
+          />
+          <Filtro
+            etiqueta="Especie"
+            valor={filtros.especie ?? ""}
+            opciones={opciones.especies}
+            todos="Todas las especies"
+            onChange={(especie) =>
+              onFiltros({ ...filtros, especie: especie || undefined, guia: undefined })
+            }
+          />
+          <Filtro
+            etiqueta="Guía"
+            valor={filtros.guia ?? ""}
+            opciones={opciones.guias}
+            todos="Todas las guías"
+            onChange={(guia) => onFiltros({ ...filtros, guia: guia || undefined })}
+          />
+          {conFiltro && (
+            <button
+              type="button"
+              onClick={() => onFiltros({})}
+              className="text-xs font-bold text-[var(--accent-dark)] underline underline-offset-2 dark:text-[var(--accent)]"
+            >
+              Quitar filtros
+            </button>
           )}
-        </label>
+        </div>
       )}
 
       <ul className="mt-4 space-y-2">
@@ -171,7 +152,9 @@ export default function BalanceDeCapacidad({
             className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-[var(--rule-soft)] pb-2 last:border-0"
           >
             <span className="min-w-[11rem] font-bold text-[var(--text-primary)]">{f.label}</span>
-            <span className="font-mono tabular-nums text-[var(--text-secondary)]">{fmtM3(f.m3)} m³</span>
+            <span className="font-mono tabular-nums text-[var(--text-secondary)]">
+              {fmtM3(f.m3)} m³
+            </span>
             {f.convertido && (
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 → al {Math.round(RENDIMIENTO_META * 100)} %
@@ -185,7 +168,27 @@ export default function BalanceDeCapacidad({
             <span className="w-28 shrink-0 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
               {pieTablarDe(f.enProducto).toLocaleString("es-PE")} pt
             </span>
-            {f.detalle && <span className="w-full text-xs text-[var(--text-tertiary)]">{f.detalle}</span>}
+            {/* El botón sólo aparece si hay filas que abrir: un «Ver detalle»
+                que abre una tabla vacía enseña a no tocarlo. */}
+            <span className="w-24 shrink-0 text-right">
+              {onDetalle && f.filas > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => onDetalle(f)}
+                  className="inline-flex items-center gap-0.5 rounded-lg px-2 py-1 text-xs font-bold text-[var(--accent-dark)] hover:bg-[var(--accent-soft)] dark:text-[var(--accent)]"
+                >
+                  Detalles ({f.filas})
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              ) : (
+                <span className="text-xs text-[var(--text-tertiary)]">—</span>
+              )}
+            </span>
+            {(f.noAtribuible ?? f.detalle) && (
+              <span className="w-full text-xs text-[var(--text-tertiary)]">
+                {f.noAtribuible ?? f.detalle}
+              </span>
+            )}
           </li>
         ))}
       </ul>

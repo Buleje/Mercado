@@ -13,7 +13,13 @@
  * Primitivos comunes (esc, ventana, identidad, CSS base) en `ctp-print-shared`.
  */
 
-import { esc, ctpIdentityBlock, ctpReportFooter, openCtpReport, type CtpReportFicha } from "./ctp-print-shared";
+import {
+  esc,
+  ctpIdentityBlock,
+  ctpReportFooter,
+  openCtpReport,
+  type CtpReportFicha,
+} from "./ctp-print-shared";
 
 /** Un lote con lo que le resta y su plazo (ADR-342 · `finProceso`). */
 export interface LoteDelReporte {
@@ -41,6 +47,9 @@ export interface FuenteDelReporte {
   enProducto: number;
   convertido: boolean;
   detalle?: string;
+  /** Por qué esta fuente quedó en cero bajo el filtro. Un cero mudo se lee como
+   *  «no hay»; acá significa «no se puede saber». Gana sobre `detalle`. */
+  noAtribuible?: string;
 }
 
 export interface ExistenciasReportData {
@@ -71,13 +80,30 @@ export interface ExistenciasReportData {
   concil?: {
     fuenteApertura: "cierre" | "calculada" | "sin_apertura";
     aperturaLabel: string | null;
-    materiaPrima: { especie: string; cites: boolean; apertura: number; ingreso: number; consumido: number; despachadoDirecto?: number; final: number; negativa: boolean }[];
-    productos: { producto: string; apertura: number; producido: number; despachado: number; final: number; negativo: boolean }[];
+    materiaPrima: {
+      especie: string;
+      cites: boolean;
+      apertura: number;
+      ingreso: number;
+      consumido: number;
+      despachadoDirecto?: number;
+      final: number;
+      negativa: boolean;
+    }[];
+    productos: {
+      producto: string;
+      apertura: number;
+      producido: number;
+      despachado: number;
+      final: number;
+      negativo: boolean;
+    }[];
   } | null;
   ficha?: CtpReportFicha | null;
 }
 
-const n2 = (n: number): string => n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const n2 = (n: number): string =>
+  n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const CSS = `
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0 4px}
@@ -89,7 +115,9 @@ const CSS = `
 
 /** Badge CITES junto al nombre de especie. */
 function especieCell(nombre: string, scientific: string | null, cites: boolean): string {
-  const sci = scientific ? `<div class="muted" style="font-style:italic;margin-top:1px">${esc(scientific)}</div>` : "";
+  const sci = scientific
+    ? `<div class="muted" style="font-style:italic;margin-top:1px">${esc(scientific)}</div>`
+    : "";
   return `<b>${esc(nombre)}</b>${cites ? '<span class="cites">CITES</span>' : ""}${sci}`;
 }
 
@@ -100,7 +128,13 @@ function num(v: number, unit = ""): string {
 }
 
 export function printExistencias(d: ExistenciasReportData): void {
-  const fecha = new Date().toLocaleString("es-PE", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const fecha = new Date().toLocaleString("es-PE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   const mp = d.materiaPrima;
 
   const especieRows = d.porEspecie
@@ -129,7 +163,9 @@ export function printExistencias(d: ExistenciasReportData): void {
      columna va: sin ella, apertura + ingreso − consumido no da el final que se
      imprime y el fiscalizador ve una tabla que no cierra. Si no hubo, no se
      imprime una columna de ceros. */
-  const hayDirecto = (d.concil?.materiaPrima ?? []).some((s) => (s.despachadoDirecto ?? 0) > 0.0001);
+  const hayDirecto = (d.concil?.materiaPrima ?? []).some(
+    (s) => (s.despachadoDirecto ?? 0) > 0.0001,
+  );
   const concilBlock =
     d.concil && d.concil.materiaPrima.length > 0
       ? `<h2>Conciliación del período · apertura → cierre</h2>
@@ -252,7 +288,7 @@ export function printExistencias(d: ExistenciasReportData): void {
       <td>${f.label}${f.convertido ? ' <span style="color:#777">· al 56 %</span>' : ""}</td>
       ${num(f.m3)}
       ${num(f.enProducto)}
-      <td style="color:#555">${f.detalle ?? ""}</td>
+      <td style="color:#555">${esc(f.noAtribuible ?? f.detalle ?? "")}</td>
     </tr>`,
       )
       .join("")}</tbody>

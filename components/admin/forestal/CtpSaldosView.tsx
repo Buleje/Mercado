@@ -29,7 +29,15 @@ import { useCtpSaldos } from "@/hooks/use-ctp-saldos";
 import CtpKardexModal from "./CtpKardexModal";
 import CtpPatioAging from "./CtpPatioAging";
 import LotesConSaldo, { diasParaVencer } from "./saldos/LotesConSaldo";
-import BalanceDeCapacidad, { calcularBalance } from "./saldos/BalanceDeCapacidad";
+import BalanceDeCapacidad from "./saldos/BalanceDeCapacidad";
+import DetalleDeFuente, { textoDeFiltros } from "./saldos/DetalleDeFuente";
+import {
+  armarBalance,
+  opcionesDeCapacidad,
+  type EntradaCapacidad,
+  type FiltrosCapacidad,
+  type FuenteDeCapacidad,
+} from "@/lib/forestal/capacidad-de-planta";
 import { logger } from "@/lib/logger";
 import {
   consumidoDelLote,
@@ -93,8 +101,10 @@ export function CtpSaldosView({
      todavía no se recibió. Va por su cuenta como los lotes — no depende del
      período: madera que llegó en julio y sigue en el patio es capacidad de hoy. */
   const [patio, setPatio] = useState<TrozaConsumible[]>([]);
-  /** Permiso elegido para acotar la capacidad. Vacío = toda la planta. */
-  const [permisoCapacidad, setPermisoCapacidad] = useState("");
+  /** Permiso → especie → guía. Objeto vacío = toda la planta. */
+  const [filtrosCapacidad, setFiltrosCapacidad] = useState<FiltrosCapacidad>({});
+  /** La fuente cuyo detalle está abierto en el modal. */
+  const [detalleFuente, setDetalleFuente] = useState<FuenteDeCapacidad | null>(null);
   const [seccion, setSeccion] = useState<Seccion>("estado");
   useEffect(() => {
     let vivo = true;
@@ -148,63 +158,37 @@ export function CtpSaldosView({
 
   const mp = data?.materiaPrima;
 
-  /* El balance de capacidad: las cuatro fuentes de la planta en un solo número.
-     Se arma acá —no en la tarjeta— porque el reporte lleva el MISMO cálculo. */
-  /** Los títulos habilitantes que hay en la planta hoy, para el selector. */
-  const permisosDeLaPlanta = useMemo(() => {
-    const set = new Set<string>();
-    for (const t of patio) {
-      const p = (t.permiso ?? "").trim();
-      if (p) set.add(p);
-    }
-    for (const l of lotes) for (const p of permisosDelLote(l)) set.add(p);
-    return [...set].sort();
-  }, [patio, lotes]);
+  /* La entrada del balance: lo que ya se pidió, en la forma que espera el
+     núcleo. Se arma acá —no en la tarjeta— porque el MISMO objeto lo leen la
+     tarjeta, el modal de detalle, el Excel y el PDF; cuatro cálculos paralelos
+     divergen a la primera columna nueva. */
+  const entradaCapacidad = useMemo<EntradaCapacidad>(
+    () => ({
+      patio,
+      lotes: lotesDelReporte,
+      productos: data?.productos ?? [],
+      pendienteM3: Number(mp?.pendienteM3 ?? 0),
+      /* El stock que muestra ESTA pantalla es el del período elegido —el mismo
+         del bloque «Stock de productos transformados» de arriba—. Con el período
+         completo el número es otro (medido: 62.39 en Jul–Set contra 71.21 en el
+         año), así que se dice de dónde sale: dos cifras de stock distintas en la
+         misma pantalla, sin explicar cuál es cuál, es peor que una sola
+         acotada. */
+      periodoLabel: period.label,
+    }),
+    [patio, lotesDelReporte, data?.productos, mp?.pendienteM3, period.label],
+  );
 
-  const balance = useMemo(() => {
-    /* Con un permiso elegido, cada fuente cuenta sólo la madera de ESE título.
-       Los lotes se filtran por los permisos de SUS TROZAS y no por el permiso
-       declarado del lote: lo que hay adentro es lo que se puede aserrar, y un
-       lote viejo puede declarar uno y tener otro (ADR-393 no lo bloquea hacia
-       atrás). */
-    const delPermiso = (t: TrozaConsumible) =>
-      !permisoCapacidad || (t.permiso ?? "").trim() === permisoCapacidad;
-    const libres = patio.filter(
-      (t) => !t.loteAserrioId && !t.consumidaEnId && t.guiaRecepcionada !== false && delPermiso(t),
-    );
-    /* Por recepcionar = lo anotado que todavía no llegó. Dos formas del mismo
-       hecho: la troza de una guía sin recibir (ADR-339) y el ingreso sin
-       validar que el libro ya cuenta como pendiente. */
-    const sinRecibirM3 = patio
-      .filter((t) => t.guiaRecepcionada === false && delPermiso(t))
-      .reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0);
-    const productos = data?.productos ?? [];
-    const stock = productos.reduce((a, p) => a + Number(p.stock ?? 0), 0);
-    return calcularBalance({
-      /* `pendienteM3` es un total del libro sin permiso adentro: con un título
-         elegido no se puede repartir, así que sólo entra en «todos». */
-      porRecepcionarM3: sinRecibirM3 + (permisoCapacidad ? 0 : Number(mp?.pendienteM3 ?? 0)),
-      patioM3: libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0),
-      patioPiezas: libres.length,
-      restaLotesM3: lotesDelReporte
-        .filter((l) => !permisoCapacidad || l.permisos.includes(permisoCapacidad))
-        .reduce((a, l) => a + (l.restaM3 ?? 0), 0),
-      productosM3: stock,
-      filtrado: Boolean(permisoCapacidad),
-      /* El stock que muestra ESTA pantalla, que es el del período elegido —el
-         mismo del bloque «Stock de productos transformados» de arriba—. Con el
-         período completo el número es otro (medido: 62.39 en Jul–Set contra
-         71.21 en el año), así que se dice de dónde sale: dos cifras de stock
-         distintas en la misma pantalla, sin explicar cuál es cuál, es peor que
-         una sola acotada. */
-      productosDetalle:
-        productos.length === 0
-          ? `Sin productos en stock en ${period.label}`
-          : productos.length === 1
-            ? `${productos[0].producto} · stock de ${period.label}`
-            : `${productos.length} productos · stock de ${period.label}`,
-    });
-  }, [patio, data?.productos, mp?.pendienteM3, lotesDelReporte, period.label, permisoCapacidad]);
+  /** Las opciones de los tres filtros, cada una acotada por la anterior. */
+  const opcionesCapacidad = useMemo(
+    () => opcionesDeCapacidad(patio, filtrosCapacidad),
+    [patio, filtrosCapacidad],
+  );
+
+  const balance = useMemo(
+    () => armarBalance(entradaCapacidad, filtrosCapacidad),
+    [entradaCapacidad, filtrosCapacidad],
+  );
 
   // Reporte de existencias imprimible (PDF) para fiscalización: misma data del
   // panel + identidad del CTP (best-effort desde la Ficha).
@@ -325,9 +309,7 @@ export function CtpSaldosView({
                 "Al 56 %": "",
                 "En producto (m³)": balance.totalProducto,
                 "En producto (pt)": pieTablarDe(balance.totalProducto),
-                Detalle: permisoCapacidad
-                  ? `Sólo el permiso ${permisoCapacidad}. Cota máxima, no una promesa.`
-                  : "Toda la planta. Cota máxima, no una promesa.",
+                Detalle: `${textoDeFiltros(filtrosCapacidad)}. Cota máxima, no una promesa.`,
               },
             ],
           },
@@ -337,7 +319,7 @@ export function CtpSaldosView({
     } catch (err) {
       setReportError(err instanceof Error ? err.message : String(err));
     }
-  }, [data, period.label, lotesDelReporte, balance, permisoCapacidad]);
+  }, [data, period.label, lotesDelReporte, balance, filtrosCapacidad]);
 
   const descargarCsv = useCallback(() => {
     if (!data) return;
@@ -486,9 +468,10 @@ export function CtpSaldosView({
               {/* El techo: cuánto producto puede salir de las cuatro fuentes. */}
               <BalanceDeCapacidad
                 balance={balance}
-                permisos={permisosDeLaPlanta}
-                permiso={permisoCapacidad}
-                onPermiso={setPermisoCapacidad}
+                filtros={filtrosCapacidad}
+                opciones={opcionesCapacidad}
+                onFiltros={setFiltrosCapacidad}
+                onDetalle={setDetalleFuente}
               />
 
               {/* De dónde sale una parte de ese techo, lote por lote. */}
@@ -529,6 +512,16 @@ export function CtpSaldosView({
         </>
       )}
       {loading && !data && <PanelSkeleton kpis={4} />}
+
+      {detalleFuente && (
+        <DetalleDeFuente
+          fuente={detalleFuente}
+          entrada={entradaCapacidad}
+          filtros={filtrosCapacidad}
+          periodoLabel={period.label}
+          onClose={() => setDetalleFuente(null)}
+        />
+      )}
 
       {kardexEspecie && (
         <CtpKardexModal

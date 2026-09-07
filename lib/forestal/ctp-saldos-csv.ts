@@ -70,6 +70,9 @@ export interface FuenteCsv {
   enProducto: number;
   convertido: boolean;
   detalle?: string;
+  /** Por qué esta fuente quedó en cero bajo el filtro. Un cero mudo se lee como
+   *  «no hay»; acá significa «no se puede saber». Gana sobre `detalle`. */
+  noAtribuible?: string;
 }
 
 export function saldosACsv(
@@ -89,8 +92,15 @@ export function saldosACsv(
     "",
     fila(["MATERIA PRIMA (m3)"]),
     fila([
-      "Especie", "Nombre cientifico", "CITES", "Guias",
-      "Ingresado (m3)", "Sin validar (m3)", "Consumido (m3)", "Saldo (m3)", "Usado (%)",
+      "Especie",
+      "Nombre cientifico",
+      "CITES",
+      "Guias",
+      "Ingresado (m3)",
+      "Sin validar (m3)",
+      "Consumido (m3)",
+      "Saldo (m3)",
+      "Usado (%)",
     ]),
     ...especies.map((e) =>
       fila([
@@ -106,7 +116,9 @@ export function saldosACsv(
       ]),
     ),
     fila([
-      "TOTAL", "", "",
+      "TOTAL",
+      "",
+      "",
       especies.reduce((a, e) => a + (e.ingresosCount ?? 0), 0),
       num(especies.reduce((a, e) => a + e.ingresoM3, 0)),
       num(especies.reduce((a, e) => a + (e.pendienteM3 ?? 0), 0)),
@@ -135,9 +147,20 @@ export function saldosACsv(
       "",
       fila(["LOTES DE ASERRIO"]),
       fila([
-        "Lote", "N de permiso", "Especie", "Estado",
-        "Consumido (m3)", "Al 56% (m3)", "Producido (m3)", "Resta al 56% (m3)", "Apartado sin aserrar (m3)", "Piezas libres",
-        "Dias parado", "Fin de proceso", "Dias para vencer", "Plazo",
+        "Lote",
+        "N de permiso",
+        "Especie",
+        "Estado",
+        "Consumido (m3)",
+        "Al 56% (m3)",
+        "Producido (m3)",
+        "Resta al 56% (m3)",
+        "Apartado sin aserrar (m3)",
+        "Piezas libres",
+        "Dias parado",
+        "Fin de proceso",
+        "Dias para vencer",
+        "Plazo",
       ]),
       ...lotes.map((l) =>
         fila([
@@ -184,10 +207,18 @@ export function saldosACsv(
     lineas.push(
       "",
       fila(["CAPACIDAD DE LA PLANTA"]),
-      fila([`La rolliza se convierte al 56%, que es el TECHO del rendimiento: el total es un maximo, no una promesa.`]),
+      fila([
+        `La rolliza se convierte al 56%, que es el TECHO del rendimiento: el total es un maximo, no una promesa.`,
+      ]),
       fila(["Fuente", "Como esta hoy (m3)", "Convertido al 56%", "En producto (m3)", "Detalle"]),
       ...balance.fuentes.map((f) =>
-        fila([f.label, num(f.m3), f.convertido ? "si" : "no", num(f.enProducto), f.detalle ?? ""]),
+        fila([
+          f.label,
+          num(f.m3),
+          f.convertido ? "si" : "no",
+          num(f.enProducto),
+          f.noAtribuible ?? f.detalle ?? "",
+        ]),
       ),
       fila(["CAPACIDAD MAXIMA EN PRODUCTO", "", "", num(balance.totalProducto)]),
     );
