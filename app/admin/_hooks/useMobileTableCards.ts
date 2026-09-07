@@ -35,7 +35,8 @@ export function useMobileTableCards(authReady: boolean, tab: string): void {
       const title = cell.getAttribute("title");
       if (title) return title.trim();
       const inner = cell.querySelector<HTMLElement>("[aria-label], [title]");
-      if (inner) return (inner.getAttribute("aria-label") || inner.getAttribute("title") || "").trim();
+      if (inner)
+        return (inner.getAttribute("aria-label") || inner.getAttribute("title") || "").trim();
       return "";
     };
 
@@ -45,7 +46,9 @@ export function useMobileTableCards(authReady: boolean, tab: string): void {
         const headerCells = Array.from(table.querySelectorAll("thead th"));
         const labels = headerCells.map(headerLabel);
 
-        table.querySelectorAll("tbody tr").forEach((row) => {
+        /* `tfoot` también: una fila de totales sin etiquetas es cinco cifras
+           sueltas en el celular (auditoría 2026-09-06, tabla de lotes de Saldos). */
+        table.querySelectorAll("tbody tr, tfoot tr").forEach((row) => {
           Array.from(row.children).forEach((cell, index) => {
             if (!(cell instanceof HTMLElement)) return;
             const label = labels[index] ?? "";

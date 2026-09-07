@@ -36,7 +36,7 @@ import type {
 } from "@/lib/forestal/capacidad-de-planta";
 
 const SELECT =
-  "h-9 min-w-[10rem] max-w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-medium text-[var(--text-primary)]";
+  "h-9 w-56 max-w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-medium text-[var(--text-primary)]";
 
 /** Un filtro con sus opciones; cada una dice cuánta madera tiene detrás. */
 function Filtro({
@@ -159,7 +159,7 @@ export default function BalanceDeCapacidad({
             key={f.clave}
             className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 border-b border-[var(--rule-soft)] pb-2 last:border-0"
           >
-            <span className="min-w-[11rem] font-bold text-[var(--text-primary)]">{f.label}</span>
+            <span className="w-52 shrink-0 font-bold text-[var(--text-primary)]">{f.label}</span>
             <span className="font-mono tabular-nums text-[var(--text-secondary)]">
               {fmtM3(f.m3)} m³
             </span>
@@ -183,7 +183,7 @@ export default function BalanceDeCapacidad({
                 <button
                   type="button"
                   onClick={() => onDetalle(f)}
-                  className="inline-flex items-center gap-0.5 rounded-lg px-2 py-1 text-xs font-bold text-[var(--accent-dark)] hover:bg-[var(--accent-soft)] dark:text-[var(--accent)]"
+                  className="inline-flex items-center gap-0.5 rounded-lg px-2 py-1 text-xs font-bold text-[var(--accent-dark)] hover:bg-primary/10 dark:hover:bg-primary/20 dark:text-[var(--accent)]"
                 >
                   Detalles ({f.filas})
                   <ChevronRight className="h-3.5 w-3.5" />

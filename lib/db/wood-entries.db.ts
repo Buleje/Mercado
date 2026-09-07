@@ -8,12 +8,9 @@
  * - Audit log fire-and-forget en mutaciones
  */
 import { prisma } from "@/lib/prisma";
+import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { Prisma } from "@/lib/generated/prisma/client";
-import {
-  claveDeGuia,
-  resumirGuia,
-  type GuiaIngreso,
-} from "@/lib/forestal/ingresos-por-guia";
+import { claveDeGuia, resumirGuia, type GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 import type {
   WoodEntryStatus,
   WoodOriginType,
@@ -468,6 +465,7 @@ export type WoodEntryUpdateInput = Partial<
     | "humidityPct"
     | "defectsNotes"
     | "notes"
+    | "gtfDatos"
   >
 >;
 
@@ -622,7 +620,10 @@ async function guardCodigoPlantaUnico(
   `;
   if (enUso.length > 0) {
     const detalle = enUso
-      .map((t) => `${t.codigoPlanta} (GTF ${t.gtfNumber}${t.codificacion ? `, troza ${t.codificacion}` : ""})`)
+      .map(
+        (t) =>
+          `${t.codigoPlanta} (GTF ${t.gtfNumber}${t.codificacion ? `, troza ${t.codificacion}` : ""})`,
+      )
       .join("; ");
     throw new CtpInvariantError(
       `Ese código de planta ya está usado en el libro: ${detalle}. ` +
@@ -651,10 +652,7 @@ export class WoodEntriesDB {
    * Crea un nuevo ingreso de madera al CTP.
    * Status default = `pendiente` (validación posterior).
    */
-  static async create(
-    tenantId: string,
-    input: WoodEntryCreateInput,
-  ) {
+  static async create(tenantId: string, input: WoodEntryCreateInput) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!input.gtfNumber?.trim()) throw new Error("gtfNumber is required");
     if (!input.providerName?.trim()) throw new Error("providerName is required");
@@ -676,7 +674,10 @@ export class WoodEntriesDB {
 
     // Cierre de período (ADR-139): no se ingresa madera con fecha de un mes ya
     // cerrado (ni a mano ni por importación — no se backdatea a un acta cerrada).
-    const cerradoWe = await ForestCtpCierreDB.closedPeriodOf(tenantId, input.entryDate ?? new Date());
+    const cerradoWe = await ForestCtpCierreDB.closedPeriodOf(
+      tenantId,
+      input.entryDate ?? new Date(),
+    );
     if (cerradoWe) {
       throw new CtpInvariantError(
         `El período ${cerradoWe.label} está cerrado: no se puede ingresar madera con fecha de un mes cerrado.`,
@@ -704,8 +705,8 @@ export class WoodEntriesDB {
           costoTotal: input.costoTotal != null ? new Prisma.Decimal(input.costoTotal) : null,
           moneda: input.moneda ?? "PEN",
           docType: input.docType?.trim() || "GTF",
-        serforNumeroRegistro: input.serforNumeroRegistro?.trim() || null,
-        serforGtf: input.serforGtf ? (input.serforGtf as Prisma.InputJsonValue) : Prisma.DbNull,
+          serforNumeroRegistro: input.serforNumeroRegistro?.trim() || null,
+          serforGtf: input.serforGtf ? (input.serforGtf as Prisma.InputJsonValue) : Prisma.DbNull,
           gtfNumber: input.gtfNumber.trim(),
           gtfDate: input.gtfDate ?? null,
           fechaRecepcion: input.fechaRecepcion ?? null,
@@ -728,7 +729,8 @@ export class WoodEntriesDB {
           volumeM3: volumeDecimal,
           pieces: input.pieces ?? 0,
           avgLengthM: input.avgLengthM != null ? new Prisma.Decimal(input.avgLengthM) : null,
-          avgDiameterCm: input.avgDiameterCm != null ? new Prisma.Decimal(input.avgDiameterCm) : null,
+          avgDiameterCm:
+            input.avgDiameterCm != null ? new Prisma.Decimal(input.avgDiameterCm) : null,
           humidityPct: input.humidityPct != null ? new Prisma.Decimal(input.humidityPct) : null,
           defectsNotes: input.defectsNotes ?? null,
           notes: input.notes ?? null,
@@ -737,14 +739,18 @@ export class WoodEntriesDB {
           status: "pendiente",
           createdBy: input.createdBy,
         },
-        });
+      });
 
       // La lista de trozas viaja con su guía y en la misma tx (ADR-312/320): si
       // falla, no queda un ingreso al que después haya que pegarle las piezas.
       if (input.trozas?.length) {
         // El código de planta es único en el centro (ADR-336). Se valida DENTRO
         // de la tx: fuera, dos tablets numerando a la vez pasan las dos.
-        await guardCodigoPlantaUnico(tx, tenantId, input.trozas.map((t) => t.codigoPlanta));
+        await guardCodigoPlantaUnico(
+          tx,
+          tenantId,
+          input.trozas.map((t) => t.codigoPlanta),
+        );
         await tx.woodEntryTroza.createMany({
           data: input.trozas.map((t) => ({
             tenantId,
@@ -763,7 +769,9 @@ export class WoodEntriesDB {
             codigoPlanta: t.codigoPlanta ?? null,
             parcela: t.parcela ?? null,
             // Una pieza que no llegó no puede tener el día en que llegó.
-            fechaRecepcion: t.noRecepcionada ? null : (t.fechaRecepcion ?? input.fechaRecepcion ?? null),
+            fechaRecepcion: t.noRecepcionada
+              ? null
+              : (t.fechaRecepcion ?? input.fechaRecepcion ?? null),
             noRecepcionada: t.noRecepcionada ?? false,
           })),
         });
@@ -781,7 +789,9 @@ export class WoodEntriesDB {
         (estaFueraDePlazo(entry) ? ` · FUERA DE PLAZO (${PLAZO_REGISTRO_DIAS} días)` : ""),
       user: input.createdBy,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return entry;
   }
 
@@ -796,10 +806,7 @@ export class WoodEntriesDB {
    * `lineas` ya viene repartido por `repartirGtfEnIngresos` a partir de la ficha
    * que el SERVIDOR le pidió a SERFOR — nunca de la que mandó el navegador.
    */
-  static async createDesdeGtfSerfor(
-    tenantId: string,
-    input: WoodEntryDesdeGtfInput,
-  ) {
+  static async createDesdeGtfSerfor(tenantId: string, input: WoodEntryDesdeGtfInput) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!input.gtfNumber?.trim()) throw new Error("gtfNumber is required");
     if (!input.providerName?.trim()) throw new Error("providerName is required");
@@ -922,10 +929,14 @@ export class WoodEntriesDB {
         `Registró la guía ${input.gtfNumber.trim()} desde SERFOR: ${creados.length} ingreso(s) ` +
         `(${creados.map((c) => c.entry.speciesCommonName).join(", ")}) · ${m3(volumenTotal)} · ` +
         `${creados.reduce((a, c) => a + c.trozas, 0)} troza(s)` +
-        (creados[0] && estaFueraDePlazo(creados[0].entry) ? ` · FUERA DE PLAZO (${PLAZO_REGISTRO_DIAS} días)` : ""),
+        (creados[0] && estaFueraDePlazo(creados[0].entry)
+          ? ` · FUERA DE PLAZO (${PLAZO_REGISTRO_DIAS} días)`
+          : ""),
       user: input.createdBy,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return creados.map((c) => c.entry);
   }
 
@@ -934,11 +945,7 @@ export class WoodEntriesDB {
    * de OSINFOR contra el POA del título habilitante: dado un código de troza,
    * de qué GTF entró y a qué ingreso pertenece.
    */
-  static async buscarTrozas(
-    tenantId: string,
-    codificacion: string,
-    limite = 50,
-  ) {
+  static async buscarTrozas(tenantId: string, codificacion: string, limite = 50) {
     if (!tenantId) throw new Error("tenantId is required");
     const q = codificacion.trim();
     if (!q) return [];
@@ -962,9 +969,17 @@ export class WoodEntriesDB {
       include: {
         entry: {
           select: {
-            id: true, libroNro: true, gtfNumber: true, serforNumeroRegistro: true,
-            entryDate: true, providerName: true, speciesCommonName: true,
-            status: true, originCode: true, originRegion: true, originDistrict: true,
+            id: true,
+            libroNro: true,
+            gtfNumber: true,
+            serforNumeroRegistro: true,
+            entryDate: true,
+            providerName: true,
+            speciesCommonName: true,
+            status: true,
+            originCode: true,
+            originRegion: true,
+            originDistrict: true,
           },
         },
         // Lo mismo que trae `trozasDelPatio`, y por la misma razón: quien busca
@@ -1009,7 +1024,9 @@ export class WoodEntriesDB {
         select: { id: true, gtfNumber: true, status: true, entryDate: true },
       });
       if (!entry) {
-        throw new CtpInvariantError("Ese ingreso no existe en este tenant.", "TENANT_MISMATCH", { woodEntryId });
+        throw new CtpInvariantError("Ese ingreso no existe en este tenant.", "TENANT_MISMATCH", {
+          woodEntryId,
+        });
       }
       if (entry.status === "anulado" || entry.status === "rechazado") {
         throw new CtpInvariantError(
@@ -1034,7 +1051,10 @@ export class WoodEntriesDB {
       const propias = await tx.woodEntryTroza.findMany({
         where: { id: { in: ids }, tenantId, woodEntryId },
         select: {
-          id: true, codificacion: true, noRecepcionada: true, consumidaEnId: true,
+          id: true,
+          codificacion: true,
+          noRecepcionada: true,
+          consumidaEnId: true,
           // El ESTADO de la corrida, no sólo el id: si se anuló, la troza está
           // libre y marcarla "no llegó" no contradice nada. Mismo criterio que
           // `marcarTrozasConsumidas` — bloquear por un id que apunta a una
@@ -1061,7 +1081,12 @@ export class WoodEntriesDB {
         .filter((c) => c.noRecepcionada)
         .map((c) => previaPorId.get(c.id))
         .filter((t): t is (typeof propias)[number] =>
-          Boolean(t?.consumidaEnId && t.consumidaEn && t.consumidaEn.status === "registrado" && !t.consumidaEn.deletedAt),
+          Boolean(
+            t?.consumidaEnId &&
+            t.consumidaEn &&
+            t.consumidaEn.status === "registrado" &&
+            !t.consumidaEn.deletedAt,
+          ),
         );
       if (contradicen.length > 0) {
         throw new CtpInvariantError(
@@ -1079,7 +1104,9 @@ export class WoodEntriesDB {
       await guardCodigoPlantaUnico(
         tx,
         tenantId,
-        cambios.filter((c) => c.codigoPlanta !== undefined && !c.noRecepcionada).map((c) => c.codigoPlanta),
+        cambios
+          .filter((c) => c.codigoPlanta !== undefined && !c.noRecepcionada)
+          .map((c) => c.codigoPlanta),
         ids,
       );
 
@@ -1139,7 +1166,9 @@ export class WoodEntriesDB {
           (faltantes.length > 0 ? ` · marcó como NO recibidas: ${faltantes.join(", ")}` : ""),
         user: usuario,
       });
-      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {}
 
       return { actualizadas: cambios.length };
     });
@@ -1208,11 +1237,16 @@ export class WoodEntriesDB {
            que adivinar cuáles bajaron del camión. */
         entry: {
           select: {
-            id: true, gtfNumber: true, providerName: true, entryDate: true,
-            status: true, fechaRecepcion: true,
+            id: true,
+            gtfNumber: true,
+            providerName: true,
+            entryDate: true,
+            status: true,
+            fechaRecepcion: true,
             // Título habilitante (6) y resolución (8): por ahí agrupa el patio
             // cuando entra la carga de un permiso entero (ADR-342).
-            originCode: true, originSourceNumber: true,
+            originCode: true,
+            originSourceNumber: true,
             /* De dónde salió el DATO de esta pieza (Brandon, 2026-09-02:
                «importados o puestos»). No hay un campo que lo declare, pero
                el hecho sí está guardado: una guía traída del SNIFFS deja su
@@ -1259,7 +1293,10 @@ export class WoodEntriesDB {
     opts: { limite?: number; loteId?: string } = {},
   ): Promise<TrozaConsumible[]> {
     const filas = await WoodEntriesDB.trozasDelPatio(tenantId, opts);
-    const consumido = await WoodEntriesDB.consumidoPorIngreso(tenantId, filas.map((t) => t.woodEntryId));
+    const consumido = await WoodEntriesDB.consumidoPorIngreso(
+      tenantId,
+      filas.map((t) => t.woodEntryId),
+    );
     const num = (v: unknown) => (v == null ? null : Number(v));
     return filas.map((t) => ({
       id: t.id,
@@ -1278,7 +1315,10 @@ export class WoodEntriesDB {
       proveedor: t.entry.providerName,
       fechaIngreso: t.entry.entryDate as unknown as string,
       fechaRecepcion: t.fechaRecepcion as unknown as string | null,
-      guiaRecepcionada: t.entry.status === "validado" || Boolean(t.entry.fechaRecepcion) || Boolean(t.fechaRecepcion),
+      guiaRecepcionada:
+        t.entry.status === "validado" ||
+        Boolean(t.entry.fechaRecepcion) ||
+        Boolean(t.fechaRecepcion),
       permiso: t.entry.originCode,
       resolucion: t.entry.originSourceNumber,
       /* DERIVADO, y se dice que lo es: «serfor» = la guía trae su constancia
@@ -1288,9 +1328,13 @@ export class WoodEntriesDB {
       guiaVolumenM3: num(t.entry.volumeM3),
       guiaConsumidoM3: consumido.get(t.woodEntryId) ?? 0,
       consumidaEnId:
-        t.consumidaEn && t.consumidaEn.status === "registrado" && !t.consumidaEn.deletedAt ? t.consumidaEnId : null,
+        t.consumidaEn && t.consumidaEn.status === "registrado" && !t.consumidaEn.deletedAt
+          ? t.consumidaEnId
+          : null,
       despachadaEnId:
-        t.despachadaEn && t.despachadaEn.status === "registrado" && !t.despachadaEn.deletedAt ? t.despachadaEnId : null,
+        t.despachadaEn && t.despachadaEn.status === "registrado" && !t.despachadaEn.deletedAt
+          ? t.despachadaEnId
+          : null,
       noRecepcionada: t.noRecepcionada,
       trozaOrigenId: t.trozaOrigenId,
       descarte: t.descarte,
@@ -1394,9 +1438,18 @@ export class WoodEntriesDB {
     if (!tenantId) throw new Error("tenantId is required");
     const filas = await prisma.$queryRaw<
       {
-        id: string; codigoPlanta: string; codificacion: string | null; especieComun: string | null;
-        volumenM3: unknown; createdAt: Date; woodEntryId: string; gtfNumber: string;
-        entryDate: Date; consumida: boolean; noRecepcionada: boolean; ingresoAnulado: boolean;
+        id: string;
+        codigoPlanta: string;
+        codificacion: string | null;
+        especieComun: string | null;
+        volumenM3: unknown;
+        createdAt: Date;
+        woodEntryId: string;
+        gtfNumber: string;
+        entryDate: Date;
+        consumida: boolean;
+        noRecepcionada: boolean;
+        ingresoAnulado: boolean;
       }[]
     >`
       SELECT t."id", t."codigoPlanta", t."codificacion", t."especieComun", t."volumenM3",
@@ -1472,7 +1525,10 @@ export class WoodEntriesDB {
     tenantId: string,
     trozaIds: string[],
     usuario = "unknown",
-  ): Promise<{ renumeradas: { id: string; antes: string | null; ahora: string }[]; omitidas: { id: string; motivo: string }[] }> {
+  ): Promise<{
+    renumeradas: { id: string; antes: string | null; ahora: string }[];
+    omitidas: { id: string; motivo: string }[];
+  }> {
     if (!tenantId) throw new Error("tenantId is required");
     const ids = [...new Set(trozaIds.filter(Boolean))];
     if (ids.length === 0) return { renumeradas: [], omitidas: [] };
@@ -1481,12 +1537,17 @@ export class WoodEntriesDB {
     const piezas = await prisma.woodEntryTroza.findMany({
       where: { id: { in: ids }, tenantId },
       select: {
-        id: true, codigoPlanta: true, codificacion: true,
-        entry: { select: { id: true, entryDate: true, status: true, deletedAt: true, gtfNumber: true } },
+        id: true,
+        codigoPlanta: true,
+        codificacion: true,
+        entry: {
+          select: { id: true, entryDate: true, status: true, deletedAt: true, gtfNumber: true },
+        },
       },
     });
     const encontradas = new Set(piezas.map((p) => p.id));
-    for (const id of ids) if (!encontradas.has(id)) omitidas.push({ id, motivo: "No es una troza de este tenant." });
+    for (const id of ids)
+      if (!encontradas.has(id)) omitidas.push({ id, motivo: "No es una troza de este tenant." });
 
     // El cierre se consulta UNA vez por período, no una por troza.
     const cerrados = new Map<string, string | null>();
@@ -1506,7 +1567,10 @@ export class WoodEntriesDB {
       }
       const label = cerrados.get(clave);
       if (label) {
-        omitidas.push({ id: p.id, motivo: `El período ${label} está cerrado: reabrilo para corregir esa pieza.` });
+        omitidas.push({
+          id: p.id,
+          motivo: `El período ${label} está cerrado: reabrilo para corregir esa pieza.`,
+        });
         continue;
       }
       elegibles.push(p);
@@ -1552,11 +1616,16 @@ export class WoodEntriesDB {
       entityId: renumeradas[0]?.id ?? "",
       detail:
         `Renumeró ${renumeradas.length} troza(s) con código de planta repetido: ` +
-        renumeradas.slice(0, 10).map((r) => `${r.antes ?? "—"}→${r.ahora}`).join(", ") +
+        renumeradas
+          .slice(0, 10)
+          .map((r) => `${r.antes ?? "—"}→${r.ahora}`)
+          .join(", ") +
         (renumeradas.length > 10 ? "…" : ""),
       user: usuario,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return { renumeradas, omitidas };
   }
 
@@ -1569,7 +1638,10 @@ export class WoodEntriesDB {
    * tabla entera. Con el índice puesto, ni un bug futuro ni una importación
    * pueden volver a duplicar una marca.
    */
-  static async intentarCandadoCodigoPlanta(): Promise<{ creado: boolean; duplicadosRestantes: number }> {
+  static async intentarCandadoCodigoPlanta(): Promise<{
+    creado: boolean;
+    duplicadosRestantes: number;
+  }> {
     const dup = await prisma.$queryRaw<{ n: bigint }[]>`
       SELECT COUNT(*)::bigint AS n FROM (
         SELECT "tenantId", UPPER("codigoPlanta")
@@ -1617,7 +1689,11 @@ export class WoodEntriesDB {
         AND e."status" NOT IN ('anulado', 'rechazado')
       LIMIT 200
     `;
-    return filas.map((f) => ({ codigo: f.codigoPlanta, gtfNumber: f.gtfNumber, codificacion: f.codificacion }));
+    return filas.map((f) => ({
+      codigo: f.codigoPlanta,
+      gtfNumber: f.gtfNumber,
+      codificacion: f.codificacion,
+    }));
   }
 
   /**
@@ -1634,7 +1710,11 @@ export class WoodEntriesDB {
   static async trozasDelPeriodo(
     tenantId: string,
     opts: { from?: Date; to?: Date; limite?: number; offset?: number } = {},
-  ): Promise<{ trozas: Awaited<ReturnType<typeof WoodEntriesDB.trozasDelPatio>>; total: number; volumenM3: number }> {
+  ): Promise<{
+    trozas: Awaited<ReturnType<typeof WoodEntriesDB.trozasDelPatio>>;
+    total: number;
+    volumenM3: number;
+  }> {
     if (!tenantId) throw new Error("tenantId is required");
     const where: Prisma.WoodEntryTrozaWhereInput = {
       tenantId,
@@ -1642,7 +1722,12 @@ export class WoodEntriesDB {
         deletedAt: null,
         status: { notIn: ["anulado", "rechazado"] },
         ...(opts.from || opts.to
-          ? { entryDate: { ...(opts.from ? { gte: opts.from } : {}), ...(opts.to ? { lte: opts.to } : {}) } }
+          ? {
+              entryDate: {
+                ...(opts.from ? { gte: opts.from } : {}),
+                ...(opts.to ? { lte: opts.to } : {}),
+              },
+            }
           : {}),
       },
     };
@@ -1656,10 +1741,10 @@ export class WoodEntriesDB {
         include: {
           entry: { select: { id: true, gtfNumber: true, providerName: true, entryDate: true } },
           consumidaEn: { select: { id: true, status: true, deletedAt: true } },
-        // El despacho que se la llevó SIN ASERRAR (ADR-363). Con su estado, por
-        // lo mismo que la corrida: un despacho anulado devuelve la troza al
-        // patio, y sin mirarlo la pieza quedaría bloqueada para siempre.
-        despachadaEn: { select: { id: true, status: true, deletedAt: true } },
+          // El despacho que se la llevó SIN ASERRAR (ADR-363). Con su estado, por
+          // lo mismo que la corrida: un despacho anulado devuelve la troza al
+          // patio, y sin mirarlo la pieza quedaría bloqueada para siempre.
+          despachadaEn: { select: { id: true, status: true, deletedAt: true } },
           _count: { select: { retrozos: true } },
         },
       }),
@@ -1701,10 +1786,16 @@ export class WoodEntriesDB {
         select: { id: true, lineNo: true, section: true, status: true, entryDate: true },
       });
       if (!corrida) {
-        throw new CtpInvariantError("Esa corrida no existe en este tenant.", "TENANT_MISMATCH", { ctpEntryId });
+        throw new CtpInvariantError("Esa corrida no existe en este tenant.", "TENANT_MISMATCH", {
+          ctpEntryId,
+        });
       }
       if (corrida.section !== "produccion") {
-        throw new CtpInvariantError("Sólo una corrida de producción consume trozas.", "ESTADO_NO_EDITABLE", { ctpEntryId });
+        throw new CtpInvariantError(
+          "Sólo una corrida de producción consume trozas.",
+          "ESTADO_NO_EDITABLE",
+          { ctpEntryId },
+        );
       }
       // Cierre de período (ADR-139): qué piezas se comió una corrida es parte
       // del acta de ese mes. El consumo ES la corrida, así que la fecha que
@@ -1754,8 +1845,12 @@ export class WoodEntriesDB {
         const candidatas = await tx.woodEntryTroza.findMany({
           where: { id: { in: ids }, tenantId },
           select: {
-            id: true, codificacion: true, volumenM3: true, consumidaEnId: true,
-            noRecepcionada: true, descarte: true,
+            id: true,
+            codificacion: true,
+            volumenM3: true,
+            consumidaEnId: true,
+            noRecepcionada: true,
+            descarte: true,
             // El ESTADO de la corrida que la tomó, no sólo su id: una corrida
             // anulada devolvió la madera al patio. Mirar el id pelado rechazaba
             // trozas que la pantalla ya mostraba libres — y esa asimetría es
@@ -1772,9 +1867,14 @@ export class WoodEntriesDB {
           },
         });
         if (candidatas.length !== ids.length) {
-          throw new CtpInvariantError("Alguna de esas trozas no existe en este tenant.", "TENANT_MISMATCH", {
-            pedidas: ids.length, encontradas: candidatas.length,
-          });
+          throw new CtpInvariantError(
+            "Alguna de esas trozas no existe en este tenant.",
+            "TENANT_MISMATCH",
+            {
+              pedidas: ids.length,
+              encontradas: candidatas.length,
+            },
+          );
         }
         /** Tomada por OTRA corrida que sigue viva. Si esa corrida se anuló o se
          *  borró, la pieza está libre aunque la columna todavía la apunte. */
@@ -1803,7 +1903,11 @@ export class WoodEntriesDB {
       // Primero se sueltan las que ya no están en la selección, después se toman
       // las nuevas: al revés, una pieza movida de corrida quedaría sin dueño.
       await tx.woodEntryTroza.updateMany({
-        where: { tenantId, consumidaEnId: ctpEntryId, ...(ids.length > 0 ? { id: { notIn: ids } } : {}) },
+        where: {
+          tenantId,
+          consumidaEnId: ctpEntryId,
+          ...(ids.length > 0 ? { id: { notIn: ids } } : {}),
+        },
         data: { consumidaEnId: null, fechaConsumo: null },
       });
       if (ids.length > 0) {
@@ -1821,7 +1925,9 @@ export class WoodEntriesDB {
         detail: `Corrida #${corrida.lineNo ?? "?"}: ${ids.length} troza(s) declaradas como consumidas`,
         user: opts.usuario,
       });
-      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {}
 
       return { consumidas: ids.length };
     });
@@ -1873,8 +1979,13 @@ export class WoodEntriesDB {
     const candidatas = await prisma.woodEntryTroza.findMany({
       where: { id: { in: ids }, tenantId },
       select: {
-        id: true, codificacion: true, volumenM3: true,
-        consumidaEnId: true, despachadaEnId: true, noRecepcionada: true, descarte: true,
+        id: true,
+        codificacion: true,
+        volumenM3: true,
+        consumidaEnId: true,
+        despachadaEnId: true,
+        noRecepcionada: true,
+        descarte: true,
         consumidaEn: { select: { status: true, deletedAt: true } },
         despachadaEn: { select: { status: true, deletedAt: true } },
         entry: { select: { status: true, deletedAt: true } },
@@ -1882,9 +1993,14 @@ export class WoodEntriesDB {
       },
     });
     if (candidatas.length !== ids.length) {
-      throw new CtpInvariantError("Alguna de esas trozas no existe en este tenant.", "TENANT_MISMATCH", {
-        pedidas: ids.length, encontradas: candidatas.length,
-      });
+      throw new CtpInvariantError(
+        "Alguna de esas trozas no existe en este tenant.",
+        "TENANT_MISMATCH",
+        {
+          pedidas: ids.length,
+          encontradas: candidatas.length,
+        },
+      );
     }
     const malas = WoodEntriesDB.trozasNoDespachables(candidatas, null);
     if (malas.length > 0) {
@@ -1923,13 +2039,23 @@ export class WoodEntriesDB {
         select: { id: true, lineNo: true, section: true, status: true, entryDate: true },
       });
       if (!despacho) {
-        throw new CtpInvariantError("Ese despacho no existe en este tenant.", "TENANT_MISMATCH", { despachoEntryId });
+        throw new CtpInvariantError("Ese despacho no existe en este tenant.", "TENANT_MISMATCH", {
+          despachoEntryId,
+        });
       }
       if (despacho.section !== "despacho") {
-        throw new CtpInvariantError("Sólo una línea de despacho puede llevarse trozas.", "ESTADO_NO_EDITABLE", { despachoEntryId });
+        throw new CtpInvariantError(
+          "Sólo una línea de despacho puede llevarse trozas.",
+          "ESTADO_NO_EDITABLE",
+          { despachoEntryId },
+        );
       }
       if (despacho.status !== "registrado") {
-        throw new CtpInvariantError("El despacho está anulado: sus trozas ya volvieron al patio.", "ESTADO_NO_EDITABLE", { despachoEntryId });
+        throw new CtpInvariantError(
+          "El despacho está anulado: sus trozas ya volvieron al patio.",
+          "ESTADO_NO_EDITABLE",
+          { despachoEntryId },
+        );
       }
       const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, despacho.entryDate);
       if (cerrado) {
@@ -1955,9 +2081,13 @@ export class WoodEntriesDB {
         const candidatas = await tx.woodEntryTroza.findMany({
           where: { id: { in: ids }, tenantId },
           select: {
-            id: true, codificacion: true, volumenM3: true,
-            consumidaEnId: true, despachadaEnId: true,
-            noRecepcionada: true, descarte: true,
+            id: true,
+            codificacion: true,
+            volumenM3: true,
+            consumidaEnId: true,
+            despachadaEnId: true,
+            noRecepcionada: true,
+            descarte: true,
             // El ESTADO de la línea que la tomó, no su id pelado: una corrida o
             // un despacho anulados devolvieron la madera al patio.
             consumidaEn: { select: { status: true, deletedAt: true } },
@@ -1967,9 +2097,14 @@ export class WoodEntriesDB {
           },
         });
         if (candidatas.length !== ids.length) {
-          throw new CtpInvariantError("Alguna de esas trozas no existe en este tenant.", "TENANT_MISMATCH", {
-            pedidas: ids.length, encontradas: candidatas.length,
-          });
+          throw new CtpInvariantError(
+            "Alguna de esas trozas no existe en este tenant.",
+            "TENANT_MISMATCH",
+            {
+              pedidas: ids.length,
+              encontradas: candidatas.length,
+            },
+          );
         }
 
         const malas = WoodEntriesDB.trozasNoDespachables(candidatas, despachoEntryId);
@@ -1985,7 +2120,11 @@ export class WoodEntriesDB {
       // Primero se sueltan las que ya no están en la selección, después se toman
       // las nuevas: al revés, una pieza movida de despacho quedaría sin dueño.
       await tx.woodEntryTroza.updateMany({
-        where: { tenantId, despachadaEnId: despachoEntryId, ...(ids.length > 0 ? { id: { notIn: ids } } : {}) },
+        where: {
+          tenantId,
+          despachadaEnId: despachoEntryId,
+          ...(ids.length > 0 ? { id: { notIn: ids } } : {}),
+        },
         data: { despachadaEnId: null, fechaDespacho: null },
       });
       if (ids.length > 0) {
@@ -2003,7 +2142,9 @@ export class WoodEntriesDB {
         detail: `Despacho #${despacho.lineNo ?? "?"}: ${ids.length} troza(s) salieron sin aserrar`,
         user: opts.usuario,
       });
-      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {}
 
       return { despachadas: ids.length };
     });
@@ -2034,7 +2175,9 @@ export class WoodEntriesDB {
         FOR UPDATE
       `;
       if (bloqueo.length === 0) {
-        throw new CtpInvariantError("Esa troza no existe en este tenant.", "TENANT_MISMATCH", { trozaId });
+        throw new CtpInvariantError("Esa troza no existe en este tenant.", "TENANT_MISMATCH", {
+          trozaId,
+        });
       }
 
       const madre = await tx.woodEntryTroza.findFirst({
@@ -2044,9 +2187,16 @@ export class WoodEntriesDB {
           entry: { select: { id: true, gtfNumber: true, status: true, deletedAt: true } },
         },
       });
-      if (!madre) throw new CtpInvariantError("Esa troza no existe en este tenant.", "TENANT_MISMATCH", { trozaId });
+      if (!madre)
+        throw new CtpInvariantError("Esa troza no existe en este tenant.", "TENANT_MISMATCH", {
+          trozaId,
+        });
       if (madre.entry.deletedAt) {
-        throw new CtpInvariantError("El ingreso de esa troza está anulado: no se puede retrozar.", "ESTADO_NO_EDITABLE", { trozaId });
+        throw new CtpInvariantError(
+          "El ingreso de esa troza está anulado: no se puede retrozar.",
+          "ESTADO_NO_EDITABLE",
+          { trozaId },
+        );
       }
       // Una troza que ya es pedazo de otra no se vuelve a cortar acá: el árbol
       // de dos niveles alcanza para el libro y uno más profundo haría que el
@@ -2077,8 +2227,18 @@ export class WoodEntriesDB {
           codificacion: madre.codificacion,
           // Los extremos REALES. Con el promedio (65.5) una troza de 73→58
           // rechazaba un corte de 73 cm, que es justamente su propia base.
-          d1Cm: madre.d1Cm != null ? Number(madre.d1Cm) : madre.diametroCm != null ? Number(madre.diametroCm) : null,
-          d2Cm: madre.d2Cm != null ? Number(madre.d2Cm) : madre.diametroCm != null ? Number(madre.diametroCm) : null,
+          d1Cm:
+            madre.d1Cm != null
+              ? Number(madre.d1Cm)
+              : madre.diametroCm != null
+                ? Number(madre.diametroCm)
+                : null,
+          d2Cm:
+            madre.d2Cm != null
+              ? Number(madre.d2Cm)
+              : madre.diametroCm != null
+                ? Number(madre.diametroCm)
+                : null,
           largoM: madre.largoM != null ? Number(madre.largoM) : null,
           volumenM3: madre.volumenM3 != null ? Number(madre.volumenM3) : null,
           retrozosPrevios: madre.retrozos.map((r) => ({
@@ -2089,7 +2249,10 @@ export class WoodEntriesDB {
         pedazos,
       );
       if (!calculo.ok) {
-        throw new CtpInvariantError(calculo.errores.join(" "), "R1_SOBRE_RETROZADO", { trozaId, errores: calculo.errores });
+        throw new CtpInvariantError(calculo.errores.join(" "), "R1_SOBRE_RETROZADO", {
+          trozaId,
+          errores: calculo.errores,
+        });
       }
 
       const fecha = fechaCorte;
@@ -2126,7 +2289,9 @@ export class WoodEntriesDB {
           ` · quedan ${m3(calculo.volumenLibre)} sin cortar`,
         user: opts.usuario,
       });
-      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {}
 
       return {
         madre: { id: madre.id, codificacion: madre.codificacion },
@@ -2153,12 +2318,13 @@ export class WoodEntriesDB {
     opts: { fromDate?: Date; toDate?: Date; limite?: number } = {},
   ) {
     if (!tenantId) throw new Error("tenantId is required");
-    const rango = opts.fromDate || opts.toDate
-      ? {
-          ...(opts.fromDate ? { gte: opts.fromDate } : {}),
-          ...(opts.toDate ? { lte: opts.toDate } : {}),
-        }
-      : undefined;
+    const rango =
+      opts.fromDate || opts.toDate
+        ? {
+            ...(opts.fromDate ? { gte: opts.fromDate } : {}),
+            ...(opts.toDate ? { lte: opts.toDate } : {}),
+          }
+        : undefined;
 
     return prisma.woodEntryTroza.findMany({
       where: {
@@ -2167,15 +2333,20 @@ export class WoodEntriesDB {
         // Un retrozo de un ingreso anulado no es parte del libro (mismo criterio
         // que `buscarTrozas`): hacen falta las DOS condiciones.
         entry: { deletedAt: null, status: { notIn: ["anulado", "rechazado"] } },
-        ...(rango ? { OR: [{ fechaRetrozo: rango }, { fechaRetrozo: null, createdAt: rango }] } : {}),
+        ...(rango
+          ? { OR: [{ fechaRetrozo: rango }, { fechaRetrozo: null, createdAt: rango }] }
+          : {}),
       },
       orderBy: [{ fechaRetrozo: "asc" }, { orden: "asc" }],
       take: Math.min(Math.max(opts.limite ?? 2000, 1), 5000),
       include: {
         trozaOrigen: {
           select: {
-            id: true, codificacion: true, volumenM3: true,
-            especieComun: true, especieCientifica: true,
+            id: true,
+            codificacion: true,
+            volumenM3: true,
+            especieComun: true,
+            especieCientifica: true,
           },
         },
         entry: { select: { gtfNumber: true, originCode: true, ctpProductCode: true } },
@@ -2243,32 +2414,64 @@ export class WoodEntriesDB {
       include: {
         entry: {
           select: {
-            id: true, libroNro: true, gtfNumber: true, providerName: true,
-            entryDate: true, fechaRecepcion: true, status: true,
-            originCode: true, originSourceNumber: true, volumeM3: true,
+            id: true,
+            libroNro: true,
+            gtfNumber: true,
+            providerName: true,
+            entryDate: true,
+            fechaRecepcion: true,
+            status: true,
+            originCode: true,
+            originSourceNumber: true,
+            volumeM3: true,
           },
         },
-        trozaOrigen: { select: { id: true, codificacion: true, codigoPlanta: true, volumenM3: true } },
+        trozaOrigen: {
+          select: { id: true, codificacion: true, codigoPlanta: true, volumenM3: true },
+        },
         retrozos: {
           orderBy: { orden: "asc" },
           select: {
-            id: true, codificacion: true, codigoPlanta: true, volumenM3: true,
-            largoM: true, d1Cm: true, d2Cm: true, descarte: true,
-            consumidaEnId: true, despachadaEnId: true,
+            id: true,
+            codificacion: true,
+            codigoPlanta: true,
+            volumenM3: true,
+            largoM: true,
+            d1Cm: true,
+            d2Cm: true,
+            descarte: true,
+            consumidaEnId: true,
+            despachadaEnId: true,
           },
         },
         loteAserrio: { select: { id: true, code: true, status: true, speciesCommon: true } },
         consumidaEn: {
           select: {
-            id: true, lineNo: true, entryDate: true, status: true, deletedAt: true,
-            productType: true, presentacion: true, quantity: true, unit: true,
-            rendimientoPct: true, lineaProduccion: true, volumeInputM3: true,
+            id: true,
+            lineNo: true,
+            entryDate: true,
+            status: true,
+            deletedAt: true,
+            productType: true,
+            presentacion: true,
+            quantity: true,
+            unit: true,
+            rendimientoPct: true,
+            lineaProduccion: true,
+            volumeInputM3: true,
           },
         },
         despachadaEn: {
           select: {
-            id: true, lineNo: true, entryDate: true, status: true, deletedAt: true,
-            docType: true, gtfNumber: true, quantity: true, unit: true,
+            id: true,
+            lineNo: true,
+            entryDate: true,
+            status: true,
+            deletedAt: true,
+            docType: true,
+            gtfNumber: true,
+            quantity: true,
+            unit: true,
           },
         },
       },
@@ -2340,10 +2543,7 @@ export class WoodEntriesDB {
     });
   }
 
-  static async list(
-    tenantId: string,
-    filters: WoodEntryListFilters = {},
-  ) {
+  static async list(tenantId: string, filters: WoodEntryListFilters = {}) {
     if (!tenantId) throw new Error("tenantId is required");
 
     const where = await withRecepcionFilter(
@@ -2435,13 +2635,20 @@ export class WoodEntriesDB {
        el camión. En texto, el primero alfabético del grupo. */
     const clave = (g: (typeof grupos)[number]): number | string => {
       switch (sortBy) {
-        case "volumeM3": return Number(g._sum.volumeM3 ?? 0);
-        case "pieces": return g._sum.pieces ?? 0;
-        case "providerName": return (g._min.providerName ?? "").toLowerCase();
-        case "speciesCommonName": return (g._min.speciesCommonName ?? "").toLowerCase();
-        case "createdAt": return g._min.createdAt?.getTime() ?? 0;
-        case "fechaRecepcion": return g._max.fechaRecepcion?.getTime() ?? 0;
-        default: return g._min.entryDate?.getTime() ?? 0;
+        case "volumeM3":
+          return Number(g._sum.volumeM3 ?? 0);
+        case "pieces":
+          return g._sum.pieces ?? 0;
+        case "providerName":
+          return (g._min.providerName ?? "").toLowerCase();
+        case "speciesCommonName":
+          return (g._min.speciesCommonName ?? "").toLowerCase();
+        case "createdAt":
+          return g._min.createdAt?.getTime() ?? 0;
+        case "fechaRecepcion":
+          return g._max.fechaRecepcion?.getTime() ?? 0;
+        default:
+          return g._min.entryDate?.getTime() ?? 0;
       }
     };
     const signo = sortDir === "asc" ? 1 : -1;
@@ -2454,7 +2661,9 @@ export class WoodEntriesDB {
          páginas y una fila aparece dos veces o ninguna. */
       const ca = (a._min.createdAt?.getTime() ?? 0) - (b._min.createdAt?.getTime() ?? 0);
       if (ca !== 0) return -ca;
-      return `${a.gtfSeries ?? ""}|${a.gtfNumber}`.localeCompare(`${b.gtfSeries ?? ""}|${b.gtfNumber}`);
+      return `${a.gtfSeries ?? ""}|${a.gtfNumber}`.localeCompare(
+        `${b.gtfSeries ?? ""}|${b.gtfNumber}`,
+      );
     });
 
     const pagina = ordenados.slice(offset, offset + limit);
@@ -2511,8 +2720,13 @@ export class WoodEntriesDB {
    */
   private static async resumenTrozasDe(
     ids: string[],
-  ): Promise<Map<string, { trozasCount: number; trozasM3: number | null; trozasDecididas: number }>> {
-    const mapa = new Map<string, { trozasCount: number; trozasM3: number | null; trozasDecididas: number }>();
+  ): Promise<
+    Map<string, { trozasCount: number; trozasM3: number | null; trozasDecididas: number }>
+  > {
+    const mapa = new Map<
+      string,
+      { trozasCount: number; trozasM3: number | null; trozasDecididas: number }
+    >();
     if (ids.length === 0) return mapa;
 
     /* Dos cuentas: cuántas piezas declara la guía y cuántas ya tienen DECISIÓN
@@ -2596,16 +2810,30 @@ export class WoodEntriesDB {
   static async comparableByGtf(
     tenantId: string,
     gtfs: string[],
-  ): Promise<Map<string, { volumeM3: number; speciesCommonName: string; productType: string; providerName: string }>> {
+  ): Promise<
+    Map<
+      string,
+      { volumeM3: number; speciesCommonName: string; productType: string; providerName: string }
+    >
+  > {
     if (!tenantId) throw new Error("tenantId is required");
     const clean = [...new Set(gtfs.map((g) => g.trim()).filter(Boolean))];
     if (clean.length === 0) return new Map();
     const rows = await prisma.woodEntry.findMany({
       where: { tenantId, deletedAt: null, gtfNumber: { in: clean } },
       orderBy: { entryDate: "asc" },
-      select: { gtfNumber: true, volumeM3: true, speciesCommonName: true, productType: true, providerName: true },
+      select: {
+        gtfNumber: true,
+        volumeM3: true,
+        speciesCommonName: true,
+        productType: true,
+        providerName: true,
+      },
     });
-    const map = new Map<string, { volumeM3: number; speciesCommonName: string; productType: string; providerName: string }>();
+    const map = new Map<
+      string,
+      { volumeM3: number; speciesCommonName: string; productType: string; providerName: string }
+    >();
     for (const r of rows) {
       map.set(r.gtfNumber, {
         volumeM3: Number(r.volumeM3),
@@ -2635,13 +2863,20 @@ export class WoodEntriesDB {
     const { status: _ignored, limit: _l, offset: _o, ...periodFilters } = filters;
     // El filtro "fuera de plazo" también aplica acá: si la tabla muestra sólo
     // los tarde, los KPIs que la encabezan tienen que hablar de ESE conjunto.
-    const where = await withLateFilter(tenantId, periodFilters, buildListWhere(tenantId, periodFilters));
+    const where = await withLateFilter(
+      tenantId,
+      periodFilters,
+      buildListWhere(tenantId, periodFilters),
+    );
     // Las cifras OFICIALES (total, volumen, CITES, especies, fuera de plazo) NO
     // deben contar ingresos RECHAZADOS ni ANULADOS: no forman parte del libro y
     // no pueden aparecer en lo que se declara a SERFOR (QA 2026-07-17). El
     // desglose `byStatus` sí usa `where` completo para poder mostrar cuántos
     // fueron rechazados. `pendiente` sí cuenta: es material registrado real.
-    const whereVigente: Prisma.WoodEntryWhereInput = { ...where, status: { notIn: ["rechazado", "anulado"] } };
+    const whereVigente: Prisma.WoodEntryWhereInput = {
+      ...where,
+      status: { notIn: ["rechazado", "anulado"] },
+    };
 
     // Fuera de plazo = días HÁBILES(operación → registro) > PLAZO (2, RDE
     // D000025-2023), con los mismos filtros del período. Mismo predicado que
@@ -2649,7 +2884,19 @@ export class WoodEntriesDB {
     // la tabla listar 2.
     const condFueraDePlazo = lateConditions(tenantId, periodFilters);
 
-    const [agg, byStatusRows, speciesRows, citesAgg, lateRows, providerRows, productRows, sinOrigenCount, sinCostoAgg, conPiezasCount, sinConstanciaCount] = await Promise.all([
+    const [
+      agg,
+      byStatusRows,
+      speciesRows,
+      citesAgg,
+      lateRows,
+      providerRows,
+      productRows,
+      sinOrigenCount,
+      sinCostoAgg,
+      conPiezasCount,
+      sinConstanciaCount,
+    ] = await Promise.all([
       prisma.woodEntry.aggregate({
         where: whereVigente,
         _sum: { volumeM3: true, pieces: true },
@@ -2682,7 +2929,11 @@ export class WoodEntriesDB {
         _count: { _all: true },
         _sum: { volumeM3: true },
       }),
-      prisma.woodEntry.groupBy({ by: ["productType"], where: whereVigente, _count: { _all: true } }),
+      prisma.woodEntry.groupBy({
+        by: ["productType"],
+        where: whereVigente,
+        _count: { _all: true },
+      }),
       // Ingresos sin código de origen: el gap que deja la pestaña EUDR inerte.
       // Se cuenta sobre los VIGENTES (un rechazado sin código no bloquea nada).
       prisma.woodEntry.count({
@@ -2703,7 +2954,10 @@ export class WoodEntriesDB {
          string vacío es un campo que alguien abrió y dejó igual — contarlo
          como verificado sería el falso verde más caro del libro. */
       prisma.woodEntry.count({
-        where: { ...whereVigente, OR: [{ serforNumeroRegistro: null }, { serforNumeroRegistro: "" }] },
+        where: {
+          ...whereVigente,
+          OR: [{ serforNumeroRegistro: null }, { serforNumeroRegistro: "" }],
+        },
       }),
     ]);
 
@@ -2719,7 +2973,9 @@ export class WoodEntriesDB {
     const r4 = (n: number) => Math.round(n * 10000) / 10000;
     // Facetas ordenadas por volumen (lo que más pesa primero) y acotadas: el
     // selector es para elegir, no para leer el padrón entero.
-    const faceta = <T extends { _count: { _all: number }; _sum?: { volumeM3: Prisma.Decimal | null } }>(
+    const faceta = <
+      T extends { _count: { _all: number }; _sum?: { volumeM3: Prisma.Decimal | null } },
+    >(
       rows: T[],
       key: (r: T) => string,
     ): WoodEntryFacet[] =>
@@ -2765,8 +3021,15 @@ export class WoodEntriesDB {
    * Guard de cierre de período (ADR-139): tira si el ingreso `id` cae en un mes
    * cerrado. Carga solo la fecha. No-op si no hay períodos cerrados.
    */
-  private static async assertPeriodoAbierto(tenantId: string, id: string, accion: string): Promise<void> {
-    const cur = await prisma.woodEntry.findFirst({ where: { id, tenantId }, select: { entryDate: true } });
+  private static async assertPeriodoAbierto(
+    tenantId: string,
+    id: string,
+    accion: string,
+  ): Promise<void> {
+    const cur = await prisma.woodEntry.findFirst({
+      where: { id, tenantId },
+      select: { entryDate: true },
+    });
     const cerrado = cur ? await ForestCtpCierreDB.closedPeriodOf(tenantId, cur.entryDate) : null;
     if (cerrado) {
       throw new CtpInvariantError(
@@ -2788,12 +3051,7 @@ export class WoodEntriesDB {
    * 3. Queda auditado campo por campo — un libro fiscalizable tiene que poder
    *    responder "¿esto siempre dijo 5.20 m³?".
    */
-  static async update(
-    tenantId: string,
-    id: string,
-    input: WoodEntryUpdateInput,
-    user: string,
-  ) {
+  static async update(tenantId: string, id: string, input: WoodEntryUpdateInput, user: string) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!id) throw new Error("id is required");
 
@@ -2830,29 +3088,55 @@ export class WoodEntriesDB {
       ...(input.gtfDate !== undefined ? { gtfDate: input.gtfDate } : {}),
       ...(input.fechaRecepcion !== undefined ? { fechaRecepcion: input.fechaRecepcion } : {}),
       ...(input.gtfSeries !== undefined ? { gtfSeries: input.gtfSeries } : {}),
-      ...(input.serforNumeroRegistro !== undefined ? { serforNumeroRegistro: input.serforNumeroRegistro?.trim() || null } : {}),
+      ...(input.serforNumeroRegistro !== undefined
+        ? { serforNumeroRegistro: input.serforNumeroRegistro?.trim() || null }
+        : {}),
       ...(input.docType !== undefined ? { docType: input.docType?.trim() || null } : {}),
       ...(input.providerName !== undefined ? { providerName: input.providerName.trim() } : {}),
       ...(input.providerDocument !== undefined ? { providerDocument: input.providerDocument } : {}),
-      ...(input.providerDocumentType !== undefined ? { providerDocumentType: input.providerDocumentType } : {}),
+      ...(input.providerDocumentType !== undefined
+        ? { providerDocumentType: input.providerDocumentType }
+        : {}),
       ...(input.originType !== undefined ? { originType: input.originType } : {}),
       ...(input.originCode !== undefined ? { originCode: input.originCode } : {}),
-      ...(input.originSourceNumber !== undefined ? { originSourceNumber: input.originSourceNumber?.trim() || null } : {}),
-      ...(input.ctpProductCode !== undefined ? { ctpProductCode: input.ctpProductCode?.trim() || null } : {}),
+      ...(input.originSourceNumber !== undefined
+        ? { originSourceNumber: input.originSourceNumber?.trim() || null }
+        : {}),
+      ...(input.ctpProductCode !== undefined
+        ? { ctpProductCode: input.ctpProductCode?.trim() || null }
+        : {}),
       ...(input.originRegion !== undefined ? { originRegion: input.originRegion } : {}),
       ...(input.originDistrict !== undefined ? { originDistrict: input.originDistrict } : {}),
-      ...(input.speciesCommonName !== undefined ? { speciesCommonName: input.speciesCommonName.trim() } : {}),
-      ...(input.speciesScientificName !== undefined ? { speciesScientificName: input.speciesScientificName } : {}),
+      ...(input.speciesCommonName !== undefined
+        ? { speciesCommonName: input.speciesCommonName.trim() }
+        : {}),
+      ...(input.speciesScientificName !== undefined
+        ? { speciesScientificName: input.speciesScientificName }
+        : {}),
       ...(input.speciesCites !== undefined ? { speciesCites: input.speciesCites } : {}),
       ...(input.productType !== undefined ? { productType: input.productType } : {}),
       ...(input.unit !== undefined ? { unit: input.unit?.trim() || null } : {}),
       ...(volumeDecimal ? { volumeM3: volumeDecimal } : {}),
       ...(input.pieces !== undefined ? { pieces: input.pieces } : {}),
-      ...(input.avgLengthM !== undefined ? { avgLengthM: input.avgLengthM != null ? new Prisma.Decimal(input.avgLengthM) : null } : {}),
-      ...(input.avgDiameterCm !== undefined ? { avgDiameterCm: input.avgDiameterCm != null ? new Prisma.Decimal(input.avgDiameterCm) : null } : {}),
-      ...(input.humidityPct !== undefined ? { humidityPct: input.humidityPct != null ? new Prisma.Decimal(input.humidityPct) : null } : {}),
+      ...(input.avgLengthM !== undefined
+        ? { avgLengthM: input.avgLengthM != null ? new Prisma.Decimal(input.avgLengthM) : null }
+        : {}),
+      ...(input.avgDiameterCm !== undefined
+        ? {
+            avgDiameterCm:
+              input.avgDiameterCm != null ? new Prisma.Decimal(input.avgDiameterCm) : null,
+          }
+        : {}),
+      ...(input.humidityPct !== undefined
+        ? { humidityPct: input.humidityPct != null ? new Prisma.Decimal(input.humidityPct) : null }
+        : {}),
       ...(input.defectsNotes !== undefined ? { defectsNotes: input.defectsNotes } : {}),
       ...(input.notes !== undefined ? { notes: input.notes } : {}),
+      /* El cuerpo del documento (casilleros 13–34). Se reemplaza entero: el
+         formulario manda el objeto completo, validado por `gtfDatosSchema`. */
+      ...(input.gtfDatos !== undefined
+        ? { gtfDatos: input.gtfDatos ? (input.gtfDatos as Prisma.InputJsonValue) : Prisma.DbNull }
+        : {}),
     };
 
     /*
@@ -2870,14 +3154,34 @@ export class WoodEntriesDB {
      * sobre los otros 26.
      */
     const previa =
-      actual.camposManuales && typeof actual.camposManuales === "object" && !Array.isArray(actual.camposManuales)
+      actual.camposManuales &&
+      typeof actual.camposManuales === "object" &&
+      !Array.isArray(actual.camposManuales)
         ? (actual.camposManuales as Record<string, unknown>)
         : {};
     const ahora = new Date().toISOString();
     const procedencia: Record<string, unknown> = { ...previa };
     for (const campo of Object.keys(input)) {
       if ((input as Record<string, unknown>)[campo] === undefined) continue;
+      if (campo === "gtfDatos") continue; // abajo, casillero por casillero
       procedencia[campo] = { por: user, el: ahora };
+    }
+    /* `gtfDatos` es un objeto con ~40 casilleros y viaja entero: marcar «a
+       mano» todo el bloque por corregir un DNI diría que el almacenero
+       transcribió también el nombre que ya traía el papel. Se anota sólo lo que
+       CAMBIÓ, con su ruta (`gtfDatos.propietario.nombre`), que es lo que la
+       ficha lee para pintar cada casillero. */
+    if (input.gtfDatos !== undefined) {
+      /* Se comparan las dos versiones NORMALIZADAS (`leerGtfDatos` aplica los
+         defaults del schema): contra un `null` crudo, «docTipo: RUC» o «modo:
+         terrestre» contaban como escritos a mano por sólo haber tipeado un
+         nombre — y la ficha pintaba «a mano» casilleros que nadie tocó. */
+      for (const ruta of casillerosCambiados(
+        leerGtfDatos(actual.gtfDatos),
+        leerGtfDatos(input.gtfDatos),
+      )) {
+        procedencia[`gtfDatos.${ruta}`] = { por: user, el: ahora };
+      }
     }
     if (Object.keys(procedencia).length > 0) {
       data.camposManuales = procedencia as Prisma.InputJsonValue;
@@ -2895,7 +3199,9 @@ export class WoodEntriesDB {
       detail: `Corrigió el ingreso ${actual.gtfNumber}${cambios ? ` · ${cambios}` : " · sin cambios"}`,
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return entry;
   }
 
@@ -2962,7 +3268,9 @@ export class WoodEntriesDB {
       detail: `Valorizó el ingreso ${actual.gtfNumber} · ${antes} → ${despues}`,
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return entry;
   }
 
@@ -2997,7 +3305,12 @@ export class WoodEntriesDB {
     trozas: WoodEntryTrozaInput[],
     user: string,
     opts: { desdeImportacion?: boolean } = {},
-  ): Promise<{ agregadas: number; repetidas: string[]; m3Agregados: number; bloqueado?: "ya-tiene-lista" }> {
+  ): Promise<{
+    agregadas: number;
+    repetidas: string[];
+    m3Agregados: number;
+    bloqueado?: "ya-tiene-lista";
+  }> {
     if (!tenantId) throw new Error("tenantId is required");
     if (!id) throw new Error("id is required");
     if (trozas.length === 0) return { agregadas: 0, repetidas: [], m3Agregados: 0 };
@@ -3012,7 +3325,8 @@ export class WoodEntriesDB {
       /* Validado y CON lista: no es un error, no hay nada que completar. Re-subir
          el mismo archivo tiene que decir «ya está», no gritar un invariante.
          Cuál de las dos listas vale no lo decide un importador. */
-      if (yaTiene === true) return { agregadas: 0, repetidas: [], m3Agregados: 0, bloqueado: "ya-tiene-lista" };
+      if (yaTiene === true)
+        return { agregadas: 0, repetidas: [], m3Agregados: 0, bloqueado: "ya-tiene-lista" };
       if (yaTiene !== false) {
         throw new CtpInvariantError(
           `Sólo se le agregan piezas a un ingreso pendiente. Este está ${actual.status}.`,
@@ -3105,7 +3419,9 @@ export class WoodEntriesDB {
           (resultado.repetidas.length > 0 ? ` · ${resultado.repetidas.length} ya estaban` : ""),
         user,
       });
-      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {}
     }
 
     return resultado;
@@ -3137,7 +3453,9 @@ export class WoodEntriesDB {
       detail: `Validó el ingreso ${entry.gtfNumber} · ${entry.speciesCommonName} · ${m3(Number(entry.volumeM3))}${entry.speciesCites ? " · CITES" : ""}`,
       user: validatorId,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return entry;
   }
 
@@ -3157,12 +3475,7 @@ export class WoodEntriesDB {
    * - Validar es lo último y sólo si estaba pendiente: es lo que la convierte en
    *   materia prima computable.
    */
-  static async recepcionar(
-    tenantId: string,
-    id: string,
-    fecha: string | undefined,
-    user: string,
-  ) {
+  static async recepcionar(tenantId: string, id: string, fecha: string | undefined, user: string) {
     if (!tenantId) throw new Error("tenantId is required");
     const actual = await prisma.woodEntry.findFirst({
       where: { id, tenantId, deletedAt: null },
@@ -3177,7 +3490,8 @@ export class WoodEntriesDB {
     /* La fecha viaja como texto hasta el `::date` de Postgres: convertirla a
        `Date` acá la interpretaría en la zona del servidor y correría un día en
        Lima (el mismo off-by-one de `entryDate`). */
-    const dia = fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : new Date().toISOString().slice(0, 10);
+    const dia =
+      fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : new Date().toISOString().slice(0, 10);
 
     const { piezas } = await prisma.$transaction(async (tx) => {
       const marcadas = await tx.$executeRaw`
@@ -3207,10 +3521,16 @@ export class WoodEntriesDB {
       entityId: id,
       detail:
         `Recepcionó la guía ${actual.gtfNumber} el ${dia}` +
-        (piezas > 0 ? ` · ${piezas} pieza${piezas === 1 ? "" : "s"} fechada${piezas === 1 ? "" : "s"}` : ""),
+        (piezas > 0
+          ? ` · ${piezas} pieza${piezas === 1 ? "" : "s"} fechada${piezas === 1 ? "" : "s"}`
+          : ""),
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
     return { entry, piezas, fecha: dia };
   }
 
@@ -3238,7 +3558,8 @@ export class WoodEntriesDB {
     fallo: { id: string; motivo: string } | null;
   }> {
     if (!tenantId) throw new Error("tenantId is required");
-    const dia = fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : new Date().toISOString().slice(0, 10);
+    const dia =
+      fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : new Date().toISOString().slice(0, 10);
     let recepcionados = 0;
     let piezas = 0;
 
@@ -3264,12 +3585,7 @@ export class WoodEntriesDB {
     return { recepcionados, piezas, fecha: dia, fallo: null };
   }
 
-  static async reject(
-    tenantId: string,
-    id: string,
-    validatorId: string,
-    reason: string,
-  ) {
+  static async reject(tenantId: string, id: string, validatorId: string, reason: string) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("rejection reason is required");
     const entry = await prisma.woodEntry.update({
@@ -3289,7 +3605,9 @@ export class WoodEntriesDB {
       detail: `Rechazó el ingreso ${entry.gtfNumber} · ${entry.speciesCommonName} · motivo: ${reason.trim()}`,
       user: validatorId,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return entry;
   }
 
@@ -3311,7 +3629,9 @@ export class WoodEntriesDB {
       where: { tenantId, woodEntryId: id, ctpEntry: { deletedAt: null, status: "registrado" } },
     });
     if (consumido > 0) {
-      throw new Error("Este ingreso ya se consumió en una corrida de producción. Corregí o anulá esas corridas antes de anular el ingreso.");
+      throw new Error(
+        "Este ingreso ya se consumió en una corrida de producción. Corregí o anulá esas corridas antes de anular el ingreso.",
+      );
     }
     const entry = await prisma.woodEntry.update({
       where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
@@ -3325,7 +3645,9 @@ export class WoodEntriesDB {
       detail: `Anuló el ingreso ${entry.gtfNumber} · ${entry.speciesCommonName} · ${m3(Number(entry.volumeM3))} · motivo: ${reason.trim()}`,
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return entry;
   }
 
@@ -3383,11 +3705,9 @@ export class WoodEntriesDB {
         where: { id: input.trozaId, tenantId, woodEntryId: id },
       });
       if (!troza) {
-        throw new CtpInvariantError(
-          "Esa pieza no pertenece a este ingreso.",
-          "TROZA_AJENA",
-          { trozaId: input.trozaId },
-        );
+        throw new CtpInvariantError("Esa pieza no pertenece a este ingreso.", "TROZA_AJENA", {
+          trozaId: input.trozaId,
+        });
       }
       if (troza.consumidaEnId) {
         throw new CtpInvariantError(
@@ -3396,7 +3716,10 @@ export class WoodEntriesDB {
           { trozaId: troza.id },
         );
       }
-      if (troza.trozaOrigenId || (await prisma.woodEntryTroza.count({ where: { tenantId, trozaOrigenId: troza.id } })) > 0) {
+      if (
+        troza.trozaOrigenId ||
+        (await prisma.woodEntryTroza.count({ where: { tenantId, trozaOrigenId: troza.id } })) > 0
+      ) {
         throw new CtpInvariantError(
           `La pieza ${troza.codificacion ?? "—"} está retrozada: cuadrá el retrozado antes de tocar su volumen.`,
           "TROZA_RETROZADA",
@@ -3424,7 +3747,9 @@ export class WoodEntriesDB {
           `${antesCant} → ${nueva.cantidad} troza(s), ${m3(antesVol)} → ${m3(Number(nueva.volumenM3 ?? 0))} · motivo: ${motivo}`,
         user,
       });
-      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {}
       return { entry: actual, troza: nueva };
     }
 
@@ -3439,9 +3764,7 @@ export class WoodEntriesDB {
         "CUADRE_SIN_LISTA",
       );
     }
-    const suma = Number(
-      piezas.reduce((a, p) => a + Number(p.volumenM3 ?? 0), 0).toFixed(4),
-    );
+    const suma = Number(piezas.reduce((a, p) => a + Number(p.volumenM3 ?? 0), 0).toFixed(4));
     if (!(suma > 0)) {
       throw new CtpInvariantError(
         "Las piezas de este ingreso no declaran volumen: no hay con qué cuadrar.",
@@ -3476,7 +3799,9 @@ export class WoodEntriesDB {
         `${m3(antes)} → ${m3(suma)} · motivo: ${motivo}`,
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return { entry, troza: null };
   }
 
@@ -3500,7 +3825,9 @@ export class WoodEntriesDB {
       detail: `Eliminó (soft) el ingreso ${entry.gtfNumber} · ${entry.speciesCommonName} · ${m3(Number(entry.volumeM3))}`,
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return entry;
   }
 
@@ -3535,3 +3862,30 @@ export class WoodEntriesDB {
 }
 
 export type { WoodEntryStatus, WoodOriginType, WoodProductType, DocumentType };
+
+/**
+ * Las rutas (`propietario.nombre`, `vehiculo.placa`…) cuyo valor cambió entre
+ * dos cuerpos de guía. Compara hoja por hoja: dos objetos con las mismas claves
+ * en otro orden no son un cambio.
+ */
+export function casillerosCambiados(antes: unknown, despues: unknown, prefijo = ""): string[] {
+  const esObj = (v: unknown): v is Record<string, unknown> =>
+    Boolean(v) && typeof v === "object" && !Array.isArray(v);
+  const a = esObj(antes) ? antes : {};
+  const d = esObj(despues) ? despues : {};
+  const claves = new Set([...Object.keys(a), ...Object.keys(d)]);
+  const out: string[] = [];
+  for (const k of claves) {
+    const va = a[k];
+    const vd = d[k];
+    const ruta = prefijo ? `${prefijo}.${k}` : k;
+    if (esObj(va) || esObj(vd)) {
+      out.push(...casillerosCambiados(va, vd, ruta));
+      continue;
+    }
+    const norm = (v: unknown) =>
+      v == null ? "" : Array.isArray(v) ? JSON.stringify(v) : String(v).trim();
+    if (norm(va) !== norm(vd)) out.push(ruta);
+  }
+  return out;
+}

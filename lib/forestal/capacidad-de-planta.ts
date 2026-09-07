@@ -33,9 +33,12 @@
 
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
-import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
+import { estaDisponible, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 
-export type ClaveFuente = "porRecepcionar" | "patio" | "lotes" | "productos";
+export type ClaveFuente = "porRecepcionar" | "patio" | "apartado" | "lotes" | "productos";
+
+/** Cómo llegó cada dato que alimenta el balance. */
+export type EstadoFuente = "cargando" | "ok" | "error";
 
 export interface FuenteDeCapacidad {
   clave: ClaveFuente;
@@ -142,8 +145,21 @@ export interface EntradaCapacidad {
   corridas?: readonly CorridaDisponible[];
   /** El stock de productos que firma el libro para el período, para conciliar. */
   stockLibroM3: number;
-  /** Ingresos anotados que el libro cuenta pendientes. Es un total SIN permiso adentro. */
-  pendienteM3: number;
+  /**
+   * Ingresos pendientes de validar que NO tienen piezas cargadas. Sólo esos: los
+   * que sí las tienen ya entran troza por troza en «por recepcionar», y sumar
+   * también su total del libro contaba la misma madera dos veces (auditoría
+   * 2026-09-06). Es un total SIN permiso adentro.
+   */
+  pendienteSinPiezasM3: number;
+  /**
+   * Cómo llegó cada fetch. Un `[]` que en realidad es «no cargó» o «falló»
+   * produce un reporte firmable con «0 piezas libres» donde había 5.000: acá
+   * se distingue, y el balance lo dice en la fila en vez de poner un cero.
+   */
+  estado?: Partial<Record<"patio" | "lotes" | "corridas" | "pendientes", EstadoFuente>>;
+  /** El endpoint del patio recorta a 5.000 piezas: si recortó, el techo es parcial. */
+  patioTruncado?: { devueltas: number; total: number } | null;
   /** De qué período habla el libro, para decirlo en la tarjeta. */
   periodoLabel?: string;
   /** Sus fechas (ISO), para separar lo que queda de ese período de lo anterior. */
@@ -154,12 +170,15 @@ export interface EntradaCapacidad {
 
 /** Rolliza libre: sin lote, sin corrida y de una guía ya recibida (ADR-339). */
 export function esLibre(t: TrozaConsumible): boolean {
-  return !t.loteAserrioId && !t.consumidaEnId && t.guiaRecepcionada !== false;
+  /* DISPONIBLE según las reglas del patio (`estaDisponible`): no consumida, no
+     despachada en rollo, no descarte, no una madre ya retrozada, con volumen.
+     Reimplementar esa lista acá contaba madera que ya salió de la planta. */
+  return !t.loteAserrioId && t.guiaRecepcionada !== false && estaDisponible(t);
 }
 
 /** Anotada pero todavía no bajó del camión. */
 export function esPorRecepcionar(t: TrozaConsumible): boolean {
-  return t.guiaRecepcionada === false;
+  return t.guiaRecepcionada === false && !t.consumidaEnId && !t.despachadaEnId && !t.descarte;
 }
 
 function pasaFiltros(t: TrozaConsumible, f: FiltrosCapacidad): boolean {
@@ -341,9 +360,39 @@ export function lotesDeFuente(
   if (filtros.guia) return [];
   return lotes.filter(
     (l) =>
-      (!filtros.permiso || l.permisos.includes(filtros.permiso)) &&
+      /* Con un permiso elegido el lote entra sólo si TODA su madera es de ese
+         permiso — la misma regla que las corridas. Un lote con dos títulos
+         adentro atribuido entero a cada uno sumaba la misma madera dos veces. */
+      (!filtros.permiso || origenUnico(l.permisos, filtros.permiso)) &&
       (!filtros.especie || mismaEspecie(l.especie, filtros.especie)),
   );
+}
+
+/** Los lotes que el filtro de permiso deja afuera por tener varios títulos adentro. */
+export function lotesMezclados(
+  lotes: readonly LoteDeCapacidad[],
+  filtros: FiltrosCapacidad,
+): LoteDeCapacidad[] {
+  if (!filtros.permiso || filtros.guia) return [];
+  return lotes.filter(
+    (l) =>
+      new Set(l.permisos.map(txt).filter(Boolean)).size > 1 &&
+      l.permisos.includes(filtros.permiso!) &&
+      (!filtros.especie || mismaEspecie(l.especie, filtros.especie)),
+  );
+}
+
+/**
+ * Cuánto producto más admite un lote bajo el techo del 56 %.
+ *
+ * Es una COTA MÁXIMA, así que: un lote que consumió y todavía no declaró tiene
+ * el techo entero por delante (no cero); uno que ya pasó el techo aporta cero
+ * (no un negativo que le reste al total: pasarse es un hallazgo de la tabla de
+ * lotes, no un descuento de la capacidad).
+ */
+export function admiteDelLote(l: LoteDeCapacidad): number {
+  if (l.producidoM3 == null) return l.consumidoM3 > 0 ? r4(l.esperado56M3) : 0;
+  return Math.max(0, r4(l.restaM3 ?? l.esperado56M3 - l.producidoM3));
 }
 
 /** Las corridas con saldo que quedan bajo los filtros, en m³, de mayor a menor. */
@@ -382,17 +431,26 @@ function filaProductos(entrada: EntradaCapacidad, filtros: FiltrosCapacidad): Fu
   const base = { clave: "productos" as const, label: "Productos terminados", convertido: false };
   const periodo = entrada.periodoLabel ? ` en ${entrada.periodoLabel}` : "";
 
-  if (!entrada.corridas) {
+  const fallo = entrada.estado?.corridas === "error";
+  if (!entrada.corridas || fallo) {
     const ciego = hayFiltro(filtros);
     return {
       ...base,
       m3: ciego ? 0 : r4(entrada.stockLibroM3),
       enProducto: ciego ? 0 : r4(entrada.stockLibroM3),
       filas: 0,
+      /* Un fallo de red no es un hecho del depósito: se dice que no se pudo
+         leer y se cae al stock del libro, que NO descuenta lo marcado usado. */
       detalle: ciego
         ? undefined
-        : `Stock del libro${periodo} — el detalle por corrida está cargando`,
-      noAtribuible: ciego ? "Cargando las corridas del depósito…" : undefined,
+        : fallo
+          ? `No se pudo leer el depósito — se muestra el stock del libro${periodo}, que no descuenta lo marcado «ya usado»`
+          : `Stock del libro${periodo} — el detalle por corrida está cargando`,
+      noAtribuible: ciego
+        ? fallo
+          ? "No se pudo leer el depósito"
+          : "Cargando las corridas del depósito…"
+        : undefined,
     };
   }
 
@@ -472,51 +530,97 @@ export function armarBalance(
   const aProducto = (m3: number) => r4(m3 * RENDIMIENTO_META);
   const sumaM3 = (ts: readonly TrozaConsumible[]) =>
     r4(ts.reduce((a, t) => a + num(t.volumenM3), 0));
+  const est = (k: "patio" | "lotes" | "pendientes") => entrada.estado?.[k] ?? "ok";
+  /* Una fuente que no llegó no vale cero: vale «no se sabe», y se dice. */
+  const sinDato = (k: "patio" | "lotes" | "pendientes", que: string): string | undefined =>
+    est(k) === "cargando"
+      ? `Cargando ${que}…`
+      : est(k) === "error"
+        ? `No se pudo leer ${que} — el techo no lo incluye`
+        : undefined;
 
   const porRecepcionar = trozasDeFuente("porRecepcionar", entrada.patio, filtros);
   const libres = trozasDeFuente("patio", entrada.patio, filtros);
   const lotes = lotesDeFuente(entrada.lotes, filtros);
-  const restaLotes = r4(lotes.reduce((a, l) => a + (l.restaM3 ?? 0), 0));
+  const mezclados = lotesMezclados(entrada.lotes, filtros);
+  const admiten = r4(lotes.reduce((a, l) => a + admiteDelLote(l), 0));
+  const apartado = r4(lotes.reduce((a, l) => a + l.apartadoM3, 0));
+  const conApartado = lotes.filter((l) => l.apartadoM3 > 0);
 
-  /* `pendienteM3` es un total del libro sin permiso ni especie adentro: con
-     cualquier filtro puesto no se puede repartir, así que sólo entra en «toda
-     la planta». */
-  const pendiente = hayFiltro(filtros) ? 0 : r4(entrada.pendienteM3);
+  /* Lo pendiente sin piezas es un total del libro sin permiso ni especie
+     adentro: con cualquier filtro puesto no se puede repartir, así que sólo
+     entra en «toda la planta». */
+  const pendiente =
+    hayFiltro(filtros) || est("pendientes") !== "ok" ? 0 : r4(entrada.pendienteSinPiezasM3);
   const recepcionarM3 = r4(sumaM3(porRecepcionar) + pendiente);
+  const patioNoLlego = sinDato("patio", "el patio");
+  const lotesNoLlego = sinDato("lotes", "los lotes");
+  const trunc = entrada.patioTruncado;
 
   const fuentes: FuenteDeCapacidad[] = [
     {
       clave: "porRecepcionar",
       label: "Por recepcionar",
-      m3: recepcionarM3,
-      enProducto: aProducto(recepcionarM3),
+      m3: patioNoLlego ? 0 : recepcionarM3,
+      enProducto: patioNoLlego ? 0 : aProducto(recepcionarM3),
       convertido: true,
-      detalle: "Anotada en el libro, todavía no llegó o no se validó",
+      detalle: [
+        `${porRecepcionar.length} ${porRecepcionar.length === 1 ? "pieza" : "piezas"} de guías sin recibir`,
+        pendiente > 0 ? `${pendiente} m³ de ingresos sin validar y sin piezas cargadas` : "",
+        est("pendientes") === "error" ? "los ingresos sin validar no se pudieron leer" : "",
+      ]
+        .filter(Boolean)
+        .join(" · "),
       filas: porRecepcionar.length,
+      noAtribuible: patioNoLlego,
     },
     {
       clave: "patio",
       label: "Trozas en el patio",
-      m3: sumaM3(libres),
-      enProducto: aProducto(sumaM3(libres)),
+      m3: patioNoLlego ? 0 : sumaM3(libres),
+      enProducto: patioNoLlego ? 0 : aProducto(sumaM3(libres)),
       convertido: true,
-      detalle: `${libres.length} ${libres.length === 1 ? "pieza libre" : "piezas libres"}, sin lote ni bloqueo`,
+      detalle: `${libres.length} ${libres.length === 1 ? "pieza libre" : "piezas libres"}, sin lote ni bloqueo${
+        trunc && trunc.devueltas < trunc.total
+          ? ` · ⚠ el patio tiene ${trunc.total.toLocaleString("es-PE")} piezas y sólo llegaron ${trunc.devueltas.toLocaleString("es-PE")}: el techo es parcial`
+          : ""
+      }`,
       filas: libres.length,
+      noAtribuible: patioNoLlego,
+    },
+    {
+      clave: "apartado",
+      label: "Apartado en lotes, sin aserrar",
+      m3: lotesNoLlego ? 0 : apartado,
+      enProducto: lotesNoLlego ? 0 : aProducto(apartado),
+      convertido: true,
+      /* Estas piezas NO están en el patio libre (tienen lote) ni en «lo que los
+         lotes admiten» (eso es lo ya consumido): sin esta fila la madera
+         apartada desaparecía del techo. */
+      detalle: `${conApartado.length} ${conApartado.length === 1 ? "lote" : "lotes"} con piezas apartadas todavía enteras`,
+      filas: conApartado.length,
+      noAtribuible: lotesNoLlego,
     },
     {
       clave: "lotes",
       label: "Lo que los lotes admiten",
-      m3: restaLotes,
+      m3: lotesNoLlego ? 0 : admiten,
       /* YA es producto: es cuánto más se puede DECLARAR bajo el tope, no
          rolliza esperando. Convertirlo otra vez sería aplicar el 56 % dos
          veces sobre la misma madera. */
-      enProducto: restaLotes,
+      enProducto: lotesNoLlego ? 0 : admiten,
       convertido: false,
-      detalle: "Al 56 % menos lo ya declarado",
+      detalle: `Al 56 % menos lo ya declarado; un lote que consumió y no declaró tiene el techo entero${
+        mezclados.length > 0
+          ? ` · ${r4(mezclados.reduce((a, l) => a + admiteDelLote(l), 0))} m³ en ${mezclados.length} ${mezclados.length === 1 ? "lote" : "lotes"} con permisos mezclados — no se reparten`
+          : ""
+      }`,
       filas: lotes.length,
-      noAtribuible: filtros.guia
-        ? "Un lote junta piezas de varias guías: no se puede acotar a una sola"
-        : undefined,
+      noAtribuible:
+        lotesNoLlego ??
+        (filtros.guia
+          ? "Un lote junta piezas de varias guías: no se puede acotar a una sola"
+          : undefined),
     },
     filaProductos(entrada, filtros),
   ];

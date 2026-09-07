@@ -82,7 +82,12 @@ export default function KpisDeExistencias({
   // `Date.now()` se toma acá y se INYECTA: la lib es pura y testeable, y el
   // valor no cambia entre los cálculos de un mismo render.
   const kpis = useMemo(
-    () => kpisDePlanta(mp, porEspecie, productos, { from: period.from, to: period.to, ahora: Date.now() }),
+    () =>
+      kpisDePlanta(mp, porEspecie, productos, {
+        from: period.from,
+        to: period.to,
+        ahora: Date.now(),
+      }),
     [mp, porEspecie, productos, period.from, period.to],
   );
 
@@ -187,7 +192,11 @@ export default function KpisDeExistencias({
           icono={Boxes}
           termino="Consumido en producción"
           valor={`${n2(mp.consumidoM3)} m³`}
-          pie={kpis.rotacionPct != null ? `${n2(kpis.rotacionPct)} % de lo ingresado` : "sin ingresos que rotar"}
+          pie={
+            kpis.rotacionPct != null
+              ? `${n2(kpis.rotacionPct)} % de lo ingresado`
+              : "sin ingresos que rotar"
+          }
           /* Consumir más del 100 % de lo ingresado es exactamente el sobreconsumo
              que deja el saldo en rojo: se marca donde se produce, no sólo en el
              total de arriba. */
@@ -234,8 +243,16 @@ export default function KpisDeExistencias({
         <Derivado
           termino="Depende de"
           valor={kpis.concentracion ? `${n2(kpis.concentracion.pct)} %` : null}
-          pie={kpis.concentracion ? `${kpis.concentracion.especie} · del saldo en patio` : "sin saldo positivo en patio"}
-          tono={kpis.concentracion && kpis.concentracion.pct > CONCENTRACION_ALTA ? "warning" : "neutral"}
+          pie={
+            kpis.concentracion
+              ? `${kpis.concentracion.especie} · del saldo en patio`
+              : "sin saldo positivo en patio"
+          }
+          tono={
+            kpis.concentracion && kpis.concentracion.pct > CONCENTRACION_ALTA
+              ? "warning"
+              : "neutral"
+          }
         />
         <Derivado
           termino="Especies con movimiento"
@@ -245,7 +262,11 @@ export default function KpisDeExistencias({
         <Derivado
           termino="Producto terminado"
           valor={`${kpis.productosConStock.con} / ${kpis.productosConStock.total}`}
-          pie={kpis.productosConStock.total > 0 ? "líneas con stock para despachar" : "sin producción transformada"}
+          pie={
+            kpis.productosConStock.total > 0
+              ? "líneas con stock para despachar"
+              : "sin producción transformada"
+          }
         />
       </dl>
     </section>
@@ -271,7 +292,9 @@ function Movimiento({
       <dt className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         <Icono className="h-3.5 w-3.5" aria-hidden /> {termino}
       </dt>
-      <dd className={`mt-0.5 font-mono text-xl font-extrabold tabular-nums ${TONO_VALOR[tono]}`}>{valor}</dd>
+      <dd className={`mt-0.5 font-mono text-xl font-extrabold tabular-nums ${TONO_VALOR[tono]}`}>
+        {valor}
+      </dd>
       <p className="text-xs text-[var(--text-tertiary)]">{pie}</p>
     </div>
   );
@@ -300,7 +323,9 @@ function Derivado({
       </dt>
       {valor != null ? (
         <>
-          <dd className={`font-mono text-lg font-extrabold tabular-nums ${TONO_VALOR[tono]}`}>{valor}</dd>
+          <dd className={`font-mono text-lg font-extrabold tabular-nums ${TONO_VALOR[tono]}`}>
+            {valor}
+          </dd>
           <p className="text-xs text-[var(--text-tertiary)]">{pie}</p>
         </>
       ) : (

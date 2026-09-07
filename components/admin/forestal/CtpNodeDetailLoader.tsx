@@ -23,9 +23,21 @@ export interface DetailTarget {
   kind: NodeKind;
   id: string;
   gtf?: string | null;
+  /**
+   * La fecha de la línea (ISO). Con ella la búsqueda va al día exacto: sin
+   * eso, una corrida de hace un año se busca en el listado entero y, si no
+   * entra en la página, la ficha dice «no se encontró» teniendo la línea ahí.
+   */
+  fecha?: string | null;
 }
 
-export default function CtpNodeDetailLoader({ target, onClose }: { target: DetailTarget; onClose: () => void }) {
+export default function CtpNodeDetailLoader({
+  target,
+  onClose,
+}: {
+  target: DetailTarget;
+  onClose: () => void;
+}) {
   const [entry, setEntry] = useState<WoodEntry | CtpEntry | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +48,11 @@ export default function CtpNodeDetailLoader({ target, onClose }: { target: Detai
         const url =
           target.kind === "ingreso"
             ? `/api/admin/forestal/wood-entries?gtf=${encodeURIComponent(target.gtf ?? "")}&limit=100`
-            : `/api/admin/forestal/ctp?section=${target.kind === "corrida" ? "produccion" : "despacho"}`;
+            : `/api/admin/forestal/ctp?section=${target.kind === "corrida" ? "produccion" : "despacho"}${
+                target.fecha
+                  ? `&from=${target.fecha.slice(0, 10)}&to=${target.fecha.slice(0, 10)}`
+                  : ""
+              }`;
         const r = await fetch(url, { credentials: "include" });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const rows = ((await r.json()).entries ?? []) as (WoodEntry | CtpEntry)[];
@@ -48,15 +64,21 @@ export default function CtpNodeDetailLoader({ target, onClose }: { target: Detai
         if (alive) setError(e instanceof Error ? e.message : String(e));
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [target]);
 
   if (error) {
     return (
       <div className="fixed inset-x-0 bottom-4 z-[70] mx-auto flex max-w-md items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] shadow-xl">
         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-        <div className="flex-1"><strong>No se pudo abrir la ficha:</strong> {error}</div>
-        <button type="button" onClick={onClose} className="shrink-0 text-xs font-bold underline">Cerrar</button>
+        <div className="flex-1">
+          <strong>No se pudo abrir la ficha:</strong> {error}
+        </div>
+        <button type="button" onClick={onClose} className="shrink-0 text-xs font-bold underline">
+          Cerrar
+        </button>
       </div>
     );
   }
@@ -71,7 +93,9 @@ export default function CtpNodeDetailLoader({ target, onClose }: { target: Detai
     );
   }
 
-  if (target.kind === "ingreso") return <CtpEntryDetailModal entry={entry as WoodEntry} onClose={onClose} />;
-  if (target.kind === "corrida") return <CtpProduccionDetalleModal entry={entry as CtpEntry} onClose={onClose} />;
+  if (target.kind === "ingreso")
+    return <CtpEntryDetailModal entry={entry as WoodEntry} onClose={onClose} />;
+  if (target.kind === "corrida")
+    return <CtpProduccionDetalleModal entry={entry as CtpEntry} onClose={onClose} />;
   return <CtpDespachoDetalleModal entry={entry as CtpEntry} onClose={onClose} />;
 }

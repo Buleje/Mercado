@@ -130,7 +130,10 @@ function motivoNoElegible(t: {
 }): string | null {
   if (t.consumidaEnId) return "ya entró a una corrida";
   if (vivaLinea(t.despachadaEn ?? null)) return "ya se despachó sin aserrar";
-  if (t.entry && (Boolean(t.entry.deletedAt) || ["anulado", "rechazado"].includes(t.entry.status))) {
+  if (
+    t.entry &&
+    (Boolean(t.entry.deletedAt) || ["anulado", "rechazado"].includes(t.entry.status))
+  ) {
     return "la guía de ingreso está anulada o rechazada";
   }
   if (t.noRecepcionada) return "no llegó al patio";
@@ -181,7 +184,10 @@ export class ForestLoteAserrioDB {
       select: { id: true },
     });
     if (enUso) {
-      throw new CtpInvariantError(`El código "${limpio}" ya está en uso: elegí otro.`, "LOTE_CODIGO_DUPLICADO");
+      throw new CtpInvariantError(
+        `El código "${limpio}" ya está en uso: elegí otro.`,
+        "LOTE_CODIGO_DUPLICADO",
+      );
     }
     return limpio;
   }
@@ -212,8 +218,16 @@ export class ForestLoteAserrioDB {
       include: {
         trozas: {
           select: {
-            id: true, codificacion: true, codigoPlanta: true, volumenM3: true, especieComun: true,
-            largoM: true, d1Cm: true, d2Cm: true, diametroCm: true, woodEntryId: true,
+            id: true,
+            codificacion: true,
+            codigoPlanta: true,
+            volumenM3: true,
+            especieComun: true,
+            largoM: true,
+            d1Cm: true,
+            d2Cm: true,
+            diametroCm: true,
+            woodEntryId: true,
             // El ESTADO de la corrida, no el id pelado: una pieza que apunta a
             // una corrida anulada volvió al patio y sigue libre. Es la misma
             // regla que aplican las tres lecturas de una troza (ADR-326 §6).
@@ -249,7 +263,10 @@ export class ForestLoteAserrioDB {
         ...lotes.flatMap((l) =>
           l.trozas
             .map((t) => t.consumidaEn)
-            .filter((c): c is NonNullable<typeof c> => Boolean(c) && c!.deletedAt == null && c!.status !== "anulado")
+            .filter(
+              (c): c is NonNullable<typeof c> =>
+                Boolean(c) && c!.deletedAt == null && c!.status !== "anulado",
+            )
             .map((c) => c.id),
         ),
       ]),
@@ -265,9 +282,18 @@ export class ForestLoteAserrioDB {
             /* `volumeInputM3` es el denominador del rendimiento: sin él la
                pantalla no puede decir cuánto más se puede declarar (ADR-365). */
             select: {
-              id: true, lineNo: true, entryDate: true, productType: true, quantity: true, unit: true,
-              status: true, deletedAt: true, volumeInputM3: true, speciesCommon: true,
-              usadoAt: true, usadoMotivo: true,
+              id: true,
+              lineNo: true,
+              entryDate: true,
+              productType: true,
+              quantity: true,
+              unit: true,
+              status: true,
+              deletedAt: true,
+              volumeInputM3: true,
+              speciesCommon: true,
+              usadoAt: true,
+              usadoMotivo: true,
               /* El detalle de productos de la corrida (ADR-349): una corrida
                  declarada con el formulario oficial casi siempre trae más de
                  un tipo, y sin esto la Ficha del Lote sólo mostraba el total
@@ -275,7 +301,14 @@ export class ForestLoteAserrioDB {
               paquetes: {
                 where: { deletedAt: null },
                 orderBy: { createdAt: "asc" },
-                select: { id: true, codigo: true, productType: true, presentacion: true, cantidad: true, volumenM3: true },
+                select: {
+                  id: true,
+                  codigo: true,
+                  productType: true,
+                  presentacion: true,
+                  cantidad: true,
+                  volumenM3: true,
+                },
               },
             },
           })
@@ -283,21 +316,33 @@ export class ForestLoteAserrioDB {
       corridaIds.length
         ? prisma.forestCtpDespachoOrigen.groupBy({
             by: ["produccionEntryId"],
-            where: { tenantId, produccionEntryId: { in: corridaIds }, despacho: { deletedAt: null, status: "registrado" } },
+            where: {
+              tenantId,
+              produccionEntryId: { in: corridaIds },
+              despacho: { deletedAt: null, status: "registrado" },
+            },
             _sum: { quantity: true },
           })
         : [],
       corridaIds.length
         ? prisma.forestCtpReproceso.groupBy({
             by: ["origenEntryId"],
-            where: { tenantId, origenEntryId: { in: corridaIds }, destino: { deletedAt: null, status: "registrado" } },
+            where: {
+              tenantId,
+              origenEntryId: { in: corridaIds },
+              destino: { deletedAt: null, status: "registrado" },
+            },
             _sum: { quantity: true },
           })
         : [],
     ]);
     const porCorrida = new Map(corridas.map((c) => [c.id, c]));
-    const despachado = new Map(salidas.map((r) => [r.produccionEntryId, Number(r._sum.quantity ?? 0)]));
-    const reprocesado = new Map(reprocesos.map((r) => [r.origenEntryId, Number(r._sum.quantity ?? 0)]));
+    const despachado = new Map(
+      salidas.map((r) => [r.produccionEntryId, Number(r._sum.quantity ?? 0)]),
+    );
+    const reprocesado = new Map(
+      reprocesos.map((r) => [r.origenEntryId, Number(r._sum.quantity ?? 0)]),
+    );
     const num = (v: unknown) => (v == null ? null : Number(v));
 
     /** Una corrida vista desde el lote, con lo que la pantalla necesita decidir. */
@@ -335,13 +380,19 @@ export class ForestLoteAserrioDB {
         ...new Set([
           ...l.trozas
             .map((t) => t.consumidaEn)
-            .filter((x): x is NonNullable<typeof x> => Boolean(x) && x!.deletedAt == null && x!.status !== "anulado")
+            .filter(
+              (x): x is NonNullable<typeof x> =>
+                Boolean(x) && x!.deletedAt == null && x!.status !== "anulado",
+            )
             .map((x) => x.id),
           ...(l.produccionEntryId ? [l.produccionEntryId] : []),
         ]),
       ]
         .map((id) => porCorrida.get(id))
-        .filter((x): x is NonNullable<typeof x> => Boolean(x) && x!.deletedAt == null && x!.status !== "anulado")
+        .filter(
+          (x): x is NonNullable<typeof x> =>
+            Boolean(x) && x!.deletedAt == null && x!.status !== "anulado",
+        )
         .map(verCorrida)
         .sort((a, b) => a.lineNo - b.lineNo);
       return {
@@ -409,9 +460,17 @@ export class ForestLoteAserrioDB {
         trozas: {
           orderBy: { orden: "asc" },
           select: {
-            id: true, codificacion: true, codigoPlanta: true, especieComun: true,
-            d1Cm: true, d2Cm: true, largoM: true, volumenM3: true,
-            despachadaEnId: true, noRecepcionada: true, descarte: true,
+            id: true,
+            codificacion: true,
+            codigoPlanta: true,
+            especieComun: true,
+            d1Cm: true,
+            d2Cm: true,
+            largoM: true,
+            volumenM3: true,
+            despachadaEnId: true,
+            noRecepcionada: true,
+            descarte: true,
             /* El ESTADO de la corrida, no el id pelado: una pieza que apunta a
                una corrida anulada volvió al patio (ADR-326 §6). */
             consumidaEn: { select: { id: true, status: true, deletedAt: true } },
@@ -443,12 +502,27 @@ export class ForestLoteAserrioDB {
           where: { tenantId, id: { in: idsCorridas }, deletedAt: null },
           orderBy: { lineNo: "asc" },
           select: {
-            id: true, lineNo: true, entryDate: true, productType: true, speciesCommon: true,
-            quantity: true, unit: true, volumeInputM3: true, status: true, observations: true,
+            id: true,
+            lineNo: true,
+            entryDate: true,
+            productType: true,
+            speciesCommon: true,
+            quantity: true,
+            unit: true,
+            volumeInputM3: true,
+            status: true,
+            observations: true,
             paquetes: {
               where: { deletedAt: null },
               orderBy: { createdAt: "asc" },
-              select: { id: true, codigo: true, productType: true, presentacion: true, cantidad: true, volumenM3: true },
+              select: {
+                id: true,
+                codigo: true,
+                productType: true,
+                presentacion: true,
+                cantidad: true,
+                volumenM3: true,
+              },
             },
           },
         })
@@ -457,7 +531,11 @@ export class ForestLoteAserrioDB {
     // ── Salto 1: de las corridas del lote a las guías que se las llevaron ────
     const propios = idsCorridas.length
       ? await prisma.forestCtpDespachoOrigen.findMany({
-          where: { tenantId, produccionEntryId: { in: idsCorridas }, despacho: { deletedAt: null } },
+          where: {
+            tenantId,
+            produccionEntryId: { in: idsCorridas },
+            despacho: { deletedAt: null },
+          },
           select: { despachoEntryId: true },
         })
       : [];
@@ -474,7 +552,15 @@ export class ForestLoteAserrioDB {
       idsDespachos.length
         ? prisma.forestCtpEntry.findMany({
             where: { tenantId, id: { in: idsDespachos }, deletedAt: null },
-            select: { id: true, lineNo: true, entryDate: true, gtfNumber: true, destino: true, unit: true, status: true },
+            select: {
+              id: true,
+              lineNo: true,
+              entryDate: true,
+              gtfNumber: true,
+              destino: true,
+              unit: true,
+              status: true,
+            },
           })
         : [],
     ]);
@@ -516,7 +602,8 @@ export class ForestLoteAserrioDB {
       corridasDeLotes.push({ produccionEntryId, loteId, loteCode });
     };
     for (const l of lotesDeEsasCorridas) {
-      if (l.produccionEntryId && idsAjenas.includes(l.produccionEntryId)) anotar(l.produccionEntryId, l.id, l.code);
+      if (l.produccionEntryId && idsAjenas.includes(l.produccionEntryId))
+        anotar(l.produccionEntryId, l.id, l.code);
       for (const t of l.trozas) if (t.consumidaEnId) anotar(t.consumidaEnId, l.id, l.code);
     }
 
@@ -627,7 +714,11 @@ export class ForestLoteAserrioDB {
       detail: `Abrió el lote de aserrío ${lote.code} · ${especie}`,
       user: input.createdBy,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
     return lote;
   }
 
@@ -659,15 +750,22 @@ export class ForestLoteAserrioDB {
     const especie = input.speciesCommon.trim();
     if (!especie) throw new CtpInvariantError("El lote necesita una especie.", "LOTE_SIN_ESPECIE");
     if (!(input.volumenConsumidoM3 > 0)) {
-      throw new CtpInvariantError("El volumen consumido tiene que ser mayor a 0.", "LOTE_INVENTARIO_INVALIDO");
+      throw new CtpInvariantError(
+        "El volumen consumido tiene que ser mayor a 0.",
+        "LOTE_INVENTARIO_INVALIDO",
+      );
     }
     if (input.paquetes.length === 0) {
-      throw new CtpInvariantError("Declará al menos un paquete de producción.", "LOTE_INVENTARIO_INVALIDO");
+      throw new CtpInvariantError(
+        "Declará al menos un paquete de producción.",
+        "LOTE_INVENTARIO_INVALIDO",
+      );
     }
 
     const code = await ForestLoteAserrioDB.codigoAUsar(tenantId, input.code);
     const piezas = input.paquetes.reduce((a, p) => a + Math.max(0, Math.round(p.cantidad)), 0);
-    const volumenProducido = Math.round(input.paquetes.reduce((a, p) => a + Number(p.volumenM3 || 0), 0) * 10000) / 10000;
+    const volumenProducido =
+      Math.round(input.paquetes.reduce((a, p) => a + Number(p.volumenM3 || 0), 0) * 10000) / 10000;
     const notas = [ORIGEN_LOTE_INVENTARIO, input.notes?.trim()].filter(Boolean).join(" · ");
 
     /* La corrida entra con su materia prima y sin declarar, igual que
@@ -729,7 +827,11 @@ export class ForestLoteAserrioDB {
           `${volumenProducido} m³ producidos en ${input.paquetes.length} paquete(s), sin trozas reales`,
         user: input.createdBy,
       });
-      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {
+        /* cache best-effort */
+      }
       return { lote, corrida: declarada };
     } catch (e) {
       /* Nada quedó declarado de verdad: se retira la corrida para no dejar una
@@ -756,12 +858,17 @@ export class ForestLoteAserrioDB {
     loteId: string,
     trozaIds: string[],
     user: string,
-  ): Promise<{ agregadas: number; rechazadas: { id: string; codigo: string | null; motivo: string }[] }> {
+  ): Promise<{
+    agregadas: number;
+    rechazadas: { id: string; codigo: string | null; motivo: string }[];
+  }> {
     if (!tenantId) throw new Error("tenantId is required");
     if (trozaIds.length === 0) return { agregadas: 0, rechazadas: [] };
 
     return prisma.$transaction(async (tx) => {
-      const lote = await tx.forestLoteAserrio.findFirst({ where: { id: loteId, tenantId, deletedAt: null } });
+      const lote = await tx.forestLoteAserrio.findFirst({
+        where: { id: loteId, tenantId, deletedAt: null },
+      });
       if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
       if (lote.status !== "abierto") {
         throw new CtpInvariantError(
@@ -789,7 +896,11 @@ export class ForestLoteAserrioDB {
            «Ishpíngo» y «Ishpingo» eran especies distintas y la troza se
            rechazaba con un motivo que se lee idéntico al del lote. */
         if (claveEspecie(t.especieComun) !== claveEspecie(lote.speciesCommon)) {
-          rechazadas.push({ id: t.id, codigo, motivo: `es ${t.especieComun ?? "sin especie"} y el lote es de ${lote.speciesCommon}` });
+          rechazadas.push({
+            id: t.id,
+            codigo,
+            motivo: `es ${t.especieComun ?? "sin especie"} y el lote es de ${lote.speciesCommon}`,
+          });
           continue;
         }
         if (t.loteAserrioId && t.loteAserrioId !== loteId) {
@@ -806,7 +917,10 @@ export class ForestLoteAserrioDB {
       }
 
       if (aceptadas.length > 0) {
-        await tx.woodEntryTroza.updateMany({ where: { id: { in: aceptadas }, tenantId }, data: { loteAserrioId: loteId } });
+        await tx.woodEntryTroza.updateMany({
+          where: { id: { in: aceptadas }, tenantId },
+          data: { loteAserrioId: loteId },
+        });
       }
 
       if (aceptadas.length > 0) {
@@ -815,12 +929,17 @@ export class ForestLoteAserrioDB {
           action: "ctp_lote_aserrio_trozas_add",
           entity: "ForestLoteAserrio",
           entityId: loteId,
-          detail: `Guardó ${aceptadas.length} troza${aceptadas.length === 1 ? "" : "s"} en el lote ${lote.code}` +
+          detail:
+            `Guardó ${aceptadas.length} troza${aceptadas.length === 1 ? "" : "s"} en el lote ${lote.code}` +
             (rechazadas.length > 0 ? ` · ${rechazadas.length} no entraron` : ""),
           user,
         });
       }
-      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {
+        /* cache best-effort */
+      }
       return { agregadas: aceptadas.length, rechazadas };
     });
   }
@@ -862,8 +981,13 @@ export class ForestLoteAserrioDB {
       include: {
         trozas: {
           select: {
-            id: true, woodEntryId: true, volumenM3: true, consumidaEnId: true,
-            noRecepcionada: true, descarte: true, _count: { select: { retrozos: true } },
+            id: true,
+            woodEntryId: true,
+            volumenM3: true,
+            consumidaEnId: true,
+            noRecepcionada: true,
+            descarte: true,
+            _count: { select: { retrozos: true } },
             // Auditoría 2026-08-25: una troza reservada en el lote pudo salir
             // despachada en rollo (o su guía anularse) por otro camino antes
             // de que este lote entrara a la sierra — sin esto quedaba con
@@ -876,7 +1000,11 @@ export class ForestLoteAserrioDB {
     });
     if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
     if (lote.status !== "abierto") {
-      throw new CtpInvariantError(`El lote ${lote.code} ya está ${lote.status}.`, "LOTE_NO_EDITABLE", { status: lote.status });
+      throw new CtpInvariantError(
+        `El lote ${lote.code} ya está ${lote.status}.`,
+        "LOTE_NO_EDITABLE",
+        { status: lote.status },
+      );
     }
     const disponibles = lote.trozas.filter((t) => motivoNoElegible(t) === null);
     const pedidas = soloEstas && soloEstas.length > 0 ? new Set(soloEstas) : null;
@@ -893,7 +1021,9 @@ export class ForestLoteAserrioDB {
     /* Los m³ por guía, ANTES de marcar nada: si I1/I2 rechazan, el lote queda
        abierto y no hay medio consumo escrito. Sólo se derivan si la corrida no
        tiene ya su atribución — un operador que la declaró a mano manda. */
-    const yaAtribuida = await prisma.forestCtpConsumo.count({ where: { tenantId, ctpEntryId: corridaId } });
+    const yaAtribuida = await prisma.forestCtpConsumo.count({
+      where: { tenantId, ctpEntryId: corridaId },
+    });
     if (yaAtribuida === 0) {
       const porGuia = agruparPorGuia(
         libres.map((t) => ({
@@ -923,12 +1053,17 @@ export class ForestLoteAserrioDB {
       if (libres.length >= disponibles.length) {
         await tx.forestLoteAserrio.update({
           where: { id: loteId },
-          data: { status: "consumido", fechaConsumo: fecha ?? new Date(), produccionEntryId: corridaId },
+          data: {
+            status: "consumido",
+            fechaConsumo: fecha ?? new Date(),
+            produccionEntryId: corridaId,
+          },
         });
       }
     });
 
-    const volumenM3 = Math.round(libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000;
+    const volumenM3 =
+      Math.round(libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000;
     const quedan = disponibles.length - libres.length;
     auditCtp({
       tenantId,
@@ -940,7 +1075,11 @@ export class ForestLoteAserrioDB {
         (quedan > 0 ? ` · quedan ${quedan} apartada(s) en el lote` : ""),
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
     return { piezas: libres.length, volumenM3 };
   }
 
@@ -965,7 +1104,13 @@ export class ForestLoteAserrioDB {
    */
   static async consumirEnPatio(
     tenantId: string,
-    input: { loteId: string; trozaIds?: string[]; fecha?: Date; observaciones?: string | null; user: string },
+    input: {
+      loteId: string;
+      trozaIds?: string[];
+      fecha?: Date;
+      observaciones?: string | null;
+      user: string;
+    },
   ): Promise<{
     corrida: { id: string; lineNo: number };
     piezas: number;
@@ -977,17 +1122,26 @@ export class ForestLoteAserrioDB {
 
     /* Primero las piezas al lote: si alguna no entra, se dice cuál y por qué
        ANTES de abrir nada en el libro. */
-    const agregado = trozaIds.length > 0
-      ? await ForestLoteAserrioDB.agregarTrozas(tenantId, loteId, trozaIds, user)
-      : { agregadas: 0, rechazadas: [] as { id: string; codigo: string | null; motivo: string }[] };
+    const agregado =
+      trozaIds.length > 0
+        ? await ForestLoteAserrioDB.agregarTrozas(tenantId, loteId, trozaIds, user)
+        : {
+            agregadas: 0,
+            rechazadas: [] as { id: string; codigo: string | null; motivo: string }[],
+          };
 
     const lote = await prisma.forestLoteAserrio.findFirst({
       where: { id: loteId, tenantId, deletedAt: null },
       include: {
         trozas: {
           select: {
-            id: true, volumenM3: true, consumidaEnId: true, especieCientifica: true,
-            noRecepcionada: true, descarte: true, _count: { select: { retrozos: true } },
+            id: true,
+            volumenM3: true,
+            consumidaEnId: true,
+            especieCientifica: true,
+            noRecepcionada: true,
+            descarte: true,
+            _count: { select: { retrozos: true } },
             despachadaEn: { select: { status: true, deletedAt: true } },
             entry: { select: { status: true, deletedAt: true } },
           },
@@ -1007,7 +1161,8 @@ export class ForestLoteAserrioDB {
         "LOTE_NO_EDITABLE",
       );
     }
-    const volumenM3 = Math.round(libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000;
+    const volumenM3 =
+      Math.round(libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000;
 
     const corrida = await ForestCtpDB.create(tenantId, {
       section: "produccion",
@@ -1020,12 +1175,20 @@ export class ForestLoteAserrioDB {
          en `materiaPrimaRef` y en el casillero (10), y que falte declarar la
          producción se sabe por `quantity == null`. Concatenar las dos llenaba
          el casillero (11) de ruido justo cuando había algo real que leer. */
-      observations: (observaciones ?? "").trim() || `Consumo del lote ${lote.code} · producción por declarar`,
+      observations:
+        (observaciones ?? "").trim() || `Consumo del lote ${lote.code} · producción por declarar`,
       createdBy: user,
     });
 
     try {
-      const r = await ForestLoteAserrioDB.consumir(tenantId, loteId, corrida.id, fecha, user, trozaIds);
+      const r = await ForestLoteAserrioDB.consumir(
+        tenantId,
+        loteId,
+        corrida.id,
+        fecha,
+        user,
+        trozaIds,
+      );
       return {
         corrida: { id: corrida.id, lineNo: corrida.lineNo },
         piezas: r.piezas,
@@ -1086,12 +1249,16 @@ export class ForestLoteAserrioDB {
     // total sobre el mismo valor viejo y el que escribe último pisa al otro
     // — el mismo TOCTOU que `setConsumos`/`setOrigenes` ya blindaron con
     // `FOR UPDATE` cuando se reprodujo en una función hermana.
-    const { corrida, lote, libres, delta, volumenPrevio, volumenTotal, seVacia } = await prisma.$transaction(
-      async (tx) => {
+    const { corrida, lote, libres, delta, volumenPrevio, volumenTotal, seVacia } =
+      await prisma.$transaction(async (tx) => {
         const locked = await tx.$queryRaw<
           {
-            id: string; lineNo: number; section: string; status: string;
-            quantity: Prisma.Decimal | null; volumeInputM3: Prisma.Decimal | null;
+            id: string;
+            lineNo: number;
+            section: string;
+            status: string;
+            quantity: Prisma.Decimal | null;
+            volumeInputM3: Prisma.Decimal | null;
             speciesCommon: string | null;
           }[]
         >`
@@ -1100,7 +1267,8 @@ export class ForestLoteAserrioDB {
           WHERE "id" = ${corridaId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
           FOR UPDATE
         `;
-        if (locked.length === 0) throw new CtpInvariantError("Esa corrida no existe.", "LOTE_NO_ENCONTRADO");
+        if (locked.length === 0)
+          throw new CtpInvariantError("Esa corrida no existe.", "LOTE_NO_ENCONTRADO");
         const corrida = locked[0];
         if (corrida.section !== "produccion" || corrida.status !== "registrado") {
           throw new CtpInvariantError(
@@ -1122,8 +1290,13 @@ export class ForestLoteAserrioDB {
           include: {
             trozas: {
               select: {
-                id: true, woodEntryId: true, volumenM3: true, consumidaEnId: true,
-                noRecepcionada: true, descarte: true, _count: { select: { retrozos: true } },
+                id: true,
+                woodEntryId: true,
+                volumenM3: true,
+                consumidaEnId: true,
+                noRecepcionada: true,
+                descarte: true,
+                _count: { select: { retrozos: true } },
                 despachadaEn: { select: { status: true, deletedAt: true } },
                 entry: { select: { status: true, deletedAt: true } },
               },
@@ -1132,11 +1305,18 @@ export class ForestLoteAserrioDB {
         });
         if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
         if (lote.status !== "abierto") {
-          throw new CtpInvariantError(`El lote ${lote.code} ya está ${lote.status}.`, "LOTE_NO_EDITABLE", { status: lote.status });
+          throw new CtpInvariantError(
+            `El lote ${lote.code} ya está ${lote.status}.`,
+            "LOTE_NO_EDITABLE",
+            { status: lote.status },
+          );
         }
         /* L-A1 llevada a la corrida: un asiento es de UNA especie, o el Cuadro
            Resumen por especie deja de poder armarse. */
-        if (corrida.speciesCommon && claveEspecie(lote.speciesCommon) !== claveEspecie(corrida.speciesCommon)) {
+        if (
+          corrida.speciesCommon &&
+          claveEspecie(lote.speciesCommon) !== claveEspecie(corrida.speciesCommon)
+        ) {
           throw new CtpInvariantError(
             `El lote ${lote.code} es de ${lote.speciesCommon} y la corrida N° ${corrida.lineNo} es de ${corrida.speciesCommon}.`,
             "LOTE_NO_EDITABLE",
@@ -1160,14 +1340,16 @@ export class ForestLoteAserrioDB {
         const volumenTotal = r4(volumenPrevio + delta);
 
         // 1. El volumen primero (ver cabecera y ADR-364), todavía bajo lock.
-        await tx.forestCtpEntry.update({ where: { id: corridaId }, data: { volumeInputM3: volumenTotal } });
+        await tx.forestCtpEntry.update({
+          where: { id: corridaId },
+          data: { volumeInputM3: volumenTotal },
+        });
 
         const disponibles = lote.trozas.filter((t) => motivoNoElegible(t) === null);
         const seVacia = libres.length >= disponibles.length;
 
         return { corrida, lote, libres, delta, volumenPrevio, volumenTotal, seVacia };
-      },
-    );
+      });
 
     try {
       // 2. La atribución por guía: lo que YA tenía ⊕ lo que entra ahora.
@@ -1222,7 +1404,11 @@ export class ForestLoteAserrioDB {
       if (seVacia) {
         await tx.forestLoteAserrio.update({
           where: { id: loteId },
-          data: { status: "consumido", fechaConsumo: fecha ?? new Date(), produccionEntryId: corridaId },
+          data: {
+            status: "consumido",
+            fechaConsumo: fecha ?? new Date(),
+            produccionEntryId: corridaId,
+          },
         });
       }
     });
@@ -1238,9 +1424,18 @@ export class ForestLoteAserrioDB {
         (seVacia ? ` · el lote quedó consumido` : ""),
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
 
-    return { piezas: libres.length, volumenM3: delta, volumenTotalM3: volumenTotal, loteCerrado: seVacia };
+    return {
+      piezas: libres.length,
+      volumenM3: delta,
+      volumenTotalM3: volumenTotal,
+      loteCerrado: seVacia,
+    };
   }
 
   /**
@@ -1260,7 +1455,12 @@ export class ForestLoteAserrioDB {
   static async quitarDeCorrida(
     tenantId: string,
     input: { corridaId: string; trozaIds: string[]; user: string },
-  ): Promise<{ piezas: number; volumenM3: number; volumenTotalM3: number; lotesReabiertos: string[] }> {
+  ): Promise<{
+    piezas: number;
+    volumenM3: number;
+    volumenTotalM3: number;
+    lotesReabiertos: string[];
+  }> {
     if (!tenantId) throw new Error("tenantId is required");
     const { corridaId, trozaIds, user } = input;
     if (trozaIds.length === 0) {
@@ -1275,63 +1475,73 @@ export class ForestLoteAserrioDB {
     // el volumen — misma protección, orden invertido (acá se escribe primero
     // porque el lock tiene que cubrir la lectura Y la escritura del mismo
     // valor, no sólo una de las dos).
-    const { corrida, salen, delta, volumenPrevio, volumenTotal } = await prisma.$transaction(async (tx) => {
-      const locked = await tx.$queryRaw<
-        {
-          id: string; lineNo: number; section: string; status: string;
-          quantity: Prisma.Decimal | null; volumeInputM3: Prisma.Decimal | null;
-        }[]
-      >`
+    const { corrida, salen, delta, volumenPrevio, volumenTotal } = await prisma.$transaction(
+      async (tx) => {
+        const locked = await tx.$queryRaw<
+          {
+            id: string;
+            lineNo: number;
+            section: string;
+            status: string;
+            quantity: Prisma.Decimal | null;
+            volumeInputM3: Prisma.Decimal | null;
+          }[]
+        >`
         SELECT "id", "lineNo", "section", "status", "quantity", "volumeInputM3"
         FROM "ForestCtpEntry"
         WHERE "id" = ${corridaId} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
         FOR UPDATE
       `;
-      if (locked.length === 0) throw new CtpInvariantError("Esa corrida no existe.", "LOTE_NO_ENCONTRADO");
-      const corrida = locked[0];
-      if (corrida.section !== "produccion" || corrida.status !== "registrado") {
-        throw new CtpInvariantError(
-          `La corrida N° ${corrida.lineNo} no está vigente: no se le tocan las piezas.`,
-          "LOTE_NO_EDITABLE",
-        );
-      }
-      if (corrida.quantity != null) {
-        throw new CtpInvariantError(
-          `La corrida N° ${corrida.lineNo} ya declaró su producción: sacarle materia prima le cambiaría el rendimiento. ` +
-            "Anulala y rehacela si la carga estaba mal.",
-          "LOTE_NO_EDITABLE",
-        );
-      }
+        if (locked.length === 0)
+          throw new CtpInvariantError("Esa corrida no existe.", "LOTE_NO_ENCONTRADO");
+        const corrida = locked[0];
+        if (corrida.section !== "produccion" || corrida.status !== "registrado") {
+          throw new CtpInvariantError(
+            `La corrida N° ${corrida.lineNo} no está vigente: no se le tocan las piezas.`,
+            "LOTE_NO_EDITABLE",
+          );
+        }
+        if (corrida.quantity != null) {
+          throw new CtpInvariantError(
+            `La corrida N° ${corrida.lineNo} ya declaró su producción: sacarle materia prima le cambiaría el rendimiento. ` +
+              "Anulala y rehacela si la carga estaba mal.",
+            "LOTE_NO_EDITABLE",
+          );
+        }
 
-      /* Las piezas de ESTA corrida y nada más: un id de otra sería sacar madera de
+        /* Las piezas de ESTA corrida y nada más: un id de otra sería sacar madera de
          un asiento que el operador no está mirando. */
-      const suyas = await tx.woodEntryTroza.findMany({
-        where: { tenantId, consumidaEnId: corridaId },
-        select: { id: true, woodEntryId: true, volumenM3: true, loteAserrioId: true },
-      });
-      const pedidas = new Set(trozaIds);
-      const salen = suyas.filter((t) => pedidas.has(t.id));
-      if (salen.length === 0) {
-        throw new CtpInvariantError(
-          `Ninguna de esas piezas está en la corrida N° ${corrida.lineNo}.`,
-          "LOTE_NO_EDITABLE",
-        );
-      }
-      if (salen.length >= suyas.length) {
-        throw new CtpInvariantError(
-          `Sacarlas todas dejaría la corrida N° ${corrida.lineNo} sin materia prima. Si la carga estaba mal, anulala.`,
-          "LOTE_NO_EDITABLE",
-        );
-      }
+        const suyas = await tx.woodEntryTroza.findMany({
+          where: { tenantId, consumidaEnId: corridaId },
+          select: { id: true, woodEntryId: true, volumenM3: true, loteAserrioId: true },
+        });
+        const pedidas = new Set(trozaIds);
+        const salen = suyas.filter((t) => pedidas.has(t.id));
+        if (salen.length === 0) {
+          throw new CtpInvariantError(
+            `Ninguna de esas piezas está en la corrida N° ${corrida.lineNo}.`,
+            "LOTE_NO_EDITABLE",
+          );
+        }
+        if (salen.length >= suyas.length) {
+          throw new CtpInvariantError(
+            `Sacarlas todas dejaría la corrida N° ${corrida.lineNo} sin materia prima. Si la carga estaba mal, anulala.`,
+            "LOTE_NO_EDITABLE",
+          );
+        }
 
-      const delta = r4(salen.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0));
-      const volumenPrevio = corrida.volumeInputM3 == null ? 0 : Number(corrida.volumeInputM3);
-      const volumenTotal = r4(volumenPrevio - delta);
+        const delta = r4(salen.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0));
+        const volumenPrevio = corrida.volumeInputM3 == null ? 0 : Number(corrida.volumeInputM3);
+        const volumenTotal = r4(volumenPrevio - delta);
 
-      await tx.forestCtpEntry.update({ where: { id: corridaId }, data: { volumeInputM3: volumenTotal } });
+        await tx.forestCtpEntry.update({
+          where: { id: corridaId },
+          data: { volumeInputM3: volumenTotal },
+        });
 
-      return { corrida, suyas, salen, delta, volumenPrevio, volumenTotal };
-    });
+        return { corrida, suyas, salen, delta, volumenPrevio, volumenTotal };
+      },
+    );
 
     try {
       // 1. La atribución baja (ver cabecera) — el volumen ya está escrito arriba.
@@ -1349,7 +1559,10 @@ export class ForestLoteAserrioDB {
           volumenM3: t.volumenM3 == null ? null : Number(t.volumenM3),
         })),
       )) {
-        porGuia.set(g.woodEntryId, r4(Math.max(0, (porGuia.get(g.woodEntryId) ?? 0) - g.volumenM3)));
+        porGuia.set(
+          g.woodEntryId,
+          r4(Math.max(0, (porGuia.get(g.woodEntryId) ?? 0) - g.volumenM3)),
+        );
       }
       const nuevos = [...porGuia.entries()]
         .filter(([, v]) => v > 0)
@@ -1385,7 +1598,9 @@ export class ForestLoteAserrioDB {
 
     // 3. Las piezas vuelven a estar libres, y su lote se reabre si se había
     //    cerrado por esta corrida: recuperó madera, así que ya no está consumido.
-    const lotesTocados = [...new Set(salen.map((t) => t.loteAserrioId).filter((v): v is string => Boolean(v)))];
+    const lotesTocados = [
+      ...new Set(salen.map((t) => t.loteAserrioId).filter((v): v is string => Boolean(v))),
+    ];
     const reabiertos: string[] = [];
     await prisma.$transaction(async (tx) => {
       await tx.woodEntryTroza.updateMany({
@@ -1418,9 +1633,18 @@ export class ForestLoteAserrioDB {
         (reabiertos.length > 0 ? ` · reabrió ${reabiertos.join(", ")}` : ""),
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
 
-    return { piezas: salen.length, volumenM3: delta, volumenTotalM3: volumenTotal, lotesReabiertos: reabiertos };
+    return {
+      piezas: salen.length,
+      volumenM3: delta,
+      volumenTotalM3: volumenTotal,
+      lotesReabiertos: reabiertos,
+    };
   }
 
   /**
@@ -1446,7 +1670,10 @@ export class ForestLoteAserrioDB {
     if (!tenantId) throw new Error("tenantId is required");
     const { loteId, motivo, user } = input;
     if (motivo.trim().length < 3) {
-      throw new CtpInvariantError("Poné el motivo por el que se cierra el lote.", "LOTE_NO_EDITABLE");
+      throw new CtpInvariantError(
+        "Poné el motivo por el que se cierra el lote.",
+        "LOTE_NO_EDITABLE",
+      );
     }
 
     const lote = await prisma.forestLoteAserrio.findFirst({
@@ -1464,7 +1691,8 @@ export class ForestLoteAserrioDB {
 
     const libres = lote.trozas.filter((t) => !t.consumidaEnId);
     const consumidas = lote.trozas.length - libres.length;
-    const volumenM3 = Math.round(libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000;
+    const volumenM3 =
+      Math.round(libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000;
 
     await prisma.$transaction(async (tx) => {
       /* Sólo las libres: las que ya entraron a una corrida siguen atadas a ella
@@ -1480,7 +1708,10 @@ export class ForestLoteAserrioDB {
         data: {
           status: "cerrado",
           fechaConsumo: consumidas > 0 ? (lote.fechaConsumo ?? new Date()) : lote.fechaConsumo,
-          notes: [lote.notes?.trim(), `Cerrado: ${motivo.trim()}`].filter(Boolean).join(" · ").slice(0, 500),
+          notes: [lote.notes?.trim(), `Cerrado: ${motivo.trim()}`]
+            .filter(Boolean)
+            .join(" · ")
+            .slice(0, 500),
         },
       });
     });
@@ -1495,7 +1726,11 @@ export class ForestLoteAserrioDB {
         `${libres.length} troza${libres.length === 1 ? "" : "s"} (${volumenM3} m³) volvieron al patio · motivo: ${motivo.trim()}`,
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
 
     return { code: lote.code, liberadas: libres.length, volumenM3, teniaCorridas: consumidas > 0 };
   }
@@ -1566,7 +1801,11 @@ export class ForestLoteAserrioDB {
         `${piezasConsumidas} pieza${piezasConsumidas === 1 ? "" : "s"} ya aserrada${piezasConsumidas === 1 ? "" : "s"} siguen atadas a su corrida`,
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
 
     return { code: lote.code, piezasConsumidas };
   }
@@ -1574,17 +1813,33 @@ export class ForestLoteAserrioDB {
   /** Saca una pieza del lote (mientras esté abierto). */
   static async quitarTroza(tenantId: string, loteId: string, trozaId: string, user: string) {
     if (!tenantId) throw new Error("tenantId is required");
-    const lote = await prisma.forestLoteAserrio.findFirst({ where: { id: loteId, tenantId, deletedAt: null } });
+    const lote = await prisma.forestLoteAserrio.findFirst({
+      where: { id: loteId, tenantId, deletedAt: null },
+    });
     if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
     if (lote.status !== "abierto") {
-      throw new CtpInvariantError(`El lote ${lote.code} está ${lote.status}: sus piezas ya no se mueven.`, "LOTE_NO_EDITABLE");
+      throw new CtpInvariantError(
+        `El lote ${lote.code} está ${lote.status}: sus piezas ya no se mueven.`,
+        "LOTE_NO_EDITABLE",
+      );
     }
-    await prisma.woodEntryTroza.updateMany({ where: { id: trozaId, tenantId, loteAserrioId: loteId }, data: { loteAserrioId: null } });
-    auditCtp({
-      tenantId, action: "ctp_lote_aserrio_trozas_remove", entity: "ForestLoteAserrio", entityId: loteId,
-      detail: `Sacó una troza del lote ${lote.code}`, user,
+    await prisma.woodEntryTroza.updateMany({
+      where: { id: trozaId, tenantId, loteAserrioId: loteId },
+      data: { loteAserrioId: null },
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    auditCtp({
+      tenantId,
+      action: "ctp_lote_aserrio_trozas_remove",
+      entity: "ForestLoteAserrio",
+      entityId: loteId,
+      detail: `Sacó una troza del lote ${lote.code}`,
+      user,
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
   }
 
   /**
@@ -1605,7 +1860,11 @@ export class ForestLoteAserrioDB {
     if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
 
     const nuevaEspecie = cambios.speciesCommon?.trim();
-    if (nuevaEspecie && nuevaEspecie.toLowerCase() !== lote.speciesCommon.trim().toLowerCase() && lote._count.trozas > 0) {
+    if (
+      nuevaEspecie &&
+      nuevaEspecie.toLowerCase() !== lote.speciesCommon.trim().toLowerCase() &&
+      lote._count.trozas > 0
+    ) {
       throw new CtpInvariantError(
         `El lote ${lote.code} ya tiene ${lote._count.trozas} pieza${lote._count.trozas === 1 ? "" : "s"} de ${lote.speciesCommon}: no se le puede cambiar la especie.`,
         "LOTE_NO_EDITABLE",
@@ -1615,24 +1874,57 @@ export class ForestLoteAserrioDB {
     // Código vacío/ausente = no se pidió cambiarlo, no "borralo": un lote
     // siempre necesita uno.
     const codigoPedido = cambios.code?.trim();
-    const code = codigoPedido ? await ForestLoteAserrioDB.codigoAUsar(tenantId, codigoPedido, loteId) : undefined;
+    const code = codigoPedido
+      ? await ForestLoteAserrioDB.codigoAUsar(tenantId, codigoPedido, loteId)
+      : undefined;
+
+    /* La marca «Inventario» vive en `notes` (ver `ORIGEN_LOTE_INVENTARIO`) y es
+       un HECHO del lote, no texto del operador: nació sin trozas reales y eso no
+       cambia porque alguien edite la nota. Si la edición la borra, se vuelve a
+       anteponer; sin esto, un lote de inventario pasaba a leerse como un lote
+       de patio con cero piezas (auditoría 2026-09-05 #12). */
+    const notasPedidas = cambios.notes !== undefined ? cambios.notes?.trim() || null : undefined;
+    const eraInventario = (lote.notes ?? "").includes(ORIGEN_LOTE_INVENTARIO);
+    const notes =
+      notasPedidas !== undefined &&
+      eraInventario &&
+      !(notasPedidas ?? "").includes(ORIGEN_LOTE_INVENTARIO)
+        ? [ORIGEN_LOTE_INVENTARIO, notasPedidas].filter(Boolean).join(" · ").slice(0, 500)
+        : notasPedidas;
 
     const actualizado = await prisma.forestLoteAserrio.update({
       where: { id: loteId },
       data: {
         ...(code !== undefined ? { code } : {}),
         ...(nuevaEspecie ? { speciesCommon: nuevaEspecie } : {}),
-        ...(cambios.speciesScientific !== undefined ? { speciesScientific: cambios.speciesScientific?.trim() || null } : {}),
-        ...(cambios.notes !== undefined ? { notes: cambios.notes?.trim() || null } : {}),
-        ...(cambios.ordenProduccion !== undefined ? { ordenProduccion: cambios.ordenProduccion?.trim() || null } : {}),
-        ...(cambios.tipoProductoConsumir !== undefined ? { tipoProductoConsumir: cambios.tipoProductoConsumir?.trim() || null } : {}),
+        ...(cambios.speciesScientific !== undefined
+          ? { speciesScientific: cambios.speciesScientific?.trim() || null }
+          : {}),
+        ...(notes !== undefined ? { notes } : {}),
+        ...(cambios.ordenProduccion !== undefined
+          ? { ordenProduccion: cambios.ordenProduccion?.trim() || null }
+          : {}),
+        ...(cambios.tipoProductoConsumir !== undefined
+          ? { tipoProductoConsumir: cambios.tipoProductoConsumir?.trim() || null }
+          : {}),
         ...(cambios.permiso !== undefined ? { permiso: cambios.permiso?.trim() || null } : {}),
         ...(cambios.inicioProceso !== undefined ? { inicioProceso: cambios.inicioProceso } : {}),
         ...(cambios.finProceso !== undefined ? { finProceso: cambios.finProceso } : {}),
       },
     });
-    auditCtp({ tenantId, action: "ctp_lote_aserrio_update", entity: "ForestLoteAserrio", entityId: loteId, detail: `Editó el lote ${lote.code}`, user });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    auditCtp({
+      tenantId,
+      action: "ctp_lote_aserrio_update",
+      entity: "ForestLoteAserrio",
+      entityId: loteId,
+      detail: `Editó el lote ${lote.code}`,
+      user,
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
     return actualizado;
   }
 
@@ -1650,7 +1942,11 @@ export class ForestLoteAserrioDB {
    * piezas que una corrida todavía viva sigue contando como su materia prima
    * — el libro quedaba con una corrida sin origen sin que nadie lo pidiera.
    */
-  private static async corridasQueConsumieron(tenantId: string, loteId: string, produccionEntryId: string | null) {
+  private static async corridasQueConsumieron(
+    tenantId: string,
+    loteId: string,
+    produccionEntryId: string | null,
+  ) {
     const consumidas = await prisma.woodEntryTroza.findMany({
       where: { tenantId, loteAserrioId: loteId, consumidaEnId: { not: null } },
       select: { consumidaEnId: true },
@@ -1658,7 +1954,9 @@ export class ForestLoteAserrioDB {
     });
     const ids = [
       ...new Set(
-        [produccionEntryId, ...consumidas.map((t) => t.consumidaEnId)].filter((x): x is string => Boolean(x)),
+        [produccionEntryId, ...consumidas.map((t) => t.consumidaEnId)].filter((x): x is string =>
+          Boolean(x),
+        ),
       ),
     ];
     if (ids.length === 0) return [];
@@ -1690,12 +1988,21 @@ export class ForestLoteAserrioDB {
     if (!tenantId) throw new Error("tenantId is required");
     const { loteId, motivo, user, forzar = false } = input;
     if (motivo.trim().length < 3) {
-      throw new CtpInvariantError("Poné el motivo por el que se deshace el lote.", "LOTE_NO_EDITABLE");
+      throw new CtpInvariantError(
+        "Poné el motivo por el que se deshace el lote.",
+        "LOTE_NO_EDITABLE",
+      );
     }
-    const lote = await prisma.forestLoteAserrio.findFirst({ where: { id: loteId, tenantId, deletedAt: null } });
+    const lote = await prisma.forestLoteAserrio.findFirst({
+      where: { id: loteId, tenantId, deletedAt: null },
+    });
     if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
 
-    const corridas = await ForestLoteAserrioDB.corridasQueConsumieron(tenantId, loteId, lote.produccionEntryId);
+    const corridas = await ForestLoteAserrioDB.corridasQueConsumieron(
+      tenantId,
+      loteId,
+      lote.produccionEntryId,
+    );
     const vivas = corridas.filter((c) => c.deletedAt == null && c.status !== "anulado");
 
     let corridaAnulada = false;
@@ -1705,15 +2012,25 @@ export class ForestLoteAserrioDB {
           vivas.map(async (c) => {
             const [despachado, reprocesado] = await Promise.all([
               prisma.forestCtpDespachoOrigen.aggregate({
-                where: { tenantId, produccionEntryId: c.id, despacho: { deletedAt: null, status: "registrado" } },
+                where: {
+                  tenantId,
+                  produccionEntryId: c.id,
+                  despacho: { deletedAt: null, status: "registrado" },
+                },
                 _sum: { quantity: true },
               }),
               prisma.forestCtpReproceso.aggregate({
-                where: { tenantId, origenEntryId: c.id, destino: { deletedAt: null, status: "registrado" } },
+                where: {
+                  tenantId,
+                  origenEntryId: c.id,
+                  destino: { deletedAt: null, status: "registrado" },
+                },
                 _sum: { quantity: true },
               }),
             ]);
-            const tieneSalida = Number(despachado._sum.quantity ?? 0) > 0 || Number(reprocesado._sum.quantity ?? 0) > 0;
+            const tieneSalida =
+              Number(despachado._sum.quantity ?? 0) > 0 ||
+              Number(reprocesado._sum.quantity ?? 0) > 0;
             return tieneSalida ? c : null;
           }),
         )
@@ -1735,7 +2052,9 @@ export class ForestLoteAserrioDB {
         await ForestCtpDB.annul(
           tenantId,
           c.id,
-          conSalidaIds.has(c.id) ? `${motivo.trim()} · FORZADO: la corrida ya tenía despacho/reproceso registrado` : motivo.trim(),
+          conSalidaIds.has(c.id)
+            ? `${motivo.trim()} · FORZADO: la corrida ya tenía despacho/reproceso registrado`
+            : motivo.trim(),
           user,
         );
       }
@@ -1753,7 +2072,9 @@ export class ForestLoteAserrioDB {
    */
   static async softDelete(tenantId: string, loteId: string, user: string) {
     if (!tenantId) throw new Error("tenantId is required");
-    const lote = await prisma.forestLoteAserrio.findFirst({ where: { id: loteId, tenantId, deletedAt: null } });
+    const lote = await prisma.forestLoteAserrio.findFirst({
+      where: { id: loteId, tenantId, deletedAt: null },
+    });
     if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
 
     /**
@@ -1766,9 +2087,13 @@ export class ForestLoteAserrioDB {
      */
     const corridasVivas =
       lote.status !== "abierto"
-        ? (await ForestLoteAserrioDB.corridasQueConsumieron(tenantId, loteId, lote.produccionEntryId)).filter(
-            (c) => c.deletedAt == null && c.status !== "anulado",
-          )
+        ? (
+            await ForestLoteAserrioDB.corridasQueConsumieron(
+              tenantId,
+              loteId,
+              lote.produccionEntryId,
+            )
+          ).filter((c) => c.deletedAt == null && c.status !== "anulado")
         : [];
     if (corridasVivas.length > 0) {
       throw new CtpInvariantError(
@@ -1782,15 +2107,25 @@ export class ForestLoteAserrioDB {
          lote estaba consumido por una corrida muerta, además se liberan. */
       await tx.woodEntryTroza.updateMany({
         where: { tenantId, loteAserrioId: loteId },
-        data: { loteAserrioId: null, ...(lote.status !== "abierto" ? { consumidaEnId: null, fechaConsumo: null } : {}) },
+        data: {
+          loteAserrioId: null,
+          ...(lote.status !== "abierto" ? { consumidaEnId: null, fechaConsumo: null } : {}),
+        },
       });
       await tx.forestLoteAserrio.update({ where: { id: loteId }, data: { deletedAt: new Date() } });
     });
     auditCtp({
-      tenantId, action: "ctp_lote_aserrio_delete", entity: "ForestLoteAserrio", entityId: loteId,
+      tenantId,
+      action: "ctp_lote_aserrio_delete",
+      entity: "ForestLoteAserrio",
+      entityId: loteId,
       detail: `Deshizo el lote ${lote.code} · sus piezas volvieron al patio${lote.status !== "abierto" ? " (su corrida ya no existía)" : ""}`,
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
   }
 }

@@ -39,6 +39,10 @@ import {
   type FuenteDeCapacidad,
 } from "@/lib/forestal/capacidad-de-planta";
 import { useParamsDeSaldos } from "@/hooks/use-params-de-saldos";
+import OrigenIncompleto from "./saldos/OrigenIncompleto";
+import CtpNodeDetailLoader, { type DetailTarget } from "./CtpNodeDetailLoader";
+import { resumenDeOrigen } from "@/lib/forestal/origen-incompleto";
+import type { EstadoFuente } from "@/lib/forestal/capacidad-de-planta";
 import { applyCtpPeriodParams } from "@/lib/forestal/ctp-period";
 import { logger } from "@/lib/logger";
 import {
@@ -116,24 +120,35 @@ export function CtpSaldosView({
   const [detalleFuente, setDetalleFuente] = useState<FuenteDeCapacidad | null>(null);
   /** Las corridas con saldo en el depósito HOY (foto, sin período). `null` = cargando. */
   const [corridas, setCorridas] = useState<CorridaDisponible[] | null>(null);
-  useEffect(() => {
-    let vivo = true;
-    fetch("/api/admin/forestal/lotes-aserrio", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        if (vivo && Array.isArray(j?.lotes)) setLotes(j.lotes as LoteAserrio[]);
-      })
-      .catch((err) => logger.warn("[ctp-saldos] lotes no cargaron", { error: String(err) }));
-    fetch("/api/admin/forestal/trozas/patio", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        if (vivo && Array.isArray(j?.trozas)) setPatio(j.trozas as TrozaConsumible[]);
-      })
-      .catch((err) => logger.warn("[ctp-saldos] patio no cargó", { error: String(err) }));
-    /* Lo disponible es una FOTO del depósito, no un movimiento del mes: un
-       paquete aserrado en 2024 que nadie despachó sigue estando hoy. Por eso
-       va SIN `soloDelPeriodo` (ADR-349) — el período sólo acompaña. */
-    fetch(
+  /* Cómo llegó cada fetch. Un `[]` que en realidad es «todavía no» o «falló»
+     bajaba un reporte firmable con «0 piezas libres» donde había 5.000. */
+  const [estado, setEstado] = useState<
+    Record<"patio" | "lotes" | "corridas" | "pendientes", EstadoFuente>
+  >({
+    patio: "cargando",
+    lotes: "cargando",
+    corridas: "cargando",
+    pendientes: "cargando",
+  });
+  const marcar = useCallback(
+    (k: "patio" | "lotes" | "corridas" | "pendientes", v: EstadoFuente) =>
+      setEstado((e) => (e[k] === v ? e : { ...e, [k]: v })),
+    [],
+  );
+  /** El endpoint del patio recorta a 5.000 piezas: si recortó, el techo es parcial. */
+  const [patioTruncado, setPatioTruncado] = useState<{ devueltas: number; total: number } | null>(
+    null,
+  );
+  /** Ingresos sin validar que NO tienen piezas (los que sí, entran troza por troza). */
+  const [pendienteSinPiezasM3, setPendienteSinPiezasM3] = useState(0);
+  /** La corrida abierta desde «Origen incompleto», para atarle materia prima. */
+  const [corridaAbierta, setCorridaAbierta] = useState<DetailTarget | null>(null);
+  /* Lo disponible es una FOTO del depósito, no un movimiento del mes: un
+     paquete aserrado en 2024 que nadie despachó sigue estando hoy. Por eso
+     va SIN `soloDelPeriodo` (ADR-349) — el período sólo acompaña. Es una
+     función porque se vuelve a pedir después de atar un origen. */
+  const cargarCorridas = useCallback(() => {
+    return fetch(
       `/api/admin/forestal/ctp?${applyCtpPeriodParams(new URLSearchParams({ disponibles: "1" }), period)}`,
       {
         credentials: "include",
@@ -141,27 +156,90 @@ export function CtpSaldosView({
     )
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
-        if (vivo)
-          setCorridas(Array.isArray(j?.corridas) ? (j.corridas as CorridaDisponible[]) : []);
+        if (Array.isArray(j?.corridas)) {
+          setCorridas(j.corridas as CorridaDisponible[]);
+          marcar("corridas", "ok");
+        } else {
+          setCorridas([]);
+          marcar("corridas", "error");
+        }
       })
       .catch((err) => {
         logger.warn("[ctp-saldos] disponibles no cargaron", { error: String(err) });
-        if (vivo) setCorridas([]);
+        /* Un fallo de red NO es un depósito vacío: se marca y el balance lo dice. */
+        setCorridas([]);
+        marcar("corridas", "error");
       });
+    // El período sólo acompaña; lo que se lista no depende de él.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/admin/forestal/lotes-aserrio", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!vivo) return;
+        if (Array.isArray(j?.lotes)) {
+          setLotes(j.lotes as LoteAserrio[]);
+          marcar("lotes", "ok");
+        } else marcar("lotes", "error");
+      })
+      .catch((err) => {
+        logger.warn("[ctp-saldos] lotes no cargaron", { error: String(err) });
+        if (vivo) marcar("lotes", "error");
+      });
+    fetch("/api/admin/forestal/trozas/patio", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!vivo) return;
+        if (Array.isArray(j?.trozas)) {
+          setPatio(j.trozas as TrozaConsumible[]);
+          setPatioTruncado(
+            j.truncado
+              ? { devueltas: Number(j.devueltas ?? j.trozas.length), total: Number(j.total ?? 0) }
+              : null,
+          );
+          marcar("patio", "ok");
+        } else marcar("patio", "error");
+      })
+      .catch((err) => {
+        logger.warn("[ctp-saldos] patio no cargó", { error: String(err) });
+        if (vivo) marcar("patio", "error");
+      });
+    /* Los ingresos sin validar y SIN piezas: los que tienen piezas ya entran
+       troza por troza en «por recepcionar». Sumar el total del libro además
+       contaba la misma madera dos veces. */
+    fetch("/api/admin/forestal/wood-entries?status=pendiente&limit=500", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!vivo) return;
+        const filas = (j?.entries ?? j?.items) as
+          | { volumeM3?: unknown; trozasCount?: unknown }[]
+          | undefined;
+        if (!Array.isArray(filas)) return marcar("pendientes", "error");
+        setPendienteSinPiezasM3(
+          filas
+            .filter((e) => Number(e.trozasCount ?? 0) === 0)
+            .reduce((a, e) => a + Number(e.volumeM3 ?? 0), 0),
+        );
+        marcar("pendientes", "ok");
+      })
+      .catch((err) => {
+        logger.warn("[ctp-saldos] pendientes no cargaron", { error: String(err) });
+        if (vivo) marcar("pendientes", "error");
+      });
+    void cargarCorridas();
     return () => {
       vivo = false;
     };
-    // El período sólo acompaña al fetch de disponibles; los otros dos no lo usan.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [cargarCorridas, marcar]);
 
   /* Los lotes en la forma que piden los dos reportes. Se arma UNA vez y la usan
      el PDF y el CSV: dos versiones de la misma tabla divergen a la primera
      columna nueva, que es exactamente lo que ya pasó con las guías. */
-  const lotesDelReporte = useMemo(() => {
+  const lotesTodos = useMemo(() => {
     const ahora = new Date();
-    const elegidos = lotesElegidos.size > 0 ? lotes.filter((l) => lotesElegidos.has(l.id)) : lotes;
-    return elegidos.map((l) => ({
+    return lotes.map((l) => ({
       id: l.id,
       code: l.code,
       permisos: permisosDelLote(l),
@@ -195,7 +273,15 @@ export function CtpSaldosView({
         consumida: Boolean(t.consumidaEnId),
       })),
     }));
-  }, [lotes, lotesElegidos]);
+  }, [lotes]);
+
+  /* Tildar lotes acota SÓLO la hoja/tabla de lotes del reporte. El balance de
+     capacidad sigue hablando de toda la planta: un techo que se achica en
+     silencio al tildar dos filas es un techo que miente (auditoría 2026-09-06). */
+  const lotesDelReporte = useMemo(
+    () => (lotesElegidos.size > 0 ? lotesTodos.filter((l) => lotesElegidos.has(l.id)) : lotesTodos),
+    [lotesTodos, lotesElegidos],
+  );
 
   const mp = data?.materiaPrima;
 
@@ -206,10 +292,12 @@ export function CtpSaldosView({
   const entradaCapacidad = useMemo<EntradaCapacidad>(
     () => ({
       patio,
-      lotes: lotesDelReporte,
+      lotes: lotesTodos,
       corridas: corridas ?? undefined,
       stockLibroM3: (data?.productos ?? []).reduce((a, p) => a + Number(p.stock ?? 0), 0),
-      pendienteM3: Number(mp?.pendienteM3 ?? 0),
+      pendienteSinPiezasM3,
+      estado,
+      patioTruncado,
       /* El stock que muestra ESTA pantalla es el del período elegido —el mismo
          del bloque «Stock de productos transformados» de arriba—. Con el período
          completo el número es otro (medido: 62.39 en Jul–Set contra 71.21 en el
@@ -221,10 +309,12 @@ export function CtpSaldosView({
     }),
     [
       patio,
-      lotesDelReporte,
+      lotesTodos,
       corridas,
       data?.productos,
-      mp?.pendienteM3,
+      pendienteSinPiezasM3,
+      estado,
+      patioTruncado,
       period.label,
       period.from,
       period.to,
@@ -241,6 +331,14 @@ export function CtpSaldosView({
     () => armarBalance(entradaCapacidad, filtrosCapacidad),
     [entradaCapacidad, filtrosCapacidad],
   );
+
+  /* Mientras una fuente no llegó, el reporte no se baja: un PDF con «0 piezas
+     libres» porque el patio todavía estaba cargando es un papel que miente. */
+  const fuentesCargando =
+    estado.patio === "cargando" || estado.lotes === "cargando" || estado.corridas === "cargando";
+
+  /** Qué parte del depósito no se puede certificar, y por qué. Foto, sin filtros. */
+  const origen = useMemo(() => resumenDeOrigen(corridas ?? [], lotesTodos), [corridas, lotesTodos]);
 
   /** Los lotes bajo el mismo recorte que la tarjeta (permiso y especie; la guía no aplica). */
   const lotesFiltrados = useMemo(() => {
@@ -275,11 +373,12 @@ export function CtpSaldosView({
         ficha,
         lotes: lotesDelReporte,
         balance,
+        origen,
       });
     } catch (err) {
       setReportError(err instanceof Error ? err.message : String(err));
     }
-  }, [data, concil, period.label, lotesDelReporte, balance]);
+  }, [data, concil, period.label, lotesDelReporte, balance, origen]);
 
   /**
    * El mismo reporte, en Excel.
@@ -386,7 +485,14 @@ export function CtpSaldosView({
 
   const descargarCsv = useCallback(() => {
     if (!data) return;
-    const csv = saldosACsv(data.porEspecie, data.productos, period.label, lotesDelReporte, balance);
+    const csv = saldosACsv(
+      data.porEspecie,
+      data.productos,
+      period.label,
+      lotesDelReporte,
+      balance,
+      origen,
+    );
     const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -394,7 +500,7 @@ export function CtpSaldosView({
     a.download = nombreArchivoSaldos(period.label);
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  }, [data, period.label, lotesDelReporte, balance]);
+  }, [data, period.label, lotesDelReporte, balance, origen]);
 
   const excepciones = useMemo(
     () =>
@@ -432,13 +538,31 @@ export function CtpSaldosView({
         meta={ctpPeriodShortLabel(period)}
         hint="Materia prima que entra vs. producto que sale. Es el saldo que se declara ante SERFOR — va en la hoja «Existencias» del export oficial."
       >
-        <Btn variant="dark" size="md" onClick={() => void handleReport()} disabled={!data}>
+        <Btn
+          variant="dark"
+          size="md"
+          onClick={() => void handleReport()}
+          disabled={!data || fuentesCargando}
+          title={fuentesCargando ? "Esperando el patio y los lotes…" : undefined}
+        >
           <FileDown className="h-4 w-4" /> Descargar reporte
         </Btn>
-        <Btn variant="secondary" size="md" onClick={descargarCsv} disabled={!data}>
+        <Btn
+          variant="secondary"
+          size="md"
+          onClick={descargarCsv}
+          disabled={!data || fuentesCargando}
+          title={fuentesCargando ? "Esperando el patio y los lotes…" : undefined}
+        >
           <FileSpreadsheet className="h-4 w-4" /> CSV
         </Btn>
-        <Btn variant="secondary" size="md" onClick={() => void descargarExcel()} disabled={!data}>
+        <Btn
+          variant="secondary"
+          size="md"
+          onClick={() => void descargarExcel()}
+          disabled={!data || fuentesCargando}
+          title={fuentesCargando ? "Esperando el patio y los lotes…" : undefined}
+        >
           <FileSpreadsheet className="h-4 w-4" /> Excel
         </Btn>
         <Btn variant="secondary" size="md" onClick={() => void recargar()} disabled={loading}>
@@ -480,14 +604,38 @@ export function CtpSaldosView({
             role="tablist"
             aria-label="Secciones de Saldos"
             className="flex flex-wrap gap-1 rounded-xl bg-[var(--surface-sunken)] p-1"
+            /* Flechas, Home y End mueven entre pestañas y el foco las sigue; Tab
+               entra y sale del grupo de una (tabIndex roving), como en
+               AdminTabBar. Cuatro botones todos tabulables no son un tablist. */
           >
             {SECCIONES.map((s) => (
               <button
                 key={s.id}
+                id={`saldos-tab-${s.id}`}
                 type="button"
                 role="tab"
                 aria-selected={seccion === s.id}
+                aria-controls={`saldos-panel-${s.id}`}
+                tabIndex={seccion === s.id ? 0 : -1}
                 onClick={() => setSeccion(s.id)}
+                onKeyDown={(e) => {
+                  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+                  e.preventDefault();
+                  const i = SECCION_IDS.indexOf(seccion);
+                  const destino =
+                    e.key === "Home"
+                      ? 0
+                      : e.key === "End"
+                        ? SECCION_IDS.length - 1
+                        : (i + (e.key === "ArrowRight" ? 1 : -1) + SECCION_IDS.length) %
+                          SECCION_IDS.length;
+                  setSeccion(SECCION_IDS[destino]);
+                  (
+                    e.currentTarget.parentElement?.querySelector(
+                      `#saldos-tab-${SECCION_IDS[destino]}`,
+                    ) as HTMLElement | null
+                  )?.focus();
+                }}
                 className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold transition-colors ${
                   seccion === s.id
                     ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
@@ -499,92 +647,121 @@ export function CtpSaldosView({
             ))}
           </div>
 
-          {seccion === "estado" && (
-            <>
-              <KpisDeExistencias
-                materiaPrima={mp}
-                porEspecie={data.porEspecie}
-                productos={data.productos}
-                period={period}
-                /* La trayectoria del saldo al lado del número. Sale de la curva, que
+          <div
+            role="tabpanel"
+            id={`saldos-panel-${seccion}`}
+            aria-labelledby={`saldos-tab-${seccion}`}
+            className="space-y-6"
+          >
+            {seccion === "estado" && (
+              <>
+                <KpisDeExistencias
+                  materiaPrima={mp}
+                  porEspecie={data.porEspecie}
+                  productos={data.productos}
+                  period={period}
+                  /* La trayectoria del saldo al lado del número. Sale de la curva, que
                    es un pedido aparte: si no llegó, el héroe se dibuja sin rastro. */
-                serieSaldo={curva?.puntos.map((p) => Number(p.saldo))}
-              />
+                  serieSaldo={curva?.puntos.map((p) => Number(p.saldo))}
+                />
 
-              {/* Lo primero que se pregunta quien abre esta pantalla: cuánta
+                {/* Lo primero que se pregunta quien abre esta pantalla: cuánta
                   madera tengo y de qué. Va arriba de los derivados porque el
                   saldo se mira antes que la rotación. */}
-              <DisponiblePorTipo
-                especies={data.porEspecie}
-                productos={data.productos}
-                onKardex={setKardexEspecie}
-              />
+                <DisponiblePorTipo
+                  especies={data.porEspecie}
+                  productos={data.productos}
+                  onKardex={setKardexEspecie}
+                />
 
-              {/* Gemelo del patio: qué parte de esa madera lleva demasiado
+                {/* Gemelo del patio: qué parte de esa madera lleva demasiado
                   tiempo parada (self-fetch). */}
-              <CtpPatioAging onValorizar={onIr ? () => onIr("rentabilidad") : undefined} />
-            </>
-          )}
+                <CtpPatioAging onValorizar={onIr ? () => onIr("rentabilidad") : undefined} />
+              </>
+            )}
 
-          {seccion === "capacidad" && (
-            <>
-              {/* El techo: cuánto producto puede salir de las cuatro fuentes. */}
-              <BalanceDeCapacidad
-                balance={balance}
-                filtros={filtrosCapacidad}
-                opciones={opcionesCapacidad}
-                onFiltros={setFiltrosCapacidad}
-                onDetalle={setDetalleFuente}
-              />
+            {seccion === "capacidad" && (
+              <>
+                {/* El techo: cuánto producto puede salir de las cuatro fuentes. */}
+                <BalanceDeCapacidad
+                  balance={balance}
+                  filtros={filtrosCapacidad}
+                  opciones={opcionesCapacidad}
+                  onFiltros={setFiltrosCapacidad}
+                  onDetalle={setDetalleFuente}
+                />
 
-              {/* De dónde sale una parte de ese techo, lote por lote. */}
-              {/* El mismo recorte que la tarjeta de arriba: la pestaña entera habla
+                {/* Lo que de ese techo NO puede salir con papeles. Va pegado al
+                  balance: el número de arriba es «cuánto», éste es «cuánto de
+                  eso se puede certificar». */}
+                <OrigenIncompleto
+                  resumen={origen}
+                  onAbrirCorrida={(c) =>
+                    setCorridaAbierta({ kind: "corrida", id: c.id, fecha: c.fecha })
+                  }
+                />
+
+                {/* De dónde sale una parte de ese techo, lote por lote. */}
+                {/* El mismo recorte que la tarjeta de arriba: la pestaña entera habla
                   de un solo título. La guía no acota lotes (juntan varias) y se
                   dice, en vez de esconder la tabla. */}
-              <LotesConSaldo
-                lotes={lotesFiltrados}
-                seleccion={lotesElegidos}
-                onSeleccion={setLotesElegidos}
-                vacioMotivo={
-                  lotes.length === 0
-                    ? undefined
-                    : filtrosCapacidad.guia
-                      ? "Un lote junta piezas de varias guías: no se puede acotar a una sola. Quitá el filtro de guía para verlos."
-                      : `Ningún lote de ${[filtrosCapacidad.permiso && `permiso ${filtrosCapacidad.permiso}`, filtrosCapacidad.especie && `especie ${filtrosCapacidad.especie}`].filter(Boolean).join(" y ")}.`
-                }
-              />
-            </>
-          )}
+                <LotesConSaldo
+                  lotes={lotesFiltrados}
+                  seleccion={lotesElegidos}
+                  onSeleccion={setLotesElegidos}
+                  vacioMotivo={
+                    lotes.length === 0
+                      ? undefined
+                      : filtrosCapacidad.guia
+                        ? "Un lote junta piezas de varias guías: no se puede acotar a una sola. Quitá el filtro de guía para verlos."
+                        : `Ningún lote de ${[filtrosCapacidad.permiso && `permiso ${filtrosCapacidad.permiso}`, filtrosCapacidad.especie && `especie ${filtrosCapacidad.especie}`].filter(Boolean).join(" y ")}.`
+                  }
+                />
+              </>
+            )}
 
-          {seccion === "movimiento" && (
-            <>
-              {/* ¿Sube o baja? La foto del saldo no lo dice, y es con lo que se
+            {seccion === "movimiento" && (
+              <>
+                {/* ¿Sube o baja? La foto del saldo no lo dice, y es con lo que se
                   decide comprar madera. */}
-              {curva && <CurvaDeSaldo curva={curva} periodoLabel={ctpPeriodShortLabel(period)} />}
+                {curva && <CurvaDeSaldo curva={curva} periodoLabel={ctpPeriodShortLabel(period)} />}
 
-              {/* Cómo se llegó al saldo, de qué especie está hecho y en qué
+                {/* Cómo se llegó al saldo, de qué especie está hecho y en qué
                   estado está el volumen de cada una. */}
-              <CtpSaldosGraficos
-                materiaPrima={mp}
-                porEspecie={data.porEspecie}
-                apertura={apertura}
-                aperturaPendiente={loading}
-              />
-            </>
-          )}
+                <CtpSaldosGraficos
+                  materiaPrima={mp}
+                  porEspecie={data.porEspecie}
+                  apertura={apertura}
+                  aperturaPendiente={loading}
+                />
+              </>
+            )}
 
-          {seccion === "libro" && (
-            <>
-              {/* Conciliación: apertura (del cierre anterior) + movimientos =
+            {seccion === "libro" && (
+              <>
+                {/* Conciliación: apertura (del cierre anterior) + movimientos =
                   final (ADR-139 rollforward). Es la cuenta que firma el libro. */}
-              {concil && <TablaConciliacion concil={concil} onKardex={setKardexEspecie} />}
+                {concil && <TablaConciliacion concil={concil} onKardex={setKardexEspecie} />}
 
-              <TablaProductos productos={data.productos} onDespachar={onDespachar} />
-            </>
-          )}
+                <TablaProductos productos={data.productos} onDespachar={onDespachar} />
+              </>
+            )}
+          </div>
         </>
       )}
       {loading && !data && <PanelSkeleton kpis={4} />}
+
+      {corridaAbierta && (
+        <CtpNodeDetailLoader
+          target={corridaAbierta}
+          onClose={() => {
+            setCorridaAbierta(null);
+            /* Lo que se ató en la ficha cambia el diagnóstico: se vuelve a
+               pedir la foto en vez de adivinar qué cambió. */
+            void cargarCorridas();
+          }}
+        />
+      )}
 
       {detalleFuente && (
         <DetalleDeFuente

@@ -18,8 +18,18 @@
  */
 
 import { CardTitle } from "@buleje/design-system";
-import { AlertTriangle, AlertCircle, ArrowRight, CheckCircle2, Info } from "@buleje/design-system/icons";
-import { nombresVisibles, type Excepcion, type TonoExcepcion } from "@/lib/forestal/ctp-saldos-excepciones";
+import {
+  AlertTriangle,
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  Info,
+} from "@buleje/design-system/icons";
+import {
+  nombresVisibles,
+  type Excepcion,
+  type TonoExcepcion,
+} from "@/lib/forestal/ctp-saldos-excepciones";
 
 /**
  * Cada tono con su ícono además del color: en dark el rojo y el ámbar se
@@ -64,7 +74,8 @@ export default function ExcepcionesSaldo({
     return (
       <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
         <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
-        Las existencias cuadran: sin saldos negativos, sin volumen sin validar y sin especies por agotarse.
+        Las existencias cuadran: sin saldos negativos, sin volumen sin validar y sin especies por
+        agotarse.
       </p>
     );
   }
@@ -72,7 +83,10 @@ export default function ExcepcionesSaldo({
   const graves = excepciones.filter((e) => e.tono === "error").length;
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]" aria-label="Qué revisar">
+    <section
+      className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]"
+      aria-label="Qué revisar"
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
           Qué revisar ({excepciones.length})
@@ -107,7 +121,9 @@ export default function ExcepcionesSaldo({
                     {/* Lo que no entra se DICE. Cortar la lista en silencio hace
                         creer que el problema es más chico de lo que es. */}
                     {resto > 0 && (
-                      <li className="px-1 py-0.5 text-xs text-[var(--text-tertiary)]">y {resto} más</li>
+                      <li className="px-1 py-0.5 text-xs text-[var(--text-tertiary)]">
+                        y {resto} más
+                      </li>
                     )}
                   </ul>
                 )}

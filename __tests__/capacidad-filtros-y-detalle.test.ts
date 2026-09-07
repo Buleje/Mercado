@@ -25,6 +25,8 @@ import {
 } from "@/lib/forestal/capacidad-de-planta";
 import { tablaDeFuente } from "@/lib/forestal/capacidad-detalle-filas";
 import { escribirParams, leerParams } from "@/hooks/use-params-de-saldos";
+import { admiteDelLote } from "@/lib/forestal/capacidad-de-planta";
+import { celdaCsv } from "@/lib/forestal/ctp-ingresos-csv";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 
 const troza = (o: Partial<TrozaConsumible> & { id: string }): TrozaConsumible =>
@@ -89,7 +91,7 @@ const ENTRADA: EntradaCapacidad = {
     corrida({ id: "c3", disponible: 2, titularOrigen: [], gtfOrigen: [] }),
   ],
   stockLibroM3: 62,
-  pendienteM3: 7,
+  pendienteSinPiezasM3: 7,
   periodoLabel: "julio de 2026",
 };
 
@@ -313,5 +315,105 @@ describe("la conciliación con el libro", () => {
     const entrada: EntradaCapacidad = { ...ENTRADA, stockLibroM3: 15 };
     const prod = armarBalance(entrada, {}).fuentes.find((f) => f.clave === "productos")!;
     expect(prod.detalle).not.toMatch(/libro/);
+  });
+});
+
+
+describe("las reglas del patio mandan sobre qué es «libre»", () => {
+  it("una pieza despachada en rollo, un descarte o una madre retrozada no son patio libre", () => {
+    const patio = [
+      troza({ id: "d", despachadaEnId: "desp-1", volumenM3: 4 }),
+      troza({ id: "x", descarte: true, volumenM3: 4 }),
+      troza({ id: "m", retrozos: 2, volumenM3: 4 }),
+      troza({ id: "ok", volumenM3: 4 }),
+    ];
+    expect(patio.filter(esLibre).map((t) => t.id)).toEqual(["ok"]);
+  });
+
+  it("una pieza sin volumen no cuenta", () => {
+    expect(esLibre(troza({ id: "z", volumenM3: 0 }))).toBe(false);
+  });
+});
+
+describe("cuánto admite un lote (cota máxima)", () => {
+  it("consumió y no declaró: el techo entero por delante, no cero", () => {
+    expect(admiteDelLote(lote({ code: "a", consumidoM3: 10, esperado56M3: 5.6, producidoM3: null, restaM3: null }))).toBe(5.6);
+  });
+
+  it("ya pasó el techo: aporta cero, no un negativo que reste", () => {
+    expect(admiteDelLote(lote({ code: "b", consumidoM3: 10, esperado56M3: 5.6, producidoM3: 7, restaM3: -1.4 }))).toBe(0);
+  });
+
+  it("sin consumo ni producción: nada que admitir", () => {
+    expect(admiteDelLote(lote({ code: "c", producidoM3: null, restaM3: null }))).toBe(0);
+  });
+});
+
+describe("las cinco fuentes", () => {
+  it("la madera apartada en lotes sin aserrar es una fuente, convertida al 56 %", () => {
+    const entrada: EntradaCapacidad = {
+      ...ENTRADA,
+      lotes: [lote({ code: "L-9", apartadoM3: 10, trozas: [{ id: "t", codigo: "T", especie: "TORNILLO", m3: 10, permiso: "", guia: "", consumida: false }] })],
+    };
+    const f = armarBalance(entrada, {}).fuentes.find((x) => x.clave === "apartado")!;
+    expect(f).toMatchObject({ m3: 10, enProducto: 5.6, convertido: true, filas: 1 });
+  });
+
+  it("un lote con permisos mezclados no entra al permiso filtrado y se cuenta aparte", () => {
+    const entrada: EntradaCapacidad = {
+      ...ENTRADA,
+      lotes: [
+        lote({ code: "M", permisos: ["P-1", "P-2"], consumidoM3: 10, esperado56M3: 5.6, producidoM3: 0, restaM3: 5.6 }),
+        lote({ code: "U", permisos: ["P-1"], consumidoM3: 10, esperado56M3: 5.6, producidoM3: 0, restaM3: 5.6 }),
+      ],
+    };
+    const f = armarBalance(entrada, { permiso: "P-1" }).fuentes.find((x) => x.clave === "lotes")!;
+    expect(f.m3).toBe(5.6);
+    expect(f.detalle).toMatch(/5\.6 m³ en 1 lote con permisos mezclados/);
+  });
+
+  it("una guía sin recibir ya no se cuenta también por el total del libro", () => {
+    // D (5 m³, sin recibir) entra troza por troza; el pendiente sin piezas (7) es OTRA madera.
+    const f = armarBalance(ENTRADA, {}).fuentes.find((x) => x.clave === "porRecepcionar")!;
+    expect(f.m3).toBe(12);
+    expect(f.detalle).toMatch(/1 pieza de guías sin recibir/);
+    expect(f.detalle).toMatch(/7 m³ de ingresos sin validar y sin piezas/);
+  });
+});
+
+describe("cuando una fuente no llegó", () => {
+  it("el patio cargando o fallado no vale cero: lo dice y no suma", () => {
+    const cargando = armarBalance({ ...ENTRADA, estado: { patio: "cargando" } }, {});
+    expect(cargando.fuentes.find((f) => f.clave === "patio")).toMatchObject({ m3: 0, noAtribuible: "Cargando el patio…" });
+    const fallo = armarBalance({ ...ENTRADA, estado: { patio: "error" } }, {});
+    expect(fallo.fuentes.find((f) => f.clave === "patio")?.noAtribuible).toMatch(/No se pudo leer el patio/);
+    expect(fallo.fuentes.find((f) => f.clave === "porRecepcionar")?.m3).toBe(0);
+  });
+
+  it("un fallo al leer el depósito NO se declara como stock marcado usado", () => {
+    const b = armarBalance({ ...ENTRADA, corridas: [], estado: { corridas: "error" } }, {});
+    const prod = b.fuentes.find((f) => f.clave === "productos")!;
+    expect(prod.m3).toBe(62); // cae al libro
+    expect(prod.detalle).toMatch(/No se pudo leer el depósito/);
+    expect(prod.detalle).not.toMatch(/ya usado» o ya salió/);
+  });
+
+  it("un patio recortado por el endpoint avisa que el techo es parcial", () => {
+    const b = armarBalance({ ...ENTRADA, patioTruncado: { devueltas: 5000, total: 6120 } }, {});
+    expect(b.fuentes.find((f) => f.clave === "patio")?.detalle).toMatch(/sólo llegaron 5,?000|sólo llegaron 5\.000/);
+  });
+});
+
+describe("el CSV no ejecuta fórmulas", () => {
+  it("una celda que empieza con = + @ se vuelve texto", () => {
+    expect(celdaCsv("=cmd|' /C calc'!A0")).toMatch(/^"?'=cmd/);
+    expect(celdaCsv("@SUM(A1)")).toBe("'@SUM(A1)");
+    expect(celdaCsv("+1+1")).toBe("'+1+1");
+  });
+
+  it("un número negativo sigue siendo número", () => {
+    expect(celdaCsv("-81,807")).toBe("-81,807");
+    expect(celdaCsv("-3")).toBe("-3");
+    expect(celdaCsv(-2.5)).toBe("-2.5");
   });
 });

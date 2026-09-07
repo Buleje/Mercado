@@ -78,8 +78,8 @@ export default function TablaConciliacion({
           Conciliación del período · apertura → cierre
         </CardTitle>
         <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-          Existencia de apertura {FUENTE[concil.fuenteApertura](concil.aperturaLabel)} + movimientos del período =
-          existencia final. Así el saldo cuadra con el stock heredado.
+          Existencia de apertura {FUENTE[concil.fuenteApertura](concil.aperturaLabel)} + movimientos
+          del período = existencia final. Así el saldo cuadra con el stock heredado.
         </p>
       </div>
       <DataTable className="w-full text-sm">
@@ -114,11 +114,15 @@ export default function TablaConciliacion({
                   </span>
                 )}
               </td>
-              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(s.apertura)}</td>
+              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                {n2(s.apertura)}
+              </td>
               <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--data-success-600)] dark:text-[var(--data-success-500)]">
                 {n2(s.ingreso)}
               </td>
-              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(s.consumido)}</td>
+              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                {n2(s.consumido)}
+              </td>
               {hayDirecto && (
                 <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
                   {n2(s.despachadoDirecto ?? 0)}
@@ -154,14 +158,22 @@ export default function TablaConciliacion({
             sumar cinco columnas a mano para creerle a la tabla. */}
         <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
           <tr>
-            <td className="px-4 py-2.5 text-[var(--text-primary)]">Total · {filas.length} especies</td>
-            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n2(total.apertura)}</td>
+            <td className="px-4 py-2.5 text-[var(--text-primary)]">
+              Total · {filas.length} especies
+            </td>
+            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+              {n2(total.apertura)}
+            </td>
             <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--data-success-600)] dark:text-[var(--data-success-500)]">
               {n2(total.ingreso)}
             </td>
-            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n2(total.consumido)}</td>
+            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+              {n2(total.consumido)}
+            </td>
             {hayDirecto && (
-              <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n2(total.directo)}</td>
+              <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                {n2(total.directo)}
+              </td>
             )}
             <td className="bg-[var(--surface-raised)] px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
               {n2(total.final)}
@@ -182,7 +194,11 @@ export default function TablaConciliacion({
                 : "bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
             }`}
           >
-            {cuadra ? <Check className="h-3.5 w-3.5" aria-hidden /> : <AlertTriangle className="h-3.5 w-3.5" aria-hidden />}
+            {cuadra ? (
+              <Check className="h-3.5 w-3.5" aria-hidden />
+            ) : (
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
+            )}
             {cuadra ? "La conciliación cierra" : "La conciliación no cierra"}
           </span>
           <span className="font-mono tabular-nums text-[var(--text-secondary)]">
@@ -204,9 +220,9 @@ export default function TablaConciliacion({
                 : `${negativas.length} especies cierran en negativo`}
               :
             </strong>{" "}
-            el libro consumió madera que todavía no tiene ingreso que la respalde. No es un error de cálculo — es una
-            fecha mal puesta o una guía sin cargar. Abrí el Kardex de la especie y compará la fecha de cada corrida
-            contra la de su guía.
+            el libro consumió madera que todavía no tiene ingreso que la respalde. No es un error de
+            cálculo — es una fecha mal puesta o una guía sin cargar. Abrí el Kardex de la especie y
+            compará la fecha de cada corrida contra la de su guía.
           </p>
         )}
       </div>

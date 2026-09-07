@@ -39,10 +39,11 @@ export interface TablaDetalle {
 
 /** Columnas que van a la derecha: número, no texto. */
 export const esColumnaNumerica = (col: string) =>
-  /m³|pt|Piezas|Producido|Despachado|Disponible|Consumido|Resta|56|Paquetes/.test(col);
+  /m³|pt|Piezas|Producido|Despachado|Disponible|Consumido|Resta|56|Paquetes|Apartado/.test(col);
 
 /** Columnas en m³ (4 decimales en pantalla y en el PDF). */
-export const esColumnaM3 = (col: string) => /m³|Resta|Consumido|56/.test(col) && !/pt/.test(col);
+export const esColumnaM3 = (col: string) =>
+  /m³|Resta|Consumido|56|Apartado/.test(col) && !/pt/.test(col);
 
 const filasDeTrozasDeLote = (trozas: readonly TrozaDeLote[]) => ({
   columnas: ["Código", "Especie", "m³", "pt", "Permiso", "Guía", "Estado"],
@@ -91,6 +92,36 @@ export function tablaDeFuente(
           },
         };
       }),
+    };
+  }
+
+  if (fuente.clave === "apartado") {
+    return {
+      columnas: [
+        "Lote",
+        "Permiso",
+        "Especie",
+        "Estado",
+        "Apartado (m³)",
+        "Apartado (pt)",
+        "Piezas sin aserrar",
+      ],
+      filas: lotesDeFuente(entrada.lotes, filtros)
+        .filter((l) => l.apartadoM3 > 0)
+        .map((l) => ({
+          celdas: {
+            Lote: l.code,
+            Permiso: l.permisos.join(" + ") || "—",
+            Especie: l.especie ?? "—",
+            Estado: l.status,
+            "Apartado (m³)": l.apartadoM3,
+            "Apartado (pt)": pieTablarDe(l.apartadoM3),
+            "Piezas sin aserrar": l.trozas.filter((t) => !t.consumida).length,
+          },
+          hijas: l.trozas.some((t) => !t.consumida)
+            ? filasDeTrozasDeLote(l.trozas.filter((t) => !t.consumida))
+            : undefined,
+        })),
     };
   }
 

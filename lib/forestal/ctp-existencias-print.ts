@@ -52,8 +52,26 @@ export interface FuenteDelReporte {
   noAtribuible?: string;
 }
 
+/** Una corrida cuyo origen no se puede certificar, para el reporte. */
+export interface CorridaSinOrigenReporte {
+  fecha: string;
+  lote: string | null;
+  producto: string | null;
+  especie: string | null;
+  unidad: string;
+  disponible: number;
+  motivo: string;
+  guias: readonly string[];
+}
+
 export interface ExistenciasReportData {
   periodLabel: string;
+  /** Lo que del depósito no se puede certificar, con el motivo. */
+  origen?: {
+    m3SinCertificar: number;
+    fraccion: number;
+    corridas: readonly CorridaSinOrigenReporte[];
+  } | null;
   /** El balance de capacidad: las cuatro fuentes y el techo que suman. */
   balance?: { fuentes: readonly FuenteDelReporte[]; totalProducto: number } | null;
   /** Opcional: un CTP sin lotes de aserrío no tiene por qué ver la tabla. */
@@ -243,10 +261,10 @@ export function printExistencias(d: ExistenciasReportData): void {
     <tbody>${(d.lotes ?? [])
       .map(
         (l) => `<tr>
-      <td>${l.code}</td>
-      <td>${l.permisos.length > 1 ? `<b>${l.permisos.length} permisos mezclados</b>` : (l.permisos[0] ?? "—")}</td>
-      <td>${l.especie}</td>
-      <td>${l.status}</td>
+      <td>${esc(l.code)}</td>
+      <td>${l.permisos.length > 1 ? `<b>${l.permisos.length} permisos mezclados</b>` : esc(l.permisos[0] ?? "—")}</td>
+      <td>${esc(l.especie)}</td>
+      <td>${esc(l.status)}</td>
       ${num(l.consumidoM3)}
       ${num(l.esperado56M3)}
       <td class="num">${l.producidoM3 == null ? "—" : l.producidoM3.toFixed(3)}</td>
@@ -254,7 +272,7 @@ export function printExistencias(d: ExistenciasReportData): void {
       ${num(l.apartadoM3)}
       <td class="num">${l.piezas}</td>
       <td class="num">${l.diasParado == null ? "—" : `${l.diasParado} d`}</td>
-      <td>${l.finProceso ?? "—"}</td>
+      <td>${esc(l.finProceso ?? "—")}</td>
       <td${l.vencido ? ' style="color:#b91c1c;font-weight:700"' : ""}>${
         l.vencido
           ? `${Math.abs(l.diasParaVencer ?? 0)} ${Math.abs(l.diasParaVencer ?? 0) === 1 ? "día" : "días"} vencido`
@@ -293,6 +311,27 @@ export function printExistencias(d: ExistenciasReportData): void {
       )
       .join("")}</tbody>
     <tfoot><tr><td colspan="2"><b>Capacidad máxima en producto</b></td>${num(d.balance.totalProducto)}<td></td></tr></tfoot>
+  </table>`
+      : ""
+  }
+
+  ${
+    d.origen && d.origen.corridas.length > 0
+      ? `<h2>Origen incompleto</h2>
+  <p style="color:#555;margin:0 0 6px"><b>${d.origen.m3SinCertificar.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 3 })} m³</b> del depósito (${Math.round(d.origen.fraccion * 100)} %) no se pueden certificar. El libro lo admite; el certificado de origen no.</p>
+  <table>
+    <thead><tr><th>Fecha</th><th>Lote</th><th>Producto</th><th class="num">Disponible</th><th>Motivo</th></tr></thead>
+    <tbody>${d.origen.corridas
+      .map(
+        (c) => `<tr>
+      <td>${esc(c.fecha.slice(0, 10))}</td>
+      <td>${esc(c.lote ?? "—")}</td>
+      <td>${esc(c.producto ?? "—")}${c.especie ? ` <span style="color:#777">· ${esc(c.especie)}</span>` : ""}</td>
+      <td class="num">${esc(String(c.disponible))} ${esc(c.unidad)}</td>
+      <td style="color:#555">${c.motivo === "sin_materia_prima" ? "Sin materia prima atada" : `La guía no declara título habilitante${c.guias.length ? ` (${esc(c.guias.join(", "))})` : ""}`}</td>
+    </tr>`,
+      )
+      .join("")}</tbody>
   </table>`
       : ""
   }

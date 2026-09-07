@@ -224,7 +224,7 @@ export default function DetalleDeFuente({
                               onClick={() => alternar(i)}
                               aria-expanded={abierta}
                               aria-label={abierta ? "Ocultar piezas" : "Ver piezas"}
-                              className="rounded p-1 text-[var(--accent-dark)] hover:bg-[var(--accent-soft)] dark:text-[var(--accent)]"
+                              className="rounded p-1 text-[var(--accent-dark)] hover:bg-primary/10 dark:hover:bg-primary/20 dark:text-[var(--accent)]"
                             >
                               {abierta ? (
                                 <ChevronDown className="h-4 w-4" />

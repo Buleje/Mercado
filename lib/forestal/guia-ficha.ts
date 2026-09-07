@@ -52,7 +52,10 @@ function quien(linea: unknown, campo: string): { por?: string; el?: string } | u
   const dato = (cm as Record<string, unknown>)[campo];
   if (!dato || typeof dato !== "object") return undefined;
   const { por, el } = dato as { por?: unknown; el?: unknown };
-  return { por: typeof por === "string" ? por : undefined, el: typeof el === "string" ? el : undefined };
+  return {
+    por: typeof por === "string" ? por : undefined,
+    el: typeof el === "string" ? el : undefined,
+  };
 }
 
 const t = (v: unknown): string | null => {
@@ -93,16 +96,58 @@ export function seccionesDeGuia(guia: GuiaIngreso<LineaConGuia>): SeccionFicha[]
       titulo: "Documento y origen",
       rango: "casilleros (2) a (12)",
       campos: [
-        { label: "N° de guía", valor: t(guia.gtfNumber), casillero: "4", manual: quien(p, "gtfNumber") },
+        {
+          label: "N° de guía",
+          valor: t(guia.gtfNumber),
+          casillero: "4",
+          manual: quien(p, "gtfNumber"),
+        },
         { label: "Serie", valor: t(guia.gtfSeries), manual: quien(p, "gtfSeries") },
-        { label: "Tipo de documento", valor: t(guia.docType) ?? "GTF", casillero: "3", manual: quien(p, "docType") },
-        { label: "Fecha del documento", valor: t(guia.gtfDate ? String(guia.gtfDate).slice(0, 10) : null), manual: quien(p, "gtfDate") },
-        { label: "N° de registro SNIFFS", valor: t(p.serforNumeroRegistro), manual: quien(p, "serforNumeroRegistro") },
-        { label: "Título habilitante", valor: t(p.originCode), casillero: "6", manual: quien(p, "originCode") },
-        { label: "N° de resolución", valor: t(p.originSourceNumber), casillero: "8", manual: quien(p, "originSourceNumber") },
-        { label: "Tipo de origen", valor: t(p.originType), casillero: "5", manual: quien(p, "originType") },
-        { label: "Procedencia", valor: ubicacion(p.originRegion ?? "", "", p.originDistrict ?? ""), manual: quien(p, "originRegion") ?? quien(p, "originDistrict") },
-        { label: "Código de CTP de procedencia", valor: t(p.ctpProductCode), casillero: "9", manual: quien(p, "ctpProductCode") },
+        {
+          label: "Tipo de documento",
+          valor: t(guia.docType) ?? "GTF",
+          casillero: "3",
+          manual: quien(p, "docType"),
+        },
+        {
+          label: "Fecha del documento",
+          valor: t(guia.gtfDate ? String(guia.gtfDate).slice(0, 10) : null),
+          manual: quien(p, "gtfDate"),
+        },
+        {
+          label: "N° de registro SNIFFS",
+          valor: t(p.serforNumeroRegistro),
+          manual: quien(p, "serforNumeroRegistro"),
+        },
+        {
+          label: "Título habilitante",
+          valor: t(p.originCode),
+          casillero: "6",
+          manual: quien(p, "originCode"),
+        },
+        {
+          label: "N° de resolución",
+          valor: t(p.originSourceNumber),
+          casillero: "8",
+          manual: quien(p, "originSourceNumber"),
+        },
+        {
+          label: "Tipo de origen",
+          valor: t(p.originType),
+          casillero: "5",
+          manual: quien(p, "originType"),
+        },
+        {
+          label: "Procedencia",
+          valor: ubicacion(p.originRegion ?? "", "", p.originDistrict ?? ""),
+          manual: quien(p, "originRegion") ?? quien(p, "originDistrict"),
+        },
+        {
+          label: "Código de CTP de procedencia",
+          valor: t(p.ctpProductCode),
+          casillero: "9",
+          manual: quien(p, "ctpProductCode"),
+        },
       ],
     },
     {
@@ -112,19 +157,42 @@ export function seccionesDeGuia(guia: GuiaIngreso<LineaConGuia>): SeccionFicha[]
         { label: "Nombre o razón social", valor: t(p.providerName), casillero: "7" },
         {
           label: "Documento",
-          valor: t(p.providerDocument) ? `${t(p.providerDocumentType) ?? "DOC"} ${t(p.providerDocument)}` : null,
+          valor: t(p.providerDocument)
+            ? `${t(p.providerDocumentType) ?? "DOC"} ${t(p.providerDocument)}`
+            : null,
         },
-        { label: "Propietario del producto", valor: t(d.propietario?.nombre), casillero: "13" },
+        {
+          label: "Propietario del producto",
+          valor: t(d.propietario?.nombre),
+          casillero: "13",
+          manual: quien(p, "gtfDatos.propietario.nombre"),
+        },
         {
           label: "Documento del propietario",
-          valor: t(d.propietario?.docNumero) ? `${d.propietario.docTipo} ${d.propietario.docNumero}` : null,
+          valor: t(d.propietario?.docNumero)
+            ? `${d.propietario.docTipo} ${d.propietario.docNumero}`
+            : null,
           casillero: "14/15",
+          manual: quien(p, "gtfDatos.propietario.docNumero"),
         },
-        { label: "Dirección", valor: t(d.propietario?.direccion), casillero: "16" },
+        {
+          label: "Dirección",
+          valor: t(d.propietario?.direccion),
+          casillero: "16",
+          manual: quien(p, "gtfDatos.propietario.direccion"),
+        },
         {
           label: "Ubicación",
-          valor: ubicacion(d.propietario?.departamento, d.propietario?.provincia, d.propietario?.distrito),
+          valor: ubicacion(
+            d.propietario?.departamento,
+            d.propietario?.provincia,
+            d.propietario?.distrito,
+          ),
           casillero: "17/18/19",
+          manual:
+            quien(p, "gtfDatos.propietario.distrito") ??
+            quien(p, "gtfDatos.propietario.provincia") ??
+            quien(p, "gtfDatos.propietario.departamento"),
         },
       ],
     },
@@ -132,17 +200,38 @@ export function seccionesDeGuia(guia: GuiaIngreso<LineaConGuia>): SeccionFicha[]
       titulo: "Destinatario",
       rango: "casilleros (22) a (28)",
       campos: [
-        { label: "Nombre o razón social", valor: t(d.destinatario?.nombre), casillero: "22" },
+        {
+          label: "Nombre o razón social",
+          valor: t(d.destinatario?.nombre),
+          casillero: "22",
+          manual: quien(p, "gtfDatos.destinatario.nombre"),
+        },
         {
           label: "Documento",
-          valor: t(d.destinatario?.docNumero) ? `${d.destinatario.docTipo} ${d.destinatario.docNumero}` : null,
+          valor: t(d.destinatario?.docNumero)
+            ? `${d.destinatario.docTipo} ${d.destinatario.docNumero}`
+            : null,
           casillero: "23/24",
+          manual: quien(p, "gtfDatos.destinatario.docNumero"),
         },
-        { label: "Dirección", valor: t(d.destinatario?.direccion), casillero: "25" },
+        {
+          label: "Dirección",
+          valor: t(d.destinatario?.direccion),
+          casillero: "25",
+          manual: quien(p, "gtfDatos.destinatario.direccion"),
+        },
         {
           label: "Ubicación",
-          valor: ubicacion(d.destinatario?.departamento, d.destinatario?.provincia, d.destinatario?.distrito),
+          valor: ubicacion(
+            d.destinatario?.departamento,
+            d.destinatario?.provincia,
+            d.destinatario?.distrito,
+          ),
           casillero: "26/27/28",
+          manual:
+            quien(p, "gtfDatos.destinatario.distrito") ??
+            quien(p, "gtfDatos.destinatario.provincia") ??
+            quien(p, "gtfDatos.destinatario.departamento"),
         },
       ],
     },
@@ -150,19 +239,53 @@ export function seccionesDeGuia(guia: GuiaIngreso<LineaConGuia>): SeccionFicha[]
       titulo: "Transportista y vehículo",
       rango: "casilleros (29) a (34)",
       campos: [
-        { label: "Modo de transporte", valor: t(d.vehiculo?.modo), casillero: "30" },
-        { label: "Empresa de transporte", valor: t(d.transportista?.nombre) },
-        { label: "Tipo de vehículo", valor: t(d.vehiculo?.tipo), casillero: "31" },
+        {
+          label: "Modo de transporte",
+          valor: t(d.vehiculo?.modo),
+          casillero: "30",
+          manual: quien(p, "gtfDatos.vehiculo.modo"),
+        },
+        {
+          label: "Empresa de transporte",
+          valor: t(d.transportista?.nombre),
+          manual: quien(p, "gtfDatos.transportista.nombre"),
+        },
+        {
+          label: "Tipo de vehículo",
+          valor: t(d.vehiculo?.tipo),
+          casillero: "31",
+          manual: quien(p, "gtfDatos.vehiculo.tipo"),
+        },
         {
           /* Placa o matrícula según el modo: en la selva central buena parte de
              la madera sale por río y una guía fluvial no lleva placa. */
           label: d.vehiculo?.modo === "fluvial" ? "Embarcación / matrícula" : "Placa",
-          valor: t(d.vehiculo?.modo === "fluvial" ? d.vehiculo?.embarcacion || d.vehiculo?.placa : d.vehiculo?.placa),
+          valor: t(
+            d.vehiculo?.modo === "fluvial"
+              ? d.vehiculo?.embarcacion || d.vehiculo?.placa
+              : d.vehiculo?.placa,
+          ),
           casillero: "31",
+          manual: quien(p, "gtfDatos.vehiculo.placa") ?? quien(p, "gtfDatos.vehiculo.embarcacion"),
         },
-        { label: "Conductor", valor: t(d.vehiculo?.conductor), casillero: "32" },
-        { label: "DNI del conductor", valor: t(d.vehiculo?.conductorDni), casillero: "33" },
-        { label: "Licencia de conducir", valor: t(d.vehiculo?.licencia), casillero: "34" },
+        {
+          label: "Conductor",
+          valor: t(d.vehiculo?.conductor),
+          casillero: "32",
+          manual: quien(p, "gtfDatos.vehiculo.conductor"),
+        },
+        {
+          label: "DNI del conductor",
+          valor: t(d.vehiculo?.conductorDni),
+          casillero: "33",
+          manual: quien(p, "gtfDatos.vehiculo.conductorDni"),
+        },
+        {
+          label: "Licencia de conducir",
+          valor: t(d.vehiculo?.licencia),
+          casillero: "34",
+          manual: quien(p, "gtfDatos.vehiculo.licencia"),
+        },
       ],
     },
   ];

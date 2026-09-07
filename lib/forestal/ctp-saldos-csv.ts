@@ -63,6 +63,23 @@ export interface LoteCsv {
   vencido: boolean;
 }
 
+/** El diagnóstico de origen, para el reporte (misma forma que `ResumenOrigen`). */
+export interface OrigenCsv {
+  m3SinCertificar: number;
+  fraccion: number;
+  corridas: readonly {
+    fecha: string;
+    lote: string | null;
+    producto: string | null;
+    especie: string | null;
+    unidad: string;
+    disponible: number;
+    motivo: string;
+    guias: readonly string[];
+    piezasLibresDelLote: number;
+  }[];
+}
+
 /** Una fuente del balance de capacidad, para el reporte. */
 export interface FuenteCsv {
   label: string;
@@ -86,6 +103,9 @@ export function saldosACsv(
   /* El balance de capacidad. Va al final: primero lo que hay, después lo que
      puede llegar a salir de todo eso junto. */
   balance: { fuentes: readonly FuenteCsv[]; totalProducto: number } | null = null,
+  /* Lo que del depósito NO se puede certificar. Va después de la capacidad:
+     primero cuánto puede salir, después cuánto de eso puede salir con papeles. */
+  origen: OrigenCsv | null = null,
 ): string {
   const lineas: string[] = [
     fila(["Existencias del Libro CTP", periodoLabel]),
@@ -221,6 +241,42 @@ export function saldosACsv(
         ]),
       ),
       fila(["CAPACIDAD MAXIMA EN PRODUCTO", "", "", num(balance.totalProducto)]),
+    );
+  }
+
+  if (origen && origen.corridas.length > 0) {
+    lineas.push(
+      "",
+      fila(["ORIGEN INCOMPLETO"]),
+      fila([
+        `${num(origen.m3SinCertificar)} m3 del deposito (${Math.round(origen.fraccion * 100)}%) no se pueden certificar: el libro lo admite, el certificado de origen no.`,
+      ]),
+      fila([
+        "Fecha",
+        "Lote",
+        "Producto",
+        "Especie",
+        "Disponible",
+        "Unidad",
+        "Motivo",
+        "Guias",
+        "Piezas libres del lote",
+      ]),
+      ...origen.corridas.map((c) =>
+        fila([
+          c.fecha.slice(0, 10),
+          c.lote ?? "",
+          c.producto ?? "",
+          c.especie ?? "",
+          num(c.disponible),
+          c.unidad,
+          c.motivo === "sin_materia_prima"
+            ? "Sin materia prima atada"
+            : "La guia no declara titulo habilitante",
+          c.guias.join(" "),
+          String(c.piezasLibresDelLote),
+        ]),
+      ),
     );
   }
 

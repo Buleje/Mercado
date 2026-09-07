@@ -61,7 +61,8 @@ export default function TablaProductos({
     const copia = [...productos];
     const { col, desc } = orden;
     copia.sort((a, b) => {
-      const r = col === "producto" ? a.producto.localeCompare(b.producto, "es-PE") : a[col] - b[col];
+      const r =
+        col === "producto" ? a.producto.localeCompare(b.producto, "es-PE") : a[col] - b[col];
       return desc ? -r : r;
     });
     return copia;
@@ -81,7 +82,15 @@ export default function TablaProductos({
   const ordenar = (col: Columna) =>
     setOrden((p) => ({ col, desc: p.col === col ? !p.desc : col !== "producto" }));
 
-  const Orden = ({ col, children, className }: { col: Columna; children: React.ReactNode; className?: string }) => (
+  const Orden = ({
+    col,
+    children,
+    className,
+  }: {
+    col: Columna;
+    children: React.ReactNode;
+    className?: string;
+  }) => (
     <Th className={className}>
       <button
         type="button"
@@ -104,8 +113,8 @@ export default function TablaProductos({
           Stock de productos transformados
         </CardTitle>
         <p className="text-xs text-[var(--text-tertiary)]">
-          {conStock} de {filas.length} {filas.length === 1 ? "línea" : "líneas"} con stock listo para despachar · las
-          cantidades van en la unidad declarada por cada corrida
+          {conStock} de {filas.length} {filas.length === 1 ? "línea" : "líneas"} con stock listo
+          para despachar · las cantidades van en la unidad declarada por cada corrida
         </p>
       </div>
 
@@ -119,9 +128,15 @@ export default function TablaProductos({
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
               <Orden col="producto">Producto · Especie</Orden>
-              <Orden col="producido" className="text-right">Producido</Orden>
-              <Orden col="despachado" className="text-right">Despachado</Orden>
-              <Orden col="stock" className="text-right">Stock</Orden>
+              <Orden col="producido" className="text-right">
+                Producido
+              </Orden>
+              <Orden col="despachado" className="text-right">
+                Despachado
+              </Orden>
+              <Orden col="stock" className="text-right">
+                Stock
+              </Orden>
               {onDespachar && <Th className="text-right">&nbsp;</Th>}
             </tr>
           </thead>
@@ -129,12 +144,18 @@ export default function TablaProductos({
             {filas.map((p) => (
               <tr key={p.producto} className="border-t border-[var(--rule-soft)]">
                 <Td className="font-medium text-[var(--text-primary)]">{p.producto}</Td>
-                <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(p.producido)}</Td>
-                <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{n2(p.despachado)}</Td>
+                <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                  {n2(p.producido)}
+                </Td>
+                <Td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                  {n2(p.despachado)}
+                </Td>
                 <Td className="text-right">
                   <span
                     className={`font-mono font-bold tabular-nums ${
-                      p.stock < 0 ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]"
+                      p.stock < 0
+                        ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]"
+                        : "text-[var(--text-primary)]"
                     }`}
                   >
                     {n2(p.stock)}
@@ -148,7 +169,11 @@ export default function TablaProductos({
                 {onDespachar && (
                   <Td className="text-right">
                     {p.stock > 0 && (
-                      <Btn size="sm" variant="secondary" onClick={() => onDespachar(...partirProducto(p.producto))}>
+                      <Btn
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => onDespachar(...partirProducto(p.producto))}
+                      >
                         <Truck className="h-4 w-4" />
                         Despachar
                       </Btn>
@@ -168,9 +193,15 @@ export default function TablaProductos({
                   </span>
                 )}
               </td>
-              <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n2(total.producido)}</td>
-              <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n2(total.despachado)}</td>
-              <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{n2(disponible)}</td>
+              <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                {n2(total.producido)}
+              </td>
+              <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                {n2(total.despachado)}
+              </td>
+              <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+                {n2(disponible)}
+              </td>
               {onDespachar && <td />}
             </tr>
           </tfoot>

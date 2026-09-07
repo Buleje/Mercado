@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -44,7 +45,14 @@ const updateFieldsSchema = z.object({
   providerDocument: z.string().trim().max(20).nullable().optional(),
   providerDocumentType: z.enum(["RUC", "DNI", "CE", "PASAPORTE"]).nullable().optional(),
   originType: z
-    .enum(["concesion", "predio_privado", "comunidad_nativa", "reforestacion", "retroaserradero", "otro"])
+    .enum([
+      "concesion",
+      "predio_privado",
+      "comunidad_nativa",
+      "reforestacion",
+      "retroaserradero",
+      "otro",
+    ])
     .optional(),
   originCode: z.string().trim().max(100).nullable().optional(),
   originSourceNumber: z.string().trim().max(100).nullable().optional(),
@@ -55,7 +63,17 @@ const updateFieldsSchema = z.object({
   speciesScientificName: z.string().trim().max(150).nullable().optional(),
   speciesCites: z.boolean().optional(),
   productType: z
-    .enum(["rolliza", "aserrada", "tablones", "listones", "durmientes", "pulgada", "carbon", "lena", "otro"])
+    .enum([
+      "rolliza",
+      "aserrada",
+      "tablones",
+      "listones",
+      "durmientes",
+      "pulgada",
+      "carbon",
+      "lena",
+      "otro",
+    ])
     .optional(),
   unit: z.enum(UNIDADES_LOCTP.map((u) => u.valor) as [string, ...string[]]).optional(),
   volumeM3: z.coerce.number().positive().max(99999).optional(),
@@ -65,6 +83,12 @@ const updateFieldsSchema = z.object({
   humidityPct: z.coerce.number().min(0).max(100).nullable().optional(),
   defectsNotes: z.string().trim().max(500).nullable().optional(),
   notes: z.string().trim().max(1000).nullable().optional(),
+  /* El cuerpo del documento —propietario, destinatario, transportista,
+     casilleros (13) a (34)—. Estaba en la tabla y en la ficha, que lo mostraba
+     vacío, pero ningún endpoint lo aceptaba después del alta: los casilleros
+     que el papel trae y el operador no transcribió al registrar quedaban en
+     blanco para siempre. Se valida con el MISMO schema que la guía de salida. */
+  gtfDatos: gtfDatosSchema.optional(),
 });
 
 const patchSchema = z.discriminatedUnion("action", [
@@ -73,7 +97,11 @@ const patchSchema = z.discriminatedUnion("action", [
      valida. La fecha va como texto `AAAA-MM-DD` — es un día, no un instante. */
   z.object({
     action: z.literal("recepcionar"),
-    fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD").optional(),
+    fecha: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD")
+      .optional(),
   }),
   z.object({ action: z.literal("reject"), reason: z.string().trim().min(3).max(500) }),
   // Anular un ingreso YA validado (con motivo). Distinto de reject (pre-validación).
@@ -129,169 +157,192 @@ const patchSchema = z.discriminatedUnion("action", [
 async function ensureSpec(tenantId: string) {
   const ok = await isSpecializationEnabled(tenantId, "spec:forestal:ctp-libro");
   if (!ok) {
-    return NextResponse.json(
-      { error: "specialization_disabled" },
-      { status: 403 },
-    );
+    return NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
   }
   return null;
 }
 
 // ─── GET ─────────────────────────────────────────────────────────────────
 
-export const GET = withApiHandler("forestal-wood-entries-id-get", async (req: NextRequest, ctx: RouteCtx) => {
-  const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
-  if (auth instanceof NextResponse) return auth;
+export const GET = withApiHandler(
+  "forestal-wood-entries-id-get",
+  async (req: NextRequest, ctx: RouteCtx) => {
+    const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const rl = await applyRateLimit(req, "GENEROUS", "ctp");
-  if (rl) return rl;
+    const rl = await applyRateLimit(req, "GENEROUS", "ctp");
+    if (rl) return rl;
 
-  const guard = await ensureSpec(auth.tenantId);
-  if (guard) return guard;
+    const guard = await ensureSpec(auth.tenantId);
+    if (guard) return guard;
 
-  const { id } = await ctx.params;
-  const entry = await WoodEntriesDB.getById(auth.tenantId, id);
-  if (!entry) {
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
-  }
-  return NextResponse.json({ entry });
-});
+    const { id } = await ctx.params;
+    const entry = await WoodEntriesDB.getById(auth.tenantId, id);
+    if (!entry) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+    return NextResponse.json({ entry });
+  },
+);
 
 // ─── PATCH ───────────────────────────────────────────────────────────────
 
-export const PATCH = withApiHandler("forestal-wood-entries-id-patch", async (req: NextRequest, ctx: RouteCtx) => {
-  // Validate y delete solo admin/owner. Almacenero no puede validar
-  // sus propios ingresos (separation of duties — CTP requiere doble check).
-  const auth = await requireAdmin(req, ["admin", "owner"]);
-  if (auth instanceof NextResponse) return auth;
+export const PATCH = withApiHandler(
+  "forestal-wood-entries-id-patch",
+  async (req: NextRequest, ctx: RouteCtx) => {
+    // Validate y delete solo admin/owner. Almacenero no puede validar
+    // sus propios ingresos (separation of duties — CTP requiere doble check).
+    const auth = await requireAdmin(req, ["admin", "owner"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const rl = await applyRateLimit(req, "GENEROUS", "ctp");
-  if (rl) return rl;
+    const rl = await applyRateLimit(req, "GENEROUS", "ctp");
+    if (rl) return rl;
 
-  const guard = await ensureSpec(auth.tenantId);
-  if (guard) return guard;
+    const guard = await ensureSpec(auth.tenantId);
+    if (guard) return guard;
 
-  const { id } = await ctx.params;
+    const { id } = await ctx.params;
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
-  }
-
-  const parsed = patchSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "validation_error", issues: parsed.error.issues },
-      { status: 400 },
-    );
-  }
-
-  try {
-    // Devuelve el recuento, no el ingreso: lo que la pantalla necesita saber es
-    // cuántas entraron y cuáles se saltaron por estar ya cargadas.
-    if (parsed.data.action === "trozas") {
-      const r = await WoodEntriesDB.agregarTrozas(
-        auth.tenantId,
-        id,
-        // `orden` lo asigna el servidor continuando la numeración del ingreso:
-        // si lo mandara el cliente, dos importaciones dejarían dos piezas con el
-        // mismo número de fila en el papel.
-        parsed.data.trozas.map((t, i) => ({ ...t, orden: i + 1 })),
-        auth.username ?? "unknown",
-      );
-      logger.info("[wood-entries.PATCH] trozas", {
-        tenantId: auth.tenantId,
-        id,
-        agregadas: r.agregadas,
-        repetidas: r.repetidas.length,
-        actor: auth.username,
-      });
-      return NextResponse.json(r);
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "invalid_json" }, { status: 400 });
     }
 
-    if (parsed.data.action === "cuadrar") {
-      const d = parsed.data;
-      if (d.lado === "cabecera" && (!d.trozaId || d.cantidad == null || d.volumenM3 == null)) {
+    const parsed = patchSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "validation_error", issues: parsed.error.issues },
+        { status: 400 },
+      );
+    }
+
+    try {
+      // Devuelve el recuento, no el ingreso: lo que la pantalla necesita saber es
+      // cuántas entraron y cuáles se saltaron por estar ya cargadas.
+      if (parsed.data.action === "trozas") {
+        const r = await WoodEntriesDB.agregarTrozas(
+          auth.tenantId,
+          id,
+          // `orden` lo asigna el servidor continuando la numeración del ingreso:
+          // si lo mandara el cliente, dos importaciones dejarían dos piezas con el
+          // mismo número de fila en el papel.
+          parsed.data.trozas.map((t, i) => ({ ...t, orden: i + 1 })),
+          auth.username ?? "unknown",
+        );
+        logger.info("[wood-entries.PATCH] trozas", {
+          tenantId: auth.tenantId,
+          id,
+          agregadas: r.agregadas,
+          repetidas: r.repetidas.length,
+          actor: auth.username,
+        });
+        return NextResponse.json(r);
+      }
+
+      if (parsed.data.action === "cuadrar") {
+        const d = parsed.data;
+        if (d.lado === "cabecera" && (!d.trozaId || d.cantidad == null || d.volumenM3 == null)) {
+          return NextResponse.json(
+            {
+              error: "validation_error",
+              message: "Cuadrar por la cabecera necesita la pieza, su cantidad y su volumen.",
+            },
+            { status: 400 },
+          );
+        }
+        const r = await WoodEntriesDB.cuadrarIngreso(
+          auth.tenantId,
+          id,
+          d.lado === "cabecera"
+            ? {
+                lado: "cabecera",
+                motivo: d.motivo,
+                trozaId: d.trozaId!,
+                cantidad: d.cantidad!,
+                volumenM3: d.volumenM3!,
+              }
+            : { lado: "lista", motivo: d.motivo },
+          auth.username ?? "unknown",
+        );
+        logger.info("[wood-entries.PATCH] cuadrar", {
+          tenantId: auth.tenantId,
+          id,
+          lado: d.lado,
+          actor: auth.username,
+        });
+        return NextResponse.json({ ok: true, entry: r.entry, troza: r.troza });
+      }
+
+      if (parsed.data.action === "recepcionar") {
+        const r = await WoodEntriesDB.recepcionar(
+          auth.tenantId,
+          id,
+          parsed.data.fecha,
+          auth.username ?? "unknown",
+        );
+        if (!r) return NextResponse.json({ error: "not_found" }, { status: 404 });
+        return NextResponse.json(r);
+      }
+
+      let entry;
+      if (parsed.data.action === "validate") {
+        entry = await WoodEntriesDB.validate(auth.tenantId, id, auth.username);
+      } else if (parsed.data.action === "reject") {
+        entry = await WoodEntriesDB.reject(auth.tenantId, id, auth.username, parsed.data.reason);
+      } else if (parsed.data.action === "annul") {
+        entry = await WoodEntriesDB.annul(
+          auth.tenantId,
+          id,
+          auth.username ?? "unknown",
+          parsed.data.reason,
+        );
+      } else if (parsed.data.action === "update") {
+        // 404 antes de tocar nada: un id inexistente no es un error de negocio.
+        const actual = await WoodEntriesDB.getById(auth.tenantId, id);
+        if (!actual) return NextResponse.json({ error: "not_found" }, { status: 404 });
+        entry = await WoodEntriesDB.update(
+          auth.tenantId,
+          id,
+          parsed.data.fields,
+          auth.username ?? "unknown",
+        );
+      } else if (parsed.data.action === "set_costo") {
+        const actual = await WoodEntriesDB.getById(auth.tenantId, id);
+        if (!actual) return NextResponse.json({ error: "not_found" }, { status: 404 });
+        entry = await WoodEntriesDB.setCosto(
+          auth.tenantId,
+          id,
+          { costoTotal: parsed.data.costoTotal, moneda: parsed.data.moneda },
+          auth.username ?? "unknown",
+        );
+      } else {
+        entry = await WoodEntriesDB.softDelete(auth.tenantId, id, auth.username ?? "unknown");
+      }
+
+      logger.info("[wood-entries.PATCH] action", {
+        tenantId: auth.tenantId,
+        id,
+        action: parsed.data.action,
+        actor: auth.username,
+      });
+
+      return NextResponse.json({ entry });
+    } catch (err) {
+      logger.error("[wood-entries.PATCH] failed", { error: String(err), id });
+      // El guard de anular (ingreso ya consumido) es un error de negocio → 422 con motivo.
+      if (parsed.data.action === "annul") {
         return NextResponse.json(
-          { error: "validation_error", message: "Cuadrar por la cabecera necesita la pieza, su cantidad y su volumen." },
-          { status: 400 },
+          {
+            error: "annul_blocked",
+            message: err instanceof Error ? err.message : "No se pudo anular el ingreso.",
+          },
+          { status: 422 },
         );
       }
-      const r = await WoodEntriesDB.cuadrarIngreso(
-        auth.tenantId,
-        id,
-        d.lado === "cabecera"
-          ? { lado: "cabecera", motivo: d.motivo, trozaId: d.trozaId!, cantidad: d.cantidad!, volumenM3: d.volumenM3! }
-          : { lado: "lista", motivo: d.motivo },
-        auth.username ?? "unknown",
-      );
-      logger.info("[wood-entries.PATCH] cuadrar", {
-        tenantId: auth.tenantId,
-        id,
-        lado: d.lado,
-        actor: auth.username,
-      });
-      return NextResponse.json({ ok: true, entry: r.entry, troza: r.troza });
+      // Editar un ingreso de un mes cerrado también es un invariante, no un bug.
+      return ctpErrorResponse(err, "wood-entries.PATCH", auth.tenantId);
     }
-
-    if (parsed.data.action === "recepcionar") {
-      const r = await WoodEntriesDB.recepcionar(auth.tenantId, id, parsed.data.fecha, auth.username ?? "unknown");
-      if (!r) return NextResponse.json({ error: "not_found" }, { status: 404 });
-      return NextResponse.json(r);
-    }
-
-    let entry;
-    if (parsed.data.action === "validate") {
-      entry = await WoodEntriesDB.validate(auth.tenantId, id, auth.username);
-    } else if (parsed.data.action === "reject") {
-      entry = await WoodEntriesDB.reject(
-        auth.tenantId,
-        id,
-        auth.username,
-        parsed.data.reason,
-      );
-    } else if (parsed.data.action === "annul") {
-      entry = await WoodEntriesDB.annul(auth.tenantId, id, auth.username ?? "unknown", parsed.data.reason);
-    } else if (parsed.data.action === "update") {
-      // 404 antes de tocar nada: un id inexistente no es un error de negocio.
-      const actual = await WoodEntriesDB.getById(auth.tenantId, id);
-      if (!actual) return NextResponse.json({ error: "not_found" }, { status: 404 });
-      entry = await WoodEntriesDB.update(
-        auth.tenantId,
-        id,
-        parsed.data.fields,
-        auth.username ?? "unknown",
-      );
-    } else if (parsed.data.action === "set_costo") {
-      const actual = await WoodEntriesDB.getById(auth.tenantId, id);
-      if (!actual) return NextResponse.json({ error: "not_found" }, { status: 404 });
-      entry = await WoodEntriesDB.setCosto(
-        auth.tenantId,
-        id,
-        { costoTotal: parsed.data.costoTotal, moneda: parsed.data.moneda },
-        auth.username ?? "unknown",
-      );
-    } else {
-      entry = await WoodEntriesDB.softDelete(auth.tenantId, id, auth.username ?? "unknown");
-    }
-
-    logger.info("[wood-entries.PATCH] action", {
-      tenantId: auth.tenantId,
-      id,
-      action: parsed.data.action,
-      actor: auth.username,
-    });
-
-    return NextResponse.json({ entry });
-  } catch (err) {
-    logger.error("[wood-entries.PATCH] failed", { error: String(err), id });
-    // El guard de anular (ingreso ya consumido) es un error de negocio → 422 con motivo.
-    if (parsed.data.action === "annul") {
-      return NextResponse.json({ error: "annul_blocked", message: err instanceof Error ? err.message : "No se pudo anular el ingreso." }, { status: 422 });
-    }
-    // Editar un ingreso de un mes cerrado también es un invariante, no un bug.
-    return ctpErrorResponse(err, "wood-entries.PATCH", auth.tenantId);
-  }
-});
+  },
+);

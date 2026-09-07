@@ -17,7 +17,13 @@ import type { WoodEntry } from "@/components/admin/forestal/ctp-shared";
  * dejaba entre comillas — Excel los leía como texto y no se podían sumar.
  */
 export function celdaCsv(v: unknown): string {
-  const s = v == null ? "" : String(v);
+  let s = v == null ? "" : String(v);
+  /* Una celda que empieza con = + - @ (o tab/CR) Excel la ejecuta como fórmula:
+     un código de lote «=cmd|…» o un permiso pegado desde un Excel ajeno se
+     convierte en código al abrir el reporte. Se antepone un apóstrofo, que
+     Excel muestra como texto. Los NÚMEROS negativos («-81,807») se dejan tal
+     cual: son lo que el reporte tiene que sumar. */
+  if (/^[=+\-@\t\r]/.test(s) && !/^[-+]?\d+([.,]\d+)?$/.test(s)) s = `'${s}`;
   return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
@@ -59,7 +65,12 @@ const fechaSolo = (iso: string | null): string => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? iso
-    : d.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
+    : d.toLocaleDateString("es-PE", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        timeZone: "UTC",
+      });
 };
 
 /** `createdAt` sí es un instante real: va en hora local de la planta. */
@@ -68,7 +79,14 @@ const fechaHora = (iso: string | null): string => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? iso
-    : d.toLocaleString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Lima" });
+    : d.toLocaleString("es-PE", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "America/Lima",
+      });
 };
 
 /** Decimal como lo lee Excel es-PE: coma decimal, sin separador de miles. */

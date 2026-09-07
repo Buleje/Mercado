@@ -7,7 +7,12 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
-import { ForestCtpConsumoDB, CtpInvariantError, CONSUMO_VIGENTE, CTP_TX_OPTS } from "./forest-ctp-consumo.db";
+import {
+  ForestCtpConsumoDB,
+  CtpInvariantError,
+  CONSUMO_VIGENTE,
+  CTP_TX_OPTS,
+} from "./forest-ctp-consumo.db";
 import { ORIGEN_VIGENTE, ForestCtpDespachoDB } from "./forest-ctp-despacho.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
 import { saldosDeCorridas } from "./forest-ctp-saldo-corrida";
@@ -15,7 +20,11 @@ import { saldosDeCorridas } from "./forest-ctp-saldo-corrida";
    lecturas dicen lo mismo). `wood-entries.db` no importa este archivo, así que
    la dependencia va en un solo sentido. */
 import { WoodEntriesDB } from "./wood-entries.db";
-import { agruparMovimiento, pasoParaBarras, type MovimientoDelLibro } from "@/lib/forestal/movimiento-libro";
+import {
+  agruparMovimiento,
+  pasoParaBarras,
+  type MovimientoDelLibro,
+} from "@/lib/forestal/movimiento-libro";
 import { RENDIMIENTO_TOPE_PCT, topeDeclarableM3 } from "@/lib/forestal/produccion-paquetes";
 import { estaDisponible, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
@@ -65,12 +74,18 @@ function speciesKey(raw: string | null | undefined): string {
  * "Tablones|Tornillo" y "tablones|tornillo " contaban como productos distintos
  * y el stock se partía en dos. Mismo criterio que `speciesKey`.
  */
-function productKey(productType: string | null | undefined, species: string | null | undefined): string {
+function productKey(
+  productType: string | null | undefined,
+  species: string | null | undefined,
+): string {
   return `${speciesKey(productType)}|${speciesKey(species)}`;
 }
 
 /** Etiqueta legible del producto (la clave es para agrupar, esto es para mostrar). */
-function productLabel(productType: string | null | undefined, species: string | null | undefined): string {
+function productLabel(
+  productType: string | null | undefined,
+  species: string | null | undefined,
+): string {
   return `${productType ?? "—"} · ${species ?? "—"}`;
 }
 
@@ -126,7 +141,14 @@ export interface ConciliacionPeriodo {
     final: number;
     negativa: boolean;
   }[];
-  productos: { producto: string; apertura: number; producido: number; despachado: number; final: number; negativo: boolean }[];
+  productos: {
+    producto: string;
+    apertura: number;
+    producido: number;
+    despachado: number;
+    final: number;
+    negativo: boolean;
+  }[];
 }
 
 export interface CtpEntryInput {
@@ -222,10 +244,23 @@ export interface CtpEntryInput {
  * producción entraría DOS VECES — declarar de más es exactamente lo que el
  * libro no puede hacer.
  */
-export function produccionKeyBase(entryDate: Date | string, productType: string | null, speciesCommon: string | null, quantity: unknown): string {
-  const d = entryDate instanceof Date ? entryDate.toISOString().slice(0, 10) : String(entryDate ?? "").slice(0, 10);
+export function produccionKeyBase(
+  entryDate: Date | string,
+  productType: string | null,
+  speciesCommon: string | null,
+  quantity: unknown,
+): string {
+  const d =
+    entryDate instanceof Date
+      ? entryDate.toISOString().slice(0, 10)
+      : String(entryDate ?? "").slice(0, 10);
   const q = quantity == null || quantity === "" ? "" : Number(quantity).toFixed(4);
-  return [d, (productType ?? "").trim().toLowerCase(), (speciesCommon ?? "").trim().toLowerCase(), q].join("|");
+  return [
+    d,
+    (productType ?? "").trim().toLowerCase(),
+    (speciesCommon ?? "").trim().toLowerCase(),
+    q,
+  ].join("|");
 }
 
 export function produccionKey(
@@ -244,10 +279,20 @@ export function produccionKey(
   codigoProducto?: string | null,
   materiaPrimaRef?: string | null,
 ): string {
-  const d = entryDate instanceof Date ? entryDate.toISOString().slice(0, 10) : String(entryDate ?? "").slice(0, 10);
+  const d =
+    entryDate instanceof Date
+      ? entryDate.toISOString().slice(0, 10)
+      : String(entryDate ?? "").slice(0, 10);
   const q = quantity == null || quantity === "" ? "" : Number(quantity).toFixed(4);
   const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
-  return [d, norm(productType), norm(speciesCommon), q, norm(codigoProducto), norm(materiaPrimaRef)].join("|");
+  return [
+    d,
+    norm(productType),
+    norm(speciesCommon),
+    q,
+    norm(codigoProducto),
+    norm(materiaPrimaRef),
+  ].join("|");
 }
 
 /**
@@ -255,12 +300,28 @@ export function produccionKey(
  * GTF de salida si la tiene (identificador natural), o composite fecha+producto+
  * especie+cantidad+destino si aún no se emitió GTF. Misma fórmula en DB y endpoint.
  */
-export function despachoKey(gtfNumber: string | null, entryDate: Date | string, productType: string | null, speciesCommon: string | null, quantity: unknown, destino: string | null): string {
+export function despachoKey(
+  gtfNumber: string | null,
+  entryDate: Date | string,
+  productType: string | null,
+  speciesCommon: string | null,
+  quantity: unknown,
+  destino: string | null,
+): string {
   const g = (gtfNumber ?? "").trim();
   if (g) return `gtf:${g.toLowerCase()}`;
-  const d = entryDate instanceof Date ? entryDate.toISOString().slice(0, 10) : String(entryDate ?? "").slice(0, 10);
+  const d =
+    entryDate instanceof Date
+      ? entryDate.toISOString().slice(0, 10)
+      : String(entryDate ?? "").slice(0, 10);
   const q = quantity == null || quantity === "" ? "" : Number(quantity).toFixed(4);
-  return [d, (productType ?? "").trim().toLowerCase(), (speciesCommon ?? "").trim().toLowerCase(), q, (destino ?? "").trim().toLowerCase()].join("|");
+  return [
+    d,
+    (productType ?? "").trim().toLowerCase(),
+    (speciesCommon ?? "").trim().toLowerCase(),
+    q,
+    (destino ?? "").trim().toLowerCase(),
+  ].join("|");
 }
 
 export class ForestCtpDB {
@@ -298,7 +359,14 @@ export class ForestCtpDB {
 
     const lineas = await tx.forestCtpEntry.findMany({
       where: { tenantId, deletedAt: null, status: "registrado" },
-      select: { id: true, section: true, productType: true, speciesCommon: true, quantity: true, unit: true },
+      select: {
+        id: true,
+        section: true,
+        productType: true,
+        speciesCommon: true,
+        quantity: true,
+        unit: true,
+      },
     });
 
     let producido = 0;
@@ -337,13 +405,21 @@ export class ForestCtpDB {
     if (r4(pedido) > stock) {
       const label = productLabel(input.productType, input.speciesCommon);
       const salidas =
-        `ya se despacharon ${r4(despachado)}` + (reprocesado > 0 ? ` y ${r4(reprocesado)} se reprocesaron` : "");
+        `ya se despacharon ${r4(despachado)}` +
+        (reprocesado > 0 ? ` y ${r4(reprocesado)} se reprocesaron` : "");
       throw new CtpInvariantError(
         stock <= 0
           ? `No hay stock de ${label} para despachar: se produjeron ${r4(producido)} y ${salidas}.`
           : `Sólo quedan ${stock} de ${label} sin despachar; estás pidiendo ${r4(pedido)}.`,
         "I3_SOBRE_DESPACHO",
-        { producto: label, stock, pedido: r4(pedido), producido: r4(producido), despachado: r4(despachado), reprocesado: r4(reprocesado) },
+        {
+          producto: label,
+          stock,
+          pedido: r4(pedido),
+          producido: r4(producido),
+          despachado: r4(despachado),
+          reprocesado: r4(reprocesado),
+        },
       );
     }
   }
@@ -355,7 +431,10 @@ export class ForestCtpDB {
 
     // Cierre de período (ADR-139): no se registra una línea con fecha dentro de
     // un mes ya cerrado — sería alterar un acta inmutable.
-    const cerradoCreate = await ForestCtpCierreDB.closedPeriodOf(tenantId, input.entryDate ?? new Date());
+    const cerradoCreate = await ForestCtpCierreDB.closedPeriodOf(
+      tenantId,
+      input.entryDate ?? new Date(),
+    );
     if (cerradoCreate) {
       throw new CtpInvariantError(
         `El período ${cerradoCreate.label} está cerrado: no se puede registrar una línea con fecha de un mes cerrado.`,
@@ -368,7 +447,13 @@ export class ForestCtpDB {
     let rendimiento = input.rendimientoPct;
     const inVol = input.volumeInputM3 != null ? Number(input.volumeInputM3) : 0;
     const outQty = input.quantity != null ? Number(input.quantity) : 0;
-    if (rendimiento == null && input.section === "produccion" && inVol > 0 && outQty > 0 && input.unit === "m3") {
+    if (
+      rendimiento == null &&
+      input.section === "produccion" &&
+      inVol > 0 &&
+      outQty > 0 &&
+      input.unit === "m3"
+    ) {
       rendimiento = Math.round((outQty / inVol) * 10000) / 100;
     }
 
@@ -408,7 +493,8 @@ export class ForestCtpDB {
           pieces: input.pieces ?? null,
           gtfNumber: input.gtfNumber?.trim() || null,
           docType: input.docType?.trim() || null,
-          lineaProduccion: input.section === "produccion" ? (input.lineaProduccion?.trim() || "LP") : null,
+          lineaProduccion:
+            input.section === "produccion" ? input.lineaProduccion?.trim() || "LP" : null,
           codigoProducto: input.codigoProducto?.trim() || null,
           presentacion: input.presentacion?.trim().toUpperCase() || null,
           destino: input.destino?.trim() || null,
@@ -471,13 +557,21 @@ export class ForestCtpDB {
       await ForestCtpDespachoDB.setOrigenes(tenantId, entry.id, input.origenes, input.createdBy);
     }
 
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return entry;
   }
 
   static async list(
     tenantId: string,
-    filters: { section?: CtpSection; search?: string; includeAnnulled?: boolean; fromDate?: Date; toDate?: Date } = {},
+    filters: {
+      section?: CtpSection;
+      search?: string;
+      includeAnnulled?: boolean;
+      fromDate?: Date;
+      toDate?: Date;
+    } = {},
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     const where: Prisma.ForestCtpEntryWhereInput = { tenantId, deletedAt: null };
@@ -497,7 +591,11 @@ export class ForestCtpDB {
       ];
     }
     const [entries, total] = await Promise.all([
-      prisma.forestCtpEntry.findMany({ where, orderBy: [{ section: "asc" }, { lineNo: "asc" }], take: 500 }),
+      prisma.forestCtpEntry.findMany({
+        where,
+        orderBy: [{ section: "asc" }, { lineNo: "asc" }],
+        take: 500,
+      }),
       prisma.forestCtpEntry.count({ where }),
     ]);
 
@@ -563,21 +661,30 @@ export class ForestCtpDB {
      * Cierra el trío: el ingreso se cuadra contra sus piezas, la corrida contra
      * su materia prima, el despacho contra su corrida.
      */
-    const [salidas, reprocesos, entraPorReproceso, consumos, consumosConOrigen] = await Promise.all([
-      prisma.forestCtpDespachoOrigen.groupBy({
-        by: ["produccionEntryId"],
-        where: { tenantId, produccionEntryId: { in: corridas }, despacho: { deletedAt: null, status: "registrado" } },
-        _sum: { quantity: true },
-      }),
-      prisma.forestCtpReproceso.groupBy({
-        by: ["origenEntryId"],
-        // Si la corrida DESTINO se anuló, ese reproceso no consumió nada: la
-        // madera del origen volvió a estar disponible. Mismo criterio que el
-        // despacho de arriba.
-        where: { tenantId, origenEntryId: { in: corridas }, destino: { deletedAt: null, status: "registrado" } },
-        _sum: { quantity: true },
-      }),
-      /* La MISMA tabla, mirada al revés: lo que ENTRA a la corrida por
+    const [salidas, reprocesos, entraPorReproceso, consumos, consumosConOrigen] = await Promise.all(
+      [
+        prisma.forestCtpDespachoOrigen.groupBy({
+          by: ["produccionEntryId"],
+          where: {
+            tenantId,
+            produccionEntryId: { in: corridas },
+            despacho: { deletedAt: null, status: "registrado" },
+          },
+          _sum: { quantity: true },
+        }),
+        prisma.forestCtpReproceso.groupBy({
+          by: ["origenEntryId"],
+          // Si la corrida DESTINO se anuló, ese reproceso no consumió nada: la
+          // madera del origen volvió a estar disponible. Mismo criterio que el
+          // despacho de arriba.
+          where: {
+            tenantId,
+            origenEntryId: { in: corridas },
+            destino: { deletedAt: null, status: "registrado" },
+          },
+          _sum: { quantity: true },
+        }),
+        /* La MISMA tabla, mirada al revés: lo que ENTRA a la corrida por
          reproceso. `reprocesos` (arriba) agrupa por origen y contesta «cuánto
          de esta corrida se fue a reprocesar»; ésta agrupa por destino y
          contesta «cuánta materia prima llegó desde otra corrida».
@@ -586,30 +693,37 @@ export class ForestCtpDB {
          —porque no consumió ningún WoodEntry— y la fila la acusaba de «sin
          origen declarado» teniendo su cadena completa. Simétrico al filtro de
          arriba: si el ORIGEN se anuló, ese reproceso no aportó nada. */
-      prisma.forestCtpReproceso.groupBy({
-        by: ["destinoEntryId"],
-        where: { tenantId, destinoEntryId: { in: corridas }, origen: { deletedAt: null, status: "registrado" } },
-        _sum: { quantity: true },
-      }),
-      prisma.forestCtpConsumo.groupBy({
-        by: ["ctpEntryId"],
-        where: { tenantId, ctpEntryId: { in: corridas } },
-        _sum: { volumeM3: true },
-      }),
-      /* El N° de Permiso de la corrida es el `originCode` del ingreso que la
-       * alimentó (mismo dato que ya usa `productosDisponibles` como
-       * `titularOrigen`) — no un campo propio: una corrida no tiene permiso
-       * propio, hereda el de la madera que consumió. `groupBy` no puede
-       * traer el campo del padre (`WoodEntry`), así que va por `findMany`. */
-      prisma.forestCtpConsumo.findMany({
-        where: { tenantId, ctpEntryId: { in: corridas } },
-        select: { ctpEntryId: true, woodEntry: { select: { originCode: true } } },
-      }),
-    ]);
+        prisma.forestCtpReproceso.groupBy({
+          by: ["destinoEntryId"],
+          where: {
+            tenantId,
+            destinoEntryId: { in: corridas },
+            origen: { deletedAt: null, status: "registrado" },
+          },
+          _sum: { quantity: true },
+        }),
+        prisma.forestCtpConsumo.groupBy({
+          by: ["ctpEntryId"],
+          where: { tenantId, ctpEntryId: { in: corridas } },
+          _sum: { volumeM3: true },
+        }),
+        /* El N° de Permiso de la corrida es el `originCode` del ingreso que la
+         * alimentó (mismo dato que ya usa `productosDisponibles` como
+         * `titularOrigen`) — no un campo propio: una corrida no tiene permiso
+         * propio, hereda el de la madera que consumió. `groupBy` no puede
+         * traer el campo del padre (`WoodEntry`), así que va por `findMany`. */
+        prisma.forestCtpConsumo.findMany({
+          where: { tenantId, ctpEntryId: { in: corridas } },
+          select: { ctpEntryId: true, woodEntry: { select: { originCode: true } } },
+        }),
+      ],
+    );
     const desp = new Map(salidas.map((r) => [r.produccionEntryId, Number(r._sum.quantity ?? 0)]));
     const repro = new Map(reprocesos.map((r) => [r.origenEntryId, Number(r._sum.quantity ?? 0)]));
     const mpAtribuida = new Map(consumos.map((c) => [c.ctpEntryId, Number(c._sum.volumeM3 ?? 0)]));
-    const mpDesdeReproceso = new Map(entraPorReproceso.map((r) => [r.destinoEntryId, Number(r._sum.quantity ?? 0)]));
+    const mpDesdeReproceso = new Map(
+      entraPorReproceso.map((r) => [r.destinoEntryId, Number(r._sum.quantity ?? 0)]),
+    );
     const permisoDeCorrida = new Map<string, string[]>();
     for (const c of consumosConOrigen) {
       const codigo = (c.woodEntry?.originCode ?? "").trim();
@@ -641,7 +755,8 @@ export class ForestCtpDB {
                  que un campo en cero. El caso no-m³ se queda sin sumar y la
                  fila lo dice con su chip de reproceso, igual que un costo sin
                  factura es `null` y nunca 0. */
-              mpReprocesoM3: (e.unit ?? "").toLowerCase() === "m3" ? (mpDesdeReproceso.get(e.id) ?? 0) : 0,
+              mpReprocesoM3:
+                (e.unit ?? "").toLowerCase() === "m3" ? (mpDesdeReproceso.get(e.id) ?? 0) : 0,
               /* Varios ingresos con distinto permiso pueden alimentar la
                  misma corrida (dos guías de dos concesiones aserradas
                  juntas): se listan todos, no se elige uno. */
@@ -671,8 +786,15 @@ export class ForestCtpDB {
       include: {
         paquetes: {
           select: {
-            id: true, codigo: true, productType: true, presentacion: true,
-            cantidad: true, volumenM3: true, espesorCm: true, anchoCm: true, largoM: true,
+            id: true,
+            codigo: true,
+            productType: true,
+            presentacion: true,
+            cantidad: true,
+            volumenM3: true,
+            espesorCm: true,
+            anchoCm: true,
+            largoM: true,
           },
           orderBy: { createdAt: "asc" },
         },
@@ -766,7 +888,10 @@ export class ForestCtpDB {
     }
     const suma = r4(nuevos.reduce((a, p) => a + (Number(p.volumenM3) || 0), 0));
     if (!(suma > 0)) {
-      throw new CtpInvariantError("Los paquetes que se agregan no suman volumen.", "CANTIDAD_INVALIDA");
+      throw new CtpInvariantError(
+        "Los paquetes que se agregan no suman volumen.",
+        "CANTIDAD_INVALIDA",
+      );
     }
 
     // Lock + lectura + escritura de `quantity` en UNA transacción (auditoría
@@ -777,9 +902,16 @@ export class ForestCtpDB {
     const entry = await prisma.$transaction(async (tx) => {
       const locked = await tx.$queryRaw<
         {
-          id: string; section: string; status: string; lineNo: number; entryDate: Date;
-          quantity: Prisma.Decimal | null; unit: string | null; volumeInputM3: Prisma.Decimal | null;
-          productType: string | null; presentacion: string | null;
+          id: string;
+          section: string;
+          status: string;
+          lineNo: number;
+          entryDate: Date;
+          quantity: Prisma.Decimal | null;
+          unit: string | null;
+          volumeInputM3: Prisma.Decimal | null;
+          productType: string | null;
+          presentacion: string | null;
         }[]
       >`
         SELECT "id", "section", "status", "lineNo", "entryDate", "quantity", "unit",
@@ -788,10 +920,14 @@ export class ForestCtpDB {
         WHERE "id" = ${id} AND "tenantId" = ${tenantId} AND "deletedAt" IS NULL
         FOR UPDATE
       `;
-      if (locked.length === 0) throw new CtpInvariantError("Esa corrida no existe.", "LINEA_NO_EDITABLE");
+      if (locked.length === 0)
+        throw new CtpInvariantError("Esa corrida no existe.", "LINEA_NO_EDITABLE");
       const actual = locked[0];
       if (actual.section !== "produccion") {
-        throw new CtpInvariantError("Sólo una corrida de producción declara producción.", "SECCION_INVALIDA");
+        throw new CtpInvariantError(
+          "Sólo una corrida de producción declara producción.",
+          "SECCION_INVALIDA",
+        );
       }
       if (actual.status !== "registrado") {
         throw new CtpInvariantError(`Esa corrida está ${actual.status}.`, "LINEA_NO_EDITABLE");
@@ -811,7 +947,10 @@ export class ForestCtpDB {
         );
       }
 
-      const paquetesActuales = await tx.forestCtpPaquete.findMany({ where: { ctpEntryId: id, tenantId }, select: { codigo: true } });
+      const paquetesActuales = await tx.forestCtpPaquete.findMany({
+        where: { ctpEntryId: id, tenantId },
+        select: { codigo: true },
+      });
 
       /* El código de paquete es lo que se busca en la pila y lo que se cita en la
          guía de salida: no puede repetirse ni contra los que ya están. */
@@ -824,8 +963,13 @@ export class ForestCtpDB {
         );
       }
       /* Y contra el resto de la planta, que es el alcance real del índice. */
-      await ForestCtpDB.assertCodigosLibres(tenantId, nuevos.map((p) => p.codigo));
-      const repetido = nuevos.find((p, i) => nuevos.findIndex((q) => q.codigo.trim() === p.codigo.trim()) !== i);
+      await ForestCtpDB.assertCodigosLibres(
+        tenantId,
+        nuevos.map((p) => p.codigo),
+      );
+      const repetido = nuevos.find(
+        (p, i) => nuevos.findIndex((q) => q.codigo.trim() === p.codigo.trim()) !== i,
+      );
       if (repetido) {
         throw new CtpInvariantError(
           `El código de paquete «${repetido.codigo}» viene dos veces.`,
@@ -890,7 +1034,11 @@ export class ForestCtpDB {
         `(total ${Number(entry.quantity)}${entry.rendimientoPct != null ? ` · rendimiento ${Number(entry.rendimientoPct)}%` : ""})`,
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* best-effort */ }
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* best-effort */
+    }
     return entry;
   }
 
@@ -931,11 +1079,23 @@ export class ForestCtpDB {
     if (!tenantId) throw new Error("tenantId is required");
     const actual = await prisma.forestCtpEntry.findFirst({
       where: { id, tenantId, deletedAt: null },
-      select: { id: true, section: true, status: true, lineNo: true, entryDate: true, quantity: true, volumeInputM3: true, observations: true },
+      select: {
+        id: true,
+        section: true,
+        status: true,
+        lineNo: true,
+        entryDate: true,
+        quantity: true,
+        volumeInputM3: true,
+        observations: true,
+      },
     });
     if (!actual) return null;
     if (actual.section !== "produccion") {
-      throw new CtpInvariantError("Sólo una corrida de producción declara producción.", "SECCION_INVALIDA");
+      throw new CtpInvariantError(
+        "Sólo una corrida de producción declara producción.",
+        "SECCION_INVALIDA",
+      );
     }
     if (actual.status !== "registrado") {
       throw new CtpInvariantError(`Esa corrida está ${actual.status}.`, "LINEA_NO_EDITABLE");
@@ -981,14 +1141,17 @@ export class ForestCtpDB {
        pero la tolerancia es la del negocio (un litro), no la del float. */
     const paquetes = campos.paquetes ?? [];
     if (paquetes.length > 0) {
-      const suma = Math.round(paquetes.reduce((a, p) => a + (Number(p.volumenM3) || 0), 0) * 10000) / 10000;
+      const suma =
+        Math.round(paquetes.reduce((a, p) => a + (Number(p.volumenM3) || 0), 0) * 10000) / 10000;
       if (Math.abs(suma - campos.quantity) > 0.001) {
         throw new CtpInvariantError(
           `Los paquetes suman ${suma} y la producción declara ${campos.quantity}: tienen que ser lo mismo.`,
           "PAQUETES_NO_CUADRAN",
         );
       }
-      const repetido = paquetes.find((p, i) => paquetes.findIndex((q) => q.codigo.trim() === p.codigo.trim()) !== i);
+      const repetido = paquetes.find(
+        (p, i) => paquetes.findIndex((q) => q.codigo.trim() === p.codigo.trim()) !== i,
+      );
       if (repetido) {
         throw new CtpInvariantError(
           `El código de paquete «${repetido.codigo}» está dos veces: es lo que se busca en la pila, no puede repetirse.`,
@@ -997,12 +1160,17 @@ export class ForestCtpDB {
       }
       /* Y contra los que ya existen en la planta: el índice es por tenant, así
          que el choque con OTRA corrida volvía como 500 sin explicación. */
-      await ForestCtpDB.assertCodigosLibres(tenantId, paquetes.map((p) => p.codigo));
+      await ForestCtpDB.assertCodigosLibres(
+        tenantId,
+        paquetes.map((p) => p.codigo),
+      );
     }
 
     const inVol = actual.volumeInputM3 != null ? Number(actual.volumeInputM3) : 0;
     const rendimiento =
-      inVol > 0 && campos.unit === "m3" ? Math.round((campos.quantity / inVol) * 10000) / 100 : null;
+      inVol > 0 && campos.unit === "m3"
+        ? Math.round((campos.quantity / inVol) * 10000) / 100
+        : null;
 
     const entry = await prisma.forestCtpEntry.update({
       where: { id, tenantId } satisfies Prisma.ForestCtpEntryWhereUniqueInput,
@@ -1054,7 +1222,11 @@ export class ForestCtpDB {
         (rendimiento != null ? ` · rendimiento ${rendimiento}%` : ""),
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
     return entry;
   }
 
@@ -1146,10 +1318,22 @@ export class ForestCtpDB {
       include: {
         entry: {
           select: {
-            id: true, lineNo: true, entryDate: true, section: true, status: true,
-            speciesCommon: true, speciesScientific: true, productType: true, presentacion: true,
-            quantity: true, unit: true, volumeInputM3: true, rendimientoPct: true,
-            materiaPrimaRef: true, lineaProduccion: true, observations: true,
+            id: true,
+            lineNo: true,
+            entryDate: true,
+            section: true,
+            status: true,
+            speciesCommon: true,
+            speciesScientific: true,
+            productType: true,
+            presentacion: true,
+            quantity: true,
+            unit: true,
+            volumeInputM3: true,
+            rendimientoPct: true,
+            materiaPrimaRef: true,
+            lineaProduccion: true,
+            observations: true,
           },
         },
       },
@@ -1160,7 +1344,9 @@ export class ForestCtpDB {
     const exacto = (c: string) => c.trim().toLowerCase() === q.toLowerCase();
     paquetes.sort((a, b) => Number(exacto(b.codigo)) - Number(exacto(a.codigo)));
 
-    const saldos = await saldosDeCorridas(prisma, tenantId, [...new Set(paquetes.map((p) => p.ctpEntryId))]);
+    const saldos = await saldosDeCorridas(prisma, tenantId, [
+      ...new Set(paquetes.map((p) => p.ctpEntryId)),
+    ]);
     const num = (v: unknown) => (v == null ? null : Number(v));
     const resultados = paquetes.map((p) => {
       const s = saldos.get(p.ctpEntryId);
@@ -1268,8 +1454,13 @@ export class ForestCtpDB {
     if (!tenantId) throw new Error("tenantId is required");
     if (!reason?.trim()) throw new Error("reason is required");
     // Cierre de período (ADR-139): una línea de un mes cerrado no se anula.
-    const curAnnul = await prisma.forestCtpEntry.findFirst({ where: { id, tenantId }, select: { entryDate: true } });
-    const cerradoAnnul = curAnnul ? await ForestCtpCierreDB.closedPeriodOf(tenantId, curAnnul.entryDate) : null;
+    const curAnnul = await prisma.forestCtpEntry.findFirst({
+      where: { id, tenantId },
+      select: { entryDate: true },
+    });
+    const cerradoAnnul = curAnnul
+      ? await ForestCtpCierreDB.closedPeriodOf(tenantId, curAnnul.entryDate)
+      : null;
     if (cerradoAnnul) {
       throw new CtpInvariantError(
         `El período ${cerradoAnnul.label} está cerrado: no se puede anular una línea de un mes cerrado. Reabrí el período para corregir.`,
@@ -1304,7 +1495,9 @@ export class ForestCtpDB {
       detail: `Anuló la línea #${e.lineNo} de ${e.section} (${e.speciesCommon ?? "sin especie"}) · motivo: ${reason.trim()}`,
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return e;
   }
 
@@ -1331,6 +1524,10 @@ export class ForestCtpDB {
    *    `productosDisponibles()`, que es la foto del depósito de hoy. `saldos()`,
    *    `conciliacionPeriodo()`, el snapshot de cierre y el export SERFOR no lo
    *    miran. El acta congelada del mes sigue diciendo exactamente lo mismo.
+   *    (Desde 2026-09-06 la «Capacidad de la planta» de Saldos también lee la
+   *    foto, y va al reporte de existencias — pero como COTA MÁXIMA derivada y
+   *    declarada como tal, con la conciliación contra el libro al lado. No es
+   *    un número que se firme: la condición sigue en pie.)
    *  · Bloquearlo obligaría a REABRIR un período cerrado —que sí es un evento
    *    de compliance, y queda en el historial del cierre— para esconder una
    *    tarjeta del depósito. El remedio sería más grave que la enfermedad.
@@ -1348,12 +1545,18 @@ export class ForestCtpDB {
     if (!tenantId) throw new Error("tenantId is required");
     const { usado, motivo, user } = input;
     if (usado && !motivo?.trim()) {
-      throw new CtpInvariantError("Poné el motivo por el que se marca como usado.", "MOTIVO_REQUERIDO");
+      throw new CtpInvariantError(
+        "Poné el motivo por el que se marca como usado.",
+        "MOTIVO_REQUERIDO",
+      );
     }
     const e = await prisma.forestCtpEntry.findFirst({ where: { id, tenantId, deletedAt: null } });
     if (!e) throw new CtpInvariantError("Esa línea no existe.", "LOTE_NO_ENCONTRADO");
     if (e.section !== "produccion") {
-      throw new CtpInvariantError("Sólo una corrida de producción se puede marcar como usada.", "LOTE_NO_EDITABLE");
+      throw new CtpInvariantError(
+        "Sólo una corrida de producción se puede marcar como usada.",
+        "LOTE_NO_EDITABLE",
+      );
     }
     /* No bloquea (ver la cabecera), pero SÍ se deja dicho: una marca sobre una
        línea de un mes cerrado tiene que poder rastrearse sin cruzar tablas. */
@@ -1378,14 +1581,21 @@ export class ForestCtpDB {
           : ""),
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return actualizada;
   }
 
   static async softDelete(tenantId: string, id: string, user = "unknown") {
     if (!tenantId) throw new Error("tenantId is required");
-    const curDel = await prisma.forestCtpEntry.findFirst({ where: { id, tenantId }, select: { entryDate: true } });
-    const cerradoDel = curDel ? await ForestCtpCierreDB.closedPeriodOf(tenantId, curDel.entryDate) : null;
+    const curDel = await prisma.forestCtpEntry.findFirst({
+      where: { id, tenantId },
+      select: { entryDate: true },
+    });
+    const cerradoDel = curDel
+      ? await ForestCtpCierreDB.closedPeriodOf(tenantId, curDel.entryDate)
+      : null;
     if (cerradoDel) {
       throw new CtpInvariantError(
         `El período ${cerradoDel.label} está cerrado: no se puede eliminar una línea de un mes cerrado.`,
@@ -1418,7 +1628,9 @@ export class ForestCtpDB {
       detail: `Eliminó (soft) la línea #${e.lineNo} de ${e.section} (${e.speciesCommon ?? "sin especie"})`,
       user,
     });
-    try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
     return e;
   }
 
@@ -1486,8 +1698,10 @@ export class ForestCtpDB {
         ...(opts.toDate ? { lte: opts.toDate } : {}),
       };
     }
-    if (opts.especie?.trim()) where.speciesCommon = { contains: opts.especie.trim(), mode: "insensitive" };
-    if (opts.producto?.trim()) where.productType = { contains: opts.producto.trim(), mode: "insensitive" };
+    if (opts.especie?.trim())
+      where.speciesCommon = { contains: opts.especie.trim(), mode: "insensitive" };
+    if (opts.producto?.trim())
+      where.productType = { contains: opts.producto.trim(), mode: "insensitive" };
 
     const corridas = await prisma.forestCtpEntry.findMany({
       where,
@@ -1508,9 +1722,14 @@ export class ForestCtpDB {
         },
       },
     });
-    if (corridas.length === 0) return { corridas: [], totales: { volumen: 0, paquetes: 0, corridas: 0 } };
+    if (corridas.length === 0)
+      return { corridas: [], totales: { volumen: 0, paquetes: 0, corridas: 0 } };
 
-    const saldos = await saldosDeCorridas(prisma, tenantId, corridas.map((c) => c.id));
+    const saldos = await saldosDeCorridas(
+      prisma,
+      tenantId,
+      corridas.map((c) => c.id),
+    );
 
     const conSaldo = corridas
       .map((c) => {
@@ -1520,18 +1739,10 @@ export class ForestCtpDB {
            repetir "1-19-0313629" cinco veces no agrega información. Si la
            corrida se cargó a mano, queda el resumen de texto `gtfIngreso`. */
         const gtfOrigen = [
-          ...new Set(
-            c.consumos
-              .map((x) => (x.woodEntry?.gtfNumber ?? "").trim())
-              .filter(Boolean),
-          ),
+          ...new Set(c.consumos.map((x) => (x.woodEntry?.gtfNumber ?? "").trim()).filter(Boolean)),
         ];
         const titularOrigen = [
-          ...new Set(
-            c.consumos
-              .map((x) => (x.woodEntry?.originCode ?? "").trim())
-              .filter(Boolean),
-          ),
+          ...new Set(c.consumos.map((x) => (x.woodEntry?.originCode ?? "").trim()).filter(Boolean)),
         ];
         return {
           id: c.id,
@@ -1547,7 +1758,7 @@ export class ForestCtpDB {
           lote: c.materiaPrimaRef,
           lineaProduccion: c.lineaProduccion,
           /** GTF de ingreso de la materia prima que alimentó la corrida. */
-          gtfOrigen: gtfOrigen.length > 0 ? gtfOrigen : (c.gtfIngreso ? [c.gtfIngreso] : []),
+          gtfOrigen: gtfOrigen.length > 0 ? gtfOrigen : c.gtfIngreso ? [c.gtfIngreso] : [],
           /** Título habilitante / plan de manejo del que salió esa madera. */
           titularOrigen,
           rendimientoPct: c.rendimientoPct != null ? Number(c.rendimientoPct) : null,
@@ -1598,7 +1809,11 @@ export class ForestCtpDB {
       deletedAt: null,
       status: { in: ["validado", "procesado", "pendiente"] },
     };
-    const ctpWhere: Prisma.ForestCtpEntryWhereInput = { tenantId, deletedAt: null, status: "registrado" };
+    const ctpWhere: Prisma.ForestCtpEntryWhereInput = {
+      tenantId,
+      deletedAt: null,
+      status: "registrado",
+    };
     if (range) {
       woodWhere.entryDate = range;
       ctpWhere.entryDate = range;
@@ -1642,9 +1857,17 @@ export class ForestCtpDB {
         where: {
           tenantId,
           despachadaEnId: { not: null },
-          despachadaEn: { deletedAt: null, status: "registrado", ...(range ? { entryDate: range } : {}) },
+          despachadaEn: {
+            deletedAt: null,
+            status: "registrado",
+            ...(range ? { entryDate: range } : {}),
+          },
         },
-        select: { volumenM3: true, especieComun: true, entry: { select: { speciesCommonName: true } } },
+        select: {
+          volumenM3: true,
+          especieComun: true,
+          entry: { select: { speciesCommonName: true } },
+        },
       }),
       /* Piezas del patio, para el conteo de "cantidad de piezas" (pedido de
          Brandon): mismo `estaDisponible()` que usa la pantalla del patio — no
@@ -1652,7 +1875,14 @@ export class ForestCtpDB {
          (memoria: "47 vs 30"). Se filtra por la fecha del ingreso, igual que
          el resto de `saldos()`. */
       prisma.woodEntryTroza.findMany({
-        where: { tenantId, entry: { deletedAt: null, status: { in: ["validado", "procesado", "pendiente"] }, ...(range ? { entryDate: range } : {}) } },
+        where: {
+          tenantId,
+          entry: {
+            deletedAt: null,
+            status: { in: ["validado", "procesado", "pendiente"] },
+            ...(range ? { entryDate: range } : {}),
+          },
+        },
         select: {
           id: true,
           especieComun: true,
@@ -1717,10 +1947,25 @@ export class ForestCtpDB {
     let consumoSinDeclararM3 = 0;
     let consumoSinDeclararCount = 0;
     // Agrupado por clave normalizada; se guarda la etiqueta de la 1ª aparición.
-    const prod: Record<string, { label: string; producido: number; despachado: number; piezasProducido: number; piezasDespachado: number }> = {};
+    const prod: Record<
+      string,
+      {
+        label: string;
+        producido: number;
+        despachado: number;
+        piezasProducido: number;
+        piezasDespachado: number;
+      }
+    > = {};
     for (const e of ctp) {
       const key = productKey(e.productType, e.speciesCommon);
-      prod[key] ??= { label: productLabel(e.productType, e.speciesCommon), producido: 0, despachado: 0, piezasProducido: 0, piezasDespachado: 0 };
+      prod[key] ??= {
+        label: productLabel(e.productType, e.speciesCommon),
+        producido: 0,
+        despachado: 0,
+        piezasProducido: 0,
+        piezasDespachado: 0,
+      };
       if (e.section === "produccion") {
         const consumido = Number(e.volumeInputM3 ?? 0);
         consumidoM3 += consumido;
@@ -1818,7 +2063,13 @@ export class ForestCtpDB {
            existió, con nombre de dato roto, en la tabla que se firma. El
            consumo de esa corrida sigue contando en `consumidoM3` y ahora se
            reporta con nombre propio en `consumoSinDeclararM3`. */
-        .filter((v) => v.producido !== 0 || v.despachado !== 0 || v.piezasProducido !== 0 || v.piezasDespachado !== 0)
+        .filter(
+          (v) =>
+            v.producido !== 0 ||
+            v.despachado !== 0 ||
+            v.piezasProducido !== 0 ||
+            v.piezasDespachado !== 0,
+        )
         .map((v) => ({
           producto: v.label,
           producido: r4(v.producido),
@@ -1856,20 +2107,24 @@ export class ForestCtpDB {
   }> {
     const materiaPrima: { especie: string; cites: boolean; existencia: number }[] = [];
     const productos: { producto: string; existencia: number }[] = [];
-    if (!fromDate) return { fuenteApertura: "sin_apertura", aperturaLabel: null, materiaPrima, productos };
+    if (!fromDate)
+      return { fuenteApertura: "sin_apertura", aperturaLabel: null, materiaPrima, productos };
 
     const cierres = await ForestCtpCierreDB.list(tenantId);
     const prev = cierres
       .filter((c) => !c.reabierto && new Date(c.to).getTime() < fromDate.getTime())
       .sort((a, b) => new Date(b.to).getTime() - new Date(a.to).getTime())[0];
     if (prev) {
-      for (const m of prev.saldoCierre.materiaPrima) materiaPrima.push({ especie: m.especie, cites: m.cites, existencia: m.existenciaM3 });
-      for (const p of prev.saldoCierre.productos) productos.push({ producto: p.producto, existencia: p.existencia });
+      for (const m of prev.saldoCierre.materiaPrima)
+        materiaPrima.push({ especie: m.especie, cites: m.cites, existencia: m.existenciaM3 });
+      for (const p of prev.saldoCierre.productos)
+        productos.push({ producto: p.producto, existencia: p.existencia });
       return { fuenteApertura: "cierre", aperturaLabel: prev.label, materiaPrima, productos };
     }
 
     const acum = await ForestCtpDB.saldos(tenantId, { toDate: new Date(fromDate.getTime() - 1) });
-    for (const e of acum.porEspecie) materiaPrima.push({ especie: e.especie, cites: e.cites, existencia: e.saldoM3 });
+    for (const e of acum.porEspecie)
+      materiaPrima.push({ especie: e.especie, cites: e.cites, existencia: e.saldoM3 });
     for (const p of acum.productos) productos.push({ producto: p.producto, existencia: p.stock });
     return { fuenteApertura: "calculada", aperturaLabel: null, materiaPrima, productos };
   }
@@ -1881,17 +2136,34 @@ export class ForestCtpDB {
    * calcula acumulada hasta el inicio del período. Cierra el bug de que un saldo
    * mensual ignoraba el stock heredado y no cuadraba ante un fiscalizador.
    */
-  static async conciliacionPeriodo(tenantId: string, opts: { fromDate?: Date; toDate?: Date } = {}): Promise<ConciliacionPeriodo> {
+  static async conciliacionPeriodo(
+    tenantId: string,
+    opts: { fromDate?: Date; toDate?: Date } = {},
+  ): Promise<ConciliacionPeriodo> {
     if (!tenantId) throw new Error("tenantId is required");
 
     const mov = await ForestCtpDB.saldos(tenantId, opts);
 
     // ── Apertura ──────────────────────────────────────────────────────────
-    const { fuenteApertura, aperturaLabel, materiaPrima: aperturaMP, productos: aperturaProd } =
-      await ForestCtpDB.aperturaDePeriodo(tenantId, opts.fromDate);
+    const {
+      fuenteApertura,
+      aperturaLabel,
+      materiaPrima: aperturaMP,
+      productos: aperturaProd,
+    } = await ForestCtpDB.aperturaDePeriodo(tenantId, opts.fromDate);
 
     // ── Combinar apertura + movimientos → final (materia prima) ───────────
-    const mp = new Map<string, { label: string; cites: boolean; apertura: number; ingreso: number; consumido: number; despachadoDirecto: number }>();
+    const mp = new Map<
+      string,
+      {
+        label: string;
+        cites: boolean;
+        apertura: number;
+        ingreso: number;
+        consumido: number;
+        despachadoDirecto: number;
+      }
+    >();
     /* `speciesKey` y NO un `trim().toLowerCase()` propio: la apertura puede venir
        de un snapshot de cierre escrito hace meses y el movimiento de la tabla de
        hoy. Con dos normalizaciones distintas, "Ishpíngo" heredado e "Ishpingo"
@@ -1902,7 +2174,10 @@ export class ForestCtpDB {
     const mpUpsert = (especie: string, cites: boolean) => {
       const key = speciesKey(especie);
       let x = mp.get(key);
-      if (!x) { x = { label: especie, cites, apertura: 0, ingreso: 0, consumido: 0, despachadoDirecto: 0 }; mp.set(key, x); }
+      if (!x) {
+        x = { label: especie, cites, apertura: 0, ingreso: 0, consumido: 0, despachadoDirecto: 0 };
+        mp.set(key, x);
+      }
       if (cites) x.cites = true;
       return x;
     };
@@ -1935,17 +2210,37 @@ export class ForestCtpDB {
       .sort((a, b) => (a.negativa === b.negativa ? b.final - a.final : a.negativa ? -1 : 1));
 
     // ── Combinar apertura + movimientos → final (productos) ───────────────
-    const pr = new Map<string, { producto: string; apertura: number; producido: number; despachado: number }>();
+    const pr = new Map<
+      string,
+      { producto: string; apertura: number; producido: number; despachado: number }
+    >();
     const prUpsert = (producto: string) => {
       let x = pr.get(producto);
-      if (!x) { x = { producto, apertura: 0, producido: 0, despachado: 0 }; pr.set(producto, x); }
+      if (!x) {
+        x = { producto, apertura: 0, producido: 0, despachado: 0 };
+        pr.set(producto, x);
+      }
       return x;
     };
     for (const a of aperturaProd) prUpsert(a.producto).apertura = a.existencia;
-    for (const p of mov.productos) { const x = prUpsert(p.producto); x.producido = p.producido; x.despachado = p.despachado; }
+    for (const p of mov.productos) {
+      const x = prUpsert(p.producto);
+      x.producido = p.producido;
+      x.despachado = p.despachado;
+    }
 
     const productos = [...pr.values()]
-      .map((x) => { const final = r4(x.apertura + x.producido - x.despachado); return { producto: x.producto, apertura: r4(x.apertura), producido: r4(x.producido), despachado: r4(x.despachado), final, negativo: final < 0 }; })
+      .map((x) => {
+        const final = r4(x.apertura + x.producido - x.despachado);
+        return {
+          producto: x.producto,
+          apertura: r4(x.apertura),
+          producido: r4(x.producido),
+          despachado: r4(x.despachado),
+          final,
+          negativo: final < 0,
+        };
+      })
       .sort((a, b) => b.final - a.final);
 
     return { fuenteApertura, aperturaLabel, materiaPrima, productos };
@@ -1967,32 +2262,60 @@ export class ForestCtpDB {
    * La granularidad la elige la longitud del período: 90 puntos diarios se leen,
    * 900 son una mancha. Sin snapshots ni tabla nueva — derivado de las fechas.
    */
-  static async curvaSaldo(tenantId: string, opts: { fromDate?: Date; toDate?: Date } = {}): Promise<CurvaSaldo> {
+  static async curvaSaldo(
+    tenantId: string,
+    opts: { fromDate?: Date; toDate?: Date } = {},
+  ): Promise<CurvaSaldo> {
     if (!tenantId) throw new Error("tenantId is required");
 
     const range = dateRange(opts);
     // Mismos predicados que `saldos()`: la madera `pendiente` NO es saldo (está
     // en el patio pero no validada), así que tampoco mueve la curva.
-    const woodWhere: Prisma.WoodEntryWhereInput = { tenantId, deletedAt: null, status: { in: ["validado", "procesado"] } };
-    const prodWhere: Prisma.ForestCtpEntryWhereInput = { tenantId, deletedAt: null, status: "registrado", section: "produccion" };
-    if (range) { woodWhere.entryDate = range; prodWhere.entryDate = range; }
+    const woodWhere: Prisma.WoodEntryWhereInput = {
+      tenantId,
+      deletedAt: null,
+      status: { in: ["validado", "procesado"] },
+    };
+    const prodWhere: Prisma.ForestCtpEntryWhereInput = {
+      tenantId,
+      deletedAt: null,
+      status: "registrado",
+      section: "produccion",
+    };
+    if (range) {
+      woodWhere.entryDate = range;
+      prodWhere.entryDate = range;
+    }
 
     const [ap, ingresos, corridas] = await Promise.all([
       ForestCtpDB.aperturaDePeriodo(tenantId, opts.fromDate),
       prisma.woodEntry.findMany({ where: woodWhere, select: { entryDate: true, volumeM3: true } }),
-      prisma.forestCtpEntry.findMany({ where: prodWhere, select: { entryDate: true, volumeInputM3: true } }),
+      prisma.forestCtpEntry.findMany({
+        where: prodWhere,
+        select: { entryDate: true, volumeInputM3: true },
+      }),
     ]);
 
     const apertura = r4(ap.materiaPrima.reduce((a, m) => a + m.existencia, 0));
     const vacia: CurvaSaldo = {
-      apertura, fuenteApertura: ap.fuenteApertura, aperturaLabel: ap.aperturaLabel,
-      paso: "dia", puntos: [], final: apertura, pico: null, valle: null,
+      apertura,
+      fuenteApertura: ap.fuenteApertura,
+      aperturaLabel: ap.aperturaLabel,
+      paso: "dia",
+      puntos: [],
+      final: apertura,
+      pico: null,
+      valle: null,
     };
 
     const marcas = [...ingresos.map((i) => i.entryDate), ...corridas.map((c) => c.entryDate)];
     if (!marcas.length && !opts.fromDate) return vacia;
-    const msMin = marcas.length ? Math.min(...marcas.map((d) => d.getTime())) : Number.POSITIVE_INFINITY;
-    const msMax = marcas.length ? Math.max(...marcas.map((d) => d.getTime())) : Number.NEGATIVE_INFINITY;
+    const msMin = marcas.length
+      ? Math.min(...marcas.map((d) => d.getTime()))
+      : Number.POSITIVE_INFINITY;
+    const msMax = marcas.length
+      ? Math.max(...marcas.map((d) => d.getTime()))
+      : Number.NEGATIVE_INFINITY;
     // El eje arranca en el inicio del período aunque los primeros días estén
     // vacíos: si empezara en el primer movimiento, la curva escondería una
     // semana sin ingresos, que es justo lo que hay que ver.
@@ -2012,7 +2335,10 @@ export class ForestCtpDB {
     const inicioDe = (d: Date): Date => {
       const u = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
       if (paso === "mes") return new Date(Date.UTC(u.getUTCFullYear(), u.getUTCMonth(), 1));
-      if (paso === "semana") { u.setUTCDate(u.getUTCDate() - ((u.getUTCDay() + 6) % 7)); return u; } // lunes
+      if (paso === "semana") {
+        u.setUTCDate(u.getUTCDate() - ((u.getUTCDay() + 6) % 7));
+        return u;
+      } // lunes
       return u;
     };
     const avanzar = (d: Date): Date => {
@@ -2027,7 +2353,11 @@ export class ForestCtpDB {
     const orden: string[] = [];
     // Tope duro: con "mes" un período de 30 años da 360 puntos. Más que eso es
     // data corrupta, no un libro — se corta en vez de colgar la pantalla.
-    for (let c = inicioDe(desde), fin = inicioDe(hasta); c.getTime() <= fin.getTime() && orden.length < 400; c = avanzar(c)) {
+    for (
+      let c = inicioDe(desde), fin = inicioDe(hasta);
+      c.getTime() <= fin.getTime() && orden.length < 400;
+      c = avanzar(c)
+    ) {
       const k = c.toISOString().slice(0, 10);
       cubos.set(k, { ingreso: 0, consumo: 0 });
       orden.push(k);
@@ -2036,9 +2366,12 @@ export class ForestCtpDB {
 
     // Un movimiento fuera de la ventana dibujada (o pasado el tope) se imputa al
     // extremo más cercano: descartarlo dejaría la curva sin cerrar en el saldo real.
-    const dentro = (k: string) => (cubos.has(k) ? k : k < orden[0] ? orden[0] : orden[orden.length - 1]);
-    for (const i of ingresos) cubos.get(dentro(clave(i.entryDate)))!.ingreso += Number(i.volumeM3 ?? 0);
-    for (const c of corridas) cubos.get(dentro(clave(c.entryDate)))!.consumo += Number(c.volumeInputM3 ?? 0);
+    const dentro = (k: string) =>
+      cubos.has(k) ? k : k < orden[0] ? orden[0] : orden[orden.length - 1];
+    for (const i of ingresos)
+      cubos.get(dentro(clave(i.entryDate)))!.ingreso += Number(i.volumeM3 ?? 0);
+    for (const c of corridas)
+      cubos.get(dentro(clave(c.entryDate)))!.consumo += Number(c.volumeInputM3 ?? 0);
 
     let saldo = apertura;
     const puntos = orden.map((fecha) => {
@@ -2047,10 +2380,20 @@ export class ForestCtpDB {
       return { fecha, ingreso: r4(b.ingreso), consumo: r4(b.consumo), saldo };
     });
 
-    const pico = puntos.reduce((m, p) => (m == null || p.saldo > m.saldo ? p : m), null as (typeof puntos)[number] | null);
-    const valle = puntos.reduce((m, p) => (m == null || p.saldo < m.saldo ? p : m), null as (typeof puntos)[number] | null);
+    const pico = puntos.reduce(
+      (m, p) => (m == null || p.saldo > m.saldo ? p : m),
+      null as (typeof puntos)[number] | null,
+    );
+    const valle = puntos.reduce(
+      (m, p) => (m == null || p.saldo < m.saldo ? p : m),
+      null as (typeof puntos)[number] | null,
+    );
     return {
-      apertura, fuenteApertura: ap.fuenteApertura, aperturaLabel: ap.aperturaLabel, paso, puntos,
+      apertura,
+      fuenteApertura: ap.fuenteApertura,
+      aperturaLabel: ap.aperturaLabel,
+      paso,
+      puntos,
       final: saldo,
       pico: pico ? { fecha: pico.fecha, saldo: pico.saldo } : null,
       valle: valle ? { fecha: valle.fecha, saldo: valle.saldo } : null,
@@ -2090,9 +2433,15 @@ export class ForestCtpDB {
         orderBy: { entryDate: "desc" },
         take: 300,
         select: {
-          id: true, gtfNumber: true, entryDate: true,
-          speciesCommonName: true, speciesScientificName: true, speciesCites: true,
-          volumeM3: true, costoTotal: true, moneda: true,
+          id: true,
+          gtfNumber: true,
+          entryDate: true,
+          speciesCommonName: true,
+          speciesScientificName: true,
+          speciesCites: true,
+          volumeM3: true,
+          costoTotal: true,
+          moneda: true,
         },
       });
       if (ing.length === 0) return [];
@@ -2109,28 +2458,32 @@ export class ForestCtpDB {
       });
       const usado = new Map(consumido.map((c) => [c.woodEntryId, Number(c._sum.volumeM3 ?? 0)]));
 
-      return ing
-        .map((w) => {
-          const total = w.volumeM3 ? Number(w.volumeM3) : 0;
-          const disponible = r4(total - (usado.get(w.id) ?? 0));
-          return {
-            kind: "ingreso" as const,
-            id: w.id,
-            code: w.gtfNumber,
-            entryDate: w.entryDate,
-            species: w.speciesCommonName,
-            scientific: w.speciesScientificName,
-            cites: w.speciesCites,
-            vol: total,
-            disponible,
-            /** S/ por m³ — null si la factura todavía no llegó (ADR-134 D6). */
-            costoUnitario:
-              w.costoTotal != null && total > 0 ? Math.round((Number(w.costoTotal) / total) * 100) / 100 : null,
-            moneda: w.moneda ?? "PEN",
-          };
-        })
-        // Ya consumido del todo = no es "available".
-        .filter((w) => w.disponible > 0);
+      return (
+        ing
+          .map((w) => {
+            const total = w.volumeM3 ? Number(w.volumeM3) : 0;
+            const disponible = r4(total - (usado.get(w.id) ?? 0));
+            return {
+              kind: "ingreso" as const,
+              id: w.id,
+              code: w.gtfNumber,
+              entryDate: w.entryDate,
+              species: w.speciesCommonName,
+              scientific: w.speciesScientificName,
+              cites: w.speciesCites,
+              vol: total,
+              disponible,
+              /** S/ por m³ — null si la factura todavía no llegó (ADR-134 D6). */
+              costoUnitario:
+                w.costoTotal != null && total > 0
+                  ? Math.round((Number(w.costoTotal) / total) * 100) / 100
+                  : null,
+              moneda: w.moneda ?? "PEN",
+            };
+          })
+          // Ya consumido del todo = no es "available".
+          .filter((w) => w.disponible > 0)
+      );
     }
     if (section === "despacho") {
       // ADR-135: devuelve CORRIDAS, no productos agregados.
@@ -2145,8 +2498,15 @@ export class ForestCtpDB {
         orderBy: { entryDate: "desc" },
         take: 300,
         select: {
-          id: true, lineNo: true, entryDate: true, productType: true,
-          speciesCommon: true, speciesScientific: true, cites: true, quantity: true, unit: true,
+          id: true,
+          lineNo: true,
+          entryDate: true,
+          productType: true,
+          speciesCommon: true,
+          speciesScientific: true,
+          cites: true,
+          quantity: true,
+          unit: true,
         },
       });
       if (corridas.length === 0) return [];
@@ -2195,14 +2555,26 @@ export class ForestCtpDB {
    * dibuja. Read-only. Los edges se filtran a endpoints VIVOS (soft-delete no
    * cascada) para no dibujar líneas colgando de un nodo que ya no está.
    */
-  static async grafoTrazabilidad(tenantId: string, opts: { fromDate?: Date; toDate?: Date } = {}): Promise<TrazaGrafo> {
+  static async grafoTrazabilidad(
+    tenantId: string,
+    opts: { fromDate?: Date; toDate?: Date } = {},
+  ): Promise<TrazaGrafo> {
     if (!tenantId) throw new Error("tenantId is required");
     const range = dateRange(opts);
     const woodWhere: Prisma.WoodEntryWhereInput = {
-      tenantId, deletedAt: null, status: { in: ["validado", "procesado", "pendiente"] },
+      tenantId,
+      deletedAt: null,
+      status: { in: ["validado", "procesado", "pendiente"] },
     };
-    const ctpWhere: Prisma.ForestCtpEntryWhereInput = { tenantId, deletedAt: null, status: "registrado" };
-    if (range) { woodWhere.entryDate = range; ctpWhere.entryDate = range; }
+    const ctpWhere: Prisma.ForestCtpEntryWhereInput = {
+      tenantId,
+      deletedAt: null,
+      status: "registrado",
+    };
+    if (range) {
+      woodWhere.entryDate = range;
+      ctpWhere.entryDate = range;
+    }
 
     const [ing, ctp] = await Promise.all([
       prisma.woodEntry.findMany({
@@ -2212,21 +2584,44 @@ export class ForestCtpDB {
            traía el ingreso entero —notas, fotos, GTF de SERFOR— de miles de
            filas para leerle seis campos. */
         select: {
-          id: true, gtfNumber: true, speciesCommonName: true, volumeM3: true,
-          speciesCites: true, entryDate: true,
-          productType: true, speciesScientificName: true, originCode: true,
-          ctpProductCode: true, originSourceNumber: true, unit: true,
+          id: true,
+          gtfNumber: true,
+          speciesCommonName: true,
+          volumeM3: true,
+          speciesCites: true,
+          entryDate: true,
+          productType: true,
+          speciesScientificName: true,
+          originCode: true,
+          ctpProductCode: true,
+          originSourceNumber: true,
+          unit: true,
           // `originType` es lo que distingue una concesión de un permiso: el
           // radar lo necesita para etiquetar la columna del título habilitante,
           // que es el eslabón que va ANTES de la GTF (EUDR pide llegar al monte).
           originType: true,
         },
-        orderBy: { entryDate: "asc" }, take: 300,
+        orderBy: { entryDate: "asc" },
+        take: 300,
       }),
       prisma.forestCtpEntry.findMany({
         where: ctpWhere,
-        select: { id: true, section: true, lineNo: true, productType: true, speciesCommon: true, quantity: true, unit: true, destino: true, gtfNumber: true, cites: true, entryDate: true, observations: true },
-        orderBy: { lineNo: "asc" }, take: 300,
+        select: {
+          id: true,
+          section: true,
+          lineNo: true,
+          productType: true,
+          speciesCommon: true,
+          quantity: true,
+          unit: true,
+          destino: true,
+          gtfNumber: true,
+          cites: true,
+          entryDate: true,
+          observations: true,
+        },
+        orderBy: { lineNo: "asc" },
+        take: 300,
       }),
     ]);
     const corridas = ctp.filter((e) => e.section === "produccion");
@@ -2237,10 +2632,16 @@ export class ForestCtpDB {
 
     const [consumos, origenes, reprocesos] = await Promise.all([
       corridaIds.length
-        ? prisma.forestCtpConsumo.findMany({ where: { tenantId, ctpEntryId: { in: corridaIds } }, select: { woodEntryId: true, ctpEntryId: true, volumeM3: true } })
+        ? prisma.forestCtpConsumo.findMany({
+            where: { tenantId, ctpEntryId: { in: corridaIds } },
+            select: { woodEntryId: true, ctpEntryId: true, volumeM3: true },
+          })
         : Promise.resolve([]),
       despachoIds.length
-        ? prisma.forestCtpDespachoOrigen.findMany({ where: { tenantId, despachoEntryId: { in: despachoIds } }, select: { produccionEntryId: true, despachoEntryId: true, quantity: true } })
+        ? prisma.forestCtpDespachoOrigen.findMany({
+            where: { tenantId, despachoEntryId: { in: despachoIds } },
+            select: { produccionEntryId: true, despachoEntryId: true, quantity: true },
+          })
         : Promise.resolve([]),
       /* La tercera arista de la cadena: corrida → corrida por reproceso
          (ADR-316). Faltaba, y sin ella una corrida nacida de un reproceso no
@@ -2249,33 +2650,71 @@ export class ForestCtpDB {
          madera vino de otra corrida del mismo libro, con su propio origen atado
          a GTF. Medido sobre la L95053. */
       corridaIds.length
-        ? prisma.forestCtpReproceso.findMany({ where: { tenantId, destinoEntryId: { in: corridaIds } }, select: { origenEntryId: true, destinoEntryId: true, quantity: true } })
+        ? prisma.forestCtpReproceso.findMany({
+            where: { tenantId, destinoEntryId: { in: corridaIds } },
+            select: { origenEntryId: true, destinoEntryId: true, quantity: true },
+          })
         : Promise.resolve([]),
     ]);
     const corridaIdSet = new Set(corridaIds);
 
     return {
       ingresos: ing.map((w) => ({
-        id: w.id, gtf: w.gtfNumber, species: w.speciesCommonName,
-        volumeM3: Number(w.volumeM3 ?? 0), cites: w.speciesCites, fecha: w.entryDate.toISOString(),
-        productType: w.productType, speciesScientificName: w.speciesScientificName,
-        originCode: w.originCode, ctpProductCode: w.ctpProductCode,
-        originSourceNumber: w.originSourceNumber, unit: w.unit,
+        id: w.id,
+        gtf: w.gtfNumber,
+        species: w.speciesCommonName,
+        volumeM3: Number(w.volumeM3 ?? 0),
+        cites: w.speciesCites,
+        fecha: w.entryDate.toISOString(),
+        productType: w.productType,
+        speciesScientificName: w.speciesScientificName,
+        originCode: w.originCode,
+        ctpProductCode: w.ctpProductCode,
+        originSourceNumber: w.originSourceNumber,
+        unit: w.unit,
         originType: w.originType,
       })),
-      corridas: corridas.map((c) => ({ id: c.id, lineNo: c.lineNo, label: `${c.productType ?? "—"} · ${c.speciesCommon ?? "—"}`, quantity: Number(c.quantity ?? 0), unit: c.unit, cites: c.cites, productType: c.productType, species: c.speciesCommon, fecha: c.entryDate.toISOString(), observations: c.observations })),
-      despachos: despachos.map((d) => ({ id: d.id, lineNo: d.lineNo, label: `${d.productType ?? "—"} · ${d.speciesCommon ?? "—"}`, quantity: Number(d.quantity ?? 0), unit: d.unit, destino: d.destino, gtf: d.gtfNumber, fecha: d.entryDate.toISOString() })),
+      corridas: corridas.map((c) => ({
+        id: c.id,
+        lineNo: c.lineNo,
+        label: `${c.productType ?? "—"} · ${c.speciesCommon ?? "—"}`,
+        quantity: Number(c.quantity ?? 0),
+        unit: c.unit,
+        cites: c.cites,
+        productType: c.productType,
+        species: c.speciesCommon,
+        fecha: c.entryDate.toISOString(),
+        observations: c.observations,
+      })),
+      despachos: despachos.map((d) => ({
+        id: d.id,
+        lineNo: d.lineNo,
+        label: `${d.productType ?? "—"} · ${d.speciesCommon ?? "—"}`,
+        quantity: Number(d.quantity ?? 0),
+        unit: d.unit,
+        destino: d.destino,
+        gtf: d.gtfNumber,
+        fecha: d.entryDate.toISOString(),
+      })),
       // Edge sólo si ambos extremos siguen en el grafo (endpoint vivo).
       consumos: consumos
         .filter((c) => ingIds.has(c.woodEntryId) && corridaIdSet.has(c.ctpEntryId))
         .map((c) => ({ from: c.woodEntryId, to: c.ctpEntryId, volumeM3: Number(c.volumeM3 ?? 0) })),
       origenes: origenes
         .filter((o) => corridaIdSet.has(o.produccionEntryId))
-        .map((o) => ({ from: o.produccionEntryId, to: o.despachoEntryId, quantity: Number(o.quantity ?? 0) })),
+        .map((o) => ({
+          from: o.produccionEntryId,
+          to: o.despachoEntryId,
+          quantity: Number(o.quantity ?? 0),
+        })),
       // Misma regla que las otras aristas: sólo si ambos extremos siguen vivos.
       reprocesos: reprocesos
         .filter((r) => corridaIdSet.has(r.origenEntryId) && corridaIdSet.has(r.destinoEntryId))
-        .map((r) => ({ from: r.origenEntryId, to: r.destinoEntryId, quantity: Number(r.quantity ?? 0) })),
+        .map((r) => ({
+          from: r.origenEntryId,
+          to: r.destinoEntryId,
+          quantity: Number(r.quantity ?? 0),
+        })),
     };
   }
 
@@ -2287,26 +2726,66 @@ export class ForestCtpDB {
    * (mismos criterios: ingresos validado/procesado en +, volumeInputM3 de las
    * corridas de esa especie en −, misma `speciesKey` normalizada).
    */
-  static async kardexEspecie(tenantId: string, especie: string, opts: { fromDate?: Date; toDate?: Date } = {}): Promise<KardexEspecie> {
+  static async kardexEspecie(
+    tenantId: string,
+    especie: string,
+    opts: { fromDate?: Date; toDate?: Date } = {},
+  ): Promise<KardexEspecie> {
     if (!tenantId) throw new Error("tenantId is required");
     const target = speciesKey(especie);
     const range = dateRange(opts);
-    const woodWhere: Prisma.WoodEntryWhereInput = { tenantId, deletedAt: null, status: { in: ["validado", "procesado"] } };
-    const prodWhere: Prisma.ForestCtpEntryWhereInput = { tenantId, deletedAt: null, status: "registrado", section: "produccion" };
-    if (range) { woodWhere.entryDate = range; prodWhere.entryDate = range; }
+    const woodWhere: Prisma.WoodEntryWhereInput = {
+      tenantId,
+      deletedAt: null,
+      status: { in: ["validado", "procesado"] },
+    };
+    const prodWhere: Prisma.ForestCtpEntryWhereInput = {
+      tenantId,
+      deletedAt: null,
+      status: "registrado",
+      section: "produccion",
+    };
+    if (range) {
+      woodWhere.entryDate = range;
+      prodWhere.entryDate = range;
+    }
 
     const [ingresos, corridas] = await Promise.all([
-      prisma.woodEntry.findMany({ where: woodWhere, select: { entryDate: true, gtfNumber: true, speciesCommonName: true, volumeM3: true } }),
-      prisma.forestCtpEntry.findMany({ where: prodWhere, select: { entryDate: true, lineNo: true, productType: true, speciesCommon: true, volumeInputM3: true } }),
+      prisma.woodEntry.findMany({
+        where: woodWhere,
+        select: { entryDate: true, gtfNumber: true, speciesCommonName: true, volumeM3: true },
+      }),
+      prisma.forestCtpEntry.findMany({
+        where: prodWhere,
+        select: {
+          entryDate: true,
+          lineNo: true,
+          productType: true,
+          speciesCommon: true,
+          volumeInputM3: true,
+        },
+      }),
     ]);
 
     const movs = [
       ...ingresos
         .filter((i) => speciesKey(i.speciesCommonName) === target)
-        .map((i) => ({ fecha: i.entryDate, tipo: "ingreso" as const, doc: `GTF ${i.gtfNumber}`, entra: Number(i.volumeM3 ?? 0), sale: 0 })),
+        .map((i) => ({
+          fecha: i.entryDate,
+          tipo: "ingreso" as const,
+          doc: `GTF ${i.gtfNumber}`,
+          entra: Number(i.volumeM3 ?? 0),
+          sale: 0,
+        })),
       ...corridas
         .filter((c) => speciesKey(c.speciesCommon) === target && c.volumeInputM3 != null)
-        .map((c) => ({ fecha: c.entryDate, tipo: "consumo" as const, doc: `Corrida #${c.lineNo}${c.productType ? ` · ${c.productType}` : ""}`, entra: 0, sale: Number(c.volumeInputM3 ?? 0) })),
+        .map((c) => ({
+          fecha: c.entryDate,
+          tipo: "consumo" as const,
+          doc: `Corrida #${c.lineNo}${c.productType ? ` · ${c.productType}` : ""}`,
+          entra: 0,
+          sale: Number(c.volumeInputM3 ?? 0),
+        })),
     ].sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
 
     let saldo = 0;
@@ -2316,9 +2795,22 @@ export class ForestCtpDB {
       saldo = r4(saldo + m.entra - m.sale);
       ingresoTotal += m.entra;
       consumoTotal += m.sale;
-      return { fecha: m.fecha, tipo: m.tipo, doc: m.doc, entra: r4(m.entra), sale: r4(m.sale), saldo };
+      return {
+        fecha: m.fecha,
+        tipo: m.tipo,
+        doc: m.doc,
+        entra: r4(m.entra),
+        sale: r4(m.sale),
+        saldo,
+      };
     });
-    return { especie, movimientos, ingresoTotal: r4(ingresoTotal), consumoTotal: r4(consumoTotal), saldo: r4(ingresoTotal - consumoTotal) };
+    return {
+      especie,
+      movimientos,
+      ingresoTotal: r4(ingresoTotal),
+      consumoTotal: r4(consumoTotal),
+      saldo: r4(ingresoTotal - consumoTotal),
+    };
   }
 
   /**
@@ -2331,29 +2823,80 @@ export class ForestCtpDB {
     if (!tenantId) throw new Error("tenantId is required");
     const desde = new Date(Date.now() - 90 * 86_400_000);
     const [ingresos, corridas] = await Promise.all([
-      prisma.woodEntry.findMany({ where: { tenantId, deletedAt: null, status: { in: ["validado", "procesado"] } }, select: { speciesCommonName: true, speciesScientificName: true, speciesCites: true, volumeM3: true } }),
-      prisma.forestCtpEntry.findMany({ where: { tenantId, deletedAt: null, status: "registrado", section: "produccion" }, select: { speciesCommon: true, volumeInputM3: true, entryDate: true } }),
+      prisma.woodEntry.findMany({
+        where: { tenantId, deletedAt: null, status: { in: ["validado", "procesado"] } },
+        select: {
+          speciesCommonName: true,
+          speciesScientificName: true,
+          speciesCites: true,
+          volumeM3: true,
+        },
+      }),
+      prisma.forestCtpEntry.findMany({
+        where: { tenantId, deletedAt: null, status: "registrado", section: "produccion" },
+        select: { speciesCommon: true, volumeInputM3: true, entryDate: true },
+      }),
     ]);
-    const map = new Map<string, { especie: string; scientific: string | null; cites: boolean; ingreso: number; consumo: number; consumo90: number }>();
+    const map = new Map<
+      string,
+      {
+        especie: string;
+        scientific: string | null;
+        cites: boolean;
+        ingreso: number;
+        consumo: number;
+        consumo90: number;
+      }
+    >();
     const get = (raw: string | null, sci?: string | null, cites?: boolean) => {
       const k = speciesKey(raw);
       let m = map.get(k);
-      if (!m) { m = { especie: raw?.trim() || "Sin especie", scientific: sci?.trim() || null, cites: false, ingreso: 0, consumo: 0, consumo90: 0 }; map.set(k, m); }
+      if (!m) {
+        m = {
+          especie: raw?.trim() || "Sin especie",
+          scientific: sci?.trim() || null,
+          cites: false,
+          ingreso: 0,
+          consumo: 0,
+          consumo90: 0,
+        };
+        map.set(k, m);
+      }
       if (sci && !m.scientific) m.scientific = sci.trim();
       if (cites) m.cites = true;
       return m;
     };
-    for (const i of ingresos) get(i.speciesCommonName, i.speciesScientificName, i.speciesCites).ingreso += Number(i.volumeM3 ?? 0);
-    for (const c of corridas) { const m = get(c.speciesCommon); const v = Number(c.volumeInputM3 ?? 0); m.consumo += v; if (c.entryDate >= desde) m.consumo90 += v; }
+    for (const i of ingresos)
+      get(i.speciesCommonName, i.speciesScientificName, i.speciesCites).ingreso += Number(
+        i.volumeM3 ?? 0,
+      );
+    for (const c of corridas) {
+      const m = get(c.speciesCommon);
+      const v = Number(c.volumeInputM3 ?? 0);
+      m.consumo += v;
+      if (c.entryDate >= desde) m.consumo90 += v;
+    }
     return [...map.values()]
       .map((m) => {
         const saldo = r4(m.ingreso - m.consumo);
         const ratePorDia = m.consumo90 / 90;
         const diasHastaAgotar = ratePorDia > 0 && saldo > 0 ? Math.round(saldo / ratePorDia) : null;
-        return { especie: m.especie, scientific: m.scientific, cites: m.cites, saldo, consumo90: r4(m.consumo90), ratePorDia: r4(ratePorDia), diasHastaAgotar };
+        return {
+          especie: m.especie,
+          scientific: m.scientific,
+          cites: m.cites,
+          saldo,
+          consumo90: r4(m.consumo90),
+          ratePorDia: r4(ratePorDia),
+          diasHastaAgotar,
+        };
       })
       .filter((r) => r.saldo > 0 || r.consumo90 > 0)
-      .sort((a, b) => (a.diasHastaAgotar ?? Number.POSITIVE_INFINITY) - (b.diasHastaAgotar ?? Number.POSITIVE_INFINITY));
+      .sort(
+        (a, b) =>
+          (a.diasHastaAgotar ?? Number.POSITIVE_INFINITY) -
+          (b.diasHastaAgotar ?? Number.POSITIVE_INFINITY),
+      );
   }
 
   /**
@@ -2386,11 +2929,16 @@ export class ForestCtpDB {
     const range = dateRange(opts);
 
     const woodWhere: Prisma.WoodEntryWhereInput = {
-      tenantId, deletedAt: null, status: { in: ["validado", "procesado"] },
+      tenantId,
+      deletedAt: null,
+      status: { in: ["validado", "procesado"] },
       ...(range ? { entryDate: range } : {}),
     };
     const linea = (section: "produccion" | "despacho"): Prisma.ForestCtpEntryWhereInput => ({
-      tenantId, deletedAt: null, status: "registrado", section,
+      tenantId,
+      deletedAt: null,
+      status: "registrado",
+      section,
       ...(range ? { entryDate: range } : {}),
     });
 
@@ -2404,7 +2952,13 @@ export class ForestCtpDB {
       }),
       prisma.forestCtpEntry.findMany({
         where: linea("produccion"),
-        select: { entryDate: true, volumeInputM3: true, quantity: true, unit: true, speciesCommon: true },
+        select: {
+          entryDate: true,
+          volumeInputM3: true,
+          quantity: true,
+          unit: true,
+          speciesCommon: true,
+        },
       }),
       prisma.forestCtpEntry.findMany({
         where: linea("despacho"),
@@ -2423,19 +2977,28 @@ export class ForestCtpDB {
     ];
     const desde = opts.fromDate ?? (marcas.length ? new Date(Math.min(...marcas)) : hoy);
     const topeSuperior = Math.min(opts.toDate?.getTime() ?? hoy.getTime(), hoy.getTime());
-    const hasta = new Date(marcas.length ? Math.max(topeSuperior, Math.max(...marcas)) : topeSuperior);
+    const hasta = new Date(
+      marcas.length ? Math.max(topeSuperior, Math.max(...marcas)) : topeSuperior,
+    );
 
     return agruparMovimiento({
       ingresos: ingresos.map((i) => ({
-        fecha: i.entryDate, volumenM3: Number(i.volumeM3 ?? 0),
-        especie: i.speciesCommonName, piezas: i.pieces,
+        fecha: i.entryDate,
+        volumenM3: Number(i.volumeM3 ?? 0),
+        especie: i.speciesCommonName,
+        piezas: i.pieces,
       })),
       corridas: corridas.map((c) => ({
-        fecha: c.entryDate, consumidoM3: Number(c.volumeInputM3 ?? 0),
-        producido: Number(c.quantity ?? 0), unidad: c.unit, especie: c.speciesCommon,
+        fecha: c.entryDate,
+        consumidoM3: Number(c.volumeInputM3 ?? 0),
+        producido: Number(c.quantity ?? 0),
+        unidad: c.unit,
+        especie: c.speciesCommon,
       })),
       despachos: despachos.map((d) => ({
-        fecha: d.entryDate, cantidad: Number(d.quantity ?? 0), especie: d.speciesCommon,
+        fecha: d.entryDate,
+        cantidad: Number(d.quantity ?? 0),
+        especie: d.speciesCommon,
       })),
       desde: desde <= hasta ? desde : hasta,
       hasta,
@@ -2443,7 +3006,11 @@ export class ForestCtpDB {
       /* Este endpoint alimenta BARRAS: el trimestre en días daba 67 barras
          apretadas y casi todas en cero. */
       paso: pasoParaBarras(
-        Math.max(1, Math.floor((hasta.getTime() - Math.min(desde.getTime(), hasta.getTime())) / 86_400_000) + 1),
+        Math.max(
+          1,
+          Math.floor((hasta.getTime() - Math.min(desde.getTime(), hasta.getTime())) / 86_400_000) +
+            1,
+        ),
       ),
     });
   }
@@ -2455,16 +3022,62 @@ export class ForestCtpDB {
     const startMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (n - 1), 1));
     const keyOf = (d: Date) => d.toISOString().slice(0, 7);
     const [ingresos, corridas, despachos] = await Promise.all([
-      prisma.woodEntry.findMany({ where: { tenantId, deletedAt: null, status: { in: ["validado", "procesado"] }, entryDate: { gte: startMonth } }, select: { entryDate: true, volumeM3: true } }),
-      prisma.forestCtpEntry.findMany({ where: { tenantId, deletedAt: null, status: "registrado", section: "produccion", entryDate: { gte: startMonth } }, select: { entryDate: true, quantity: true, volumeInputM3: true, rendimientoPct: true } }),
-      prisma.forestCtpEntry.findMany({ where: { tenantId, deletedAt: null, status: "registrado", section: "despacho", entryDate: { gte: startMonth } }, select: { entryDate: true, quantity: true } }),
+      prisma.woodEntry.findMany({
+        where: {
+          tenantId,
+          deletedAt: null,
+          status: { in: ["validado", "procesado"] },
+          entryDate: { gte: startMonth },
+        },
+        select: { entryDate: true, volumeM3: true },
+      }),
+      prisma.forestCtpEntry.findMany({
+        where: {
+          tenantId,
+          deletedAt: null,
+          status: "registrado",
+          section: "produccion",
+          entryDate: { gte: startMonth },
+        },
+        select: { entryDate: true, quantity: true, volumeInputM3: true, rendimientoPct: true },
+      }),
+      prisma.forestCtpEntry.findMany({
+        where: {
+          tenantId,
+          deletedAt: null,
+          status: "registrado",
+          section: "despacho",
+          entryDate: { gte: startMonth },
+        },
+        select: { entryDate: true, quantity: true },
+      }),
     ]);
-    const buckets = new Map<string, { ingresoM3: number; producido: number; despachado: number; consumidoM3: number; rendW: number; rendPeso: number }>();
+    const buckets = new Map<
+      string,
+      {
+        ingresoM3: number;
+        producido: number;
+        despachado: number;
+        consumidoM3: number;
+        rendW: number;
+        rendPeso: number;
+      }
+    >();
     for (let i = 0; i < n; i++) {
       const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (n - 1) + i, 1));
-      buckets.set(keyOf(d), { ingresoM3: 0, producido: 0, despachado: 0, consumidoM3: 0, rendW: 0, rendPeso: 0 });
+      buckets.set(keyOf(d), {
+        ingresoM3: 0,
+        producido: 0,
+        despachado: 0,
+        consumidoM3: 0,
+        rendW: 0,
+        rendPeso: 0,
+      });
     }
-    for (const i of ingresos) { const b = buckets.get(keyOf(i.entryDate)); if (b) b.ingresoM3 += Number(i.volumeM3 ?? 0); }
+    for (const i of ingresos) {
+      const b = buckets.get(keyOf(i.entryDate));
+      if (b) b.ingresoM3 += Number(i.volumeM3 ?? 0);
+    }
     for (const c of corridas) {
       const b = buckets.get(keyOf(c.entryDate));
       if (!b) continue;
@@ -2472,15 +3085,28 @@ export class ForestCtpDB {
       const vin = Number(c.volumeInputM3 ?? 0);
       b.consumidoM3 += vin;
       const rend = Number(c.rendimientoPct ?? 0);
-      if (rend > 0 && vin > 0) { b.rendW += rend * vin; b.rendPeso += vin; }
+      if (rend > 0 && vin > 0) {
+        b.rendW += rend * vin;
+        b.rendPeso += vin;
+      }
     }
     // Despachado: cantidad de producto que salió por mes (como el `producido`, en
     // unidades de producto declaradas — por eso va en el chart de salida, no en el
     // de materia prima m³, para no mezclar unidades).
-    for (const d of despachos) { const b = buckets.get(keyOf(d.entryDate)); if (b) b.despachado += Number(d.quantity ?? 0); }
+    for (const d of despachos) {
+      const b = buckets.get(keyOf(d.entryDate));
+      if (b) b.despachado += Number(d.quantity ?? 0);
+    }
     return [...buckets.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([mes, b]) => ({ mes, ingresoM3: r4(b.ingresoM3), producido: r4(b.producido), despachado: r4(b.despachado), consumidoM3: r4(b.consumidoM3), rendimiento: b.rendPeso > 0 ? Math.round((b.rendW / b.rendPeso) * 10) / 10 : 0 }));
+      .map(([mes, b]) => ({
+        mes,
+        ingresoM3: r4(b.ingresoM3),
+        producido: r4(b.producido),
+        despachado: r4(b.despachado),
+        consumidoM3: r4(b.consumidoM3),
+        rendimiento: b.rendPeso > 0 ? Math.round((b.rendW / b.rendPeso) * 10) / 10 : 0,
+      }));
   }
 
   /**
@@ -2506,12 +3132,28 @@ export class ForestCtpDB {
     if (!tenantId) throw new Error("tenantId is required");
     const rows = await prisma.forestCtpEntry.findMany({
       where: { tenantId, section: "produccion", deletedAt: null, status: "registrado" },
-      select: { entryDate: true, productType: true, speciesCommon: true, quantity: true, codigoProducto: true, materiaPrimaRef: true },
+      select: {
+        entryDate: true,
+        productType: true,
+        speciesCommon: true,
+        quantity: true,
+        codigoProducto: true,
+        materiaPrimaRef: true,
+      },
     });
     const claves = new Map<string, number>();
     const sumar = (k: string) => claves.set(k, (claves.get(k) ?? 0) + 1);
     for (const r of rows) {
-      sumar(produccionKey(r.entryDate, r.productType, r.speciesCommon, r.quantity, r.codigoProducto, r.materiaPrimaRef));
+      sumar(
+        produccionKey(
+          r.entryDate,
+          r.productType,
+          r.speciesCommon,
+          r.quantity,
+          r.codigoProducto,
+          r.materiaPrimaRef,
+        ),
+      );
       /* Sólo las corridas SIN paquete ni lote aportan además su clave vieja: son
          las que se importaron antes y no se pueden distinguir de otra igual. Una
          corrida que sí tiene código no bloquea a un paquete distinto. */
@@ -2527,9 +3169,27 @@ export class ForestCtpDB {
     if (!tenantId) throw new Error("tenantId is required");
     const rows = await prisma.forestCtpEntry.findMany({
       where: { tenantId, section: "despacho", deletedAt: null, status: "registrado" },
-      select: { gtfNumber: true, entryDate: true, productType: true, speciesCommon: true, quantity: true, destino: true },
+      select: {
+        gtfNumber: true,
+        entryDate: true,
+        productType: true,
+        speciesCommon: true,
+        quantity: true,
+        destino: true,
+      },
     });
-    return new Set(rows.map((r) => despachoKey(r.gtfNumber, r.entryDate, r.productType, r.speciesCommon, r.quantity, r.destino)));
+    return new Set(
+      rows.map((r) =>
+        despachoKey(
+          r.gtfNumber,
+          r.entryDate,
+          r.productType,
+          r.speciesCommon,
+          r.quantity,
+          r.destino,
+        ),
+      ),
+    );
   }
 
   /**
@@ -2540,13 +3200,30 @@ export class ForestCtpDB {
    */
   static async despachoComparableByGtf(
     tenantId: string,
-  ): Promise<Map<string, { quantity: number; productType: string; speciesCommon: string; destino: string }>> {
+  ): Promise<
+    Map<string, { quantity: number; productType: string; speciesCommon: string; destino: string }>
+  > {
     if (!tenantId) throw new Error("tenantId is required");
     const rows = await prisma.forestCtpEntry.findMany({
-      where: { tenantId, section: "despacho", deletedAt: null, status: "registrado", gtfNumber: { not: null } },
-      select: { gtfNumber: true, quantity: true, productType: true, speciesCommon: true, destino: true },
+      where: {
+        tenantId,
+        section: "despacho",
+        deletedAt: null,
+        status: "registrado",
+        gtfNumber: { not: null },
+      },
+      select: {
+        gtfNumber: true,
+        quantity: true,
+        productType: true,
+        speciesCommon: true,
+        destino: true,
+      },
     });
-    const map = new Map<string, { quantity: number; productType: string; speciesCommon: string; destino: string }>();
+    const map = new Map<
+      string,
+      { quantity: number; productType: string; speciesCommon: string; destino: string }
+    >();
     for (const r of rows) {
       if (!r.gtfNumber) continue;
       map.set(r.gtfNumber, {
@@ -2570,7 +3247,10 @@ export class ForestCtpDB {
    * `sinConsumirM3` = volumen que aún no entró a ninguna corrida (Σ consumos ≤
    * volumeM3, invariante I2). No es un hueco de trazabilidad: es patio.
    */
-  static async trazaForwardIngreso(tenantId: string, woodEntryId: string): Promise<TrazaForwardIngreso | null> {
+  static async trazaForwardIngreso(
+    tenantId: string,
+    woodEntryId: string,
+  ): Promise<TrazaForwardIngreso | null> {
     if (!tenantId) throw new Error("tenantId is required");
     if (!woodEntryId) throw new Error("woodEntryId is required");
 
@@ -2591,7 +3271,16 @@ export class ForestCtpDB {
       corridaIds.length
         ? prisma.forestCtpEntry.findMany({
             where: { id: { in: corridaIds }, tenantId, deletedAt: null },
-            select: { id: true, lineNo: true, entryDate: true, productType: true, speciesCommon: true, quantity: true, unit: true, status: true },
+            select: {
+              id: true,
+              lineNo: true,
+              entryDate: true,
+              productType: true,
+              speciesCommon: true,
+              quantity: true,
+              unit: true,
+              status: true,
+            },
           })
         : Promise.resolve([]),
       corridaIds.length
@@ -2606,7 +3295,15 @@ export class ForestCtpDB {
     const despachoRows = despachoIds.length
       ? await prisma.forestCtpEntry.findMany({
           where: { id: { in: despachoIds }, tenantId, deletedAt: null },
-          select: { id: true, lineNo: true, entryDate: true, destino: true, gtfNumber: true, unit: true, status: true },
+          select: {
+            id: true,
+            lineNo: true,
+            entryDate: true,
+            destino: true,
+            gtfNumber: true,
+            unit: true,
+            status: true,
+          },
         })
       : [];
     const despachoById = new Map(despachoRows.map((d) => [d.id, d]));
@@ -2663,15 +3360,23 @@ export class ForestCtpDB {
 }
 
 export interface ReordenProyeccion {
-  especie: string; scientific: string | null; cites: boolean;
-  saldo: number; consumo90: number; ratePorDia: number;
+  especie: string;
+  scientific: string | null;
+  cites: boolean;
+  saldo: number;
+  consumo90: number;
+  ratePorDia: number;
   /** Días hasta agotar al ritmo reciente; null si no se consume. */
   diasHastaAgotar: number | null;
 }
 
 export interface TendenciaMes {
   mes: string; // YYYY-MM
-  ingresoM3: number; producido: number; despachado: number; consumidoM3: number; rendimiento: number;
+  ingresoM3: number;
+  producido: number;
+  despachado: number;
+  consumidoM3: number;
+  rendimiento: number;
 }
 
 /** Serie del saldo de materia prima en el tiempo. Ver `curvaSaldo`. */
@@ -2724,7 +3429,14 @@ export interface TrazaForwardIngreso {
 
 export interface KardexEspecie {
   especie: string;
-  movimientos: { fecha: Date; tipo: "ingreso" | "consumo"; doc: string; entra: number; sale: number; saldo: number }[];
+  movimientos: {
+    fecha: Date;
+    tipo: "ingreso" | "consumo";
+    doc: string;
+    entra: number;
+    sale: number;
+    saldo: number;
+  }[];
   ingresoTotal: number;
   consumoTotal: number;
   saldo: number;
@@ -2732,16 +3444,45 @@ export interface KardexEspecie {
 
 export interface TrazaGrafo {
   ingresos: {
-    id: string; gtf: string; species: string | null; volumeM3: number; cites: boolean; fecha: string;
+    id: string;
+    gtf: string;
+    species: string | null;
+    volumeM3: number;
+    cites: boolean;
+    fecha: string;
     /** Los casilleros por ingreso que pinta la Sección 2 (ADR-347). Opcionales
      *  en el tipo: el endpoint siempre los manda, los fixtures no los declaran. */
-    productType?: string | null; speciesScientificName?: string | null; originCode?: string | null;
-    ctpProductCode?: string | null; originSourceNumber?: string | null; unit?: string | null;
+    productType?: string | null;
+    speciesScientificName?: string | null;
+    originCode?: string | null;
+    ctpProductCode?: string | null;
+    originSourceNumber?: string | null;
+    unit?: string | null;
     /** Concesión, permiso, comunidad… — el tipo del título habilitante de origen. */
     originType?: string | null;
   }[];
-  corridas: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; cites: boolean; productType: string | null; species: string | null; fecha: string; observations?: string | null }[];
-  despachos: { id: string; lineNo: number; label: string; quantity: number; unit: string | null; destino: string | null; gtf: string | null; fecha: string }[];
+  corridas: {
+    id: string;
+    lineNo: number;
+    label: string;
+    quantity: number;
+    unit: string | null;
+    cites: boolean;
+    productType: string | null;
+    species: string | null;
+    fecha: string;
+    observations?: string | null;
+  }[];
+  despachos: {
+    id: string;
+    lineNo: number;
+    label: string;
+    quantity: number;
+    unit: string | null;
+    destino: string | null;
+    gtf: string | null;
+    fecha: string;
+  }[];
   /** woodEntryId → corridaId (m³ consumido). */
   consumos: { from: string; to: string; volumeM3: number }[];
   /** corridaId → despachoId (cantidad atribuida). */

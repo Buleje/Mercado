@@ -49,7 +49,8 @@ const m3 = (v: number | string) => `${Number(v).toFixed(2)} m³`;
 function etiqueta(iso: string, paso: CurvaSaldoData["paso"]): string {
   const d = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return iso;
-  if (paso === "mes") return d.toLocaleDateString("es-PE", { month: "short", year: "2-digit", timeZone: "UTC" });
+  if (paso === "mes")
+    return d.toLocaleDateString("es-PE", { month: "short", year: "2-digit", timeZone: "UTC" });
   const dia = d.toLocaleDateString("es-PE", { day: "numeric", month: "short", timeZone: "UTC" });
   return paso === "semana" ? `sem ${dia}` : dia;
 }
@@ -60,7 +61,13 @@ const NOMBRE_PASO: Record<CurvaSaldoData["paso"], string> = {
   mes: "por mes",
 };
 
-export default function CurvaDeSaldo({ curva, periodoLabel }: { curva: CurvaSaldoData; periodoLabel: string }) {
+export default function CurvaDeSaldo({
+  curva,
+  periodoLabel,
+}: {
+  curva: CurvaSaldoData;
+  periodoLabel: string;
+}) {
   /* Los días que valen la pena señalar, sacados de los MISMOS puntos que
      dibuja el gráfico (nada calculado aparte, nada inventado): el día que más
      madera entró y el día que más se aserró. Son las dos fechas que se buscan
@@ -116,7 +123,8 @@ export default function CurvaDeSaldo({ curva, periodoLabel }: { curva: CurvaSald
       <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <Encabezado paso={curva.paso} periodoLabel={periodoLabel} />
         <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">
-          El período no tiene suficientes movimientos para dibujar una tendencia. Con dos fechas distintas ya se ve.
+          El período no tiene suficientes movimientos para dibujar una tendencia. Con dos fechas
+          distintas ya se ve.
         </p>
       </div>
     );
@@ -140,7 +148,11 @@ export default function CurvaDeSaldo({ curva, periodoLabel }: { curva: CurvaSald
                 : "sin cierre previo"
           }
         />
-        <Dato termino="Terminó en" valor={`${n2(curva.final)} m³`} pie={`${movimientos} ${movimientos === 1 ? "fecha" : "fechas"} con movimiento`} />
+        <Dato
+          termino="Terminó en"
+          valor={`${n2(curva.final)} m³`}
+          pie={`${movimientos} ${movimientos === 1 ? "fecha" : "fechas"} con movimiento`}
+        />
         <Dato
           termino="Cambió"
           valor={`${delta > 0 ? "+" : delta < 0 ? "−" : ""}${n2(Math.abs(delta))} m³`}
@@ -164,8 +176,9 @@ export default function CurvaDeSaldo({ curva, periodoLabel }: { curva: CurvaSald
 
       {valleEnRojo && (
         <p className="mt-3 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2 text-sm text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]">
-          El saldo estuvo bajo cero durante el período: hubo consumo declarado antes de que ingresara la madera que lo
-          respalda. Revisá las fechas de las corridas contra las de sus guías.
+          El saldo estuvo bajo cero durante el período: hubo consumo declarado antes de que
+          ingresara la madera que lo respalda. Revisá las fechas de las corridas contra las de sus
+          guías.
         </p>
       )}
 
@@ -197,7 +210,9 @@ export default function CurvaDeSaldo({ curva, periodoLabel }: { curva: CurvaSald
           </span>
         )}
         <span className="text-[var(--text-secondary)]">
-          <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Ritmo</span>{" "}
+          <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            Ritmo
+          </span>{" "}
           <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
             {movimientos} de {curva.puntos.length}
           </span>{" "}
@@ -252,18 +267,27 @@ export default function CurvaDeSaldo({ curva, periodoLabel }: { curva: CurvaSald
   );
 }
 
-function Encabezado({ paso, periodoLabel }: { paso: CurvaSaldoData["paso"]; periodoLabel: string }) {
+function Encabezado({
+  paso,
+  periodoLabel,
+}: {
+  paso: CurvaSaldoData["paso"];
+  periodoLabel: string;
+}) {
   return (
     <>
       <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         Tendencia · {periodoLabel}
       </p>
-      <CardTitle as="h3" className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+      <CardTitle
+        as="h3"
+        className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"
+      >
         Cómo se movió el patio, {NOMBRE_PASO[paso]}
       </CardTitle>
       <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-        La línea es la existencia de materia prima acumulada; las barras, lo que entró y lo que se aserró en cada
-        fecha. Sube cuando llegan guías, baja cuando la sierra trabaja.
+        La línea es la existencia de materia prima acumulada; las barras, lo que entró y lo que se
+        aserró en cada fecha. Sube cuando llegan guías, baja cuando la sierra trabaja.
       </p>
     </>
   );
@@ -287,7 +311,9 @@ function Dato({
       <dt className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         {termino}
       </dt>
-      <dd className={`flex items-center gap-1.5 font-mono text-lg font-extrabold tabular-nums ${tono ?? "text-[var(--text-primary)]"}`}>
+      <dd
+        className={`flex items-center gap-1.5 font-mono text-lg font-extrabold tabular-nums ${tono ?? "text-[var(--text-primary)]"}`}
+      >
         {icono}
         {valor}
       </dd>
