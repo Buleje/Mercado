@@ -27,6 +27,7 @@
 import { CardTitle } from "@buleje/design-system";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
+import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 
 export interface FuenteDeCapacidad {
   clave: "porRecepcionar" | "patio" | "lotes" | "productos";
@@ -53,6 +54,16 @@ export function calcularBalance(input: {
   restaLotesM3: number;
   productosM3: number;
   productosDetalle?: string;
+  /**
+   * `true` cuando se está mirando UN permiso.
+   *
+   * Los productos terminados no se pueden atribuir a un título habilitante sin
+   * recorrer la cadena corrida→lote→troza→ingreso, así que con un permiso
+   * elegido esa fila queda en cero y lo DICE. Repartirlos por prorrateo sería
+   * inventar de qué permiso salió cada tablón, que es justo lo que el libro
+   * existe para no hacer.
+   */
+  filtrado?: boolean;
 }): BalanceCapacidad {
   const r4 = (v: number) => Math.round(v * 10000) / 10000;
   const aProducto = (m3: number) => r4(m3 * RENDIMIENTO_META);
@@ -88,17 +99,30 @@ export function calcularBalance(input: {
     {
       clave: "productos",
       label: "Productos terminados",
-      m3: r4(input.productosM3),
-      enProducto: r4(input.productosM3),
+      m3: input.filtrado ? 0 : r4(input.productosM3),
+      enProducto: input.filtrado ? 0 : r4(input.productosM3),
       convertido: false,
-      detalle: input.productosDetalle ?? "Stock listo para despachar",
+      detalle: input.filtrado
+        ? "No se puede atribuir a un permiso sin recorrer la cadena — se cuenta sólo en «todos los permisos»"
+        : (input.productosDetalle ?? "Stock listo para despachar"),
     },
   ];
 
   return { fuentes, totalProducto: r4(fuentes.reduce((a, f) => a + f.enProducto, 0)) };
 }
 
-export default function BalanceDeCapacidad({ balance }: { balance: BalanceCapacidad }) {
+export default function BalanceDeCapacidad({
+  balance,
+  permisos = [],
+  permiso = "",
+  onPermiso,
+}: {
+  balance: BalanceCapacidad;
+  /** Los títulos habilitantes que hay en la planta, para acotar la capacidad. */
+  permisos?: string[];
+  permiso?: string;
+  onPermiso?: (p: string) => void;
+}) {
   const { fuentes, totalProducto } = balance;
   if (totalProducto <= 0 && fuentes.every((f) => f.m3 <= 0)) return null;
 
@@ -116,6 +140,30 @@ export default function BalanceDeCapacidad({ balance }: { balance: BalanceCapaci
         máximo, no una promesa.
       </p>
 
+      {onPermiso && permisos.length > 0 && (
+        <label className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            Título habilitante
+          </span>
+          <select
+            value={permiso}
+            onChange={(e) => onPermiso(e.target.value)}
+            className="h-9 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-medium text-[var(--text-primary)]"
+          >
+            <option value="">Todos los permisos</option>
+            {permisos.map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+          {permiso && (
+            <span className="text-[var(--text-tertiary)]">
+              Sólo la madera de este permiso. El producto terminado no entra: no se puede atribuir sin recorrer la
+              cadena.
+            </span>
+          )}
+        </label>
+      )}
+
       <ul className="mt-4 space-y-2">
         {fuentes.map((f) => (
           <li
@@ -132,6 +180,11 @@ export default function BalanceDeCapacidad({ balance }: { balance: BalanceCapaci
             <span className="ml-auto font-mono font-bold tabular-nums text-[var(--text-primary)]">
               {fmtM3(f.enProducto)} m³
             </span>
+            {/* El pie tablar es la unidad con la que se vende y se cotiza; el m³
+                es la del libro. Las dos juntas evitan la calculadora al lado. */}
+            <span className="w-28 shrink-0 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+              {pieTablarDe(f.enProducto).toLocaleString("es-PE")} pt
+            </span>
             {f.detalle && <span className="w-full text-xs text-[var(--text-tertiary)]">{f.detalle}</span>}
           </li>
         ))}
@@ -139,8 +192,13 @@ export default function BalanceDeCapacidad({ balance }: { balance: BalanceCapaci
 
       <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2.5">
         <span className="font-bold text-[var(--text-primary)]">Capacidad máxima en producto</span>
-        <span className="font-mono text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
-          {fmtM3(totalProducto)} m³
+        <span className="flex items-baseline gap-3">
+          <span className="font-mono text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
+            {fmtM3(totalProducto)} m³
+          </span>
+          <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-secondary)]">
+            {pieTablarDe(totalProducto).toLocaleString("es-PE")} pt
+          </span>
         </span>
       </div>
     </div>
