@@ -52,7 +52,10 @@ export interface LoteCsv {
   esperado56M3: number;
   /** `null` = no se puede sumar sin inventar (otra unidad o sin corridas vivas). */
   producidoM3: number | null;
-  restaM3: number;
+  /** Al 56 % − producido: lo que el lote todavía admite. `null` sin producción sumable. */
+  restaM3: number | null;
+  /** m³ de madera que siguen sin aserrar — distinto de `restaM3`. */
+  apartadoM3: number;
   piezas: number;
   diasParado: number | null;
   finProceso: string | null;
@@ -121,7 +124,7 @@ export function saldosACsv(
       fila(["LOTES DE ASERRIO"]),
       fila([
         "Lote", "N de permiso", "Especie", "Estado",
-        "Consumido (m3)", "Al 56% (m3)", "Producido (m3)", "Resta (m3)", "Piezas libres",
+        "Consumido (m3)", "Al 56% (m3)", "Producido (m3)", "Resta al 56% (m3)", "Apartado sin aserrar (m3)", "Piezas libres",
         "Dias parado", "Fin de proceso", "Dias para vencer", "Plazo",
       ]),
       ...lotes.map((l) =>
@@ -136,7 +139,8 @@ export function saldosACsv(
           num(l.consumidoM3),
           num(l.esperado56M3),
           l.producidoM3 == null ? "" : num(l.producidoM3),
-          num(l.restaM3),
+          l.restaM3 == null ? "" : num(l.restaM3),
+          num(l.apartadoM3),
           String(l.piezas),
           l.diasParado == null ? "" : String(l.diasParado),
           l.finProceso ?? "",
@@ -158,7 +162,8 @@ export function saldosACsv(
         num(lotes.reduce((a, l) => a + l.consumidoM3, 0)),
         num(lotes.reduce((a, l) => a + l.esperado56M3, 0)),
         num(lotes.reduce((a, l) => a + (l.producidoM3 ?? 0), 0)),
-        num(lotes.reduce((a, l) => a + l.restaM3, 0)),
+        num(lotes.reduce((a, l) => a + (l.restaM3 ?? 0), 0)),
+        num(lotes.reduce((a, l) => a + l.apartadoM3, 0)),
       ]),
     );
   }

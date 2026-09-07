@@ -24,7 +24,10 @@ export interface LoteDelReporte {
   consumidoM3: number;
   esperado56M3: number;
   producidoM3: number | null;
-  restaM3: number;
+  /** Al 56 % − producido: lo que el lote todavía admite. `null` sin producción sumable. */
+  restaM3: number | null;
+  /** m³ de madera que siguen sin aserrar — distinto de `restaM3`. */
+  apartadoM3: number;
   piezas: number;
   diasParado: number | null;
   finProceso: string | null;
@@ -190,7 +193,7 @@ export function printExistencias(d: ExistenciasReportData): void {
       ? `<h2>Lo que resta en cada lote de aserrío</h2>
   <p style="color:#555;margin:0 0 6px">Madera apartada: mientras esté en un lote abierto no se ofrece para otra corrida. El plazo es el «fin de proceso» que el lote declaró (ADR-342).</p>
   <table>
-    <thead><tr><th>Lote</th><th>N° de permiso</th><th>Especie</th><th>Estado</th><th class="num">Consumido</th><th class="num">Al 56 %</th><th class="num">Producido</th><th class="num">Resta (m³)</th><th class="num">Piezas</th><th class="num">Parado</th><th>Fin de proceso</th><th>Plazo</th></tr></thead>
+    <thead><tr><th>Lote</th><th>N° de permiso</th><th>Especie</th><th>Estado</th><th class="num">Consumido</th><th class="num">Al 56 %</th><th class="num">Producido</th><th class="num">Resta al 56 %</th><th class="num">Apartado</th><th class="num">Piezas</th><th class="num">Parado</th><th>Fin de proceso</th><th>Plazo</th></tr></thead>
     <tbody>${(d.lotes ?? [])
       .map(
         (l) => `<tr>
@@ -201,7 +204,8 @@ export function printExistencias(d: ExistenciasReportData): void {
       ${num(l.consumidoM3)}
       ${num(l.esperado56M3)}
       <td class="num">${l.producidoM3 == null ? "—" : l.producidoM3.toFixed(3)}</td>
-      ${num(l.restaM3)}
+      <td class="num">${l.restaM3 == null ? "—" : l.restaM3.toFixed(3)}</td>
+      ${num(l.apartadoM3)}
       <td class="num">${l.piezas}</td>
       <td class="num">${l.diasParado == null ? "—" : `${l.diasParado} d`}</td>
       <td>${l.finProceso ?? "—"}</td>
@@ -221,7 +225,7 @@ export function printExistencias(d: ExistenciasReportData): void {
       (d.lotes ?? []).reduce((a, l) => a + l.consumidoM3, 0),
     )}${num((d.lotes ?? []).reduce((a, l) => a + l.esperado56M3, 0))}${num(
       (d.lotes ?? []).reduce((a, l) => a + (l.producidoM3 ?? 0), 0),
-    )}${num((d.lotes ?? []).reduce((a, l) => a + l.restaM3, 0))}<td colspan="4"></td></tr></tfoot>
+    )}${num((d.lotes ?? []).reduce((a, l) => a + (l.restaM3 ?? 0), 0))}${num((d.lotes ?? []).reduce((a, l) => a + l.apartadoM3, 0))}<td colspan="4"></td></tr></tfoot>
   </table>`
       : ""
   }

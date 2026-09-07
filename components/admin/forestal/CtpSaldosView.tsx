@@ -63,6 +63,10 @@ export function CtpSaldosView({
      apartada hoy, y filtrarlo por el trimestre lo escondería justo cuando más
      hay que cerrarlo. Secundario: si falla, Saldos se muestra igual. */
   const [lotes, setLotes] = useState<LoteAserrio[]>([]);
+  /* Qué lotes entran al reporte. Vacío = TODOS, que es lo que esperaba quien
+     descargaba antes de que existiera la selección: tildar nada no puede
+     significar «un reporte sin lotes». */
+  const [lotesElegidos, setLotesElegidos] = useState<Set<string>>(new Set());
   useEffect(() => {
     let vivo = true;
     fetch("/api/admin/forestal/lotes-aserrio", { credentials: "include" })
@@ -77,22 +81,29 @@ export function CtpSaldosView({
      columna nueva, que es exactamente lo que ya pasó con las guías. */
   const lotesDelReporte = useMemo(() => {
     const ahora = new Date();
-    return lotes.map((l) => ({
+    const elegidos = lotesElegidos.size > 0 ? lotes.filter((l) => lotesElegidos.has(l.id)) : lotes;
+    return elegidos.map((l) => ({
       code: l.code,
       permisos: permisosDelLote(l),
       especie: l.speciesCommon,
       status: l.status,
       consumidoM3: consumidoDelLote(l),
-      esperado56M3: Math.round(consumidoDelLote(l) * RENDIMIENTO_META * 100) / 100,
+      esperado56M3: Math.round(consumidoDelLote(l) * RENDIMIENTO_META * 10000) / 10000,
       producidoM3: producidoDelLote(l),
-      restaM3: volumenLibre(l),
+      /* La MISMA resta que muestra la tabla: al 56 % − producido. Si el reporte
+         dijera otra cosa que la pantalla, el que firma no sabría a cuál creerle. */
+      restaM3: (() => {
+        const p = producidoDelLote(l);
+        return p == null ? null : Math.round((consumidoDelLote(l) * RENDIMIENTO_META - p) * 10000) / 10000;
+      })(),
+      apartadoM3: volumenLibre(l),
       piezas: piezasLibres(l).length,
       diasParado: diasDeEspera(l, ahora),
       finProceso: l.finProceso ? String(l.finProceso).slice(0, 10) : null,
       diasParaVencer: diasParaVencer(l.finProceso, ahora),
       vencido: loteVencido(l, ahora),
     }));
-  }, [lotes]);
+  }, [lotes, lotesElegidos]);
 
   // Reporte de existencias imprimible (PDF) para fiscalización: misma data del
   // panel + identidad del CTP (best-effort desde la Ficha).
@@ -122,6 +133,69 @@ export function CtpSaldosView({
   }, [data, concil, period.label, lotesDelReporte]);
 
   /** Lo mismo que se ve, para cruzar en Excel contra la planilla del contador. */
+  /**
+   * El mismo reporte, en Excel.
+   *
+   * `exportToExcel` ya existía y lo usan cuatro módulos del panel; acá sólo se
+   * arma la grilla. Va en TRES hojas —materia prima, productos y lotes— porque
+   * apilar tres tablas distintas en una sola hoja obliga a borrar filas antes
+   * de poder ordenar o filtrar, que es lo que se hace con un Excel.
+   *
+   * Las cantidades van como NÚMERO, no como texto: un m³ que llega como cadena
+   * no se suma en la planilla, y la razón de exportar a Excel es sumar.
+   */
+  const descargarExcel = useCallback(async () => {
+    if (!data) return;
+    setReportError(null);
+    try {
+      const { exportToExcel } = await import("@/lib/export-excel");
+      const nombre = nombreArchivoSaldos(period.label).replace(/\.csv$/, "");
+      await exportToExcel(
+        data.porEspecie.map((e) => ({
+          Especie: e.especie,
+          "Nombre científico": e.scientific ?? "",
+          CITES: e.cites ? "Sí" : "No",
+          "Ingresado (m³)": e.ingresoM3,
+          "Sin validar (m³)": e.pendienteM3,
+          "Consumido (m³)": e.consumidoM3,
+          "Saldo (m³)": e.saldoM3,
+        })),
+        `${nombre}-materia-prima`,
+        "Materia prima",
+      );
+      if (lotesDelReporte.length > 0) {
+        await exportToExcel(
+          lotesDelReporte.map((l) => ({
+            Lote: l.code,
+            "N° de permiso": l.permisos.join(" + "),
+            Especie: l.especie,
+            Estado: l.status,
+            "Consumido (m³)": l.consumidoM3,
+            "Al 56 % (m³)": l.esperado56M3,
+            "Producido (m³)": l.producidoM3 ?? "",
+            "Resta al 56 % (m³)": l.restaM3 ?? "",
+            "Apartado sin aserrar (m³)": l.apartadoM3,
+            "Piezas libres": l.piezas,
+            "Días parado": l.diasParado ?? "",
+            "Fin de proceso": l.finProceso ?? "",
+            "Días para vencer": l.diasParaVencer ?? "",
+            Plazo: l.vencido
+              ? `${Math.abs(l.diasParaVencer ?? 0)} días vencido`
+              : l.diasParaVencer == null
+                ? "sin fecha"
+                : l.diasParaVencer === 0
+                  ? "vence hoy"
+                  : `quedan ${l.diasParaVencer} días`,
+          })),
+          `${nombre}-lotes`,
+          "Lotes de aserrío",
+        );
+      }
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : String(err));
+    }
+  }, [data, period.label, lotesDelReporte]);
+
   const descargarCsv = useCallback(() => {
     if (!data) return;
     const csv = saldosACsv(data.porEspecie, data.productos, period.label, lotesDelReporte);
@@ -175,6 +249,9 @@ export function CtpSaldosView({
         </Btn>
         <Btn variant="secondary" size="md" onClick={descargarCsv} disabled={!data}>
           <FileSpreadsheet className="h-4 w-4" /> CSV
+        </Btn>
+        <Btn variant="secondary" size="md" onClick={() => void descargarExcel()} disabled={!data}>
+          <FileSpreadsheet className="h-4 w-4" /> Excel
         </Btn>
         <Btn variant="secondary" size="md" onClick={() => void recargar()} disabled={loading}>
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
@@ -243,7 +320,7 @@ export function CtpSaldosView({
           <TablaProductos productos={data.productos} onDespachar={onDespachar} />
 
           {/* Gemelo del patio: materia prima parada por antigüedad (self-fetch). */}
-          <LotesConSaldo lotes={lotes} />
+          <LotesConSaldo lotes={lotes} seleccion={lotesElegidos} onSeleccion={setLotesElegidos} />
 
           <CtpPatioAging onValorizar={onIr ? () => onIr("rentabilidad") : undefined} />
         </>

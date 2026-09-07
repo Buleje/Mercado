@@ -67,7 +67,11 @@ export function diasParaVencer(finProceso: string | Date | null | undefined, aho
   return Math.round((aMs(clave) - aMs(hoy)) / 86_400_000);
 }
 
-const r2 = (v: number) => Math.round(v * 100) / 100;
+/* Cuatro decimales, como el resto del libro (`Decimal(12,4)` en el schema).
+   Con dos, 19.7439 − 18.328 daba 1.41 y la pantalla mostraba «1.410» en vez de
+   «1.416»: seis milésimas de m³ inventadas por un redondeo intermedio, en una
+   columna que dice cuánto más se puede declarar. */
+const r4 = (v: number) => Math.round(v * 10000) / 10000;
 
 const fecha = (v: string | Date | null | undefined): string =>
   v ? new Date(v).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }) : "—";
@@ -90,22 +94,45 @@ function TextoPlazo({ dias, vencido }: { dias: number | null; vencido: boolean }
   );
 }
 
-export default function LotesConSaldo({ lotes, ahora = new Date() }: { lotes: LoteAserrio[]; ahora?: Date }) {
+export default function LotesConSaldo({
+  lotes,
+  ahora = new Date(),
+  seleccion,
+  onSeleccion,
+}: {
+  lotes: LoteAserrio[];
+  ahora?: Date;
+  /** Ids tildados. La selección vive ARRIBA porque el reporte la necesita. */
+  seleccion?: Set<string>;
+  onSeleccion?: (ids: Set<string>) => void;
+}) {
   if (lotes.length === 0) return null;
 
   const filas = lotes
     .map((l) => {
       const libre = volumenLibre(l);
       const consumido = consumidoDelLote(l);
+      /* Lo que ese consumo DEBERÍA rendir al tope del 56 % (ADR-358). No es lo
+         que salió: es la vara contra la que se compara. */
+      const esperado56 = r4(consumido * RENDIMIENTO_META);
+      const producido = producidoDelLote(l);
       const dias = diasParaVencer(l.finProceso, ahora);
       return {
         lote: l,
         libre,
         consumido,
-        /* Lo que ese consumo DEBERÍA rendir al tope del 56 % (ADR-358). No es
-           lo que salió: es la vara contra la que se compara. */
-        esperado56: r2(consumido * RENDIMIENTO_META),
-        producido: producidoDelLote(l),
+        esperado56,
+        producido,
+        /* Lo que TODAVÍA SE PUEDE DECLARAR bajo el techo: la vara menos lo ya
+           declarado (Brandon, 2026-09-06).
+           ⚠️ NO es la madera que queda sin aserrar —eso es `volumenLibre`, que
+           sigue alimentando el total «apartado en lotes» de la cabecera—: es
+           cuánto producto más admite el lote antes de tocar el 56 %.
+           Negativo = ya lo pasó, y se muestra: un lote que declaró más de lo
+           que su consumo puede rendir es el hallazgo, no un cero.
+           `null` sin producción sumable (otra unidad o sin corridas vivas):
+           sin minuendo no hay resta que inventar. */
+        restaDeclarable: producido == null ? null : r4(esperado56 - producido),
         permisos: permisosDelLote(l),
         piezas: piezasLibres(l).length,
         espera: diasDeEspera(l, ahora),
@@ -122,6 +149,26 @@ export default function LotesConSaldo({ lotes, ahora = new Date() }: { lotes: Lo
       if (da !== db) return da - db;
       return b.libre - a.libre;
     });
+
+  const eligiendo = Boolean(seleccion && onSeleccion);
+  const marcados = seleccion ?? new Set<string>();
+  const todosMarcados = filas.length > 0 && filas.every((f) => marcados.has(f.lote.id));
+  const alguno = filas.some((f) => marcados.has(f.lote.id));
+
+  const alternar = (id: string) => {
+    if (!onSeleccion) return;
+    const siguiente = new Set(marcados);
+    if (siguiente.has(id)) siguiente.delete(id);
+    else siguiente.add(id);
+    onSeleccion(siguiente);
+  };
+  /* Tildar la cabecera alcanza SÓLO a las filas visibles, que es lo que el
+     usuario está viendo; no hay paginación acá, pero si mañana la hay, tildar
+     «todos» no debe llevarse lo que no se ve. */
+  const alternarTodos = () => {
+    if (!onSeleccion) return;
+    onSeleccion(todosMarcados ? new Set() : new Set(filas.map((f) => f.lote.id)));
+  };
 
   const totalLibre = filas.reduce((s, f) => s + f.libre, 0);
   const vencidos = filas.filter((f) => f.vencido).length;
@@ -167,6 +214,18 @@ export default function LotesConSaldo({ lotes, ahora = new Date() }: { lotes: Lo
       <DataTable className="w-full text-sm">
         <thead className="bg-[var(--surface-sunken)]">
           <tr>
+            {eligiendo && (
+              <Th className="w-10">
+                <input
+                  type="checkbox"
+                  checked={todosMarcados}
+                  ref={(el) => { if (el) el.indeterminate = alguno && !todosMarcados; }}
+                  onChange={alternarTodos}
+                  aria-label="Elegir todos los lotes"
+                  className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                />
+              </Th>
+            )}
             <Th>Lote</Th>
             <Th>N° de permiso</Th>
             <Th>Especie</Th>
@@ -189,6 +248,17 @@ export default function LotesConSaldo({ lotes, ahora = new Date() }: { lotes: Lo
                 f.vencido ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : ""
               }`}
             >
+              {eligiendo && (
+                <td className="px-4 py-2">
+                  <input
+                    type="checkbox"
+                    checked={marcados.has(f.lote.id)}
+                    onChange={() => alternar(f.lote.id)}
+                    aria-label={`Elegir el lote ${f.lote.code}`}
+                    className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                  />
+                </td>
+              )}
               <td className="px-4 py-2 font-mono font-bold text-[var(--text-primary)]">{f.lote.code}</td>
               {/* Más de un permiso en un lote es madera de dos títulos
                   habilitantes mezclada: se dice, no se esconde detrás del
@@ -222,8 +292,21 @@ export default function LotesConSaldo({ lotes, ahora = new Date() }: { lotes: Lo
               <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
                 {f.producido == null ? <span className="text-xs text-[var(--text-tertiary)]">—</span> : fmtM3(f.producido)}
               </td>
-              <td className="px-4 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                {fmtM3(f.libre)}
+              {/* Resta = al 56 % − producido: lo que el lote todavía admite.
+                  En rojo si es negativo — pasó el techo. */}
+              <td
+                className={`px-4 py-2 text-right font-mono font-bold tabular-nums ${
+                  f.restaDeclarable != null && f.restaDeclarable < 0
+                    ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                    : "text-[var(--text-primary)]"
+                }`}
+                title={
+                  f.restaDeclarable == null
+                    ? "Sin producción sumable: no hay resta que calcular"
+                    : `${fmtM3(f.esperado56)} al 56 % − ${fmtM3(f.producido ?? 0)} producido`
+                }
+              >
+                {f.restaDeclarable == null ? <span className="text-xs text-[var(--text-tertiary)]">—</span> : fmtM3(f.restaDeclarable)}
               </td>
               <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{f.piezas}</td>
               <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">

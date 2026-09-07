@@ -27,7 +27,8 @@ const lote = (over: Partial<LoteCsv> = {}): LoteCsv => ({
   consumidoM3: 3.2,
   esperado56M3: 1.79,
   producidoM3: 1.75,
-  restaM3: 5.411,
+  restaM3: 1.28,
+  apartadoM3: 5.411,
   piezas: 21,
   diasParado: 5,
   finProceso: "2026-10-01",
@@ -98,8 +99,8 @@ describe("los lotes en el CSV del reporte", () => {
 
   it("el total suma lo apartado en todos los lotes", () => {
     const csv = saldosACsv(especies, productos, "P", [
-      lote({ code: "A", restaM3: 5.411 }),
-      lote({ code: "B", restaM3: 2.5 }),
+      lote({ code: "A", apartadoM3: 5.411 }),
+      lote({ code: "B", apartadoM3: 2.5 }),
     ]);
     expect(csv).toContain("TOTALES");
     expect(csv).toMatch(/TOTALES;;;;/);
@@ -107,7 +108,7 @@ describe("los lotes en el CSV del reporte", () => {
   });
 
   it("un lote sin nada libre NO se esconde: es el que hay que cerrar", () => {
-    const csv = saldosACsv(especies, productos, "P", [lote({ restaM3: 0, piezas: 0 })]);
+    const csv = saldosACsv(especies, productos, "P", [lote({ apartadoM3: 0, piezas: 0 })]);
     expect(csv).toContain("17-2026");
   });
 });
