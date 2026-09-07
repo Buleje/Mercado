@@ -31,12 +31,32 @@ import CtpPatioAging from "./CtpPatioAging";
 import LotesConSaldo, { diasParaVencer } from "./saldos/LotesConSaldo";
 import BalanceDeCapacidad, { calcularBalance } from "./saldos/BalanceDeCapacidad";
 import { logger } from "@/lib/logger";
-import { consumidoDelLote, diasDeEspera, loteVencido, permisosDelLote, piezasLibres, producidoDelLote, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import {
+  consumidoDelLote,
+  diasDeEspera,
+  loteVencido,
+  permisosDelLote,
+  pieTablarDe,
+  piezasLibres,
+  producidoDelLote,
+  volumenLibre,
+  type LoteAserrio,
+} from "@/lib/forestal/lotes-aserrio";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 
+/** Las cuatro preguntas que contesta Saldos, cada una con su pestaña. */
+const SECCIONES = [
+  { id: "estado" as const, label: "Cómo está hoy" },
+  { id: "capacidad" as const, label: "Qué puede salir" },
+  { id: "movimiento" as const, label: "Cómo se movió" },
+  { id: "libro" as const, label: "Lo que firma el libro" },
+];
+type Seccion = (typeof SECCIONES)[number]["id"];
+
 const AVISO = {
-  error: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]",
+  error:
+    "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]",
   warning:
     "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]",
 } as const;
@@ -75,17 +95,24 @@ export function CtpSaldosView({
   const [patio, setPatio] = useState<TrozaConsumible[]>([]);
   /** Permiso elegido para acotar la capacidad. Vacío = toda la planta. */
   const [permisoCapacidad, setPermisoCapacidad] = useState("");
+  const [seccion, setSeccion] = useState<Seccion>("estado");
   useEffect(() => {
     let vivo = true;
     fetch("/api/admin/forestal/lotes-aserrio", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (vivo && Array.isArray(j?.lotes)) setLotes(j.lotes as LoteAserrio[]); })
+      .then((j) => {
+        if (vivo && Array.isArray(j?.lotes)) setLotes(j.lotes as LoteAserrio[]);
+      })
       .catch((err) => logger.warn("[ctp-saldos] lotes no cargaron", { error: String(err) }));
     fetch("/api/admin/forestal/trozas/patio", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (vivo && Array.isArray(j?.trozas)) setPatio(j.trozas as TrozaConsumible[]); })
+      .then((j) => {
+        if (vivo && Array.isArray(j?.trozas)) setPatio(j.trozas as TrozaConsumible[]);
+      })
       .catch((err) => logger.warn("[ctp-saldos] patio no cargó", { error: String(err) }));
-    return () => { vivo = false; };
+    return () => {
+      vivo = false;
+    };
   }, []);
 
   /* Los lotes en la forma que piden los dos reportes. Se arma UNA vez y la usan
@@ -106,7 +133,9 @@ export function CtpSaldosView({
          dijera otra cosa que la pantalla, el que firma no sabría a cuál creerle. */
       restaM3: (() => {
         const p = producidoDelLote(l);
-        return p == null ? null : Math.round((consumidoDelLote(l) * RENDIMIENTO_META - p) * 10000) / 10000;
+        return p == null
+          ? null
+          : Math.round((consumidoDelLote(l) * RENDIMIENTO_META - p) * 10000) / 10000;
       })(),
       apartadoM3: volumenLibre(l),
       piezas: piezasLibres(l).length,
@@ -205,14 +234,15 @@ export function CtpSaldosView({
     }
   }, [data, concil, period.label, lotesDelReporte, balance]);
 
-  /** Lo mismo que se ve, para cruzar en Excel contra la planilla del contador. */
   /**
    * El mismo reporte, en Excel.
    *
-   * `exportToExcel` ya existía y lo usan cuatro módulos del panel; acá sólo se
-   * arma la grilla. Va en TRES hojas —materia prima, productos y lotes— porque
-   * apilar tres tablas distintas en una sola hoja obliga a borrar filas antes
-   * de poder ordenar o filtrar, que es lo que se hace con un Excel.
+   * Va en CUATRO hojas de un mismo archivo —materia prima, productos, lotes y
+   * capacidad— porque apilar cuatro tablas distintas en una sola hoja obliga a
+   * borrar filas antes de poder ordenar o filtrar, que es lo que se hace con
+   * un Excel. Y en UN archivo, no cuatro: `exportToExcel` genera un libro por
+   * llamada, así que llamarlo cuatro veces baja cuatro archivos sueltos y el
+   * navegador bloquea la segunda descarga automática.
    *
    * Las cantidades van como NÚMERO, no como texto: un m³ que llega como cadena
    * no se suma en la planilla, y la razón de exportar a Excel es sumar.
@@ -221,53 +251,93 @@ export function CtpSaldosView({
     if (!data) return;
     setReportError(null);
     try {
-      const { exportToExcel } = await import("@/lib/export-excel");
+      const { exportSheetsToExcel } = await import("@/lib/export-excel");
       const nombre = nombreArchivoSaldos(period.label).replace(/\.csv$/, "");
-      await exportToExcel(
-        data.porEspecie.map((e) => ({
-          Especie: e.especie,
-          "Nombre científico": e.scientific ?? "",
-          CITES: e.cites ? "Sí" : "No",
-          "Ingresado (m³)": e.ingresoM3,
-          "Sin validar (m³)": e.pendienteM3,
-          "Consumido (m³)": e.consumidoM3,
-          "Saldo (m³)": e.saldoM3,
-        })),
-        `${nombre}-materia-prima`,
-        "Materia prima",
+      await exportSheetsToExcel(
+        [
+          {
+            nombre: "Materia prima",
+            filas: data.porEspecie.map((e) => ({
+              Especie: e.especie,
+              "Nombre científico": e.scientific ?? "",
+              CITES: e.cites ? "Sí" : "No",
+              "Ingresado (m³)": e.ingresoM3,
+              "Sin validar (m³)": e.pendienteM3,
+              "Consumido (m³)": e.consumidoM3,
+              "Saldo (m³)": e.saldoM3,
+            })),
+          },
+          {
+            nombre: "Productos",
+            /* Sin columna de unidad a propósito: `productos[]` agrega corridas
+               que pueden venir en m³, pt o unidades, y una unidad inventada en
+               la cabecera haría sumar peras con manzanas en la planilla. Es la
+               misma decisión que ya toma la tabla en pantalla. */
+            filas: data.productos.map((p) => ({
+              Producto: p.producto,
+              Producido: p.producido,
+              Despachado: p.despachado,
+              Disponible: p.stock,
+            })),
+          },
+          {
+            nombre: "Lotes de aserrío",
+            filas: lotesDelReporte.map((l) => ({
+              Lote: l.code,
+              "N° de permiso": l.permisos.join(" + "),
+              Especie: l.especie,
+              Estado: l.status,
+              "Consumido (m³)": l.consumidoM3,
+              "Al 56 % (m³)": l.esperado56M3,
+              "Producido (m³)": l.producidoM3 ?? "",
+              "Resta al 56 % (m³)": l.restaM3 ?? "",
+              "Apartado sin aserrar (m³)": l.apartadoM3,
+              "Piezas libres": l.piezas,
+              "Días parado": l.diasParado ?? "",
+              "Fin de proceso": l.finProceso ?? "",
+              "Días para vencer": l.diasParaVencer ?? "",
+              Plazo: l.vencido
+                ? `${Math.abs(l.diasParaVencer ?? 0)} días vencido`
+                : l.diasParaVencer == null
+                  ? "sin fecha"
+                  : l.diasParaVencer === 0
+                    ? "vence hoy"
+                    : `quedan ${l.diasParaVencer} días`,
+            })),
+          },
+          {
+            /* El techo de producción, con la misma advertencia que la pantalla:
+               es una cota máxima, no una promesa. Sin la columna «Es» el número
+               se lee como stock comprometido. */
+            nombre: "Capacidad de la planta",
+            filas: [
+              ...balance.fuentes.map((f) => ({
+                Fuente: f.label,
+                "Hoy (m³)": f.m3,
+                "Al 56 %": f.convertido ? "sí" : "no (ya es producto)",
+                "En producto (m³)": f.enProducto,
+                "En producto (pt)": pieTablarDe(f.enProducto),
+                Detalle: f.detalle ?? "",
+              })),
+              {
+                Fuente: "CAPACIDAD MÁXIMA",
+                "Hoy (m³)": "",
+                "Al 56 %": "",
+                "En producto (m³)": balance.totalProducto,
+                "En producto (pt)": pieTablarDe(balance.totalProducto),
+                Detalle: permisoCapacidad
+                  ? `Sólo el permiso ${permisoCapacidad}. Cota máxima, no una promesa.`
+                  : "Toda la planta. Cota máxima, no una promesa.",
+              },
+            ],
+          },
+        ],
+        nombre,
       );
-      if (lotesDelReporte.length > 0) {
-        await exportToExcel(
-          lotesDelReporte.map((l) => ({
-            Lote: l.code,
-            "N° de permiso": l.permisos.join(" + "),
-            Especie: l.especie,
-            Estado: l.status,
-            "Consumido (m³)": l.consumidoM3,
-            "Al 56 % (m³)": l.esperado56M3,
-            "Producido (m³)": l.producidoM3 ?? "",
-            "Resta al 56 % (m³)": l.restaM3 ?? "",
-            "Apartado sin aserrar (m³)": l.apartadoM3,
-            "Piezas libres": l.piezas,
-            "Días parado": l.diasParado ?? "",
-            "Fin de proceso": l.finProceso ?? "",
-            "Días para vencer": l.diasParaVencer ?? "",
-            Plazo: l.vencido
-              ? `${Math.abs(l.diasParaVencer ?? 0)} días vencido`
-              : l.diasParaVencer == null
-                ? "sin fecha"
-                : l.diasParaVencer === 0
-                  ? "vence hoy"
-                  : `quedan ${l.diasParaVencer} días`,
-          })),
-          `${nombre}-lotes`,
-          "Lotes de aserrío",
-        );
-      }
     } catch (err) {
       setReportError(err instanceof Error ? err.message : String(err));
     }
-  }, [data, period.label, lotesDelReporte, balance]);
+  }, [data, period.label, lotesDelReporte, balance, permisoCapacidad]);
 
   const descargarCsv = useCallback(() => {
     if (!data) return;
@@ -279,10 +349,7 @@ export function CtpSaldosView({
     a.download = nombreArchivoSaldos(period.label);
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  }, [data, period.label, lotesDelReporte]);
-
-
-
+  }, [data, period.label, lotesDelReporte, balance]);
 
   const excepciones = useMemo(
     () =>
@@ -296,7 +363,10 @@ export function CtpSaldosView({
                planta con stock heredado puede consumir más de lo que recibió
                sin que el libro tenga nada malo. Va sólo si la conciliación
                llegó; si no, el aviso se queda con lo que se sabe. */
-            existenciaFinal: concil?.materiaPrima.map((m) => ({ especie: m.especie, final: m.final })),
+            existenciaFinal: concil?.materiaPrima.map((m) => ({
+              especie: m.especie,
+              final: m.final,
+            })),
           })
         : [],
     [data, curva, concil],
@@ -351,64 +421,121 @@ export function CtpSaldosView({
 
       {data && mp && (
         <>
-          {/* Todo lo que está mal, junto y con nombre propio. Va primero: es lo
-              único de esta pantalla que obliga a hacer algo hoy. */}
+          {/* Todo lo que está mal, junto y con nombre propio. Va primero y va
+              FUERA de las pestañas: es lo único de esta pantalla que obliga a
+              hacer algo hoy, y un aviso escondido detrás de una pestaña es un
+              aviso que nadie ve. */}
           <ExcepcionesSaldo excepciones={excepciones} onIr={onIr} />
 
-          <KpisDeExistencias
-            materiaPrima={mp}
-            porEspecie={data.porEspecie}
-            productos={data.productos}
-            period={period}
-            /* La trayectoria del saldo al lado del número. Sale de la curva, que
-               es un pedido aparte: si no llegó, el héroe se dibuja sin rastro. */
-            serieSaldo={curva?.puntos.map((p) => Number(p.saldo))}
-          />
+          {/* Diez bloques en una sola tirada obligaban a scrollear por lo que
+              no se está mirando. Agrupados por la pregunta que contesta cada
+              uno: cómo está hoy · qué puede salir · cómo se movió · qué firma
+              el libro. */}
+          <div
+            role="tablist"
+            aria-label="Secciones de Saldos"
+            className="flex flex-wrap gap-1 rounded-xl bg-[var(--surface-sunken)] p-1"
+          >
+            {SECCIONES.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                role="tab"
+                aria-selected={seccion === s.id}
+                onClick={() => setSeccion(s.id)}
+                className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-bold transition-colors ${
+                  seccion === s.id
+                    ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
 
-          {/* Lo primero que se pregunta quien abre esta pantalla: cuánta
-              madera tengo y de qué. Va arriba de los derivados porque el saldo
-              se mira antes que la rotación. */}
-          <DisponiblePorTipo
-            especies={data.porEspecie}
-            productos={data.productos}
-            onKardex={setKardexEspecie}
-          />
+          {seccion === "estado" && (
+            <>
+              <KpisDeExistencias
+                materiaPrima={mp}
+                porEspecie={data.porEspecie}
+                productos={data.productos}
+                period={period}
+                /* La trayectoria del saldo al lado del número. Sale de la curva, que
+                   es un pedido aparte: si no llegó, el héroe se dibuja sin rastro. */
+                serieSaldo={curva?.puntos.map((p) => Number(p.saldo))}
+              />
 
-          {/* ¿Sube o baja? La foto de arriba no lo dice, y es con lo que se
-              decide comprar madera. */}
-          {curva && <CurvaDeSaldo curva={curva} periodoLabel={ctpPeriodShortLabel(period)} />}
+              {/* Lo primero que se pregunta quien abre esta pantalla: cuánta
+                  madera tengo y de qué. Va arriba de los derivados porque el
+                  saldo se mira antes que la rotación. */}
+              <DisponiblePorTipo
+                especies={data.porEspecie}
+                productos={data.productos}
+                onKardex={setKardexEspecie}
+              />
 
-          {/* Cómo se llegó al saldo, de qué especie está hecho y en qué estado
-              está el volumen de cada una. */}
-          <CtpSaldosGraficos
-            materiaPrima={mp}
-            porEspecie={data.porEspecie}
-            apertura={apertura}
-            aperturaPendiente={loading}
-          />
+              {/* Gemelo del patio: qué parte de esa madera lleva demasiado
+                  tiempo parada (self-fetch). */}
+              <CtpPatioAging onValorizar={onIr ? () => onIr("rentabilidad") : undefined} />
+            </>
+          )}
 
-          {/* Conciliación: apertura (del cierre anterior) + movimientos = final (ADR-139 rollforward). */}
-          {concil && <TablaConciliacion concil={concil} onKardex={setKardexEspecie} />}
+          {seccion === "capacidad" && (
+            <>
+              {/* El techo: cuánto producto puede salir de las cuatro fuentes. */}
+              <BalanceDeCapacidad
+                balance={balance}
+                permisos={permisosDeLaPlanta}
+                permiso={permisoCapacidad}
+                onPermiso={setPermisoCapacidad}
+              />
 
-          <TablaProductos productos={data.productos} onDespachar={onDespachar} />
+              {/* De dónde sale una parte de ese techo, lote por lote. */}
+              <LotesConSaldo
+                lotes={lotes}
+                seleccion={lotesElegidos}
+                onSeleccion={setLotesElegidos}
+              />
+            </>
+          )}
 
-          {/* Gemelo del patio: materia prima parada por antigüedad (self-fetch). */}
-          <BalanceDeCapacidad
-            balance={balance}
-            permisos={permisosDeLaPlanta}
-            permiso={permisoCapacidad}
-            onPermiso={setPermisoCapacidad}
-          />
+          {seccion === "movimiento" && (
+            <>
+              {/* ¿Sube o baja? La foto del saldo no lo dice, y es con lo que se
+                  decide comprar madera. */}
+              {curva && <CurvaDeSaldo curva={curva} periodoLabel={ctpPeriodShortLabel(period)} />}
 
-          <LotesConSaldo lotes={lotes} seleccion={lotesElegidos} onSeleccion={setLotesElegidos} />
+              {/* Cómo se llegó al saldo, de qué especie está hecho y en qué
+                  estado está el volumen de cada una. */}
+              <CtpSaldosGraficos
+                materiaPrima={mp}
+                porEspecie={data.porEspecie}
+                apertura={apertura}
+                aperturaPendiente={loading}
+              />
+            </>
+          )}
 
-          <CtpPatioAging onValorizar={onIr ? () => onIr("rentabilidad") : undefined} />
+          {seccion === "libro" && (
+            <>
+              {/* Conciliación: apertura (del cierre anterior) + movimientos =
+                  final (ADR-139 rollforward). Es la cuenta que firma el libro. */}
+              {concil && <TablaConciliacion concil={concil} onKardex={setKardexEspecie} />}
+
+              <TablaProductos productos={data.productos} onDespachar={onDespachar} />
+            </>
+          )}
         </>
       )}
       {loading && !data && <PanelSkeleton kpis={4} />}
 
       {kardexEspecie && (
-        <CtpKardexModal especie={kardexEspecie} period={period} onClose={() => setKardexEspecie(null)} />
+        <CtpKardexModal
+          especie={kardexEspecie}
+          period={period}
+          onClose={() => setKardexEspecie(null)}
+        />
       )}
     </div>
   );
