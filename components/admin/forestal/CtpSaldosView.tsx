@@ -34,10 +34,12 @@ import DetalleDeFuente, { textoDeFiltros } from "./saldos/DetalleDeFuente";
 import {
   armarBalance,
   opcionesDeCapacidad,
+  type CorridaDisponible,
   type EntradaCapacidad,
-  type FiltrosCapacidad,
   type FuenteDeCapacidad,
 } from "@/lib/forestal/capacidad-de-planta";
+import { useParamsDeSaldos } from "@/hooks/use-params-de-saldos";
+import { applyCtpPeriodParams } from "@/lib/forestal/ctp-period";
 import { logger } from "@/lib/logger";
 import {
   consumidoDelLote,
@@ -61,6 +63,7 @@ const SECCIONES = [
   { id: "libro" as const, label: "Lo que firma el libro" },
 ];
 type Seccion = (typeof SECCIONES)[number]["id"];
+const SECCION_IDS = SECCIONES.map((s) => s.id) as readonly Seccion[];
 
 const AVISO = {
   error:
@@ -101,11 +104,18 @@ export function CtpSaldosView({
      todavía no se recibió. Va por su cuenta como los lotes — no depende del
      período: madera que llegó en julio y sigue en el patio es capacidad de hoy. */
   const [patio, setPatio] = useState<TrozaConsumible[]>([]);
-  /** Permiso → especie → guía. Objeto vacío = toda la planta. */
-  const [filtrosCapacidad, setFiltrosCapacidad] = useState<FiltrosCapacidad>({});
+  /* La pestaña y el recorte permiso→especie→guía viven en la URL: el link a
+     «la capacidad del permiso X» tiene que abrir eso, no la pestaña default. */
+  const {
+    seccion,
+    setSeccion,
+    filtros: filtrosCapacidad,
+    setFiltros: setFiltrosCapacidad,
+  } = useParamsDeSaldos<Seccion>(SECCION_IDS, "estado");
   /** La fuente cuyo detalle está abierto en el modal. */
   const [detalleFuente, setDetalleFuente] = useState<FuenteDeCapacidad | null>(null);
-  const [seccion, setSeccion] = useState<Seccion>("estado");
+  /** Las corridas con saldo en el depósito HOY (foto, sin período). `null` = cargando. */
+  const [corridas, setCorridas] = useState<CorridaDisponible[] | null>(null);
   useEffect(() => {
     let vivo = true;
     fetch("/api/admin/forestal/lotes-aserrio", { credentials: "include" })
@@ -120,9 +130,29 @@ export function CtpSaldosView({
         if (vivo && Array.isArray(j?.trozas)) setPatio(j.trozas as TrozaConsumible[]);
       })
       .catch((err) => logger.warn("[ctp-saldos] patio no cargó", { error: String(err) }));
+    /* Lo disponible es una FOTO del depósito, no un movimiento del mes: un
+       paquete aserrado en 2024 que nadie despachó sigue estando hoy. Por eso
+       va SIN `soloDelPeriodo` (ADR-349) — el período sólo acompaña. */
+    fetch(
+      `/api/admin/forestal/ctp?${applyCtpPeriodParams(new URLSearchParams({ disponibles: "1" }), period)}`,
+      {
+        credentials: "include",
+      },
+    )
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (vivo)
+          setCorridas(Array.isArray(j?.corridas) ? (j.corridas as CorridaDisponible[]) : []);
+      })
+      .catch((err) => {
+        logger.warn("[ctp-saldos] disponibles no cargaron", { error: String(err) });
+        if (vivo) setCorridas([]);
+      });
     return () => {
       vivo = false;
     };
+    // El período sólo acompaña al fetch de disponibles; los otros dos no lo usan.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* Los lotes en la forma que piden los dos reportes. Se arma UNA vez y la usan
@@ -132,6 +162,7 @@ export function CtpSaldosView({
     const ahora = new Date();
     const elegidos = lotesElegidos.size > 0 ? lotes.filter((l) => lotesElegidos.has(l.id)) : lotes;
     return elegidos.map((l) => ({
+      id: l.id,
       code: l.code,
       permisos: permisosDelLote(l),
       especie: l.speciesCommon,
@@ -153,6 +184,16 @@ export function CtpSaldosView({
       finProceso: l.finProceso ? String(l.finProceso).slice(0, 10) : null,
       diasParaVencer: diasParaVencer(l.finProceso, ahora),
       vencido: loteVencido(l, ahora),
+      /* Las piezas, con su guía: el cruce lote↔guía que pide el detalle. */
+      trozas: l.trozas.map((t) => ({
+        id: t.id,
+        codigo: t.codigoPlanta ?? t.codificacion ?? "—",
+        especie: t.especieComun ?? l.speciesCommon,
+        m3: Number(t.volumenM3 ?? 0),
+        permiso: (t.permiso ?? "").trim(),
+        guia: (t.gtfNumber ?? "").trim(),
+        consumida: Boolean(t.consumidaEnId),
+      })),
     }));
   }, [lotes, lotesElegidos]);
 
@@ -166,7 +207,8 @@ export function CtpSaldosView({
     () => ({
       patio,
       lotes: lotesDelReporte,
-      productos: data?.productos ?? [],
+      corridas: corridas ?? undefined,
+      stockLibroM3: (data?.productos ?? []).reduce((a, p) => a + Number(p.stock ?? 0), 0),
       pendienteM3: Number(mp?.pendienteM3 ?? 0),
       /* El stock que muestra ESTA pantalla es el del período elegido —el mismo
          del bloque «Stock de productos transformados» de arriba—. Con el período
@@ -175,20 +217,41 @@ export function CtpSaldosView({
          misma pantalla, sin explicar cuál es cuál, es peor que una sola
          acotada. */
       periodoLabel: period.label,
+      periodo: { from: period.from, to: period.to },
     }),
-    [patio, lotesDelReporte, data?.productos, mp?.pendienteM3, period.label],
+    [
+      patio,
+      lotesDelReporte,
+      corridas,
+      data?.productos,
+      mp?.pendienteM3,
+      period.label,
+      period.from,
+      period.to,
+    ],
   );
 
   /** Las opciones de los tres filtros, cada una acotada por la anterior. */
   const opcionesCapacidad = useMemo(
-    () => opcionesDeCapacidad(patio, filtrosCapacidad),
-    [patio, filtrosCapacidad],
+    () => opcionesDeCapacidad(patio, filtrosCapacidad, corridas ?? []),
+    [patio, filtrosCapacidad, corridas],
   );
 
   const balance = useMemo(
     () => armarBalance(entradaCapacidad, filtrosCapacidad),
     [entradaCapacidad, filtrosCapacidad],
   );
+
+  /** Los lotes bajo el mismo recorte que la tarjeta (permiso y especie; la guía no aplica). */
+  const lotesFiltrados = useMemo(() => {
+    const f = filtrosCapacidad;
+    if (f.guia) return [];
+    return lotes.filter(
+      (l) =>
+        (!f.permiso || permisosDelLote(l).includes(f.permiso)) &&
+        (!f.especie || l.speciesCommon.trim().toUpperCase() === f.especie.toUpperCase()),
+    );
+  }, [lotes, filtrosCapacidad]);
 
   // Reporte de existencias imprimible (PDF) para fiscalización: misma data del
   // panel + identidad del CTP (best-effort desde la Ficha).
@@ -475,10 +538,20 @@ export function CtpSaldosView({
               />
 
               {/* De dónde sale una parte de ese techo, lote por lote. */}
+              {/* El mismo recorte que la tarjeta de arriba: la pestaña entera habla
+                  de un solo título. La guía no acota lotes (juntan varias) y se
+                  dice, en vez de esconder la tabla. */}
               <LotesConSaldo
-                lotes={lotes}
+                lotes={lotesFiltrados}
                 seleccion={lotesElegidos}
                 onSeleccion={setLotesElegidos}
+                vacioMotivo={
+                  lotes.length === 0
+                    ? undefined
+                    : filtrosCapacidad.guia
+                      ? "Un lote junta piezas de varias guías: no se puede acotar a una sola. Quitá el filtro de guía para verlos."
+                      : `Ningún lote de ${[filtrosCapacidad.permiso && `permiso ${filtrosCapacidad.permiso}`, filtrosCapacidad.especie && `especie ${filtrosCapacidad.especie}`].filter(Boolean).join(" y ")}.`
+                }
               />
             </>
           )}

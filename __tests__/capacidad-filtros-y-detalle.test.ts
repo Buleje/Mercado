@@ -19,9 +19,12 @@ import {
   lotesDeFuente,
   opcionesDeCapacidad,
   trozasDeFuente,
+  type CorridaDisponible,
   type EntradaCapacidad,
   type LoteDeCapacidad,
 } from "@/lib/forestal/capacidad-de-planta";
+import { tablaDeFuente } from "@/lib/forestal/capacidad-detalle-filas";
+import { escribirParams, leerParams } from "@/hooks/use-params-de-saldos";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 
 const troza = (o: Partial<TrozaConsumible> & { id: string }): TrozaConsumible =>
@@ -35,6 +38,8 @@ const troza = (o: Partial<TrozaConsumible> & { id: string }): TrozaConsumible =>
   }) as TrozaConsumible;
 
 const lote = (o: Partial<LoteDeCapacidad> & { code: string }): LoteDeCapacidad => ({
+  id: o.code,
+  trozas: [],
   permisos: [],
   especie: "TORNILLO",
   status: "abierto",
@@ -44,6 +49,19 @@ const lote = (o: Partial<LoteDeCapacidad> & { code: string }): LoteDeCapacidad =
   restaM3: 0,
   apartadoM3: 0,
   piezas: 0,
+  ...o,
+});
+
+const corrida = (o: Partial<CorridaDisponible> & { id: string }): CorridaDisponible => ({
+  fecha: "2026-08-01",
+  lote: "L-1",
+  producto: "ASERRADA",
+  especie: "TORNILLO",
+  unidad: "m3",
+  disponible: 0,
+  titularOrigen: [],
+  gtfOrigen: [],
+  paquetes: [],
   ...o,
 });
 
@@ -63,7 +81,14 @@ const ENTRADA: EntradaCapacidad = {
     lote({ code: "L-1", permisos: ["P-1"], especie: "TORNILLO", restaM3: 2 }),
     lote({ code: "L-2", permisos: ["P-2"], especie: "CAPIRONA", restaM3: 1 }),
   ],
-  productos: [{ producto: "ASERRADA · TORNILLO", producido: 20, despachado: 5, stock: 15 }],
+  /* Tres corridas con saldo: una de un solo permiso, una con dos adentro y una
+     sin origen. El libro del período firma más de lo que hay (usados). */
+  corridas: [
+    corrida({ id: "c1", disponible: 10, titularOrigen: ["P-1"], gtfOrigen: ["G-1"], especie: "TORNILLO" }),
+    corrida({ id: "c2", disponible: 3, titularOrigen: ["P-1", "P-2"], gtfOrigen: ["G-1", "G-3"] }),
+    corrida({ id: "c3", disponible: 2, titularOrigen: [], gtfOrigen: [] }),
+  ],
+  stockLibroM3: 62,
   pendienteM3: 7,
   periodoLabel: "julio de 2026",
 };
@@ -110,7 +135,9 @@ describe("el balance bajo filtros", () => {
     expect(f.patio.m3).toBe(20); // A+B+C
     expect(f.porRecepcionar.m3).toBe(12); // D(5) + pendiente del libro(7)
     expect(f.lotes.m3).toBe(3);
+    // Lo DISPONIBLE hoy (10+3+2), no los 62 que firma el libro.
     expect(f.productos.m3).toBe(15);
+    expect(f.productos.detalle).toMatch(/libro firma 62/);
   });
 
   it("el pendiente del libro NO se reparte entre permisos", () => {
@@ -119,12 +146,39 @@ describe("el balance bajo filtros", () => {
     expect(rec.m3).toBe(5); // sólo la troza D; el pendiente de 7 se cae
   });
 
-  it("los productos quedan en cero y DICEN por qué", () => {
+  it("los productos se atribuyen SÓLO por corrida entera de ese permiso", () => {
     const b = armarBalance(ENTRADA, { permiso: "P-1" });
     const prod = b.fuentes.find((x) => x.clave === "productos")!;
+    expect(prod.m3).toBe(10); // c1 sí; c2 (mezcla) y c3 (sin origen) no
+    expect(prod.filas).toBe(1);
+    expect(prod.detalle).toMatch(/3 m³ en 1 corrida con origen mezclado/);
+    expect(prod.detalle).toMatch(/2 m³ sin origen/);
+  });
+
+  it("con un permiso que ninguna corrida trae entera, cero y el porqué", () => {
+    const b = armarBalance(ENTRADA, { permiso: "P-2" });
+    const prod = b.fuentes.find((x) => x.clave === "productos")!;
     expect(prod.m3).toBe(0);
-    expect(prod.noAtribuible).toMatch(/no se puede atribuir/i);
-    expect(prod.filas).toBe(0);
+    expect(prod.noAtribuible).toMatch(/mezclado/);
+  });
+
+  it("sin corridas cargadas usa el stock del libro y lo dice", () => {
+    const b = armarBalance({ ...ENTRADA, corridas: undefined }, {});
+    const prod = b.fuentes.find((x) => x.clave === "productos")!;
+    expect(prod.m3).toBe(62);
+    expect(prod.detalle).toMatch(/libro/);
+  });
+
+  it("una corrida en otra unidad no se suma y se avisa", () => {
+    const b = armarBalance({ ...ENTRADA, corridas: [corrida({ id: "x", unidad: "pt", disponible: 400 })] }, {});
+    const prod = b.fuentes.find((x) => x.clave === "productos")!;
+    expect(prod.m3).toBe(0);
+    expect(prod.detalle).toMatch(/1 corrida en pt no se suman/);
+  });
+
+  it("el permiso que sólo existe ya aserrado se puede elegir igual", () => {
+    const { permisos } = opcionesDeCapacidad([], {}, [corrida({ id: "y", disponible: 4, titularOrigen: ["P-9"] })]);
+    expect(permisos).toEqual([{ valor: "P-9", piezas: 1, m3: 4 }]);
   });
 
   it("con una guía elegida los lotes se caen y lo dicen", () => {
@@ -187,5 +241,77 @@ describe("la fecha de la pieza", () => {
 
   it("sin ninguna fecha no inventa una", () => {
     expect(filaDeTroza(troza({ id: "F4" })).fecha).toBe("—");
+  });
+});
+
+
+describe("las filas del detalle (tabla)", () => {
+  it("un lote trae sus piezas como filas hijas, con la guía", () => {
+    const entrada: EntradaCapacidad = {
+      ...ENTRADA,
+      lotes: [
+        lote({
+          code: "L-9",
+          permisos: ["P-1"],
+          trozas: [{ id: "t1", codigo: "T-1", especie: "TORNILLO", m3: 1.5, permiso: "P-1", guia: "G-1", consumida: false }],
+        }),
+      ],
+    };
+    const fuente = armarBalance(entrada, {}).fuentes.find((f) => f.clave === "lotes")!;
+    const t = tablaDeFuente(fuente, entrada, {});
+    expect(t.filas[0].celdas.Lote).toBe("L-9");
+    expect(t.filas[0].hijas?.filas[0]).toMatchObject({ Código: "T-1", Guía: "G-1", Estado: "sin aserrar" });
+  });
+
+  it("productos = una fila por corrida, con su permiso o «mezclados»", () => {
+    const fuente = armarBalance(ENTRADA, {}).fuentes.find((f) => f.clave === "productos")!;
+    const t = tablaDeFuente(fuente, ENTRADA, {});
+    expect(t.filas.map((f) => f.celdas.Permiso)).toEqual(["P-1", "2 mezclados", "sin origen"]);
+  });
+});
+
+describe("la URL de Saldos", () => {
+  const SECC = ["estado", "capacidad"] as const;
+
+  it("lee pestaña y filtros, ignorando una pestaña que no existe", () => {
+    expect(leerParams("?seccion=capacidad&permiso=P-1&guia=G-1", SECC)).toEqual({
+      seccion: "capacidad",
+      filtros: { permiso: "P-1", guia: "G-1" },
+    });
+    expect(leerParams("?seccion=otra", SECC).seccion).toBeNull();
+  });
+
+  it("escribe lo que hay y borra lo vacío", () => {
+    const url = escribirParams(new URL("http://x/admin?tab=ctp&vista=saldos&especie=VIEJA"), "capacidad", { permiso: "P-1" });
+    expect(url.searchParams.get("seccion")).toBe("capacidad");
+    expect(url.searchParams.get("permiso")).toBe("P-1");
+    expect(url.searchParams.has("especie")).toBe(false);
+    expect(url.searchParams.get("vista")).toBe("saldos");
+  });
+});
+
+describe("la conciliación con el libro", () => {
+  it("separa lo que queda del período de lo anterior, número por número", () => {
+    const entrada: EntradaCapacidad = {
+      ...ENTRADA,
+      stockLibroM3: 62,
+      periodo: { from: "2026-07-01", to: "2026-09-30" },
+      corridas: [
+        corrida({ id: "p1", fecha: "2026-08-01", disponible: 7.5 }),
+        corrida({ id: "v1", fecha: "2025-12-10", disponible: 12.5 }),
+      ],
+    };
+    const prod = armarBalance(entrada, {}).fuentes.find((f) => f.clave === "productos")!;
+    expect(prod.m3).toBe(20);
+    expect(prod.detalle).toMatch(/libro firma 62/);
+    expect(prod.detalle).toMatch(/quedan 7\.5 disponibles/);
+    expect(prod.detalle).toMatch(/12\.5 más de períodos anteriores/);
+    expect(prod.detalle).toMatch(/→ 20 hoy/);
+  });
+
+  it("si el libro y el depósito coinciden, no inventa una conciliación", () => {
+    const entrada: EntradaCapacidad = { ...ENTRADA, stockLibroM3: 15 };
+    const prod = armarBalance(entrada, {}).fuentes.find((f) => f.clave === "productos")!;
+    expect(prod.detalle).not.toMatch(/libro/);
   });
 });

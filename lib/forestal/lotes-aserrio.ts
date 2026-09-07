@@ -77,6 +77,8 @@ export interface TrozaDelLote {
   woodEntryId?: string;
   /** N° de permiso (título habilitante) del ingreso — viaja en `WoodEntry.originCode`. */
   permiso?: string | null;
+  /** La guía por la que entró — también del ingreso, no de la pieza. */
+  gtfNumber?: string | null;
   /**
    * La corrida que YA se comió esta pieza, o `null` si sigue libre.
    *

@@ -40,7 +40,18 @@ const PARAM_SUB = "sub";
 
 /** Todos los parámetros de navegación interna, para que `navigateTab` los limpie
  *  de una: si borrara sólo `vista`, un `?sub=` huérfano sobreviviría al salto. */
-export const PARAMS_DE_VISTA = [PARAM_VISTA, PARAM_SUB] as const;
+export const PARAMS_DE_VISTA = [
+  PARAM_VISTA,
+  PARAM_SUB,
+  /* Los de Saldos (`use-params-de-saldos`): la pestaña interna y el recorte
+     permiso/especie/guía. Van acá y no en su hook porque quien los limpia es
+     `navigateTab`, y un `?permiso=` huérfano le impondría un filtro a un
+     módulo que no sabe qué es. */
+  "seccion",
+  "permiso",
+  "especie",
+  "guia",
+] as const;
 
 /** Lee la vista que pide la URL, validada contra las que el módulo declara. */
 function vistaDeUrl(validas: readonly string[], param: string): string | null {

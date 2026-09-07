@@ -52,7 +52,11 @@ function Filtro({
   todos: string;
   onChange: (v: string) => void;
 }) {
-  if (opciones.length === 0) return null;
+  /* Se dibuja si hay opciones O si ya hay un valor puesto: con un filtro que
+     llegó por la URL y el patio todavía cargando, las opciones están vacías y
+     sin esto el filtro quedaba invisible — imposible de ver y de quitar. */
+  if (opciones.length === 0 && !valor) return null;
+  const conocido = opciones.some((o) => o.valor === valor);
   return (
     <label className="flex items-center gap-2 text-xs">
       <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
@@ -60,6 +64,10 @@ function Filtro({
       </span>
       <select value={valor} onChange={(e) => onChange(e.target.value)} className={SELECT}>
         <option value="">{todos}</option>
+        {/* Un valor que no está entre las opciones (link viejo, o datos que
+            aún no llegaron) se muestra igual: un select en blanco con un
+            filtro activo es un filtro fantasma. */}
+        {valor && !conocido && <option value={valor}>{valor}</option>}
         {opciones.map((o) => (
           <option key={o.valor} value={o.valor}>
             {o.valor} · {fmtM3(o.m3)} m³ ({o.piezas})

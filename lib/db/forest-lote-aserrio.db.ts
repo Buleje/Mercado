@@ -223,8 +223,11 @@ export class ForestLoteAserrioDB {
             // (Brandon, 2026-09-01: "en la columna de N° de permiso se tiene
             // que rellenar según el número de permiso de las trozas"). Sin
             // este join, un bloque sembrado desde un lote no podía saber de
-            // qué título habilitante salió su rolliza.
-            entry: { select: { originCode: true } },
+            // qué título habilitante salió su rolliza. La guía viaja con él:
+            // es lo primero que se cruza en una fiscalización, y la lectura
+            // de UN lote (`get`) ya la mandaba — las dos lecturas tienen que
+            // decir lo mismo.
+            entry: { select: { originCode: true, gtfNumber: true } },
           },
           orderBy: { orden: "asc" },
         },
@@ -352,6 +355,7 @@ export class ForestLoteAserrioDB {
           d2Cm: num(t.d2Cm),
           diametroCm: num(t.diametroCm),
           permiso: entry.originCode,
+          gtfNumber: entry.gtfNumber,
           consumidaEnId:
             consumidaEn && consumidaEn.deletedAt == null && consumidaEn.status !== "anulado"
               ? consumidaEn.id

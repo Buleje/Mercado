@@ -8,113 +8,45 @@
  * cruzar contra el patio ni contra una guía, que es exactamente lo que pide un
  * fiscalizador —y lo que hace el dueño antes de comprometer una venta—.
  *
- * Cada fuente trae sus propias columnas porque son cosas distintas: una troza
- * tiene código y dimensiones, un lote tiene tope y plazo, un producto tiene
- * piezas. Forzarlas a una tabla común obligaría a dejar la mitad en blanco.
+ * Las filas las arma `lib/forestal/capacidad-detalle-filas.ts`, la MISMA
+ * función que alimenta el Excel y el PDF: lo que se ve es lo que se baja.
+ *
+ * Un lote se despliega y muestra sus piezas, cada una con su guía: es el cruce
+ * lote↔guía que antes obligaba a salir a la Ficha del lote.
  *
  * El reporte que baja de acá es SÓLO lo filtrado, y lo dice en el encabezado:
  * un PDF que no declara su filtro se archiva como si fuera todo el patio.
  */
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { DataTable } from "@buleje/design-system";
-import { FileSpreadsheet, Layers, Printer } from "@buleje/design-system/icons";
+import {
+  ChevronDown,
+  ChevronRight,
+  FileSpreadsheet,
+  Layers,
+  Printer,
+} from "@buleje/design-system/icons";
 import { Btn, MODAL_BODY } from "../ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import {
-  filaDeTroza,
   hayFiltro,
-  lotesDeFuente,
-  trozasDeFuente,
   type EntradaCapacidad,
   type FiltrosCapacidad,
   type FuenteDeCapacidad,
 } from "@/lib/forestal/capacidad-de-planta";
+import {
+  esColumnaM3,
+  esColumnaNumerica,
+  filasPlanas,
+  tablaDeFuente,
+  type Celda,
+} from "@/lib/forestal/capacidad-detalle-filas";
 import { printCapacidadDetalle } from "@/lib/forestal/capacidad-detalle-print";
 
 const pt = (v: number) => pieTablarDe(v).toLocaleString("es-PE");
-
-/** Las filas de la fuente, ya en la forma que se muestra y se exporta. */
-function filasDe(
-  fuente: FuenteDeCapacidad,
-  entrada: EntradaCapacidad,
-  filtros: FiltrosCapacidad,
-): { columnas: string[]; filas: Record<string, string | number>[] } {
-  if (fuente.clave === "patio" || fuente.clave === "porRecepcionar") {
-    return {
-      columnas: [
-        "Código",
-        "Especie",
-        "Dimensiones",
-        "m³",
-        "pt",
-        "Permiso",
-        "Guía",
-        "Proveedor",
-        "Fecha",
-      ],
-      filas: trozasDeFuente(fuente.clave, entrada.patio, filtros).map((t) => {
-        const f = filaDeTroza(t);
-        return {
-          Código: f.codigo,
-          Especie: f.especie,
-          Dimensiones: f.dimensiones,
-          "m³": f.m3,
-          pt: f.pt,
-          Permiso: f.permiso,
-          Guía: f.guia,
-          Proveedor: f.proveedor,
-          Fecha: f.fecha,
-        };
-      }),
-    };
-  }
-  if (fuente.clave === "lotes") {
-    return {
-      columnas: [
-        "Lote",
-        "Permiso",
-        "Especie",
-        "Estado",
-        "Consumido (m³)",
-        "Al 56 % (m³)",
-        "Producido (m³)",
-        "Resta (m³)",
-        "Resta (pt)",
-        "Piezas",
-      ],
-      filas: lotesDeFuente(entrada.lotes, filtros).map((l) => ({
-        Lote: l.code,
-        Permiso: l.permisos.join(" + ") || "—",
-        Especie: l.especie ?? "—",
-        Estado: l.status,
-        "Consumido (m³)": l.consumidoM3,
-        "Al 56 % (m³)": l.esperado56M3,
-        /* Vacío y no 0: una corrida en pt o kg no se puede sumar en m³, y un
-           cero ahí se leería como «no produjo nada». */
-        "Producido (m³)": l.producidoM3 ?? "",
-        "Resta (m³)": l.restaM3 ?? "",
-        "Resta (pt)": l.restaM3 == null ? "" : pieTablarDe(l.restaM3),
-        Piezas: l.piezas,
-      })),
-    };
-  }
-  return {
-    columnas: ["Producto", "Producido", "Despachado", "Disponible", "Disponible (pt)"],
-    /* Sin columna de unidad a propósito: `productos[]` agrega corridas que
-       pueden venir en m³, pt o unidades. El pie tablar se calcula igual porque
-       la fila que llega acá ya está en m³ (es la que suma el balance). */
-    filas: entrada.productos.map((p) => ({
-      Producto: p.producto,
-      Producido: p.producido,
-      Despachado: p.despachado,
-      Disponible: p.stock,
-      "Disponible (pt)": pieTablarDe(p.stock),
-    })),
-  };
-}
 
 /** Cómo se lee el filtro puesto, para el encabezado y para el reporte. */
 export function textoDeFiltros(f: FiltrosCapacidad): string {
@@ -124,6 +56,11 @@ export function textoDeFiltros(f: FiltrosCapacidad): string {
     f.guia && `guía ${f.guia}`,
   ].filter(Boolean);
   return partes.length === 0 ? "Toda la planta" : `Sólo ${partes.join(" · ")}`;
+}
+
+function Valor({ col, v }: { col: string; v: Celda }) {
+  if (typeof v !== "number") return <>{v}</>;
+  return <>{esColumnaM3(col) ? fmtM3(v) : v.toLocaleString("es-PE")}</>;
 }
 
 export default function DetalleDeFuente({
@@ -140,13 +77,22 @@ export default function DetalleDeFuente({
   onClose: () => void;
 }) {
   const [error, setError] = useState<string | null>(null);
-  const { columnas, filas } = useMemo(
-    () => filasDe(fuente, entrada, filtros),
-    [fuente, entrada, filtros],
-  );
+  const [abiertas, setAbiertas] = useState<Set<number>>(new Set());
+  const tabla = useMemo(() => tablaDeFuente(fuente, entrada, filtros), [fuente, entrada, filtros]);
+  const { columnas, filas } = tabla;
+  const planas = useMemo(() => filasPlanas(tabla), [tabla]);
   const nombreArchivo = `capacidad-${fuente.clave}-${periodoLabel}`
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-");
+  const conHijas = filas.some((f) => f.hijas);
+
+  const alternar = (i: number) =>
+    setAbiertas((s) => {
+      const n = new Set(s);
+      if (n.has(i)) n.delete(i);
+      else n.add(i);
+      return n;
+    });
 
   const excel = async () => {
     setError(null);
@@ -154,7 +100,19 @@ export default function DetalleDeFuente({
       const { exportSheetsToExcel } = await import("@/lib/export-excel");
       await exportSheetsToExcel(
         [
-          { nombre: fuente.label.slice(0, 31), filas },
+          { nombre: fuente.label.slice(0, 31), filas: planas },
+          /* Las piezas de los lotes van en su hoja, con el lote al lado: en el
+             archivo no hay filas que desplegar. */
+          ...(conHijas
+            ? [
+                {
+                  nombre: "Piezas por lote",
+                  filas: filas.flatMap((f) =>
+                    (f.hijas?.filas ?? []).map((h) => ({ Lote: f.celdas[columnas[0]], ...h })),
+                  ),
+                },
+              ]
+            : []),
           {
             /* El filtro viaja EN el archivo: un Excel suelto en un correo no
                tiene cómo decir de qué recorte salió. */
@@ -162,7 +120,7 @@ export default function DetalleDeFuente({
             filas: [
               { Dato: "Fuente", Valor: fuente.label },
               { Dato: "Filtro", Valor: textoDeFiltros(filtros) },
-              { Dato: "Período", Valor: periodoLabel },
+              { Dato: "Período del libro", Valor: periodoLabel },
               { Dato: "Filas", Valor: filas.length },
               { Dato: "En producto (m³)", Valor: fuente.enProducto },
               { Dato: "En producto (pt)", Valor: pieTablarDe(fuente.enProducto) },
@@ -184,7 +142,7 @@ export default function DetalleDeFuente({
         filtro: textoDeFiltros(filtros),
         periodoLabel,
         columnas,
-        filas,
+        filas: planas,
         totalM3: fuente.m3,
         enProductoM3: fuente.enProducto,
         convertido: fuente.convertido,
@@ -228,6 +186,8 @@ export default function DetalleDeFuente({
           </span>
         </div>
 
+        {fuente.detalle && <p className="text-xs text-[var(--text-tertiary)]">{fuente.detalle}</p>}
+
         {error && (
           <p className="rounded-xl border-2 border-[var(--data-error-500)] px-3 py-2 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
             {error}
@@ -242,41 +202,92 @@ export default function DetalleDeFuente({
           <DataTable>
             <thead>
               <tr>
+                {conHijas && <th className="w-8" aria-label="Desplegar" />}
                 {columnas.map((c) => (
-                  <th
-                    key={c}
-                    className={
-                      /m³|pt|Piezas|Producido|Despachado|Disponible|Consumido|Resta|56/.test(c)
-                        ? "text-right"
-                        : undefined
-                    }
-                  >
+                  <th key={c} className={esColumnaNumerica(c) ? "text-right" : undefined}>
                     {c}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {filas.map((f, i) => (
-                <tr key={`${f[columnas[0]]}-${i}`}>
-                  {columnas.map((c) => {
-                    const v = f[c];
-                    const numerica = typeof v === "number";
-                    return (
-                      <td
-                        key={c}
-                        className={numerica ? "text-right font-mono tabular-nums" : undefined}
-                      >
-                        {numerica && /m³|Resta|Consumido|56/.test(c)
-                          ? fmtM3(v)
-                          : numerica
-                            ? v.toLocaleString("es-PE")
-                            : v}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
+              {filas.map((f, i) => {
+                const abierta = abiertas.has(i);
+                return (
+                  <Fragment key={`${f.celdas[columnas[0]]}-${i}`}>
+                    <tr>
+                      {conHijas && (
+                        <td className="px-1">
+                          {f.hijas ? (
+                            <button
+                              type="button"
+                              onClick={() => alternar(i)}
+                              aria-expanded={abierta}
+                              aria-label={abierta ? "Ocultar piezas" : "Ver piezas"}
+                              className="rounded p-1 text-[var(--accent-dark)] hover:bg-[var(--accent-soft)] dark:text-[var(--accent)]"
+                            >
+                              {abierta ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </button>
+                          ) : null}
+                        </td>
+                      )}
+                      {columnas.map((c) => (
+                        <td
+                          key={c}
+                          className={
+                            typeof f.celdas[c] === "number"
+                              ? "text-right font-mono tabular-nums"
+                              : undefined
+                          }
+                        >
+                          <Valor col={c} v={f.celdas[c]} />
+                        </td>
+                      ))}
+                    </tr>
+                    {abierta && f.hijas && (
+                      <tr>
+                        <td
+                          colSpan={columnas.length + 1}
+                          className="bg-[var(--surface-sunken)] px-4 py-2"
+                        >
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="text-[var(--text-tertiary)]">
+                                {f.hijas.columnas.map((c) => (
+                                  <th
+                                    key={c}
+                                    className={`py-1 font-bold ${esColumnaNumerica(c) ? "text-right" : "text-left"}`}
+                                  >
+                                    {c}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {f.hijas.filas.map((h, j) => (
+                                <tr key={j} className="border-t border-[var(--rule-soft)]">
+                                  {f.hijas!.columnas.map((c) => (
+                                    <td
+                                      key={c}
+                                      className={`py-1 ${typeof h[c] === "number" ? "text-right font-mono tabular-nums" : ""}`}
+                                    >
+                                      <Valor col={c} v={h[c]} />
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </DataTable>
         )}

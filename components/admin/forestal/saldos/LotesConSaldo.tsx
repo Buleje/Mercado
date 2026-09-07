@@ -52,7 +52,10 @@ import { Th } from "../ctp-section-shared";
  * menos de plazo. Un timestamp completo sí se convierte al día de Lima, que es
  * donde abre la planta. Mismo criterio que `claveDelDia` en el centro de IA.
  */
-export function diasParaVencer(finProceso: string | Date | null | undefined, ahora: Date): number | null {
+export function diasParaVencer(
+  finProceso: string | Date | null | undefined,
+  ahora: Date,
+): number | null {
   if (!finProceso) return null;
   const clave =
     typeof finProceso === "string" && finProceso.length <= 10
@@ -74,7 +77,14 @@ export function diasParaVencer(finProceso: string | Date | null | undefined, aho
 const r4 = (v: number) => Math.round(v * 10000) / 10000;
 
 const fecha = (v: string | Date | null | undefined): string =>
-  v ? new Date(v).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }) : "—";
+  v
+    ? new Date(v).toLocaleDateString("es-PE", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+      })
+    : "—";
 
 function TextoPlazo({ dias, vencido }: { dias: number | null; vencido: boolean }) {
   if (dias == null) return <span className="text-[var(--text-tertiary)]">sin fecha</span>;
@@ -85,10 +95,21 @@ function TextoPlazo({ dias, vencido }: { dias: number | null; vencido: boolean }
       </span>
     );
   }
-  if (dias === 0) return <span className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">vence hoy</span>;
+  if (dias === 0)
+    return (
+      <span className="font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+        vence hoy
+      </span>
+    );
   const apura = dias <= 3;
   return (
-    <span className={apura ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]"}>
+    <span
+      className={
+        apura
+          ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+          : "text-[var(--text-secondary)]"
+      }
+    >
       quedan {dias} {dias === 1 ? "día" : "días"}
     </span>
   );
@@ -99,14 +120,31 @@ export default function LotesConSaldo({
   ahora = new Date(),
   seleccion,
   onSeleccion,
+  vacioMotivo,
 }: {
   lotes: LoteAserrio[];
   ahora?: Date;
   /** Ids tildados. La selección vive ARRIBA porque el reporte la necesita. */
   seleccion?: Set<string>;
   onSeleccion?: (ids: Set<string>) => void;
+  /**
+   * Por qué no hay filas, cuando es por un filtro y no porque no haya lotes.
+   * Sin esto la tabla desaparecía entera al filtrar y se leía como «la planta
+   * no tiene lotes», que es otra afirmación.
+   */
+  vacioMotivo?: string;
 }) {
-  if (lotes.length === 0) return null;
+  if (lotes.length === 0) {
+    if (!vacioMotivo) return null;
+    return (
+      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+          Lo que resta en cada lote
+        </CardTitle>
+        <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{vacioMotivo}</p>
+      </div>
+    );
+  }
 
   const filas = lotes
     .map((l) => {
@@ -185,7 +223,9 @@ export default function LotesConSaldo({
     sinProduccion: filas.length - conProduccion.length,
   };
   const vencidos = filas.filter((f) => f.vencido).length;
-  const anejos = filas.filter((f) => !f.vencido && f.lote.status === "abierto" && (f.espera ?? 0) > DIAS_LOTE_ANEJO).length;
+  const anejos = filas.filter(
+    (f) => !f.vencido && f.lote.status === "abierto" && (f.espera ?? 0) > DIAS_LOTE_ANEJO,
+  ).length;
 
   return (
     <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
@@ -195,15 +235,17 @@ export default function LotesConSaldo({
             Lo que resta en cada lote
           </CardTitle>
           <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-            Madera apartada en un lote: mientras esté ahí no se ofrece para otra corrida. El plazo es el que el lote
-            declaró al SNIFFS.
+            Madera apartada en un lote: mientras esté ahí no se ofrece para otra corrida. El plazo
+            es el que el lote declaró al SNIFFS.
           </p>
         </div>
         <div className="text-right">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Apartado en lotes
           </p>
-          <p className="font-mono text-sm font-bold text-[var(--text-primary)]">{fmtM3(totalLibre)} m³</p>
+          <p className="font-mono text-sm font-bold text-[var(--text-primary)]">
+            {fmtM3(totalLibre)} m³
+          </p>
         </div>
       </div>
 
@@ -232,7 +274,9 @@ export default function LotesConSaldo({
                 <input
                   type="checkbox"
                   checked={todosMarcados}
-                  ref={(el) => { if (el) el.indeterminate = alguno && !todosMarcados; }}
+                  ref={(el) => {
+                    if (el) el.indeterminate = alguno && !todosMarcados;
+                  }}
                   onChange={alternarTodos}
                   aria-label="Elegir todos los lotes"
                   className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
@@ -272,7 +316,9 @@ export default function LotesConSaldo({
                   />
                 </td>
               )}
-              <td className="px-4 py-2 font-mono font-bold text-[var(--text-primary)]">{f.lote.code}</td>
+              <td className="px-4 py-2 font-mono font-bold text-[var(--text-primary)]">
+                {f.lote.code}
+              </td>
               {/* Más de un permiso en un lote es madera de dos títulos
                   habilitantes mezclada: se dice, no se esconde detrás del
                   primero. */}
@@ -303,7 +349,11 @@ export default function LotesConSaldo({
               {/* `null` = no se puede sumar sin inventar (sin corridas vivas, o
                   alguna declarada en pie tablar). Se dice, no se pone 0. */}
               <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-primary)]">
-                {f.producido == null ? <span className="text-xs text-[var(--text-tertiary)]">—</span> : fmtM3(f.producido)}
+                {f.producido == null ? (
+                  <span className="text-xs text-[var(--text-tertiary)]">—</span>
+                ) : (
+                  fmtM3(f.producido)
+                )}
               </td>
               {/* Resta = al 56 % − producido: lo que el lote todavía admite.
                   En rojo si es negativo — pasó el techo. */}
@@ -319,13 +369,21 @@ export default function LotesConSaldo({
                     : `${fmtM3(f.esperado56)} al 56 % − ${fmtM3(f.producido ?? 0)} producido`
                 }
               >
-                {f.restaDeclarable == null ? <span className="text-xs text-[var(--text-tertiary)]">—</span> : fmtM3(f.restaDeclarable)}
+                {f.restaDeclarable == null ? (
+                  <span className="text-xs text-[var(--text-tertiary)]">—</span>
+                ) : (
+                  fmtM3(f.restaDeclarable)
+                )}
               </td>
-              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{f.piezas}</td>
+              <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                {f.piezas}
+              </td>
               <td className="px-4 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
                 {f.espera == null ? "—" : `${f.espera} d`}
               </td>
-              <td className="px-4 py-2 font-mono text-xs text-[var(--text-secondary)]">{fecha(f.lote.finProceso)}</td>
+              <td className="px-4 py-2 font-mono text-xs text-[var(--text-secondary)]">
+                {fecha(f.lote.finProceso)}
+              </td>
               <td className="px-4 py-2 text-xs">
                 <TextoPlazo dias={f.dias} vencido={f.vencido} />
               </td>
