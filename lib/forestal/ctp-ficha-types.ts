@@ -82,18 +82,37 @@ export interface CtpFicha {
    * de los papeles que emite el centro. Vacío = va el monograma del libro.
    */
   logo?: string;
+  /**
+   * A qué GRUPO de operaciones pertenece este libro (ADR-395). Dos libros
+   * hermanos —dos operaciones de la misma planta— comparten `grupoId`; el
+   * `nombre` es cómo se llama ESTA operación en el switch de la cabina.
+   * Ausente = libro único, como siempre.
+   */
+  operacion?: { grupoId: string; nombre: string };
 }
 
 /** Ficha vacía — un CTP recién habilitado todavía no cargó sus datos. */
 export function emptyCtpFicha(): CtpFicha {
   return {
-    nombreCtp: "", codigoCtp: "", ruc: "", razonSocial: "",
-    arffs: "", registroArffs: "", registroArffsFecha: "",
+    nombreCtp: "",
+    codigoCtp: "",
+    ruc: "",
+    razonSocial: "",
+    arffs: "",
+    registroArffs: "",
+    registroArffsFecha: "",
     titulos: [],
     citesPermisos: [],
-    representante: "", representanteDni: "",
-    direccion: "", region: "", provincia: "", distrito: "", ubigeo: "",
-    telefono: "", email: "", gtfSerie: "",
+    representante: "",
+    representanteDni: "",
+    direccion: "",
+    region: "",
+    provincia: "",
+    distrito: "",
+    ubigeo: "",
+    telefono: "",
+    email: "",
+    gtfSerie: "",
   };
 }
 
@@ -107,7 +126,13 @@ export function normalizeCtpFicha(raw: unknown): CtpFicha {
     ? (r.titulos as unknown[])
         .map((t) => {
           const o = (t ?? {}) as Record<string, unknown>;
-          return { tipo: s(o.tipo), codigo: s(o.codigo), resolucion: s(o.resolucion), planManejo: s(o.planManejo), vencimiento: s(o.vencimiento) };
+          return {
+            tipo: s(o.tipo),
+            codigo: s(o.codigo),
+            resolucion: s(o.resolucion),
+            planManejo: s(o.planManejo),
+            vencimiento: s(o.vencimiento),
+          };
         })
         .filter((t) => t.tipo || t.codigo)
     : [];
@@ -120,19 +145,45 @@ export function normalizeCtpFicha(raw: unknown): CtpFicha {
         .filter((p) => p.especie || p.numero)
     : [];
   return {
-    nombreCtp: s(r.nombreCtp), codigoCtp: s(r.codigoCtp), ruc: s(r.ruc), razonSocial: s(r.razonSocial),
-    arffs: s(r.arffs), registroArffs: s(r.registroArffs), registroArffsFecha: s(r.registroArffsFecha),
+    nombreCtp: s(r.nombreCtp),
+    codigoCtp: s(r.codigoCtp),
+    ruc: s(r.ruc),
+    razonSocial: s(r.razonSocial),
+    arffs: s(r.arffs),
+    registroArffs: s(r.registroArffs),
+    registroArffsFecha: s(r.registroArffsFecha),
     titulos,
     citesPermisos,
-    representante: s(r.representante), representanteDni: s(r.representanteDni),
-    direccion: s(r.direccion), region: s(r.region), provincia: s(r.provincia), distrito: s(r.distrito), ubigeo: s(r.ubigeo),
-    telefono: s(r.telefono), email: s(r.email), gtfSerie: s(r.gtfSerie),
+    representante: s(r.representante),
+    representanteDni: s(r.representanteDni),
+    direccion: s(r.direccion),
+    region: s(r.region),
+    provincia: s(r.provincia),
+    distrito: s(r.distrito),
+    ubigeo: s(r.ubigeo),
+    telefono: s(r.telefono),
+    email: s(r.email),
+    gtfSerie: s(r.gtfSerie),
     logo: s(r.logo),
+    operacion:
+      r.operacion &&
+      typeof r.operacion === "object" &&
+      s((r.operacion as Record<string, unknown>).grupoId)
+        ? {
+            grupoId: s((r.operacion as Record<string, unknown>).grupoId),
+            nombre: s((r.operacion as Record<string, unknown>).nombre),
+          }
+        : undefined,
   };
 }
 
 /** Campos que un documento SERFOR necesita sí o sí (para el aviso "ficha incompleta"). */
-export const CTP_FICHA_REQUIRED: (keyof CtpFicha)[] = ["nombreCtp", "codigoCtp", "ruc", "razonSocial"];
+export const CTP_FICHA_REQUIRED: (keyof CtpFicha)[] = [
+  "nombreCtp",
+  "codigoCtp",
+  "ruc",
+  "razonSocial",
+];
 
 /** ¿Faltan datos mínimos para emitir documentos con identidad legal? */
 export function ctpFichaFaltantes(f: CtpFicha): (keyof CtpFicha)[] {
@@ -163,12 +214,27 @@ export function tituloTipoLabel(tipo: string): string {
  *  editor, la vista de lectura y los avisos leen de acá (si no, el mismo campo
  *  se llama distinto en cada lugar y el operador no sabe qué tiene que llenar). */
 export const CTP_FICHA_LABELS: Record<keyof CtpFicha, string> = {
-  nombreCtp: "Nombre del CTP", codigoCtp: "Código de CTP", ruc: "RUC", razonSocial: "Razón social",
-  arffs: "ARFFS competente", registroArffs: "N° de registro ARFFS", registroArffsFecha: "Fecha de registro",
-  titulos: "Títulos habilitantes", citesPermisos: "Permisos CITES",
-  representante: "Representante legal", representanteDni: "DNI / CE del representante",
-  direccion: "Dirección", region: "Región", provincia: "Provincia", distrito: "Distrito", ubigeo: "Ubigeo",
-  telefono: "Teléfono", email: "Email", gtfSerie: "Serie GTF autorizada", logo: "Logo del CTP",
+  operacion: "Operación",
+  nombreCtp: "Nombre del CTP",
+  codigoCtp: "Código de CTP",
+  ruc: "RUC",
+  razonSocial: "Razón social",
+  arffs: "ARFFS competente",
+  registroArffs: "N° de registro ARFFS",
+  registroArffsFecha: "Fecha de registro",
+  titulos: "Títulos habilitantes",
+  citesPermisos: "Permisos CITES",
+  representante: "Representante legal",
+  representanteDni: "DNI / CE del representante",
+  direccion: "Dirección",
+  region: "Región",
+  provincia: "Provincia",
+  distrito: "Distrito",
+  ubigeo: "Ubigeo",
+  telefono: "Teléfono",
+  email: "Email",
+  gtfSerie: "Serie GTF autorizada",
+  logo: "Logo del CTP",
 };
 
 /**
@@ -223,7 +289,12 @@ export function fechaCortaUTC(iso: string): string {
   if (!v) return "";
   const d = new Date(`${v}T12:00:00Z`);
   if (Number.isNaN(d.getTime())) return v;
-  return d.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+  return d.toLocaleDateString("es-PE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 /** Días que le quedan a una fecha `YYYY-MM-DD` (negativo = ya venció). */
@@ -258,8 +329,16 @@ export const DOCUMENTOS_CTP: DocumentoCtp[] = [
     campos: ["razonSocial", "representante", "gtfSerie", "region", "provincia", "distrito"],
     necesitaTitulo: true,
   },
-  { clave: "certificado", nombre: "Certificado de trazabilidad", campos: ["nombreCtp", "codigoCtp", "ruc", "razonSocial", "direccion"] },
-  { clave: "libro", nombre: "Libro de Operaciones (export)", campos: ["nombreCtp", "codigoCtp", "ruc", "razonSocial", "arffs"] },
+  {
+    clave: "certificado",
+    nombre: "Certificado de trazabilidad",
+    campos: ["nombreCtp", "codigoCtp", "ruc", "razonSocial", "direccion"],
+  },
+  {
+    clave: "libro",
+    nombre: "Libro de Operaciones (export)",
+    campos: ["nombreCtp", "codigoCtp", "ruc", "razonSocial", "arffs"],
+  },
 ];
 
 /** Un documento y los campos que le faltan a la Ficha para salir completo. */
@@ -328,7 +407,8 @@ export function avisosDeFicha(f: CtpFicha, ahora: number = Date.now()): AvisoFic
       clave: `titulo-sin-vencimiento:${nombreTitulo(t)}`,
       nivel: "aviso",
       titulo: `El título ${nombreTitulo(t)} no tiene fecha de vencimiento`,
-      detalle: "Sin esa fecha nadie te va a avisar cuando caduque, y un título vencido invalida el origen de la madera que ampara. Cargala desde la resolución que lo aprobó.",
+      detalle:
+        "Sin esa fecha nadie te va a avisar cuando caduque, y un título vencido invalida el origen de la madera que ampara. Cargala desde la resolución que lo aprobó.",
     });
   }
 
@@ -394,9 +474,10 @@ export function avisosDeFicha(f: CtpFicha, ahora: number = Date.now()): AvisoFic
       clave: `doc:${documento.clave}`,
       nivel: "aviso",
       titulo: `${documento.nombre}: falta ${faltan.join(", ")}`,
-      detalle: faltan.length === 1
-        ? "Cada guía que emitas va a salir con ese casillero vacío."
-        : "Cada guía que emitas va a salir con esos casilleros vacíos.",
+      detalle:
+        faltan.length === 1
+          ? "Cada guía que emitas va a salir con ese casillero vacío."
+          : "Cada guía que emitas va a salir con esos casilleros vacíos.",
     });
   }
 
@@ -411,7 +492,10 @@ export function avisosDeFicha(f: CtpFicha, ahora: number = Date.now()): AvisoFic
  * Single source: lo usan el aviso "CITES sin permiso" del Excel y el autollenado
  * del N° de permiso en la guía de salida. Si el criterio cambia, cambia acá.
  */
-export function especieCoincide(a: string | null | undefined, b: string | null | undefined): boolean {
+export function especieCoincide(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): boolean {
   const x = (a ?? "").trim().toLowerCase();
   const y = (b ?? "").trim().toLowerCase();
   if (!x || !y) return false;
@@ -440,7 +524,10 @@ export type EstadoVencimiento = "vencido" | "por_vencer" | "vigente";
  * cliente (llama a `Date.now()` — no en un render server cacheado). Single
  * source para permisos CITES y títulos habilitantes de la Ficha.
  */
-export function estadoVencimiento(vencimiento: string, ahora: number = Date.now()): EstadoVencimiento | null {
+export function estadoVencimiento(
+  vencimiento: string,
+  ahora: number = Date.now(),
+): EstadoVencimiento | null {
   const dias = diasParaVencer(vencimiento, ahora);
   if (dias == null) return null;
   if (dias < 0) return "vencido";
@@ -525,7 +612,9 @@ export function documentosVencimientoDeFicha(
     if (estado === "vencido") vencidosLabels.push(t.codigo || t.tipo || "título");
     else if (estado === "por_vencer") {
       const dias = diasParaVencer(t.vencimiento ?? "", ahora) ?? 0;
-      porVencerLabels.push(`${t.codigo || t.tipo || "título"} (${dias} ${dias === 1 ? "día" : "días"})`);
+      porVencerLabels.push(
+        `${t.codigo || t.tipo || "título"} (${dias} ${dias === 1 ? "día" : "días"})`,
+      );
     }
   }
 

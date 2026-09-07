@@ -69,7 +69,8 @@ export type CtpAuditEntity =
   // KV: ANEXO N° 04 emitido (lista de productos transformados de la GTF). No es
   // modelo Prisma: es el PAPEL que se entregó, guardado para poder re-imprimir
   // el mismo documento ante una fiscalización.
-  | "ForestAnexo04";
+  | "ForestAnexo04"
+  | "Tenant";
 
 /**
  * Acciones auditables. Prefijo `ctp_` para aislarlas del resto del ActivityLog
@@ -151,6 +152,10 @@ export type CtpAuditAction =
   /** Existencia de apertura declarada / deshecha (ADR-394). */
   | "ctp_apertura_declarar"
   | "ctp_apertura_deshacer"
+  /** Operaciones hermanas del CTP (ADR-395). */
+  | "ctp_operacion_crear"
+  | "ctp_operacion_quitar"
+  | "ctp_operacion_cambiar"
   // Atribución de origen y costeo — lo más sensible del módulo
   | "ctp_consumos_set"
   /** Qué PIEZAS entraron a la sierra en una corrida (ADR-326). */

@@ -73,10 +73,11 @@ export interface ConsumoInput {
 export class CtpInvariantError extends Error {
   constructor(
     message: string,
-    readonly code:
-      // ── Entrada: ingreso → producción (ADR-134) ──
+    readonly code: // ── Entrada: ingreso → producción (ADR-134) ──
       | "I1_SOBRE_ATRIBUCION"
       | "I2_SOBRE_CONSUMO"
+      /** Dato del usuario que no cuadra fuera de un invariante numérico (ADR-395). */
+      | "VALIDACION"
       /** Despachar producto que no se produjo — el acta, agregado por producto. */
       | "I3_SOBRE_DESPACHO"
       // ── Salida: producción → despacho (ADR-135) ──
@@ -229,18 +230,21 @@ export class ForestCtpConsumoDB {
     }
     for (const c of consumos) {
       if (Number(c.volumeM3) <= 0) {
-        throw new CtpInvariantError(
-          "Un consumo debe ser mayor a 0 m³.",
-          "I1_SOBRE_ATRIBUCION",
-          { woodEntryId: c.woodEntryId },
-        );
+        throw new CtpInvariantError("Un consumo debe ser mayor a 0 m³.", "I1_SOBRE_ATRIBUCION", {
+          woodEntryId: c.woodEntryId,
+        });
       }
     }
 
     // Cierre de período (ADR-139): la atribución de una corrida de un mes cerrado
     // es inmutable (además del guard de costo congelado de más abajo).
-    const entryCons = await prisma.forestCtpEntry.findFirst({ where: { id: ctpEntryId, tenantId }, select: { entryDate: true } });
-    const cerradoCons = entryCons ? await ForestCtpCierreDB.closedPeriodOf(tenantId, entryCons.entryDate) : null;
+    const entryCons = await prisma.forestCtpEntry.findFirst({
+      where: { id: ctpEntryId, tenantId },
+      select: { entryDate: true },
+    });
+    const cerradoCons = entryCons
+      ? await ForestCtpCierreDB.closedPeriodOf(tenantId, entryCons.entryDate)
+      : null;
     if (cerradoCons) {
       throw new CtpInvariantError(
         `El período ${cerradoCons.label} está cerrado: no se puede cambiar la materia prima de una corrida de un mes cerrado.`,
@@ -345,12 +349,12 @@ export class ForestCtpConsumoDB {
           throw new CtpInvariantError(
             nadaConsumido
               ? `La guía ${ingreso.gtfNumber} declara ${r4(Number(ingreso.volumeM3))} m³ en su cabecera, ` +
-                `pero las piezas que estás llevando a la sierra suman ${r4(Number(c.volumeM3))} m³. ` +
-                `La guía no cuadra consigo misma — el total del lote no es el problema, es esa guía. ` +
-                `Cuadrala en Ingresos: tocá el aviso naranja de su fila.`
+                  `pero las piezas que estás llevando a la sierra suman ${r4(Number(c.volumeM3))} m³. ` +
+                  `La guía no cuadra consigo misma — el total del lote no es el problema, es esa guía. ` +
+                  `Cuadrala en Ingresos: tocá el aviso naranja de su fila.`
               : `De la guía ${ingreso.gtfNumber} quedan ${r4(disponible)} m³ sin consumir ` +
-                `(declara ${r4(Number(ingreso.volumeM3))} y ya se consumieron ` +
-                `${r4(yaConsumido.get(c.woodEntryId) ?? 0)}), y estás pidiendo ${r4(Number(c.volumeM3))} m³.`,
+                  `(declara ${r4(Number(ingreso.volumeM3))} y ya se consumieron ` +
+                  `${r4(yaConsumido.get(c.woodEntryId) ?? 0)}), y estás pidiendo ${r4(Number(c.volumeM3))} m³.`,
             "I2_SOBRE_CONSUMO",
             {
               gtfNumber: ingreso.gtfNumber,
@@ -431,7 +435,9 @@ export class ForestCtpConsumoDB {
       });
 
       const fmt = (rows: { volumeM3: Prisma.Decimal; woodEntry: { gtfNumber: string } }[]) =>
-        rows.length === 0 ? "(sin atribución)" : rows.map((r) => `${r.woodEntry.gtfNumber}: ${m3(Number(r.volumeM3))}`).join(", ");
+        rows.length === 0
+          ? "(sin atribución)"
+          : rows.map((r) => `${r.woodEntry.gtfNumber}: ${m3(Number(r.volumeM3))}`).join(", ");
       auditCtp({
         tenantId,
         action: "ctp_consumos_set",
@@ -447,7 +453,11 @@ export class ForestCtpConsumoDB {
         user: createdBy,
       });
 
-      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {
+        /* cache best-effort */
+      }
       return result;
     }, CTP_TX_OPTS);
   }
@@ -461,8 +471,13 @@ export class ForestCtpConsumoDB {
       include: {
         woodEntry: {
           select: {
-            id: true, gtfNumber: true, speciesCommonName: true,
-            volumeM3: true, costoTotal: true, moneda: true, entryDate: true,
+            id: true,
+            gtfNumber: true,
+            speciesCommonName: true,
+            volumeM3: true,
+            costoTotal: true,
+            moneda: true,
+            entryDate: true,
           },
         },
       },
@@ -484,7 +499,13 @@ export class ForestCtpConsumoDB {
     const [linea, consumos] = await Promise.all([
       prisma.forestCtpEntry.findFirst({
         where: { id: ctpEntryId, tenantId, deletedAt: null },
-        select: { volumeInputM3: true, quantity: true, unit: true, costoProceso: true, moneda: true },
+        select: {
+          volumeInputM3: true,
+          quantity: true,
+          unit: true,
+          costoProceso: true,
+          moneda: true,
+        },
       }),
       ForestCtpConsumoDB.listByEntry(tenantId, ctpEntryId),
     ]);
@@ -505,13 +526,25 @@ export class ForestCtpConsumoDB {
     };
 
     if (consumos.length === 0) {
-      return { ...base, costoMateriaPrima: null, costoTotal: null, costoUnitario: null, motivo: "sin_consumos" };
+      return {
+        ...base,
+        costoMateriaPrima: null,
+        costoTotal: null,
+        costoUnitario: null,
+        motivo: "sin_consumos",
+      };
     }
 
     // Monedas: las del ingreso mandan; mezclarlas invalida la suma.
     const monedas = new Set(consumos.map((c) => c.woodEntry.moneda ?? "PEN"));
     if (monedas.size > 1) {
-      return { ...base, costoMateriaPrima: null, costoTotal: null, costoUnitario: null, motivo: "monedas_mezcladas" };
+      return {
+        ...base,
+        costoMateriaPrima: null,
+        costoTotal: null,
+        costoUnitario: null,
+        motivo: "monedas_mezcladas",
+      };
     }
 
     let costoMateriaPrima = 0;
@@ -525,7 +558,13 @@ export class ForestCtpConsumoDB {
             : null;
       // Sin factura ⇒ no se sabe. NULL honesto, no 0 (D6).
       if (unitario == null) {
-        return { ...base, costoMateriaPrima: null, costoTotal: null, costoUnitario: null, motivo: "falta_factura" };
+        return {
+          ...base,
+          costoMateriaPrima: null,
+          costoTotal: null,
+          costoUnitario: null,
+          motivo: "falta_factura",
+        };
       }
       costoMateriaPrima += unitario * Number(c.volumeM3);
     }
@@ -596,7 +635,11 @@ export class ForestCtpConsumoDB {
         user,
       });
 
-      try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch { /* cache best-effort */ }
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {
+        /* cache best-effort */
+      }
       return tx.forestCtpConsumo.findMany({ where: { tenantId, ctpEntryId } });
     }, CTP_TX_OPTS);
   }

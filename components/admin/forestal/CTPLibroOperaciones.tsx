@@ -51,7 +51,10 @@ import {
   Upload,
   Users,
 } from "@buleje/design-system/icons";
-import LibroChrome, { type LibroAction, type LibroGroup } from "@/components/admin/shared/libro-chrome";
+import LibroChrome, {
+  type LibroAction,
+  type LibroGroup,
+} from "@/components/admin/shared/libro-chrome";
 import type { ShortcutSection } from "@/contexts/admin-shortcuts-context";
 import { exportarLibroCtp, exportarLibroCtpOficial } from "@/lib/forestal/ctp-export";
 import { printInformePeriodo } from "@/lib/forestal/ctp-informe";
@@ -60,6 +63,7 @@ import { resolveCtpPeriod, type CtpPeriodKey } from "@/lib/forestal/ctp-period";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import CtpPeriodPicker, { type CtpCustomRange } from "./CtpPeriodPicker";
 import CtpIngresosView from "./CtpIngresosView";
+import CtpOperacionSwitcher from "./CtpOperacionSwitcher";
 import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
 import CtpCompliancePanel from "./CtpCompliancePanel";
 import CtpFichaEditor from "./CtpFichaEditor";
@@ -101,7 +105,30 @@ import {
 } from "./ctp-shared";
 import { CTP_VISTAS } from "@/lib/admin/subvistas-modulos";
 
-type CtpView = "ingresos" | "gtf-ingresadas" | "lotes" | "consumos" | "produccion" | "disponibles" | "despacho" | "trozas" | "radar" | "historia-lote" | "planta" | "tablero" | "saldos" | "resumenes" | "cumplimiento" | "cierre" | "eudr" | "rentabilidad" | "analisis" | "fletes" | "guias" | "directorio" | "ficha";
+type CtpView =
+  | "ingresos"
+  | "gtf-ingresadas"
+  | "lotes"
+  | "consumos"
+  | "produccion"
+  | "disponibles"
+  | "despacho"
+  | "trozas"
+  | "radar"
+  | "historia-lote"
+  | "planta"
+  | "tablero"
+  | "saldos"
+  | "resumenes"
+  | "cumplimiento"
+  | "cierre"
+  | "eudr"
+  | "rentabilidad"
+  | "analisis"
+  | "fletes"
+  | "guias"
+  | "directorio"
+  | "ficha";
 
 /**
  * Las doce vistas, agrupadas por la fase del libro a la que sirven. El orden
@@ -111,7 +138,9 @@ type CtpView = "ingresos" | "gtf-ingresadas" | "lotes" | "consumos" | "produccio
  */
 /** label y hint salen de `lib/admin/subvistas-modulos` — la MISMA fuente que
  *  indexa el buscador global. Acá sólo se agrega lo visual (icono) y la tecla. */
-const CTP_VISTAS_POR_KEY = Object.fromEntries(CTP_VISTAS.map((v) => [v.key, { label: v.label, hint: v.hint }]));
+const CTP_VISTAS_POR_KEY = Object.fromEntries(
+  CTP_VISTAS.map((v) => [v.key, { label: v.label, hint: v.hint }]),
+);
 
 const CTP_GROUPS: LibroGroup[] = [
   {
@@ -121,7 +150,12 @@ const CTP_GROUPS: LibroGroup[] = [
       { key: "ingresos", ...CTP_VISTAS_POR_KEY["ingresos"], icon: PackageOpen, tecla: "i" },
       /* Las guías que ya se recibieron salen de la bandeja y viven acá (ADR-339):
          Ingresos es trabajo por hacer, esto es el archivo del período. */
-      { key: "gtf-ingresadas", ...CTP_VISTAS_POR_KEY["gtf-ingresadas"], icon: PackageCheck, tecla: "z" },
+      {
+        key: "gtf-ingresadas",
+        ...CTP_VISTAS_POR_KEY["gtf-ingresadas"],
+        icon: PackageCheck,
+        tecla: "z",
+      },
       /* Va entre Ingresos y Consumos porque ése es el orden del patio: llega la
          madera, se aparta la que entra junta al carro, y recién ahí se aserra. */
       { key: "lotes", ...CTP_VISTAS_POR_KEY["lotes"], icon: Layers, tecla: "l" },
@@ -188,19 +222,28 @@ export default function CTPLibroOperaciones() {
   const cola = usePatioCola();
   // La vista vive en la URL (`?vista=`) con localStorage de memoria: así se
   // puede compartir un link a Saldos y el atrás recorre las vistas del libro.
-  const { vista: view, irA: setView } = useVistaModulo<CtpView>(CTP_MODULE_ID, CTP_VIEW_KEYS_TIPADAS, "ingresos");
+  const { vista: view, irA: setView } = useVistaModulo<CtpView>(
+    CTP_MODULE_ID,
+    CTP_VIEW_KEYS_TIPADAS,
+    "ingresos",
+  );
   // Default = trimestre, no "mes actual": una planta con un mes flojo abriría el
   // libro vacío teniendo datos, y "vacío al abrir" se lee como "roto".
   // El cierre mensual está a un click en el selector.
   /** Producto elegido en Saldos para despachar (atajo "del stock a la guía"). */
-  const [productoADespachar, setProductoADespachar] = useState<{ producto: string; especie: string | null } | null>(null);
+  const [productoADespachar, setProductoADespachar] = useState<{
+    producto: string;
+    especie: string | null;
+  } | null>(null);
   /** Lote elegido en Lotes para aserrar: abre la corrida con él ya cargado. */
   const [loteAProducir, setLoteAProducir] = useState<LoteAProducir | null>(null);
   /** Lote que se va a CARGAR: Consumos abre con él y la tabla filtrada (ADR-342). */
   const [loteACargar, setLoteACargar] = useState<LoteAProducir | null>(null);
   const [periodKey, setPeriodKey] = useState<CtpPeriodKey>("trimestre");
   const [custom, setCustom] = useState<CtpCustomRange>({ from: "", to: "" });
-  const [exporting, setExporting] = useState<null | "interno" | "oficial" | "informe" | "dossier">(null);
+  const [exporting, setExporting] = useState<null | "interno" | "oficial" | "informe" | "dossier">(
+    null,
+  );
   const [exportError, setExportError] = useState<string | null>(null);
   // Puente inverso: GTF que el Libro de Títulos Habilitantes mandó a ingresar.
   const [pendingIngresoGtf, setPendingIngresoGtf] = useState<string | null>(null);
@@ -325,7 +368,10 @@ export default function CTPLibroOperaciones() {
         {
           title: view === "produccion" ? "En Producción" : "En Despacho",
           items: [
-            { keys: ["N"], description: view === "produccion" ? "Elegir el lote a producir" : "Nuevo despacho" },
+            {
+              keys: ["N"],
+              description: view === "produccion" ? "Elegir el lote a producir" : "Nuevo despacho",
+            },
             { keys: ["/"], description: "Ir al buscador" },
             { keys: ["R"], description: "Recargar la lista" },
           ],
@@ -339,10 +385,11 @@ export default function CTPLibroOperaciones() {
    *  el número aparece en el grupo y el punto en la vista. Misma fuente que la
    *  tira de abajo — no puede decir "3" arriba y listar dos. */
   const alertasPorVista = useMemo(
-    () => pendientes.lista.reduce<Record<string, number>>((acc, p) => {
-      acc[p.vista] = (acc[p.vista] ?? 0) + p.cantidad;
-      return acc;
-    }, {}),
+    () =>
+      pendientes.lista.reduce<Record<string, number>>((acc, p) => {
+        acc[p.vista] = (acc[p.vista] ?? 0) + p.cantidad;
+        return acc;
+      }, {}),
     [pendientes.lista],
   );
 
@@ -448,6 +495,10 @@ export default function CTPLibroOperaciones() {
         }
         tools={
           <>
+            {/* Dos operaciones de la misma planta = dos libros hermanos
+                (ADR-395). El switch va acá, con las herramientas del libro:
+                cambiar de operación es cambiar de libro, no de vista. */}
+            <CtpOperacionSwitcher vista={view} />
             <button
               type="button"
               onClick={() => setBuscarGtf(true)}
@@ -584,7 +635,9 @@ export default function CTPLibroOperaciones() {
         {view === "eudr" && <CtpEudrPanel period={period} onNavigate={irA} />}
         {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
         {view === "analisis" && <CtpAnalisis />}
-        {view === "guias" && <CtpGuiasEmitidasView period={period} onAbrirDespacho={() => setView("despacho")} />}
+        {view === "guias" && (
+          <CtpGuiasEmitidasView period={period} onAbrirDespacho={() => setView("despacho")} />
+        )}
         {view === "fletes" && <CtpFletesView period={period} />}
         {view === "directorio" && <CtpDirectorioView />}
         {view === "ficha" && <CtpFichaEditor />}
@@ -599,7 +652,9 @@ export default function CTPLibroOperaciones() {
           onIrA={irA}
         />
       )}
-      {fichaIngreso && <CtpEntryDetailModal entry={fichaIngreso} onClose={() => setFichaIngreso(null)} />}
+      {fichaIngreso && (
+        <CtpEntryDetailModal entry={fichaIngreso} onClose={() => setFichaIngreso(null)} />
+      )}
       {/* El otro extremo de la cadena: del cartel del atado a su corrida y a la
           madera con la que se hizo (ADR-366). */}
       {fichaPaquete && (
@@ -619,7 +674,6 @@ export default function CTPLibroOperaciones() {
           onImportado={() => setIngresosKey((k) => k + 1)}
         />
       )}
-
     </>
   );
 }
