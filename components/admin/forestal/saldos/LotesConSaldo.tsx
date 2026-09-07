@@ -171,6 +171,19 @@ export default function LotesConSaldo({
   };
 
   const totalLibre = filas.reduce((s, f) => s + f.libre, 0);
+  /* Los totales de la última fila. `producido` y `restaDeclarable` pueden ser
+     `null` —lote sin producción sumable—: se suma lo que hay y se dice sobre
+     cuántos lotes, en vez de tratar el «no se sabe» como un cero que baja el
+     total sin avisar. */
+  const conProduccion = filas.filter((f) => f.producido != null);
+  const total = {
+    consumido: filas.reduce((s, f) => s + f.consumido, 0),
+    esperado56: filas.reduce((s, f) => s + f.esperado56, 0),
+    producido: conProduccion.reduce((s, f) => s + (f.producido ?? 0), 0),
+    resta: conProduccion.reduce((s, f) => s + (f.restaDeclarable ?? 0), 0),
+    piezas: filas.reduce((s, f) => s + f.piezas, 0),
+    sinProduccion: filas.length - conProduccion.length,
+  };
   const vencidos = filas.filter((f) => f.vencido).length;
   const anejos = filas.filter((f) => !f.vencido && f.lote.status === "abierto" && (f.espera ?? 0) > DIAS_LOTE_ANEJO).length;
 
@@ -319,6 +332,35 @@ export default function LotesConSaldo({
             </tr>
           ))}
         </tbody>
+        <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
+          <tr>
+            {eligiendo && <td />}
+            <td className="px-4 py-2.5 text-[var(--text-primary)]">
+              {filas.length} {filas.length === 1 ? "lote" : "lotes"}
+            </td>
+            <td colSpan={3} className="px-4 py-2.5 text-xs font-normal text-[var(--text-tertiary)]">
+              {total.sinProduccion > 0
+                ? `${total.sinProduccion} sin producción sumable, fuera de los totales de producido y resta`
+                : ""}
+            </td>
+            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+              {fmtM3(total.consumido)}
+            </td>
+            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+              {fmtM3(total.esperado56)}
+            </td>
+            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+              {fmtM3(total.producido)}
+            </td>
+            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
+              {fmtM3(total.resta)}
+            </td>
+            <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+              {total.piezas}
+            </td>
+            <td colSpan={3} />
+          </tr>
+        </tfoot>
       </DataTable>
     </div>
   );

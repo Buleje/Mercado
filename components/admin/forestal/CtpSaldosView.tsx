@@ -29,9 +29,11 @@ import { useCtpSaldos } from "@/hooks/use-ctp-saldos";
 import CtpKardexModal from "./CtpKardexModal";
 import CtpPatioAging from "./CtpPatioAging";
 import LotesConSaldo, { diasParaVencer } from "./saldos/LotesConSaldo";
+import BalanceDeCapacidad, { calcularBalance } from "./saldos/BalanceDeCapacidad";
 import { logger } from "@/lib/logger";
 import { consumidoDelLote, diasDeEspera, loteVencido, permisosDelLote, piezasLibres, producidoDelLote, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
+import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 
 const AVISO = {
   error: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]",
@@ -67,12 +69,20 @@ export function CtpSaldosView({
      descargaba antes de que existiera la selección: tildar nada no puede
      significar «un reporte sin lotes». */
   const [lotesElegidos, setLotesElegidos] = useState<Set<string>>(new Set());
+  /* El patio, para el balance de capacidad: lo que hay sin aserrar y lo que
+     todavía no se recibió. Va por su cuenta como los lotes — no depende del
+     período: madera que llegó en julio y sigue en el patio es capacidad de hoy. */
+  const [patio, setPatio] = useState<TrozaConsumible[]>([]);
   useEffect(() => {
     let vivo = true;
     fetch("/api/admin/forestal/lotes-aserrio", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => { if (vivo && Array.isArray(j?.lotes)) setLotes(j.lotes as LoteAserrio[]); })
       .catch((err) => logger.warn("[ctp-saldos] lotes no cargaron", { error: String(err) }));
+    fetch("/api/admin/forestal/trozas/patio", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (vivo && Array.isArray(j?.trozas)) setPatio(j.trozas as TrozaConsumible[]); })
+      .catch((err) => logger.warn("[ctp-saldos] patio no cargó", { error: String(err) }));
     return () => { vivo = false; };
   }, []);
 
@@ -105,6 +115,43 @@ export function CtpSaldosView({
     }));
   }, [lotes, lotesElegidos]);
 
+  const mp = data?.materiaPrima;
+
+  /* El balance de capacidad: las cuatro fuentes de la planta en un solo número.
+     Se arma acá —no en la tarjeta— porque el reporte lleva el MISMO cálculo. */
+  const balance = useMemo(() => {
+    const libres = patio.filter(
+      (t) => !t.loteAserrioId && !t.consumidaEnId && t.guiaRecepcionada !== false,
+    );
+    /* Por recepcionar = lo anotado que todavía no llegó. Dos formas del mismo
+       hecho: la troza de una guía sin recibir (ADR-339) y el ingreso sin
+       validar que el libro ya cuenta como pendiente. */
+    const sinRecibirM3 = patio
+      .filter((t) => t.guiaRecepcionada === false)
+      .reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0);
+    const productos = data?.productos ?? [];
+    const stock = productos.reduce((a, p) => a + Number(p.stock ?? 0), 0);
+    return calcularBalance({
+      porRecepcionarM3: sinRecibirM3 + Number(mp?.pendienteM3 ?? 0),
+      patioM3: libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0),
+      patioPiezas: libres.length,
+      restaLotesM3: lotesDelReporte.reduce((a, l) => a + (l.restaM3 ?? 0), 0),
+      productosM3: stock,
+      /* El stock que muestra ESTA pantalla, que es el del período elegido —el
+         mismo del bloque «Stock de productos transformados» de arriba—. Con el
+         período completo el número es otro (medido: 62.39 en Jul–Set contra
+         71.21 en el año), así que se dice de dónde sale: dos cifras de stock
+         distintas en la misma pantalla, sin explicar cuál es cuál, es peor que
+         una sola acotada. */
+      productosDetalle:
+        productos.length === 0
+          ? `Sin productos en stock en ${period.label}`
+          : productos.length === 1
+            ? `${productos[0].producto} · stock de ${period.label}`
+            : `${productos.length} productos · stock de ${period.label}`,
+    });
+  }, [patio, data?.productos, mp?.pendienteM3, lotesDelReporte, period.label]);
+
   // Reporte de existencias imprimible (PDF) para fiscalización: misma data del
   // panel + identidad del CTP (best-effort desde la Ficha).
   const handleReport = useCallback(async () => {
@@ -126,11 +173,12 @@ export function CtpSaldosView({
         concil,
         ficha,
         lotes: lotesDelReporte,
+        balance,
       });
     } catch (err) {
       setReportError(err instanceof Error ? err.message : String(err));
     }
-  }, [data, concil, period.label, lotesDelReporte]);
+  }, [data, concil, period.label, lotesDelReporte, balance]);
 
   /** Lo mismo que se ve, para cruzar en Excel contra la planilla del contador. */
   /**
@@ -194,11 +242,11 @@ export function CtpSaldosView({
     } catch (err) {
       setReportError(err instanceof Error ? err.message : String(err));
     }
-  }, [data, period.label, lotesDelReporte]);
+  }, [data, period.label, lotesDelReporte, balance]);
 
   const descargarCsv = useCallback(() => {
     if (!data) return;
-    const csv = saldosACsv(data.porEspecie, data.productos, period.label, lotesDelReporte);
+    const csv = saldosACsv(data.porEspecie, data.productos, period.label, lotesDelReporte, balance);
     const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -208,7 +256,7 @@ export function CtpSaldosView({
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }, [data, period.label, lotesDelReporte]);
 
-  const mp = data?.materiaPrima;
+
 
 
   const excepciones = useMemo(
@@ -320,6 +368,8 @@ export function CtpSaldosView({
           <TablaProductos productos={data.productos} onDespachar={onDespachar} />
 
           {/* Gemelo del patio: materia prima parada por antigüedad (self-fetch). */}
+          <BalanceDeCapacidad balance={balance} />
+
           <LotesConSaldo lotes={lotes} seleccion={lotesElegidos} onSeleccion={setLotesElegidos} />
 
           <CtpPatioAging onValorizar={onIr ? () => onIr("rentabilidad") : undefined} />

@@ -35,8 +35,18 @@ export interface LoteDelReporte {
   vencido: boolean;
 }
 
+export interface FuenteDelReporte {
+  label: string;
+  m3: number;
+  enProducto: number;
+  convertido: boolean;
+  detalle?: string;
+}
+
 export interface ExistenciasReportData {
   periodLabel: string;
+  /** El balance de capacidad: las cuatro fuentes y el techo que suman. */
+  balance?: { fuentes: readonly FuenteDelReporte[]; totalProducto: number } | null;
   /** Opcional: un CTP sin lotes de aserrío no tiene por qué ver la tabla. */
   lotes?: readonly LoteDelReporte[];
   materiaPrima: {
@@ -226,6 +236,27 @@ export function printExistencias(d: ExistenciasReportData): void {
     )}${num((d.lotes ?? []).reduce((a, l) => a + l.esperado56M3, 0))}${num(
       (d.lotes ?? []).reduce((a, l) => a + (l.producidoM3 ?? 0), 0),
     )}${num((d.lotes ?? []).reduce((a, l) => a + (l.restaM3 ?? 0), 0))}${num((d.lotes ?? []).reduce((a, l) => a + l.apartadoM3, 0))}<td colspan="4"></td></tr></tfoot>
+  </table>`
+      : ""
+  }
+
+  ${
+    d.balance && d.balance.fuentes.length > 0
+      ? `<h2>Capacidad de la planta</h2>
+  <p style="color:#555;margin:0 0 6px">Cuánto producto puede salir de todo lo que hay hoy. La rolliza se convierte al 56 %, que es el <b>techo</b> del rendimiento: el total es un máximo, no una promesa.</p>
+  <table>
+    <thead><tr><th>Fuente</th><th class="num">Como está hoy</th><th class="num">En producto (m³)</th><th>Detalle</th></tr></thead>
+    <tbody>${d.balance.fuentes
+      .map(
+        (f) => `<tr>
+      <td>${f.label}${f.convertido ? ' <span style="color:#777">· al 56 %</span>' : ""}</td>
+      ${num(f.m3)}
+      ${num(f.enProducto)}
+      <td style="color:#555">${f.detalle ?? ""}</td>
+    </tr>`,
+      )
+      .join("")}</tbody>
+    <tfoot><tr><td colspan="2"><b>Capacidad máxima en producto</b></td>${num(d.balance.totalProducto)}<td></td></tr></tfoot>
   </table>`
       : ""
   }

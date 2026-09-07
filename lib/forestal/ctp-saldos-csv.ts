@@ -63,6 +63,15 @@ export interface LoteCsv {
   vencido: boolean;
 }
 
+/** Una fuente del balance de capacidad, para el reporte. */
+export interface FuenteCsv {
+  label: string;
+  m3: number;
+  enProducto: number;
+  convertido: boolean;
+  detalle?: string;
+}
+
 export function saldosACsv(
   especies: readonly EspecieCsv[],
   productos: readonly ProductoCsv[],
@@ -71,6 +80,9 @@ export function saldosACsv(
      siempre sin ellos, y un tenant sin lotes no tiene por qué ver una tabla
      vacía. */
   lotes: readonly LoteCsv[] = [],
+  /* El balance de capacidad. Va al final: primero lo que hay, después lo que
+     puede llegar a salir de todo eso junto. */
+  balance: { fuentes: readonly FuenteCsv[]; totalProducto: number } | null = null,
 ): string {
   const lineas: string[] = [
     fila(["Existencias del Libro CTP", periodoLabel]),
@@ -165,6 +177,19 @@ export function saldosACsv(
         num(lotes.reduce((a, l) => a + (l.restaM3 ?? 0), 0)),
         num(lotes.reduce((a, l) => a + l.apartadoM3, 0)),
       ]),
+    );
+  }
+
+  if (balance && balance.fuentes.length > 0) {
+    lineas.push(
+      "",
+      fila(["CAPACIDAD DE LA PLANTA"]),
+      fila([`La rolliza se convierte al 56%, que es el TECHO del rendimiento: el total es un maximo, no una promesa.`]),
+      fila(["Fuente", "Como esta hoy (m3)", "Convertido al 56%", "En producto (m3)", "Detalle"]),
+      ...balance.fuentes.map((f) =>
+        fila([f.label, num(f.m3), f.convertido ? "si" : "no", num(f.enProducto), f.detalle ?? ""]),
+      ),
+      fila(["CAPACIDAD MAXIMA EN PRODUCTO", "", "", num(balance.totalProducto)]),
     );
   }
 
