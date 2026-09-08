@@ -36,7 +36,7 @@ function Seccion({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b-2 border-[var(--rule-soft)] pb-3">
         <div className="flex items-center gap-2.5">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-sm font-black text-[var(--accent-ink)] dark:text-[var(--accent)]">{numero}</span>
@@ -212,7 +212,7 @@ export default function PlantacionPasoPredio({
               disabled={soloLectura}
               checked={Boolean(datos.tituloHabilitanteTiene)}
               onChange={(e) => onChange({ tituloHabilitanteTiene: e.target.checked })}
-              className="h-5 w-5 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)]"
+              className="h-5 w-5 rounded border border-[var(--rule-base)] accent-[var(--accent)]"
             />
             Corresponde un título habilitante o contrato
           </label>

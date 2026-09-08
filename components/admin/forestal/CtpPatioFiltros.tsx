@@ -20,7 +20,7 @@ import { Search, SlidersHorizontal, X } from "@buleje/design-system/icons";
 import type { EstadoFiltroPatio } from "./hooks/use-filtro-patio";
 
 const CAMPO =
-  "h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
+  "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
 /** Un `<select>` que sólo aparece si hay algo que elegir. */
 function Filtro({
@@ -69,7 +69,7 @@ function FiltroGuias({
     <div
       role="group"
       aria-label="Filtrar por guía de ingreso"
-      className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2"
+      className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2"
     >
       <p className="mb-1 px-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         Guía de ingreso
@@ -182,7 +182,7 @@ export default function CtpPatioFiltros({
               )}
             </button>
           )}
-          <label className="flex h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-secondary)]">
+          <label className="flex h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-secondary)]">
             <input
               type="checkbox"
               checked={filtro.soloLibres}
@@ -197,7 +197,7 @@ export default function CtpPatioFiltros({
       {/* Desplegado: los cinco selectores en su propia grilla. Se cierra solo
           nunca — el operador que abre para afinar suele tocar dos seguidos. */}
       {abierto && (
-        <div className="grid grid-cols-1 gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2 sm:grid-cols-2 lg:grid-cols-3">
           <div className={soloMovil}>
             <Filtro
               valor={filtro.especie}

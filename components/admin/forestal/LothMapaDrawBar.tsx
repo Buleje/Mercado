@@ -10,7 +10,7 @@
 import { Check, Clipboard, Loader2, MapPin, Trees, Undo2, X } from "@buleje/design-system/icons";
 
 const BTN =
-  "inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
+  "inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
 
 interface Props {
   /** Qué polígono se está levantando: cambia el rótulo y el color de la barra. */

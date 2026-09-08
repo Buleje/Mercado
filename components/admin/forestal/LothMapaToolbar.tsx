@@ -56,7 +56,7 @@ export default function LothMapaToolbar({
   return (
     <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1.5">
       <div className="flex flex-wrap items-center gap-1.5">
-        <div className="inline-flex overflow-hidden rounded-lg border-2 border-[var(--rule-base)]">
+        <div className="inline-flex overflow-hidden rounded-lg border border-[var(--rule-base)]">
           {BASEMAPS.map((b) => (
             <button
               key={b.id}

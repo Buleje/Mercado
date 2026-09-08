@@ -120,7 +120,7 @@ export default function PatioModo() {
         <button
           type="button"
           onClick={() => setRecibiendo(null)}
-          className="mb-3 inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-primary)]"
+          className="mb-3 inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-primary)]"
         >
           <ArrowLeft className="h-5 w-5" aria-hidden /> Volver al patio
         </button>
@@ -205,7 +205,7 @@ export default function PatioModo() {
                 <button
                   type="button"
                   onClick={() => void abrirRecepcion(g)}
-                  className="flex w-full items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 min-h-11 text-left transition-colors hover:border-[var(--accent)]"
+                  className="flex w-full items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 min-h-11 text-left transition-colors hover:border-[var(--accent)]"
                 >
                   <PackageCheck className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
                   <span className="min-w-0 flex-1">
@@ -225,7 +225,7 @@ export default function PatioModo() {
                 <button
                   type="button"
                   onClick={() => setVerTodasLasGuias(true)}
-                  className="h-12 w-full rounded-2xl border-2 border-dashed border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)]"
+                  className="h-12 w-full rounded-2xl border border-dashed border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)]"
                 >
                   Ver las {guias.length - GUIAS_VISIBLES} guías más viejas
                 </button>

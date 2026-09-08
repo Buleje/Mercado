@@ -94,7 +94,7 @@ export default function CubicacionesGuardadas({
   );
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <FileText className="h-4 w-4 text-[var(--accent)]" /> Cubicaciones guardadas ({lista.length})
@@ -104,7 +104,7 @@ export default function CubicacionesGuardadas({
         </button>
       </div>
 
-      <label className="mb-3 flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3">
+      <label className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3">
         <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
         <input
           value={busqueda}

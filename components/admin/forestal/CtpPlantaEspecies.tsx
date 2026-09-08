@@ -65,7 +65,7 @@ export default function CtpPlantaEspecies({ items, ubicados }: { items: Item[]; 
   const porKind = new Map(resumen.porKind.map((k) => [k.kind, k]));
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <TreePine className="h-4 w-4 text-[var(--accent)]" /> Qué madera hay, por especie
@@ -101,7 +101,7 @@ export default function CtpPlantaEspecies({ items, ubicados }: { items: Item[]; 
       {enM3.filas.length > 0 ? (
         <>
           {/* Barra de composición: dónde está el volumen. */}
-          <div className="flex h-5 w-full overflow-hidden rounded-lg border-2 border-[var(--rule-base)]">
+          <div className="flex h-5 w-full overflow-hidden rounded-lg border border-[var(--rule-base)]">
             {enM3.filas.map((f, i) => (
               <div
                 key={f.especie}

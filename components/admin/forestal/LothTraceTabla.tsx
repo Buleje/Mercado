@@ -75,7 +75,7 @@ export default function LothTraceTabla({
 }) {
   if (filas.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-10 text-center text-sm text-[var(--text-tertiary)]">
+      <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-10 text-center text-sm text-[var(--text-tertiary)]">
         <TreePine className="mx-auto mb-2 h-6 w-6 opacity-40" />
         Ningún árbol coincide con el filtro.
       </div>
@@ -83,7 +83,7 @@ export default function LothTraceTabla({
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <DataTable className="w-full border-collapse">
         <thead className="sticky top-0 z-10 bg-[var(--surface-canvas)]">
           <tr className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">

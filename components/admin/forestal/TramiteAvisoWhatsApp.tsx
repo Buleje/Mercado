@@ -77,7 +77,7 @@ export default function TramiteAvisoWhatsApp({
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--data-success-500)] hover:text-[var(--data-success-700)] dark:hover:text-[var(--data-success-500)]"
+        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--data-success-500)] hover:text-[var(--data-success-700)] dark:hover:text-[var(--data-success-500)]"
       >
         <MessageCircle className="h-3.5 w-3.5" /> {label}
       </button>
@@ -85,14 +85,14 @@ export default function TramiteAvisoWhatsApp({
   }
 
   return (
-    <div className="flex w-full flex-wrap items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+    <div className="flex w-full flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
       <input
         type="text"
         value={telefono}
         onChange={(e) => { setTelefono(e.target.value); setAviso(null); }}
         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void enviar(); } }}
         placeholder="Número de WhatsApp — 9XX XXX XXX"
-        className="h-9 min-w-[180px] flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]"
+        className="h-9 min-w-[180px] flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]"
       />
       <button
         type="button"

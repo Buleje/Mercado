@@ -110,7 +110,7 @@ export default function LothRentabilidadPanel({
         <p className="text-sm text-[var(--text-tertiary)]">Margen por especie = precio de venta − (derecho VEN + extracción + transformación + flete). Mismos números que la Analítica.</p>
         <div className="flex items-center gap-2">
           {entries.length > 0 && (
-            <div className="flex h-10 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
+            <div className="flex h-10 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
               <button
                 type="button"
                 onClick={() => setPorArbol(false)}
@@ -173,7 +173,7 @@ export default function LothRentabilidadPanel({
       {porArbol ? (
         <ArbolesTabla filas={arboles} resumen={resArboles} maxAbs={maxAbsArbol} />
       ) : (
-      <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
@@ -217,7 +217,7 @@ export default function LothRentabilidadPanel({
       {/* De qué se compone el costo. Un número sin fórmula es un número que no
           se puede discutir con el contador. */}
       {!porArbol && rows[0]?.desglose && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
           <p className="mb-2 flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-[var(--text-secondary)]">
             <Calculator className="h-3.5 w-3.5" /> De dónde sale cada cifra
           </p>
@@ -275,7 +275,7 @@ function ArbolesTabla({
 }) {
   if (filas.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+      <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
         Todavía no hay árboles talados para valorizar.
       </div>
     );
@@ -313,7 +313,7 @@ function ArbolesTabla({
         />
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>

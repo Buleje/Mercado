@@ -29,7 +29,7 @@ export default function CtpLoteCerradoFicha({
   const sinDeclarar = corridas.some((c) => c.viva && c.quantity == null);
 
   return (
-    <section className="space-y-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <section className="space-y-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-[var(--text-secondary)]">
           Lote <b className="font-mono text-[var(--text-primary)]">{lote.code}</b> ·{" "}

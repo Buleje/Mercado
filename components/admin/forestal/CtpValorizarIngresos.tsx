@@ -167,7 +167,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
     );
   }
   if (!ingresos) {
-    return <div className="h-40 animate-pulse rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]" />;
+    return <div className="h-40 animate-pulse rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]" />;
   }
 
   const visibles = verTodos ? ingresos : ingresos.filter((e) => num(e.costoTotal) == null);
@@ -221,7 +221,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
         </div>
       )}
 
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <CardTitle as="h3" className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
             {sinPeriodo ? "Todos los ingresos · registrá lo que pagaste" : "Ingresos del período · registrá lo que pagaste"}
@@ -244,7 +244,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
             <button
               type="button"
               onClick={() => setVerTodos((v) => !v)}
-              className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+              className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
             >
               {verTodos ? "Ver sólo los que faltan" : `Ver todos (${ingresos.length})`}
             </button>
@@ -273,7 +273,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
               const efectivo = dirty ? (val.trim() === "" ? null : Number(val)) : guardado;
               const porM3 = efectivo != null && Number.isFinite(efectivo) && vol > 0 ? efectivo / vol : null;
               return (
-                <div key={e.id} className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+                <div key={e.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
                   <div className="min-w-[10rem] flex-1">
                     <p className="text-sm font-bold text-[var(--text-primary)]">
                       {e.speciesCommonName} · {m3(vol)}
@@ -294,7 +294,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
                       }}
                       aria-label={`Costo total del ingreso ${e.gtfNumber}`}
                       placeholder="costo"
-                      className="h-11 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]"
+                      className="h-11 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]"
                     />
                   </div>
                   <div className="min-w-[6rem] text-right">
@@ -307,7 +307,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
                     type="button"
                     onClick={() => void saveCosto(e.id)}
                     disabled={savingId === e.id || !dirty}
-                    className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+                    className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
                   >
                     {savingId === e.id ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <CheckCircle2 className="h-4 w-4" aria-hidden />} Guardar
                   </button>

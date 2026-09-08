@@ -112,7 +112,7 @@ export default function LotesTabla({
           para once columnas se lee mejor que cualquier scroll lateral. Por eso
           acá NO va el degradé de borde que sí llevan los cuadros SERFOR —esos
           sí optan por quedarse como tabla, porque son el formato oficial. */}
-      <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full text-sm">
           <thead>
             <tr className="border-b-2 border-[var(--rule-base)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
@@ -214,7 +214,7 @@ export default function LotesTabla({
               onPorPagina(Number(e.target.value));
               onPagina(1); // Cambiar el tamaño y quedar en la página 7 deja la vista vacía.
             }}
-            className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
+            className="h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
           >
             {[10, 25, 50, 100].map((n) => (
               <option key={n} value={n}>{n}</option>
@@ -231,7 +231,7 @@ export default function LotesTabla({
             type="button"
             onClick={() => onPagina(actual - 1)}
             disabled={actual <= 1}
-            className="inline-flex h-12 items-center gap-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
+            className="inline-flex h-12 items-center gap-1 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
           >
             <ChevronLeft className="h-4 w-4" aria-hidden /> Anterior
           </button>
@@ -242,7 +242,7 @@ export default function LotesTabla({
             type="button"
             onClick={() => onPagina(actual + 1)}
             disabled={actual >= paginas}
-            className="inline-flex h-12 items-center gap-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
+            className="inline-flex h-12 items-center gap-1 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
           >
             Siguiente <ChevronRight className="h-4 w-4" aria-hidden />
           </button>

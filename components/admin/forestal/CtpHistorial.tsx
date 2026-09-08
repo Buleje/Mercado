@@ -70,7 +70,7 @@ export default function CtpHistorial({ entityId }: { entityId: string }) {
   if (eventos.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

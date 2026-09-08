@@ -80,14 +80,14 @@ export default function CtpTrozasPatio({
   return (
     <div className="space-y-3">
       {/* ── Lo que hay parado ─────────────────────────────────────────────── */}
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <Trees className="h-4 w-4 text-[var(--accent)]" /> El patio, pieza por pieza
           </CardTitle>
           <button
             type="button" onClick={onRecargar} disabled={cargando}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-2.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-60"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${cargando ? "animate-spin" : ""}`} /> Actualizar
           </button>
@@ -218,7 +218,7 @@ export default function CtpTrozasPatio({
                 <span
                   key={e.especie}
                   title={`${n2(e.m3Libres)} m³ libres de ${n2(e.m3)} m³`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 py-1"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 py-1"
                 >
                   <span
                     className="h-1.5 w-8 shrink-0 overflow-hidden rounded-full bg-[var(--rule-base)]"

@@ -118,7 +118,7 @@ export default function LothEudrRail({
       )}
 
       {/* Checklist EUDR */}
-      <div className="space-y-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="space-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Checklist</p>
         {readiness.checks.map((c) => (
           <div key={c.key} className="flex items-start gap-2.5">
@@ -136,7 +136,7 @@ export default function LothEudrRail({
       </div>
 
       {/* Declaración de deforestación cero */}
-      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-3">
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-3">
         <input
           type="checkbox"
           checked={parcela.deforestacionCero}
@@ -166,7 +166,7 @@ export default function LothEudrRail({
             onClick={onExportGeoJson}
             disabled={!canExport}
             title={canExport ? "Descargar la geolocalización en GeoJSON para la DDS" : "Declará la parcela y geolocalizá operaciones primero"}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
           >
             <Download className="h-3.5 w-3.5" /> GeoJSON
           </button>
@@ -175,7 +175,7 @@ export default function LothEudrRail({
             onClick={onPrintDds}
             disabled={!parcelaDeclarada}
             title={parcelaDeclarada ? "Informe EUDR imprimible (DDS)" : "Declará la parcela primero"}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
           >
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />} Informe
           </button>
@@ -207,7 +207,7 @@ function MiniStat({ label, value, hint, tone }: { label: string; value: string; 
           ? "text-[var(--data-error-700)]"
           : "text-[var(--text-primary)]";
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</p>
       <p className={`mt-0.5 font-mono text-lg font-bold tabular-nums ${valueColor}`}>{value}</p>
       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{hint}</p>

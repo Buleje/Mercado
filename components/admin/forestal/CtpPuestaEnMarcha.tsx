@@ -48,7 +48,7 @@ export default function CtpPuestaEnMarcha({ onIr }: { onIr?: (vista: string) => 
      para no pedir nada, y la próxima vez ya nadie lo lee. */
   if (resumen.sinEstrenar === 0 && resumen.aMedias === 0) {
     return (
-      <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+      <p className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
         <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
         {resumen.frase} Las {resumen.total} partes del libro tienen datos.
       </p>
@@ -60,7 +60,7 @@ export default function CtpPuestaEnMarcha({ onIr }: { onIr?: (vista: string) => 
   const filas = [...capacidades].sort((a, b) => orden[a.estado] - orden[b.estado]);
 
   return (
-    <section className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <section className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
           Qué del libro está sin estrenar
@@ -134,7 +134,7 @@ function Fila({ c, onIr }: { c: Capacidad; onIr?: (vista: string) => void }) {
         <button
           type="button"
           onClick={() => onIr(c.vista)}
-          className="inline-flex shrink-0 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-primary hover:bg-primary/10"
+          className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-primary hover:bg-primary/10"
         >
           Activar <ArrowRight className="h-4 w-4" aria-hidden />
         </button>

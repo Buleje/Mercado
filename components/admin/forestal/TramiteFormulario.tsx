@@ -555,7 +555,7 @@ export default function TramiteFormulario({
     <div className="space-y-4">
       {/* Cabecera del trámite: identidad editorial + a quién va + progreso. */}
       <div
-        className="relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] p-5"
+        className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] p-5"
         style={{ background: "linear-gradient(135deg, var(--accent-soft) 0%, var(--surface-raised) 60%)" }}
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -751,7 +751,7 @@ export default function TramiteFormulario({
       <TramiteArchivadorOffscreen handleRef={archivadorRef} />
 
       {/* Acciones: pegadas al pie, siempre alcanzables. */}
-      <div className="sticky bottom-0 z-10 -mx-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur">
+      <div className="sticky bottom-0 z-10 -mx-1 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur">
         {barraAcciones}
       </div>
     </div>

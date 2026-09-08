@@ -89,7 +89,7 @@ function construirSecciones(d: PlantacionInput): Seccion[] {
 }
 
 const inputCls =
-  "mt-1 h-10 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20 disabled:opacity-60";
+  "mt-1 h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20 disabled:opacity-60";
 
 export default function PlantacionPasoRevision({
   datos,
@@ -112,7 +112,7 @@ export default function PlantacionPasoRevision({
         {resumen.numEspecies} especie(s) · {resumen.totalPlantas.toLocaleString("es-PE")} plantas
       </p>
 
-      <ul className="divide-y divide-[var(--rule-soft)] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <ul className="divide-y divide-[var(--rule-soft)] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         {secciones.map((s) => {
           const meta = ESTADO_META[s.estado];
           return (
@@ -129,7 +129,7 @@ export default function PlantacionPasoRevision({
         })}
       </ul>
 
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="mb-2 flex items-center gap-2">
           <ScrollText className="h-4 w-4 text-[var(--accent)]" aria-hidden="true" />
           <p className="text-sm font-bold text-[var(--text-primary)]">Declaración jurada</p>

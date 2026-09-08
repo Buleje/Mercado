@@ -106,7 +106,7 @@ export default function PatioBuscador() {
           ¿Qué troza estás mirando?
         </label>
         <div className="flex gap-2">
-          <div className="flex h-14 flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]">
+          <div className="flex h-14 flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]">
             <Search className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
             <input
               id="patio-buscar"

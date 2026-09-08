@@ -591,7 +591,7 @@ function VersionsTab({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Nota del cambio (opcional)…"
-          className="w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary mb-2"
+          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary mb-2"
         />
         <input
           ref={fileRef}
@@ -616,7 +616,7 @@ function VersionsTab({
               onClick={() => { setCompareMode((c) => !c); setPicked([]); setVerDiff(false); }}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors",
-                compareMode ? "bg-primary text-white" : "border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-primary"
+                compareMode ? "bg-primary text-white" : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-primary"
               )}
             >
               <GitCompare className="h-3.5 w-3.5" /> {compareMode ? "Salir" : "Comparar"}
@@ -699,7 +699,7 @@ function VersionsTab({
                       type="checkbox"
                       checked={isPicked}
                       onChange={() => { setVerDiff(false); setPicked((p) => (p.includes(v.id) ? p.filter((x) => x !== v.id) : [...p, v.id].slice(-2))); }}
-                      className="h-4 w-4 shrink-0 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
+                      className="h-4 w-4 shrink-0 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
                       aria-label={`Comparar v${v.versionNumber}`}
                     />
                   )}
@@ -828,7 +828,7 @@ function RelatedSection({ doc, allDocs, onChanged }: { doc: DbDocument; allDocs:
           defaultValue=""
           onChange={(e) => { if (e.target.value) toggle(e.target.value, true); }}
           disabled={busy}
-          className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary dark:bg-[var(--surface-sunken)]"
+          className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary dark:bg-[var(--surface-sunken)]"
         >
           <option value="" disabled>Elegí un documento…</option>
           {candidates.map((d) => (
@@ -836,7 +836,7 @@ function RelatedSection({ doc, allDocs, onChanged }: { doc: DbDocument; allDocs:
           ))}
         </select>
       ) : (
-        <button onClick={() => setAdding(true)} disabled={candidates.length === 0} className="inline-flex items-center gap-1.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] px-3 py-1.5 text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary disabled:opacity-40">
+        <button onClick={() => setAdding(true)} disabled={candidates.length === 0} className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] px-3 py-1.5 text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary disabled:opacity-40">
           <Plus className="h-4 w-4" /> Vincular documento
         </button>
       )}
@@ -894,7 +894,7 @@ function ApprovalSection({ doc, onChanged }: { doc: DbDocument; onChanged: (d: D
 
       {status === "review" ? (
         <>
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (opcional)" className="mb-2 h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (opcional)" className="mb-2 h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
           <div className="flex gap-2">
             <button onClick={() => act("approve")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--data-success-700)] px-3 min-h-10 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]"><Check className="h-4 w-4" /> Aprobar</button>
             <button onClick={() => act("reject")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--data-error-500)]/40 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-50 dark:text-[var(--data-error-500)]"><X className="h-4 w-4" /> Rechazar</button>
@@ -1038,7 +1038,7 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
             onChange={(e) => save("folder", { folderId: e.target.value || null })}
             disabled={saving === "folder"}
             aria-label="Mover a otra carpeta"
-            className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)] disabled:opacity-50"
+            className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)] disabled:opacity-50"
           >
             <option value="">Sin carpeta (raíz)</option>
             {arbolCarpetas.map(({ folder, depth }) => (
@@ -1080,7 +1080,7 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
             type="date"
             defaultValue={expiryValue}
             onChange={(e) => save("expiry", { expiresAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
-            className="px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+            className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary"
           />
           {doc.expiresAt && (
             <button
@@ -1116,7 +1116,7 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
             <select
               value={doc.customerId ?? ""}
               onChange={(e) => save("customer", { customerId: e.target.value || null })}
-              className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
+              className="mt-1 w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
             >
               <option value="">— Ninguno —</option>
               {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -1127,7 +1127,7 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
             <select
               value={doc.supplierId ?? ""}
               onChange={(e) => save("supplier", { supplierId: e.target.value || null })}
-              className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
+              className="mt-1 w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
             >
               <option value="">— Ninguno —</option>
               {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -1200,7 +1200,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
             <input
               type="number" min={1} max={90} value={days}
               onChange={(e) => setDays(Math.max(1, Math.min(90, Number(e.target.value))))}
-              className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+              className="mt-1 w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary"
             />
           </label>
           <label className="block">
@@ -1211,7 +1211,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
             {usePwd && (
               <input
                 type="text" value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="Mínimo 4 caracteres"
-                className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                className="mt-1 w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary"
               />
             )}
           </label>
@@ -1430,7 +1430,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
             <span className="text-xs font-bold text-[var(--text-secondary)]">Tu nombre</span>
             <input
               type="text" value={signerName} onChange={(e) => setSignerName(e.target.value)}
-              className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+              className="mt-1 w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary"
             />
           </label>
           <label className="block">
@@ -1438,13 +1438,13 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
             <input
               type="text" value={signerRole} onChange={(e) => setSignerRole(e.target.value)}
               placeholder="Gerente, Contador…"
-              className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+              className="mt-1 w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary"
             />
           </label>
         </div>
 
         <p className="text-xs font-bold text-[var(--text-secondary)] mb-1.5">Trazá tu firma:</p>
-        <div className="inline-block border-2 border-dashed border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)]">
+        <div className="inline-block border border-dashed border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)]">
           <canvas
             ref={canvasRef}
             width={w}
@@ -1467,7 +1467,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
             {signing && <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
             <PencilLine className="h-3.5 w-3.5" /> Firmar PDF
           </button>
-          <button onClick={saveMySignature} className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary inline-flex items-center gap-1.5" title="Guardá tu firma para reusarla con 1 clic">
+          <button onClick={saveMySignature} className="px-3 py-2 rounded-xl border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary inline-flex items-center gap-1.5" title="Guardá tu firma para reusarla con 1 clic">
             <Save className="h-3.5 w-3.5" /> Guardar mi firma
           </button>
           {savedNote && <span className="text-xs font-semibold text-[var(--text-tertiary)]">{savedNote}</span>}

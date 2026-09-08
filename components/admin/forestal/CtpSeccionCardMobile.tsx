@@ -63,7 +63,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
   );
 
   return (
-    <article className={`rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 ${anulado ? "opacity-60" : ""}`}>
+    <article className={`rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 ${anulado ? "opacity-60" : ""}`}>
       {/* Encabezado: especie + CITES · estado */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -222,7 +222,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
             <button
               type="button"
               onClick={() => onPapeles(e)}
-              className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
             >
               <Paperclip className="h-3.5 w-3.5" /> Papeles
             </button>

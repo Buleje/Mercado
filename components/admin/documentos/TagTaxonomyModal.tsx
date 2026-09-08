@@ -61,7 +61,7 @@ export function TagTaxonomyModal({ onChanged, onClose }: { onChanged: () => void
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="flex max-h-[85vh] w-full max-w-[30rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
+      <div className="flex max-h-[85vh] w-full max-w-[30rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Tag className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">

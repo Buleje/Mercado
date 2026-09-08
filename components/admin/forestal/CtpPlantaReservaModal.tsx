@@ -117,7 +117,7 @@ export default function CtpPlantaReservaModal({ titulo, corridas, onClose, onDes
           </p>
         )}
         {!cargando && !error && filas.length === 0 && (
-          <p className="rounded-xl border-2 border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
+          <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
             Lo que estaba apartado acá ya no figura como disponible: puede haberse despachado desde otra pantalla.
           </p>
         )}

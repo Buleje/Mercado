@@ -747,14 +747,14 @@ export function RepartidoresTab() {
                         checked={isSelected}
                         onChange={() => toggleSelect(p.id)}
                         aria-label={`Seleccionar ${p.name}`}
-                        className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                        className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                       />
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <div
                           className={cn(
-                            "h-12 w-12 rounded-2xl flex items-center justify-center text-xl font-extrabold shrink-0 border-2 border-transparent",
+                            "h-12 w-12 rounded-2xl flex items-center justify-center text-xl font-extrabold shrink-0 border border-transparent",
                             zc.bg,
                             zc.text,
                           )}

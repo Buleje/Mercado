@@ -162,7 +162,7 @@ export default function CtpParteCampos({
                 ? `Consultar ${tipoPadron === "RUC" ? "SUNAT" : "RENIEC"} con ese número`
                 : "Escribí 8 dígitos (DNI) u 11 (RUC)"
             }
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {consultando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             <span className="sr-only">Traer del padrón</span>
@@ -188,7 +188,7 @@ export default function CtpParteCampos({
                 <button
                   type="button"
                   onClick={() => aplicar(hallado, true)}
-                  className="ml-auto rounded-lg border-2 border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                  className="ml-auto rounded-lg border border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
                 >
                   Traer todo del padrón
                 </button>

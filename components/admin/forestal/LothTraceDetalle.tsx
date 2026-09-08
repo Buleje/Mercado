@@ -73,7 +73,7 @@ export default function LothTraceDetalle({
           <button
             type="button"
             onClick={() => nav.onVerCadena?.(op.tree)}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             <Link2 className="h-4 w-4" /> Cadena de custodia
           </button>
@@ -82,7 +82,7 @@ export default function LothTraceDetalle({
           <button
             type="button"
             onClick={() => nav.onVerMapa?.(op.tree)}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             <MapIcon className="h-4 w-4" /> Ver en el mapa
           </button>

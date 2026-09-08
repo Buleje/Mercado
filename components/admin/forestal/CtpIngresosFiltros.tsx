@@ -155,7 +155,7 @@ export default function CtpIngresosFiltros({
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 transition-colors focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]">
+        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 transition-colors focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent-muted)]">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <label htmlFor="ctp-ing-search" className="sr-only">
             Buscar ingresos
@@ -297,7 +297,7 @@ function StatusChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex h-9 items-center gap-2 rounded-full border-2 px-3.5 text-sm font-bold transition ${
+      className={`inline-flex h-9 items-center gap-2 rounded-full border px-3.5 text-sm font-bold transition ${
         active
           ? activeCls
           : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"

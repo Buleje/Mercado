@@ -31,7 +31,7 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 const CELL = "px-3 py-2 text-sm";
 const NUM = `${CELL} text-right font-mono tabular-nums`;
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
+  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
 
 interface Props {
   analisis: PoaAnalisis;
@@ -74,7 +74,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
   };
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
         <div>
           <CardTitle as="h3" className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
@@ -131,7 +131,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
               max={100}
               value={config.semillerosPct}
               onChange={(e) => onConfig({ ...config, semillerosPct: Math.max(0, Math.min(100, Number(e.target.value) || 0)) })}
-              className="h-10 w-20 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
+              className="h-10 w-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
             />
             % de los árboles que superan el DMC (se reservan los de mayor DAP)
           </label>
@@ -150,7 +150,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
                       placeholder={String(oficial.cm)}
                       value={config.dmcOverrides[normKey(e.especie)] ?? ""}
                       onChange={(ev) => setDmc(e.especie, ev.target.value)}
-                      className="h-10 w-20 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold text-[var(--text-primary)]"
+                      className="h-10 w-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold text-[var(--text-primary)]"
                     />
                     <span className="w-16 shrink-0 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                       {oficial.fuente === "oficial" ? `norma ${oficial.cm}` : `gral. ${oficial.cm}`}
@@ -281,7 +281,7 @@ function Kpi({ label, valor, sub, tone }: { label: string; valor: string; sub: s
           ? "text-[#0d9488]"
           : "text-[var(--text-primary)]";
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</p>
       <p className={`font-mono text-2xl font-black tabular-nums ${color}`}>{valor}</p>
       <p className="text-xs font-semibold text-[var(--text-tertiary)]">{sub}</p>

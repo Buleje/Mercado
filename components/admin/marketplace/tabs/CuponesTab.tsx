@@ -66,7 +66,7 @@ export function MarketplaceCuponesTab() {
       )}
 
       {coupons.length === 0 ? (
-        <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="text-center py-20 px-6 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             <Ticket className="h-6 w-6" />
           </div>
@@ -299,7 +299,7 @@ function NewCouponModal({
                     placeholder="BIENVENIDO10"
                     value={form.code}
                     onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase().replace(/\s+/g, "") })}
-                    className="w-full px-4 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono font-bold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase tracking-wider"
+                    className="w-full px-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono font-bold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase tracking-wider"
                     maxLength={20}
                   />
                 </Field>
@@ -313,7 +313,7 @@ function NewCouponModal({
                     placeholder="Descuento de bienvenida"
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    className="w-full px-4 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    className="w-full px-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
                 </Field>
               </div>
@@ -368,7 +368,7 @@ function NewCouponModal({
                   labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]"
                 >
                   {(id) => (
-                    <div className="flex items-stretch rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+                    <div className="flex items-stretch rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
                       <input
                         id={id}
                         type="number"
@@ -397,7 +397,7 @@ function NewCouponModal({
                     onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
                     min={0}
                     step={0.5}
-                    className="w-full px-4 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
+                    className="w-full px-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
                   />
                 </Field>
               </div>
@@ -420,7 +420,7 @@ function NewCouponModal({
                     value={form.maxUses}
                     onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
                     min={1}
-                    className="w-full px-4 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
+                    className="w-full px-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
                   />
                 </Field>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vacío = sin tope de canjes</p>
@@ -432,7 +432,7 @@ function NewCouponModal({
                     type="datetime-local"
                     value={form.expiresAt ? form.expiresAt.slice(0, 16) : ""}
                     onChange={(e) => setForm({ ...form, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" })}
-                    className="w-full px-4 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    className="w-full px-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
                 </Field>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vacío = sin vencimiento</p>
@@ -449,7 +449,7 @@ function NewCouponModal({
           <div className="flex items-center gap-3 ml-auto">
             <button
               onClick={onClose}
-              className="px-4 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] border-2 border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
+              className="px-4 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
             >
               Cancelar
             </button>

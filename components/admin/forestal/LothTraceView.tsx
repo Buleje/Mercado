@@ -133,7 +133,7 @@ export default function LothTraceView({
 
   if (filas.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
         <TreePine className="mx-auto mb-3 h-10 w-10 opacity-30" />
         <p className="text-base font-medium">No hay operaciones para trazar todavía.</p>
         <p className="mt-1 text-sm">Registrá una tala en la sección 1 para iniciar la trazabilidad de un árbol.</p>
@@ -237,7 +237,7 @@ export default function LothTraceView({
           <button
             type="button"
             onClick={() => descargar("trazabilidad-seleccion.csv", filasToCsv(seleccionadas.map(({ f }) => f)))}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             CSV de la selección
           </button>
@@ -263,7 +263,7 @@ export default function LothTraceView({
           <button
             type="button"
             onClick={() => setExpandir((e) => ({ signal: e.signal + 1, todo: !e.todo }))}
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
             <ChevronsUpDown className="h-4 w-4" /> {expandir.todo ? "Colapsar todo" : "Expandir todo"}
           </button>
@@ -271,7 +271,7 @@ export default function LothTraceView({
       </div>
 
       {visibles.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-10 text-center text-sm text-[var(--text-tertiary)]">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-10 text-center text-sm text-[var(--text-tertiary)]">
           Ningún árbol coincide con el filtro. Probá con otro término o quitá los filtros.
         </div>
       ) : modo === "tabla" ? (
@@ -307,7 +307,7 @@ export default function LothTraceView({
             type="button"
             onClick={() => setPagina((p) => Math.max(0, p - 1))}
             disabled={pagActual === 0}
-            className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+            className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
           >
             Anterior
           </button>
@@ -318,7 +318,7 @@ export default function LothTraceView({
             type="button"
             onClick={() => setPagina((p) => Math.min(totalPaginas - 1, p + 1))}
             disabled={pagActual >= totalPaginas - 1}
-            className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+            className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
           >
             Siguiente
           </button>

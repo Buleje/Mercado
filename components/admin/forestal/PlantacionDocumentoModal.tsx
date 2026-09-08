@@ -140,14 +140,14 @@ export default function PlantacionDocumentoModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             <X className="h-4 w-4" /> Cerrar
           </button>
           <button
             type="button"
             onClick={() => imprimirPlantacion({ datos, codigoInterno })}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             <Printer className="h-4 w-4" /> Imprimir
           </button>
@@ -155,7 +155,7 @@ export default function PlantacionDocumentoModal({
             type="button"
             onClick={() => void descargarPdf()}
             disabled={descargando}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
           >
             <Download className="h-4 w-4" /> {descargando ? "Armando…" : "Descargar PDF"}
           </button>

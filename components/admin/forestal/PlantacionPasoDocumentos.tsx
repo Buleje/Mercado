@@ -97,7 +97,7 @@ export default function PlantacionPasoDocumentos({
         const meta = ESTADO_META[estadoDe(doc)];
 
         return (
-          <div key={cat.key} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <div key={cat.key} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-[var(--text-primary)]">{cat.label}</p>
@@ -109,7 +109,7 @@ export default function PlantacionPasoDocumentos({
                 <select
                   value={doc.clasificacion}
                   onChange={(e) => actualizar(cat.key, { clasificacion: e.target.value as ClasificacionDocumento })}
-                  className="h-9 shrink-0 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-primary)]"
+                  className="h-9 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-primary)]"
                 >
                   <option value="requerido">Requerido</option>
                   <option value="opcional">Opcional</option>
@@ -125,7 +125,7 @@ export default function PlantacionPasoDocumentos({
                     href={`/api/admin/documents/${encodeURIComponent(doc.documentId)}/download`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-9 max-w-full items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--accent)]"
+                    className="inline-flex h-9 max-w-full items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--accent)]"
                   >
                     <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> <span className="truncate">{doc.rotulo || "Ver documento"}</span>
                   </a>
@@ -147,7 +147,7 @@ export default function PlantacionPasoDocumentos({
                     type="button"
                     onClick={() => inputs.current[cat.key]?.click()}
                     disabled={subiendo === cat.key}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:opacity-60 dark:hover:text-[var(--accent)]"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:opacity-60 dark:hover:text-[var(--accent)]"
                   >
                     {subiendo === cat.key ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Paperclip className="h-3.5 w-3.5" aria-hidden="true" />}
                     {subiendo === cat.key ? "Subiendo…" : "Subir documento"}

@@ -640,7 +640,7 @@ export default function ReceivingTab() {
                 </div>
               ) : (
                 <label className={cn(
-                  "flex items-center gap-2 rounded-lg border-2 border-dashed border-[var(--rule-base)] px-3 py-2.5 cursor-pointer hover:border-primary/50 transition-colors text-sm text-[var(--text-secondary)] dark:text-muted",
+                  "flex items-center gap-2 rounded-lg border border-dashed border-[var(--rule-base)] px-3 py-2.5 cursor-pointer hover:border-primary/50 transition-colors text-sm text-[var(--text-secondary)] dark:text-muted",
                   uploadingInvoice && "opacity-60 cursor-wait",
                 )}>
                   {uploadingInvoice ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Camera className="h-4 w-4" aria-hidden />}

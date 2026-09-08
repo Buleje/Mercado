@@ -89,7 +89,7 @@ export default function LothCampoBar({
         type="button"
         onClick={onToggle}
         aria-pressed={activo}
-        className={`inline-flex h-9 items-center gap-1.5 rounded-lg border-2 px-3 text-xs font-bold transition ${
+        className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-bold transition ${
  activo
  ? "border-transparent bg-[var(--accent-ink)] text-white"
  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
@@ -100,7 +100,7 @@ export default function LothCampoBar({
 
       {activo && posicion && utm && (
         <>
-          <span className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1.5 font-mono text-xs font-bold tabular-nums text-[var(--text-secondary)]">
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1.5 font-mono text-xs font-bold tabular-nums text-[var(--text-secondary)]">
             {utm.zone}
             {utm.band} · E {formatMeters(utm.easting, 0)} · N {formatMeters(utm.northing, 0)}
             <span className="font-sans font-semibold text-[var(--text-tertiary)]">±{Math.round(posicion.accuracy)} m</span>
@@ -120,7 +120,7 @@ export default function LothCampoBar({
           <button
             type="button"
             onClick={() => onCentrar([posicion.lat, posicion.lng])}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             <Locate className="h-3.5 w-3.5" /> Centrar
           </button>

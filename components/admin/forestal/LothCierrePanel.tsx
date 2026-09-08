@@ -142,7 +142,7 @@ export default function LothCierrePanel({
       {error && <ErrorAlert title="No se pudo completar la acción" description={error} />}
 
       {/* Cerrar un período */}
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="mb-1 flex items-center gap-2">
           <Lock className="h-4 w-4 text-[var(--accent-dark)] dark:text-[var(--accent)]" />
           <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Cerrar un período</CardTitle>
@@ -157,7 +157,7 @@ export default function LothCierrePanel({
               type="month"
               value={period}
               onChange={(e) => { setPeriod(e.target.value); setConfirmCerrar(false); }}
-              className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </label>
           {!confirmCerrar ? (
@@ -177,7 +177,7 @@ export default function LothCierrePanel({
 
         {/* Qué se está por congelar. Antes el botón no decía NADA del contenido
             del mes: ni cuántas líneas, ni qué volumen, ni si algo quedaba flojo. */}
-        <div className="mt-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+        <div className="mt-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
           {resumen.lineas === 0 && resumen.anuladas === 0 ? (
             <p className="text-sm text-[var(--text-tertiary)]">
               <b className="capitalize text-[var(--text-secondary)]">{resumen.label}</b> no tiene líneas registradas: no hay nada que cerrar.
@@ -193,7 +193,7 @@ export default function LothCierrePanel({
                 <button
                   type="button"
                   onClick={() => printActaCierre(resumen, null, caratula)}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
                 >
                   <Printer className="h-3.5 w-3.5" /> Vista previa del acta
                 </button>
@@ -262,7 +262,7 @@ export default function LothCierrePanel({
           </CardTitle>
         </div>
         {(cierres ?? []).length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+          <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
             Ningún período cerrado todavía. Cerrá un mes cuando termines de registrar sus operaciones.
           </div>
         ) : (
@@ -297,7 +297,7 @@ export default function LothCierrePanel({
                           value={motivo}
                           onChange={(e) => setMotivo(e.target.value)}
                           placeholder="Motivo de reapertura (min 3)"
-                          className="h-9 w-56 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-warning-500)]"
+                          className="h-9 w-56 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-warning-500)]"
                         />
                         <div className="flex gap-2">
                           <Btn variant="danger" size="sm" onClick={() => void doReabrir(c.periodKey)} disabled={busy || motivo.trim().length < 3}>

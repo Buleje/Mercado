@@ -76,7 +76,7 @@ export default function PlantacionPasoBloques({
   return (
     <div className="space-y-4">
       <div
-        className="relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] p-4"
+        className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] p-4"
         style={{ background: "linear-gradient(135deg, var(--accent-soft) 0%, var(--surface-raised) 60%)" }}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -111,7 +111,7 @@ export default function PlantacionPasoBloques({
       </div>
 
       {bloques.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center">
           <p className="text-sm text-[var(--text-tertiary)]">Todavía no hay bloques cargados.</p>
           {!soloLectura && (
             <button

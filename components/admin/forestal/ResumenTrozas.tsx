@@ -36,7 +36,7 @@ function leerTrozas(): TrozaCubicada[] {
   }
 }
 
-const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
+const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
 
 /** Fila compacta: label · piezas · PT · m³ · barra de participación. */
 function FilaGrupo({ g, destacada }: { g: GrupoTrozas; destacada?: boolean }) {

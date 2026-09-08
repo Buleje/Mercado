@@ -216,7 +216,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                 {/* Traer al cliente del sistema en vez de tipearlo: menos errores
                     en el DNI y el teléfono queda listo para mandarlo. */}
                 {clientes.length > 0 && (
-                  <div className="mt-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+                  <div className="mt-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
                     <p className="mb-1.5 text-xs font-bold text-[var(--text-primary)]">Traer datos de un cliente</p>
                     <div className="relative">
                       <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
@@ -225,7 +225,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                         onChange={(e) => setBuscaCliente(e.target.value)}
                         placeholder="Buscar cliente…"
                         aria-label="Buscar cliente"
-                        className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] h-10 pl-8 pr-3 text-sm outline-none focus:border-primary"
+                        className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] h-10 pl-8 pr-3 text-sm outline-none focus:border-primary"
                       />
                     </div>
                     {buscaCliente.trim() !== "" && (
@@ -264,7 +264,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                           onChange={(e) => setField(f.name, e.target.value)}
                           placeholder={f.placeholder ?? ""}
                           rows={3}
-                          className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                          className="mt-1 w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary"
                         />
                       ) : (
                         <input
@@ -273,7 +273,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                           value={values[f.name] ?? ""}
                           onChange={(e) => setField(f.name, e.target.value)}
                           placeholder={f.placeholder ?? ""}
-                          className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                          className="mt-1 w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary"
                         />
                       )}
                     </label>

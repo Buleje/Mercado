@@ -276,7 +276,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
 
       {/* Estado vacio */}
       {sections.length === 0 && (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
           <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             <Layers className="h-7 w-7" strokeWidth={1.75} />
           </span>
@@ -488,7 +488,7 @@ function TemplatesModal({
               key={tpl.type}
               type="button"
               onClick={() => onPick(tpl)}
-              className="group text-left rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 hover:border-[var(--accent)] hover:-translate-y-0.5 hover:shadow-md transition-all"
+              className="group text-left rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-5 hover:border-[var(--accent)] hover:-translate-y-0.5 hover:shadow-md transition-all"
             >
               <div className="flex items-start justify-between gap-2 mb-3">
                 <span className="text-2xl">{tpl.emoji}</span>

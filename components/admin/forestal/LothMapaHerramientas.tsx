@@ -27,7 +27,7 @@ const CHIP =
   "inline-flex h-9 items-center gap-1.5 rounded-lg border-2 px-3 text-xs font-bold transition disabled:opacity-40";
 const OFF = "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]";
 const INPUT =
-  "h-10 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 font-mono text-sm text-[var(--text-primary)]";
+  "h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 font-mono text-sm text-[var(--text-primary)]";
 
 interface Props {
   medicion: LatLng[] | null;
@@ -133,7 +133,7 @@ export default function LothMapaHerramientas({
           <Table className="h-3.5 w-3.5" /> {midiendo ? "Midiendo…" : "Medir"}
         </button>
         {midiendo && (
-          <div className="inline-flex overflow-hidden rounded-lg border-2 border-[var(--rule-base)]">
+          <div className="inline-flex overflow-hidden rounded-lg border border-[var(--rule-base)]">
             {(["distancia", "area"] as const).map((m) => (
               <button
                 key={m}
@@ -204,7 +204,7 @@ export default function LothMapaHerramientas({
 
       {/* Panel: ir a coordenada */}
       {irOpen && (
-        <div className="flex flex-wrap items-end gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+        <div className="flex flex-wrap items-end gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
           <label className="text-xs font-bold text-[var(--text-secondary)]">
             Este (m)
             <input value={este} onChange={(e) => setEste(e.target.value)} inputMode="decimal" placeholder="545060" className={`mt-1 block w-32 ${INPUT}`} />
@@ -247,14 +247,14 @@ export default function LothMapaHerramientas({
               type="button"
               onClick={() => onMedicion(medicion.slice(0, -1))}
               disabled={medicion.length === 0}
-              className="inline-flex h-8 items-center rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] disabled:opacity-40"
+              className="inline-flex h-8 items-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] disabled:opacity-40"
             >
               Deshacer
             </button>
             <button
               type="button"
               onClick={() => onMedicion([])}
-              className="inline-flex h-8 items-center rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)]"
+              className="inline-flex h-8 items-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)]"
             >
               Limpiar
             </button>
@@ -281,7 +281,7 @@ export default function LothMapaHerramientas({
               max={500}
               value={fajaAnchoM}
               onChange={(e) => onFajaAncho(Math.max(0, Math.min(500, Number(e.target.value) || 0)))}
-              className="h-9 w-20 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold text-[var(--text-primary)]"
+              className="h-9 w-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold text-[var(--text-primary)]"
             />
             m
           </label>
@@ -310,7 +310,7 @@ export default function LothMapaHerramientas({
             <button
               type="button"
               onClick={onCerrarPerfil}
-              className="ml-auto inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)]"
+              className="ml-auto inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)]"
             >
               <X className="h-3.5 w-3.5" /> Cerrar
             </button>
@@ -352,7 +352,7 @@ export default function LothMapaHerramientas({
               value={wayback.releaseNum}
               onChange={(e) => onWayback(releases.find((r) => r.releaseNum === e.target.value) ?? null)}
               aria-label="Versión de la imagen histórica"
-              className="ml-auto h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-primary)]"
+              className="ml-auto h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-primary)]"
             >
               {releases.map((r) => (
                 <option key={r.releaseNum} value={r.releaseNum}>

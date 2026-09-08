@@ -234,7 +234,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
             })()}
 
             {/* 2. Las guías que alimentaron la corrida */}
-            <section className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]">
+            <section className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]">
               <div className="flex items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
                 <div className="flex items-center gap-2">
                   <Link2 className="h-4 w-4 text-[var(--text-tertiary)]" />
@@ -313,7 +313,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
             </div>
             <div className="space-y-4">
             {/* 3. Costo de la corrida (interno) */}
-            <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+            <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
               <div className="mb-2 flex items-center gap-2">
                 <Banknote className="h-4 w-4 text-[var(--text-tertiary)]" />
                 <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Costo de la corrida (interno)</CardTitle>
@@ -404,7 +404,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
 function MiniStat({ label, value, tone }: { label: string; value: string; tone?: "ok" | "bad" }) {
   const color = tone === "bad" ? "text-[var(--data-error-700)]" : tone === "ok" ? "text-[var(--data-success-700)]" : "text-[var(--text-primary)]";
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{label}</p>
       <p className={`mt-0.5 font-mono text-base font-bold tabular-nums ${color}`}>{value}</p>
     </div>

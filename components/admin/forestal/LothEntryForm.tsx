@@ -714,7 +714,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 value={correctionNote}
                 onChange={(e) => setCorrectionNote(e.target.value)}
                 placeholder="Motivo de la corrección (ej.: el Ø mayor se anotó en cm, no en m)"
-                className="mt-2 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]"
+                className="mt-2 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]"
               />
             </div>
           )}

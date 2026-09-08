@@ -58,7 +58,7 @@ export default function CtpKardexModal({ especie, period, onClose }: { especie: 
               <p className="text-xs text-[var(--text-tertiary)]">El saldo final coincide con la pestaña Saldos. Consumo = m³ declarados en las corridas de producción de esta especie.</p>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+            <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
               <DataTable className="w-full text-sm">
                 <thead className="bg-[var(--surface-sunken)] text-left">
                   <tr>
@@ -109,7 +109,7 @@ export default function CtpKardexModal({ especie, period, onClose }: { especie: 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "ok" | "bad" }) {
   const color = tone === "bad" ? "text-[var(--data-error-700)]" : tone === "ok" ? "text-[var(--data-success-700)]" : "text-[var(--text-primary)]";
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{label}</p>
       <p className={`mt-0.5 font-mono text-base font-bold tabular-nums ${color}`}>{value}</p>
     </div>

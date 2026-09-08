@@ -151,7 +151,7 @@ export default function CtpRadarLienzo({
         onPointerMove={onPointerMove}
         onPointerUp={terminarPan}
         onPointerLeave={terminarPan}
-        className={`overflow-auto rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-3 shadow-[var(--shadow-sm)] ${
+        className={`overflow-auto rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-3 shadow-[var(--shadow-sm)] ${
           pantallaCompleta ? "max-h-[calc(100vh-13rem)]" : "max-h-[min(78vh,60rem)]"
         } ${arrastrando ? "cursor-grabbing select-none" : "cursor-grab"}`}
       >

@@ -244,7 +244,7 @@ export default function TramiteCamposPanel({
               type="button"
               onClick={() => set(c.id, s.texto)}
               title={s.texto}
-              className="rounded-full border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="rounded-full border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
             >
               {s.label}
             </button>
@@ -260,7 +260,7 @@ export default function TramiteCamposPanel({
         const campos = formato.campos.filter((c) => (c.grupo ?? "datos") === g.id);
         const camposDeEmisor = campos.filter((c) => c.id in CAMPO_A_EMISOR || c.id === "lugar");
         return (
-          <section key={g.id} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <section key={g.id} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
             <SeccionHeader
               numero={i + 1}
               titulo={g.label}
@@ -315,7 +315,7 @@ export default function TramiteCamposPanel({
       )}
 
       {/* Seguimiento: lo que convierte un papel en expediente. */}
-      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+      <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
         <SeccionHeader
           numero={gruposVisibles.length + (formato.tablaGuias ? 2 : 1)}
           titulo="Seguimiento"

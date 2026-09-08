@@ -166,7 +166,7 @@ export default function CtpRadarApariencia({
           role="dialog"
           aria-label="Apariencia del dibujo"
           style={lugar ? ({ "--radar-panel-max-h": `${lugar.maxH}px` } as CSSProperties) : undefined}
-          className={`fixed inset-x-0 bottom-0 z-50 max-h-[85vh] space-y-4 overflow-y-auto rounded-t-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)] sm:absolute sm:inset-x-auto sm:right-0 sm:z-30 sm:w-96 sm:rounded-2xl sm:max-h-[var(--radar-panel-max-h,32rem)] ${
+          className={`fixed inset-x-0 bottom-0 z-50 max-h-[85vh] space-y-4 overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)] sm:absolute sm:inset-x-auto sm:right-0 sm:z-30 sm:w-96 sm:rounded-2xl sm:max-h-[var(--radar-panel-max-h,32rem)] ${
             lugar?.arriba ? "sm:top-auto sm:bottom-full sm:mb-2" : "sm:bottom-auto sm:top-full sm:mt-2"
           }`}
         >
@@ -177,7 +177,7 @@ export default function CtpRadarApariencia({
             <button
               type="button"
               onClick={() => onApariencia(APARIENCIA_DEFAULT)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
             >
               <RotateCcw className="h-3.5 w-3.5" /> Restablecer
             </button>
@@ -265,7 +265,7 @@ export default function CtpRadarApariencia({
                     value={hexDe(colorDe(apariencia, key), cajaRef.current)}
                     onChange={(e) => setColor(key, e.target.value)}
                     aria-label={`Color de ${label}`}
-                    className="h-8 w-10 shrink-0 cursor-pointer rounded-md border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5"
+                    className="h-8 w-10 shrink-0 cursor-pointer rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5"
                   />
                   <span className="min-w-0 flex-1 truncate text-xs font-semibold text-[var(--text-secondary)]">{label}</span>
                   {apariencia.colores[key] !== undefined && (
@@ -299,7 +299,7 @@ export default function CtpRadarApariencia({
             {vistas.length > 0 && (
               <ul className="flex flex-wrap gap-1.5">
                 {vistas.map((v) => (
-                  <li key={v.id} className="inline-flex h-8 items-center overflow-hidden rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+                  <li key={v.id} className="inline-flex h-8 items-center overflow-hidden rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)]">
                     <button
                       type="button"
                       onClick={() => onAplicarVista(v)}
@@ -331,7 +331,7 @@ export default function CtpRadarApariencia({
                 maxLength={LARGO_NOMBRE}
                 placeholder="Cierre de mes, Fiscalización…"
                 aria-label="Nombre de la vista a guardar"
-                className="h-9 min-w-0 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none"
+                className="h-9 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none"
               />
               <button
                 type="submit"

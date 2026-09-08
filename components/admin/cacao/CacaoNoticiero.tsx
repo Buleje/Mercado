@@ -29,11 +29,11 @@ import { ChartPresentationModal } from "@/components/admin/inicio/_shared/ChartP
 // recharts fuera del bundle inicial del admin
 const CacaoPriceChart = dynamic(() => import("./CacaoPriceChart"), {
   ssr: false,
-  loading: () => <div className="flex h-[360px] items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]"><Activity className="mr-2 h-5 w-5 animate-pulse" /> Cargando gráfico…</div>,
+  loading: () => <div className="flex h-[360px] items-center justify-center rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]"><Activity className="mr-2 h-5 w-5 animate-pulse" /> Cargando gráfico…</div>,
 });
 const CacaoMiPrecio = dynamic(() => import("./CacaoMiPrecio"), {
   ssr: false,
-  loading: () => <div className="flex h-[320px] items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]"><Activity className="mr-2 h-5 w-5 animate-pulse" /> Cargando gráfico…</div>,
+  loading: () => <div className="flex h-[320px] items-center justify-center rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]"><Activity className="mr-2 h-5 w-5 animate-pulse" /> Cargando gráfico…</div>,
 });
 
 interface Price {
@@ -212,7 +212,7 @@ export default function CacaoNoticiero() {
             <span className={`h-2 w-2 rounded-full ${auto ? "animate-pulse bg-[var(--accent)]" : "bg-[var(--rule-base)]"}`} aria-hidden />
             {auto ? <>Auto · <span className="font-mono tabular-nums">{mmss(countdown)}</span></> : "Auto off"}
           </button>
-          <button type="button" onClick={refreshNow} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
+          <button type="button" onClick={refreshNow} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
         </div>
       </VistaHeader>
 
@@ -223,7 +223,7 @@ export default function CacaoNoticiero() {
       {data && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Precio */}
-          <div className="lg:col-span-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+          <div className="lg:col-span-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
             {p ? (
               <>
                 {/* HERO: referencia local en soles — el número que le importa al productor */}
@@ -289,7 +289,7 @@ export default function CacaoNoticiero() {
           </div>
 
           {/* Análisis */}
-          <div className="rounded-2xl border-2 border-l-[6px] border-[var(--rule-base)] border-l-[var(--accent)] bg-[var(--surface-canvas)]/40 p-5">
+          <div className="rounded-2xl border border-l-[6px] border-[var(--rule-base)] border-l-[var(--accent)] bg-[var(--surface-canvas)]/40 p-5">
             <CardTitle className="mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-[var(--accent)]" /> Lectura de mercado</CardTitle>
             {insights.length ? <ul className="space-y-2.5 text-sm text-[var(--text-secondary)]">{insights.map((s, i) => <li key={i} className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />{s}</li>)}</ul> : <p className="text-sm text-[var(--text-tertiary)]">Sin datos de precio para analizar.</p>}
             <p className="mt-3 border-t border-[var(--rule-soft)] pt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">

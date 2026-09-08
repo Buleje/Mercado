@@ -67,7 +67,7 @@ export default function CtpSumarALaCorrida({
   if (trozas.length === 0) return null;
 
   return (
-    <section className="space-y-2 rounded-xl border-2 border-dashed border-[var(--rule-base)] p-3">
+    <section className="space-y-2 rounded-xl border border-dashed border-[var(--rule-base)] p-3">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <Layers className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
         <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">

@@ -637,16 +637,16 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
       >
           {g && !isEmpty && (
             <>
-              <button type="button" onClick={exportarCsv} title="Planilla con el saldo de cada línea y el volumen de cada eslabón" className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+              <button type="button" onClick={exportarCsv} title="Planilla con el saldo de cada línea y el volumen de cada eslabón" className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
                 <FileSpreadsheet className="h-4 w-4" /> CSV
               </button>
-              <button type="button" onClick={() => printCadenaCustodia(g, period.label)} title="Documento imprimible de la cadena de custodia (para adjuntar a un informe ARFFS)" className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+              <button type="button" onClick={() => printCadenaCustodia(g, period.label)} title="Documento imprimible de la cadena de custodia (para adjuntar a un informe ARFFS)" className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
                 <FileDown className="h-4 w-4" /> Imprimir
               </button>
               {/* El DIBUJO como archivo: lo que se entiende de un vistazo, para
                   el informe. Sólo tiene sentido con la cadena en pantalla. */}
               {vista === "cadena" && (
-                <div className="inline-flex h-10 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+                <div className="inline-flex h-10 items-center overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
                   <span className="flex h-full items-center gap-1.5 border-r-2 border-[var(--rule-base)] px-2.5 text-sm font-bold text-[var(--text-tertiary)]">
                     <Camera className="h-4 w-4" aria-hidden="true" /> Imagen
                   </span>
@@ -660,14 +660,14 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
               )}
             </>
           )}
-          <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
+          <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
           </button>
       </VistaHeader>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
       {loading && !g && <div className="p-8 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Dibujando la cadena…</p></div>}
-      {isEmpty && <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><TreePine className="mx-auto mb-3 h-9 w-9 opacity-30" /><p className="text-sm">Sin movimientos en {period.label}.</p></div>}
+      {isEmpty && <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><TreePine className="mx-auto mb-3 h-9 w-9 opacity-30" /><p className="text-sm">Sin movimientos en {period.label}.</p></div>}
 
       {layout && g && a && !isEmpty && (
         <>
@@ -787,7 +787,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
                       <Eye className="h-3.5 w-3.5" /> Ver ficha completa
                     </button>
                   )}
-                  <button type="button" onClick={() => setPinned(null)} title="Soltar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
+                  <button type="button" onClick={() => setPinned(null)} title="Soltar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
                     <XIcon className="h-4 w-4" />
                   </button>
                 </div>

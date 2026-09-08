@@ -25,9 +25,9 @@ import {
 import { formatDistance, formatMeters, lineLengthM, toUtm } from "@/lib/forestal/loth-utm";
 
 const INPUT =
-  "h-10 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-primary)]";
+  "h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-primary)]";
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
+  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
 
 interface Props {
   cartografia: LothCartografia;
@@ -75,7 +75,7 @@ export default function LothContextoPanel({
   };
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
         <div>
           <CardTitle as="h3" className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
@@ -119,7 +119,7 @@ export default function LothContextoPanel({
             Referencias ({referencias.length})
           </p>
           {referencias.length === 0 ? (
-            <p className="rounded-xl border-2 border-dashed border-[var(--rule-base)] p-4 text-center text-sm text-[var(--text-tertiary)]">
+            <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-4 text-center text-sm text-[var(--text-tertiary)]">
               Tocá <b>Marcar en el mapa</b> y hacé click donde está el centro poblado, el campamento o el ingreso a la UMF.
             </p>
           ) : (
@@ -127,7 +127,7 @@ export default function LothContextoPanel({
               {referencias.map((r) => {
                 const u = toUtm(r.lat, r.lng);
                 return (
-                  <li key={r.id} className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-2.5">
+                  <li key={r.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-2.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <input
                         value={r.nombre}
@@ -151,7 +151,7 @@ export default function LothContextoPanel({
                         type="button"
                         onClick={() => delRef(r.id)}
                         aria-label={`Borrar ${r.nombre}`}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--data-error-700)] hover:bg-[var(--surface-raised)] dark:text-[var(--data-error-500)]"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--data-error-700)] hover:bg-[var(--surface-raised)] dark:text-[var(--data-error-500)]"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -173,13 +173,13 @@ export default function LothContextoPanel({
             Vías y ríos ({cartografia.vias.length})
           </p>
           {cartografia.vias.length === 0 ? (
-            <p className="rounded-xl border-2 border-dashed border-[var(--rule-base)] p-4 text-center text-sm text-[var(--text-tertiary)]">
+            <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-4 text-center text-sm text-[var(--text-tertiary)]">
               Usá <b>Trazar vía</b> arriba del mapa para dibujar la carretera, la trocha de arrastre o el río.
             </p>
           ) : (
             <ul className="space-y-2">
               {cartografia.vias.map((v) => (
-                <li key={v.id} className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-2.5">
+                <li key={v.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-2.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <input
                       value={v.nombre}
@@ -203,7 +203,7 @@ export default function LothContextoPanel({
                       type="button"
                       onClick={() => delVia(v.id)}
                       aria-label={`Borrar ${v.nombre}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--data-error-700)] hover:bg-[var(--surface-raised)] dark:text-[var(--data-error-500)]"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--data-error-700)] hover:bg-[var(--surface-raised)] dark:text-[var(--data-error-500)]"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -226,13 +226,13 @@ export default function LothContextoPanel({
             </button>
           </div>
           {accesos.length === 0 ? (
-            <p className="rounded-xl border-2 border-dashed border-[var(--rule-base)] p-4 text-center text-sm text-[var(--text-tertiary)]">
+            <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-4 text-center text-sm text-[var(--text-tertiary)]">
               Agregá los tramos como en el expediente: <b>Puerto Bermúdez — C.P. Unión Siria · 30 min · auto-camioneta</b>.
             </p>
           ) : (
             <ul className="space-y-2">
               {accesos.map((a) => (
-                <li key={a.id} className="flex flex-wrap items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-2.5">
+                <li key={a.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-2.5">
                   <input
                     value={a.lugar}
                     onChange={(e) => patchAcc(a.id, { lugar: e.target.value })}
@@ -263,7 +263,7 @@ export default function LothContextoPanel({
                     type="button"
                     onClick={() => delAcc(a.id)}
                     aria-label="Borrar tramo"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--data-error-700)] hover:bg-[var(--surface-raised)] dark:text-[var(--data-error-500)]"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--data-error-700)] hover:bg-[var(--surface-raised)] dark:text-[var(--data-error-500)]"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>

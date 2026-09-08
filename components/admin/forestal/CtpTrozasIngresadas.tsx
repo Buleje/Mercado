@@ -243,7 +243,7 @@ export default function CtpTrozasIngresadas({
   };
 
   return (
-    <section className="space-y-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <section className="space-y-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <PackageOpen className="h-4 w-4 text-[var(--accent)]" aria-hidden />

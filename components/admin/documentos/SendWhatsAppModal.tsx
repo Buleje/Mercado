@@ -330,7 +330,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
-        className="flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        className="flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -393,7 +393,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
 
           {/* Enlaces (sólo en la vía enlace) */}
           {via === "enlace" && !isSign && (
-            <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
               <div className="flex items-start gap-2.5">
                 <input
                   id="enlace-con-clave"
@@ -419,7 +419,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
                     value={clave}
                     onChange={(e) => setClave(e.target.value)}
                     placeholder="Clave (mínimo 4 caracteres)"
-                    className="h-11 min-w-[190px] flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"
+                    className="h-11 min-w-[190px] flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"
                   />
                   <button
                     onClick={generarConClave}
@@ -440,7 +440,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
           )}
 
           {via === "enlace" && multi && (
-            <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
               <div className="mb-2 flex items-center justify-between gap-2 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                 <span className="inline-flex items-center gap-1.5"><Link2 className="h-3.5 w-3.5" /> Enlaces (30 días)</span>
                 <span className="font-mono tabular-nums">{creating ? "generando…" : `${listos}/${docs.length} listos`}</span>
@@ -471,7 +471,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
           )}
 
           {via === "enlace" && !multi && (
-            <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
               <div className="mb-1.5 flex items-center gap-1.5 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                 <Link2 className="h-3.5 w-3.5" /> {isSign ? "Enlace de firma (30 días)" : "Enlace de acceso (30 días)"}
               </div>
@@ -482,7 +482,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
               ) : (
                 <div className="flex items-center gap-2">
                   <code className="min-w-0 flex-1 truncate rounded-md bg-[var(--surface-raised)] px-2 py-1.5 text-xs text-[var(--text-secondary)]">{link}</code>
-                  <button onClick={copyLink} className="inline-flex shrink-0 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary">
+                  <button onClick={copyLink} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary">
                     {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} {copied ? "Copiado" : "Copiar"}
                   </button>
                 </div>
@@ -496,7 +496,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
               <label className="mb-1.5 block text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                 Número de WhatsApp {via === "archivo" && <span className="text-[var(--data-error-600)]">*</span>}
               </label>
-              <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 focus-within:border-primary">
+              <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 focus-within:border-primary">
                 <span className="shrink-0 text-sm font-bold text-[var(--text-tertiary)]">+51</span>
                 <input
                   value={phone}
@@ -525,7 +525,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
                   value={contactQuery}
                   onChange={(e) => setContactQuery(e.target.value)}
                   placeholder="Buscar contacto…"
-                  className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] h-10 pl-8 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+                  className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] h-10 pl-8 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
                 />
               </div>
               <ul className="max-h-40 space-y-0.5 overflow-y-auto">
@@ -568,7 +568,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
               onChange={(e) => setMessage(e.target.value)}
               rows={via === "enlace" ? 3 : 2}
               placeholder={via === "enlace" ? "" : "Sin texto: llega sólo el archivo"}
-              className="w-full resize-none rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+              className="w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
             />
             <p className="mt-1 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
               {via === "enlace" ? "El enlace se agrega automáticamente al final del mensaje." : "Si lo dejás vacío, el archivo va solo."}

@@ -155,7 +155,7 @@ export default function CapturaFoto({
               <button
                 onClick={repetir}
                 disabled={subiendo}
-                className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+                className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
               >
                 <RefreshCw className="h-4 w-4" /> Repetir
               </button>

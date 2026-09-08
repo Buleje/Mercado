@@ -71,7 +71,7 @@ export default function CtpRendimientoLotes({ filas }: { filas: ReadonlyArray<Fi
   const fuera = conDato.filter((f) => estado(f.rendimientoPct as number).tono === "malo").length;
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
           Rendimiento de cada lote, contra su referencia

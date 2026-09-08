@@ -93,7 +93,7 @@ export default function CtpRadarControles({
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Buscar GTF, especie, destino o «corrida 2»…"
                   aria-label="Buscar en la cadena de custodia"
-                  className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-9 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] focus:outline-none"
+                  className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-9 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] focus:outline-none"
                 />
                 {query && (
                   <button type="button" onClick={() => setQuery("")} title="Limpiar búsqueda" className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
@@ -126,7 +126,7 @@ export default function CtpRadarControles({
               )}
 
               {/* Orden de las columnas: por línea del libro, por urgencia o por tamaño. */}
-              <div className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+              <div className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
                 <span className="flex h-full items-center gap-1.5 border-r-2 border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)]">
                   <ArrowDownUp className="h-3.5 w-3.5" aria-hidden="true" /> Orden
                 </span>
@@ -142,7 +142,7 @@ export default function CtpRadarControles({
 
               {/* Zoom: con muchas líneas la cadena no entra; achicar la deja de un vistazo.
                   También responde a Ctrl/⌘ + rueda sobre el dibujo y a + / − / 0. */}
-              <div className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+              <div className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
                 <button type="button" title="Alejar (tecla −)" aria-label="Alejar" onClick={() => setZoom((z) => pasoZoom(z, -1))} disabled={zoom <= ZOOM_MIN} className="flex h-full w-9 items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
                   <ZoomOut className="h-4 w-4" />
                 </button>
@@ -200,7 +200,7 @@ export default function CtpRadarControles({
                 <Layers className="h-4 w-4" /> {hayAgrupacion ? "Agrupado" : "Agrupar"}
               </button>
               {hayAgrupacion && expandidos.size > 0 && (
-                <button type="button" onClick={() => setExpandidos(new Set())} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
+                <button type="button" onClick={() => setExpandidos(new Set())} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
                   Cerrar los {expandidos.size} grupos abiertos
                 </button>
               )}

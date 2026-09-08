@@ -1077,7 +1077,7 @@ export default function PuntoCompraView() {
           - Empty state con CTA gigante
           - Toolbar header con sticky info
           ════════════════════════════════════════════════════════════════════ */}
-      <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden mb-4">
+      <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden mb-4">
         {/* Header del módulo */}
         <header className="px-5 py-4 border-b-2 border-[var(--rule-base)] bg-linear-to-r from-[var(--accent-soft)]/30 to-transparent dark:from-[var(--accent-muted)]/20 flex items-center gap-3 flex-wrap">
           <span className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 border border-[var(--data-warning-500)]/30 shrink-0">
@@ -1113,7 +1113,7 @@ export default function PuntoCompraView() {
               ))}
             </div>
           ) : expenseCatalog.length === 0 ? (
-            <div className="text-center py-10 px-4 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/50">
+            <div className="text-center py-10 px-4 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/50">
               <span className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/20 mb-3">
                 <Tag className="h-7 w-7 text-[var(--data-warning-500)]" />
               </span>
@@ -1501,7 +1501,7 @@ export default function PuntoCompraView() {
                 <button
                   type="button"
                   onClick={() => setShowInventario(true)}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors"
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors"
                 >
                   Ver todo el inventario
                 </button>

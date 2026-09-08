@@ -37,7 +37,7 @@ import { Btn, CtpKpisPlegables, PanelSkeleton, VistaHeader } from "./ctp-shared"
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const CAMPO =
-  "h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
+  "h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 const ANILLO_ACTIVO = "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]";
 
 /** El lote elegido para producir viaja al formulario de la pestaña Producción. */
@@ -316,7 +316,7 @@ export default function CtpLotesView({
           <button
             type="button"
             onClick={() => { setTexto(""); setEspecie(""); setEstado(""); }}
-            className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
+            className="h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
           >
             Limpiar
           </button>
@@ -334,7 +334,7 @@ export default function CtpLotesView({
         /* Tarjetas, no filas: el esqueleto tiene que prometer lo que va a venir. */
         <PanelSkeleton kpis={3} />
       ) : visibles.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-10 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-10 text-center">
           <Boxes className="mx-auto mb-3 h-10 w-10 text-[var(--text-tertiary)] opacity-40" aria-hidden />
           <p className="text-base font-bold text-[var(--text-primary)]">
             {lotes.length === 0 ? "Todavía no hay lotes de aserrío" : "Ningún lote coincide con el filtro"}

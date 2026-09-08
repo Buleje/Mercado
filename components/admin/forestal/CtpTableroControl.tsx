@@ -81,7 +81,7 @@ function Kpi({
         ? "antes no hubo movimiento"
         : "sin período previo";
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
       <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
         <Icon className="h-3.5 w-3.5" aria-hidden /> {label}
       </p>
@@ -109,7 +109,7 @@ function Kpi({
 
 function Bloque({ titulo, meta, children }: { titulo: string; meta?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
           {titulo}

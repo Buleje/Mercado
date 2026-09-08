@@ -162,7 +162,7 @@ function MetaChip({ meta }: { meta?: MetaLote | null }) {
 
 export default function LoteCard({ lote: l, onAbrir }: { lote: LoteRow; onAbrir: (id: string) => void }) {
   return (
-            <button type="button" onClick={() => onAbrir(l.id)} className="flex flex-col gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-left transition-colors hover:border-[var(--brand-ink)] hover:bg-[var(--surface-canvas)]">
+            <button type="button" onClick={() => onAbrir(l.id)} className="flex flex-col gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-left transition-colors hover:border-[var(--brand-ink)] hover:bg-[var(--surface-canvas)]">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-lg font-bold text-[var(--text-primary)]">{l.loteCode}</span>
                 <div className="flex items-center gap-1.5">

@@ -188,7 +188,7 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Scale className="h-5 w-5" />
         </span>
@@ -204,7 +204,7 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
         <button
           onClick={() => void cargar()}
           disabled={cargando}
-          className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 min-h-10 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-primary disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 min-h-10 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-primary disabled:opacity-50"
         >
           {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
           Recalcular
@@ -264,7 +264,7 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
       )}
 
       {cargando && !datos ? (
-        <p className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
+        <p className="rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
           Armando los cuadros del período…
         </p>
       ) : datos ? (

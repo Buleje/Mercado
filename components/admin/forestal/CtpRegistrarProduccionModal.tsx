@@ -73,7 +73,7 @@ export interface ProduccionRegistrada {
 }
 
 const CAMPO =
-  "h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
+  "h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
 const fmtDia = (iso: string | null | undefined) => {
   if (!iso) return "—";
@@ -1018,7 +1018,7 @@ export default function CtpRegistrarProduccionModal({
                     if (m.productType) setProducto(m.productType);
                     if (m.presentacion) setPresentacion(m.presentacion);
                   }}
-                  className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm tabular-nums text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] sm:h-9"
+                  className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm tabular-nums text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] sm:h-9"
                 >
                   {m.espesorCm} × {m.anchoCm} cm × {m.largoM} m
                 </button>

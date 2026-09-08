@@ -187,7 +187,7 @@ export default function CtpTrozasLista({
   }, [filtradas, hoy, canchas]);
 
   return (
-    <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       {/* ── Filtros ────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5">
         <CardTitle as="h3" className="mr-1 text-sm font-bold text-[var(--text-primary)]">Piezas</CardTitle>
@@ -199,7 +199,7 @@ export default function CtpTrozasLista({
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Código, especie, guía, proveedor, título…"
             aria-label="Buscar una troza"
-            className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
+            className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
           />
         </div>
         {/* La especie se elige desde la cabecera de su columna (estilo Excel,
@@ -208,13 +208,13 @@ export default function CtpTrozasLista({
           value={orden}
           onChange={(e) => setOrden(e.target.value as OrdenTrozas)}
           aria-label="Ordenar por"
-          className="h-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-medium text-[var(--text-primary)] focus:border-primary focus:outline-none"
+          className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-medium text-[var(--text-primary)] focus:border-primary focus:outline-none"
         >
           {ORDENES.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
         </select>
         <button
           type="button" onClick={exportar} disabled={filtradas.length === 0}
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-50"
         >
           <Download className="h-4 w-4" /> CSV
         </button>
@@ -504,7 +504,7 @@ export default function CtpTrozasLista({
               <button
                 type="button"
                 onClick={() => setTope((v) => v + 200)}
-                className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+                className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
               >
                 Ver 200 más ({filtradas.length - visibles.length} restantes)
               </button>

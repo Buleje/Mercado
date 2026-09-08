@@ -176,7 +176,7 @@ export default function PlantacionWizard({
   return (
     <div className="space-y-4">
       <div
-        className="relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] p-5"
+        className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] p-5"
         style={{ background: "linear-gradient(135deg, var(--accent-soft) 0%, var(--surface-raised) 60%)" }}
       >
         {/* Mismo patrón que la cabecera de `TramiteFormulario` (vista Formatos):

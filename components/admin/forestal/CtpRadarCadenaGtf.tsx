@@ -46,7 +46,7 @@ export default function CtpRadarCadenaGtf({
             {cadena.especie} · ingresó el {fechaCorta(cadena.fecha)} · {resumenCadena(cadena)}
           </p>
         </div>
-        <button type="button" onClick={onCerrar} title="Cerrar el seguimiento" aria-label="Cerrar el seguimiento" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
+        <button type="button" onClick={onCerrar} title="Cerrar el seguimiento" aria-label="Cerrar el seguimiento" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
           <XIcon className="h-4 w-4" />
         </button>
       </header>
@@ -62,7 +62,7 @@ export default function CtpRadarCadenaGtf({
         />
 
         {cadena.corridas.length === 0 ? (
-          <p className="rounded-xl border-2 border-dashed border-[var(--rule-base)] p-4 text-center text-sm text-[var(--text-tertiary)]">
+          <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-4 text-center text-sm text-[var(--text-tertiary)]">
             Esta guía todavía no entró a ninguna corrida de producción.
           </p>
         ) : (
@@ -127,7 +127,7 @@ function Paso({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 min-h-11 text-left transition hover:border-[var(--accent)] hover:bg-[var(--surface-canvas)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+      className="flex w-full items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 min-h-11 text-left transition hover:border-[var(--accent)] hover:bg-[var(--surface-canvas)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
         <Icon className="h-4.5 w-4.5" style={{ color }} aria-hidden="true" />

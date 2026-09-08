@@ -224,7 +224,7 @@ export default function CtpPapelesDespachoModal({
             e.preventDefault();
             if (e.dataTransfer.files.length > 0) void agregar(e.dataTransfer.files);
           }}
-          className="flex w-full flex-col items-center gap-1 rounded-2xl border-2 border-dashed border-[var(--rule-base)] px-4 py-6 text-center transition-colors hover:border-[var(--accent)]"
+          className="flex w-full flex-col items-center gap-1 rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-6 text-center transition-colors hover:border-[var(--accent)]"
         >
           <Upload className="h-6 w-6 text-[var(--text-tertiary)]" aria-hidden />
           <span className="text-sm font-bold text-[var(--text-primary)]">
@@ -256,7 +256,7 @@ export default function CtpPapelesDespachoModal({
               return (
                 <li
                   key={p.id}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2"
+                  className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-[var(--text-primary)]">{p.archivo.name}</p>

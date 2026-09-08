@@ -66,7 +66,7 @@ export default function ResumenMeta({ rows, precioDe, guardadas }: {
   const pico = Math.max(100, ...tendencia.puntos.map((p) => p.pctMeta));
 
   return (
-    <div className="scroll-mt-24 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
+    <div className="scroll-mt-24 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <span className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
           <Target className="h-4 w-4 text-[var(--accent)]" aria-hidden /> Meta de mix
@@ -77,14 +77,14 @@ export default function ResumenMeta({ rows, precioDe, guardadas }: {
             type="number" min={0} max={100} step={5} value={meta.pctMinimo}
             onChange={(e) => guardar({ pctMinimo: Math.max(0, Math.min(100, Number(e.target.value) || 0)) })}
             aria-label="Porcentaje mínimo de la meta"
-            className="h-9 w-16 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-center text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-9 w-16 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-center text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
           % de
           <select
             value={meta.tipo}
             onChange={(e) => guardar({ tipo: e.target.value as TipoComercial })}
             aria-label="Tipo de la meta"
-            className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           >
             {TIPOS_META.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>

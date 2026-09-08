@@ -60,7 +60,7 @@ export default function CtpRadarRendimiento({
   onVerCorrida: (id: string) => void;
 }) {
   if (rs.length === 0) {
-    return <p className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">Sin corridas de producción en el período.</p>;
+    return <p className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">Sin corridas de producción en el período.</p>;
   }
   const alertas = alertasRendimiento(rs);
   const conRatio = rs.filter((r) => r.ratio != null);
@@ -119,7 +119,7 @@ export default function CtpRadarRendimiento({
                         <span className="font-mono tabular-nums">{r.desvioPct > 0 ? "+" : ""}{r.desvioPct}%</span>
                       )}
                     </span>
-                    <button type="button" onClick={() => onVerCorrida(r.id)} title="Abrir la ficha de la corrida" className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+                    <button type="button" onClick={() => onVerCorrida(r.id)} title="Abrir la ficha de la corrida" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
                       <Eye className="h-3.5 w-3.5" /> Ficha
                     </button>
                   </div>

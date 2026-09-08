@@ -30,7 +30,7 @@ interface Props {
 }
 
 const INPUT =
-  "h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)]";
+  "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)]";
 
 export default function LothCaratulaBanner({ caratula, titularSugerido, onSaved }: Props) {
   const completa = !!(caratula?.departamento && caratula?.provincia && caratula?.distrito);

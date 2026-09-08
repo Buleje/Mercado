@@ -135,7 +135,7 @@ export default function CtpRadarResumen({
           {/* Salud de la cadena en UNA tira: los dos porcentajes que lee un
               fiscalizador y los cuatro conteos accionables. Antes eran dos
               filas de tarjetas (≈250px) para seis cifras. */}
-          <div className="space-y-2.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+          <div className="space-y-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
             {/*
               Dos columnas SÓLO si hay dos medidores. Sin despachos en el
               período `trazabilidadPct` es null y queda uno solo: el grid fijo de
@@ -173,7 +173,7 @@ export default function CtpRadarResumen({
           {/* Tres lecturas del mismo período. Apiladas serían tres pantallas de
               scroll; como pestañas, cada pregunta tiene su lugar. */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex h-11 items-center overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+            <div className="inline-flex h-11 items-center overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
               {VISTAS.map((v) => {
                 const Icon = v.icon;
                 const alertas = v.key === "cronologia" ? (tiempo?.anomalias.length ?? 0)
@@ -298,7 +298,7 @@ function HuecoFila({
 }) {
   const color = tono === "warning" ? "text-[var(--data-warning-600)]" : "text-[var(--data-info-500)]";
   return (
-    <li className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2">
+    <li className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2">
       <div className="flex min-w-0 items-center gap-2 text-sm">
         <Icon className={`h-4 w-4 shrink-0 ${color}`} />
         <span>

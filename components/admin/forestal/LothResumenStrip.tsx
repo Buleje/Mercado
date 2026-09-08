@@ -56,7 +56,7 @@ export default function LothResumenStrip({ onNavigate, reloadSignal }: { onNavig
   }, [load, reloadSignal]);
 
   if (loading && !data) {
-    return <div className="h-[104px] animate-pulse rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]" aria-hidden="true" />;
+    return <div className="h-[104px] animate-pulse rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]" aria-hidden="true" />;
   }
   if (!data) return null;
 
@@ -86,7 +86,7 @@ export default function LothResumenStrip({ onNavigate, reloadSignal }: { onNavig
 
   return (
     <section
-      className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]"
+      className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
       aria-label="Resumen del aprovechamiento"
     >
       {/* Cabecera editorial */}

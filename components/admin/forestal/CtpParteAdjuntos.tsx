@@ -70,7 +70,7 @@ export default function CtpParteAdjuntos({
   return (
     <div className="space-y-3">
       {adjuntos.length > 0 && (
-        <ul className="divide-y divide-[var(--rule-soft)] rounded-xl border-2 border-[var(--rule-base)]">
+        <ul className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)]">
           {adjuntos.map((a) => (
             <li key={a.documentId} className="flex items-center gap-3 px-3 py-2">
               <Paperclip className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
@@ -107,7 +107,7 @@ export default function CtpParteAdjuntos({
           type="button"
           onClick={() => input.current?.click()}
           disabled={subiendo}
-          className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-60"
+          className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-60"
         >
           {subiendo ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Paperclip className="h-4 w-4" aria-hidden />}
           {subiendo ? "Subiendo…" : "Subir documento"}

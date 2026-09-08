@@ -65,7 +65,7 @@ export default function LothLineaDetalleModal({
         if (e.key === "Escape") onClose();
       }}
     >
-      <div className="flex max-h-[88vh] w-full max-w-[42rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
+      <div className="flex max-h-[88vh] w-full max-w-[42rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
         <header className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3">
           <div>
             <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
@@ -80,7 +80,7 @@ export default function LothLineaDetalleModal({
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -207,7 +207,7 @@ export default function LothLineaDetalleModal({
                 onVerCadena(codigo);
                 onClose();
               }}
-              className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
             >
               <Link2 className="h-4 w-4" /> Cadena de custodia
             </button>

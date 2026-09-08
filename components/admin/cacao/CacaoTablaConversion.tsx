@@ -106,7 +106,7 @@ export default function CacaoTablaConversion({
     `rounded-lg px-3 py-1.5 text-xs font-bold transition ${active ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`;
 
   return (
-    <div className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div className="group relative rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
@@ -116,17 +116,17 @@ export default function CacaoTablaConversion({
           <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Equivalente de compra local ({COMPRA_LOCAL_PCT}% del oficial, calibrado con {ANCLA_CC_LABEL}) según la variación internacional. Tocá una fila para fijarla como base.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+          <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
             {PRESETS.map((p) => (
               <button key={p.key} type="button" onClick={() => { setPreset(p.key); setDesde(""); setHasta(""); }} className={pill(!(desde || hasta) && preset === p.key)}>{p.key}</button>
             ))}
           </div>
-          <div className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1">
+          <div className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1">
             <input type="date" value={desde} min={limites?.min} max={hasta || limites?.max} onChange={(e) => setDesde(e.target.value)} aria-label="Desde" className="bg-transparent text-xs font-bold text-[var(--text-secondary)] outline-none" />
             <span className="text-xs text-[var(--text-tertiary)]">→</span>
             <input type="date" value={hasta} min={desde || limites?.min} max={limites?.max} onChange={(e) => setHasta(e.target.value)} aria-label="Hasta" className="bg-transparent text-xs font-bold text-[var(--text-secondary)] outline-none" />
           </div>
-          <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+          <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
             <button type="button" onClick={() => setGran("dia")} className={pill(gran === "dia")}>Días</button>
             <button type="button" onClick={() => setGran("semana")} className={pill(gran === "semana")}>Semanas</button>
           </div>

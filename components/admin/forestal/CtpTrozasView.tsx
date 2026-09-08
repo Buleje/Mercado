@@ -101,7 +101,7 @@ export default function CtpTrozasView() {
           lo que está cargado. Este pregunta al servidor, así que es el que vale
           cuando el patio pasa el tope y también encuentra piezas de guías ya
           consumidas hace meses. */}
-      <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <button
           type="button"
           onClick={() => setBuscadorAbierto((v) => !v)}

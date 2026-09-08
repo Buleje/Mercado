@@ -250,7 +250,7 @@ export default function CtpTrozaFichaModal({ trozaId, onClose, onVerOtra }: CtpT
 
 function Dato({ label, valor, fuerte }: { label: string; valor: string; fuerte?: boolean }) {
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 py-1.5">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 py-1.5">
       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">{label}</p>
       <p className={`font-mono tabular-nums text-[var(--text-primary)] ${fuerte ? "text-base font-bold" : "text-sm"}`}>{valor}</p>
     </div>
@@ -264,7 +264,7 @@ function Hito({ icono: Icono, ocurrio, tono = "ok", titulo, cuando, children }: 
 }) {
   const color = !ocurrio ? "var(--rule-strong)" : tono === "warn" ? "var(--data-warning-500)" : "var(--data-success-500)";
   return (
-    <li className={`flex gap-2.5 rounded-xl border-2 p-2.5 ${ocurrio ? "border-[var(--rule-base)] bg-[var(--surface-raised)]" : "border-dashed border-[var(--rule-base)]"}`}>
+    <li className={`flex gap-2.5 rounded-xl border p-2.5 ${ocurrio ? "border-[var(--rule-base)] bg-[var(--surface-raised)]" : "border-dashed border-[var(--rule-base)]"}`}>
       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: `color-mix(in oklab, ${color} 16%, transparent)` }}>
         <Icono className="h-4 w-4" style={{ color }} aria-hidden="true" />
       </span>

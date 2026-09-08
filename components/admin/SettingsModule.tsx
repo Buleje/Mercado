@@ -240,7 +240,7 @@ function OverviewCard({ section, completionPct, onClick }: {
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="relative flex flex-col items-start gap-3 p-4 rounded-xl border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-left transition-all bg-[var(--surface-raised)] hover:shadow-[var(--shadow-lg)] hover:border-gray-200 dark:hover:border-gray-600"
+      className="relative flex flex-col items-start gap-3 p-4 rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-left transition-all bg-[var(--surface-raised)] hover:shadow-[var(--shadow-lg)] hover:border-gray-200 dark:hover:border-gray-600"
     >
       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", section.color)}>
         {section.icon}
@@ -813,7 +813,7 @@ export default function SettingsModule({
             ))}
           </div>
           {customShortcuts.length < 6 && (
-            <button onClick={addShortcut} className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors mt-2">
+            <button onClick={addShortcut} className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors mt-2">
               <Plus className="h-4 w-4" /> Agregar acceso directo
             </button>
           )}
@@ -1367,7 +1367,7 @@ export default function SettingsModule({
               </div>
               <div>
                 <FieldLabel>QR de Yape</FieldLabel>
-                <button onClick={() => yapeImgRef.current?.click()} className="w-full min-h-11 rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--rule-base)]0 text-sm font-semibold text-[var(--text-secondary)] bg-[var(--surface-sunken)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
+                <button onClick={() => yapeImgRef.current?.click()} className="w-full min-h-11 rounded-xl border border-dashed border-[var(--rule-base)] hover:border-[var(--rule-base)]0 text-sm font-semibold text-[var(--text-secondary)] bg-[var(--surface-sunken)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
                 <input ref={yapeImgRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload(setYapeImage, "yape", "payments")} />
                 {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-[var(--surface-sunken)] rounded-lg"><Image src={yapeImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setYapeImage("")} className="text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Quitar</button></div>}
               </div>
@@ -2170,7 +2170,7 @@ function ImageDropCard({
 }: ImageDropCardProps) {
   const safeUrl = value && !value.startsWith("data:") ? value : "";
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex flex-col gap-3">
+    <div className="rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex flex-col gap-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -2213,7 +2213,7 @@ function ImageDropCard({
             type="button"
             disabled={uploading}
             onClick={() => inputRef.current?.click()}
-            className={`w-full flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-primary text-[var(--text-secondary)] hover:text-primary bg-[var(--surface-sunken)] transition-all disabled:opacity-60 disabled:cursor-wait ${previewClass}`}
+            className={`w-full flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] hover:border-primary text-[var(--text-secondary)] hover:text-primary bg-[var(--surface-sunken)] transition-all disabled:opacity-60 disabled:cursor-wait ${previewClass}`}
           >
             {uploading ? (
               <>

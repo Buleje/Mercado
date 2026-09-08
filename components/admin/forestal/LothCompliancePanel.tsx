@@ -203,7 +203,7 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
 
       <ReadinessBanner readiness={readiness} bloqueos={bloqueos} advertencias={advertencias} onNavigate={onNavigate} />
 
-      <div className="grid gap-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-6">
+      <div className="grid gap-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-6">
         <div className="flex justify-center">
           <BulejeGaugeChart value={score} max={100} size={190} color={GAUGE_COLOR[tone]} sublabel="de 100" label={TONE_LABEL[tone]} />
         </div>
@@ -257,7 +257,7 @@ export default function LothCompliancePanel({ totalLineas, onNavigate, reloadSig
       )}
 
       {enOrden.length > 0 && (
-        <details open className="group rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <details open className="group rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-2xl px-4 py-3 hover:bg-[var(--surface-canvas)]">
             <span className="inline-flex items-center gap-2">
               <ListChecks className="h-4 w-4 text-[var(--data-success-600)]" />

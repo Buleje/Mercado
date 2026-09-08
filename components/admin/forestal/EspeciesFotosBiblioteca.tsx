@@ -143,7 +143,7 @@ export default function EspeciesFotosBiblioteca() {
         }}
       />
 
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 ">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 ">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Trees className="h-5 w-5" aria-hidden />
         </span>
@@ -161,13 +161,13 @@ export default function EspeciesFotosBiblioteca() {
             value={nueva}
             onChange={(e) => setNueva(e.target.value)}
             placeholder="Otra especie…"
-            className="h-12 w-48 rounded-2xl border-2 border-[var(--rule-base)] bg-transparent px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+            className="h-12 w-48 rounded-2xl border border-[var(--rule-base)] bg-transparent px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
           />
           <button
             type="button"
             disabled={!nueva.trim() || subiendo !== null}
             onClick={() => pedirArchivo(nueva.trim(), cientificoDe(nueva.trim()))}
-            className="flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] disabled:opacity-40"
+            className="flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] disabled:opacity-40"
           >
             <Upload className="h-4 w-4" aria-hidden /> Subir
           </button>
@@ -182,7 +182,7 @@ export default function EspeciesFotosBiblioteca() {
       )}
 
       {faltan.length > 0 && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
           <p className="mb-2 text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
             Especies del libro sin foto ({faltan.length})
           </p>
@@ -193,7 +193,7 @@ export default function EspeciesFotosBiblioteca() {
                 type="button"
                 disabled={subiendo !== null}
                 onClick={() => pedirArchivo(e, cientificoDe(e))}
-                className="flex items-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] px-3 min-h-10 text-sm text-[var(--text-secondary)] hover:border-primary hover:text-[var(--text-primary)] disabled:opacity-40"
+                className="flex items-center gap-1.5 rounded-xl border border-dashed border-[var(--rule-base)] px-3 min-h-10 text-sm text-[var(--text-secondary)] hover:border-primary hover:text-[var(--text-primary)] disabled:opacity-40"
               >
                 {subiendo === e ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -212,7 +212,7 @@ export default function EspeciesFotosBiblioteca() {
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Cargando la biblioteca…
         </div>
       ) : fotos.length === 0 ? (
-        <p className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] px-4 py-8 text-center text-sm text-[var(--text-secondary)]">
+        <p className="rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-8 text-center text-sm text-[var(--text-secondary)]">
           Todavía no hay fotos cargadas. Empezá por las especies que más recibís.
         </p>
       ) : (
@@ -220,7 +220,7 @@ export default function EspeciesFotosBiblioteca() {
           {fotos.map((f) => (
             <li
               key={f.clave}
-              className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] "
+              className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] "
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={f.url} alt={`Foto de ${f.nombre}`} className="h-32 w-full object-cover" loading="lazy" />

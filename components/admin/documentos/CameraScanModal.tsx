@@ -91,14 +91,14 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
               <video ref={videoRef} className="max-h-[40vh] w-full object-contain" playsInline muted />
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-[var(--rule-base)] p-6 text-center">
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center">
               <Camera className="h-8 w-8 text-[var(--text-tertiary)]" />
               {camState === "idle" && <p className="text-sm text-[var(--text-secondary)]">Usá la cámara para fotografiar cada página, o subí fotos.</p>}
               {camState === "denied" && <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">No pudimos acceder a la cámara. Podés subir fotos igual.</p>}
               {camState === "unsupported" && <p className="text-sm text-[var(--text-secondary)]">Este dispositivo no expone cámara al navegador. Subí fotos.</p>}
               <div className="flex flex-wrap justify-center gap-2">
                 <button onClick={startCamera} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 min-h-10 text-sm font-semibold text-white hover:bg-primary/90"><Camera className="h-4 w-4" /> Abrir cámara</button>
-                <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 min-h-10 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary"><ImageIcon className="h-4 w-4" /> Subir fotos</button>
+                <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 min-h-10 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary"><ImageIcon className="h-4 w-4" /> Subir fotos</button>
               </div>
             </div>
           )}
@@ -106,7 +106,7 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
           {camState === "on" && (
             <div className="mt-3 flex justify-center gap-2">
               <button onClick={capture} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 min-h-10 text-sm font-semibold text-white hover:bg-primary/90"><Camera className="h-4 w-4" /> Capturar página</button>
-              <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 min-h-10 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary"><ImageIcon className="h-4 w-4" /> Subir</button>
+              <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 min-h-10 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary"><ImageIcon className="h-4 w-4" /> Subir</button>
             </div>
           )}
 
@@ -131,7 +131,7 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
 
           <label className="mt-4 block text-xs font-semibold text-[var(--text-secondary)]">
             Nombre del documento (opcional)
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: DNI escaneado" className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: DNI escaneado" className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
           </label>
 
           {error && <p className="mt-2 text-xs font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>}

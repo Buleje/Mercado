@@ -52,7 +52,7 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
   const hayOcultos = mesesVisibles.length < zafra.meses.length;
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
         <div>
           <CardTitle as="h3" className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
@@ -100,7 +100,7 @@ export default function LothZafraPanel({ zafra }: { zafra: ZafraAnalisis }) {
         {/* Cronograma mensual */}
         {zafra.meses.length > 0 && (
           <>
-          <div className="overflow-x-auto rounded-xl border-2 border-[var(--rule-base)]">
+          <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
             <DataTable className="w-full border-collapse text-sm">
               <thead className="bg-[var(--surface-canvas)]">
                 <tr className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">
@@ -165,7 +165,7 @@ function Barra({ label, pct, tone }: { label: string; pct: number; tone: keyof t
 
 function Dato({ label, valor, sub, tone = "info" }: { label: string; valor: string; sub?: string; tone?: keyof typeof TONE_CLASS }) {
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</p>
       <p className={`font-mono text-lg font-black tabular-nums ${TONE_CLASS[tone]}`}>{valor}</p>
       {sub && <p className="text-xs font-semibold text-[var(--text-tertiary)]">{sub}</p>}

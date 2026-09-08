@@ -155,7 +155,7 @@ export default function CtpSaldosGraficos({
 
         {/* ── De qué especie depende el patio ──────────────────────────────── */}
         {rebanadas.length > 0 && (
-          <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
             <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Composición
             </p>
@@ -263,7 +263,7 @@ export default function CtpSaldosGraficos({
 
       {/* ── En qué estado está el volumen de cada especie ───────────────────── */}
       {porEstado.length > 0 && tramos.length > 0 && (
-        <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             Estado del volumen
           </p>

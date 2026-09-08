@@ -132,7 +132,7 @@ export default function PlantacionListado({
             type="button"
             onClick={() => void recargar()}
             disabled={cargando}
-            className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+            className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} />
             Recargar
@@ -154,7 +154,7 @@ export default function PlantacionListado({
       {cargando ? (
         <TablaSkeleton columnas={8} />
       ) : visibles.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
           <TreePine className="h-10 w-10 text-[var(--text-tertiary)] opacity-40" aria-hidden="true" />
           <p className="text-xl font-bold text-[var(--text-primary)]">
             {filtro ? "Ningún registro en ese estado" : "Todavía no registraste ninguna plantación"}
@@ -170,7 +170,7 @@ export default function PlantacionListado({
           </Btn>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] admin-mobile-cards">
+        <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] admin-mobile-cards">
           <div className="max-h-[38rem] overflow-auto">
             <DataTable className="w-full min-w-[960px] text-sm">
               <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
@@ -277,7 +277,7 @@ function ResumenTira({
     success: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
   };
   return (
-    <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
+    <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
       {items.map((it) => (
         <div key={it.label} className="flex items-baseline gap-1.5">
           <span className={`font-display text-xl leading-none tabular-nums ${TONO[it.tono]}`}>{it.value}</span>

@@ -66,7 +66,7 @@ export default function CtpIngresoCompletitud({
       className={
         bloquea
           ? "rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 dark:bg-[var(--data-warning-500)]/10"
-          : "rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3"
+          : "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3"
       }
     >
       <div className="flex flex-wrap items-start justify-between gap-3">

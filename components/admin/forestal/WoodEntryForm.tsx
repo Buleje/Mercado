@@ -1138,7 +1138,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   <button
                     type="button"
                     onClick={() => { void printGtfSerfor(serforGtf as never); }}
-                    className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--text-primary)]"
+                    className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--text-primary)]"
                   >
                     <FileText className="h-3.5 w-3.5" /> Imprimir la GTF
                   </button>
@@ -1188,7 +1188,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     <button
                       type="button"
                       onClick={() => setModo("manual")}
-                      className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                      className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
                     >
                       La guía no está en SERFOR — cargarla a mano
                     </button>

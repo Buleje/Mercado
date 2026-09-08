@@ -29,7 +29,7 @@ export interface TrozaCardRecepcion {
 }
 
 const CAMPO =
-  "h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] disabled:opacity-40";
+  "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] disabled:opacity-40";
 
 export default function CtpRecepcionTrozaCard({
   troza: t,

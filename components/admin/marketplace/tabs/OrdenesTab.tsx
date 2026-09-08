@@ -566,7 +566,7 @@ export function MarketplaceOrdenesTab() {
                           checked={isSelected}
                           onChange={() => toggleSelect(o.id)}
                           aria-label={`Seleccionar orden ${o.id.slice(-8)}`}
-                          className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                          className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                         />
                       </td>
                       <td className="px-4 py-2.5">
@@ -651,7 +651,7 @@ export function MarketplaceOrdenesTab() {
                                 )}
                               </button>
                               {openStatusMenuFor === o.id && (
-                                <div className="absolute right-0 mt-1 w-52 z-30 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden">
+                                <div className="absolute right-0 mt-1 w-52 z-30 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden">
                                   {nextOptions.map((s) => (
                                     <button
                                       key={s}

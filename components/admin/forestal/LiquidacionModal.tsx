@@ -89,19 +89,19 @@ export default function LiquidacionModal({
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <label className="flex flex-col gap-1">
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Cliente</span>
-            <input value={cliente} onChange={(e) => setCliente(e.target.value)} placeholder="Nombre del comprador" className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+            <input value={cliente} onChange={(e) => setCliente(e.target.value)} placeholder="Nombre del comprador" className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">RUC / DNI (opcional)</span>
-            <input value={documento} onChange={(e) => setDocumento(e.target.value)} inputMode="numeric" placeholder="—" className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+            <input value={documento} onChange={(e) => setDocumento(e.target.value)} inputMode="numeric" placeholder="—" className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Fecha</span>
-            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Nota (opcional)</span>
-            <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Forma de pago, entrega…" className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+            <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Forma de pago, entrega…" className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
           </label>
         </div>
 

@@ -75,7 +75,7 @@ export default function CtpRadarCronologia({
   const pos = new Map(puntos.map((p) => [p.id, p]));
 
   if (!t.desde || !t.hasta) {
-    return <p className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">Sin fechas para ubicar en el tiempo.</p>;
+    return <p className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">Sin fechas para ubicar en el tiempo.</p>;
   }
 
   return (
@@ -116,7 +116,7 @@ export default function CtpRadarCronologia({
           </p>
           <ul className="space-y-2">
             {t.anomalias.map((a, i) => (
-              <li key={`${a.nodoId}-${a.contraId}-${i}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm">
+              <li key={`${a.nodoId}-${a.contraId}-${i}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm">
                 <span className="min-w-0">
                   <span className="font-bold text-[var(--text-primary)]">{a.etiqueta}</span>
                   <span className="text-[var(--text-tertiary)]"> · {a.detalle}</span>
@@ -132,7 +132,7 @@ export default function CtpRadarCronologia({
       )}
 
       {/* Eje */}
-      <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-3">
+      <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-raised)] to-[var(--surface-sunken)] p-3">
         <svg viewBox={`0 0 ${W} ${H}`} width={W} className="max-w-none" style={{ minWidth: "100%" }} role="img" aria-label="Cronología de la cadena de custodia">
           {CARRILES.map((c, i) => (
             <g key={c.key}>

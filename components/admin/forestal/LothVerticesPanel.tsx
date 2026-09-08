@@ -93,7 +93,7 @@ export default function LothVerticesPanel({ vertices, censoCount, onPrintPlano, 
   };
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
         <div>
           <CardTitle as="h3" className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
@@ -108,7 +108,7 @@ export default function LothVerticesPanel({ vertices, censoCount, onPrintPlano, 
             type="button"
             onClick={onImportCoords}
             title="Pegar el cuadro de coordenadas del plan o subir KML/GeoJSON"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             <Clipboard className="h-3.5 w-3.5" /> Importar
           </button>
@@ -116,7 +116,7 @@ export default function LothVerticesPanel({ vertices, censoCount, onPrintPlano, 
             type="button"
             onClick={copy}
             disabled={rows.length === 0}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
           >
             {copied ? <Check className="h-3.5 w-3.5" /> : <ClipboardCopy className="h-3.5 w-3.5" />}
             {copied ? "Copiado" : "Copiar"}
@@ -125,7 +125,7 @@ export default function LothVerticesPanel({ vertices, censoCount, onPrintPlano, 
             type="button"
             onClick={downloadCsv}
             disabled={rows.length === 0}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
           >
             <FileSpreadsheet className="h-3.5 w-3.5" /> CSV
           </button>
@@ -134,7 +134,7 @@ export default function LothVerticesPanel({ vertices, censoCount, onPrintPlano, 
             onClick={onExportKml}
             disabled={rows.length === 0}
             title="Descargar KML para Google Earth (área + censo + operaciones)"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
           >
             <Globe className="h-3.5 w-3.5" /> KML
           </button>

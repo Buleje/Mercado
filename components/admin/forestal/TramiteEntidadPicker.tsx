@@ -92,7 +92,7 @@ export default function TramiteEntidadPicker({ onElegir }: { onElegir: (e: Entid
       </Btn>
 
       {abierto && (
-        <div className="absolute right-0 z-20 mt-1.5 w-80 max-w-[90vw] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]">
+        <div className="absolute right-0 z-20 mt-1.5 w-80 max-w-[90vw] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
             <input
@@ -149,7 +149,7 @@ export default function TramiteEntidadPicker({ onElegir }: { onElegir: (e: Entid
               setModal("nuevo");
               setAbierto(false);
             }}
-            className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
           >
             <Plus className="h-3.5 w-3.5" /> Nuevo emisor
           </button>

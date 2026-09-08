@@ -299,7 +299,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
           <>
             <div>
               <p className="mb-1.5 text-sm font-bold text-[var(--text-primary)]">¿Qué importás?</p>
-              <div className="inline-flex flex-wrap gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1">
+              <div className="inline-flex flex-wrap gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1">
                 {(["completo", "ingresos", "produccion", "salida"] as ImportMode[]).map((m) => (
                   <button
                     key={m}
@@ -336,13 +336,13 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               </div>
             </button>
             <input ref={fileRef} type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.target.value = ""; }} />
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
               <p className="text-sm text-[var(--text-secondary)]">¿No tenés el Excel? Bajá la plantilla oficial con las 4 hojas y una fila de ejemplo por hoja.</p>
               <button
                 type="button"
                 onClick={() => void descargarPlantilla()}
                 disabled={phase === "parsing"}
-                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
               >
                 <Download className="h-4 w-4" />
                 Descargar plantilla
@@ -366,7 +366,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                   ) : (
                     <ul className="space-y-2">
                       {history.map((h, i) => (
-                        <li key={i} className="flex items-start gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+                        <li key={i} className="flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
                           <FileSpreadsheet className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
                           <div className="min-w-0">
                             <p className="text-sm text-[var(--text-primary)]">{h.detail}</p>
@@ -391,7 +391,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               {counts.produccion > 0 && <Chip tone="info" label={`${counts.produccion} corridas`} />}
               {counts.salida > 0 && <Chip tone="info" label={`${counts.salida} despachos`} />}
             </div>
-            <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+            <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
               <p className="text-sm font-bold text-[var(--text-primary)]">Se importa el libro en orden de dependencia:</p>
               <ol className="mt-2 space-y-1.5 text-sm text-[var(--text-secondary)]">
                 <li className="flex items-center gap-2"><StepDot n={1} on={counts.ingresos > 0} /> <span><strong className="text-[var(--text-primary)]">Ingresos</strong> — {counts.ingresos} fila{counts.ingresos === 1 ? "" : "s"}</span></li>
@@ -401,7 +401,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               <p className="mt-3 text-xs text-[var(--text-tertiary)]">Las filas que ya existan se saltan; las que fallen una validación (p. ej. despachar más de lo producido) se reportan sin cortar el resto.</p>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <button type="button" onClick={reset} disabled={phase === "committing"} className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">Elegir otro archivo</button>
+              <button type="button" onClick={reset} disabled={phase === "committing"} className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">Elegir otro archivo</button>
               <button type="button" onClick={() => void commitCombined()} disabled={phase === "committing" || totalCombined === 0} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
                 {phase === "committing" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                 {phase === "committing" ? "Importando el libro…" : "Importar libro completo"}
@@ -425,7 +425,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                 se leyó por columnas, no por hoja fija). Un aserradero con su
                 propia planilla lo necesita antes de poder importar nada. */}
             {mode === "ingresos" && mapeo && phase !== "done" && (
-              <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+              <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
                 <button
                   type="button"
                   onClick={() => setVerMapeo((v) => !v)}
@@ -501,7 +501,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               </p>
             )}
 
-            <div className="max-h-[46vh] overflow-y-auto rounded-2xl border-2 border-[var(--rule-base)]">
+            <div className="max-h-[46vh] overflow-y-auto rounded-2xl border border-[var(--rule-base)]">
               <DataTable className="w-full text-sm">
                 <thead className="sticky top-0 bg-[var(--surface-sunken)] text-left">
                   <tr>
@@ -539,7 +539,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                 </>
               ) : (
                 <>
-                  <button type="button" onClick={reset} disabled={phase === "committing"} className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">Elegir otro archivo</button>
+                  <button type="button" onClick={reset} disabled={phase === "committing"} className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">Elegir otro archivo</button>
                   <button type="button" onClick={() => void commit()} disabled={!((resumen?.crear ?? 0) > 0) || phase === "committing"} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
                     {phase === "committing" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                     {phase === "committing" ? "Importando…" : `Importar ${resumen.crear} ${singleNoun}`}

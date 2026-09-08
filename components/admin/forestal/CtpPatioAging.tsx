@@ -125,7 +125,7 @@ export default function CtpPatioAging({ onValorizar }: { onValorizar?: () => voi
   if (guias.length === 0) return null;
 
   return (
-    <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
         <div>
           <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Clock className="h-4 w-4" /> Antigüedad de materia prima (patio)</CardTitle>
@@ -144,7 +144,7 @@ export default function CtpPatioAging({ onValorizar }: { onValorizar?: () => voi
               </p>
             )}
           </div>
-          <button type="button" onClick={() => void load()} className="grid h-9 w-9 place-items-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]" aria-label="Recargar"><RefreshCw className="h-4 w-4" /></button>
+          <button type="button" onClick={() => void load()} className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]" aria-label="Recargar"><RefreshCw className="h-4 w-4" /></button>
         </div>
       </div>
 

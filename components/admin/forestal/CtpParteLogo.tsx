@@ -86,7 +86,7 @@ export default function CtpParteLogo({
 
   return (
     <div className="flex flex-wrap items-center gap-4">
-      <div className="grid h-20 w-32 shrink-0 place-items-center overflow-hidden rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)]">
+      <div className="grid h-20 w-32 shrink-0 place-items-center overflow-hidden rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)]">
         {logo ? (
           // Es una data URL propia, no una imagen remota: `next/image` no aporta
           // nada acá y obligaría a permitir el origen.
@@ -103,7 +103,7 @@ export default function CtpParteLogo({
             type="button"
             onClick={() => input.current?.click()}
             disabled={cargando}
-            className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-60"
+            className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-60"
           >
             {cargando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Upload className="h-4 w-4" aria-hidden />}
             {logo ? "Cambiar logo" : "Subir logo"}

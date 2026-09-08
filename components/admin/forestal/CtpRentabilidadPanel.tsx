@@ -149,7 +149,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
 
       {/* Insight accionable: mejor y peor producto del período. */}
       {pnl.completos > 0 && best && (
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <span className="inline-flex items-center gap-2 text-sm">
             <Sparkles className="h-4 w-4 shrink-0 text-[var(--data-success-600)]" />
             <span className="text-[var(--text-tertiary)]">Más rentable:</span>
@@ -169,7 +169,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
 
       {/* Cascada del P&L: Ventas − COGS = Margen, de un vistazo. */}
       {pnl.completos > 0 && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <CardTitle as="h3" className="mb-2 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Cómo se compone el margen</CardTitle>
           <BulejeWaterfallChart steps={waterfall} currency={cur} height={230} />
         </div>
@@ -177,7 +177,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
 
       {/* Por producto */}
       {pnl.porProducto.length > 0 && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <CardTitle as="h3" className="mb-2 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Margen por producto</CardTitle>
           <div className="overflow-x-auto">
             <DataTable className="w-full text-sm">
@@ -213,7 +213,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
       <CtpValorizarIngresos period={period} />
 
       {/* Por despacho — venta editable */}
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <CardTitle as="h3" className="mb-2 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Despachos del período · registrá el valor de venta</CardTitle>
         {pnl.porDespacho.length === 0 ? (
           <p className="text-sm text-[var(--text-tertiary)]">No hay despachos en el período.</p>
@@ -223,7 +223,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
               const val = draft[d.id] ?? (d.valorVenta != null ? String(d.valorVenta) : "");
               const dirty = draft[d.id] !== undefined;
               return (
-                <div key={d.id} className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+                <div key={d.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
                   <div className="min-w-[9rem] flex-1">
                     <p className="text-sm font-bold text-[var(--text-primary)]">#{d.lineNo} · {d.producto}</p>
                     <p className="text-xs text-[var(--text-tertiary)]">{d.gtfSalida ?? "sin GTF"} · COGS {money(d.cogs, pnl.moneda)}</p>
@@ -239,13 +239,13 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
                         if (e.key === "Escape") setDraft((dr) => { const n = { ...dr }; delete n[d.id]; return n; });
                       }}
                       aria-label={`Valor de venta del despacho ${d.id}`}
-                      placeholder="venta" className="h-11 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
+                      placeholder="venta" className="h-11 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
                   </div>
                   <div className="min-w-[6rem] text-right">
                     <p className="text-xs text-[var(--text-tertiary)]">margen</p>
                     <p className={`text-sm font-bold ${d.margen == null ? "text-[var(--text-tertiary)]" : d.margen < 0 ? "text-[var(--data-error-700)]" : "text-[var(--data-success-700)]"}`} title={d.margen == null ? MOTIVO_LABEL[d.motivo] ?? d.motivo : ""}>{d.margen == null ? MOTIVO_LABEL[d.motivo] ?? "—" : `${money(d.margen, pnl.moneda)} · ${pct(d.margenPct)}`}</p>
                   </div>
-                  <button type="button" onClick={() => void saveVenta(d.id)} disabled={savingId === d.id || !dirty} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
+                  <button type="button" onClick={() => void saveVenta(d.id)} disabled={savingId === d.id || !dirty} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
                     {savingId === d.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Guardar
                   </button>
                 </div>

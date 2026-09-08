@@ -39,7 +39,7 @@ export default function CtpPatioBandeja({ cola }: { cola: PatioColaState }) {
             onClick={() => void cola.sincronizar()}
             disabled={sincronizando || !online}
             title={online ? "Intentar subir ahora" : "Sin conexión: se sube solo cuando vuelva"}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] disabled:opacity-50"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] disabled:opacity-50"
           >
             {sincronizando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Subir
           </button>
@@ -74,7 +74,7 @@ export default function CtpPatioBandeja({ cola }: { cola: PatioColaState }) {
                 <button
                   type="button"
                   onClick={() => void cola.reencolar(a.id)}
-                  className="rounded-lg border-2 border-[var(--rule-base)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]"
+                  className="rounded-lg border border-[var(--rule-base)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]"
                   title="Ya corregí lo que faltaba en el libro: intentar de nuevo"
                 >
                   Reintentar
@@ -84,7 +84,7 @@ export default function CtpPatioBandeja({ cola }: { cola: PatioColaState }) {
                   onClick={() => { void borrar(a.id).then(() => cola.refrescar()); }}
                   aria-label={`Descartar la anotación ${a.resumen}`}
                   title="Descartar: la anotación se pierde"
-                  className="rounded-xl border-2 border-[var(--rule-base)] p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-700)]"
+                  className="rounded-xl border border-[var(--rule-base)] p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-700)]"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>

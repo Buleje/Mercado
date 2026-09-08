@@ -39,10 +39,10 @@ export interface TrozaEditable extends TrozaRecepcion {
 }
 
 const BTN_LOTE =
-  "inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-40";
+  "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-40";
 
 const CAMPO_TABLA =
-  "h-11 rounded-xl border-2 border-[var(--rule-base)] bg-transparent px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] disabled:opacity-40";
+  "h-11 rounded-xl border border-[var(--rule-base)] bg-transparent px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] disabled:opacity-40";
 
 export default function CtpRecepcionTrozas({
   entryId,
@@ -361,7 +361,7 @@ export default function CtpRecepcionTrozas({
           type="button"
           onClick={onCerrar}
           disabled={guardando}
-          className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)]"
+          className="h-11 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)]"
         >
           Cancelar
         </button>

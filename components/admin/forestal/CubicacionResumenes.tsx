@@ -44,7 +44,7 @@ import ResumenTrozas from "./ResumenTrozas";
 import { useCubicacionesGuardadas } from "@/hooks/use-cubicaciones-guardadas";
 
 /** Botón de acción de la cabecera: mismo alto y peso que los filtros del admin. */
-const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
+const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
 
 type Vista = "panorama" | "tablas" | "rolliza" | "metas";
 const VISTAS: { value: Vista; label: string; icon: typeof Compass }[] = [
@@ -175,7 +175,7 @@ export default function CubicacionResumenes() {
 
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-16 text-center">
+      <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-16 text-center">
         <PackageOpen className="h-10 w-10 text-[var(--text-tertiary)]" />
         <p className="text-base font-bold text-[var(--text-primary)]">Todavía no hay lote cubicado</p>
         <p className="max-w-sm text-sm text-[var(--text-tertiary)]">Cubicá madera en la herramienta <b>Cubicador de madera</b> y volvé acá para ver los resúmenes por especie y tipo.</p>

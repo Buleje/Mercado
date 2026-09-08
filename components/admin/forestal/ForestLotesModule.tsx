@@ -137,11 +137,11 @@ export default function ForestLotesModule() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
+        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Buscar por código, especie, producto o destino..." className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
         </div>
-        <button type="button" onClick={load} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
+        <button type="button" onClick={load} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
         </button>
       </div>
@@ -182,7 +182,7 @@ export default function ForestLotesModule() {
       {loading && lotes.length === 0 ? (
         <div className="p-12 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando lotes…</p></div>
       ) : lotes.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
           <Layers className="mx-auto mb-3 h-10 w-10 opacity-30" />
           <p className="text-base font-medium">{search.trim() || statusFilter !== "todos" ? "Ningún lote coincide con el filtro." : "Sin lotes todavía."}</p>
           {!search.trim() && statusFilter === "todos" && <p className="mt-1 text-sm">Creá el primer lote agrupando corridas de producción del Libro CTP.</p>}

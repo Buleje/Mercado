@@ -11,7 +11,7 @@
 import { Download, LayoutGrid, Rows3, Search, SlidersHorizontal } from "@buleje/design-system/icons";
 import { ORDEN_LABEL, type TraceFiltro, type TraceModo, type TraceOrden } from "./loth-trace-ui";
 
-const CONTROL = "h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm";
+const CONTROL = "h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm";
 
 export interface ChipDef {
   key: TraceFiltro;
@@ -108,7 +108,7 @@ export default function LothTraceFiltros({
         </label>
 
         <div className="ml-auto flex items-center gap-2">
-          <div className="flex h-12 items-center gap-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
+          <div className="flex h-12 items-center gap-1 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
             <ModoBtn activo={modo === "tarjetas"} onClick={() => onModo("tarjetas")} icon={<LayoutGrid className="h-4 w-4" />} label="Tarjetas" />
             <ModoBtn activo={modo === "tabla"} onClick={() => onModo("tabla")} icon={<Rows3 className="h-4 w-4" />} label="Tabla" />
           </div>

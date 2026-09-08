@@ -438,7 +438,7 @@ export default function CtpResumenPermisoModal({
       <div className="space-y-4 p-5">
         {!grupo ? (
           grupos.length === 0 && lotesConSobra.length === 0 ? (
-            <p className="rounded-xl border-2 border-dashed border-[var(--rule-base)] px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">
+            <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">
               Todavía no hay trozas ingresadas en este período.
             </p>
           ) : (
@@ -462,7 +462,7 @@ export default function CtpResumenPermisoModal({
 
               {grupos.length > 0 && (
                 <SeccionResumenPermiso titulo="Permisos">
-                  <ul className="divide-y divide-[var(--rule-soft)] overflow-hidden rounded-xl border-2 border-[var(--rule-base)]">
+                  <ul className="divide-y divide-[var(--rule-soft)] overflow-hidden rounded-xl border border-[var(--rule-base)]">
                     {grupos.map((g) => (
                       <li key={g.clave} className="flex items-center gap-1 px-2">
                         <input
@@ -500,7 +500,7 @@ export default function CtpResumenPermisoModal({
                     trozas reales: su sobrante es aserrada YA producida (cuenta como «ya disponible», candado si su
                     tipo no es del objetivo); uno de trozas es rolliza sin aserrar (se distribuye abajo).
                   </p>
-                  <ul className="overflow-hidden rounded-xl border-2 border-[var(--rule-base)]">
+                  <ul className="overflow-hidden rounded-xl border border-[var(--rule-base)]">
                     {lotesConSobra.map((x) => {
                       const esInventario = esLoteDeInventario(x.lote);
                       const esRolliza = x.rollizaSobranteM3 > 1e-4;
@@ -533,7 +533,7 @@ export default function CtpResumenPermisoModal({
                     No se suman a la distribución de rolliza — es aserrada YA hecha. Tildá para compararla contra el
                     objetivo de arriba{objetivo ? " (con candado si el tipo no es del objetivo)" : ""}.
                   </p>
-                  <ul className="max-h-56 overflow-y-auto overflow-x-hidden rounded-xl border-2 border-[var(--rule-base)]">
+                  <ul className="max-h-56 overflow-y-auto overflow-x-hidden rounded-xl border border-[var(--rule-base)]">
                     {disponiblesOrdenados.map((c) => (
                       <FilaSeleccionable
                         key={c.id}
@@ -558,7 +558,7 @@ export default function CtpResumenPermisoModal({
               )}
 
               {objetivo && (
-                <div className="space-y-2 rounded-xl border-2 border-[var(--rule-base)] p-3">
+                <div className="space-y-2 rounded-xl border border-[var(--rule-base)] p-3">
                   <p className="text-sm font-bold text-[var(--text-primary)]">
                     Cuadre contra el objetivo — {objetivo.nombre}
                   </p>
@@ -673,7 +673,7 @@ export default function CtpResumenPermisoModal({
               />
             </div>
 
-            <div className="overflow-x-auto rounded-xl border-2 border-[var(--rule-base)]">
+            <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
@@ -720,7 +720,7 @@ export default function CtpResumenPermisoModal({
             ) : null}
 
             {lotesConRollizaSobrante.length > 0 && (
-              <div className="rounded-xl border-2 border-[var(--rule-base)] p-3">
+              <div className="rounded-xl border border-[var(--rule-base)] p-3">
                 <p className="mb-2 text-sm font-bold text-[var(--text-primary)]">
                   Traer rolliza sin aserrar de lotes abiertos
                 </p>
@@ -744,7 +744,7 @@ export default function CtpResumenPermisoModal({
               </div>
             )}
 
-            <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
+            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
               <p className="mb-3 text-sm text-[var(--text-secondary)]">
                 <b className="text-[var(--text-primary)]">Distribución de rolliza sobre lo aserrado:</b> abre
                 Herramientas → Resúmenes → Rolliza con un bloque por cada guía de este permiso

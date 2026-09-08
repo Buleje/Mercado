@@ -38,7 +38,7 @@ export default function CtpLotesTira({ onIr }: { onIr: () => void }) {
   const volumen = lotes.reduce((a, l) => a + volumenLibre(l), 0);
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
       <Layers className="h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
       {lotes.length === 0 ? (
         <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">

@@ -1546,7 +1546,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       />
 
       {/* Tabla acumulada */}
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
@@ -1645,7 +1645,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   onChange={(e) => setForm({ ...form, nombre: e.target.value })}
                   placeholder="Lote Tornillo · Sr. Pérez"
                   maxLength={120}
-                  className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
               </label>
               <label className="block">
@@ -1654,7 +1654,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   type="date"
                   value={form.fecha}
                   onChange={(e) => setForm({ ...form, fecha: e.target.value || hoyISO() })}
-                  className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
               </label>
               <label className="block">
@@ -1664,7 +1664,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   onChange={(e) => setForm({ ...form, cliente: e.target.value })}
                   placeholder="Maderera del Centro"
                   maxLength={120}
-                  className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
               </label>
               <label className="block">
@@ -1674,7 +1674,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   onChange={(e) => setForm({ ...form, notas: e.target.value })}
                   placeholder="Entregado en camión, falta el saldo"
                   maxLength={600}
-                  className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
               </label>
             </div>
@@ -1684,7 +1684,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {guardando ? "Guardando…" : cubicacionActual ? "Actualizar" : "Guardar"}
               </button>
-              <button type="button" onClick={() => setShowGuardar(false)} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+              <button type="button" onClick={() => setShowGuardar(false)} className="h-11 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                 Cancelar
               </button>
               <span className="text-xs text-[var(--text-tertiary)]">Queda en tu cuenta: la ves desde cualquier dispositivo.</span>
@@ -1889,7 +1889,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 {colsMenuOpen && (
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 top-full z-20 mt-1 min-w-[190px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
+                    className="absolute right-0 top-full z-20 mt-1 min-w-[190px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
                   >
                     <p className="px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Columnas visibles</p>
                     {COLS_OPCIONALES.map(({ key, label }) => (
@@ -1898,7 +1898,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                           type="checkbox"
                           checked={colsVisibles[key]}
                           onChange={(e) => setColsVisibles((c) => ({ ...c, [key]: e.target.checked }))}
-                          className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
+                          className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
                         />
                         {label}
                       </label>

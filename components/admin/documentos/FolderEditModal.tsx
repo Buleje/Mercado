@@ -44,7 +44,7 @@ export function FolderEditModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-[28rem] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[28rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-sunken)]">
             <FolderGlyph folder={{ icon, color }} className="h-5 w-5" active />
@@ -63,7 +63,7 @@ export function FolderEditModal({
               onKeyDown={(e) => { if (e.key === "Enter") save(); }}
               autoFocus
               maxLength={80}
-              className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-11 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary"
+              className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-11 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary"
             />
           </div>
 

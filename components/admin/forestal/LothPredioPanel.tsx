@@ -70,7 +70,7 @@ export default function LothPredioPanel({
   };
 
   return (
-    <section className="space-y-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <section className="space-y-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex flex-wrap items-center gap-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <ClipboardList className="h-4 w-4" />

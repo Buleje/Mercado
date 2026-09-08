@@ -53,7 +53,7 @@ export default function LothPlanTalaPanel({
   if (saldoTotalM3 <= 0) return null;
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
@@ -65,7 +65,7 @@ export default function LothPlanTalaPanel({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-lg border-2 border-[var(--rule-base)] p-0.5">
+          <div className="flex rounded-lg border border-[var(--rule-base)] p-0.5">
             {OPCIONES_DIAS.map((d) => (
               <button
                 key={d}
@@ -82,7 +82,7 @@ export default function LothPlanTalaPanel({
             <button
               type="button"
               onClick={() => onImprimir(meta)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
             >
               <Printer className="h-3.5 w-3.5" /> Imprimir
             </button>
@@ -115,7 +115,7 @@ export default function LothPlanTalaPanel({
       )}
 
       {plan.lineas.length === 0 ? (
-        <p className="rounded-xl border-2 border-dashed border-[var(--rule-base)] p-5 text-center text-sm text-[var(--text-secondary)]">
+        <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-5 text-center text-sm text-[var(--text-secondary)]">
           No hay árboles aprovechables para proponer. Revisá el censo, el DMC de cada especie y el saldo del plan.
         </p>
       ) : (
@@ -181,7 +181,7 @@ function Cifra({ label, valor, nota, tono = "muted" }: {
       : tono === "warn" ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
         : "text-[var(--text-primary)]";
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">{label}</p>
       <p className={`font-mono text-lg font-bold leading-tight tabular-nums ${color}`}>{valor}</p>
       <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{nota}</p>

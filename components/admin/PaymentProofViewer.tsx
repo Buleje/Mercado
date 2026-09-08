@@ -194,7 +194,7 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
     <>
       <div
         className={cn(
-          "rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden",
+          "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden",
           className,
         )}
       >
@@ -222,7 +222,7 @@ export function PaymentProofViewer({ orderId, isCash, className }: Props) {
           <button
             type="button"
             onClick={() => setLightbox(true)}
-            className="group relative aspect-[3/4] rounded-xl overflow-hidden border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] transition-colors"
+            className="group relative aspect-[3/4] rounded-xl overflow-hidden border border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] transition-colors"
             aria-label="Ampliar comprobante"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -34,7 +34,7 @@ interface CtpPeriodPickerProps {
 }
 
 const DATE_INPUT =
-  "h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  "h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 
 export default function CtpPeriodPicker({
   periodKey,
@@ -84,7 +84,7 @@ export default function CtpPeriodPicker({
           <div
             role="dialog"
             aria-label="Período del libro"
-            className="absolute right-0 z-50 mt-2 w-[17rem] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
+            className="absolute right-0 z-50 mt-2 w-[17rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
           >
             {CTP_PERIOD_OPTIONS.map((o) => (
               <button

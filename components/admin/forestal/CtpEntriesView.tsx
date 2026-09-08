@@ -70,7 +70,7 @@ function BuscadorSeccion({ section, label, value, onChange }: {
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
+    <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
       <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
       <label htmlFor={`ctp-search-${section}`} className="sr-only">Buscar en {label}</label>
       <input
@@ -933,7 +933,7 @@ export function CtpEntriesView({
                 <button
                   type="button"
                   onClick={() => onIr("lotes")}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-base font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-base font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
                 >
                   <Boxes className="h-5 w-5" aria-hidden />
                   Armar un lote de aserrío
@@ -1120,14 +1120,14 @@ export function CtpEntriesView({
 
       {/* Filtro activo sin resultados (pero sí hay datos): distinto de "sin datos". */}
       {!loading && entries.length > 0 && visible.length === 0 && (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
           Ninguna línea {statusFilter === "anulado" ? "anulada" : statusFilter === "registrado" ? "registrada" : ""} en {period.label}.
         </div>
       )}
 
       {/* ── Estados compartidos (vacío / cargando) ── */}
       {!loading && entries.length === 0 && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
           <Icon className="mx-auto mb-3 h-10 w-10 opacity-30" />
           <p className="text-base font-medium">{search.trim() ? "Ninguna línea coincide con la búsqueda." : meta.empty}</p>
           {!search.trim() && period.from && (
@@ -1235,12 +1235,12 @@ export function CtpEntriesView({
 
       {annulId && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setAnnulId(null)}>
-          <div className="w-full max-w-md rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Anular línea</CardTitle>
             <p className="mt-1 text-sm text-[var(--text-tertiary)]">Indicá el motivo (queda en el historial, no se borra).</p>
-            <input autoFocus value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (min 3 caracteres)" className="mt-3 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm outline-none focus:border-[var(--data-error-500)]" />
+            <input autoFocus value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (min 3 caracteres)" className="mt-3 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm outline-none focus:border-[var(--data-error-500)]" />
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setAnnulId(null)} className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]">Cancelar</button>
+              <button type="button" onClick={() => setAnnulId(null)} className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]">Cancelar</button>
               <button type="button" disabled={annulReason.trim().length < 3 || pending} onClick={annul} className="inline-flex h-10 items-center rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">Confirmar anulación</button>
             </div>
           </div>

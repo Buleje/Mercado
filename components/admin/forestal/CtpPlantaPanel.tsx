@@ -141,7 +141,7 @@ export default function CtpPlantaPanel({
     /* La altura se acota a la del mapa: sin tope, 44 filas estiran la fila del
        grid y empujan todo lo que va debajo (el desglose por especie quedaba a
        una pantalla y media de distancia). La lista scrollea adentro. */
-    <aside className="flex min-h-0 flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] xl:max-h-[38rem]">
+    <aside className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] xl:max-h-[38rem]">
       {/* ── Cabecera: cuánto falta, en una barra ─────────────────────────── */}
       <div className="border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5">
         <div className="flex items-center justify-between gap-2">
@@ -220,7 +220,7 @@ export default function CtpPlantaPanel({
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar guía, especie o zona…"
             aria-label="Buscar qué ubicar"
-            className="h-9 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-7 pr-7 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none"
+            className="h-9 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-7 pr-7 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none"
           />
           {q && (
             <button type="button" onClick={() => setQ("")} aria-label="Limpiar búsqueda" className="absolute right-1.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]">
@@ -244,7 +244,7 @@ export default function CtpPlantaPanel({
       {/* ── La lista: una línea por ítem ──────────────────────────────────── */}
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
         {grupos.length === 0 && (
-          <p className="rounded-xl border-2 border-dashed border-[var(--rule-base)] p-4 text-center text-xs text-[var(--text-tertiary)]">
+          <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-4 text-center text-xs text-[var(--text-tertiary)]">
             {items.length === 0 ? "No hay madera disponible en el período." : "Nada coincide con eso."}
           </p>
         )}
@@ -333,7 +333,7 @@ function SelectLote({ kind, zonas, disabled, onUbicarLote }: {
       onChange={(e) => { if (e.target.value) onUbicarLote(kind, e.target.value === "__none__" ? null : e.target.value); }}
       title="Ubicar todos los de este tipo en una zona"
       aria-label={`Ubicar todas las líneas de ${KIND_META[kind].corto} en una zona`}
-      className="h-6 max-w-[8.5rem] rounded border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)] disabled:opacity-60"
+      className="h-6 max-w-[8.5rem] rounded border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)] disabled:opacity-60"
     >
       <option value="">Todas en…</option>
       {zonas.map((z) => <option key={z.id} value={z.id}>{z.codigo}</option>)}
@@ -422,7 +422,7 @@ function FilaItem({ it, zona, enMano, ocupado, sinZonas, onEnMano, onResaltar, o
             type="button"
             onClick={() => onIrAZona(zona.id)}
             title={`Ir a ${zona.codigo}${zona.nombre ? ` · ${zona.nombre}` : ""} en el mapa`}
-            className="inline-flex max-w-[5.5rem] items-center gap-1 rounded border-2 border-[var(--rule-base)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex max-w-[5.5rem] items-center gap-1 rounded border border-[var(--rule-base)] px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
             <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: meta.ring }} />
             <span className="truncate">{zona.codigo}</span>

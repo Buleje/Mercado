@@ -29,7 +29,7 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Mismo campo que los filtros de Ingresos: el módulo se lee como uno solo. */
 const CAMPO =
-  "h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
+  "h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
 export default function CtpTrozasPicker({
   trozas,
@@ -144,7 +144,7 @@ export default function CtpTrozasPicker({
           <option value="">Todas las guías</option>
           {guias.map((g) => <option key={g} value={g}>{g}</option>)}
         </select>
-        <label className="flex h-12 cursor-pointer items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-secondary)]">
+        <label className="flex h-12 cursor-pointer items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-secondary)]">
           <input type="checkbox" checked={soloDisponibles} onChange={(e) => setSoloDisponibles(e.target.checked)} className="h-5 w-5 accent-[var(--accent)]" />
           Sólo disponibles
         </label>
@@ -152,7 +152,7 @@ export default function CtpTrozasPicker({
           type="button"
           onClick={tomarVisibles}
           disabled={visibles.length === 0}
-          className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
+          className="h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
         >
           Tomar las {visibles.length} visibles
         </button>

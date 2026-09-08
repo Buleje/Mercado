@@ -207,7 +207,7 @@ export default function CtpTrozasDelLote({
   };
 
   return (
-    <section className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <section className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       {/* La franja de título del formato. */}
       <header className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] bg-[var(--data-success-50)] px-4 py-2 dark:bg-[var(--data-success-500)]/10">
         <p className="text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
@@ -262,7 +262,7 @@ export default function CtpTrozasDelLote({
             type="button"
             disabled={enElRango.length === 0}
             onClick={() => aplicarRango(true)}
-            className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 sm:h-9 sm:px-3"
+            className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 sm:h-9 sm:px-3"
           >
             Tildar
           </button>
@@ -270,7 +270,7 @@ export default function CtpTrozasDelLote({
             type="button"
             disabled={enElRango.length === 0}
             onClick={() => aplicarRango(false)}
-            className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 sm:h-9 sm:px-3"
+            className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 sm:h-9 sm:px-3"
           >
             Destildar
           </button>

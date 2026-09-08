@@ -12,7 +12,7 @@ import { Wrench, Calculator, Activity, Ruler, Gauge, BarChart3, Trees } from "@b
 import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
 
 const cargando = (
-  <div className="flex h-64 items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]">
+  <div className="flex h-64 items-center justify-center rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]">
     <Activity className="mr-2 h-5 w-5 animate-pulse" /> Cargando herramienta…
   </div>
 );
