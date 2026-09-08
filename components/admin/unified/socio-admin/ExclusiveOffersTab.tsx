@@ -133,7 +133,7 @@ function OfferModal({
               value={form.productName}
               onChange={(e) => setForm((p) => ({ ...p, productName: e.target.value }))}
               placeholder="Nombre del producto"
-              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               autoFocus
             />
           </Field>
@@ -146,7 +146,7 @@ function OfferModal({
                 step={0.5}
                 value={form.regularPrice}
                 onChange={(e) => setForm((p) => ({ ...p, regularPrice: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               />
             </Field>
             <Field label="Precio Socio (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
@@ -156,7 +156,7 @@ function OfferModal({
                 step={0.5}
                 value={form.socioPrice}
                 onChange={(e) => setForm((p) => ({ ...p, socioPrice: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               />
             </Field>
           </div>
@@ -248,7 +248,7 @@ export function ExclusiveOffersTab() {
         </p>
         <button
           onClick={() => setModal({ open: true, offer: null })}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" />
           Nueva oferta

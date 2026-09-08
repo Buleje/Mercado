@@ -158,7 +158,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar item, plantilla o categoría…"
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 autoFocus
               />
             </div>
@@ -299,7 +299,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
             </span>
             <button
               onClick={onClose}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 min-h-10 text-sm font-bold text-white hover:bg-primary/90"
             >
               <Check className="h-4 w-4" />
               Listo

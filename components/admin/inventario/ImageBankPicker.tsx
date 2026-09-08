@@ -87,7 +87,7 @@ export default function ImageBankPicker({ open, onOpenChange, onPick }: Props) {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar item por nombre..."
                 autoFocus
-                className="w-full pl-10 pr-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="w-full pl-10 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
             {categories.length > 0 && (

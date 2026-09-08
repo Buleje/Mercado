@@ -114,7 +114,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Ej: Ofertas de fin de semana"
-            className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             autoFocus
           />
         </Field>
@@ -135,7 +135,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
           </Field>
           <Field label="Hora *" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
@@ -143,7 +143,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
           </Field>
         </div>
@@ -156,7 +156,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
             placeholder="Buscar producto..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
           <div className="max-h-48 overflow-y-auto border border-[var(--rule-base)] rounded-xl divide-y divide-[var(--rule-soft)]">
             {filteredProducts.map((p) => {
@@ -201,7 +201,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
           </button>
           <button
             type="submit"
-            className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
           >
             <Save className="h-4 w-4" />
             Programar

@@ -454,7 +454,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
                       key={tpl.id}
                       type="button"
                       onClick={() => handleGenerateFromTemplate(tpl.id)}
-                      className="w-full text-left px-3 py-2.5 hover:bg-[var(--surface-sunken)] transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-b-0"
+                      className="w-full text-left px-3 min-h-11 hover:bg-[var(--surface-sunken)] transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-b-0"
                     >
                       <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{tpl.label}</p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{tpl.description}</p>

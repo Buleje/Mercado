@@ -100,7 +100,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Ej: Ofertas del día"
-            className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             autoFocus
           />
         </Field>
@@ -163,7 +163,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
             onClick={handleStart}
             disabled={!canStart}
             className={cn(
-              "flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white transition-colors",
+              "flex-1 inline-flex items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-bold text-white transition-colors",
               canStart ? "bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]" : "bg-gray-300 cursor-not-allowed"
             )}
           >

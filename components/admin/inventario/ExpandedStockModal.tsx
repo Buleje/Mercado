@@ -146,7 +146,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar producto..."
-                className="pl-9 pr-3 py-2 w-56 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="pl-9 pr-3 h-10 w-56 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
             <button onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">

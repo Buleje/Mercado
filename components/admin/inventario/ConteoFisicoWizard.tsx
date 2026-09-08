@@ -272,7 +272,7 @@ export default function ConteoFisicoWizard() {
                     value={categoria}
                     onChange={e => setCategoria(e.target.value)}
                     placeholder="Ej: Abarrotes, Bebidas..."
-                    className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm"
+                    className="w-full px-3 h-10 border border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm"
                   />
                 </Field>
               )}
@@ -280,7 +280,7 @@ export default function ConteoFisicoWizard() {
               <button
                 onClick={iniciarConteo}
                 disabled={loading || (tipo === 'categoria' && !categoria.trim())}
-                className="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                className="w-full min-h-11 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
               >
                 {loading ? 'Creando...' : 'Iniciar Conteo'}
               </button>
@@ -341,11 +341,11 @@ export default function ConteoFisicoWizard() {
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Buscar producto..."
-                  className="flex-1 px-3 py-2 border border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm"
+                  className="flex-1 px-3 h-10 border border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm"
                 />
                 <button
                   onClick={() => setShowScanner(true)}
-                  className="px-3 py-2 bg-primary text-white rounded-xl hover:bg-primary-dark transition-colors"
+                  className="px-3 min-h-10 bg-primary text-white rounded-xl hover:bg-primary-dark transition-colors"
                   title="Escanear codigo"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -419,7 +419,7 @@ export default function ConteoFisicoWizard() {
                       onKeyDown={e => { if (e.key === 'Enter') guardarConteo(); }}
                       min={0}
                       placeholder="Ingresa cantidad..."
-                      className="w-full px-4 py-3 border-2 border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] text-2xl text-center font-bold focus:border-primary focus:outline-none"
+                      className="w-full px-4 h-11 border-2 border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] text-2xl text-center font-bold focus:border-primary focus:outline-none"
                       autoFocus
                     />
                   </Field>
@@ -442,7 +442,7 @@ export default function ConteoFisicoWizard() {
                   <button
                     onClick={guardarConteo}
                     disabled={loading || !inputValue || isNaN(parseInt(inputValue))}
-                    className="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                    className="w-full min-h-11 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
                   >
                     {loading ? 'Guardando...' : 'Guardar y siguiente'}
                   </button>
@@ -458,7 +458,7 @@ export default function ConteoFisicoWizard() {
           <div className="flex gap-2">
             <button
               onClick={() => setPaso(3)}
-              className="px-4 py-2 bg-secondary text-white rounded-xl font-medium hover:bg-secondary/90 transition-colors"
+              className="px-4 min-h-10 bg-secondary text-white rounded-xl font-medium hover:bg-secondary/90 transition-colors"
             >
               Revisar diferencias ({itemsConDiferencia.length})
             </button>
@@ -523,14 +523,14 @@ export default function ConteoFisicoWizard() {
           <div className="flex gap-2">
             <button
               onClick={() => setPaso(2)}
-              className="px-4 py-2 border border-[var(--rule-base)] text-[var(--text-primary)] rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
+              className="px-4 min-h-10 border border-[var(--rule-base)] text-[var(--text-primary)] rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
             >
               Volver a contar
             </button>
             <button
               onClick={cerrarConteo}
               disabled={loading}
-              className="flex-1 py-2 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              className="flex-1 min-h-10 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
             >
               {loading ? 'Cerrando...' : `Aplicar ${itemsConDiferencia.filter(i => i.ajustado).length} ajustes y cerrar`}
             </button>
@@ -570,7 +570,7 @@ export default function ConteoFisicoWizard() {
 
           <button
             onClick={() => { setPaso(1); setConteo(null); setItems([]); setResumen(null); }}
-            className="px-6 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark transition-colors"
+            className="px-6 min-h-11 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark transition-colors"
           >
             Nuevo conteo
           </button>

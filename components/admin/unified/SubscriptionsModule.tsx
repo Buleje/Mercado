@@ -160,13 +160,13 @@ function SubscriptionList({
             placeholder="Buscar por cliente, teléfono, producto o ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
         </div>
         <select
           value={freqFilter}
           onChange={(e) => setFreqFilter(e.target.value as SubFrequency | "all")}
-          className="px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
+          className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
         >
           <option value="all">Todas las frecuencias</option>
           <option value="weekly">Semanal</option>

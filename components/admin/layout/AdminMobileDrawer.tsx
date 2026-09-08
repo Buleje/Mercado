@@ -190,7 +190,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                   key={`fav-${id}`}
                   onClick={() => { navigateTab(id as Tab); onClose(); }}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
+                    "w-full flex items-center gap-3 px-4 min-h-11 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
                       ? "bg-primary text-white "
                       : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
@@ -205,7 +205,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                   key={`sc-${id}-${label}`}
                   onClick={() => { navigateTab(id as Tab); onClose(); }}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
+                    "w-full flex items-center gap-3 px-4 min-h-11 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
                       ? "bg-primary text-white "
                       : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-accent"
@@ -236,7 +236,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                   key={`rec-${id}`}
                   onClick={() => { navigateTab(id as Tab); onClose(); }}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
+                    "w-full flex items-center gap-3 px-4 min-h-11 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
                       ? "bg-primary text-white "
                       : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
@@ -287,7 +287,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
               key={id}
               onClick={() => { navigateTab(id as Tab); onClose(); }}
               className={cn(
-                "group w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all mb-1",
+                "group w-full flex items-center gap-3 px-4 min-h-11 rounded-xl text-sm font-semibold transition-all mb-1",
                 tab === id
                   ? "bg-primary text-white "
                   : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
@@ -451,7 +451,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
           </Link>
           <button
             onClick={() => { onOpenCierreDiario(); onClose(); }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-all"
+            className="w-full flex items-center gap-3 px-4 min-h-11 rounded-xl text-sm font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-all"
           >
             <Power className="h-5 w-5" /> Cerrar día
           </button>

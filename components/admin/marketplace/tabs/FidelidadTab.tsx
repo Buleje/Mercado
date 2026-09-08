@@ -153,7 +153,7 @@ export function MarketplaceFidelidadTab() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && searchCustomer()}
-            className="flex-1 min-w-0 px-3 py-3 bg-transparent text-sm font-semibold text-[var(--text-primary)] outline-none tabular-nums tracking-wide"
+            className="flex-1 min-w-0 px-3 h-11 bg-transparent text-sm font-semibold text-[var(--text-primary)] outline-none tabular-nums tracking-wide"
           />
           <button
             onClick={searchCustomer}
@@ -243,7 +243,7 @@ export function MarketplaceFidelidadTab() {
                 value={earnPoints}
                 onChange={(e) => setEarnPoints(e.target.value)}
                 min={1}
-                className="flex-1 min-w-0 px-4 py-3 bg-transparent text-base font-extrabold text-[var(--text-primary)] outline-none tabular-nums"
+                className="flex-1 min-w-0 px-4 h-11 bg-transparent text-base font-extrabold text-[var(--text-primary)] outline-none tabular-nums"
               />
               <span className="inline-flex items-center px-3 text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-l-2 border-[var(--rule-base)]">
                 pts

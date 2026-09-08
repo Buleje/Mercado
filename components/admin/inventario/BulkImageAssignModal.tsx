@@ -266,7 +266,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                   value={bankSearch}
                   onChange={(e) => setBankSearch(e.target.value)}
                   placeholder="Buscar en el banco..."
-                  className="w-full pl-10 pr-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
+                  className="w-full pl-10 pr-3 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
                 />
               </div>
               {categories.length > 0 && (
@@ -380,7 +380,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
                   placeholder="Buscar producto por nombre o código..."
-                  className="w-full pl-10 pr-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
+                  className="w-full pl-10 pr-3 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
                 />
               </div>
               {productCategories.length > 1 && (
@@ -506,7 +506,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
           </p>
           <button
             onClick={() => onOpenChange(false)}
-            className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors"
+            className="px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors"
           >
             {totalAssigned > 0 ? `Listo (${totalAssigned} asignadas)` : "Cerrar"}
           </button>
