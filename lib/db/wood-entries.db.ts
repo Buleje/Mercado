@@ -2890,10 +2890,18 @@ export class WoodEntriesDB {
     const { status: _ignored, limit: _l, offset: _o, ...periodFilters } = filters;
     // El filtro "fuera de plazo" también aplica acá: si la tabla muestra sólo
     // los tarde, los KPIs que la encabezan tienen que hablar de ESE conjunto.
-    const where = await withLateFilter(
+    /**
+     * Y el de RECEPCIÓN también (ADR-400): `list()` lo aplicaba y `stats()` no,
+     * así que en «GTF ingresadas» —el archivo— las tarjetas y los desplegables
+     * describían el período ENTERO (bandeja incluida) mientras la tabla mostraba
+     * sólo lo recepcionado. Es exactamente lo que `buildListWhere` promete en su
+     * comentario: `list` y `stats` filtran igual, o los KPIs encabezan una tabla
+     * que habla de otra cosa. Medido: la opción decía 55.78 m³ y la tarjeta 49.
+     */
+    const where = await withRecepcionFilter(
       tenantId,
       periodFilters,
-      buildListWhere(tenantId, periodFilters),
+      await withLateFilter(tenantId, periodFilters, buildListWhere(tenantId, periodFilters)),
     );
     // Las cifras OFICIALES (total, volumen, CITES, especies, fuera de plazo) NO
     // deben contar ingresos RECHAZADOS ni ANULADOS: no forman parte del libro y

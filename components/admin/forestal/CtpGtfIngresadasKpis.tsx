@@ -31,11 +31,20 @@ export default function CtpGtfIngresadasKpis({
   guias,
   lateOn,
   onLate,
+  filtros,
+  filtrosActivos = 0,
 }: {
   guias: GuiaIngreso<WoodEntry>[];
   /** El filtro «fuera de plazo» del panel, para que la tarjeta lo refleje. */
   lateOn?: boolean;
   onLate?: () => void;
+  /**
+   * La fila que recorta estas cifras (ADR-400): los MISMOS filtros de servidor
+   * que la bandeja —especie, permiso, proveedor, producto—, porque el archivo
+   * es el mismo libro leído del otro lado de la recepción.
+   */
+  filtros?: React.ReactNode;
+  filtrosActivos?: number;
 }) {
   const volumen = guias.reduce((a, g) => a + g.volumenM3, 0);
   const piezas = guias.reduce((a, g) => a + g.trozasCount, 0);
@@ -65,6 +74,8 @@ export default function CtpGtfIngresadasKpis({
        en la línea de resumen. */
     <CtpKpisPlegables
       claveMemoria="gtf-ingresadas"
+      filtros={filtros}
+      filtrosActivos={filtrosActivos}
       resumen={
         guias.length === 0
           ? "Sin guías en el archivo del período"

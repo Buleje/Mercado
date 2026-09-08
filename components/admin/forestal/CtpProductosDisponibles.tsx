@@ -19,6 +19,7 @@ import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period"
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ColumnasMenu, CtpKpisPlegables, IconAction, productLabel, useColumnasVisibles } from "./ctp-shared";
+import CtpKpiFiltros from "./CtpKpiFiltros";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 import CtpPaqueteFicha from "./CtpPaqueteFicha";
 import CtpReprocesoModal from "./CtpReprocesoModal";
@@ -184,6 +185,32 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     return { especies, productos, permisos };
   }, [corridas]);
 
+  /**
+   * Cuánto m³ DISPONIBLE hay detrás de cada valor (ADR-400).
+   *
+   * Es lo que se muestra al costado de cada opción: acá lo que importa no es
+   * cuántas corridas hay sino cuánta madera queda, que es lo que se despacha.
+   * Un permiso con 0.4 m³ y otro con 40 se eligen distinto.
+   */
+  const pesos = useMemo(() => {
+    const sumar = (clave: (c: CorridaDisponible) => string[]) => {
+      const m = new Map<string, number>();
+      for (const c of corridas) {
+        for (const k of clave(c)) {
+          const v = k.trim();
+          if (!v) continue;
+          m.set(v, (m.get(v) ?? 0) + c.disponible);
+        }
+      }
+      return m;
+    };
+    return {
+      especies: sumar((c) => [c.especie ?? ""]),
+      productos: sumar((c) => [c.producto ?? ""]),
+      permisos: sumar((c) => c.titularOrigen ?? []),
+    };
+  }, [corridas]);
+
   const visibles = useMemo(() => {
     const q = norm(texto);
     return corridas.filter((c) => {
@@ -268,6 +295,63 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
           —cuánto hay y en cuántos paquetes— va en la línea de resumen. */}
       <CtpKpisPlegables
         claveMemoria="disponibles"
+        /* Los filtros que gobiernan estas cifras (ADR-400): son los MISMOS que
+           recortan la tabla de abajo — `visibles` alimenta a las dos. */
+        filtrosActivos={[especie, producto, permiso].filter(Boolean).length}
+        filtros={
+          <CtpKpiFiltros
+            campos={[
+              {
+                key: "especie",
+                label: "Especie",
+                todos: "Todas las especies",
+                valor: especie || undefined,
+                opciones: opciones.especies.map((e) => ({
+                  value: e,
+                  label: e,
+                  hint: `${fmtM3(pesos.especies.get(e) ?? 0)} m³`,
+                })),
+                onChange: (v) => setEspecie(v ?? ""),
+              },
+              {
+                key: "permiso",
+                label: "Permiso (título habilitante)",
+                todos: "Todos los permisos",
+                valor: permiso || undefined,
+                opciones: opciones.permisos.map((p) => ({
+                  value: p,
+                  label: p,
+                  hint: `${fmtM3(pesos.permisos.get(p) ?? 0)} m³`,
+                })),
+                onChange: (v) => setPermiso(v ?? ""),
+              },
+              {
+                key: "producto",
+                label: "Producto",
+                todos: "Todos los productos",
+                valor: producto || undefined,
+                opciones: opciones.productos.map((p) => ({
+                  value: p,
+                  label: productLabel(p),
+                  hint: `${fmtM3(pesos.productos.get(p) ?? 0)} m³`,
+                })),
+                onChange: (v) => setProducto(v ?? ""),
+              },
+            ]}
+            onLimpiar={() => { setEspecie(""); setPermiso(""); setProducto(""); }}
+            nota={
+              [especie, permiso, producto].some(Boolean)
+                ? `Los indicadores muestran sólo ${[
+                    especie ? `especie: ${especie}` : "",
+                    permiso ? `permiso: ${permiso}` : "",
+                    producto ? `producto: ${productLabel(producto)}` : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}`
+                : null
+            }
+          />
+        }
         resumen={
           visibles.length === 0
             ? "Sin producto disponible en planta"

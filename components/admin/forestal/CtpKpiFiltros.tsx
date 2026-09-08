@@ -102,3 +102,91 @@ export default function CtpKpiFiltros({
     </div>
   );
 }
+
+/**
+ * Los campos de filtro de la BANDEJA de ingresos y su archivo (ADR-400).
+ *
+ * Los dos miran el mismo conjunto de datos con los mismos filtros de servidor
+ * (`facetas` → `?species=`, `?permiso=`, …), así que arman la misma fila. Vivía
+ * escrito una vez y copiarlo para el archivo habría dejado dos listas de campos
+ * que se desincronizan a la primera faceta nueva.
+ */
+export function camposDeIngresos({
+  stats,
+  facetas,
+  onFacetas,
+  productLabel,
+}: {
+  stats: {
+    species?: { value: string; count: number; volumeM3: number }[];
+    providers?: { value: string; count: number; volumeM3: number }[];
+    products?: { value: string; count: number; volumeM3: number }[];
+    permisos?: { value: string; count: number; volumeM3: number; proveedores: string[]; resoluciones: string[] }[];
+  } | null;
+  facetas: { species?: string; provider?: string; product?: string; permiso?: string };
+  onFacetas: (f: { species?: string; provider?: string; product?: string; permiso?: string }) => void;
+  /** Cómo se escribe un tipo de producto para una persona. */
+  productLabel: (v: string) => string;
+}): CampoKpiFiltro[] {
+  const nf = (n: number) => n.toLocaleString("es-PE");
+  /* «asientos» dicho con todas las letras: en el archivo la tarjeta cuenta
+     GUÍAS (documentos) y esto cuenta líneas del libro. Sin la palabra, «9 ·
+     55.78 m³» al lado de una tarjeta que dice «8 guías» se lee como un error. */
+  const peso = (f: { count: number; volumeM3: number }) =>
+    `${nf(f.count)} ${f.count === 1 ? "asiento" : "asientos"} · ${f.volumeM3.toFixed(2)} m³`;
+  return [
+    {
+      key: "species",
+      label: "Especie",
+      todos: "Todas las especies",
+      valor: facetas.species,
+      opciones: (stats?.species ?? []).map((f) => ({ value: f.value, label: f.value, hint: peso(f) })),
+      onChange: (v) => onFacetas({ ...facetas, species: v }),
+    },
+    {
+      key: "permiso",
+      label: "Permiso (título habilitante)",
+      todos: "Todos los permisos",
+      valor: facetas.permiso,
+      opciones: (stats?.permisos ?? []).map((f) => ({
+        value: f.value,
+        /* El código con su resolución y de quién vino: nadie se acuerda del
+           número de contrato, se acuerda de «lo de Maderera X». */
+        label: [f.value, f.resoluciones[0] ? `Res. ${f.resoluciones[0]}` : null, f.proveedores[0]]
+          .filter(Boolean)
+          .join(" · "),
+        hint: peso(f),
+      })),
+      onChange: (v) => onFacetas({ ...facetas, permiso: v }),
+    },
+    {
+      key: "provider",
+      label: "Proveedor",
+      todos: "Todos los proveedores",
+      valor: facetas.provider,
+      opciones: (stats?.providers ?? []).map((f) => ({ value: f.value, label: f.value, hint: peso(f) })),
+      onChange: (v) => onFacetas({ ...facetas, provider: v }),
+    },
+    {
+      key: "product",
+      label: "Producto",
+      todos: "Todos los productos",
+      valor: facetas.product,
+      opciones: (stats?.products ?? []).map((f) => ({
+        value: f.value,
+        label: productLabel(f.value),
+        hint: nf(f.count),
+      })),
+      onChange: (v) => onFacetas({ ...facetas, product: v }),
+    },
+  ];
+}
+
+/** Lo que dice la nota del panel: qué se está mirando, en una línea. */
+export function notaDeFiltros(campos: CampoKpiFiltro[]): string | null {
+  const puestos = campos.filter((c) => c.valor);
+  if (puestos.length === 0) return null;
+  return `Los indicadores muestran sólo ${puestos
+    .map((c) => `${c.label.toLowerCase()}: ${c.valor}`)
+    .join(" · ")}`;
+}

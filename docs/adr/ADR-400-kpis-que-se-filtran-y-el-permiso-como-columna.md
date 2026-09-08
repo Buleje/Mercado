@@ -51,13 +51,28 @@ desglose por estado es otra pregunta.
 Eso cubre **Producción** y **Despacho**, que comparten `CtpEntriesView`. **Consumos** tiene
 vista propia y dos apartados, y cada uno lleva su barra con los filtros que ya existían:
 
-| Apartado | Campos | Estado previo de sus cifras |
+| Pestaña / apartado | Campos | Estado previo de sus cifras |
 |---|---|---|
-| Sección 2 · Consumos | especie, **permiso (nuevo)**, guía de ingreso | ya se calculaban sobre lo filtrado |
-| Trozas en el patio | especie, permiso, proveedor | ídem (`resumenPatio(filtradas)`) |
+| Consumos · Sección 2 | especie, **permiso (nuevo)**, guía de ingreso | ya se calculaban sobre lo filtrado |
+| Consumos · Trozas en el patio | especie, permiso, proveedor | ídem (`resumenPatio(filtradas)`) |
+| Productos disponibles | especie, permiso, producto | ídem (`visibles`) |
+| GTF ingresadas | los mismos cuatro de Ingresos | 🚨 describían el período ENTERO |
 
 El cuadro de consumos tenía el permiso en una columna (`codigoOrigen`) y ninguna forma de
 filtrarlo, que es justo la pregunta del fiscalizador: «¿cuánto se aserró de este título?».
+
+**`stats()` no aplicaba el filtro de RECEPCIÓN** (`list()` sí). En «GTF ingresadas» —el
+archivo— las tarjetas y los desplegables hablaban del período completo, bandeja incluida,
+mientras la tabla mostraba sólo lo recepcionado; y en la bandeja pasaba al revés. Es
+literalmente lo que promete el comentario de `buildListWhere`: *«`list` y `stats` deben
+filtrar exactamente igual, si no los KPIs describen un conjunto distinto al de la tabla que
+están encabezando»*. Lo destapó el peso de las opciones: decía «55.78 m³» y la tarjeta 49.
+Medido después del arreglo: la bandeja «Por recepcionar» pasó de 13 ingresos / 82.89 m³ con
+2 filas en pantalla, a 2 / 15.17 m³.
+
+El peso de cada opción dice **«asientos»** con todas las letras: en el archivo la tarjeta
+cuenta GUÍAS (documentos) y la faceta cuenta líneas del libro. Sin la palabra, «8 · 49.00 m³»
+al lado de «8 guías» se lee como si fueran la misma cosa por casualidad.
 
 ### 4. El permiso es columna, el proveedor es el proveedor
 

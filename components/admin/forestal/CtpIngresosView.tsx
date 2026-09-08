@@ -72,6 +72,7 @@ import CtpGuiaFichaModal from "./CtpGuiaFichaModal";
 import CtpCostoGuiaModal, { type GuiaACostear } from "./CtpCostoGuiaModal";
 import CtpTrozasIndividuales from "./CtpTrozasIndividuales";
 import CtpIngresosKpis from "./CtpIngresosKpis";
+import CtpKpiFiltros, { camposDeIngresos, notaDeFiltros } from "./CtpKpiFiltros";
 import CtpGtfIngresadasKpis from "./CtpGtfIngresadasKpis";
 import CtpIngresosFiltros, { type CtpFacetasActivas } from "./CtpIngresosFiltros";
 import CtpGuiasBandeja from "./CtpGuiasBandeja";
@@ -678,6 +679,18 @@ export default function CtpIngresosView({
       ].filter(Boolean),
     [statusFilter, search, facetas],
   );
+  /**
+   * Los campos de la fila de filtros del ARCHIVO (ADR-400).
+   *
+   * Se arman acá y no adentro de `CtpGtfIngresadasKpis` porque ese componente
+   * cuenta guías y no sabe de facetas ni de `stats` — y son EXACTAMENTE los de
+   * la bandeja: el mismo helper, para que no haya dos listas que mantener.
+   */
+  const camposArchivo = useMemo(
+    () => camposDeIngresos({ stats, facetas, onFacetas: setFacetas, productLabel }),
+    [stats, facetas],
+  );
+
   /** Saca TODO lo que filtra. El período no: ése se ve arriba y es otra decisión. */
   const limpiarFiltros = useCallback(() => {
     setStatusFilter("");
@@ -721,6 +734,18 @@ export default function CtpIngresosView({
           guias={guias}
           lateOn={facetas.late === true}
           onLate={() => setFacetas((f) => ({ ...f, late: f.late ? undefined : true }))}
+          /* La misma fila que la bandeja (ADR-400): el archivo se filtra con los
+             mismos parámetros de servidor, así que comparte la definición. */
+          filtrosActivos={camposArchivo.filter((c) => c.valor).length}
+          filtros={
+            <CtpKpiFiltros
+              campos={camposArchivo}
+              onLimpiar={() =>
+                setFacetas((f) => ({ ...f, species: undefined, permiso: undefined, provider: undefined, product: undefined }))
+              }
+              nota={notaDeFiltros(camposArchivo)}
+            />
+          }
         />
       ) : (
       <CtpIngresosKpis

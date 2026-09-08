@@ -17,7 +17,7 @@ import { AlertCircle, Boxes, Clock, CalendarClock, MapPin, TreePine } from "@bul
 import { StatCard } from "@buleje/design-system";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { CtpKpisPlegables, type WoodEntryStats } from "./ctp-shared";
-import CtpKpiFiltros, { type CampoKpiFiltro } from "./CtpKpiFiltros";
+import CtpKpiFiltros, { camposDeIngresos, notaDeFiltros } from "./CtpKpiFiltros";
 import type { CtpFacetasActivas } from "./CtpIngresosFiltros";
 import { productLabel } from "./ctp-shared";
 
@@ -78,70 +78,13 @@ export default function CtpIngresosKpis({
   /**
    * Los desplegables que gobiernan las cifras.
    *
-   * Cada opción dice cuánto pesa: elegir a ciegas entre doce permisos y
-   * descubrir después que uno tiene 0.4 m³ es el camino largo. Las opciones
-   * salen del propio período (`stats.*`), no de un catálogo.
+   * Salen del helper que comparten la BANDEJA y el ARCHIVO de GTF: los dos
+   * miran el mismo conjunto con los mismos filtros de servidor, y dos listas de
+   * campos se desincronizan a la primera faceta nueva.
    */
-  const m3 = (n: number) => `${n.toFixed(2)} m³`;
-  const campos: CampoKpiFiltro[] = [
-    {
-      key: "species",
-      label: "Especie",
-      todos: "Todas las especies",
-      valor: facetas.species,
-      opciones: (stats?.species ?? []).map((f) => ({
-        value: f.value,
-        label: f.value,
-        hint: `${nf(f.count)} · ${m3(f.volumeM3)}`,
-      })),
-      onChange: (v) => onFacetas({ ...facetas, species: v }),
-    },
-    {
-      key: "permiso",
-      label: "Permiso (título habilitante)",
-      todos: "Todos los permisos",
-      valor: facetas.permiso,
-      opciones: (stats?.permisos ?? []).map((f) => ({
-        value: f.value,
-        /* El código con su resolución y de quién vino: nadie se acuerda del
-           número de contrato, se acuerda de «lo de Maderera X». */
-        label: [f.value, f.resoluciones[0] ? `Res. ${f.resoluciones[0]}` : null, f.proveedores[0]]
-          .filter(Boolean)
-          .join(" · "),
-        hint: `${nf(f.count)} · ${m3(f.volumeM3)}`,
-      })),
-      onChange: (v) => onFacetas({ ...facetas, permiso: v }),
-    },
-    {
-      key: "provider",
-      label: "Proveedor",
-      todos: "Todos los proveedores",
-      valor: facetas.provider,
-      opciones: (stats?.providers ?? []).map((f) => ({
-        value: f.value,
-        label: f.value,
-        hint: `${nf(f.count)} · ${m3(f.volumeM3)}`,
-      })),
-      onChange: (v) => onFacetas({ ...facetas, provider: v }),
-    },
-    {
-      key: "product",
-      label: "Producto",
-      todos: "Todos los productos",
-      valor: facetas.product,
-      opciones: (stats?.products ?? []).map((f) => ({
-        value: f.value,
-        label: productLabel(f.value),
-        hint: nf(f.count),
-      })),
-      onChange: (v) => onFacetas({ ...facetas, product: v }),
-    },
-  ];
+  const campos = camposDeIngresos({ stats, facetas, onFacetas, productLabel });
   const activos = campos.filter((c) => c.valor).length;
-  const nota = campos
-    .filter((c) => c.valor)
-    .map((c) => `${c.label.toLowerCase()}: ${c.valor}`)
-    .join(" · ");
+  const nota = notaDeFiltros(campos);
 
   return (
     /* Todas detrás del botón «Indicadores» (Brandon, 2026-09-03). El carrusel
@@ -156,7 +99,7 @@ export default function CtpIngresosKpis({
           onLimpiar={() =>
             onFacetas({ ...facetas, species: undefined, permiso: undefined, provider: undefined, product: undefined })
           }
-          nota={nota ? `Los indicadores muestran sólo ${nota}` : null}
+          nota={nota}
         />
       }
       resumen={
