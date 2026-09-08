@@ -200,6 +200,12 @@ export interface WoodEntryFacet {
   volumeM3: number;
 }
 
+/** Un permiso del período con su proveedor y resolución (ADR-400). */
+export interface WoodEntryPermisoFacet extends WoodEntryFacet {
+  proveedores: string[];
+  resoluciones: string[];
+}
+
 export interface WoodEntryStats {
   totalCount: number;
   totalVolumeM3: number;
@@ -220,6 +226,8 @@ export interface WoodEntryStats {
   species: WoodEntryFacet[];
   providers: WoodEntryFacet[];
   products: WoodEntryFacet[];
+  /** Los títulos habilitantes del período — el desplegable de «Permiso». */
+  permisos?: WoodEntryPermisoFacet[];
 }
 
 export const STATUS_META: Record<
@@ -798,9 +806,20 @@ export function CtpKpisPlegables({
   claveMemoria,
   tarjetas,
   resumen,
+  filtros,
+  filtrosActivos = 0,
 }: {
   claveMemoria: string;
   tarjetas: ReactNode[];
+  /**
+   * La fila que gobierna estas cifras (ADR-400): va DENTRO del panel, arriba
+   * de las tarjetas, porque filtra justo lo que se está mirando.
+   */
+  filtros?: ReactNode;
+  /** Cuántos filtros hay puestos: se dice en el botón, que puede estar cerrado
+   *  sobre cifras recortadas — y un número chico sin explicación se lee como
+   *  una caída del mes. */
+  filtrosActivos?: number;
   /**
    * El titular en una línea, al lado del botón cerrado.
    *
@@ -850,6 +869,16 @@ export function CtpKpisPlegables({
           </span>
           <ChevronDown className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />
         </button>
+        {/* Con el panel cerrado, el resumen habla de un conjunto filtrado sin
+            decirlo. Esta marca es lo único que lo delata. */}
+        {filtrosActivos > 0 && (
+          <span
+            title="Los indicadores están mostrando sólo una parte del período"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent-muted)] px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+          >
+            {filtrosActivos} filtro{filtrosActivos === 1 ? "" : "s"}
+          </span>
+        )}
         {/* El titular sólo mientras están escondidas: con el panel abierto, las
             tarjetas ya lo dicen mejor y repetirlo es ruido. */}
         {!abierto && resumen && (
@@ -857,9 +886,12 @@ export function CtpKpisPlegables({
         )}
       </div>
       {abierto && (
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-3">
-          {tarjetas.map((k, i) => <Fragment key={i}>{k}</Fragment>)}
-        </div>
+        <>
+          {filtros}
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-3">
+            {tarjetas.map((k, i) => <Fragment key={i}>{k}</Fragment>)}
+          </div>
+        </>
       )}
     </div>
   );

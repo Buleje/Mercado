@@ -10,6 +10,8 @@
  * testea sin navegador.
  */
 
+import { claveEspecie } from "./loth-constants";
+
 export interface LineaCtp {
   id: string;
   entryDate: string;
@@ -158,16 +160,30 @@ function agrupar(
   lineas: LineaCtp[],
   campo: (l: LineaCtp) => string | null,
   peso: (l: LineaCtp) => number,
+  /**
+   * Cómo se decide que dos valores son EL MISMO (ADR-400).
+   *
+   * Por defecto, el texto tal cual. Para especies se pasa `claveEspecie`: el
+   * libro tiene «Tornillo» y «TORNILLO» escritos por dos personas distintas, y
+   * sin esto el desplegable ofrece la misma especie dos veces con la mitad del
+   * volumen en cada una — y elegir cualquiera de las dos esconde la otra mitad.
+   */
+  clave: (v: string) => string = (v) => v,
 ): FacetaSeccion[] {
-  const map = new Map<string, { count: number; peso: number }>();
+  const map = new Map<string, { value: string; count: number; peso: number }>();
   for (const l of lineas) {
     const v = (campo(l) ?? "").trim();
     if (!v) continue;
-    const prev = map.get(v) ?? { count: 0, peso: 0 };
-    map.set(v, { count: prev.count + 1, peso: prev.peso + peso(l) });
+    const k = clave(v);
+    if (!k) continue;
+    /* Se muestra el nombre tal como está escrito en la PRIMERA línea del grupo:
+       inventar una forma canónica («Tornillo») pondría en pantalla un texto que
+       no está en ningún asiento del libro. */
+    const prev = map.get(k) ?? { value: v, count: 0, peso: 0 };
+    map.set(k, { value: prev.value, count: prev.count + 1, peso: prev.peso + peso(l) });
   }
-  return [...map.entries()]
-    .map(([value, { count, peso }]) => ({ value, count, volumeM3: r2(peso) }))
+  return [...map.values()]
+    .map(({ value, count, peso }) => ({ value, count, volumeM3: r2(peso) }))
     .sort((a, b) => (b.volumeM3 ?? 0) - (a.volumeM3 ?? 0) || b.count - a.count)
     .slice(0, 30);
 }
@@ -223,7 +239,8 @@ export function facetasDeSeccion(lineas: LineaCtp[]): {
     porSalida.set(k, { count: prev.count + 1, peso: prev.peso + num(l.quantity) });
   }
   return {
-    species: agrupar(vivas, (l) => l.speciesCommon, (l) => num(l.quantity)),
+    /* Una sola entrada por especie aunque el libro la escriba de dos formas. */
+    species: agrupar(vivas, (l) => l.speciesCommon, (l) => num(l.quantity), claveEspecie),
     products: agrupar(vivas, (l) => l.productType, (l) => num(l.quantity)),
     destinos: agrupar(vivas, (l) => l.destino, (l) => num(l.quantity)),
     permisos: agruparMultiple(vivas, (l) => l.permisoOrigen, (l) => num(l.quantity)),
@@ -237,7 +254,9 @@ export function facetasDeSeccion(lineas: LineaCtp[]): {
 /** Aplica las facetas activas. Sin filtros devuelve la lista tal cual. */
 export function filtrarSeccion<T extends LineaCtp>(lineas: T[], f: FiltrosSeccion): T[] {
   return lineas.filter((l) => {
-    if (f.species && (l.speciesCommon ?? "") !== f.species) return false;
+    /* Comparación por clave, igual que la faceta: elegir «Tornillo» tiene que
+       traer también los asientos que dicen «TORNILLO». */
+    if (f.species && claveEspecie(l.speciesCommon) !== claveEspecie(f.species)) return false;
     if (f.product && (l.productType ?? "") !== f.product) return false;
     if (f.destino && (l.destino ?? "") !== f.destino) return false;
     if (f.cites !== undefined && l.cites !== f.cites) return false;

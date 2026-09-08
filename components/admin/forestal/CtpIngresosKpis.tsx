@@ -17,6 +17,9 @@ import { AlertCircle, Boxes, Clock, CalendarClock, MapPin, TreePine } from "@bul
 import { StatCard } from "@buleje/design-system";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { CtpKpisPlegables, type WoodEntryStats } from "./ctp-shared";
+import CtpKpiFiltros, { type CampoKpiFiltro } from "./CtpKpiFiltros";
+import type { CtpFacetasActivas } from "./CtpIngresosFiltros";
+import { productLabel } from "./ctp-shared";
 
 export interface CtpIngresosKpisProps {
   stats: WoodEntryStats | null;
@@ -38,6 +41,16 @@ export interface CtpIngresosKpisProps {
    */
   sinOrigenOn: boolean;
   onSinOrigen: () => void;
+  /**
+   * Los filtros que recortan estas cifras (ADR-400).
+   *
+   * Son las MISMAS facetas que filtran la tabla: el servidor calcula los
+   * agregados sobre el conjunto filtrado (`stats()` comparte el `where` con
+   * `list()`), así que el volumen de arriba y las filas de abajo no pueden
+   * decir cosas distintas.
+   */
+  facetas: CtpFacetasActivas;
+  onFacetas: (f: CtpFacetasActivas) => void;
 }
 
 const nf = (n: number) => n.toLocaleString("es-PE");
@@ -54,11 +67,81 @@ export default function CtpIngresosKpis({
   dashboardOn,
   sinOrigenOn,
   onSinOrigen,
+  facetas,
+  onFacetas,
 }: CtpIngresosKpisProps) {
   // Una tarjeta activa se ve hundida: si no, el operador no sabe que la tabla
   // de abajo está recortada por haber hecho click acá arriba.
   const activa = "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]";
   const vol = stats ? Number(stats.totalVolumeM3) : 0;
+
+  /**
+   * Los desplegables que gobiernan las cifras.
+   *
+   * Cada opción dice cuánto pesa: elegir a ciegas entre doce permisos y
+   * descubrir después que uno tiene 0.4 m³ es el camino largo. Las opciones
+   * salen del propio período (`stats.*`), no de un catálogo.
+   */
+  const m3 = (n: number) => `${n.toFixed(2)} m³`;
+  const campos: CampoKpiFiltro[] = [
+    {
+      key: "species",
+      label: "Especie",
+      todos: "Todas las especies",
+      valor: facetas.species,
+      opciones: (stats?.species ?? []).map((f) => ({
+        value: f.value,
+        label: f.value,
+        hint: `${nf(f.count)} · ${m3(f.volumeM3)}`,
+      })),
+      onChange: (v) => onFacetas({ ...facetas, species: v }),
+    },
+    {
+      key: "permiso",
+      label: "Permiso (título habilitante)",
+      todos: "Todos los permisos",
+      valor: facetas.permiso,
+      opciones: (stats?.permisos ?? []).map((f) => ({
+        value: f.value,
+        /* El código con su resolución y de quién vino: nadie se acuerda del
+           número de contrato, se acuerda de «lo de Maderera X». */
+        label: [f.value, f.resoluciones[0] ? `Res. ${f.resoluciones[0]}` : null, f.proveedores[0]]
+          .filter(Boolean)
+          .join(" · "),
+        hint: `${nf(f.count)} · ${m3(f.volumeM3)}`,
+      })),
+      onChange: (v) => onFacetas({ ...facetas, permiso: v }),
+    },
+    {
+      key: "provider",
+      label: "Proveedor",
+      todos: "Todos los proveedores",
+      valor: facetas.provider,
+      opciones: (stats?.providers ?? []).map((f) => ({
+        value: f.value,
+        label: f.value,
+        hint: `${nf(f.count)} · ${m3(f.volumeM3)}`,
+      })),
+      onChange: (v) => onFacetas({ ...facetas, provider: v }),
+    },
+    {
+      key: "product",
+      label: "Producto",
+      todos: "Todos los productos",
+      valor: facetas.product,
+      opciones: (stats?.products ?? []).map((f) => ({
+        value: f.value,
+        label: productLabel(f.value),
+        hint: nf(f.count),
+      })),
+      onChange: (v) => onFacetas({ ...facetas, product: v }),
+    },
+  ];
+  const activos = campos.filter((c) => c.valor).length;
+  const nota = campos
+    .filter((c) => c.valor)
+    .map((c) => `${c.label.toLowerCase()}: ${c.valor}`)
+    .join(" · ");
 
   return (
     /* Todas detrás del botón «Indicadores» (Brandon, 2026-09-03). El carrusel
@@ -66,6 +149,16 @@ export default function CtpIngresosKpis({
        y abiertas usan la misma grilla que el resto del libro. */
     <CtpKpisPlegables
       claveMemoria="ingresos"
+      filtrosActivos={activos}
+      filtros={
+        <CtpKpiFiltros
+          campos={campos}
+          onLimpiar={() =>
+            onFacetas({ ...facetas, species: undefined, permiso: undefined, provider: undefined, product: undefined })
+          }
+          nota={nota ? `Los indicadores muestran sólo ${nota}` : null}
+        />
+      }
       resumen={
         stats
           ? `${nf(stats.totalCount)} ingreso${stats.totalCount === 1 ? "" : "s"} · ${vol.toFixed(2)} m³` +

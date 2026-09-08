@@ -84,8 +84,23 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
   }, [section]);
   useEffect(cargarAnexos, [cargarAnexos]);
 
+  /**
+   * Las líneas que gobiernan los KPIs (ADR-400).
+   *
+   * Son las FILTRADAS por faceta, no todas: hasta ahora las tarjetas hablaban
+   * del período entero mientras la tabla de abajo mostraba una especie, y los
+   * dos números convivían en la misma pantalla contradiciéndose. Es la misma
+   * regla que ya cumple Ingresos, donde `stats()` comparte el `where` con
+   * `list()`.
+   *
+   * El filtro de ESTADO queda afuera a propósito, igual que allá: los KPIs
+   * describen lo registrado del período, y el desglose por estado es otra
+   * pregunta (la contestan los chips).
+   */
+  const entriesDeKpis = useMemo(() => filtrarSeccion(entries, facetas), [entries, facetas]);
+
   const kpis = useMemo(() => {
-    const reg = entries.filter((e) => e.status === "registrado");
+    const reg = entriesDeKpis.filter((e) => e.status === "registrado");
     const totalQty = reg.reduce((a, e) => a + Number(e.quantity ?? 0), 0);
     const consumido = reg.reduce((a, e) => a + Number(e.volumeInputM3 ?? 0), 0);
     // Rendimiento PONDERADO por volumen consumido: la media simple hacía pesar
@@ -178,7 +193,7 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
       destinos,
       piezas,
     };
-  }, [entries, section]);
+  }, [entriesDeKpis, section]);
 
   const statusCounts = useMemo(() => ({
     total: entries.length,
@@ -186,8 +201,9 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
     anulado: entries.filter((e) => e.status === "anulado").length,
   }), [entries]);
 
-  // Filtro por estado + orden. La media/KPIs no cambian (siguen sobre todo el set);
-  // esto solo cambia lo que se LISTA en la tabla/cards.
+  // Filtro por estado + orden: esto sólo cambia lo que se LISTA. Las facetas,
+  // en cambio, mandan también sobre los KPIs (ADR-400) — la tabla y las cifras
+  // que la encabezan describen el mismo conjunto.
   /** Guías vivas que todavía no tienen anexo: lo que le falta emitir al regente. */
   const sinAnexo = useMemo(
     () => (section === "despacho" ? entries.filter((e) => e.status === "registrado" && !conAnexo.has(e.id)).length : 0),

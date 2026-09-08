@@ -49,6 +49,8 @@ export interface CtpIngresosFiltros {
   species?: string;
   provider?: string;
   product?: string;
+  /** El título habilitante que ampara la madera (ADR-400). Vacío = todos. */
+  permiso?: string;
   /** true = solo CITES · false = solo NO-CITES · undefined = ambos. */
   cites?: boolean;
   /** true = solo los registrados fuera del plazo SERFOR. */
@@ -140,7 +142,7 @@ export function useCtpIngresos({
   // Descarta respuestas de un fetch viejo que llega tarde y pisaría al nuevo.
   const requestSeq = useRef(0);
 
-  const { status, search, species, provider, product, cites, late, sinOrigen, recepcion } = filtros;
+  const { status, search, species, provider, product, permiso, cites, late, sinOrigen, recepcion } = filtros;
 
   /** Los parámetros del conjunto (sin paginación): los comparten la tabla y la
    *  descarga, así que "exportar" baja EXACTAMENTE lo que se está viendo. */
@@ -151,6 +153,7 @@ export function useCtpIngresos({
     if (species) params.set("species", species);
     if (provider) params.set("provider", provider);
     if (product) params.set("product", product);
+    if (permiso) params.set("permiso", permiso);
     if (cites !== undefined) params.set("cites", cites ? "1" : "0");
     if (late) params.set("late", "1");
     if (sinOrigen) params.set("sin_origen", "1");
@@ -158,7 +161,7 @@ export function useCtpIngresos({
     params.set("sort", sort.by);
     params.set("dir", sort.dir);
     return params;
-  }, [period, status, search, species, provider, product, cites, late, sinOrigen, recepcion, sort.by, sort.dir]);
+  }, [period, status, search, species, provider, product, permiso, cites, late, sinOrigen, recepcion, sort.by, sort.dir]);
 
   const load = useCallback(async () => {
     const seq = ++requestSeq.current;

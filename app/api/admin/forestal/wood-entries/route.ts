@@ -206,6 +206,9 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
   const limit = Number(url.searchParams.get("limit") ?? "50");
   const offset = Number(url.searchParams.get("offset") ?? "0");
   const providerName = url.searchParams.get("provider");
+  /* El título habilitante que ampara la madera (ADR-400): el filtro que faltaba
+     para poder preguntarle al libro «cuánto entró por este permiso». */
+  const permiso = url.searchParams.get("permiso");
   const product = url.searchParams.get("product");
   const cites = url.searchParams.get("cites");
   const late = url.searchParams.get("late") === "1";
@@ -242,6 +245,7 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
     toDate: parseDate(toDate),
     search: search ?? undefined,
     providerName: providerName ?? undefined,
+    originCode: permiso ?? undefined,
     productType: productParsed?.success ? productParsed.data : undefined,
     cites: cites === "1" ? true : cites === "0" ? false : undefined,
     late: late || undefined,

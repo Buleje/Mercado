@@ -38,6 +38,8 @@ export interface CtpIngresosPrefs {
     species?: string;
     provider?: string;
     product?: string;
+    /** El título habilitante (ADR-400). */
+    permiso?: string;
     cites?: boolean;
     late?: boolean;
   };

@@ -66,7 +66,7 @@ interface TrozaDeGuia {
 import CtpIngresoCadenaModal from "./CtpIngresoCadenaModal";
 import CtpIngresoEditModal from "./CtpIngresoEditModal";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
-import CtpGuiasTable from "./CtpGuiasTable";
+import CtpGuiasTable, { COLUMNAS_GUIAS_OPCIONALES } from "./CtpGuiasTable";
 import CtpCuadrarGuiaModal from "./CtpCuadrarGuiaModal";
 import CtpGuiaFichaModal from "./CtpGuiaFichaModal";
 import CtpCostoGuiaModal, { type GuiaACostear } from "./CtpCostoGuiaModal";
@@ -77,9 +77,11 @@ import CtpIngresosFiltros, { type CtpFacetasActivas } from "./CtpIngresosFiltros
 import CtpGuiasBandeja from "./CtpGuiasBandeja";
 import CtpIngresosPaginacion from "./CtpIngresosPaginacion";
 import {
+  ColumnasMenu,
   STATUS_META,
   originLabel,
   productLabel,
+  useColumnasVisibles,
   type CtpFiltroRapido,
   type WoodEntry,
 } from "./ctp-shared";
@@ -120,6 +122,9 @@ export default function CtpIngresosView({
   const search = useDebounce(searchInput, 350);
   const [statusFilter, setStatusFilter] = useState<string>(prefs.statusFilter);
   const [facetas, setFacetas] = useState<CtpFacetasActivas>(prefs.facetas);
+  /* Qué columnas de la tabla se ven (Brandon, 2026-09-08). Se recuerda por
+     dispositivo, como en Producción. */
+  const [colsGuias, setColsGuias] = useColumnasVisibles("ctp-ingresos-cols", COLUMNAS_GUIAS_OPCIONALES);
   /**
    * El ARCHIVO se ordena por lo último RECIBIDO (ADR-351).
    *
@@ -656,7 +661,7 @@ export default function CtpIngresosView({
     }
   }
 
-  const hayFiltro = Boolean(statusFilter || search || facetas.species || facetas.provider || facetas.product || facetas.cites !== undefined || facetas.late || facetas.sinOrigen);
+  const hayFiltro = Boolean(statusFilter || search || facetas.species || facetas.provider || facetas.product || facetas.permiso || facetas.cites !== undefined || facetas.late || facetas.sinOrigen);
   /** Qué está filtrando, con nombre: el vacío tiene que poder explicarse. */
   const filtrosActivos = useMemo(
     () =>
@@ -666,6 +671,7 @@ export default function CtpIngresosView({
         facetas.species ? `especie ${facetas.species}` : "",
         facetas.provider ? `proveedor ${facetas.provider}` : "",
         facetas.product ? `producto ${productLabel(facetas.product)}` : "",
+        facetas.permiso ? `permiso ${facetas.permiso}` : "",
         facetas.cites !== undefined ? (facetas.cites ? "sólo CITES" : "sin CITES") : "",
         facetas.late ? "fuera de plazo" : "",
         facetas.sinOrigen ? "sin código de origen" : "",
@@ -729,6 +735,10 @@ export default function CtpIngresosView({
         dashboardOn={showDashboard}
         sinOrigenOn={facetas.sinOrigen === true}
         onSinOrigen={() => setFacetas((f) => ({ ...f, sinOrigen: f.sinOrigen ? undefined : true }))}
+        /* Los mismos filtros que recortan la tabla gobiernan las cifras
+           (ADR-400): el servidor calcula los agregados con ese mismo `where`. */
+        facetas={facetas}
+        onFacetas={setFacetas}
       />
       )}
 
@@ -738,6 +748,13 @@ export default function CtpIngresosView({
         /* Dos lecturas del MISMO registro: por guía (lo que declara el papel) o
            por troza (una fila por pieza). Viaja con los chips de estado — antes
            tenía su propia fila con un texto que repetía el nombre del botón. */
+        /* Qué columnas de la tabla se ven — sólo en la lista por guía, que es
+           la que tiene columnas opcionales. */
+        columnas={
+          modo === "guia" ? (
+            <ColumnasMenu columnas={COLUMNAS_GUIAS_OPCIONALES} visibles={colsGuias} onChange={setColsGuias} className="h-9 rounded-full" />
+          ) : undefined
+        }
         modoLista={
           <div role="radiogroup" aria-label="Cómo listar los ingresos" className="inline-flex items-center gap-0.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-0.5">
             {([
@@ -920,7 +937,24 @@ export default function CtpIngresosView({
             onChange: (v) => setFacetas((f) => ({ ...f, species: v || undefined })),
             placeholder: "Todas",
           },
+          /* El permiso, etiquetado con su resolución y su proveedor (Brandon,
+             2026-09-08): el código suelto no alcanza para elegir, y ahora que
+             salió de la celda del proveedor tiene que traerse esa información
+             consigo. */
+          permiso: {
+            value: facetas.permiso ?? "",
+            options: stats?.permisos ?? [],
+            onChange: (v) => setFacetas((f) => ({ ...f, permiso: v || undefined })),
+            etiqueta: (v) => {
+              const p = stats?.permisos?.find((x) => x.value === v);
+              if (!p) return v;
+              return [v, p.resoluciones[0] ? `Res. ${p.resoluciones[0]}` : null, p.proveedores[0]]
+                .filter(Boolean)
+                .join(" · ");
+            },
+          },
         }}
+        cols={colsGuias}
         loading={loading}
         period={period}
         filtered={hayFiltro}

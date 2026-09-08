@@ -33,6 +33,8 @@ export interface CtpFacetasActivas {
   species?: string;
   provider?: string;
   product?: string;
+  /** El título habilitante que ampara la madera (ADR-400). Vacío = todos. */
+  permiso?: string;
   cites?: boolean;
   late?: boolean;
   /** Sin código de origen: los ingresos que dejan el EUDR sin parcela. */
@@ -66,6 +68,12 @@ export interface CtpIngresosFiltrosProps {
   /** Cómo se lista (por guía / por troza): va con los chips, no en su propia fila. */
   modoLista?: React.ReactNode;
   /**
+   * El botón «Columnas» de la tabla (Brandon, 2026-09-08). Va en esta barra y
+   * no en la tabla porque es un control de la VISTA, al lado de los otros que
+   * deciden qué se ve.
+   */
+  columnas?: React.ReactNode;
+  /**
    * Especie y Proveedor ya se filtran desde la cabecera de su columna en la
    * tabla por guía (estilo Excel, Brandon 2026-09-03): acá sólo se dibujan en
    * móvil (sin tabla, hay cards). Falso en la lista por troza, que no los tiene.
@@ -94,6 +102,7 @@ export default function CtpIngresosFiltros({
   legajoDeTodo,
   armandoLegajo,
   modoLista,
+  columnas,
   enCabecera = false,
 }: CtpIngresosFiltrosProps) {
   const activos =
@@ -233,7 +242,12 @@ export default function CtpIngresosFiltros({
             onClick={() => onStatus(statusFilter === s ? "" : s)}
           />
         ))}
-        {modoLista && <div className="ml-auto">{modoLista}</div>}
+        {(modoLista || columnas) && (
+          <div className="ml-auto flex items-center gap-2">
+            {columnas}
+            {modoLista}
+          </div>
+        )}
       </div>
 
       {abierto && (

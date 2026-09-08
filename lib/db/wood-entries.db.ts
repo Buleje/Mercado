@@ -226,6 +226,16 @@ export interface WoodEntryListFilters {
    *  incompleto: sin código no hay parcela que geolocalizar (Reg. 2023/1115). */
   sinOrigenCode?: boolean;
   /**
+   * El título habilitante / contrato que ampara la madera (`originCode`) —
+   * «el permiso» (ADR-400).
+   *
+   * Igualdad exacta y no `contains`: el valor sale de un desplegable armado con
+   * los permisos que de verdad hay, y con `contains` un permiso que es prefijo
+   * de otro (`CONC-25-1` dentro de `CONC-25-10`) arrastraría filas ajenas a un
+   * número que después se declara.
+   */
+  originCode?: string;
+  /**
    * Estado de recepción (ADR-339): `pendiente` es la bandeja del patio y
    * `cerrada` el archivo de «GTF ingresadas». Sin valor = las dos.
    */
@@ -265,6 +275,9 @@ function buildListWhere(
     where.providerName = { contains: filters.providerName, mode: "insensitive" };
   }
   if (filters.productType) where.productType = filters.productType;
+  if (filters.originCode) {
+    where.originCode = { equals: filters.originCode, mode: "insensitive" };
+  }
   if (filters.cites !== undefined) where.speciesCites = filters.cites;
   if (filters.sinOrigenCode) {
     // Va por AND y no por OR: `where.OR` ya lo usa la búsqueda libre, y
@@ -317,6 +330,7 @@ function buildLateConditions(
     conditions.push(Prisma.sql`"providerName" ILIKE ${`%${filters.providerName}%`}`);
   }
   if (filters.productType) conditions.push(Prisma.sql`"productType" = ${filters.productType}`);
+  if (filters.originCode) conditions.push(Prisma.sql`LOWER("originCode") = LOWER(${filters.originCode})`);
   if (filters.cites !== undefined) conditions.push(Prisma.sql`"speciesCites" = ${filters.cites}`);
   if (filters.sinOrigenCode) {
     conditions.push(Prisma.sql`("originCode" IS NULL OR "originCode" = '')`);
@@ -510,6 +524,17 @@ export interface WoodEntryFacet {
   volumeM3: number;
 }
 
+/**
+ * Un permiso del período (ADR-400): el código, y de quién vino.
+ *
+ * El proveedor y la resolución viajan con él porque el desplegable los muestra:
+ * el operador se acuerda de «lo de Maderera X», no del número de contrato.
+ */
+export interface WoodEntryPermisoFacet extends WoodEntryFacet {
+  proveedores: string[];
+  resoluciones: string[];
+}
+
 export interface WoodEntryStats {
   totalCount: number;
   totalVolumeM3: number;
@@ -559,6 +584,8 @@ export interface WoodEntryStats {
   species: WoodEntryFacet[];
   providers: WoodEntryFacet[];
   products: WoodEntryFacet[];
+  /** Los títulos habilitantes del período, con su proveedor y resolución. */
+  permisos: WoodEntryPermisoFacet[];
 }
 
 /**
@@ -2892,6 +2919,7 @@ export class WoodEntriesDB {
       lateRows,
       providerRows,
       productRows,
+      permisoRows,
       sinOrigenCount,
       sinCostoAgg,
       conPiezasCount,
@@ -2933,6 +2961,16 @@ export class WoodEntriesDB {
         by: ["productType"],
         where: whereVigente,
         _count: { _all: true },
+      }),
+      /* Los permisos del período, con su proveedor y su resolución (ADR-400).
+         Se agrupa por los tres para poder decir de QUIÉN es cada permiso en el
+         desplegable: un código suelto («CONC-25-001») no le dice nada a quien
+         tiene que elegir, y el mismo contrato puede llegar por dos proveedores. */
+      prisma.woodEntry.groupBy({
+        by: ["originCode", "providerName", "originSourceNumber"],
+        where: whereVigente,
+        _count: { _all: true },
+        _sum: { volumeM3: true },
       }),
       // Ingresos sin código de origen: el gap que deja la pestaña EUDR inerte.
       // Se cuenta sobre los VIGENTES (un rechazado sin código no bloquea nada).
@@ -2989,6 +3027,37 @@ export class WoodEntriesDB {
         .sort((a, b) => b.volumeM3 - a.volumeM3 || b.count - a.count)
         .slice(0, 30);
 
+    /**
+     * Un permiso por fila, juntando lo que aportó cada proveedor.
+     *
+     * `faceta()` no sirve acá: agrupa por UNA clave y esto viene agrupado por
+     * tres. Se pliega a mano para que el desplegable diga «CONC-25-001 · Res.
+     * 123 · Maderera X» con el volumen de TODO ese permiso, no el de una de sus
+     * combinaciones.
+     */
+    const porPermiso = new Map<string, WoodEntryPermisoFacet>();
+    for (const row of permisoRows) {
+      const value = (row.originCode ?? "").trim();
+      if (!value) continue;
+      const acc = porPermiso.get(value) ?? {
+        value,
+        count: 0,
+        volumeM3: 0,
+        proveedores: [] as string[],
+        resoluciones: [] as string[],
+      };
+      acc.count += row._count._all;
+      acc.volumeM3 = r4(acc.volumeM3 + (row._sum.volumeM3?.toNumber() ?? 0));
+      const prov = (row.providerName ?? "").trim();
+      if (prov && !acc.proveedores.includes(prov)) acc.proveedores.push(prov);
+      const res = (row.originSourceNumber ?? "").trim();
+      if (res && !acc.resoluciones.includes(res)) acc.resoluciones.push(res);
+      porPermiso.set(value, acc);
+    }
+    const permisos = [...porPermiso.values()]
+      .sort((a, b) => b.volumeM3 - a.volumeM3 || b.count - a.count)
+      .slice(0, 30);
+
     return {
       totalCount: agg._count._all,
       totalVolumeM3: r4(agg._sum.volumeM3?.toNumber() ?? 0),
@@ -3006,6 +3075,7 @@ export class WoodEntriesDB {
       species: faceta(speciesRows, (r) => r.speciesCommonName),
       providers: faceta(providerRows, (r) => r.providerName),
       products: faceta(productRows, (r) => r.productType),
+      permisos,
     };
   }
 

@@ -708,6 +708,11 @@ export function CtpEntriesView({
         /* La misma cuenta que dibuja el atajo de la fila (ADR-365): si la
            tarjeta la calculara aparte, podría decir 3 con 2 íconos en la tabla. */
         ampliables={idsAmpliables.size}
+        /* Los mismos filtros que recortan la tabla mandan sobre las cifras
+           (ADR-400): las dos cosas salen de `filtrarSeccion`. */
+        facetas={facetas}
+        onFacetas={setFacetas}
+        opciones={opciones}
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

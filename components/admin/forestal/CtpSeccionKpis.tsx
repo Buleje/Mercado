@@ -34,7 +34,9 @@ import {
 } from "@buleje/design-system/icons";
 import type { ReactNode } from "react";
 import { StatCard } from "@buleje/design-system";
-import { CtpKpisPlegables } from "./ctp-shared";
+import { CtpKpisPlegables, productLabel } from "./ctp-shared";
+import CtpKpiFiltros, { type CampoKpiFiltro } from "./CtpKpiFiltros";
+import type { FiltrosSeccion, facetasDeSeccion } from "@/lib/forestal/ctp-secciones-filtro";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { juzgarRendimientoLote } from "@/lib/forestal/lotes-aserrio";
 import type { CtpSection } from "./ctp-section-shared";
@@ -81,6 +83,9 @@ export default function CtpSeccionKpis({
   onSoloSinAnexo,
   onVerPendientes,
   ampliables = 0,
+  facetas,
+  onFacetas,
+  opciones,
 }: {
   section: CtpSection;
   kpis: KpisSeccion;
@@ -100,6 +105,14 @@ export default function CtpSeccionKpis({
    * ícono en la fila.
    */
   ampliables?: number;
+  /**
+   * Los filtros que gobiernan estas cifras (ADR-400) y las opciones que de
+   * verdad hay en el período. Opcionales: sin ellos las tarjetas se dibujan
+   * como siempre, hablando de todo.
+   */
+  facetas?: FiltrosSeccion;
+  onFacetas?: (f: FiltrosSeccion) => void;
+  opciones?: ReturnType<typeof facetasDeSeccion>;
 }) {
   const veredicto = juzgarRendimientoLote(kpis.avgRend > 0 ? kpis.avgRend : null);
 
@@ -303,5 +316,91 @@ export default function CtpSeccionKpis({
       : `${kpis.count} despacho${kpis.count === 1 ? "" : "s"} · ${n2(kpis.totalQty)} · ${kpis.guias} guía${kpis.guias === 1 ? "" : "s"}` +
         ((sinAnexo ?? 0) > 0 ? ` · ${sinAnexo} sin anexo` : "");
 
-  return <CtpKpisPlegables claveMemoria={`seccion-${section}`} tarjetas={tarjetas} resumen={resumen} />;
+  /**
+   * Los desplegables que recortan estas cifras (ADR-400).
+   *
+   * Son las MISMAS facetas que filtran la tabla —`filtrarSeccion` corre una
+   * sola vez para las dos cosas—, así que el número de arriba y las filas de
+   * abajo no se pueden contradecir.
+   */
+  const campos: CampoKpiFiltro[] = !opciones || !facetas || !onFacetas
+    ? []
+    : [
+        {
+          key: "species",
+          label: "Especie",
+          todos: "Todas las especies",
+          valor: facetas.species,
+          opciones: opciones.species.map((f) => ({
+            value: f.value,
+            label: f.value,
+            hint: f.volumeM3 != null ? `${f.count} · ${fmtM3(f.volumeM3)} m³` : `${f.count}`,
+          })),
+          onChange: (v) => onFacetas({ ...facetas, species: v }),
+        },
+        {
+          key: "permiso",
+          label: "Permiso (título habilitante)",
+          todos: "Todos los permisos",
+          valor: facetas.permiso,
+          opciones: opciones.permisos.map((f) => ({
+            value: f.value,
+            label: f.value,
+            hint: f.volumeM3 != null ? `${f.count} · ${fmtM3(f.volumeM3)} m³` : `${f.count}`,
+          })),
+          onChange: (v) => onFacetas({ ...facetas, permiso: v }),
+        },
+        {
+          key: "product",
+          label: "Producto",
+          todos: "Todos los productos",
+          valor: facetas.product,
+          opciones: opciones.products.map((f) => ({
+            value: f.value,
+            label: productLabel(f.value),
+            hint: f.volumeM3 != null ? `${f.count} · ${fmtM3(f.volumeM3)} m³` : `${f.count}`,
+          })),
+          onChange: (v) => onFacetas({ ...facetas, product: v }),
+        },
+        {
+          key: "destino",
+          label: "Destino",
+          todos: "Todos los destinos",
+          valor: facetas.destino,
+          opciones: opciones.destinos.map((f) => ({
+            value: f.value,
+            label: f.value,
+            hint: f.volumeM3 != null ? `${f.count} · ${fmtM3(f.volumeM3)} m³` : `${f.count}`,
+          })),
+          onChange: (v) => onFacetas({ ...facetas, destino: v }),
+        },
+      ];
+  const activos = campos.filter((c) => c.valor).length;
+
+  return (
+    <CtpKpisPlegables
+      claveMemoria={`seccion-${section}`}
+      tarjetas={tarjetas}
+      resumen={resumen}
+      filtrosActivos={activos}
+      filtros={
+        campos.length > 0 && facetas && onFacetas ? (
+          <CtpKpiFiltros
+            campos={campos}
+            onLimpiar={() =>
+              onFacetas({ ...facetas, species: undefined, permiso: undefined, product: undefined, destino: undefined })
+            }
+            nota={
+              activos > 0
+                ? `Los indicadores muestran sólo ${campos
+                    .filter((c) => c.valor)
+                    .map((c) => `${c.label.toLowerCase()}: ${c.valor}`)
+                    .join(" · ")}`
+                : null
+            }
+          />
+        ) : undefined
+      }
+    />
+  );
 }

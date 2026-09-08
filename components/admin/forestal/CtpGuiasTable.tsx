@@ -60,6 +60,26 @@ import {
 } from "./ctp-shared";
 
 /** Un autofiltro en la cabecera de su columna (estilo Excel). Lo arma la vista. */
+/**
+ * Las columnas de la tabla que se pueden apagar (ADR-400).
+ *
+ * Fijas quedan las que IDENTIFICAN la fila —N° de libro, fecha, especies,
+ * cantidad y acciones—: esconderlas dejaría filas que no se pueden reconocer.
+ */
+export type ColGuiaOpcional = "documento" | "proveedor" | "permiso" | "estado";
+export type ColsGuiasVisibles = Record<ColGuiaOpcional, boolean>;
+
+export const COLUMNAS_GUIAS_OPCIONALES: readonly { key: ColGuiaOpcional; label: string; porDefecto?: boolean }[] = [
+  { key: "documento", label: "Documento (GTF)" },
+  { key: "proveedor", label: "Proveedor" },
+  { key: "permiso", label: "N° Permiso" },
+  { key: "estado", label: "Estado" },
+];
+
+const COLS_GUIAS_DEFECTO: ColsGuiasVisibles = {
+  documento: true, proveedor: true, permiso: true, estado: true,
+};
+
 export interface FiltroColumnaGuias {
   value: string;
   options: FacetaOpcion[];
@@ -75,7 +95,15 @@ export interface CtpGuiasTableProps {
    * Especie y Proveedor se filtran desde su cabecera (Brandon, 2026-09-03).
    * Mismo estado `facetas` que el panel «Filtros»: dos lugares, un filtro.
    */
-  filtrosColumna?: { species?: FiltroColumnaGuias; provider?: FiltroColumnaGuias };
+  filtrosColumna?: {
+    species?: FiltroColumnaGuias;
+    provider?: FiltroColumnaGuias;
+    /** El título habilitante (ADR-400). Sus opciones se etiquetan con el
+     *  proveedor y la resolución: el código solo no le dice nada a nadie. */
+    permiso?: FiltroColumnaGuias & { etiqueta?: (v: string) => string };
+  };
+  /** Qué columnas opcionales se ven. Sin esto, todas (el estado de siempre). */
+  cols?: ColsGuiasVisibles;
   /** Hay algún filtro activo → el vacío significa "no coincide", no "no hay". */
   filtered: boolean;
   /** Qué filtros están puestos, para nombrarlos en el vacío (ADR-352). */
@@ -116,6 +144,9 @@ export interface CtpGuiasTableProps {
 }
 
 export default function CtpGuiasTable(props: CtpGuiasTableProps) {
+  /* Las columnas que el operador dejó prendidas. Sin el prop, todas. */
+  const cols = props.cols ?? COLS_GUIAS_DEFECTO;
+
   const {
     guias,
     loading,
@@ -203,12 +234,27 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                 </Th>
                 <Th className="w-16">N° libro</Th>
                 <ThSort field="entryDate" sort={sort} onSort={onSort}>Fecha</ThSort>
-                <Th>Documento</Th>
-                <ThSort field="providerName" sort={sort} onSort={onSort} filtro={props.filtrosColumna?.provider}>Proveedor / Origen</ThSort>
+                {cols.documento && <Th>Documento</Th>}
+                {cols.proveedor && (
+                  <ThSort field="providerName" sort={sort} onSort={onSort} filtro={props.filtrosColumna?.provider}>
+                    Proveedor
+                  </ThSort>
+                )}
+                {/* El permiso salió de la celda del proveedor y es columna
+                    propia (Brandon, 2026-09-08): es el dato por el que se
+                    filtra y se declara, no una nota al pie de otro. */}
+                {cols.permiso && (
+                  <Th>
+                    N° Permiso
+                    {props.filtrosColumna?.permiso && (
+                      <FiltroColumna label="permiso" {...props.filtrosColumna.permiso} />
+                    )}
+                  </Th>
+                )}
                 {/* Ya no es «la» especie: es la lista de lo que trae el papel. */}
                 <ThSort field="speciesCommonName" sort={sort} onSort={onSort} filtro={props.filtrosColumna?.species}>Especies de la guía</ThSort>
                 <ThSort field="volumeM3" sort={sort} onSort={onSort} align="right">Cantidad</ThSort>
-                <Th>Estado</Th>
+                {cols.estado && <Th>Estado</Th>}
                 <Th className="text-right">Acciones</Th>
               </tr>
             </thead>
@@ -229,6 +275,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                     pendientes={pendientes}
                     unaSola={unaSola}
                     primera={primera}
+                    cols={cols}
                     fotosEspecie={fotosEspecie}
                     modoBandeja={modoBandeja}
                     actionProps={actionProps}
@@ -248,7 +295,10 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
             {guias.length > 0 && (
               <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
                 <tr>
-                  <td colSpan={6} className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">
+                  {/* El colSpan cuenta las columnas VIVAS: con una apagada, un
+                      número fijo corría el total una celda y el m³ caía bajo
+                      «Estado». */}
+                  <td colSpan={3 + (cols.documento ? 1 : 0) + (cols.proveedor ? 1 : 0) + (cols.permiso ? 1 : 0)} className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">
                     {guias.length} guía{guias.length === 1 ? "" : "s"} en pantalla · {totalPagina.lineas} asiento
                     {totalPagina.lineas === 1 ? "" : "s"} del libro
                   </td>
@@ -261,7 +311,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                       {totalPagina.pz} piezas
                     </div>
                   </td>
-                  <td colSpan={2} />
+                  <td colSpan={cols.estado ? 2 : 1} />
                 </tr>
               </tfoot>
             )}
@@ -353,6 +403,7 @@ function FilaGuia({
   pendientes,
   unaSola,
   primera,
+  cols,
   fotosEspecie,
   modoBandeja,
   actionProps,
@@ -373,6 +424,7 @@ function FilaGuia({
   pendientes: string[];
   unaSola: boolean;
   primera: WoodEntry;
+  cols: ColsGuiasVisibles;
   fotosEspecie: ReturnType<typeof useEspeciesFotos>["indice"];
   modoBandeja: boolean;
   actionProps: ActionProps;
@@ -501,49 +553,66 @@ function FilaGuia({
             </div>
           )}
         </Td>
-        <Td>
-          <button
-            type="button"
-            onClick={() => onDetail(primera)}
-            title={guia.gtfNumber}
-            className="block max-w-32 truncate text-left font-mono text-sm font-bold text-[var(--brand-ink)] underline-offset-2 hover:underline dark:text-[var(--text-primary)]"
-          >
-            {guia.gtfNumber}
-          </button>
-          <div className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-            {guia.docType || "GTF"}
-            {guia.gtfSeries ? ` · ${guia.gtfSeries}` : ""}
-          </div>
-          {guia.gtfDate && <div className="text-sm text-[var(--text-tertiary)]">{formatDate(guia.gtfDate)}</div>}
-        </Td>
-        <Td>
-          <div title={guia.providerName} className="max-w-36 truncate font-medium text-[var(--text-primary)]">
-            {guia.providerName}
-          </div>
-          {/* La guía importada como existencia de apertura no trae proveedor:
-              el importador escribe siempre este texto (`ctp-serfor-a-libro.ts`),
-              así que alcanza para distinguirla de una GTF recepcionada de verdad. */}
-          {guia.providerName === PROVEEDOR_INVENTARIO_APERTURA ? (
-            <span
-              title="Existencia de apertura: entró por el importador del libro, no es una GTF recepcionada"
-              className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+        {cols.documento && (
+          <Td>
+            <button
+              type="button"
+              onClick={() => onDetail(primera)}
+              title={guia.gtfNumber}
+              className="block max-w-32 truncate text-left font-mono text-sm font-bold text-[var(--brand-ink)] underline-offset-2 hover:underline dark:text-[var(--text-primary)]"
             >
-              <Download className="h-3 w-3 shrink-0" aria-hidden /> Importado
-            </span>
-          ) : (
-            <div className="text-sm text-[var(--text-tertiary)]">{originLabel(primera.originType)}</div>
-          )}
-          {/* Contrato (9) y N° de Resolución (5) del formato LO-CTP Sección 1: el
-              importador de inventario los trae, y sin mostrarlos acá quedaban
-              en el JSON sin que nadie los viera (Brandon, 2026-09-01). */}
-          {(guia.originCode || guia.originSourceNumber) && (
-            <div className="mt-0.5 truncate font-mono text-xs text-[var(--text-tertiary)]" title={`Contrato ${guia.originCode ?? "—"} · Res. ${guia.originSourceNumber ?? "—"}`}>
-              {guia.originCode && <>Contrato {guia.originCode}</>}
-              {guia.originCode && guia.originSourceNumber && " · "}
-              {guia.originSourceNumber && <>Res. {guia.originSourceNumber}</>}
+              {guia.gtfNumber}
+            </button>
+            <div className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+              {guia.docType || "GTF"}
+              {guia.gtfSeries ? ` · ${guia.gtfSeries}` : ""}
             </div>
-          )}
-        </Td>
+            {guia.gtfDate && <div className="text-sm text-[var(--text-tertiary)]">{formatDate(guia.gtfDate)}</div>}
+          </Td>
+        )}
+        {/* Sólo el proveedor (Brandon, 2026-09-08): el contrato y la resolución
+            se mudaron a la columna «N° Permiso», que es donde se filtran. Tres
+            datos apilados en una celda hacían leer el permiso como parte del
+            nombre de la empresa. */}
+        {cols.proveedor && (
+          <Td>
+            <div title={guia.providerName} className="max-w-36 truncate font-medium text-[var(--text-primary)]">
+              {guia.providerName}
+            </div>
+            {/* La guía importada como existencia de apertura no trae proveedor:
+                el importador escribe siempre este texto (`ctp-serfor-a-libro.ts`),
+                así que alcanza para distinguirla de una GTF recepcionada de verdad. */}
+            {guia.providerName === PROVEEDOR_INVENTARIO_APERTURA ? (
+              <span
+                title="Existencia de apertura: entró por el importador del libro, no es una GTF recepcionada"
+                className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-info-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+              >
+                <Download className="h-3 w-3 shrink-0" aria-hidden /> Importado
+              </span>
+            ) : (
+              <div className="text-sm text-[var(--text-tertiary)]">{originLabel(primera.originType)}</div>
+            )}
+          </Td>
+        )}
+        {/* Contrato (9) y N° de Resolución (5) del formato LO-CTP Sección 1, en
+            su propia columna: es lo que ampara la madera y por lo que pregunta
+            un fiscalizador. */}
+        {cols.permiso && (
+          <Td>
+            {guia.originCode ? (
+              <div className="max-w-40 truncate font-mono text-sm font-bold text-[var(--text-primary)]" title={guia.originCode}>
+                {guia.originCode}
+              </div>
+            ) : (
+              <span className="text-sm text-[var(--text-tertiary)]">—</span>
+            )}
+            {guia.originSourceNumber && (
+              <div className="truncate font-mono text-xs text-[var(--text-tertiary)]" title={`Resolución ${guia.originSourceNumber}`}>
+                Res. {guia.originSourceNumber}
+              </div>
+            )}
+          </Td>
+        )}
         <Td>
           {/* Todas las especies del papel, con su volumen: es lo que el operador
               chequea contra la pila. Con una sola, se lee como antes. */}
@@ -622,27 +691,29 @@ function FilaGuia({
             );
           })()}
         </Td>
-        <Td>
-          {guia.statusMixto ? (
-            /* Un estado por asiento: decir «validada» porque la primera lo está
-               esconde justo la línea que hay que mirar. */
-            <div className="flex flex-wrap gap-1">
-              {Object.entries(guia.porEstado).map(([estado, n]) => (
-                <span key={estado} className="whitespace-nowrap">
-                  <StatusBadge status={estado as WoodEntryStatus} />
-                  <span className="ml-1 text-xs text-[var(--text-tertiary)]">×{n}</span>
-                </span>
-              ))}
-            </div>
-          ) : (
-            <StatusBadge status={guia.status as WoodEntryStatus} />
-          )}
-          {guia.trozasCount > 0 && (
-            <div className="mt-1 whitespace-nowrap text-xs text-[var(--text-tertiary)]">
-              {guia.trozasDecididas}/{guia.trozasCount} piezas recibidas
-            </div>
-          )}
-        </Td>
+        {cols.estado && (
+          <Td>
+            {guia.statusMixto ? (
+              /* Un estado por asiento: decir «validada» porque la primera lo está
+                 esconde justo la línea que hay que mirar. */
+              <div className="flex flex-wrap gap-1">
+                {Object.entries(guia.porEstado).map(([estado, n]) => (
+                  <span key={estado} className="whitespace-nowrap">
+                    <StatusBadge status={estado as WoodEntryStatus} />
+                    <span className="ml-1 text-xs text-[var(--text-tertiary)]">×{n}</span>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <StatusBadge status={guia.status as WoodEntryStatus} />
+            )}
+            {guia.trozasCount > 0 && (
+              <div className="mt-1 whitespace-nowrap text-xs text-[var(--text-tertiary)]">
+                {guia.trozasDecididas}/{guia.trozasCount} piezas recibidas
+              </div>
+            )}
+          </Td>
+        )}
         <Td className="text-right">
           {/* Una sola línea (2026-08).
               Las acciones envolvían a DOS filas —tres botones con texto arriba,

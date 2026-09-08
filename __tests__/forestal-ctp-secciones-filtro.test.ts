@@ -276,3 +276,35 @@ describe("tipos", () => {
     expect(l.status).toBe("registrado");
   });
 });
+
+/**
+ * La misma especie escrita de dos formas es UNA (ADR-400).
+ *
+ * El libro tiene «Tornillo» y «TORNILLO» cargados por dos personas distintas, y
+ * el desplegable de los KPIs los ofrecía como dos especies con la mitad del
+ * volumen cada una: elegir cualquiera de las dos escondía la otra mitad.
+ */
+describe("facetas y filtro de especie — dos grafías, una especie", () => {
+  const lineas = [
+    linea({ id: "a", speciesCommon: "Tornillo", quantity: "6" }),
+    linea({ id: "b", speciesCommon: "TORNILLO", quantity: "4" }),
+    linea({ id: "c", speciesCommon: "Shihuahuaco", quantity: "2" }),
+  ];
+
+  it("agrupa las dos grafías en una sola opción, con el volumen sumado", () => {
+    const { species } = facetasDeSeccion(lineas);
+    expect(species).toHaveLength(2);
+    expect(species[0]).toMatchObject({ count: 2, volumeM3: 10 });
+    /* Muestra el nombre TAL COMO está escrito en el libro, no uno inventado. */
+    expect(["Tornillo", "TORNILLO"]).toContain(species[0].value);
+  });
+
+  it("elegir una grafía trae también los asientos de la otra", () => {
+    expect(filtrarSeccion(lineas, { species: "Tornillo" }).map((l) => l.id)).toEqual(["a", "b"]);
+    expect(filtrarSeccion(lineas, { species: "TORNILLO" }).map((l) => l.id)).toEqual(["a", "b"]);
+  });
+
+  it("no mezcla especies distintas", () => {
+    expect(filtrarSeccion(lineas, { species: "Shihuahuaco" }).map((l) => l.id)).toEqual(["c"]);
+  });
+});

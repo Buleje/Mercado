@@ -75,6 +75,15 @@ export default function CtpGuiaCardMobile({
               </span>
             )}
           </p>
+          {/* El permiso, que en la tabla es columna propia (ADR-400): acá no
+              hay columnas, así que va bajo el proveedor — pero como dato con
+              nombre, no pegado a la razón social. */}
+          {guia.originCode && (
+            <p className="truncate font-mono text-sm text-[var(--text-tertiary)]" title={`Permiso ${guia.originCode}${guia.originSourceNumber ? ` · Res. ${guia.originSourceNumber}` : ""}`}>
+              Permiso {guia.originCode}
+              {guia.originSourceNumber ? ` · Res. ${guia.originSourceNumber}` : ""}
+            </p>
+          )}
           <p className="text-sm text-[var(--text-tertiary)]">
             {formatDate(guia.entryDate)} · {guia.lineas.length} asiento{guia.lineas.length === 1 ? "" : "s"} del libro
           </p>
