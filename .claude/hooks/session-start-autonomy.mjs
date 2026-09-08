@@ -12,7 +12,7 @@
  * Budget total: <8s. Si algún paso tarda más, lo dispara fire-and-forget.
  * Exit 0 always (non-blocking).
  */
-import { existsSync, writeFileSync, readdirSync } from "node:fs";
+import { existsSync, writeFileSync, readdirSync, openSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { join } from "node:path";
 
@@ -184,14 +184,25 @@ async function main() {
   // Si dev no arranca, lo lanzamos en BG fire-and-forget
   if (devStatus === "down") {
     try {
+      // stdout/stderr a archivo, NO a /dev/null: si el server arranca roto
+      // (DB caida, Prisma desincronizado, puerto tomado) el error tiene que
+      // quedar en algun lado. Con /dev/null el fallo es indiagnosticable —
+      // fricción real 2026-09-07: login imposible, health 503, cero rastro.
+      let stdio = ["ignore", "ignore", "ignore"];
+      try {
+        const fd = openSync(DEV_LOG, "a");
+        stdio = ["ignore", fd, fd];
+      } catch {
+        // sin permiso de escritura: seguimos como antes
+      }
       const child = spawn("npm", ["run", "dev"], {
         cwd: projectRoot,
         detached: true,
-        stdio: ["ignore", "ignore", "ignore"],
+        stdio,
         env: process.env,
       });
       child.unref();
-      log(`   → npm run dev disparado en BG (pid ${child.pid})`);
+      log(`   → npm run dev disparado en BG (pid ${child.pid}) · log: ${DEV_LOG}`);
     } catch (err) {
       log(`   → no pude arrancar dev: ${err.message?.slice(0, 60)}`);
     }
