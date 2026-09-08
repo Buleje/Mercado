@@ -51,6 +51,7 @@ import {
   type ColumnaSeleccionable,
 } from "./seleccion-celdas";
 import PanelEntradaVoz from "./cubicador-entrada-voz";
+import CubicadorKpis from "./cubicador-kpis";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -1567,6 +1568,29 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
 
   return (
     <div className="group relative space-y-4">
+      {/* Lo que llevás medido, antes del micrófono: los tres números que decide
+          el módulo (m³, pie tablar, piezas) estaban sólo abajo de la tabla o
+          detrás del panel de Resumen, y se carga mirando acá arriba. */}
+      <CubicadorKpis
+        rows={rows}
+        totales={totales}
+        totalesVisibles={totalesVisibles}
+        filtrando={filtrando}
+        valorLote={valorLote}
+        conValor={conValor}
+        hayPreciosEspecie={hayPreciosEspecie}
+        precio={precio}
+        avisarRaras={avisarRaras}
+        fmtPt={fmtPt}
+        fmtM3={fmtM3}
+        /* Tocar un tipo del mix filtra la tabla por él: la pregunta que sigue a
+           «el 60 % es Comercial» es «¿cuáles?». */
+        onFiltrarTipo={(t) => {
+          setFiltroTipo((actual) => (actual === t ? "" : t));
+          document.getElementById(`cub-tabla-ancla`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+        }}
+      />
+
       {/* Panel de voz */}
       <PanelEntradaVoz
         grillaId={GRILLA_CARGA}
@@ -1607,7 +1631,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       />
 
       {/* Tabla acumulada */}
-      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      <div id="cub-tabla-ancla" className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
