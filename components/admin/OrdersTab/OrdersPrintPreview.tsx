@@ -41,7 +41,7 @@ export function OrdersPrintPreview({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+            className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -54,12 +54,12 @@ export function OrdersPrintPreview({
               return (
                 <div
                   key={order.id}
-                  className="bg-white dark:bg-[var(--color-card)] border-2 border-[var(--rule-base)] rounded-lg p-4 print:break-after-page print:border-0 print:rounded-none"
+                  className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-lg p-4 print:break-after-page print:border-0 print:rounded-none"
                   style={{ pageBreakAfter: "always" }}
                 >
                   {/* Header */}
                   <div className="text-center mb-4 pb-3 border-b-2 border-dashed border-[var(--rule-base)]">
-                    <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
+                    <div className="w-16 h-16 mx-auto mb-2 bg-[var(--rule-soft)] rounded-full flex items-center justify-center">
                       <Store className="h-8 w-8 text-primary" />
                     </div>
                     <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)]">{storeName || "Buleje"}</SectionTitle>
@@ -135,7 +135,7 @@ export function OrdersPrintPreview({
                   </div>
 
                   {/* Total */}
-                  <div className="bg-gray-100 rounded-lg p-3 mb-4">
+                  <div className="bg-[var(--rule-soft)] rounded-lg p-3 mb-4">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-extrabold text-[var(--text-primary)]">TOTAL</span>
                       <span className="text-2xl font-extrabold text-primary">S/{Number(order.total).toFixed(2)}</span>
@@ -173,13 +173,13 @@ export function OrdersPrintPreview({
         <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={() => window.print()}
-            className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors"
           >
             <Printer className="h-4 w-4" />
             Imprimir

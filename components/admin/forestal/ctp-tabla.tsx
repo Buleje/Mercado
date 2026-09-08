@@ -143,7 +143,7 @@ export function CtpPaginacion({
             value={porPagina}
             onChange={(e) => onPorPagina(Number(e.target.value))}
             aria-label="Cuántas filas por página"
-            className="h-9 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           >
             {FILAS_POR_PAGINA.map((n) => (
               <option key={n} value={n}>

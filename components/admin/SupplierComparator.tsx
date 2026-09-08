@@ -302,7 +302,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
         </div>
         <button
           onClick={fetchData}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center self-end"
+          className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center self-end"
           title="Actualizar"
         >
           <RefreshCw className="h-4 w-4 text-[var(--text-tertiary)]" />
@@ -312,7 +312,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
       {/* KPI summary 4 cards */}
       {suppliers.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Top proveedor</p>
               <p className="text-lg font-extrabold leading-none mt-1.5 text-[var(--text-primary)] truncate">{kpis.topName}</p>
@@ -320,7 +320,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
             </div>
             <Star className="h-5 w-5 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
           </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Score promedio</p>
               <p className={cn(
@@ -331,7 +331,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
             </div>
             <Users className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
           </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
               <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{suppliers.length}</p>
@@ -339,7 +339,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
             </div>
             <Users className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
           </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Mejor precio</p>
               <p className="text-xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{kpis.lowestPrice != null ? `S/${Number(kpis.lowestPrice).toFixed(2)}` : "—"}</p>
@@ -357,7 +357,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
           value={productFilter}
           onChange={e => setProductFilter(e.target.value)}
           placeholder="Buscar proveedor o producto..."
-          className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary"
+          className="flex-1 min-w-[200px] px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-[var(--text-tertiary)] uppercase font-bold">Ordenar:</span>
@@ -369,7 +369,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
                 "px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all",
                 sortBy === s
                   ? "bg-primary text-white"
-                  : "bg-gray-100 dark:bg-white/5 text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-white/10",
+                  : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-base)] ",
               )}
             >
               {s === "score" ? "Score" : s === "name" ? "Nombre" : "Precio"}
@@ -390,7 +390,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-sm">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-white/5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                  <tr className="bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--text-tertiary)]">Proveedor</th>
                     <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)] hidden sm:table-cell">Prods.</th>
                     <th className="px-4 py-3 text-right text-xs font-bold uppercase text-[var(--text-tertiary)] hidden md:table-cell">Precio prom.</th>
@@ -400,7 +400,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
                     <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)]">OC</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-card-border">
+                <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
                   {sorted.map((s, idx) => (
                     <tr
                       key={s.id}
@@ -409,7 +409,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
                         "cursor-pointer transition-colors",
                         selectedId === s.id
                           ? "bg-primary/5 dark:bg-primary/10"
-                          : "hover:bg-gray-50 dark:hover:bg-white/5",
+                          : "hover:bg-[var(--surface-sunken)] ",
                       )}
                     >
                       <td className="px-4 py-3">
@@ -519,7 +519,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
             <div className="px-4 pb-4">
               <button
                 onClick={() => handleCreateOC(selectedSupplier)}
-                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors min-h-[40px]"
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors min-h-[40px]"
               >
                 <ShoppingCart className="h-4 w-4" /> Crear Orden de Compra
               </button>

@@ -133,8 +133,8 @@ export default function NPSTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Net Promoter Score y análisis de satisfacción del cliente</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => setView("detail")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "detail" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Detalle</button>
-          <button onClick={() => setView("trend")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "trend" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Tendencia</button>
+          <button onClick={() => setView("detail")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "detail" ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted")}>Detalle</button>
+          <button onClick={() => setView("trend")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "trend" ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted")}>Tendencia</button>
         </div>
       </div>
 
@@ -184,7 +184,7 @@ export default function NPSTab() {
           </div>
 
           {/* Score promedio */}
-          <div className="flex flex-col items-center shrink-0 bg-gray-50 dark:bg-surface rounded-xl p-4 min-w-[80px]">
+          <div className="flex flex-col items-center shrink-0 bg-[var(--surface-sunken)] rounded-xl p-4 min-w-[80px]">
             <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Promedio</p>
             <p className="text-3xl font-extrabold text-[var(--data-success-500)]">{avgScore}</p>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">/10</p>
@@ -197,13 +197,13 @@ export default function NPSTab() {
         <Filter className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
         <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Período:</span>
         {(["7d", "30d", "90d", "all"] as const).map(p => (
-          <button key={p} onClick={() => setFilterPeriod(p)} className={cn("px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors", filterPeriod === p ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+          <button key={p} onClick={() => setFilterPeriod(p)} className={cn("px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors", filterPeriod === p ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted")}>
             {p === "all" ? "Todo" : p}
           </button>
         ))}
         <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted ml-2">Canal:</span>
         {["all", "tienda", "delivery", "whatsapp"].map(c => (
-          <button key={c} onClick={() => setFilterChannel(c)} className={cn("px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors", filterChannel === c ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+          <button key={c} onClick={() => setFilterChannel(c)} className={cn("px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors", filterChannel === c ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted")}>
             {c === "all" ? "Todos" : c.charAt(0).toUpperCase() + c.slice(1)}
           </button>
         ))}
@@ -235,7 +235,7 @@ export default function NPSTab() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.customer}</span>
-                    <span className="text-[length:var(--ts-2xs)] bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded text-[var(--text-secondary)] dark:text-muted">{s.channel}</span>
+                    <span className="text-[length:var(--ts-2xs)] bg-[var(--rule-soft)] px-1.5 py-0.5 rounded text-[var(--text-secondary)] dark:text-muted">{s.channel}</span>
                     <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{fmtDate(s.date)}</span>
                   </div>
                   {s.comment && (
@@ -291,7 +291,7 @@ export default function NPSTab() {
                   return (
                     <div key={t.month} className="flex items-center gap-3">
                       <span className="w-14 text-xs font-bold text-[var(--text-secondary)] dark:text-muted shrink-0">{t.month}</span>
-                      <div className="flex-1 flex h-4 rounded-full overflow-hidden bg-gray-100 dark:bg-surface">
+                      <div className="flex-1 flex h-4 rounded-full overflow-hidden bg-[var(--rule-soft)] ">
                         <div className="bg-primary/10 transition-all" style={{ width: `${(t.promoters / total) * 100}%` }} />
                         <div className="bg-[var(--data-warning-500)] transition-all" style={{ width: `${(t.passives / total) * 100}%` }} />
                         <div className="bg-[var(--data-error-500)] transition-all" style={{ width: `${(t.detractors / total) * 100}%` }} />

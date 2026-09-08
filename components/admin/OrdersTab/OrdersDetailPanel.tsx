@@ -310,7 +310,7 @@ export function OrdersDetailPanel({
                 type="button"
                 onClick={actionBanner.primary.onClick}
                 className={cn(
-                  "inline-flex items-center gap-1.5 h-10 px-4 rounded-lg text-sm font-semibold transition-colors text-white",
+                  "inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold transition-colors text-white",
                   actionBanner.primary.tone === "success"
                     ? "bg-[var(--data-success-500)] hover:opacity-90"
                     : "bg-primary hover:bg-primary/90",
@@ -324,7 +324,7 @@ export function OrdersDetailPanel({
                   type="button"
                   onClick={actionBanner.secondary.onClick}
                   className={cn(
-                    "inline-flex items-center gap-1.5 h-10 px-4 rounded-lg text-sm font-semibold border bg-white dark:bg-surface transition-colors",
+                    "inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold border bg-[var(--surface-raised)] transition-colors",
                     actionBanner.secondary.tone === "success"
                       ? "border-[var(--data-success-500)]/40 text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/5"
                       : "border-[var(--data-error-500)]/40 text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/5",
@@ -536,7 +536,7 @@ export function OrdersDetailPanel({
                     <button
                       type="button"
                       onClick={() => onMarkDeudaPaid(order.id)}
-                      className="ml-auto inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-xs font-semibold text-[var(--data-success-500)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 transition-colors"
+                      className="ml-auto inline-flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-semibold text-[var(--data-success-500)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 transition-colors"
                     >
                       <Check className="h-3.5 w-3.5" /> Marcar cobrado
                     </button>
@@ -588,13 +588,13 @@ export function OrdersDetailPanel({
                     onChange={(e) => onAdminNoteChange(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && onSaveAdminNote(order.id)}
                     placeholder="Agregar nota interna…"
-                    className="flex-1 h-10 px-3 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary transition-colors"
+                    className="flex-1 h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => onSaveAdminNote(order.id)}
                     disabled={savingNote || !adminNote.trim()}
-                    className="h-10 px-4 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className="h-10 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     {savingNote ? "…" : "Guardar"}
                   </button>
@@ -678,7 +678,7 @@ export function OrdersDetailPanel({
             <button
               type="button"
               onClick={() => onShowRejectModal(order.id)}
-              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg text-sm font-semibold text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 hover:bg-[var(--data-error-500)]/10 transition-colors"
+              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-semibold text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 hover:bg-[var(--data-error-500)]/10 transition-colors"
             >
               <X className="h-4 w-4" />
               Rechazar
@@ -687,7 +687,7 @@ export function OrdersDetailPanel({
           <button
             type="button"
             onClick={() => printComanda(order)}
-            className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg text-sm font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-surface hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
           >
             <Printer className="h-4 w-4" />
             Imprimir comanda
@@ -695,7 +695,7 @@ export function OrdersDetailPanel({
           <button
             type="button"
             onClick={() => window.open(`/api/invoices/${order.id}`, "_blank", "noopener,noreferrer")}
-            className="ml-auto inline-flex items-center gap-1.5 h-10 px-4 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
+            className="ml-auto inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
           >
             <FileText className="h-4 w-4" strokeWidth={2} />
             Generar boleta

@@ -97,7 +97,7 @@ const DENOM_VISUAL: Record<number, { color: string; shape: "rect" | "circle"; la
   20:  { color: "bg-orange-500 text-white",  shape: "rect",   label: "S/20"  },
   10:  { color: "bg-sky-500 text-white",     shape: "rect",   label: "S/10"  },
   5:   { color: "bg-yellow-400 text-yellow-900", shape: "circle", label: "S/5"   },
-  2:   { color: "bg-gray-300 text-gray-800", shape: "circle", label: "S/2"   },
+  2:   { color: "bg-gray-300 text-[var(--text-primary)]", shape: "circle", label: "S/2"   },
   1:   { color: "bg-gray-400 text-white",    shape: "circle", label: "S/1"   },
   0.5: { color: "bg-amber-700 text-white",   shape: "circle", label: "S/.50" },
   0.2: { color: "bg-amber-800 text-white",   shape: "circle", label: "S/.20" },
@@ -200,7 +200,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
             <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">Selecciona un cliente existente</p>
           </div>
         </div>
-        <button onClick={onClose} aria-label="Cerrar" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+        <button onClick={onClose} aria-label="Cerrar" className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
           <X className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted" />
         </button>
       </div>
@@ -231,7 +231,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
             <p className="text-sm">Prueba con otro nombre o teléfono</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100 dark:divide-card-border">
+          <div className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
             {filtered.map(c => (
               <button
                 key={c.phone}
@@ -239,7 +239,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
                   onSelect(c.phone, c.name);
                   onClose();
                 }}
-                className="w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left"
+                className="w-full flex items-center gap-4 px-6 py-4 hover:bg-[var(--surface-sunken)] transition-colors text-left"
               >
                 <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <User className="h-5 w-5 text-primary" />
@@ -585,7 +585,7 @@ export default function POSPaymentModal({
                       <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold uppercase tracking-wide">Redondear:</span>
                       {uniq.map(o => (
                         <button key={o.val} onClick={() => { setDiscountValue(String((total - o.val).toFixed(2))); setDiscountMode("fixed"); setShowDiscount(true); }}
-                          className="px-2 py-0.5 rounded-md text-xs font-extrabold bg-[var(--surface-raised)] border border-[var(--rule-soft)] hover:bg-primary hover:text-white hover:border-primary shadow-sm transition-colors">
+                          className="px-2 py-0.5 rounded-lg text-xs font-extrabold bg-[var(--surface-raised)] border border-[var(--rule-soft)] hover:bg-primary hover:text-white hover:border-primary shadow-sm transition-colors">
                           S/{o.val}
                         </button>
                       ))}
@@ -647,7 +647,7 @@ export default function POSPaymentModal({
             </button>
 
             {showDiscount && (
-              <div className="space-y-3 bg-gray-50 dark:bg-surface rounded-xl p-4 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+              <div className="space-y-3 bg-[var(--surface-sunken)] rounded-xl p-4 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <div className="flex items-center gap-3">
                   <div className="flex bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg overflow-hidden">
                     <button
@@ -687,7 +687,7 @@ export default function POSPaymentModal({
                     value={discountValue}
                     onChange={(e) => setDiscountValue(e.target.value)}
                     placeholder="0"
-                    className="w-24 px-3 py-2 text-sm font-semibold border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary text-center"
+                    className="w-24 px-3 py-2 text-sm font-semibold border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary text-center"
                   />
                   {discountAmount > 0 && (
                     <button
@@ -711,7 +711,7 @@ export default function POSPaymentModal({
                         "px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors",
                         Number(discountValue) === q
                           ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100"
+                          : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)]"
                       )}
                     >
                       {discountMode === "percent" ? `${q}%` : `S/${q}`}
@@ -870,13 +870,13 @@ export default function POSPaymentModal({
                             try { localStorage.setItem(storageKey, v); } catch { /* ignore */ }
                           }}
                           placeholder={`Número ${isYape ? "Yape" : "Plin"} del negocio`}
-                          className="flex-1 px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                          className="flex-1 px-3 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                         />
                         {savedNumber && (
                           <button
                             onClick={handlePrintQR}
                             className={cn(
-                              "px-3 py-2 text-xs font-bold rounded-lg hover:opacity-80 transition-opacity",
+                              "px-3 py-2 text-xs font-bold rounded-xl hover:opacity-80 transition-opacity",
                               isYape
                                 ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
                                 : "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300"
@@ -897,7 +897,7 @@ export default function POSPaymentModal({
                             alt={`QR ${currentMethod}`}
                             width={180}
                             height={180}
-                            className="mx-auto rounded-lg bg-white p-1"
+                            className="mx-auto rounded-lg bg-[var(--surface-raised)] p-1"
                           />
                           <p className="text-xs text-[var(--text-tertiary)] mt-1">Muestrale este QR al cliente</p>
                         </div>
@@ -915,7 +915,7 @@ export default function POSPaymentModal({
                   {paymentLines.map((line, idx) => (
                     <div
                       key={idx}
-                      className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
+                      className="flex flex-wrap items-center gap-2 p-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
                     >
                       {!isSinglePayment && (
                         <select
@@ -926,7 +926,7 @@ export default function POSPaymentModal({
                               e.target.value as PaymentLineMethod
                             )
                           }
-                          className="flex-1 min-w-24 px-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-semibold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none"
+                          className="flex-1 min-w-24 px-2 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-semibold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none"
                         >
                           {METHODS.map((m) => (
                             <option key={m.id} value={m.id}>
@@ -950,7 +950,7 @@ export default function POSPaymentModal({
                           readOnly={isFiado}
                           placeholder={total.toFixed(2)}
                           className={cn(
-                            "w-full pl-7 pr-2 py-2 rounded-lg border text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary",
+                            "w-full pl-7 pr-2 py-2 rounded-xl border text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary",
                             isFiado
                               ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning-500)] cursor-not-allowed"
                               : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
@@ -982,10 +982,10 @@ export default function POSPaymentModal({
                             key={a}
                             onClick={() => updateAmount(0, a)}
                             className={cn(
-                              "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
+                              "px-4 py-2 rounded-xl text-sm font-semibold border transition-colors",
                               paymentLines[0].amount === a
                                 ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                                : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
                             )}
                           >
                             S/{a}
@@ -994,10 +994,10 @@ export default function POSPaymentModal({
                       <button
                         onClick={() => updateAmount(0, total)}
                         className={cn(
-                          "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
+                          "px-4 py-2 rounded-xl text-sm font-semibold border transition-colors",
                           paymentLines[0].amount === total
                             ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                            : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                            : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
                         )}
                       >
                         Exacto
@@ -1303,7 +1303,7 @@ export default function POSPaymentModal({
                         }
                       }}
                       className={cn(
-                        "py-2 rounded-lg text-xs font-semibold border transition-all truncate",
+                        "py-2 rounded-xl text-xs font-semibold border transition-all truncate",
                         comprobanteTipo === tipo
                           ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-primary/20"
                           : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:border-gray-300 hover:text-[var(--text-primary)]"
@@ -1339,7 +1339,7 @@ export default function POSPaymentModal({
                   placeholder="RUC (11 digitos)"
                   maxLength={11}
                   className={cn(
-                    "w-full px-3 py-3 rounded-lg border text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none transition-colors",
+                    "w-full px-3 py-3 rounded-xl border text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none transition-colors",
                     rucError
                       ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]"
                       : "border-[var(--rule-base)] dark:border-[var(--rule-base)] focus:border-primary"

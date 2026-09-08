@@ -189,7 +189,7 @@ export default function CtpListaProductosTab({
                   type="button"
                   onClick={() => onQuitar(f.uid)}
                   aria-label={`Quitar el ítem ${i + 1} de la lista`}
-                  className="rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]"
+                  className="rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

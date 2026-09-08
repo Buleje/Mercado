@@ -176,7 +176,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
             )}
 
             {!loading && groups.length === 0 && (
-              <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center bg-white dark:bg-card">
+              <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center bg-[var(--surface-raised)] ">
                 <Sliders className="h-10 w-10 mx-auto text-[var(--text-tertiary)] mb-3" />
                 <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)] mb-1">Aún no hay adicionales</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] max-w-md mx-auto leading-snug">
@@ -205,7 +205,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
             {!loading && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
                 <button onClick={addGroup}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-white dark:bg-card px-4 py-3 text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
                   <Plus className="h-4 w-4" /> Agregar grupo nuevo
                 </button>
                 <button onClick={() => setShowCatalog(true)}
@@ -233,7 +233,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
           </div>
 
           {/* Footer */}
-          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3.5 flex items-center justify-between gap-2 bg-white dark:bg-card">
+          <div className="shrink-0 border-t border-[var(--rule-soft)] px-5 py-3.5 flex items-center justify-between gap-2 bg-[var(--surface-raised)] ">
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] hidden sm:block">
               Los cambios reemplazan completamente los adicionales del producto al guardar.
             </p>
@@ -269,7 +269,7 @@ function GroupCard({
   const [showCatalogPicker, setShowCatalogPicker] = useState(false);
   const existingNames = new Set(group.options.map((o) => o.name.toLowerCase()));
   return (
-    <div className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-card overflow-hidden shadow-sm">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden shadow-sm">
       {/* Group header */}
       <div className="border-b border-[var(--rule-soft)] p-4 space-y-3">
         <div className="flex items-start gap-2">
@@ -277,10 +277,10 @@ function GroupCard({
             value={group.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
             placeholder="Nombre del grupo (ej: Cremas, Tamaño)"
-            className="flex-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-base font-bold text-[var(--text-primary)] outline-none focus:border-primary"
+            className="flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-base font-bold text-[var(--text-primary)] outline-none focus:border-primary"
           />
           <button onClick={onRemove} title="Eliminar grupo"
-            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors">
+            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
@@ -288,7 +288,7 @@ function GroupCard({
           value={group.description ?? ""}
           onChange={(e) => onUpdate({ description: e.target.value })}
           placeholder="Descripción para el cliente (opcional, ej: Elige las cremas que prefieras)"
-          className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5 text-sm text-[var(--text-secondary)] outline-none focus:border-primary"
+          className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5 text-sm text-[var(--text-secondary)] outline-none focus:border-primary"
         />
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <label className="inline-flex items-center gap-2 cursor-pointer select-none">
@@ -307,7 +307,7 @@ function GroupCard({
               type="number" min={0} max={20}
               value={group.minSelect}
               onChange={(e) => onUpdate({ minSelect: Math.max(0, Number(e.target.value) || 0) })}
-              className="w-14 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1 text-sm tabular-nums outline-none focus:border-primary"
+              className="w-14 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1 text-sm tabular-nums outline-none focus:border-primary"
             />
           </label>
           <label className="inline-flex items-center gap-1.5">
@@ -316,7 +316,7 @@ function GroupCard({
               type="number" min={1} max={20}
               value={group.maxSelect}
               onChange={(e) => onUpdate({ maxSelect: Math.max(1, Number(e.target.value) || 1) })}
-              className="w-14 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1 text-sm tabular-nums outline-none focus:border-primary"
+              className="w-14 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1 text-sm tabular-nums outline-none focus:border-primary"
             />
           </label>
           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] italic ml-auto">
@@ -346,11 +346,11 @@ function GroupCard({
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <button onClick={onAddOption}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 px-3 py-2 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors">
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 px-3 py-2 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors">
             <Plus className="h-3.5 w-3.5" /> Agregar opción
           </button>
           <button onClick={() => setShowCatalogPicker(true)}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-linear-to-r from-primary to-[var(--data-success-500)] text-white px-3 py-2 text-xs font-bold hover:opacity-90 transition-all">
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white px-3 py-2 text-xs font-bold hover:opacity-90 transition-all">
             <BookOpen className="h-3.5 w-3.5" /> Añadir del catálogo
           </button>
         </div>
@@ -399,7 +399,7 @@ function OptionRow({
   };
 
   return (
-    <div className="rounded-xl border border-[var(--rule-soft)] bg-white dark:bg-card p-2.5">
+    <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-2.5">
       <div className="flex flex-wrap items-center gap-2.5">
         {/* Image upload zone — drag-drop + click */}
         <button
@@ -414,7 +414,7 @@ function OptionRow({
             if (f) void handleFile(f);
           }}
           className={cn(
-            "relative h-12 w-12 rounded-lg overflow-hidden border-2 border-dashed shrink-0 transition-all group",
+            "relative h-12 w-12 rounded-xl overflow-hidden border-2 border-dashed shrink-0 transition-all group",
             option.imageUrl
               ? "border-[var(--rule-base)]"
               : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-primary"
@@ -462,7 +462,7 @@ function OptionRow({
           value={option.name}
           onChange={(e) => onChange({ name: e.target.value })}
           placeholder="Nombre (ej: Mayonesa, Pierna, Queso extra)"
-          className="flex-1 min-w-[140px] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+          className="flex-1 min-w-[140px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
         />
 
         {/* Price delta */}
@@ -472,7 +472,7 @@ function OptionRow({
             type="number" min={0} step={0.5}
             value={option.priceDelta}
             onChange={(e) => onChange({ priceDelta: Number(e.target.value) || 0 })}
-            className="w-16 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1.5 text-sm font-mono tabular-nums outline-none focus:border-primary"
+            className="w-16 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1.5 text-sm font-mono tabular-nums outline-none focus:border-primary"
             title="Cuánto suma al precio del producto si se elige"
           />
         </div>
@@ -483,7 +483,7 @@ function OptionRow({
           onClick={() => onChange({ isDefault: !option.isDefault })}
           title={option.isDefault ? "Pre-seleccionada por defecto" : "Marcar como por defecto"}
           className={cn(
-            "p-1.5 rounded-lg transition-colors",
+            "p-1.5 rounded-xl transition-colors",
             option.isDefault
               ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]"
               : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
@@ -497,7 +497,7 @@ function OptionRow({
           type="button"
           onClick={onRemove}
           aria-label="Eliminar opción"
-          className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
+          className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
         >
           <Trash2 className="h-4 w-4" />
         </button>

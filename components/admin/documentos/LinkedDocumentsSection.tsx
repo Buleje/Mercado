@@ -104,7 +104,7 @@ export function LinkedDocumentsSection({ entity, id }: { entity: Entity; id: str
                 </div>
                 <button
                   onClick={() => download(d)}
-                  className="p-1.5 rounded-md text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
+                  className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
                   aria-label={`Descargar ${d.name}`}
                   title="Descargar"
                 >

@@ -123,7 +123,7 @@ function ToastItem({ t, onDismiss }: { t: ActionToast; onDismiss: (id: number) =
           <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Deshacer
         </button>
       )}
-      <button type="button" onClick={() => onDismiss(t.id)} aria-label="Cerrar aviso" className="shrink-0 rounded-lg p-1 text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]">
+      <button type="button" onClick={() => onDismiss(t.id)} aria-label="Cerrar aviso" className="shrink-0 rounded-xl p-1 text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]">
         <X className="h-4 w-4" aria-hidden />
       </button>
     </div>

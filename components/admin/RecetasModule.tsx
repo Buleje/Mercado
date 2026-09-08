@@ -42,9 +42,9 @@ function RecetasDashboard() {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-gray-200 rounded-xl" />)}
+          {[...Array(4)].map((_, i) => <div key={i} className="h-20 bg-[var(--rule-base)] rounded-xl" />)}
         </div>
-        <div className="h-64 bg-gray-200 rounded-xl" />
+        <div className="h-64 bg-[var(--rule-base)] rounded-xl" />
       </div>
     );
   }
@@ -108,12 +108,12 @@ function RecetasDashboard() {
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Recetas activas", value: String(recetasActivas), border: "border-b-4 border-[#2563EB]" },
+          { label: "Recetas activas", value: String(recetasActivas), border: "border-b-4 border-[var(--accent-ink)]" },
           { label: "Lotes del mes", value: String(lotesMes), border: "border-b-4 border-secondary" },
           { label: "Costo promedio", value: `S/${costoPromedio.toFixed(2)}`, border: "border-b-4 border-[var(--rule-base)]0" },
           { label: "Ingredientes totales", value: String(ingredientesTotales), border: "border-b-4 border-[var(--data-success-500)]/30" },
         ].map(k => (
-          <div key={k.label} className={cn("bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4 ", k.border)}>
+          <div key={k.label} className={cn("bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 ", k.border)}>
             <p className="text-xs text-[var(--text-secondary)] font-medium">{k.label}</p>
             <p className="text-2xl font-mono font-bold mt-1 text-[var(--text-primary)]">{k.value}</p>
           </div>
@@ -123,7 +123,7 @@ function RecetasDashboard() {
 
       {/* Lotes producidos por semana */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 * 0.1 }}>
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Lotes producidos por semana</CardTitle>
         {weeklyData.some(d => d.lotes > 0) ? (
           <ResponsiveContainer minWidth={0} width="100%" height={220}>
@@ -144,7 +144,7 @@ function RecetasDashboard() {
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2 * 0.1 }}>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* PieChart: recetas por categoria */}
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Recetas por tipo</CardTitle>
           {categoryData.length > 0 ? (
             <ResponsiveContainer minWidth={0} width="100%" height={220}>
@@ -161,13 +161,13 @@ function RecetasDashboard() {
         </div>
 
         {/* Top 5 recetas más producidas */}
-        <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 sm:p-6 ">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Top 5 recetas más producidas</CardTitle>
           {top5Recetas.length > 0 ? (
             <div className="space-y-3">
               {top5Recetas.map((r, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <span className="w-5 h-5 rounded-full bg-[#2563EB] text-white text-xs flex items-center justify-center font-bold shrink-0">{i + 1}</span>
+                  <span className="w-5 h-5 rounded-full bg-[var(--accent-ink)] text-white text-xs flex items-center justify-center font-bold shrink-0">{i + 1}</span>
                   <span className="flex-1 text-sm text-[var(--text-primary)] truncate">{r.nombre}</span>
                   <span className="text-sm font-bold font-mono text-[var(--text-primary)]">{r.count}</span>
                 </div>
@@ -539,7 +539,7 @@ export default function RecetasModule() {
             <div className="flex flex-col items-center justify-center py-12 gap-2">
               <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
               <p className="text-sm text-[var(--data-error-500)]">{error}</p>
-              <button onClick={fetchRecetas} className="text-xs text-[#2563EB] hover:underline font-semibold">Reintentar</button>
+              <button onClick={fetchRecetas} className="text-xs text-[var(--accent-ink)] hover:underline font-semibold">Reintentar</button>
             </div>
           ) : recetas.length === 0 ? (
             <EmptyState
@@ -579,14 +579,14 @@ export default function RecetasModule() {
                       placeholder="Buscar receta..."
                       value={recetaSearch}
                       onChange={e => setRecetaSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 h-12 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full pl-9 pr-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30"
                     />
                   </div>
                   <div className="flex gap-1 flex-wrap">
                     {(["todas", "activas", "inactivas"] as const).map(f => (
                       <button key={f} onClick={() => setRecetaFilter(f)} className={cn(
                         "shrink-0 px-3 min-h-[44px] rounded-xl text-xs font-bold transition-colors",
-                        recetaFilter === f ? "bg-[#2563EB] text-white" : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
+                        recetaFilter === f ? "bg-[var(--accent-ink)] text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)]"
                       )}>
                         {f.charAt(0).toUpperCase() + f.slice(1)}
                       </button>
@@ -595,7 +595,7 @@ export default function RecetasModule() {
                   <select
                     value={recetaSort}
                     onChange={e => setRecetaSort(e.target.value as typeof recetaSort)}
-                    className="px-3 h-12 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                    className="px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30"
                   >
                     <option value="nombre">Nombre A-Z</option>
                     <option value="costo-asc">Costo menor</option>
@@ -622,12 +622,12 @@ export default function RecetasModule() {
                         <div
                           key={r.id}
                           className={cn(
-                            "relative text-left bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4  hover:shadow-[var(--shadow-lg)] hover:scale-[1.01] transition-all group",
+                            "relative text-left bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 hover:shadow-[var(--shadow-lg)] hover:scale-[1.01] transition-all group",
                             !r.activa && "opacity-60"
                           )}
                         >
                           {!r.activa && (
-                            <span className="absolute top-2 right-2 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-200 text-[var(--text-secondary)]">Inactiva</span>
+                            <span className="absolute top-2 right-2 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--rule-base)] text-[var(--text-secondary)]">Inactiva</span>
                           )}
                           <div className="text-center mb-3">
                             <span className="text-4xl">
@@ -639,9 +639,9 @@ export default function RecetasModule() {
                                "\uD83C\uDF73"}
                             </span>
                           </div>
-                          <p className="font-bold text-[var(--text-primary)] text-center truncate group-hover:text-[#2563EB] transition-colors">{r.nombre}</p>
+                          <p className="font-bold text-[var(--text-primary)] text-center truncate group-hover:text-[var(--accent-ink)] transition-colors">{r.nombre}</p>
                           <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-                            <span className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] bg-gray-100 rounded-full px-2 py-0.5">
+                            <span className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] bg-[var(--rule-soft)] rounded-full px-2 py-0.5">
                               <Package className="h-3 w-3" /> {r.ingredientes.length} ing.
                             </span>
                           </div>
@@ -686,13 +686,13 @@ export default function RecetasModule() {
                           <div className="mt-3 pt-3 border-t border-[var(--rule-soft)] flex gap-2">
                             <button
                               onClick={(e) => { e.stopPropagation(); setSelected(r); setShowProducir(true); setProducirCantidad(""); setProducirNotas(""); }}
-                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] transition-colors"
+                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] transition-colors"
                             >
                               Producir
                             </button>
                             <button
                               onClick={() => openDetail(r)}
-                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-[#2563EB] bg-[#2563EB]/10 hover:bg-[#2563EB]/20 transition-colors"
+                              className="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] bg-[var(--accent-ink)]/10 hover:bg-[var(--accent-ink)]/20 transition-colors"
                             >
                               Ver detalle
                             </button>
@@ -738,12 +738,12 @@ export default function RecetasModule() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-[var(--color-card)] border-l border-[var(--rule-base)] overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)]">{selected.nombre}</CardTitle>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -754,8 +754,8 @@ export default function RecetasModule() {
 
                 {/* ── Análisis de costo (contract RecetaCostBreakdown) ─────── */}
                 {costLoading && (
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
-                    <Loader2 className="h-4 w-4 animate-spin text-[#2563EB]" />
+                  <div className="flex items-center gap-2 p-3 bg-[var(--surface-sunken)] rounded-xl">
+                    <Loader2 className="h-4 w-4 animate-spin text-[var(--accent-ink)]" />
                     <span className="text-xs text-[var(--text-secondary)]">Cargando análisis de costo...</span>
                   </div>
                 )}
@@ -789,7 +789,7 @@ export default function RecetasModule() {
                         <p className="text-xs uppercase text-[var(--text-secondary)]">Indirectos</p>
                         <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoIndirectos)}</p>
                       </div>
-                      <div className="bg-white dark:bg-[var(--color-card)] rounded-lg p-2 border border-[var(--data-success-500)]/30">
+                      <div className="bg-[var(--surface-raised)] rounded-lg p-2 border border-[var(--data-success-500)]/30">
                         <p className="text-xs uppercase text-[var(--data-success-500)]">Total unitario</p>
                         <p className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(costData.costoTotalUnitario)}</p>
                       </div>
@@ -836,7 +836,7 @@ export default function RecetasModule() {
                   return (
                     <>
                       {/* Cost summary */}
-                      <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                      <div className="bg-[var(--surface-sunken)] rounded-xl p-4 space-y-2">
                         <div className="flex items-center justify-between">
                           <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Costo total estimado</p>
                           <p className="text-xl font-bold text-[var(--text-primary)]">{formatCurrency(selected.costoTotal)}</p>
@@ -891,7 +891,7 @@ export default function RecetasModule() {
                               const costoUnit = prod?.costPrice ?? prod?.price ?? 0;
                               const costoLinea = costoUnit * ing.cantidad;
                               return (
-                                <div key={ing.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                                <div key={ing.id} className="flex items-center gap-3 p-3 bg-[var(--surface-sunken)] rounded-xl">
                                   <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                                     <Package className="h-4 w-4 text-[var(--data-success-500)]" />
                                   </div>
@@ -910,7 +910,7 @@ export default function RecetasModule() {
                               );
                             })}
                             {/* Total row */}
-                            <div className="flex items-center justify-between p-3 bg-gray-100 rounded-xl">
+                            <div className="flex items-center justify-between p-3 bg-[var(--rule-soft)] rounded-xl">
                               <p className="text-xs font-bold text-[var(--text-secondary)]">Total ingredientes</p>
                               <p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.costoTotal)}</p>
                             </div>
@@ -921,7 +921,7 @@ export default function RecetasModule() {
                       {/* Producir button */}
                       <button
                         onClick={() => { setShowProducir(true); setProducirError(null); }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8]  transition-colors"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] transition-colors"
                       >
                         <Layers className="h-4 w-4" />
                         Producir Lote
@@ -956,13 +956,13 @@ export default function RecetasModule() {
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && resetNew()}
             >
-              <div className="w-full max-w-xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh]">
+              <div className="w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh]">
                 {/* UX Mejora 12: Sticky header */}
-                <div className="sticky top-0 z-10 bg-white dark:bg-[var(--color-card)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
+                <div className="sticky top-0 z-10 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
                   <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">
                     Nueva Receta — Paso {step}/3
                   </CardTitle>
-                  <button onClick={resetNew} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                  <button onClick={resetNew} className="p-1 hover:bg-[var(--rule-soft)] rounded-xl transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -971,7 +971,7 @@ export default function RecetasModule() {
                 {/* Steps indicator */}
                 <div className="flex gap-2">
                   {[1, 2, 3].map(s => (
-                    <div key={s} className={cn("flex-1 h-1.5 rounded-full", step >= s ? "bg-[#2563EB]" : "bg-gray-200")} />
+                    <div key={s} className={cn("flex-1 h-1.5 rounded-full", step >= s ? "bg-[var(--accent-ink)]" : "bg-[var(--rule-base)]")} />
                   ))}
                 </div>
 
@@ -984,7 +984,7 @@ export default function RecetasModule() {
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                         placeholder="Ej: Pan de yuca"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30"
                       />
                     </Field>
                     <Field label="Descripción (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
@@ -993,7 +993,7 @@ export default function RecetasModule() {
                         onChange={e => setNewDesc(e.target.value)}
                         placeholder="Proceso de preparación..."
                         rows={2}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 resize-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30 resize-none"
                       />
                     </Field>
                     <Field label="ID Producto final (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
@@ -1002,7 +1002,7 @@ export default function RecetasModule() {
                         value={newProductoId}
                         onChange={e => setNewProductoId(e.target.value)}
                         placeholder="ID del producto resultante"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30"
                       />
                     </Field>
                   </div>
@@ -1015,7 +1015,7 @@ export default function RecetasModule() {
                       <p className="text-sm font-bold text-[var(--text-primary)]">Ingredientes</p>
                       <button
                         onClick={addIngrediente}
-                        className="text-xs font-bold text-[#2563EB] hover:underline"
+                        className="text-xs font-bold text-[var(--accent-ink)] hover:underline"
                       >
                         + Agregar
                       </button>
@@ -1024,14 +1024,14 @@ export default function RecetasModule() {
                       <p className="text-xs text-[var(--text-tertiary)] text-center py-4">Agrega ingredientes con el botón de arriba</p>
                     )}
                     {newIngredientes.map((ing, i) => (
-                      <div key={i} className="flex gap-2 items-end bg-gray-50 rounded-xl p-3">
+                      <div key={i} className="flex gap-2 items-end bg-[var(--surface-sunken)] rounded-xl p-3">
                         <Field className="flex-1" label="ID Producto" labelClassName="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">
                           <input
                             type="number"
                             value={ing.productoId}
                             onChange={e => updateIngrediente(i, "productoId", e.target.value)}
                             placeholder="ID"
-                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
+                            className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-ink)]/30"
                           />
                         </Field>
                         <Field className="w-20" label="Cantidad" labelClassName="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">
@@ -1041,7 +1041,7 @@ export default function RecetasModule() {
                             value={ing.cantidad}
                             onChange={e => updateIngrediente(i, "cantidad", e.target.value)}
                             placeholder="0"
-                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
+                            className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-ink)]/30"
                           />
                         </Field>
                         <Field className="w-20" label="Unidad" labelClassName="block text-xs font-bold text-[var(--text-tertiary)] mb-0.5">
@@ -1050,12 +1050,12 @@ export default function RecetasModule() {
                             value={ing.unidad}
                             onChange={e => updateIngrediente(i, "unidad", e.target.value)}
                             placeholder="kg"
-                            className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/30"
+                            className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-ink)]/30"
                           />
                         </Field>
                         <button
                           onClick={() => removeIngrediente(i)}
-                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
+                          className="p-1.5 rounded-xl hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -1067,7 +1067,7 @@ export default function RecetasModule() {
                 {/* Step 3: Resumen */}
                 {step === 3 && (
                   <div className="space-y-3">
-                    <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                    <div className="bg-[var(--surface-sunken)] rounded-xl p-4 space-y-2">
                       <p className="text-sm font-bold text-[var(--text-primary)]">{newName || "Sin nombre"}</p>
                       {newDesc && <p className="text-xs text-[var(--text-secondary)]">{newDesc}</p>}
                       <p className="text-xs text-[var(--text-tertiary)]">{newIngredientes.length} ingredientes</p>
@@ -1080,18 +1080,18 @@ export default function RecetasModule() {
                 )}
                 </div>
                 {/* UX Mejora 12: Sticky footer */}
-                <div className="sticky bottom-0 bg-white dark:bg-[var(--color-card)] border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
+                <div className="sticky bottom-0 bg-[var(--surface-raised)] border-t border-[var(--rule-base)] px-6 py-4 flex justify-end gap-3 rounded-b-2xl">
                   {step > 1 ? (
                     <button
                       onClick={() => setStep(s => s - 1)}
-                      className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 rounded-lg transition-colors"
+                      className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] rounded-xl transition-colors"
                     >
                       Anterior
                     </button>
                   ) : (
                     <button
                       onClick={resetNew}
-                      className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 rounded-lg transition-colors"
+                      className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] rounded-xl transition-colors"
                     >
                       Cancelar
                     </button>
@@ -1099,7 +1099,7 @@ export default function RecetasModule() {
                   {step < 3 ? (
                     <button
                       onClick={() => setStep(s => s + 1)}
-                      className="px-4 py-2 text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] rounded-lg  transition-colors"
+                      className="px-4 py-2 text-sm font-bold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] rounded-xl transition-colors"
                     >
                       Siguiente
                     </button>
@@ -1107,7 +1107,7 @@ export default function RecetasModule() {
                     <button
                       onClick={handleCreate}
                       disabled={creating}
-                      className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 rounded-lg  transition-colors"
+                      className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] disabled:opacity-50 rounded-xl transition-colors"
                     >
                       {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                       Crear Receta
@@ -1140,7 +1140,7 @@ export default function RecetasModule() {
               className="fixed inset-0 z-[60] flex items-center justify-center p-4"
               onClick={e => e.target === e.currentTarget && setShowProducir(false)}
             >
-              <div className="w-full max-w-sm bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
+              <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
                 <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Producir Lote</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)]">
                   Receta: <span className="font-bold text-[var(--text-primary)]">{selected.nombre}</span>
@@ -1154,7 +1154,7 @@ export default function RecetasModule() {
                       value={producirCantidad}
                       onChange={e => setProducirCantidad(e.target.value)}
                       placeholder="Ej: 10"
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30"
                     />
                   </Field>
 
@@ -1169,8 +1169,8 @@ export default function RecetasModule() {
                     const margen = precioVenta > 0 ? Math.round(((precioVenta - costoUnitario) / precioVenta) * 100) : null;
 
                     return (
-                      <div className="bg-[#2563EB]/5 border border-[#2563EB]/20 rounded-xl p-3 space-y-1.5">
-                        <p className="text-xs uppercase font-bold text-[#2563EB]">Estimacion de costos</p>
+                      <div className="bg-[var(--accent-ink)]/5 border border-[var(--accent-ink)]/20 rounded-xl p-3 space-y-1.5">
+                        <p className="text-xs uppercase font-bold text-[var(--accent-ink)]">Estimacion de costos</p>
                         <div className="flex justify-between text-xs text-[var(--text-primary)]">
                           <span>Costo por lote ({qty} uds):</span>
                           <span className="font-bold">{formatCurrency(costoLote)}</span>
@@ -1180,7 +1180,7 @@ export default function RecetasModule() {
                           <span className="font-bold">{formatCurrency(costoUnitario)}</span>
                         </div>
                         {margen !== null && (
-                          <div className="flex justify-between text-xs text-[var(--text-primary)] pt-1 border-t border-[#2563EB]/10">
+                          <div className="flex justify-between text-xs text-[var(--text-primary)] pt-1 border-t border-[var(--accent-ink)]/10">
                             <span>Si vendes a {formatCurrency(precioVenta)}:</span>
                             <span className={cn(
                               "font-bold",
@@ -1246,7 +1246,7 @@ export default function RecetasModule() {
                       value={producirNotas}
                       onChange={e => setProducirNotas(e.target.value)}
                       placeholder="Observaciones..."
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ink)]/30"
                     />
                   </Field>
                 </div>
@@ -1258,14 +1258,14 @@ export default function RecetasModule() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowProducir(false)}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleProducir}
                     disabled={producing}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50  transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] disabled:opacity-50 transition-colors"
                   >
                     {producing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
                     Producir
@@ -1360,23 +1360,23 @@ function ProducciónTab() {
       {lotes.length > 0 && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 overflow-x-auto">
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Lotes este mes</p>
               <p className="text-lg font-extrabold text-[var(--text-primary)]">{lotesEsteMes.length}</p>
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Costo promedio</p>
               <p className="text-lg font-extrabold text-[var(--text-primary)]">{formatCurrency(costoPromedio)}</p>
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-xs uppercase font-bold text-[var(--text-tertiary)]">Unidades producidas</p>
-              <p className="text-lg font-extrabold text-[#2563EB]">{unidadesProducidas}</p>
+              <p className="text-lg font-extrabold text-[var(--accent-ink)]">{unidadesProducidas}</p>
             </div>
           </div>
 
           {/* Grafica semanal */}
           {chartData.some(d => d.lotes > 0) && (
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 ">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 ">
               <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase mb-3 flex items-center gap-1.5">
                 <BarChart3 className="h-3.5 w-3.5" /> Producción semanal (ultimas 4 semanas)
               </h4>
@@ -1398,7 +1398,7 @@ function ProducciónTab() {
         </>
       )}
 
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-x-auto ">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-x-auto ">
         {lotes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
             <Layers className="h-8 w-8 text-[var(--text-tertiary)]" />
@@ -1433,10 +1433,10 @@ function ProducciónTab() {
               <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                 <p className="text-xs text-[var(--text-secondary)]">{lotes.length} lotes — Pag. {page}/{totalPages}</p>
                 <div className="flex gap-1">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30">
+                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] disabled:opacity-30">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30">
+                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] disabled:opacity-30">
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>

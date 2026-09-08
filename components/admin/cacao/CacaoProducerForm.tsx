@@ -61,8 +61,8 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
     <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="!max-w-[860px]"
       footer={
         <div className="flex items-center justify-end gap-2 px-5 py-3.5">
-          <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="submit" form="cacao-producer-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar productor"}</button>
+          <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button type="submit" form="cacao-producer-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar productor"}</button>
         </div>
       }
     >
@@ -72,7 +72,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Users className="h-5 w-5" strokeWidth={1.75} /></span>
             <div><CardTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">Nuevo productor</CardTitle><p className="text-xs text-[var(--text-tertiary)]">Proveedor de cacao · maestro</p></div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-lg p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"><X className="h-4 w-4" /></button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-xl p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"><X className="h-4 w-4" /></button>
         </header>
 
         <div className="flex-1 overflow-y-auto">
@@ -103,7 +103,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
                     type="button"
                     onClick={useMyLocation}
                     disabled={geoLoading}
-                    className="inline-flex h-10 items-center gap-2 rounded-lg border-2 border-[var(--accent)] px-3 text-sm font-bold text-[var(--accent)] hover:bg-primary/10 disabled:opacity-60"
+                    className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--accent)] px-3 text-sm font-bold text-[var(--accent)] hover:bg-primary/10 disabled:opacity-60"
                   >
                     {geoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
                     Usar mi ubicación (GPS)

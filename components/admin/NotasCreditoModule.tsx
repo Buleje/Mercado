@@ -964,7 +964,7 @@ export default function NotasCreditoModule() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
             <input ref={searchRef} type="text" placeholder="Buscar por número, cliente, RUC/DNI..."
               aria-label="Buscar documentos" value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
           <div className="flex gap-1 items-center">
             {(["", "BORRADOR", "EMITIDA", "ANULADA"] as const).map(s => {
@@ -979,7 +979,7 @@ export default function NotasCreditoModule() {
               );
             })}
             <button onClick={() => setShowAdvFilters(s => !s)}
-              className={cn("p-2 rounded-lg transition-colors relative", showAdvFilters ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]")}>
+              className={cn("p-2 rounded-xl transition-colors relative", showAdvFilters ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]")}>
               <Filter className="h-4 w-4" />
               {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--data-error-500)] text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">{activeFilterCount}</span>}
             </button>
@@ -987,7 +987,7 @@ export default function NotasCreditoModule() {
               {([["table", LayoutList], ["cards", LayoutGrid], ["kanban", Kanban]] as const).map(([mode, Icon]) => (
                 <button key={mode} onClick={() => setViewMode(mode)}
                   title={mode === "table" ? "Tabla" : mode === "cards" ? "Tarjetas" : "Kanban"}
-                  className={cn("p-1.5 rounded-lg transition-colors", viewMode === mode ? "bg-[var(--surface-raised)] text-primary " : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>
+                  className={cn("p-1.5 rounded-xl transition-colors", viewMode === mode ? "bg-[var(--surface-raised)] text-primary " : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>
                   <Icon className="h-3.5 w-3.5" />
                 </button>
               ))}
@@ -1001,19 +1001,19 @@ export default function NotasCreditoModule() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[var(--surface-alt)] rounded-xl p-3">
                 <Field label="Desde" labelClassName="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">
                   <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)]" />
+                    className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)]" />
                 </Field>
                 <Field label="Hasta" labelClassName="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">
                   <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)]" />
+                    className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)]" />
                 </Field>
                 <Field label="Monto min" labelClassName="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">
                   <input type="number" value={minAmount} onChange={e => setMinAmount(e.target.value)} placeholder="0"
-                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)]" />
+                    className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)]" />
                 </Field>
                 <Field label="Monto max" labelClassName="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] block mb-1">
                   <input type="number" value={maxAmount} onChange={e => setMaxAmount(e.target.value)} placeholder={"\u221e"}
-                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)]" />
+                    className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)]" />
                 </Field>
               </div>
             </m.div>
@@ -1114,7 +1114,7 @@ export default function NotasCreditoModule() {
             </div>
             <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin notas de crédito</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Las notas de crédito se crean al hacer devoluciones, anulaciones o ajustes a documentos existentes</p>
-            <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); }} className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark">Crear NC</button>
+            <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); }} className="bg-primary text-white px-6 py-2.5 rounded-xl font-medium hover:bg-primary-dark">Crear NC</button>
           </div>
         ) : viewMode === "cards" ? (
           <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1193,16 +1193,16 @@ export default function NotasCreditoModule() {
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {nc.status === "BORRADOR" && (
-                              <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="p-1 rounded-lg hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" title="Emitir">
+                              <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="p-1 rounded-xl hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" title="Emitir">
                                 <Send className="h-3.5 w-3.5" />
                               </button>
                             )}
                             {nc.status !== "ANULADA" && (
-                              <button onClick={(e) => { e.stopPropagation(); handleAnular(nc); }} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error-500)]" title="Anular">
+                              <button onClick={(e) => { e.stopPropagation(); handleAnular(nc); }} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] text-[var(--data-error-500)]" title="Anular">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             )}
-                            <button onClick={(e) => { e.stopPropagation(); handleDuplicate(nc); }} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="Duplicar">
+                            <button onClick={(e) => { e.stopPropagation(); handleDuplicate(nc); }} className="p-1 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="Duplicar">
                               <Copy className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -1217,8 +1217,8 @@ export default function NotasCreditoModule() {
               <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                 <p className="text-xs text-[var(--text-secondary)]">{filteredNotas.length} doc{filteredNotas.length !== 1 ? "s" : ""} {"\u2014"} P{"\u00e1"}g. {page}/{totalPages}</p>
                 <div className="flex gap-1">
-                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
-                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
+                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
+                  <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
                 </div>
               </div>
             )}
@@ -1245,7 +1245,7 @@ export default function NotasCreditoModule() {
                     </CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">Creada {formatDateTime(selected.createdAt)}</p>
                   </div>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1383,7 +1383,7 @@ export default function NotasCreditoModule() {
                       </div>
                       Nueva Nota de Cr{"\u00e9"}dito
                     </CardTitle>
-                    <button onClick={resetWizard} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+                    <button onClick={resetWizard} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
                       <X className="h-5 w-5" />
                     </button>
                   </div>
@@ -1404,7 +1404,7 @@ export default function NotasCreditoModule() {
                       <div className="flex items-center gap-1 p-1 bg-[var(--surface-sunken)] rounded-xl">
                         {PICKER_TABS.map(tab => (
                           <button key={tab.id} onClick={() => setPickerDocType(tab.id)}
-                            className={cn("flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all",
+                            className={cn("flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all",
                               pickerDocType === tab.id
                                 ? "bg-[var(--surface-raised)] text-[var(--text-primary)] "
                                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>
@@ -1423,7 +1423,7 @@ export default function NotasCreditoModule() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                         <input type="text" value={pickerSearch} onChange={e => setPickerSearch(e.target.value)}
                           placeholder="Buscar por número, cliente, RUC/DNI..."
-                          className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                          className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                         {pickerLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--text-tertiary)]" />}
                       </div>
 
@@ -1552,7 +1552,7 @@ export default function NotasCreditoModule() {
                       {/* Description */}
                       <Field label={"Descripci\u00f3n del motivo"} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <textarea value={form.descripcionMotivo} onChange={e => setForm(p => ({ ...p, descripcionMotivo: e.target.value }))} placeholder="Detalle del motivo..." rows={2}
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+                          className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
                       </Field>
 
                       {/* Item Quantity Picker (if linked to a sale) */}
@@ -1606,7 +1606,7 @@ export default function NotasCreditoModule() {
                             <div className="relative">
                               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                               <input id={id} type="number" step="0.01" min="0.01" value={form.monto} onChange={e => setForm(p => ({ ...p, monto: e.target.value }))} placeholder="0.00"
-                                className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                                className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                             </div>
                           )}
                         </Field>
@@ -1620,7 +1620,7 @@ export default function NotasCreditoModule() {
                       {/* Notes */}
                       <Field label="Notas internas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                         <input type="text" value={form.notasText} onChange={e => setForm(p => ({ ...p, notasText: e.target.value }))} placeholder="Observaciones..."
-                          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                          className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30" />
                       </Field>
 
                       {/* Return stock toggle */}
@@ -1641,7 +1641,7 @@ export default function NotasCreditoModule() {
 
                       {/* Navigation */}
                       <div className="flex gap-2 pt-2">
-                        <button onClick={() => setWizardStep(0)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
+                        <button onClick={() => setWizardStep(0)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                           {"\u2190"} Atr{"\u00e1"}s
                         </button>
                         <button onClick={() => {
@@ -1649,7 +1649,7 @@ export default function NotasCreditoModule() {
                           if (!form.descripcionMotivo.trim()) { setCreateError("Completa la descripci\u00f3n"); return; }
                           if (montoNum <= 0) { setCreateError("El monto debe ser mayor a 0"); return; }
                           setCreateError(null); setWizardStep(2);
-                        }} className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors">
+                        }} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors">
                           Siguiente {"\u2192"}
                         </button>
                       </div>
@@ -1717,11 +1717,11 @@ export default function NotasCreditoModule() {
 
                       {/* Actions */}
                       <div className="flex gap-2 pt-2">
-                        <button onClick={() => setWizardStep(1)} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
+                        <button onClick={() => setWizardStep(1)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                           {"\u2190"} Atr{"\u00e1"}s
                         </button>
                         <button onClick={handleCreate} disabled={creating}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-all">
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-all">
                           {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                           Crear Nota de Cr{"\u00e9"}dito
                         </button>

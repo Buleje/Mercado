@@ -191,10 +191,10 @@ function ResultSkeleton() {
     <div className="px-4 py-3 space-y-3 animate-pulse">
       {[1, 2, 3].map(i => (
         <div key={i} className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[var(--rule-soft)] dark:bg-surface shrink-0" />
+          <div className="w-8 h-8 rounded-lg bg-[var(--rule-soft)] shrink-0" />
           <div className="flex-1 space-y-1.5">
-            <div className="h-3.5 bg-[var(--rule-soft)] dark:bg-surface rounded w-2/3" />
-            <div className="h-3 bg-[var(--rule-soft)] dark:bg-surface rounded w-1/3" />
+            <div className="h-3.5 bg-[var(--rule-soft)] rounded w-2/3" />
+            <div className="h-3 bg-[var(--rule-soft)] rounded w-1/3" />
           </div>
         </div>
       ))}
@@ -317,7 +317,7 @@ const QUICK_ACCESS = [
   { label: "Mi stock",        tab: "inventario", icon: Boxes,          color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
   { label: "Mis clientes",    tab: "clientes",         icon: Users,          color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { label: "Caja",            tab: "ventas-caja",             icon: Monitor,        color: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" },
-  { label: "Reportes",        tab: "reportes-documentos",  icon: FileText,       color: "text-[var(--text-secondary)] bg-[var(--surface-alt)] dark:bg-surface" },
+  { label: "Reportes",        tab: "reportes-documentos",  icon: FileText,       color: "text-[var(--text-secondary)] bg-[var(--surface-alt)] " },
   { label: "Promociones",     tab: "productos",       icon: TrendingUp,     color: "text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
 ];
 
@@ -516,13 +516,13 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
               {query && (
                 <button
                   onClick={() => { setQuery(""); setSelected(0); }}
-                  className="p-1 rounded-full hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors"
+                  className="p-1 rounded-full hover:bg-[var(--surface-sunken)] transition-colors"
                   aria-label="Limpiar búsqueda"
                 >
                   <X className="h-4 w-4 text-[var(--text-tertiary)]" />
                 </button>
               )}
-              <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-bold font-mono text-[var(--text-tertiary)] bg-[var(--surface-sunken)] dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+              <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-bold font-mono text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                 Esc
               </kbd>
             </div>
@@ -550,7 +550,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
               return (
                 <div key={groupKey}>
                   {/* Cabecera de grupo — eyebrow uppercase + counter */}
-                  <div className="flex items-center justify-between gap-2 px-5 py-2 bg-[var(--surface-sunken)] dark:bg-surface border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] sticky top-0 z-10">
+                  <div className="flex items-center justify-between gap-2 px-5 py-2 bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] sticky top-0 z-10">
                     <div className="flex items-center gap-2">
                       <GroupIcon className={cn("h-3.5 w-3.5", meta.color)} strokeWidth={2.25} />
                       <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] dark:text-muted">
@@ -588,11 +588,11 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                           "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0",
                           isSelected
                             ? "bg-primary/10 ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_25%,transparent)]"
-                            : "hover:bg-[var(--surface-sunken)] dark:hover:bg-surface"
+                            : "hover:bg-[var(--surface-sunken)] "
                         )}
                       >
                         <div className={cn(
-                          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[var(--surface-sunken)] dark:bg-surface",
+                          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[var(--surface-sunken)] ",
                           meta.color
                         )}>
                           <Icon className="h-4 w-4" />
@@ -640,7 +640,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                   <button
                     key={item.tab}
                     onClick={() => { onNavigate(item.tab); onClose(); }}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors text-left"
+                    className="flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] transition-colors text-left"
                   >
                     <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", item.color)}>
                       <Icon className="h-4 w-4" strokeWidth={2} />
@@ -656,7 +656,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
         )}
 
         {/* ── Footer — atajos de teclado discretos ── */}
-        <div className="px-5 py-2.5 bg-[var(--surface-sunken)] dark:bg-surface border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
+        <div className="px-5 py-2.5 bg-[var(--surface-sunken)] border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] dark:text-muted">
             <span className="flex items-center gap-1.5">
               <kbd className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-1.5 rounded font-mono font-semibold">↑↓</kbd>

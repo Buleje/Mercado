@@ -348,7 +348,7 @@ export function BloqueEspecie({
                       title={b.bloque.amparaManualM3 == null
                         ? "Techo del bloque. Se calcula como m³ × % aprovechable; escribí el tuyo para decirlo a mano — el bloque se reparte de nuevo dentro de esa capacidad."
                         : "Dicho a mano: manda sobre el % aprovechable."}
-                      className={`h-7 w-20 rounded-md border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.bloque.amparaManualM3 == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
+                      className={`h-7 w-20 rounded-xl border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.bloque.amparaManualM3 == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
                     />
                     m³
                   </label>
@@ -364,7 +364,7 @@ export function BloqueEspecie({
                       placeholder="todas"
                       aria-label={`Tope de piezas del bloque ${b.bloque.etiqueta || "sin etiqueta"}`}
                       title="Hasta cuántas piezas se lleva este bloque. Vacío = las que entren por volumen."
-                      className={`h-7 w-16 rounded-md border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.bloque.piezasManual == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
+                      className={`h-7 w-16 rounded-xl border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.bloque.piezasManual == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
                     />
                     pzas
                   </label>
@@ -715,7 +715,7 @@ function AgregarLineaBloque({
           value={clave}
           onChange={(ev) => setClave(ev.target.value)}
           aria-label="Tipo a agregar a este bloque"
-          className="h-9 rounded-md border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
         >
           <option value="">Elegir…</option>
           {opciones.map((o) => <option key={o.clave} value={o.clave}>{o.label}</option>)}
@@ -731,7 +731,7 @@ function AgregarLineaBloque({
               inputMode="numeric"
               placeholder="0"
               aria-label={`Piezas de ${opcionElegida?.label ?? "el tipo elegido"} a agregar`}
-              className="h-9 w-20 rounded-md border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="h-9 w-20 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </label>
           <label className="text-sm">
@@ -743,7 +743,7 @@ function AgregarLineaBloque({
               inputMode="decimal"
               placeholder="0"
               aria-label={`Metros cúbicos de ${opcionElegida?.label ?? "el tipo elegido"} a agregar`}
-              className="h-9 w-24 rounded-md border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="h-9 w-24 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </label>
         </>
@@ -751,7 +751,7 @@ function AgregarLineaBloque({
       <button
         type="button"
         onClick={() => { setAbierto(false); setClave(""); }}
-        className="h-9 rounded-md border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+        className="h-9 rounded-lg border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
       >
         Listo
       </button>
@@ -851,7 +851,7 @@ function FilaConMedidas({
               placeholder={fmtPiezas(a.piezas)}
               aria-label={`Piezas de ${a.label}, editable`}
               title="Piezas declaradas a mano para ESTA línea. Vacío = lo que reparte el cálculo — el resto del bloque se reparte de nuevo con lo que sobre."
-              className={`h-8 w-20 rounded-md border-2 bg-[var(--surface-raised)] px-1.5 text-right font-mono text-sm tabular-nums outline-none focus:border-[var(--accent)] ${overrideActual?.piezas == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`}
+              className={`h-8 w-20 rounded-xl border-2 bg-[var(--surface-raised)] px-1.5 text-right font-mono text-sm tabular-nums outline-none focus:border-[var(--accent)] ${overrideActual?.piezas == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`}
             />
           ) : fmtPiezas(a.piezas)}
         </td>
@@ -879,7 +879,7 @@ function FilaConMedidas({
               placeholder={fmtM3(a.m3)}
               aria-label={`Ampara m³ de ${a.label}, editable`}
               title="Tope de m³ dicho a mano para ESTA línea — el número que queda es el real que lograron las piezas que entraron, nunca más del tope. Vacío = lo reparte el cálculo."
-              className={`h-8 w-24 rounded-md border-2 bg-[var(--surface-raised)] px-1.5 text-right font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${overrideActual?.m3 == null ? "border-dashed border-[var(--rule-base)] text-[var(--accent)]" : "border-[var(--accent)] text-[var(--accent)]"}`}
+              className={`h-8 w-24 rounded-xl border-2 bg-[var(--surface-raised)] px-1.5 text-right font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${overrideActual?.m3 == null ? "border-dashed border-[var(--rule-base)] text-[var(--accent)]" : "border-[var(--accent)] text-[var(--accent)]"}`}
             />
           ) : fmtM3(a.m3)}
         </td>

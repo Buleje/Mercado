@@ -97,7 +97,7 @@ export default function OrderTimeline({
                         ? "border-[var(--data-success-500)]/30 bg-primary/10 text-white"
                         : isCurrent
                           ? "border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)]"
-                          : "border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
+                          : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)]"
                   )}
                 >
                   {isCancelled ? (
@@ -146,7 +146,7 @@ export default function OrderTimeline({
                         ? "bg-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30"
                         : isCompleted
                           ? "bg-primary/10"
-                          : "bg-gray-200 dark:bg-gray-700"
+                          : "bg-[var(--rule-base)] "
                     )}
                     style={{
                       left: "50%",
@@ -174,7 +174,7 @@ export default function OrderTimeline({
           <button
             onClick={() => onChangeStatus(nextAction)}
             disabled={updating}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark disabled:opacity-50 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark disabled:opacity-50 transition-colors"
           >
             {updating ? (
               <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -186,7 +186,7 @@ export default function OrderTimeline({
           <button
             onClick={() => onChangeStatus("cancelado")}
             disabled={updating}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] text-xs font-bold hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] text-xs font-bold hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
           >
             <X className="h-3.5 w-3.5" /> Cancelar
           </button>

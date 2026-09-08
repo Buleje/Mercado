@@ -284,7 +284,7 @@ export default function OCPrintPreviewModal({
               }
             }}
             disabled={!selectedSupplier}
-            className="flex-1 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Imprimir
           </button>
@@ -292,14 +292,14 @@ export default function OCPrintPreviewModal({
             type="button"
             onClick={handleDownloadPDF}
             disabled={!selectedSupplier}
-            className="flex-1 py-2 bg-primary/10 text-white rounded-lg text-sm font-medium hover:bg-primary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 py-2 bg-primary/10 text-white rounded-xl text-sm font-medium hover:bg-primary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Descargar PDF
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-[var(--text-primary)] rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
+            className="px-4 py-2 bg-[var(--rule-base)] text-[var(--text-primary)] rounded-xl text-sm font-medium hover:bg-gray-300 transition-colors"
           >
             Cerrar
           </button>

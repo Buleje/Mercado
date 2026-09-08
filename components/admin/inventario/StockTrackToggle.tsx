@@ -23,7 +23,7 @@ export function StockTrackToggle({ value, onChange }: { value: boolean; onChange
             type="button"
             onClick={() => onChange(val)}
             className={cn(
-              "rounded-lg px-3 py-2 text-left transition-colors",
+              "rounded-xl px-3 py-2 text-left transition-colors",
               value === val
                 ? "bg-[var(--accent)] text-white shadow-sm"
                 : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",

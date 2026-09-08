@@ -64,7 +64,7 @@ export default function POSFrequentProducts({
               className={cn(
                 "shrink-0 px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1.5",
                 outOfStock
-                  ? "bg-gray-100 dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
+                  ? "bg-[var(--rule-soft)] text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
                   : "bg-[var(--surface-raised)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:border-primary hover:bg-primary/5"
               )}
             >

@@ -241,7 +241,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] shrink-0"
+            className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] shrink-0"
             title="Cerrar"
           >
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />

@@ -243,8 +243,8 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors",
                         idx === selectedIdx
-                          ? "bg-[var(--surface-sunken)] dark:bg-white/10"
-                          : "text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5",
+                          ? "bg-[var(--surface-sunken)] "
+                          : "text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] ",
                       )}
                     >
                       {/* Icon: Lucide component with tinted bg, or emoji fallback */}

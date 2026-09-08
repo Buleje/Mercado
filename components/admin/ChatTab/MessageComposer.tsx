@@ -403,7 +403,7 @@ export function MessageComposer({
                   onChange={(e) => setPayAmount(e.target.value)}
                   placeholder="Monto (S/)"
                   aria-label="Monto a cobrar"
-                  className="h-10 flex-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold outline-none focus:border-primary"
+                  className="h-10 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold outline-none focus:border-primary"
                 />
                 <div className="flex overflow-hidden rounded-lg border border-[var(--rule-base)]">
                   <button type="button" onClick={() => setPayMethod("yape")} className={cn("px-3 text-sm font-bold transition-colors", payMethod === "yape" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-sunken)]")}>Yape</button>
@@ -415,14 +415,14 @@ export function MessageComposer({
                 onChange={(e) => setPayNumber(e.target.value)}
                 placeholder="Número a Yapear (opcional)"
                 aria-label="Número Yape o Plin"
-                className="h-9 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm outline-none focus:border-primary"
+                className="h-9 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm outline-none focus:border-primary"
               />
               <input
                 value={payNote}
                 onChange={(e) => setPayNote(e.target.value)}
                 placeholder="Nota (opcional, ej: pedido del sábado)"
                 aria-label="Nota del cobro"
-                className="h-9 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm outline-none focus:border-primary"
+                className="h-9 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm outline-none focus:border-primary"
               />
               <button
                 type="button"
@@ -445,7 +445,7 @@ export function MessageComposer({
                   onChange={(e) => setOriginalName(e.target.value)}
                   placeholder="¿Qué producto falta? (ej: Inca Kola 1.5L)"
                   aria-label="Producto que falta"
-                  className="mb-2 h-9 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 text-sm outline-none focus:border-primary"
+                  className="mb-2 h-9 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 text-sm outline-none focus:border-primary"
                 />
               )}
               <div className="mb-2 flex items-center gap-2 rounded-lg border border-[var(--rule-base)] px-2">
@@ -475,7 +475,7 @@ export function MessageComposer({
                       type="button"
                       onClick={() => (mode === "order" ? addToDraft(hit) : mode === "substitution" ? handleSubstitute(hit) : handleShare(hit))}
                       disabled={!!sharingId || (mode === "substitution" && !originalName.trim())}
-                      className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left hover:bg-[var(--surface-sunken)] disabled:opacity-60 dark:hover:bg-[var(--surface-sunken)]"
+                      className="flex w-full items-center gap-2 rounded-xl p-1.5 text-left hover:bg-[var(--surface-sunken)] disabled:opacity-60 dark:hover:bg-[var(--surface-sunken)]"
                     >
                       <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-md bg-[var(--surface-raised)]">
                         {hit.image && (
@@ -586,7 +586,7 @@ export function MessageComposer({
                   key={i}
                   type="button"
                   onClick={() => applySuggestion(s)}
-                  className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-left text-sm font-medium text-[var(--text-secondary)] transition-colors hover:border-primary hover:bg-primary/5 dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]"
+                  className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-left text-sm font-medium text-[var(--text-secondary)] transition-colors hover:border-primary hover:bg-primary/5 dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]"
                 >
                   {s}
                 </button>

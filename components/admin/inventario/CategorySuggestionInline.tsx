@@ -52,7 +52,7 @@ export function CategorySuggestionInline({
       <button
         type="button"
         onClick={() => onApply(detection.id)}
-        className="shrink-0 inline-flex items-center gap-1 rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 active:scale-95 transition-all"
+        className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 active:scale-95 transition-all"
       >
         Aplicar
       </button>

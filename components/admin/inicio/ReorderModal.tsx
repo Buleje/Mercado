@@ -168,7 +168,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                   type="button"
                   onClick={onClose}
                   aria-label="Cerrar"
-                  className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+                  className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -220,7 +220,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                                 onChange={(e) => setQty(id, Number(e.target.value))}
                                 onClick={(e) => e.preventDefault()}
                                 className={cn(
-                                  "w-20 px-2 py-1 text-sm font-semibold text-right rounded-md",
+                                  "w-20 px-2 py-1 text-sm font-semibold text-right rounded-xl",
                                   "bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
                                   "text-[var(--text-primary)]",
                                   "disabled:opacity-40",
@@ -246,7 +246,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Ej: urgente, confirmar precios, etc."
                     className={cn(
-                      "w-full px-3 py-2 text-sm rounded-md",
+                      "w-full px-3 py-2 text-sm rounded-xl",
                       "bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
                       "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
                       "focus:outline-none focus:ring-2 focus:ring-primary/40",
@@ -272,7 +272,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                     type="button"
                     onClick={onClose}
                     disabled={submitting}
-                    className="px-4 py-2 text-sm font-semibold rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] border border-[var(--rule-base)] transition-colors"
+                    className="px-4 py-2 text-sm font-semibold rounded-xl text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] border border-[var(--rule-base)] transition-colors"
                   >
                     Cancelar
                   </button>
@@ -281,7 +281,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                     onClick={handleSubmit}
                     disabled={submitting || selectedCount === 0}
                     className={cn(
-                      "inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all",
+                      "inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl transition-all",
                       "bg-primary text-white shadow-sm hover:shadow-md",
                       "disabled:opacity-50 disabled:cursor-not-allowed",
                     )}

@@ -57,10 +57,10 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
   if (loading) {
     return (
       <div className="space-y-4 p-4">
-        <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+        <div className="h-48 bg-[var(--rule-base)] rounded-lg animate-pulse" />
         <div className="grid grid-cols-2 gap-3">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+            <div key={i} className="h-20 bg-[var(--rule-base)] rounded-lg animate-pulse" />
           ))}
         </div>
       </div>

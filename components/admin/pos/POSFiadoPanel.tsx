@@ -107,7 +107,7 @@ export default function POSFiadoPanel({
   // Loading
   if (loading) {
     return (
-      <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+      <div className="flex items-center gap-2 p-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
         <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-tertiary)]" />
         <span className="text-xs text-[var(--text-tertiary)]">Consultando fiados...</span>
       </div>
@@ -181,13 +181,13 @@ export default function POSFiadoPanel({
                 value={cobroMonto}
                 onChange={(e) => { setCobroMonto(e.target.value); setCobroError(null); }}
                 placeholder={Number(data.montoPendiente).toFixed(2)}
-                className="w-full pl-7 pr-2 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                className="w-full pl-7 pr-2 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </div>
             <button
               onClick={handleCobrar}
               disabled={cobrando || !cobroMonto || Number(cobroMonto) <= 0}
-              className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+              className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
               {cobrando ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

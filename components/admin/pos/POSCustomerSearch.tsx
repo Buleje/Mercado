@@ -261,7 +261,7 @@ export default function POSCustomerSearch({
           <button
             onClick={onClear}
             aria-label="Quitar cliente"
-            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-white/50 dark:hover:bg-[var(--surface-raised)]/50 transition-colors shrink-0"
+            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-white/50 dark:hover:bg-[var(--surface-raised)]/50 transition-colors shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
@@ -308,7 +308,7 @@ export default function POSCustomerSearch({
                       step="0.10"
                       value={abonoMonto}
                       onChange={(e) => setAbonoMonto(e.target.value)}
-                      className="w-full pl-6 pr-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                      className="w-full pl-6 pr-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                     />
                   </div>
                   <button
@@ -386,7 +386,7 @@ export default function POSCustomerSearch({
                 <div className="flex gap-1">
                   <button
                     onClick={() => setShowRedeemSlider(false)}
-                    className="flex-1 text-sm py-1 rounded bg-gray-100 text-[var(--text-secondary)] font-bold"
+                    className="flex-1 text-sm py-1 rounded bg-[var(--rule-soft)] text-[var(--text-secondary)] font-bold"
                   >
                     Cancelar
                   </button>
@@ -442,7 +442,7 @@ export default function POSCustomerSearch({
           </div>
         )}
         {lastPurchase && Array.isArray(lastPurchase.items) && !loadingLastPurchase && (
-          <div className="bg-gray-50 dark:bg-surface rounded-lg px-3 py-2">
+          <div className="bg-[var(--surface-sunken)] rounded-lg px-3 py-2">
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
               Última compra: {getRelativeTime(lastPurchase.date)} — {lastPurchase.items.map(i => i.name).slice(0, 3).join(", ")}
               {lastPurchase.items.length > 3 && "..."} (S/{Number(lastPurchase.total).toFixed(2)})
@@ -506,7 +506,7 @@ export default function POSCustomerSearch({
               <button
                 key={c.phone}
                 onClick={() => handleSelect(c)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left border-b border-[var(--rule-base)] last:border-0"
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--surface-sunken)] transition-colors text-left border-b border-[var(--rule-base)] last:border-0"
               >
                 <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <User className="h-4 w-4 text-primary" />

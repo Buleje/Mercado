@@ -240,14 +240,14 @@ export default function PresupuestoPanel() {
                             if (e.key === "Enter") guardar(c.category);
                             if (e.key === "Escape") setEditando(null);
                           }}
-                          className="h-10 w-28 rounded-lg border-2 border-[var(--rule-base)] bg-white px-2 text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 dark:bg-[var(--color-card)]"
+                          className="h-10 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 "
                         />
                       </label>
                       <button
                         type="button"
                         onClick={() => guardar(c.category)}
                         disabled={guardando}
-                        className="inline-flex h-10 items-center gap-1 rounded-lg bg-primary px-3 text-sm font-bold text-white disabled:opacity-50"
+                        className="inline-flex h-10 items-center gap-1 rounded-xl bg-primary px-3 text-sm font-bold text-white disabled:opacity-50"
                       >
                         {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                         Guardar
@@ -257,7 +257,7 @@ export default function PresupuestoPanel() {
                     <button
                       type="button"
                       onClick={() => { setEditando(c.category); setBorrador(String(c.presupuesto ?? "")); }}
-                      className="inline-flex h-10 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                      className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                     >
                       <Pencil className="h-3.5 w-3.5" aria-hidden />
                       {c.presupuesto ? `Techo ${fmt(c.presupuesto)}` : "Poner techo"}

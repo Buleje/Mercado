@@ -57,7 +57,7 @@ export function MesaPartesBanner({ url, label }: { url: string; label: string })
         }}
         title="Copiar el link de la mesa de partes"
         aria-label="Copiar el link de la mesa de partes"
-        className="shrink-0 rounded-lg p-1 text-[var(--data-info-700)] transition hover:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]"
+        className="shrink-0 rounded-xl p-1 text-[var(--data-info-700)] transition hover:bg-[var(--data-info-500)]/15 dark:text-[var(--data-info-500)]"
       >
         {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
       </button>

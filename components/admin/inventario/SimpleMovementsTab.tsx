@@ -256,21 +256,21 @@ export default function SimpleMovementsTab() {
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative h-10 min-w-[200px] flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto, motivo o quién…" aria-label="Buscar movimientos" className="h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto, motivo o quién…" aria-label="Buscar movimientos" className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
         </div>
         <div className="flex h-10 items-center gap-1 rounded-lg bg-[var(--surface-sunken)] p-1">
           {(["hoy", "7d", "30d", "todo"] as const).map(p => (
-            <button key={p} onClick={() => setPeriod(p)} className={cn("rounded-md px-2.5 py-1.5 text-xs font-bold transition-colors", period === p ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>{p === "hoy" ? "Hoy" : p === "todo" ? "Todo" : p}</button>
+            <button key={p} onClick={() => setPeriod(p)} className={cn("rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors", period === p ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>{p === "hoy" ? "Hoy" : p === "todo" ? "Todo" : p}</button>
           ))}
         </div>
         <div className="flex h-10 items-center gap-1 rounded-lg bg-[var(--surface-sunken)] p-1">
           {([["all", "Todos"], ["in", "Entradas"], ["out", "Salidas"]] as const).map(([v, l]) => (
-            <button key={v} onClick={() => setFilterDir(v)} className={cn("rounded-md px-2.5 py-1.5 text-xs font-bold transition-colors", filterDir === v ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>{l}</button>
+            <button key={v} onClick={() => setFilterDir(v)} className={cn("rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors", filterDir === v ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>{l}</button>
           ))}
         </div>
-        <button onClick={() => void loadData()} title="Refrescar" className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"><RefreshCw className="h-4 w-4" /></button>
-        <button onClick={() => exportToCSV(filtered.map(m => ({ fecha: fmtDate(m.createdAt), producto: m.productName, tipo: m.label, cantidad: m.dir === "in" ? `+${m.quantity}` : `-${m.quantity}`, stock_resultado: m.newStock })), `movimientos_${new Date().toISOString().slice(0, 10)}.csv`)} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"><Download className="h-3.5 w-3.5" /> Excel</button>
-        <button onClick={() => setShowRegister(true)} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"><Plus className="h-4 w-4" strokeWidth={2.4} /> Registrar movimiento</button>
+        <button onClick={() => void loadData()} title="Refrescar" className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"><RefreshCw className="h-4 w-4" /></button>
+        <button onClick={() => exportToCSV(filtered.map(m => ({ fecha: fmtDate(m.createdAt), producto: m.productName, tipo: m.label, cantidad: m.dir === "in" ? `+${m.quantity}` : `-${m.quantity}`, stock_resultado: m.newStock })), `movimientos_${new Date().toISOString().slice(0, 10)}.csv`)} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"><Download className="h-3.5 w-3.5" /> Excel</button>
+        <button onClick={() => setShowRegister(true)} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"><Plus className="h-4 w-4" strokeWidth={2.4} /> Registrar movimiento</button>
       </div>
 
       {/* Ledger */}
@@ -289,7 +289,7 @@ export default function SimpleMovementsTab() {
                 <tr><td colSpan={5} className="px-4 py-14 text-center text-[var(--text-tertiary)]">
                   <Package className="mx-auto mb-2 h-8 w-8 opacity-40" />
                   <p className="font-medium">Sin movimientos en este periodo</p>
-                  <button onClick={() => setShowRegister(true)} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-bold text-white hover:bg-primary/90"><Plus className="h-3.5 w-3.5" /> Registrar el primero</button>
+                  <button onClick={() => setShowRegister(true)} className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-bold text-white hover:bg-primary/90"><Plus className="h-3.5 w-3.5" /> Registrar el primero</button>
                 </td></tr>
               )}
               {filtered.map(m => (
@@ -472,7 +472,7 @@ function RegisterMovementModal({ products, onClose, onSaved }: { products: Produ
           <Field label="Producto" labelClassName={LABEL}>
             {(id) => (<>
             {selected ? (
-              <button type="button" onClick={() => { setProductId(""); setPsearch(""); }} className="flex w-full items-center justify-between rounded-lg border border-[var(--accent)] bg-primary/10 px-3.5 py-2.5 text-left">
+              <button type="button" onClick={() => { setProductId(""); setPsearch(""); }} className="flex w-full items-center justify-between rounded-xl border border-[var(--accent)] bg-primary/10 px-3.5 py-2.5 text-left">
                 <span className="text-sm font-bold text-[var(--text-primary)]">{selected.name}</span>
                 <span className="text-xs font-bold text-[var(--text-tertiary)]">stock {selected.stock} {selected.unit} · cambiar</span>
               </button>

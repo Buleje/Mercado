@@ -471,7 +471,7 @@ function ToggleRow({
       >
         <span
           className={cn(
-            "inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform",
+            "inline-block h-5 w-5 transform rounded-full bg-[var(--surface-raised)] shadow-md transition-transform",
             active ? "translate-x-6" : "translate-x-1",
           )}
         />

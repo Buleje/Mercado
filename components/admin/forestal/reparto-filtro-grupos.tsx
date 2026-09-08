@@ -65,7 +65,7 @@ export function FiltroGruposCelda({
         title={elegidosLabels.length > 0
           ? `Sólo: ${elegidosLabels.join(", ")}. Lo demás no entra a este bloque aunque le sobre capacidad.`
           : "Este bloque lleva de todo. Elegí uno o más tipos para que lleve sólo esos."}
-        className={`inline-flex h-10 w-full items-center justify-between gap-1 rounded-lg border-2 bg-[var(--surface-raised)] px-2 text-sm font-bold outline-none focus:border-[var(--accent)] ${elegidosLabels.length > 0
+        className={`inline-flex h-10 w-full items-center justify-between gap-1 rounded-xl border-2 bg-[var(--surface-raised)] px-2 text-sm font-bold outline-none focus:border-[var(--accent)] ${elegidosLabels.length > 0
           ? "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"
           : "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}
       >

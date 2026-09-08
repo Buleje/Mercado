@@ -110,7 +110,7 @@ export default function POSExpressMode({
     return (
       <button
         onClick={() => setEnabled(true)}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-lg transition-colors shrink-0"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-xl transition-colors shrink-0"
         title="Modo Express - escaneo rápido por codigo"
       >
         <Zap className="h-4 w-4 text-[var(--data-warning-500)]" /> Express
@@ -145,7 +145,7 @@ export default function POSExpressMode({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Codigo + Enter (ej: 003x5 = producto 003, cant. 5)"
-          className="w-full px-3 py-2.5 rounded-lg border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-[var(--surface-raised)] text-center"
+          className="w-full px-3 py-2.5 rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-[var(--surface-raised)] text-center"
           autoComplete="off"
         />
       </form>

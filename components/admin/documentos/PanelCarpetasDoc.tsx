@@ -161,7 +161,7 @@ export default function PanelCarpetasDoc({ folders, folderId, carpetaActiva, acc
           onClick={alternarColapso}
           title="Mostrar las carpetas"
           aria-label="Mostrar el panel de carpetas"
-          className="rounded-lg p-1.5 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-primary"
+          className="rounded-xl p-1.5 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-primary"
         >
           <ChevronRight className="h-4 w-4" />
         </button>

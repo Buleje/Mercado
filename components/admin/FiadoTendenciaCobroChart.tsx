@@ -101,7 +101,7 @@ export default function FiadoTendenciaCobroChart() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
         <div className="h-6 w-40 bg-[var(--surface-sunken)] rounded mb-3" />
         <div className="h-[220px] bg-[var(--surface-sunken)] rounded-lg" />
       </div>
@@ -123,7 +123,7 @@ export default function FiadoTendenciaCobroChart() {
   const yMax = Math.ceil(maxValue * 1.15 / 50) * 50 || 100;
 
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
       {/* Header con KPI mes actual y delta */}
       <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
         <div>

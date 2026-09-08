@@ -44,12 +44,12 @@ export function StampModal({ doc, onClose, onDone }: { doc: DbDocument; onClose:
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-[28rem] rounded-2xl bg-white dark:bg-[var(--color-card)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[28rem] rounded-2xl bg-[var(--surface-raised)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
           <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
             <Stamp className="h-5 w-5 text-primary" /> Poner sello
           </CardTitle>
-          <button onClick={onClose} className="rounded-lg p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
         </div>
         <p className="mb-3 text-xs text-[var(--text-secondary)]">
           Se estampa una marca de agua diagonal en todas las páginas de <span className="font-semibold">{doc.name}</span> y se guarda como una nueva versión.
@@ -78,7 +78,7 @@ export function StampModal({ doc, onClose, onDone }: { doc: DbDocument; onClose:
             onChange={(e) => setCustom(e.target.value.slice(0, 24))}
             placeholder="Ej: PROFORMA"
             maxLength={24}
-            className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] uppercase outline-none focus:border-primary"
+            className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] uppercase outline-none focus:border-primary"
           />
         </label>
 

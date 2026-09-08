@@ -146,10 +146,10 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar producto..."
-                className="pl-9 pr-3 py-2 w-56 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="pl-9 pr-3 py-2 w-56 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
+            <button onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
               <X className="h-5 w-5 text-[var(--text-secondary)]" />
             </button>
           </div>
@@ -158,7 +158,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
         {/* Table */}
         <div className="flex-1 overflow-auto">
           <DataTable className="w-full text-sm">
-            <thead className="sticky top-0 bg-gray-50 dark:bg-surface z-10">
+            <thead className="sticky top-0 bg-[var(--surface-sunken)] z-10">
               <tr className="text-left">
                 <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-12">#</th>
                 <th className="px-4 py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted cursor-pointer select-none" onClick={() => toggleSort("name")}>
@@ -191,7 +191,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                 const recentMove = p.daysSinceMove !== null && p.daysSinceMove <= 7;
 
                 return (
-                  <tr key={p.id} className={cn("hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors", noStock && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
+                  <tr key={p.id} className={cn("hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/50 transition-colors", noStock && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
                     <td className="px-4 py-3 text-xs text-[var(--text-tertiary)] font-mono">{i + 1}</td>
 
                     {/* Producto */}
@@ -297,7 +297,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
         </div>
 
         {/* Footer summary */}
-        <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface flex flex-wrap items-center gap-4 text-xs shrink-0">
+        <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] flex flex-wrap items-center gap-4 text-xs shrink-0">
           <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{filtered.length} productos</span>
           <span className="text-[var(--data-error-500)] font-semibold">{filtered.filter(p => (p.stock ?? 0) === 0).length} sin stock</span>
           <span className="text-[var(--data-error-500)] font-semibold">{filtered.filter(p => p.daysSinceMove === null || (p.daysSinceMove ?? 0) > 30).length} sin movimiento</span>

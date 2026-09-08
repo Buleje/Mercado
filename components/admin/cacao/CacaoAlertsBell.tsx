@@ -128,7 +128,7 @@ export default function CacaoAlertsBell({ onNavigate }: { onNavigate: (view: Cac
                   type="button"
                   onClick={load}
                   aria-label="Actualizar"
-                  className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)]"
+                  className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)]"
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -143,7 +143,7 @@ export default function CacaoAlertsBell({ onNavigate }: { onNavigate: (view: Cac
                     setOpen(false);
                   }}
                   aria-label="Configurar alertas"
-                  className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)]"
+                  className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)]"
                 >
                   <Settings className="h-4 w-4" />
                 </button>

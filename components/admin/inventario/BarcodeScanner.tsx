@@ -39,7 +39,7 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
           </p>
           <button
             onClick={onClose}
-            className="mt-6 px-6 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors"
+            className="mt-6 px-6 py-2 bg-white/20 text-white rounded-xl hover:bg-white/30 transition-colors"
           >
             Cerrar
           </button>

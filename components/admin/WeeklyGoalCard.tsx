@@ -94,14 +94,14 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
   };
 
   return (
-    <div className="rounded-xl border border-[var(--rule-soft)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 col-span-2 sm:col-span-4">
+    <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 col-span-2 sm:col-span-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
             <Target className="w-4 h-4 text-primary" />
           </span>
           <div>
-            <span className="text-xs font-medium text-[var(--text-secondary)] dark:text-zinc-400">
+            <span className="text-xs font-medium text-[var(--text-secondary)] ">
               Meta de la semana
             </span>
           </div>
@@ -109,7 +109,7 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
         {!editing ? (
           <button
             onClick={() => { setTempGoal(String(goal)); setEditing(true); }}
-            className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] dark:text-zinc-500 hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700"
+            className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-[var(--surface-sunken)] "
           >
             <Pencil className="w-3 h-3" />
             Editar meta
@@ -129,14 +129,14 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
                 aria-invalid={!!editError}
                 aria-describedby={editError ? "weekly-goal-error" : undefined}
                 className={cn(
-                  "w-24 px-2 py-1 text-xs rounded-lg border bg-white dark:bg-zinc-700 text-[var(--text-primary)] dark:text-zinc-100 outline-none",
-                  editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-zinc-600 focus:border-primary",
+                  "w-24 px-2 py-1 text-xs rounded-xl border bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none",
+                  editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] focus:border-primary",
                 )}
               />
-              <button onClick={handleSave} aria-label="Guardar" className="p-1 rounded-lg hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+              <button onClick={handleSave} aria-label="Guardar" className="p-1 rounded-xl hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                 <Check className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="p-1 rounded-lg hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
+              <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="p-1 rounded-xl hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -159,9 +159,9 @@ export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
 
       {/* Values */}
       <div className="flex items-center justify-between">
-        <p className="text-sm font-bold text-[var(--text-primary)] dark:text-zinc-100">
+        <p className="text-sm font-bold text-[var(--text-primary)] ">
           S/{weeklySales.toFixed(2)}{" "}
-          <span className="text-xs font-normal text-[var(--text-tertiary)] dark:text-zinc-500">
+          <span className="text-xs font-normal text-[var(--text-tertiary)] ">
             de S/{goal.toFixed(2)} ({percentage.toFixed(0)}%)
           </span>
         </p>

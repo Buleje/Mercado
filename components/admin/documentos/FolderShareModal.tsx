@@ -69,7 +69,7 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
             <p className="text-sm font-extrabold text-[var(--text-primary)]">Compartir carpeta</p>
             <p className="truncate text-xs text-[var(--text-tertiary)]">{folder.name}</p>
           </div>
-          <button onClick={onClose} className="rounded-md p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
 
         <div className="space-y-4 p-5">
@@ -130,7 +130,7 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
             ) : (
               <div className="flex items-center gap-2">
                 <code className="min-w-0 flex-1 truncate rounded-md bg-[var(--surface-raised)] px-2 py-1.5 text-xs text-[var(--text-secondary)]">{link}</code>
-                <button onClick={copy} className="inline-flex shrink-0 items-center gap-1 rounded-md border-2 border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary">
+                <button onClick={copy} className="inline-flex shrink-0 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary">
                   {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} {copied ? "Copiado" : "Copiar"}
                 </button>
               </div>

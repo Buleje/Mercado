@@ -153,7 +153,7 @@ export default function MiPerfilTab() {
                 "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
                 profile.role === "admin" ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" :
                 profile.role === "cajero" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" :
-                "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-800 dark:text-[var(--text-tertiary)]"
+                "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]"
               )}>
                 <Shield className="h-3 w-3" />
                 {profile.role === "admin" ? "Administrador" :
@@ -174,7 +174,7 @@ export default function MiPerfilTab() {
                       type="text"
                       value={profile.username}
                       onChange={e => setProfile(p => ({ ...p, username: e.target.value }))}
-                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                      className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                     />
                   </Field>
                 ) : (
@@ -202,7 +202,7 @@ export default function MiPerfilTab() {
                       value={profile.phone}
                       onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
                       placeholder="+51 999 999 999"
-                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                      className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                     />
                   </Field>
                 ) : (
@@ -231,14 +231,14 @@ export default function MiPerfilTab() {
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     Guardar
                   </button>
                   <button
                     onClick={() => setEditMode(false)}
-                    className="px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+                    className="px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] transition-colors"
                   >
                     Cancelar
                   </button>
@@ -246,7 +246,7 @@ export default function MiPerfilTab() {
               ) : (
                 <button
                   onClick={() => setEditMode(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   Editar perfil
                 </button>
@@ -271,7 +271,7 @@ export default function MiPerfilTab() {
         {!showPasswordForm ? (
           <button
             onClick={() => setShowPasswordForm(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <Key className="h-4 w-4" />
             Cambiar contraseña
@@ -283,7 +283,7 @@ export default function MiPerfilTab() {
                 type="password"
                 value={currentPassword}
                 onChange={e => setCurrentPassword(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </Field>
             <Field label="Nueva contraseña" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
@@ -291,7 +291,7 @@ export default function MiPerfilTab() {
                 type="password"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </Field>
             <Field label="Confirmar contraseña" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
@@ -299,7 +299,7 @@ export default function MiPerfilTab() {
                 type="password"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </Field>
             {passwordError && (
@@ -309,14 +309,14 @@ export default function MiPerfilTab() {
               <button
                 onClick={handlePasswordChange}
                 disabled={passwordSaving}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
                 {passwordSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
                 Cambiar
               </button>
               <button
                 onClick={() => { setShowPasswordForm(false); setPasswordError(""); }}
-                className="px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+                className="px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] transition-colors"
               >
                 Cancelar
               </button>

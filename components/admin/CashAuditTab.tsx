@@ -270,7 +270,7 @@ function CashCounter({
                             value={qty || ""}
                             onChange={e => setCount(key, e.target.value)}
                             placeholder="0"
-                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1 bg-[var(--surface-raised)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                           />
                         </td>
                         <td className="py-1.5 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
@@ -310,7 +310,7 @@ function CashCounter({
                             value={qty || ""}
                             onChange={e => setCount(key, e.target.value)}
                             placeholder="0"
-                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="w-16 text-center text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1 bg-[var(--surface-raised)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                           />
                         </td>
                         <td className="py-1.5 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
@@ -326,11 +326,11 @@ function CashCounter({
 
           {/* Resumen */}
           <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-            <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 text-center">
+            <div className="bg-[var(--surface-alt)] rounded-xl p-3 text-center">
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-semibold uppercase">Esperado</p>
               <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">{fmt(expectedAmount)}</p>
             </div>
-            <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 text-center">
+            <div className="bg-[var(--surface-alt)] rounded-xl p-3 text-center">
               <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-semibold uppercase">Contado</p>
               <p className={cn("font-extrabold text-sm", hasCount ? "text-[var(--text-primary)] dark:text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>
                 {hasCount ? fmt(counted) : "—"}
@@ -338,7 +338,7 @@ function CashCounter({
             </div>
             <div className={cn(
               "rounded-xl p-3 text-center",
-              !hasCount ? "bg-[var(--surface-alt)] dark:bg-surface" :
+              !hasCount ? "bg-[var(--surface-alt)] " :
               difference === 0 ? "bg-primary/10 dark:bg-primary/15" :
               difference > 0 ? "bg-primary/10 dark:bg-primary/15" :
               "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20"
@@ -382,7 +382,7 @@ function CashCounter({
               disabled={saving || !hasCount || !registerId}
               aria-disabled={saving || !hasCount || !registerId}
               title={!registerId ? "No hay caja registradora abierta" : !hasCount ? "Contá al menos una denominación" : undefined}
-              className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? "Guardando…" : "Guardar arqueo"}
             </button>
@@ -484,14 +484,14 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
         <div className="flex flex-wrap items-center gap-2">
           <ModuleTooltip />
           {onNavigateToTurnos && (
-            <button onClick={onNavigateToTurnos} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/10 transition-colors">
+            <button onClick={onNavigateToTurnos} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-primary/30 bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/10 transition-colors">
               <ExternalLink className="h-4 w-4" strokeWidth={1.75} aria-hidden /> Ir a Turnos
             </button>
           )}
-          <button onClick={() => { startTransition(() => setLoading(true)); loadAudits(); }} disabled={loading} aria-label="Refrescar" className="p-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors">
+          <button onClick={() => { startTransition(() => setLoading(true)); loadAudits(); }} disabled={loading} aria-label="Refrescar" className="p-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-primary disabled:opacity-40 transition-colors">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} strokeWidth={1.75} aria-hidden />
           </button>
-          <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors">
             <Download className="h-4 w-4" strokeWidth={1.75} aria-hidden /> Descargar
           </button>
         </div>
@@ -599,8 +599,8 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-center">
-              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Esperado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(detail.expectedAmount)}</p></div>
-              <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Contado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.status !== "pendiente" ? fmt(detail.countedAmount) : "-"}</p></div>
+              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Esperado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(detail.expectedAmount)}</p></div>
+              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><p className="text-xs text-[var(--text-tertiary)]">Contado</p><p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.status !== "pendiente" ? fmt(detail.countedAmount) : "-"}</p></div>
               <div className={cn("rounded-xl p-3", STATUS_MAP[detail.status].bg)}><p className="text-xs text-[var(--text-tertiary)]">Diferencia</p><p className={cn("font-extrabold", STATUS_MAP[detail.status].color)}>{detail.status !== "pendiente" ? (detail.difference > 0 ? "+" : "") + fmt(detail.difference) : "-"}</p></div>
             </div>
 
@@ -626,7 +626,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                     {chips.map(({ label, valor, Icono }) => (
-                      <div key={label} className="flex items-center justify-between bg-[var(--surface-alt)] dark:bg-surface rounded-lg px-3 py-1.5 text-sm">
+                      <div key={label} className="flex items-center justify-between bg-[var(--surface-alt)] rounded-lg px-3 py-1.5 text-sm">
                         <span className="flex items-center gap-1 text-[var(--text-secondary)] dark:text-muted">
                           <Icono className="h-4 w-4" /> {label}
                         </span>

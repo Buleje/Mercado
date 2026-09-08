@@ -96,13 +96,13 @@ export default function NotificationsTab() {
           {/* Order picker */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-            <input value={orderSearch} onChange={e => { setOrderSearch(e.target.value); setSelectedOrder(null); setWaUrl(null); }} placeholder="Buscar pedido por nombre, teléfono o ID..." className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm" />
+            <input value={orderSearch} onChange={e => { setOrderSearch(e.target.value); setSelectedOrder(null); setWaUrl(null); }} placeholder="Buscar pedido por nombre, teléfono o ID..." className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
           </div>
 
           {!selectedOrder && filteredOrders.length > 0 && (
             <div className="max-h-48 overflow-y-auto space-y-1">
               {filteredOrders.map(o => (
-                <button key={o.id} onClick={() => { setSelectedOrder(o); setOrderSearch(""); setWaUrl(null); }} className="w-full text-left flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-surface border border-transparent hover:border-gray-200 dark:hover:border-[var(--rule-base)] transition text-sm">
+                <button key={o.id} onClick={() => { setSelectedOrder(o); setOrderSearch(""); setWaUrl(null); }} className="w-full text-left flex flex-wrap items-center gap-3 px-3 py-2 rounded-xl hover:bg-[var(--surface-sunken)] border border-transparent hover:border-gray-200 dark:hover:border-[var(--rule-base)] transition text-sm">
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{o.customerName ?? "Sin nombre"}</p>
                     <p className="text-xs text-[var(--text-tertiary)]">{o.customerPhone} · #{o.id.slice(0, 8)}</p>
@@ -120,7 +120,7 @@ export default function NotificationsTab() {
           )}
 
           {selectedOrder && (
-            <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-2">
+            <div className="bg-[var(--surface-sunken)] rounded-xl p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{selectedOrder.customerName}</p>
@@ -149,7 +149,7 @@ export default function NotificationsTab() {
             </div>
           )}
 
-          <button onClick={sendNotification} disabled={!selectedOrder || sending} className="w-full py-2.5 bg-primary/10 text-white rounded-lg font-bold text-sm hover:bg-primary/10 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
+          <button onClick={sendNotification} disabled={!selectedOrder || sending} className="w-full py-2.5 bg-primary/10 text-white rounded-xl font-bold text-sm hover:bg-primary/10 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}Enviar por WhatsApp
           </button>
         </div>
@@ -174,7 +174,7 @@ export default function NotificationsTab() {
                   </div>
                   <p className="text-xs text-[var(--text-secondary)] line-clamp-2">{l.message}</p>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-surface text-[var(--text-secondary)]">{TYPE_LABELS[l.type] ?? l.type}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-[var(--rule-soft)] text-[var(--text-secondary)]">{TYPE_LABELS[l.type] ?? l.type}</span>
                     {l.orderId && <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">#{l.orderId.slice(0, 8)}</span>}
                   </div>
                 </div>

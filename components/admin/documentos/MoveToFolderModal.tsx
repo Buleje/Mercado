@@ -45,13 +45,13 @@ export function MoveToFolderModal({
             <p className="text-sm font-extrabold text-[var(--text-primary)]">Mover a carpeta</p>
             <p className="truncate text-xs text-[var(--text-tertiary)]">{doc.name}</p>
           </div>
-          <button onClick={onClose} className="rounded-md p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
         <div className="max-h-[60vh] overflow-y-auto p-2">
           <button
             onClick={() => move(null)}
             className={cn(
-              "flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors",
+              "flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors",
               currentFolderId === null ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             )}
           >
@@ -70,7 +70,7 @@ export function MoveToFolderModal({
                 onClick={() => move(f.id)}
                 style={{ paddingLeft: depth * 16 + 12 }}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-lg py-2.5 pr-3 text-sm font-bold transition-colors",
+                  "flex w-full items-center gap-2 rounded-xl py-2.5 pr-3 text-sm font-bold transition-colors",
                   isCurrent ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                 )}
               >

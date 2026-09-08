@@ -502,7 +502,7 @@ function CeldaCarga({ label, col, valor, onValor, onKeyDown, etiqueta, ancho, fi
             aria-pressed={!!fijo}
             aria-label={fijo ? `Soltar ${label}` : `Fijar ${label}`}
             title={fijo ? "Soltar esta medida" : "Fijar esta medida (no se dicta más)"}
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border transition disabled:opacity-30 sm:h-10 sm:w-8 ${fijo ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition disabled:opacity-30 sm:h-10 sm:w-8 ${fijo ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
           >
             {fijo ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
           </button>
@@ -516,7 +516,7 @@ function CmdField({ label, value, onChange }: { label: string; value: string; on
   return (
     <label className="block">
       <span className="text-xs font-bold text-[var(--text-secondary)]">{label}</span>
-      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 h-9 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 h-9 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
     </label>
   );
 }

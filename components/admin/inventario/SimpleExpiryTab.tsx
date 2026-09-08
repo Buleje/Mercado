@@ -136,7 +136,7 @@ export default function SimpleExpiryTab() {
         <StatCard label="Próximos 30d" count={stats.prontos} tone="warning" active={filter === "pronto"} onClick={() => setFilter(filter === "pronto" ? "todos" : "pronto")} />
         <StatCard label="Vigentes" count={stats.bien} tone="primary" active={filter === "bien"} onClick={() => setFilter(filter === "bien" ? "todos" : "bien")} />
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 ring-1 ring-[var(--data-error-500)]/15">
-          <p className="flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)] dark:text-zinc-400"><TrendingDown className="h-3.5 w-3.5" /> Valor en riesgo</p>
+          <p className="flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)] "><TrendingDown className="h-3.5 w-3.5" /> Valor en riesgo</p>
           <p className={cn("mt-1 font-mono text-2xl font-bold tabular-nums", stats.valorRiesgo > 0 ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]")}>{fmtMoney(stats.valorRiesgo)}</p>
           <div className={cn("mt-2 h-1 rounded-full", stats.valorRiesgo > 0 ? "bg-[var(--data-error-500)]/50" : "bg-[var(--rule-soft)]")} />
         </div>
@@ -146,13 +146,13 @@ export default function SimpleExpiryTab() {
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative h-10 min-w-[200px] flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto o lote…" className="h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto o lote…" className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
         </div>
         {filter !== "todos" && (
-          <button onClick={() => setFilter("todos")} className="inline-flex h-10 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-3.5 w-3.5" /> {URGENCY_CFG[filter].label}</button>
+          <button onClick={() => setFilter("todos")} className="inline-flex h-10 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-3.5 w-3.5" /> {URGENCY_CFG[filter].label}</button>
         )}
-        <button onClick={() => exportToCSV(filtered.map(b => ({ lote: b.lote, producto: b.productName, cantidad: b.quantity, costo_unit: b.costUnit, valor: (b.quantity * (b.costUnit || 0)).toFixed(2), vence: fmtDate(b.expiryDate), dias: b.days, estado: URGENCY_CFG[b.urgency].label })), `vencimientos_${new Date().toISOString().slice(0, 10)}.csv`)} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"><Download className="h-3.5 w-3.5" /> Excel</button>
-        <button onClick={() => setShowRegister(true)} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"><Plus className="h-4 w-4" strokeWidth={2.4} /> Registrar lote</button>
+        <button onClick={() => exportToCSV(filtered.map(b => ({ lote: b.lote, producto: b.productName, cantidad: b.quantity, costo_unit: b.costUnit, valor: (b.quantity * (b.costUnit || 0)).toFixed(2), vence: fmtDate(b.expiryDate), dias: b.days, estado: URGENCY_CFG[b.urgency].label })), `vencimientos_${new Date().toISOString().slice(0, 10)}.csv`)} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"><Download className="h-3.5 w-3.5" /> Excel</button>
+        <button onClick={() => setShowRegister(true)} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"><Plus className="h-4 w-4" strokeWidth={2.4} /> Registrar lote</button>
       </div>
 
       {/* Lista */}
@@ -223,7 +223,7 @@ function StatCard({ label, count, tone, active, onClick }: { label: string; coun
   const bar = tone === "error" ? "bg-[var(--data-error-500)]/50" : tone === "warning" ? "bg-[var(--data-warning-500)]" : "bg-primary";
   return (
     <button onClick={onClick} className={cn("rounded-xl border bg-[var(--surface-raised)] p-4 text-left transition-colors", active ? "border-[var(--accent)] ring-1 ring-[var(--accent)]/25" : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]")}>
-      <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-zinc-400">{label}</p>
+      <p className="text-xs font-medium text-[var(--text-secondary)] ">{label}</p>
       <p className={cn("mt-1 font-mono text-2xl font-bold tabular-nums", count > 0 ? text : "text-[var(--text-primary)]")}>{count}</p>
       <div className={cn("mt-2 h-1 rounded-full", count > 0 ? bar : "bg-[var(--rule-soft)]")} />
     </button>
@@ -274,7 +274,7 @@ function RegisterBatchModal({ products, onClose, onSaved }: { products: Product[
           <div>
             <span className={LABEL}>Producto</span>
             {selected ? (
-              <button type="button" onClick={() => { setProductId(""); setPsearch(""); }} className="flex w-full items-center justify-between rounded-lg border border-[var(--accent)] bg-primary/10 px-3.5 py-2.5 text-left">
+              <button type="button" onClick={() => { setProductId(""); setPsearch(""); }} className="flex w-full items-center justify-between rounded-xl border border-[var(--accent)] bg-primary/10 px-3.5 py-2.5 text-left">
                 <span className="text-sm font-bold text-[var(--text-primary)]">{selected.name}</span>
                 <span className="text-xs font-bold text-[var(--text-tertiary)]">cambiar</span>
               </button>

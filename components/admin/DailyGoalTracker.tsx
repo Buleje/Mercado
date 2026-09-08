@@ -199,7 +199,7 @@ function KPICard({ label, value, sub, delta, icon: Icon, accent = "neutral" }: K
   }[accent];
 
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex flex-col gap-2 min-w-0">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex flex-col gap-2 min-w-0">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</span>
         <Icon className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
@@ -479,14 +479,14 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
                   aria-invalid={!!editError}
                   aria-describedby={editError ? "daily-goal-error" : undefined}
                   className={cn(
-                    "w-24 px-2 py-1 text-xs rounded-lg border bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none",
+                    "w-24 px-2 py-1 text-xs rounded-xl border bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none",
                     editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] focus:border-primary",
                   )}
                 />
-                <button onClick={saveGoal} aria-label="Guardar meta" className="p-1 rounded-lg hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                <button onClick={saveGoal} aria-label="Guardar meta" className="p-1 rounded-xl hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                   <Check className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="p-1 rounded-lg hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
+                <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="p-1 rounded-xl hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>

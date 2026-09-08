@@ -317,7 +317,7 @@ export default function Anexo04Modal({
                       ? "Se calcula sumando las piezas. Escribí el tuyo para declarar otro (ajuste mínimo, las medidas de cada pieza no cambian)."
                       : `Declarado a mano: el cálculo desde las piezas da ${fmtAnexo(anexo.totalCalculadoM3)} m³. Las hojas se reparten para sumar EXACTO este número.`
                   }
-                  className={`h-6 w-16 rounded-md border-2 bg-[var(--surface-raised)] px-1 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${totalManual == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-secondary)]" : "border-[var(--accent)] text-[var(--accent)]"}`}
+                  className={`h-6 w-16 rounded-xl border-2 bg-[var(--surface-raised)] px-1 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${totalManual == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-secondary)]" : "border-[var(--accent)] text-[var(--accent)]"}`}
                 />
                 <span>m³</span>
               </label>
@@ -348,7 +348,7 @@ export default function Anexo04Modal({
               )}
             </p>
           </div>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="rounded-lg p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
+          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -446,7 +446,7 @@ export default function Anexo04Modal({
                       type="button"
                       onClick={() => setDuenoFiltro("todos")}
                       aria-pressed={duenoFiltro === "todos"}
-                      className={`h-7 rounded-md px-2 text-xs font-bold transition ${duenoFiltro === "todos" ? "bg-primary/12 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                      className={`h-7 rounded-lg px-2 text-xs font-bold transition ${duenoFiltro === "todos" ? "bg-primary/12 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
                     >
                       Todos
                     </button>
@@ -457,7 +457,7 @@ export default function Anexo04Modal({
                         onClick={() => setDuenoFiltro(d)}
                         aria-pressed={duenoFiltro === d}
                         title={`Ver sólo la cubicación de ${d}`}
-                        className={`h-7 rounded-md px-2 text-xs font-bold transition ${duenoFiltro === d ? "bg-primary/12 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                        className={`h-7 rounded-lg px-2 text-xs font-bold transition ${duenoFiltro === d ? "bg-primary/12 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
                       >
                         {d}
                       </button>

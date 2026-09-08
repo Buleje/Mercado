@@ -203,7 +203,7 @@ export default function ChatTab() {
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="inline-flex items-center gap-1 rounded-md border border-[var(--data-error-500)] px-2.5 py-1 text-xs font-semibold text-[var(--data-error-500)] transition hover:bg-[var(--data-error-50)]"
+                  className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-error-500)] px-2.5 py-1 text-xs font-semibold text-[var(--data-error-500)] transition hover:bg-[var(--data-error-50)]"
                 >
                   <XCircle className="h-3.5 w-3.5" />
                   Cerrar

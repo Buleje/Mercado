@@ -42,7 +42,7 @@ export function QuotationComparator({ orders, suppliers }: {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--data-info-500)]/30 px-3 py-2 rounded-lg transition-colors"
+        className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--data-info-500)]/30 px-3 py-2 rounded-xl transition-colors"
       >
         <BarChart3 className="h-4 w-4" /> Comparar cotizaciones
       </button>
@@ -106,7 +106,7 @@ export function QuotationComparator({ orders, suppliers }: {
           <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-[var(--text-secondary)]" /> Comparar cotizaciones completas
           </CardTitle>
-          <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+          <button onClick={() => setOpen(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />
           </button>
         </div>
@@ -127,7 +127,7 @@ export function QuotationComparator({ orders, suppliers }: {
                     "text-left px-3 py-2 rounded-xl border text-xs transition-colors",
                     isSelected
                       ? "border-[var(--data-info-500)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] font-bold"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]",
+                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-[var(--text-primary)]",
                     !isSelected && selectedOCIds.length >= 3 && "opacity-40 cursor-not-allowed"
                   )}
                 >
@@ -182,7 +182,7 @@ export function QuotationComparator({ orders, suppliers }: {
                   );
                 })}
                 {/* TOTAL row */}
-                <tr className="border-t-2 border-[var(--rule-base)] dark:border-gray-600 font-bold">
+                <tr className="border-t-2 border-[var(--rule-base)] font-bold">
                   <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">TOTAL</td>
                   {selectedOCs.map(oc => {
                     const total = ocTotals.find(t => t.id === oc.id)?.total ?? 0;
@@ -229,7 +229,7 @@ function formatDate(iso: string) {
 function SkeletonTable() {
   return (
     <div className="animate-pulse space-y-2">
-      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+      <div className="h-8 bg-[var(--rule-base)] rounded w-full" />
       <div className="h-6 bg-[var(--surface-sunken)] rounded w-full" />
       <div className="h-6 bg-[var(--surface-sunken)] rounded w-full" />
     </div>

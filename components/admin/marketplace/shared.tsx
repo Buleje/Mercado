@@ -21,12 +21,12 @@ export const TableSkeleton = () => (
   <div className="space-y-3 animate-pulse">
     {[1, 2, 3, 4].map((i) => (
       <div key={i} className="flex items-center gap-4">
-        <div className="h-10 w-10 bg-gray-200 rounded-xl shrink-0" />
+        <div className="h-10 w-10 bg-[var(--rule-base)] rounded-xl shrink-0" />
         <div className="flex-1 space-y-2">
-          <div className="h-4 bg-gray-200 rounded w-1/2" />
-          <div className="h-3 bg-gray-200 rounded w-1/3" />
+          <div className="h-4 bg-[var(--rule-base)] rounded w-1/2" />
+          <div className="h-3 bg-[var(--rule-base)] rounded w-1/3" />
         </div>
-        <div className="h-8 w-20 bg-gray-200 rounded-lg" />
+        <div className="h-8 w-20 bg-[var(--rule-base)] rounded-lg" />
       </div>
     ))}
   </div>
@@ -94,7 +94,7 @@ export const REVIEW_STATUS_CONFIG: Record<string, { label: string; className: st
 
 export const TIER_CONFIG: Record<string, { label: string; className: string; minPoints: string }> = {
   bronce: { label: "Bronce", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", minPoints: "0 - 499" },
-  plata:  { label: "Plata",  className: "bg-gray-100 text-[var(--text-secondary)]",   minPoints: "500 - 999" },
+  plata:  { label: "Plata",  className: "bg-[var(--rule-soft)] text-[var(--text-secondary)]",   minPoints: "500 - 999" },
   oro:    { label: "Oro",    className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", minPoints: "1000+" },
 };
 

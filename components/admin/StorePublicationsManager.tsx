@@ -179,7 +179,7 @@ export default function StorePublicationsManager() {
               type="button"
               onClick={() => remove(p.id)}
               aria-label="Borrar publicación"
-              className="shrink-0 rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-600)]"
+              className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-600)]"
             >
               <Trash2 className="h-4 w-4" aria-hidden />
             </button>

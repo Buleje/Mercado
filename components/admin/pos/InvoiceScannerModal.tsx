@@ -264,7 +264,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] transition-colors"
             aria-label="Cerrar"
           >
             <X className="h-5 w-5" />
@@ -283,7 +283,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors group"
+                  className="flex flex-col items-center gap-2 p-6 rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors group"
                 >
                   <Camera className="h-8 w-8 text-[var(--text-tertiary)] group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-primary">
@@ -293,7 +293,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-gray-600 hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors group"
+                  className="flex flex-col items-center gap-2 p-6 rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors group"
                 >
                   <Upload className="h-8 w-8 text-[var(--text-tertiary)] group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-primary">
@@ -330,14 +330,14 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={reset}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-gray-600 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   <X className="h-4 w-4" /> Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={capturePhoto}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
                 >
                   <Camera className="h-4 w-4" /> Capturar
                 </button>
@@ -374,7 +374,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
               <button
                 type="button"
                 onClick={reset}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-gray-600 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 <RotateCcw className="h-4 w-4" /> Intentar de nuevo
               </button>
@@ -421,7 +421,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                       <th className="w-8" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  <tbody className="divide-y divide-[var(--rule-soft)] ">
                     {editItems.map((item, idx) => (
                       <tr
                         key={idx}
@@ -516,7 +516,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
           <button
             type="button"
             onClick={reset}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-gray-600 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <RotateCcw className="h-4 w-4" /> Otra foto
           </button>
@@ -524,7 +524,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
             type="button"
             onClick={handleConfirm}
             disabled={editItems.filter((i) => i.nombre.trim() && i.cantidad > 0).length === 0}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ShoppingCart className="h-4 w-4" /> Agregar al carrito
           </button>

@@ -180,14 +180,14 @@ export function OpcionesExportacion({
             onChange={(e) => onFirmaNombre(e.target.value)}
             placeholder="Nombre y apellido"
             aria-label="Nombre del responsable, va impreso sobre la línea de firma del PDF"
-            className="h-9 flex-1 min-w-[140px] rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-9 flex-1 min-w-[140px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
           <input
             value={firmaCargo}
             onChange={(e) => onFirmaCargo(e.target.value)}
             placeholder="Cargo (opcional)"
             aria-label="Cargo del responsable"
-            className="h-9 w-40 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-9 w-40 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
         </div>
       </div>

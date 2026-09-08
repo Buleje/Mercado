@@ -201,7 +201,7 @@ export function StopsTimeline({ stops, loading, onMarkStop }: StopsTimelineProps
                     value={failureReason}
                     onChange={(e) => setFailureReason(e.target.value)}
                     placeholder="Cliente ausente, dirección incorrecta…"
-                    className="w-full px-3 h-10 rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--data-error-500)]/30"
+                    className="w-full px-3 h-10 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--data-error-500)]/30"
                     autoFocus
                   />
                   <div className="flex gap-2">

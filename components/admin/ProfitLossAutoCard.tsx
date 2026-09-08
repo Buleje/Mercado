@@ -158,7 +158,7 @@ export default function ProfitLossAutoCard() {
                 className={cn(
                   "flex items-center justify-between py-2",
                   row.isFinal
-                    ? "border-t-2 border-[var(--rule-base)] dark:border-gray-600 pt-3 mt-2"
+                    ? "border-t-2 border-[var(--rule-base)] pt-3 mt-2"
                     : i < rows.length - 2
                     ? "border-b border-[var(--rule-base)]"
                     : ""

@@ -101,14 +101,14 @@ export function AdminModuleManagerModal({
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"
+              className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
             >
               <X className="h-5 w-5 text-[var(--text-secondary)]" />
             </button>
           </div>
 
           {/* Stats strip */}
-          <div className="px-6 py-3 bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-2.5">
+          <div className="px-6 py-3 bg-[var(--surface-alt)] border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-2.5">
             <div className="flex gap-6">
               <div className="text-center">
                 <div className="text-xl font-extrabold text-primary">{allowedTabs.length}</div>
@@ -166,14 +166,14 @@ export function AdminModuleManagerModal({
                       <div
                         key={tabId}
                         className={cn(
-                          "flex items-start gap-3 px-5 py-2.5 hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors",
+                          "flex items-start gap-3 px-5 py-2.5 hover:bg-[var(--surface-alt)] transition-colors",
                           isHidden && "opacity-50"
                         )}
                       >
                         <div
                           className={cn(
                             "h-9 w-9 rounded-lg flex items-center justify-center shrink-0 relative mt-0.5",
-                            isHidden ? "bg-[var(--surface-sunken)] dark:bg-surface" : "bg-primary/10"
+                            isHidden ? "bg-[var(--surface-sunken)] " : "bg-primary/10"
                           )}
                         >
                           {(() => {
@@ -245,7 +245,7 @@ export function AdminModuleManagerModal({
                             className={cn(
                               "h-8 w-8 rounded-lg flex items-center justify-center transition-colors",
                               isHidden
-                                ? "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)] hover:bg-primary/10 dark:hover:bg-primary/15 hover:text-[var(--data-success-500)]"
+                                ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:bg-primary/10 dark:hover:bg-primary/15 hover:text-[var(--data-success-500)]"
                                 : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:text-[var(--data-error-500)]"
                             )}
                           >
@@ -275,7 +275,7 @@ export function AdminModuleManagerModal({
             )}
             <button
               onClick={onClose}
-              className="px-5 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+              className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
               Listo
             </button>

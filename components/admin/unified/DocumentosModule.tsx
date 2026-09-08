@@ -281,7 +281,7 @@ export default function DocumentosModule() {
       {/* Drag overlay */}
       {dragOver && (
         <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-primary/20 backdrop-blur-sm">
-          <div className="bg-white border-4 border-dashed border-primary rounded-3xl p-8 shadow-[var(--shadow-xl)]">
+          <div className="bg-[var(--surface-raised)] border-4 border-dashed border-primary rounded-3xl p-8 shadow-[var(--shadow-xl)]">
             <Upload className="h-12 w-12 mx-auto text-primary mb-3" />
             <p className="text-xl font-extrabold text-[var(--text-primary)]">Soltá los archivos para subir</p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">PDF, imágenes, docs, hojas de cálculo</p>
@@ -353,7 +353,7 @@ export default function DocumentosModule() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-5">
         {/* ── Sidebar de carpetas ── */}
-        <aside className="bg-white border border-[var(--rule-base)] rounded-2xl p-3 h-fit">
+        <aside className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-3 h-fit">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-3 py-2">Carpetas</p>
           <ul className="space-y-1">
             {CATEGORIES.map((cat) => {
@@ -365,7 +365,7 @@ export default function DocumentosModule() {
                   <button
                     onClick={() => setCategory(cat.id)}
                     className={cn(
-                      "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors",
+                      "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors",
                       active
                         ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                         : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
@@ -399,10 +399,10 @@ export default function DocumentosModule() {
                 placeholder="Buscar por nombre, tag o tipo…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
-            <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-white overflow-hidden">
+            <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
               <button
                 onClick={() => setView("grid")}
                 className={cn(
@@ -441,7 +441,7 @@ export default function DocumentosModule() {
               ))}
             </div>
           ) : (
-            <div className="bg-white border border-[var(--rule-base)] rounded-2xl overflow-hidden">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
               <DataTable className="w-full text-sm">
                 <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                   <tr>
@@ -475,9 +475,9 @@ export default function DocumentosModule() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="inline-flex items-center gap-1">
-                            <button onClick={() => setPreview(doc)} className="p-1.5 rounded-md hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] text-[var(--text-tertiary)] transition-colors" title="Ver"><Eye className="h-4 w-4" /></button>
-                            <button onClick={() => toggleFav(doc.id)} className="p-1.5 rounded-md hover:bg-[var(--data-warning)]/10 hover:text-[var(--data-warning)] text-[var(--text-tertiary)] transition-colors" title="Favorito"><Star className={cn("h-4 w-4", doc.favorite && "fill-[var(--data-warning)] text-[var(--data-warning)]")} /></button>
-                            <button onClick={() => removeDoc(doc.id)} className="p-1.5 rounded-md hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] text-[var(--text-tertiary)] transition-colors" title="Eliminar"><Trash2 className="h-4 w-4" /></button>
+                            <button onClick={() => setPreview(doc)} className="p-1.5 rounded-xl hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] text-[var(--text-tertiary)] transition-colors" title="Ver"><Eye className="h-4 w-4" /></button>
+                            <button onClick={() => toggleFav(doc.id)} className="p-1.5 rounded-xl hover:bg-[var(--data-warning)]/10 hover:text-[var(--data-warning)] text-[var(--text-tertiary)] transition-colors" title="Favorito"><Star className={cn("h-4 w-4", doc.favorite && "fill-[var(--data-warning)] text-[var(--data-warning)]")} /></button>
+                            <button onClick={() => removeDoc(doc.id)} className="p-1.5 rounded-xl hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] text-[var(--text-tertiary)] transition-colors" title="Eliminar"><Trash2 className="h-4 w-4" /></button>
                           </div>
                         </td>
                       </tr>
@@ -517,7 +517,7 @@ function StatBlock({
   progress?: number;
 }) {
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-4">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</p>
@@ -548,7 +548,7 @@ function DocCard({
   const { Icon, tint, bg } = getFileIcon(doc.type);
   const isImage = doc.type.startsWith("image/") && doc.dataUrl;
   return (
-    <div className="group relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-white hover:border-primary/40 hover:shadow-md transition-all">
+    <div className="group relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-primary/40 hover:shadow-md transition-all">
       {/* Thumbnail */}
       <button
         onClick={onPreview}
@@ -650,7 +650,7 @@ function PreviewModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-white rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
+        className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
       >
         {/* Header */}
         <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
@@ -717,7 +717,7 @@ function PreviewModal({
           </div>
 
           {/* Sidebar info */}
-          <aside className="border-l border-[var(--rule-base)] overflow-y-auto p-5 space-y-5 bg-white">
+          <aside className="border-l border-[var(--rule-base)] overflow-y-auto p-5 space-y-5 bg-[var(--surface-raised)]">
             {/* Categoría */}
             <div>
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Carpeta</p>
@@ -768,7 +768,7 @@ function PreviewModal({
                   ))
                 )}
               </div>
-              <div className="flex items-stretch rounded-lg border-2 border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+              <div className="flex items-stretch rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
                 <input
                   type="text"
                   value={tagInput}
@@ -820,7 +820,7 @@ function PreviewModal({
 function EmptyState({ category, onUpload }: { category: DocCategory; onUpload: () => void }) {
   const isFiltered = category !== "all";
   return (
-    <div className="bg-white border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
+    <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
       <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
         <Upload className="h-7 w-7" />
       </div>

@@ -179,7 +179,7 @@ function Caja({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={deshabilitado || leyendo}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg py-3 text-sm font-bold text-[var(--text-tertiary)] transition-colors hover:text-primary disabled:opacity-50"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[var(--text-tertiary)] transition-colors hover:text-primary disabled:opacity-50"
         >
           <Upload className="h-4 w-4" aria-hidden />
           {leyendo ? "Leyendo…" : "Soltá el archivo o tocá acá"}

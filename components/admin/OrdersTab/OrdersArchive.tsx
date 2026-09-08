@@ -48,7 +48,7 @@ export function OrdersArchive({
               placeholder="Buscar cliente o teléfono…"
               value={archiveSearch}
               onChange={e => setArchiveSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary"
             />
           </div>
           <input
@@ -56,14 +56,14 @@ export function OrdersArchive({
             value={archiveDateFrom}
             onChange={e => setArchiveDateFrom(e.target.value)}
             title="Desde"
-            className="text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border px-3 py-2 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
+            className="text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border px-3 py-2 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
           />
           <input
             type="date"
             value={archiveDateTo}
             onChange={e => setArchiveDateTo(e.target.value)}
             title="Hasta"
-            className="text-sm rounded-lg border border-[var(--rule-base)] dark:border-card-border px-3 py-2 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
+            className="text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border px-3 py-2 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
           />
         </div>
 
@@ -77,7 +77,7 @@ export function OrdersArchive({
               {/* Desktop table */}
               <div className="hidden sm:block rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
                 <DataTable className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+                  <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)] dark:border-card-border">
                     <tr>
                       <th className="text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted">Cliente</th>
                       <th className="text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted">Estado</th>
@@ -86,11 +86,11 @@ export function OrdersArchive({
                       <th className="px-4 py-2.5" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-[var(--rule-soft)]">
                     {filteredArchive.map(o => (
                       <tr
                         key={o.id}
-                        className="hover:bg-gray-50 dark:hover:bg-surface cursor-pointer"
+                        className="hover:bg-[var(--surface-sunken)] cursor-pointer"
                         onClick={() => { onSelectOrder(o); onClose(); }}
                       >
                         <td className="px-4 py-3">
@@ -119,7 +119,7 @@ export function OrdersArchive({
                             </a>
                             <button
                               onClick={() => onDeleteOrder(o.id)}
-                              className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
+                              className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                               title="Eliminar"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -137,7 +137,7 @@ export function OrdersArchive({
                 {filteredArchive.map(o => (
                   <div
                     key={o.id}
-                    className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4  cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                    className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 cursor-pointer hover:bg-[var(--surface-sunken)] transition-colors"
                     {...activateProps(() => { onSelectOrder(o); onClose(); })}
                   >
                     <div className="flex justify-between items-start gap-3">
@@ -167,7 +167,7 @@ export function OrdersArchive({
                       </a>
                       <button
                         onClick={() => onDeleteOrder(o.id)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
                       >
                         <Trash2 className="h-4 w-4" /> Eliminar
                       </button>

@@ -228,7 +228,7 @@ export default function LothTrozadoMultipleModal({
                                   type="button"
                                   onClick={() => setRenglones((rs) => rs.filter((_, j) => j !== i))}
                                   aria-label={`Quitar la troza ${r.sufijo}`}
-                                  className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]"
+                                  className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </button>

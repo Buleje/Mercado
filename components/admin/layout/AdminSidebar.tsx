@@ -738,7 +738,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
         "marketplace-ops": "text-[var(--accent)]",
         analytics: "text-[var(--nav-cat-analytics)]",
         comunicacion: "text-[var(--accent-dark)] dark:text-[var(--accent)]",
-        documentos: "text-slate-600",
+        documentos: "text-[var(--text-secondary)]",
         "mi-tienda": "text-[var(--accent)]",
         metas: "text-[var(--nav-cat-metas)]",
       };
@@ -785,7 +785,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
           // Brandon mayo 2026 v4: fondo blanco SIEMPRE — el logo del tenant
           // tiene mejor contraste sobre blanco que sobre gradient
           // verde/accent, especialmente en sidebar oscuro.
-          "h-10 w-10 rounded-xl object-contain bg-white p-0.5",
+          "h-10 w-10 rounded-xl object-contain bg-[var(--surface-raised)] p-0.5",
           isDarkTheme
             ? "ring-2 ring-[color-mix(in_oklab,var(--accent)_55%,white_20%)]"
             : "ring-2 ring-primary/30 dark:ring-card-border",
@@ -796,7 +796,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     <div className={cn(
       // Sin logo del tenant: usamos BulejeMark sobre blanco con accent
       // color para el icon (mantiene identidad de marca).
-      "relative h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-white ring-2",
+      "relative h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-[var(--surface-raised)] ring-2",
       isDarkTheme
         ? "ring-[color-mix(in_oklab,var(--accent)_55%,white_20%)] text-[color:var(--accent)] shadow-[var(--shadow-md)]"
         : "ring-primary/30 text-primary shadow-sm",
@@ -872,7 +872,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                     onClick={() => canChangeIndustry && setShowIndustryModal(true)}
                     title={canChangeIndustry ? "Cambiar tipo de negocio" : verticalConfig.label}
                     className={cn(
-                      "shrink-0 text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-md leading-none transition-all",
+                      "shrink-0 text-[length:var(--ts-2xs)] font-semibold px-1.5 py-0.5 rounded-lg leading-none transition-all",
                       isDarkTheme
                         ? "bg-[color-mix(in_oklab,var(--accent)_20%,transparent)] text-[color-mix(in_oklab,var(--accent)_70%,white)] ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_30%,transparent)]"
                         : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] ring-1 ring-inset ring-primary/20",
@@ -992,7 +992,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                         }
                       }}
                       className={cn(
-                        "group relative w-full flex items-center rounded-lg text-[length:var(--ts-sm)] font-medium transition-all duration-[var(--dur-fast)] mb-px",
+                        "group relative w-full flex items-center rounded-xl text-[length:var(--ts-sm)] font-medium transition-all duration-[var(--dur-fast)] mb-px",
                         densityPad,
                         densityGap,
                         isActive
@@ -1051,7 +1051,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                       if (!tipText) return null;
                       return (
                         <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 opacity-0 pointer-events-none group-hover/cat:opacity-100 transition-opacity duration-[var(--dur-micro)] delay-[60ms] z-50">
-                          <div className="relative bg-white dark:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs rounded-lg px-3 py-2 max-w-[220px] leading-relaxed shadow-lg border border-[var(--rule-base)] dark:border-white/10">
+                          <div className="relative bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs rounded-lg px-3 py-2 max-w-[220px] leading-relaxed shadow-lg border border-[var(--rule-base)] ">
                             <div className="absolute top-1/2 -translate-y-1/2 right-full w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-white dark:border-r-[var(--surface-raised)]" />
                             {tipText}
                           </div>
@@ -1083,7 +1083,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                                   onMouseEnter={() => preloadTab(subTabId)}
                                   onFocus={() => preloadTab(subTabId)}
                                   className={cn(
-                                    "group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[length:var(--ts-sm)] transition-all",
+                                    "group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[length:var(--ts-sm)] transition-all",
                                     isSubActive
                                       ? cn(themeClasses.activeItem, isDarkTheme ? "text-white font-semibold" : "text-[var(--text-primary)] font-semibold")
                                       : cn(themeClasses.text, themeClasses.hover, "font-medium")
@@ -1201,7 +1201,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                   aria-label={label}
                   aria-haspopup={single ? undefined : "menu"}
                   className={cn(
-                    "relative w-full flex items-center justify-center rounded-lg transition-all mb-0.5 px-0 py-2.5",
+                    "relative w-full flex items-center justify-center rounded-xl transition-all mb-0.5 px-0 py-2.5",
                     isActive ? cn(themeClasses.activeItem) : cn(themeClasses.text, themeClasses.hover),
                   )}
                 >
@@ -1265,7 +1265,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                 title={isCompact ? "Expandir sidebar" : "Compactar sidebar"}
                 aria-label={isCompact ? "Expandir sidebar" : "Compactar sidebar"}
                 className={cn(
-                  "flex flex-1 items-center justify-center rounded-lg py-2.5 transition-all",
+                  "flex flex-1 items-center justify-center rounded-xl py-2.5 transition-all",
                   themeClasses.text, themeClasses.hover
                 )}
               >
@@ -1281,7 +1281,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
               title="Configurar barra lateral"
               aria-label="Configurar barra lateral"
               className={cn(
-                "flex flex-1 items-center justify-center rounded-lg py-2.5 transition-all",
+                "flex flex-1 items-center justify-center rounded-xl py-2.5 transition-all",
                 themeClasses.text, themeClasses.hover
               )}
             >
@@ -1329,7 +1329,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
           className="fixed z-50 pointer-events-none"
           style={{ left: 70, top: compactTooltip.y, transform: "translateY(-50%)" }}
         >
-          <div className="relative bg-white dark:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs rounded-lg px-3 py-2 shadow-lg border border-[var(--rule-base)] dark:border-white/10 min-w-[140px] max-w-[240px]">
+          <div className="relative bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs rounded-lg px-3 py-2 shadow-lg border border-[var(--rule-base)] min-w-[140px] max-w-[240px]">
             <div className="absolute top-1/2 -translate-y-1/2 right-full w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-white dark:border-r-[var(--surface-raised)]" />
             <div className="font-semibold whitespace-nowrap">{compactTooltip.label}</div>
             {compactTooltip.tip && (
@@ -1376,7 +1376,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                     "w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors",
                     tab === tabId
                       ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold"
-                      : "text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface font-medium"
+                      : "text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] font-medium"
                   )}
                 >
                   <FlyoutTabIcon className="h-4 w-4 shrink-0" />

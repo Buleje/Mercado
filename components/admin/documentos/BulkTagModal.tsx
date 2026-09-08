@@ -53,7 +53,7 @@ export function BulkTagModal({
             <p className="text-sm font-extrabold text-[var(--text-primary)]">Etiquetar {count} documento{count === 1 ? "" : "s"}</p>
             <p className="text-xs text-[var(--text-tertiary)]">Elegí una etiqueta existente o creá una nueva</p>
           </div>
-          <button onClick={onClose} className="rounded-md p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
 
         <div className="flex flex-col gap-3 p-5">

@@ -81,7 +81,7 @@ export default function ProductRichContentEditor({
                 onChange={(e) => update(i, { heading: e.target.value })}
                 placeholder="Título del bloque (ej. Hecho en la selva)"
                 maxLength={120}
-                className="h-10 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
               <textarea
                 value={b.body ?? ""}
@@ -89,7 +89,7 @@ export default function ProductRichContentEditor({
                 placeholder="Texto del bloque…"
                 maxLength={3000}
                 rows={3}
-                className="mt-2 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                className="mt-2 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
               <div className="mt-2">
                 <ImageUpload
@@ -110,7 +110,7 @@ export default function ProductRichContentEditor({
         <button
           type="button"
           onClick={add}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
           <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
           Agregar bloque

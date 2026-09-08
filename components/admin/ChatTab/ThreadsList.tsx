@@ -58,7 +58,7 @@ export function ThreadsList({
             onClick={() => onStatusFilterChange(s)}
             aria-pressed={statusFilter === s}
             className={cn(
- "rounded-lg px-3 py-1.5 min-h-11 sm:min-h-0 sm:py-1 text-xs font-medium transition",
+ "rounded-xl px-3 py-1.5 min-h-11 sm:min-h-0 sm:py-1 text-xs font-medium transition",
               statusFilter === s
                 ? "bg-primary text-white"
                 : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]  dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]",

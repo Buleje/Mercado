@@ -92,7 +92,7 @@ export default function BusinessIntelligenceTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">KPIs, proyección de ventas y alertas de anomalías</p>
         </div>
         {kpis && kpis.length > 0 && (
-          <button onClick={() => exportToCSV(kpis.map(k => ({ kpi: k.label, valor: k.value, cambio: k.pct != null ? `${k.pct}%` : k.caption ?? "" })), "bi-kpis")} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(kpis.map(k => ({ kpi: k.label, valor: k.value, cambio: k.pct != null ? `${k.pct}%` : k.caption ?? "" })), "bi-kpis")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         )}

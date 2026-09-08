@@ -161,7 +161,7 @@ const TIENDA_SECTION_DEFAULTS: Omit<TiendaSection, "enabled">[] = [
     label: "Vistos Recientemente",
     description: "Productos que el cliente vio hace poco",
     icon: <Clock className="h-4 w-4" />,
-    iconBg: "bg-slate-100 text-slate-600 dark:bg-slate-900/40 dark:text-slate-400",
+    iconBg: "bg-[var(--rule-soft)] text-[var(--text-secondary)] ",
     defaultEnabled: true,
   },
   {
@@ -435,7 +435,7 @@ function SectionEditorModal({
           </div>
           <button
             onClick={onClose}
-            className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+            className="h-9 w-9 rounded-xl flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors"
             aria-label="Cerrar"
           >
             <X className="h-5 w-5" />
@@ -462,7 +462,7 @@ function SectionEditorModal({
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={sectionLabel}
                 maxLength={50}
-                className="w-full px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
               </Field>
               <div className="flex items-center justify-between">
@@ -528,7 +528,7 @@ function SectionEditorModal({
                       <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold tabular-nums shrink-0">
                         {idx + 1}
                       </span>
-                      <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
+                      <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-[var(--rule-soft)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
                         {p.image ? (
                           <Image src={p.image} alt={p.name} fill className="object-cover" sizes="48px" />
                         ) : (
@@ -552,7 +552,7 @@ function SectionEditorModal({
                           type="button"
                           onClick={() => moveUp(idx)}
                           disabled={idx === 0}
-                          className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-surface transition-colors disabled:opacity-25"
+                          className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors disabled:opacity-25"
                           aria-label="Mover arriba"
                         >
                           <ChevronUp className="h-4 w-4" />
@@ -561,7 +561,7 @@ function SectionEditorModal({
                           type="button"
                           onClick={() => moveDown(idx)}
                           disabled={idx === assignedProducts.length - 1}
-                          className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-surface transition-colors disabled:opacity-25"
+                          className="h-8 w-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors disabled:opacity-25"
                           aria-label="Mover abajo"
                         >
                           <ChevronDown className="h-4 w-4" />
@@ -596,13 +596,13 @@ function SectionEditorModal({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Buscar por nombre…"
-                  className="w-full pl-12 pr-12 h-12 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full pl-12 pr-12 h-12 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-surface text-muted hover:text-[var(--text-primary)]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-xl hover:bg-[var(--rule-soft)] text-muted hover:text-[var(--text-primary)]"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -671,7 +671,7 @@ function SectionEditorModal({
                       onClick={() => addProduct(p.id)}
                       className="group flex items-center gap-3 p-2.5 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all text-left"
                     >
-                      <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
+                      <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-[var(--rule-soft)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
                         {p.image ? (
                           <Image src={p.image} alt={p.name} fill className="object-cover" sizes="48px" />
                         ) : (
@@ -715,7 +715,7 @@ function SectionEditorModal({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-5 h-11 rounded-xl text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+              className="px-5 h-11 rounded-xl text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] transition-colors"
             >
               Cancelar
             </button>
@@ -988,7 +988,7 @@ function SortableRow({
         "group rounded-2xl border-2 transition-all duration-[var(--dur-fast)] select-none overflow-hidden",
         section.enabled
           ? "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md"
-          : "bg-gray-50 dark:bg-surface border-dashed border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:opacity-100",
+          : "bg-[var(--surface-sunken)] border-dashed border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:opacity-100",
         isDragging && "ring-2 ring-primary/40 bg-primary/5 dark:bg-primary/10 shadow-xl scale-[1.01]"
       )}
     >
@@ -997,7 +997,7 @@ function SortableRow({
         {/* Drag handle */}
         <button
           type="button"
-          className="cursor-grab active:cursor-grabbing touch-none p-1 -m-1 rounded-md hover:bg-gray-100 dark:hover:bg-surface transition-colors shrink-0"
+          className="cursor-grab active:cursor-grabbing touch-none p-1 -m-1 rounded-xl hover:bg-[var(--rule-soft)] transition-colors shrink-0"
           aria-label={`Reordenar ${section.label}`}
           {...attributes}
           {...listeners}
@@ -1011,7 +1011,7 @@ function SortableRow({
             "inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-lg text-xs font-bold tabular-nums shrink-0 border",
             section.enabled
               ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-primary/20"
-              : "bg-gray-100 dark:bg-gray-700 text-[var(--text-tertiary)] border-transparent"
+              : "bg-[var(--rule-soft)] text-[var(--text-tertiary)] border-transparent"
           )}
           aria-label={`Posición ${position}`}
         >
@@ -1037,7 +1037,7 @@ function SortableRow({
               {section.label}
             </p>
             {!section.enabled && (
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] shrink-0">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--rule-base)] text-[var(--text-tertiary)] shrink-0">
                 Oculta
               </span>
             )}
@@ -1065,14 +1065,14 @@ function SortableRow({
             "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)]",
             section.enabled
               ? "bg-primary border-primary"
-              : "bg-gray-200 dark:bg-gray-700 border-transparent"
+              : "bg-[var(--rule-base)] border-transparent"
           )}
           aria-label={section.enabled ? `Ocultar ${section.label}` : `Mostrar ${section.label}`}
           aria-pressed={section.enabled}
         >
           <span
             className={cn(
-              "inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform duration-[var(--dur-base)]",
+              "inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transition-transform duration-[var(--dur-base)]",
               section.enabled ? "translate-x-6" : "translate-x-1"
             )}
           />
@@ -1249,7 +1249,7 @@ export default function StorefrontEditor() {
             href={previewHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3.5 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface hover:border-primary/40 transition-colors"
+            className="flex items-center gap-1.5 px-3.5 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-primary/40 transition-colors"
           >
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Vista previa</span>
@@ -1280,12 +1280,12 @@ export default function StorefrontEditor() {
       </div>
 
       {/* Page tabs: Tienda vs Navegación */}
-      <div className="flex gap-1 p-1 bg-gray-100 dark:bg-surface rounded-xl">
+      <div className="flex gap-1 p-1 bg-[var(--rule-soft)] rounded-xl">
         <button
           type="button"
           onClick={() => setActiveTab("tienda")}
           className={cn(
-            "flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-lg text-sm font-semibold transition-all",
+            "flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-xl text-sm font-semibold transition-all",
             activeTab === "tienda"
               ? "bg-[var(--surface-raised)] text-[var(--text-primary)] "
               : "text-muted hover:text-[var(--text-primary)]"
@@ -1298,7 +1298,7 @@ export default function StorefrontEditor() {
           type="button"
           onClick={() => setActiveTab("navegacion")}
           className={cn(
-            "flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-lg text-sm font-semibold transition-all",
+            "flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-xl text-sm font-semibold transition-all",
             activeTab === "navegacion"
               ? "bg-[var(--surface-raised)] text-[var(--text-primary)] "
               : "text-muted hover:text-[var(--text-primary)]"
@@ -1411,7 +1411,7 @@ export default function StorefrontEditor() {
                   "group flex items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-[var(--dur-fast)]",
                   item.visible
                     ? "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md"
-                    : "bg-gray-50 dark:bg-surface border-dashed border-[var(--rule-soft)] dark:border-[var(--rule-base)] opacity-70 hover:opacity-100"
+                    : "bg-[var(--surface-sunken)] border-dashed border-[var(--rule-soft)] dark:border-[var(--rule-base)] opacity-70 hover:opacity-100"
                 )}
               >
                 <div className={cn(
@@ -1427,7 +1427,7 @@ export default function StorefrontEditor() {
                       {item.label}
                     </p>
                     {!item.visible && (
-                      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)] shrink-0">
+                      <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--rule-base)] text-[var(--text-tertiary)] shrink-0">
                         Oculto
                       </span>
                     )}
@@ -1441,14 +1441,14 @@ export default function StorefrontEditor() {
                     "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border-2 transition-colors duration-[var(--dur-base)]",
                     item.visible
                       ? "bg-primary border-primary"
-                      : "bg-gray-200 dark:bg-gray-700 border-transparent"
+                      : "bg-[var(--rule-base)] border-transparent"
                   )}
                   aria-label={item.visible ? `Ocultar ${item.label}` : `Mostrar ${item.label}`}
                   aria-pressed={item.visible}
                 >
                   <span
                     className={cn(
-                      "inline-block h-4 w-4 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform duration-[var(--dur-base)]",
+                      "inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transition-transform duration-[var(--dur-base)]",
                       item.visible ? "translate-x-6" : "translate-x-1"
                     )}
                   />

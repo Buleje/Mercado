@@ -202,7 +202,7 @@ export default function FolderBulkBar({
                 type="button"
                 disabled={ocupado !== null}
                 onClick={() => void correr(`emoji-${e}`, { action: "emoji", emoji: e })}
-                className="flex h-8 items-center justify-center rounded-md text-lg transition-colors hover:bg-primary/10 disabled:opacity-50"
+                className="flex h-8 items-center justify-center rounded-lg text-lg transition-colors hover:bg-primary/10 disabled:opacity-50"
                 aria-label={`Poner ${e} a las carpetas marcadas`}
               >
                 {e}
@@ -214,7 +214,7 @@ export default function FolderBulkBar({
               type="text"
               maxLength={8}
               placeholder="Pegá otro…"
-              className="w-24 rounded-md border-2 border-[var(--rule-base)] px-2 py-1 text-sm outline-none focus:border-primary"
+              className="w-24 rounded-xl border-2 border-[var(--rule-base)] px-2 py-1 text-sm outline-none focus:border-primary"
               onKeyDown={(e) => {
                 const v = (e.target as HTMLInputElement).value.trim();
                 if (e.key === "Enter" && v) void correr("emoji-custom", { action: "emoji", emoji: v });
@@ -245,14 +245,14 @@ export default function FolderBulkBar({
             placeholder="legal, sunat, 2026…"
             autoFocus
             aria-label="Etiqueta para las carpetas marcadas"
-            className="w-full rounded-md border-2 border-[var(--rule-base)] px-2 py-1.5 text-sm outline-none focus:border-primary"
+            className="w-full rounded-xl border-2 border-[var(--rule-base)] px-2 py-1.5 text-sm outline-none focus:border-primary"
           />
           <div className="mt-1.5 flex items-center gap-1.5">
             <button
               type="button"
               disabled={!tag.trim() || ocupado !== null}
               onClick={() => void correr("tag-add", { action: "addTags", tags: [tag.trim()] }, false)}
-              className="flex-1 rounded-md bg-primary px-2.5 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+              className="flex-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-bold text-white disabled:opacity-50"
             >
               Agregar
             </button>
@@ -260,7 +260,7 @@ export default function FolderBulkBar({
               type="button"
               disabled={!tag.trim() || ocupado !== null}
               onClick={() => void correr("tag-del", { action: "removeTags", tags: [tag.trim()] }, false)}
-              className="flex-1 rounded-md border-2 border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] disabled:opacity-50"
+              className="flex-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] disabled:opacity-50"
               title="Quitar esta etiqueta de las carpetas marcadas"
             >
               Quitar

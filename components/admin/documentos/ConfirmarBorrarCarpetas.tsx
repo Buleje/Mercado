@@ -96,7 +96,7 @@ export function ConfirmarBorrarCarpetas({
           <button
             onClick={onCancelar}
             disabled={!!ocupado}
-            className="rounded-md p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+            className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             aria-label="Cerrar"
           >
             <X className="h-4 w-4" />

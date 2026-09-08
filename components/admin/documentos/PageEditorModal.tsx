@@ -54,10 +54,10 @@ export function PageEditorModal({ doc, onClose, onDone }: { doc: DbDocument; onC
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="flex max-h-[90vh] w-full max-w-[46rem] flex-col overflow-hidden rounded-2xl bg-white dark:bg-[var(--color-card)] shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="flex max-h-[90vh] w-full max-w-[46rem] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-[var(--rule-base)] p-4">
           <CardTitle as="h3" className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><FileText className="h-5 w-5 text-primary" /> Editar páginas</CardTitle>
-          <button onClick={onClose} className="rounded-lg p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
@@ -70,7 +70,7 @@ export function PageEditorModal({ doc, onClose, onDone }: { doc: DbDocument; onC
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {pages.map((pg, i) => (
                 <div key={`${pg.origIndex}-${i}`} className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]">
-                  <div className="relative aspect-[3/4] overflow-hidden bg-white">
+                  <div className="relative aspect-[3/4] overflow-hidden bg-[var(--surface-raised)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={`/api/admin/documents/${doc.id}/thumbnail?page=${pg.origIndex + 1}`}

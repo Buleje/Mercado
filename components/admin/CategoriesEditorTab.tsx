@@ -567,18 +567,18 @@ export default function CategoriesEditorTab() {
                 </button>
 
                 <div className="flex items-center gap-1">
-                  <button onClick={() => moveUp(i)} disabled={!canReorder || i === 0} className="rounded-lg p-2 text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-20" title="Subir">
+                  <button onClick={() => moveUp(i)} disabled={!canReorder || i === 0} className="rounded-xl p-2 text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-20" title="Subir">
                     <ArrowUp className="h-4 w-4" />
                   </button>
-                  <button onClick={() => moveDown(i)} disabled={!canReorder || i === cats.length - 1} className="rounded-lg p-2 text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-20" title="Bajar">
+                  <button onClick={() => moveDown(i)} disabled={!canReorder || i === cats.length - 1} className="rounded-xl p-2 text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-20" title="Bajar">
                     <ArrowDown className="h-4 w-4" />
                   </button>
-                  <button onClick={() => toggleVisibility(i)} className="rounded-lg p-2 transition-colors hover:bg-[var(--surface-sunken)]" title={cat.visible ? "Ocultar" : "Mostrar"}>
+                  <button onClick={() => toggleVisibility(i)} className="rounded-xl p-2 transition-colors hover:bg-[var(--surface-sunken)]" title={cat.visible ? "Ocultar" : "Mostrar"}>
                     {cat.visible ? <Eye className="h-4 w-4 text-[var(--data-success-500)]" /> : <EyeOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(i)}
-                    className="rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)]"
+                    className="rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)]"
                     title="Eliminar categoría"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -625,7 +625,7 @@ export default function CategoriesEditorTab() {
                       value={cat.seo?.metaTitle || ""}
                       onChange={(e) => updateSeoField(i, "metaTitle", e.target.value)}
                       placeholder={`${cat.label} - Buleje`}
-                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
                       maxLength={70}
                     />
                   </Field>
@@ -652,7 +652,7 @@ export default function CategoriesEditorTab() {
                       value={cat.seo?.metaDescription || ""}
                       onChange={(e) => updateSeoField(i, "metaDescription", e.target.value)}
                       placeholder={`Compra ${cat.label.toLowerCase()} frescos en línea...`}
-                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm resize-none"
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm resize-none"
                       rows={3}
                       maxLength={170}
                     />
@@ -680,7 +680,7 @@ export default function CategoriesEditorTab() {
                         updateSeoField(i, "keywords", keywords);
                       }}
                       placeholder="delivery, san martín, compra online..."
-                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
                     />
                   </Field>
 
@@ -694,7 +694,7 @@ export default function CategoriesEditorTab() {
                         value={cat.seo?.slug || cat.id}
                         onChange={(e) => updateSeoField(i, "slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
                         placeholder={cat.id}
-                        className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm font-mono"
+                        className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm font-mono"
                       />
                     </Field>
 
@@ -707,7 +707,7 @@ export default function CategoriesEditorTab() {
                         value={cat.seo?.ogImage || ""}
                         onChange={(e) => updateSeoField(i, "ogImage", e.target.value)}
                         placeholder="https://..."
-                        className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
+                        className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
                       />
                     </Field>
                   </div>
@@ -721,7 +721,7 @@ export default function CategoriesEditorTab() {
                       value={cat.seo?.canonical || ""}
                       onChange={(e) => updateSeoField(i, "canonical", e.target.value)}
                       placeholder="https://buleje.pe/categoria/..."
-                      className="w-full rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
                     />
                   </Field>
 

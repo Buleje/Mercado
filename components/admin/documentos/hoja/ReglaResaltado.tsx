@@ -55,7 +55,7 @@ export default function ReglaResaltado({
         <div className="flex items-center gap-2 border-b border-[var(--rule-base)] px-4 py-3">
           <Paintbrush className="h-4 w-4 text-[var(--accent)]" />
           <p className="flex-1 text-sm font-extrabold text-[var(--text-primary)]">Resaltar por regla</p>
-          <button onClick={onCerrar} aria-label="Cerrar" className="rounded-md p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]">
+          <button onClick={onCerrar} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]">
             <X className="h-4 w-4" />
           </button>
         </div>

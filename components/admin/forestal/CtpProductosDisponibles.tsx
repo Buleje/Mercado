@@ -462,7 +462,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                     type="button"
                     onClick={() => setFichaPaquete(p.codigo)}
                     title={`Ver de qué corrida y de qué madera salió ${p.codigo}`}
-                    className="rounded-lg underline decoration-dotted underline-offset-4 transition-colors hover:text-[var(--accent)]"
+                    className="rounded-xl underline decoration-dotted underline-offset-4 transition-colors hover:text-[var(--accent)]"
                   >
                     {p.codigo}
                   </button>

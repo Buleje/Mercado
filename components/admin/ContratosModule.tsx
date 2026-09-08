@@ -96,10 +96,10 @@ const ESTADO_STYLES: Record<EstadoVisible, string> = {
   POR_VENCER: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
   VENCIDO: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
   PENDIENTE_FIRMA: "bg-[color-mix(in_oklch,var(--accent)_14%,transparent)] text-[var(--accent-ink)] dark:text-[var(--accent)]",
-  RENOVADO: "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]",
-  TERMINADO: "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]",
-  ANULADO: "bg-[var(--rule-soft)] dark:bg-white/5 text-[var(--text-tertiary)]",
-  BORRADOR: "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]",
+  RENOVADO: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+  TERMINADO: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+  ANULADO: "bg-[var(--rule-soft)] text-[var(--text-tertiary)]",
+  BORRADOR: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
 };
 
 const PER_PAGE = 12;
@@ -732,7 +732,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       kpi.tone === "danger" ? "text-[var(--data-error-500)]" :
                       "text-[var(--text-primary)]";
                     return (
-                      <div key={kpi.label} className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+                      <div key={kpi.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
                         <div className="flex items-center gap-3">
                           <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", iconBg)}>
                             <kpi.icon className={cn("h-5 w-5", iconColor)} />
@@ -791,7 +791,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <m.div
                       key={tpl.id}
                       whileHover={{ scale: 1.02 }}
-                      className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-[var(--shadow-lg)] transition-all group"
+                      className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg p-4 cursor-pointer hover:border-primary hover:shadow-[var(--shadow-lg)] transition-all group"
                       onClick={() => startWizard(tpl)}
                     >
                       <div className="flex items-start gap-3">
@@ -827,22 +827,22 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       placeholder="Buscar por cliente, número..."
                       value={search}
                       onChange={e => setSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
-                  <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="ALL">Todos los tipos</option>
                     {Object.entries(TIPO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
-                  <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="ALL">Todos los estados</option>
                     <option value="VIGENTE">Vigentes</option>
                     <option value="POR_VENCER">Por vencer</option>
                     <option value="VENCIDO">Vencidos</option>
                   </select>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => setViewMode("cards")} className={cn("p-2 rounded-lg transition-colors", viewMode === "cards" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]")}><LayoutGrid className="h-4 w-4" /></button>
-                    <button onClick={() => setViewMode("list")} className={cn("p-2 rounded-lg transition-colors", viewMode === "list" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]")}><List className="h-4 w-4" /></button>
+                    <button onClick={() => setViewMode("cards")} className={cn("p-2 rounded-xl transition-colors", viewMode === "cards" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}><LayoutGrid className="h-4 w-4" /></button>
+                    <button onClick={() => setViewMode("list")} className={cn("p-2 rounded-xl transition-colors", viewMode === "list" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}><List className="h-4 w-4" /></button>
                   </div>
                 </div>
 
@@ -851,7 +851,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <FileText className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
                     <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin contratos</CardTitle>
                     <p className="text-sm text-[var(--text-secondary)] mb-6">Crea tu primer contrato desde una plantilla</p>
-                    <button onClick={() => setActiveTab("plantillas")} className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark">Ver Plantillas</button>
+                    <button onClick={() => setActiveTab("plantillas")} className="bg-primary text-white px-6 py-2.5 rounded-xl font-medium hover:bg-primary-dark">Ver Plantillas</button>
                   </div>
                 ) : viewMode === "cards" ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -863,7 +863,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         <div
                           key={c.id}
                           {...activateProps(() => setSelected(c))}
-                          className={cn("bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-lg  hover:shadow-[var(--shadow-lg)] transition-all cursor-pointer border-l-4", borderColor)}
+                          className={cn("bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg hover:shadow-[var(--shadow-lg)] transition-all cursor-pointer border-l-4", borderColor)}
                         >
                           <div className="p-4 space-y-3">
                             <div className="flex items-start justify-between">
@@ -886,11 +886,11 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                               <p>Fecha: {formatDatePeru(c.fechaInicio || c.createdAt)}</p>
                               {c.fechaVencimiento && <p>Vence: {formatDatePeru(c.fechaVencimiento)} {dias !== null && dias >= 0 ? `(${dias}d)` : dias !== null ? `(hace ${Math.abs(dias)}d)` : ""}</p>}
                             </div>
-                            <div className="flex items-center justify-between pt-2 border-t border-[var(--rule-soft)] dark:border-white/5">
+                            <div className="flex items-center justify-between pt-2 border-t border-[var(--rule-soft)] ">
                               <p className="text-sm font-bold text-primary">{formatMoney(c.monto, c.moneda)}</p>
                               <div className="flex gap-1">
-                                <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-primary transition-colors" title="PDF"><Printer className="h-3.5 w-3.5" /></button>
-                                <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
+                                <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-primary transition-colors" title="PDF"><Printer className="h-3.5 w-3.5" /></button>
+                                <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
                               </div>
                             </div>
                           </div>
@@ -899,11 +899,11 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     })}
                   </div>
                 ) : (
-                  <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl overflow-hidden">
+                  <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
+                          <tr className="border-b border-[var(--rule-soft)] text-left">
                             <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">N.o</th>
                             <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">Cliente</th>
                             <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] hidden sm:table-cell">Tipo</th>
@@ -917,14 +917,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           {paginated.map(c => {
                             const estado = estadoVisible(c);
                             return (
-                              <tr key={c.id} onClick={() => setSelected(c)} className="border-b border-[var(--rule-soft)] dark:border-white/5 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 cursor-pointer transition-colors">
+                              <tr key={c.id} onClick={() => setSelected(c)} className="border-b border-[var(--rule-soft)] hover:bg-[var(--surface-alt)] cursor-pointer transition-colors">
                                 <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">{c.numero}</td>
                                 <td className="px-4 py-3">
                                   <p className="font-medium text-[var(--text-primary)] truncate">{c.clienteNombre}</p>
                                   <p className="text-xs text-[var(--text-tertiary)]">{c.clienteDoc}</p>
                                 </td>
                                 <td className="px-4 py-3 hidden sm:table-cell">
-                                  <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]">{TIPO_LABELS[c.tipo] || c.tipo}</span>
+                                  <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">{TIPO_LABELS[c.tipo] || c.tipo}</span>
                                 </td>
                                 <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">{formatMoney(c.monto, c.moneda)}</td>
                                 <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">{formatDatePeru(c.fechaInicio || c.createdAt)}</td>
@@ -933,8 +933,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                 </td>
                                 <td className="px-4 py-3">
                                   <div className="flex gap-1">
-                                    <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 text-[var(--text-tertiary)]" title="PDF"><Printer className="h-4 w-4" /></button>
-                                    <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 text-[var(--text-tertiary)]" title="Word"><Download className="h-4 w-4" /></button>
+                                    <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="PDF"><Printer className="h-4 w-4" /></button>
+                                    <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="Word"><Download className="h-4 w-4" /></button>
                                   </div>
                                 </td>
                               </tr>
@@ -951,8 +951,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-[var(--text-secondary)]">{filteredContratos.length} contrato{filteredContratos.length !== 1 ? "s" : ""} — Pag. {page}/{totalPages}</p>
                     <div className="flex gap-1">
-                      <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
-                      <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
+                      <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
+                      <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
                     </div>
                   </div>
                 )}
@@ -967,12 +967,12 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <BookOpen className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
                     <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Selecciona una plantilla</CardTitle>
                     <p className="text-sm text-[var(--text-secondary)] mb-6">Ve a la pestana &quot;Plantillas&quot; para elegir una plantilla legal</p>
-                    <button onClick={() => setActiveTab("plantillas")} className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark">Ver Plantillas</button>
+                    <button onClick={() => setActiveTab("plantillas")} className="bg-primary text-white px-6 py-2.5 rounded-xl font-medium hover:bg-primary-dark">Ver Plantillas</button>
                   </div>
                 ) : (
                   <>
                     {/* Wizard Header */}
-                    <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+                    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)]">
                           <TemplateIcon icon={selectedTemplate.icon} className="h-5 w-5" />
@@ -994,11 +994,11 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             onClick={() => setWizardStep(i)}
                             className={cn(
                               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all",
-                              wizardStep === i ? "bg-primary text-white" : wizardStep > i ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-tertiary)]"
+                              wizardStep === i ? "bg-primary text-white" : wizardStep > i ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                             )}
                           >
                             <span className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold",
-                              wizardStep === i ? "bg-white/20 text-white" : wizardStep > i ? "bg-primary text-white" : "bg-[var(--rule-soft)] dark:bg-white/10 text-[var(--text-secondary)]"
+                              wizardStep === i ? "bg-white/20 text-white" : wizardStep > i ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)]"
                             )}>
                               {wizardStep > i ? <CheckCircle className="h-3 w-3" /> : i + 1}
                             </span>
@@ -1015,12 +1015,12 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       const filledRequired = allFields.filter(f => f.required && wizardData[f.key]?.trim()).length;
                       const progress = totalRequired > 0 ? Math.round((filledRequired / totalRequired) * 100) : 0;
                       return (
-                        <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+                        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-bold text-[var(--text-secondary)]">Progreso del contrato</span>
                             <span className="text-xs font-bold text-[var(--text-primary)]">{filledRequired} de {totalRequired} campos completados ({progress}%)</span>
                           </div>
-                          <div className="relative h-3 bg-[var(--rule-soft)] dark:bg-white/10 rounded-full overflow-hidden">
+                          <div className="relative h-3 bg-[var(--rule-soft)] rounded-full overflow-hidden">
                             <div
                               className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", progress === 100 ? "bg-primary/10" : progress >= 60 ? "bg-primary" : "bg-secondary")}
                               style={{ width: `${progress}%` }}
@@ -1032,7 +1032,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                     {/* Wizard Steps 0-2: Form Fields */}
                     {wizardStep < 3 && (
-                      <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
+                      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 space-y-4">
                         <h4 className="text-sm font-bold text-[var(--text-primary)]">{wizardGroupLabels[wizardStep]}</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {wizardGroups[wizardStep]?.fields.map(field => {
@@ -1075,15 +1075,15 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       }}
                                       placeholder={field.placeholder}
                                       className={cn(
-                                        "flex-1 px-3 py-2 rounded-lg border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
-                                        isAutoFilled ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : "border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5"
+                                        "flex-1 px-3 py-2 rounded-xl border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
+                                        isAutoFilled ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : "border-[var(--rule-base)] bg-[var(--surface-raised)] "
                                       )}
                                     />
                                     <button
                                       type="button"
                                       onClick={detectLocation}
                                       disabled={geoLoading}
-                                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors shrink-0"
+                                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors shrink-0"
                                     >
                                       {geoLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MapPin className="h-3.5 w-3.5" />}
                                       Detectar
@@ -1112,7 +1112,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                         }
                                         setAutoFilledFields(prev => { const n = new Set(prev); n.delete(field.key); return n; });
                                       }}
-                                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                      className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     >
                                       <option value="">Seleccionar...</option>
                                       {selectOptions?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -1127,7 +1127,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                           setWizardData(p => ({ ...p, [field.key]: v || "Otro (escribir)" }));
                                         }}
                                         placeholder="Escriba el valor personalizado..."
-                                        className="w-full mt-2 px-3 py-2 rounded-lg border border-secondary/50 bg-secondary/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                                        className="w-full mt-2 px-3 py-2 rounded-xl border border-secondary/50 bg-secondary/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-secondary/30"
                                       />
                                     )}
                                   </>
@@ -1141,7 +1141,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                       setWizardData(p => ({ ...p, [field.key]: e.target.value }));
                                       setAutoFilledFields(prev => { const n = new Set(prev); n.delete(field.key); return n; });
                                     }}
-                                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                                   >
                                     <option value="">Seleccionar...</option>
                                     {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -1158,7 +1158,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                     }}
                                     placeholder={field.placeholder}
                                     rows={3}
-                                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                                    className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                                   />
                                 )}
 
@@ -1193,8 +1193,8 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                     placeholder={field.placeholder}
                                     step={field.type === "number" ? "0.01" : undefined}
                                     className={cn(
-                                      "w-full px-3 py-2 rounded-lg border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
-                                      isAutoFilled && !isCiudadField ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : validationError ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : "border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5"
+                                      "w-full px-3 py-2 rounded-xl border text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30",
+                                      isAutoFilled && !isCiudadField ? "border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : validationError ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10" : "border-[var(--rule-base)] bg-[var(--surface-raised)] "
                                     )}
                                   />
                                 )}
@@ -1232,7 +1232,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         </div>
 
                         {/* Full Document Preview — with highlighted filled fields */}
-                        <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 sm:p-8 max-h-[60vh] overflow-y-auto">
+                        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 sm:p-8 max-h-[60vh] overflow-y-auto">
                           <div className="max-w-[680px] mx-auto font-serif" ref={printRef}>
                             <SectionTitle className="text-center text-base font-bold mb-1">
                               CONTRATO DE {selectedTemplate.name.toUpperCase()}
@@ -1281,7 +1281,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     {/* Step 4: Confirm */}
                     {wizardStep === 4 && (
                       <div className="space-y-6">
-                        <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 space-y-4">
+                        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 space-y-4">
                           <div className="flex items-center gap-3">
                             <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center text-white">
                               <CheckCircle className="h-6 w-6" />
@@ -1295,7 +1295,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           {/* Data Summary */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {selectedTemplate.fields.filter(f => wizardData[f.key]).map(f => (
-                              <div key={f.key} className="p-2 bg-[var(--surface-alt)] dark:bg-white/5 rounded-lg">
+                              <div key={f.key} className="p-2 bg-[var(--surface-alt)] rounded-lg">
                                 <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">{f.label}</p>
                                 <p className="text-sm text-[var(--text-secondary)] truncate">{wizardData[f.key]}</p>
                               </div>
@@ -1321,7 +1321,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                               );
                             }
                             return (
-                              <div className="rounded-xl border border-[var(--rule-base)] dark:border-white/10 p-3 space-y-2">
+                              <div className="rounded-xl border border-[var(--rule-base)] p-3 space-y-2">
                                 <label className="block text-sm font-semibold text-[var(--text-primary)]" htmlFor="venc-manual">
                                   ¿Hasta cuándo vale este contrato?
                                 </label>
@@ -1335,7 +1335,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                                   value={vencimientoManual}
                                   min={inicioDelContrato(wizardData)}
                                   onChange={e => setVencimientoManual(e.target.value)}
-                                  className="w-full sm:w-auto px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)]"
+                                  className="w-full sm:w-auto px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)]"
                                 />
                               </div>
                             );
@@ -1350,7 +1350,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <div className="flex items-center justify-between">
                       <button
                         onClick={() => wizardStep > 0 ? setWizardStep(s => s - 1) : setSelectedTemplate(null)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
                       >
                         <ArrowLeft className="h-4 w-4" />
                         {wizardStep === 0 ? "Cancelar" : "Anterior"}
@@ -1359,7 +1359,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         {wizardStep < 4 && (
                           <button
                             onClick={() => setWizardStep(s => s + 1)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
                           >
                             Siguiente
                             <ArrowRight className="h-4 w-4" />
@@ -1369,7 +1369,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <button
                             onClick={handleCreate}
                             disabled={creating}
-                            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                           >
                             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                             Guardar Contrato
@@ -1397,7 +1397,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         setEditorPreview(false);
                       }
                     }}
-                    className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="px-3 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                   >
                     <option value="">Seleccionar plantilla...</option>
                     {PLANTILLAS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -1406,7 +1406,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <button
                       onClick={() => setEditorPreview(!editorPreview)}
                       className={cn("flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors",
-                        editorPreview ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]"
+                        editorPreview ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                       )}
                     >
                       <Eye className="h-3.5 w-3.5" /> {editorPreview ? "Editando" : "Preview"}
@@ -1423,7 +1423,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Editor */}
                     <div className="space-y-3">
-                      <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+                      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
                         <p className="text-xs font-bold text-[var(--text-secondary)] mb-2">Campos disponibles (clic para insertar):</p>
                         <div className="flex flex-wrap gap-1 mb-3">
                           {editorTemplate.fields.map(f => (
@@ -1440,14 +1440,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           value={editorText}
                           onChange={e => setEditorText(e.target.value)}
                           rows={20}
-                          className="w-full px-4 py-3 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-alt)] dark:bg-white/5 text-sm text-[var(--text-primary)] font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                          className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-sm text-[var(--text-primary)] font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                           placeholder="Escribe o edita las clausulas del contrato..."
                         />
                       </div>
                     </div>
 
                     {/* Preview */}
-                    <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-6 max-h-[70vh] overflow-y-auto">
+                    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 max-h-[70vh] overflow-y-auto">
                       <h4 className="text-sm font-bold text-[var(--text-primary)] mb-4">Vista Previa</h4>
                       <div className="font-serif space-y-3">
                         {editorText.split("\n\n").filter(p => p.trim()).map((para, i) => (
@@ -1479,7 +1479,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] dark:bg-[#1a1a2e] border-l border-[var(--rule-base)] dark:border-white/10 overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[var(--surface-raised)] dark:bg-[#1a1a2e] border-l border-[var(--rule-base)] overflow-y-auto"
             >
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Header */}
@@ -1488,7 +1488,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Contrato {selected.numero}</CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">{TIPO_LABELS[selected.tipo] || selected.tipo}</p>
                   </div>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] ">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1513,13 +1513,13 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <span className={cn("px-3 py-1 rounded-lg text-xs font-bold", ESTADO_STYLES[estadoVisible(selected)])}>
                     {ESTADO_VISIBLE_LABELS[estadoVisible(selected)]}
                   </span>
-                  <span className="px-3 py-1 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] dark:bg-white/5 text-[var(--text-secondary)]">
+                  <span className="px-3 py-1 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
                     {TIPO_LABELS[selected.tipo] || selected.tipo}
                   </span>
                 </div>
 
                 {/* Parties */}
-                <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-4 space-y-3">
+                <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-secondary/20 flex items-center justify-center">
                       <User className="h-5 w-5 text-secondary" />
@@ -1529,7 +1529,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       <p className="text-xs text-[var(--text-secondary)]">{selected.clienteDoc}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[var(--rule-base)] dark:border-white/10">
+                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[var(--rule-base)] ">
                     <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Monto</p><p className="text-sm font-bold text-primary">{formatMoney(selected.monto, selected.moneda)}</p></div>
                     <div><p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Fecha</p><p className="text-sm text-[var(--text-secondary)]">{formatDatePeru(selected.fechaInicio || selected.createdAt)}</p></div>
                   </div>
@@ -1544,9 +1544,9 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     const diasRestantes = Math.ceil((vence - hoy) / (1000 * 60 * 60 * 24));
                     const barColor = progreso >= 100 ? "bg-[var(--data-error-500)]" : progreso > 80 ? "bg-[var(--data-warning-500)]" : "bg-primary";
                     return (
-                      <div className="pt-3 border-t border-[var(--rule-base)] dark:border-white/10 space-y-1.5">
+                      <div className="pt-3 border-t border-[var(--rule-base)] space-y-1.5">
                         <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Vigencia</p>
-                        <div className="relative h-2.5 bg-[var(--rule-soft)] dark:bg-white/10 rounded-full overflow-hidden">
+                        <div className="relative h-2.5 bg-[var(--rule-soft)] rounded-full overflow-hidden">
                           <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${progreso}%` }} />
                         </div>
                         <div className="flex items-center justify-between text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
@@ -1565,7 +1565,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Clausulas</h4>
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       {selected.clausulas.map((c, i) => (
-                        <div key={i} className="p-3 bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl text-sm text-[var(--text-secondary)] text-justify leading-relaxed">
+                        <div key={i} className="p-3 bg-[var(--surface-alt)] rounded-xl text-sm text-[var(--text-secondary)] text-justify leading-relaxed">
                           {c}
                         </div>
                       ))}
@@ -1578,7 +1578,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <div>
                     <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
                       <Clock className="h-4 w-4" /> Qué pasó con este contrato
-                      <span className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] dark:bg-white/10 px-2 py-0.5 rounded-full">{detalle.eventos.length}</span>
+                      <span className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] px-2 py-0.5 rounded-full">{detalle.eventos.length}</span>
                     </h4>
                     <ol className="space-y-1.5 border-l-2 border-[var(--rule-soft)] pl-3">
                       {detalle.eventos.map(ev => (
@@ -1618,7 +1618,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                 {/* Renovar: sólo tiene sentido cuando el contrato tiene un final a la vista */}
                 {["VIGENTE", "POR_VENCER", "VENCIDO"].includes(estadoVisible(selected)) && (
-                  <div className="p-3 rounded-xl bg-[var(--surface-alt)] dark:bg-white/5 space-y-2">
+                  <div className="p-3 rounded-xl bg-[var(--surface-alt)] space-y-2">
                     <p className="text-xs text-[var(--text-secondary)]">
                       Renovar crea un contrato nuevo con las mismas condiciones y las fechas corridas.
                       El actual queda archivado como renovado, sin perder qué estuvo vigente y cuándo.
@@ -1627,7 +1627,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       <select
                         value={mesesRenovacion}
                         onChange={e => setMesesRenovacion(Number(e.target.value))}
-                        className="px-2.5 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)] dark:bg-white/5 text-xs text-[var(--text-primary)]"
+                        className="px-2.5 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)]"
                         aria-label="Meses de renovación"
                       >
                         {[3, 6, 12, 24, 36].map(m => (
@@ -1640,7 +1640,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         // Renovar es constructivo: en coral lleno se leía como
                         // una acción destructiva, justo al lado del badge rojo
                         // de "Vencido".
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-primary/40 hover:bg-primary/10 transition-colors disabled:opacity-60"
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-primary/40 hover:bg-primary/10 transition-colors disabled:opacity-60"
                       >
                         {renovando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
                         Renovar contrato
@@ -1653,10 +1653,10 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* Action Buttons */}
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => verPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors">
+                    <button onClick={() => verPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors">
                       <Eye className="h-4 w-4" /> Ver PDF
                     </button>
-                    <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 transition-colors">
+                    <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 transition-colors">
                       <Download className="h-4 w-4" /> Descargar
                     </button>
                   </div>
@@ -1667,7 +1667,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     disabled={archivando === selected.id}
                     // En dark el brand-ink es casi negro: sin borde el botón se
                     // funde con el panel y parece un hueco, no una acción.
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--brand-ink)] border border-transparent dark:border-white/20 hover:opacity-90 transition-opacity disabled:opacity-60"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--brand-ink)] border border-transparent dark:border-white/20 hover:opacity-90 transition-opacity disabled:opacity-60"
                   >
                     {archivando === selected.id
                       ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -1686,13 +1686,13 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   )}
 
                   <div className="grid grid-cols-3 gap-2">
-                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] transition-colors">
+                    <button onClick={() => downloadWord(selected)} className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                       <FileText className="h-3.5 w-3.5" /> Word
                     </button>
-                    <button onClick={() => copyToClipboard(selected)} className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] transition-colors">
+                    <button onClick={() => copyToClipboard(selected)} className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                       <ClipboardCopy className="h-3.5 w-3.5" /> Copiar
                     </button>
-                    <button onClick={() => duplicarContrato(selected)} className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-bold text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors">
+                    <button onClick={() => duplicarContrato(selected)} className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-bold text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors">
                       <Copy className="h-3.5 w-3.5" /> Duplicar
                     </button>
                   </div>

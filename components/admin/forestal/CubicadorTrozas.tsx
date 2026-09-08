@@ -401,7 +401,7 @@ export default function CubicadorTrozas() {
           <label className="flex items-center gap-2">
             <Scale className="h-4 w-4 text-[var(--accent)]" />
             <span className="text-sm font-bold text-[var(--text-primary)]">Según la GTF</span>
-            <input type="number" inputMode="decimal" value={gtfM3} onChange={(e) => setGtfM3(e.target.value)} placeholder="0.000" className="h-9 w-28 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+            <input type="number" inputMode="decimal" value={gtfM3} onChange={(e) => setGtfM3(e.target.value)} placeholder="0.000" className="h-9 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
             <span className="text-sm text-[var(--text-tertiary)]">m³ declarados</span>
           </label>
           {cmpGtf ? (
@@ -475,7 +475,7 @@ function CeldaNum({ value, onChange }: { value: number; onChange: (v: number) =>
         const n = Number(limpio);
         if (limpio !== "" && Number.isFinite(n) && n > 0) onChange(n);
       }}
-      className="h-8 w-20 rounded-lg border border-[var(--rule-base)] bg-transparent px-2 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+      className="h-8 w-20 rounded-xl border border-[var(--rule-base)] bg-transparent px-2 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
     />
   );
 }

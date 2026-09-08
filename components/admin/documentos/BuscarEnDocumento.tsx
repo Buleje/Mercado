@@ -119,14 +119,14 @@ export default function BuscarEnDocumento({ docId, ocrText, origen, escaneo, con
           </span>
         )}
         <span className="inline-flex items-center gap-1">
-          <button onClick={() => ir(-1)} disabled={hits.length === 0} className="rounded-lg border-2 border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-40" aria-label="Coincidencia anterior" title="Anterior (Shift+Enter)">
+          <button onClick={() => ir(-1)} disabled={hits.length === 0} className="rounded-xl border-2 border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-40" aria-label="Coincidencia anterior" title="Anterior (Shift+Enter)">
             <ChevronUp className="h-4 w-4" />
           </button>
-          <button onClick={() => ir(1)} disabled={hits.length === 0} className="rounded-lg border-2 border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-40" aria-label="Coincidencia siguiente" title="Siguiente (Enter)">
+          <button onClick={() => ir(1)} disabled={hits.length === 0} className="rounded-xl border-2 border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-40" aria-label="Coincidencia siguiente" title="Siguiente (Enter)">
             <ChevronDown className="h-4 w-4" />
           </button>
           {consulta && (
-            <button onClick={() => setConsulta("")} className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" aria-label="Limpiar la búsqueda">
+            <button onClick={() => setConsulta("")} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" aria-label="Limpiar la búsqueda">
               <X className="h-4 w-4" />
             </button>
           )}

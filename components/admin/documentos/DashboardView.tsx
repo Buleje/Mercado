@@ -90,7 +90,7 @@ export function DashboardView({ docs }: { docs: DbDocument[] }) {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {kpis.map((k) => (
-          <div key={k.label} className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
+          <div key={k.label} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
             <div className="flex items-center gap-2 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
               <k.icon className={cn("h-4 w-4", k.tint)} /> {k.label}
             </div>
@@ -116,7 +116,7 @@ export function DashboardView({ docs }: { docs: DbDocument[] }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Dona por categoría */}
-        <section className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
+        <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <p className="mb-2 text-sm font-bold text-[var(--text-primary)]">Documentos por categoría</p>
           {stats.catData.length > 0 ? (
             <>
@@ -136,7 +136,7 @@ export function DashboardView({ docs }: { docs: DbDocument[] }) {
         </section>
 
         {/* Tendencia de subidas */}
-        <section className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
+        <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <p className="mb-3 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
             <TrendingUp className="h-4 w-4 text-primary" /> Subidas por mes
           </p>
@@ -157,7 +157,7 @@ export function DashboardView({ docs }: { docs: DbDocument[] }) {
       </div>
 
       {/* Top etiquetas */}
-      <section className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
+      <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <p className="mb-3 inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
           <TagIcon className="h-4 w-4 text-primary" /> Etiquetas más usadas
         </p>

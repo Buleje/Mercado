@@ -265,7 +265,7 @@ const OrderCard = memo(function OrderCard({
             type="button"
             onClick={onSelect}
             aria-label={`Ver detalle del pedido de ${order.customer.name}`}
-            className="flex flex-1 items-start gap-3 min-w-0 text-left cursor-pointer rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+            className="flex flex-1 items-start gap-3 min-w-0 text-left cursor-pointer rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
           >
             <span
               aria-hidden
@@ -366,7 +366,7 @@ const OrderCard = memo(function OrderCard({
             <button
               type="button"
               onClick={onRejectYape}
-              className="inline-flex items-center justify-center h-10 w-10 rounded-lg text-[var(--data-error-500)] bg-[var(--data-error-500)]/10 hover:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)]/30 transition-colors"
+              className="inline-flex items-center justify-center h-10 w-10 rounded-xl text-[var(--data-error-500)] bg-[var(--data-error-500)]/10 hover:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)]/30 transition-colors"
               title="Rechazar Yape"
               aria-label="Rechazar Yape (pago falso)"
             >
@@ -377,7 +377,7 @@ const OrderCard = memo(function OrderCard({
             <button
               type="button"
               onClick={onMarkDeudaPaid}
-              className="inline-flex items-center gap-1 h-10 px-3 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] border border-[var(--rule-base)] transition-colors"
+              className="inline-flex items-center gap-1 h-10 px-3 rounded-xl text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] border border-[var(--rule-base)] transition-colors"
               title="Marcar deuda como cobrada"
             >
               <Check className="h-3.5 w-3.5" /> Cobrado
@@ -387,7 +387,7 @@ const OrderCard = memo(function OrderCard({
             <button
               type="button"
               onClick={manualDeliverAction.onClick}
-              className="inline-flex items-center justify-center h-10 w-10 rounded-lg text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] border border-[var(--rule-base)] transition-colors"
+              className="inline-flex items-center justify-center h-10 w-10 rounded-xl text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] border border-[var(--rule-base)] transition-colors"
               title="Marcar entregado (entrega manual sin delivery)"
               aria-label="Marcar como entregado manualmente"
             >
@@ -690,7 +690,7 @@ export function OrdersKanban({
               type="button"
               onClick={() => setMobileColumn(col.id)}
               className={cn(
-                "w-full inline-flex items-center justify-center gap-1.5 h-10 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
+                "w-full inline-flex items-center justify-center gap-1.5 h-10 px-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
                 isActive
                   ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-[var(--shadow-sm)]"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",

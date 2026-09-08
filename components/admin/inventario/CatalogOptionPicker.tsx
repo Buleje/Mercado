@@ -145,7 +145,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                 Click en cada item para agregarlo a este grupo. El modal queda abierto para sumar más.
               </p>
             </div>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)]">
+            <button onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)]">
               <X className="h-5 w-5 text-[var(--text-tertiary)]" />
             </button>
           </div>
@@ -158,7 +158,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar item, plantilla o categoría…"
-                className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 autoFocus
               />
             </div>

@@ -200,7 +200,7 @@ export default function PlantacionPasoMapa({
             id="rpf-bloque-activo"
             value={activoValido ?? ""}
             onChange={(e) => setActivo(e.target.value === "" ? null : Number(e.target.value))}
-            className="h-9 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
+            className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
           >
             <option value="">Ningún bloque (sólo ver)</option>
             {bloques.map((b, i) => (

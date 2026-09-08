@@ -519,7 +519,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
               <button
                 type="button"
                 onClick={handleClose}
-                className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors px-2 h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-lg"
+                className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors px-2 h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-xl"
               >
                 Saltar
               </button>

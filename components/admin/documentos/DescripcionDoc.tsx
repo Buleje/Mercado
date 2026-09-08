@@ -118,7 +118,7 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
             onClick={describirConIA}
             disabled={analizando}
             title={descIA ? "Volver a describir con IA" : "Describir con IA"}
-            className="inline-flex items-center gap-1 rounded-md border-2 border-[var(--accent)]/40 px-2 py-0.5 text-xs font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10 disabled:opacity-60"
+            className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--accent)]/40 px-2 py-0.5 text-xs font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10 disabled:opacity-60"
           >
             {analizando ? <Loader2 className="h-3 w-3 animate-spin" /> : descIA ? <RefreshCw className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
             {analizando ? "Leyendo…" : descIA ? "Rehacer" : "Describir"}
@@ -172,7 +172,7 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) guardar();
               }}
               placeholder="Ej: es el contrato del puesto 3 del mercado, el que firmamos con don Julio."
-              className="w-full resize-y rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="w-full resize-y rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
             <div className="flex items-center gap-2">
               <button
@@ -201,7 +201,7 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
             </div>
             <button
               onClick={() => { setBorrador(descPropia); setEditando(true); }}
-              className="shrink-0 rounded-md p-1.5 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)]"
+              className="shrink-0 rounded-xl p-1.5 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)]"
               aria-label={descPropia ? "Editar tu descripción" : "Escribir tu descripción"}
               title={descPropia ? "Editar tu descripción" : "Escribir tu descripción"}
             >

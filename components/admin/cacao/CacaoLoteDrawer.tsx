@@ -237,7 +237,7 @@ export default function CacaoLoteDrawer({
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="rounded-lg p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+            className="rounded-xl p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
           >
             <XIcon className="h-5 w-5" />
           </button>
@@ -443,7 +443,7 @@ export default function CacaoLoteDrawer({
                     <img
                       src={qrUrl}
                       alt="QR de trazabilidad"
-                      className="h-28 w-28 shrink-0 rounded-xl border-2 border-[var(--rule-base)] bg-white p-1"
+                      className="h-28 w-28 shrink-0 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1"
                     />
                   ) : (
                     <div className="grid h-28 w-28 shrink-0 place-items-center rounded-xl border-2 border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]">
