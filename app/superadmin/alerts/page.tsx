@@ -70,7 +70,7 @@ const KIND_LABEL: Record<string, string> = {
 };
 const SEV_STYLE: Record<Severity, { dot: string; chip: string }> = {
   critical: { dot: "bg-[var(--data-error-500)]", chip: "text-[var(--data-error-600,#dc2626)]" },
-  warning: { dot: "bg-teal-500", chip: "text-[#0d9488]" },
+  warning: { dot: "bg-teal-500", chip: "text-[var(--accent-ink)] dark:text-[var(--accent)]" },
   info: { dot: "bg-[var(--accent)]", chip: "text-[var(--accent)]" },
 };
 
@@ -201,7 +201,7 @@ export default function AlertsPage() {
             {(mutedCount > 0 || view === "muted") && (
               <button
                 onClick={() => setView((v) => (v === "muted" ? "active" : "muted"))}
-                className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--accent)]/40"
+                className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)]/40"
               >
                 {view === "muted" ? (
                   <>
@@ -218,7 +218,7 @@ export default function AlertsPage() {
             <button
               onClick={() => void load()}
               disabled={loading}
-              className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50"
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualizar
             </button>
@@ -234,7 +234,7 @@ export default function AlertsPage() {
               t.id === "critical"
                 ? "text-[var(--data-error-600,#dc2626)]"
                 : t.id === "warning"
-                  ? "text-[#0d9488]"
+                  ? "text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : t.id === "info"
                     ? "text-[var(--accent)]"
                     : "text-[var(--text-primary)]";
@@ -245,7 +245,7 @@ export default function AlertsPage() {
                 onClick={() => setTab(t.id)}
                 aria-pressed={active}
                 className={[
-                  "inline-flex items-center gap-2 rounded-xl border-2 px-3.5 h-11 text-sm font-bold transition-colors",
+                  "inline-flex items-center gap-2 rounded-xl border-2 px-3.5 h-11 text-sm font-semibold transition-colors",
                   active
                     ? "border-[var(--accent)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40",
@@ -270,14 +270,14 @@ export default function AlertsPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por tienda, título o detalle…"
-              className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-9 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+              className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-9 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery("")}
                 aria-label="Limpiar"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-xl p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -326,7 +326,7 @@ export default function AlertsPage() {
             ))}
           </div>
         ) : alerts.length === 0 ? (
-          <div className="border-2 border-dashed border-[var(--rule-base)] p-12 text-center">
+          <div className="border border-dashed border-[var(--rule-base)] p-12 text-center">
             {view === "muted" ? (
               <>
                 <BellOff className="w-10 h-10 mx-auto text-[var(--text-tertiary)] mb-3" />
@@ -352,7 +352,7 @@ export default function AlertsPage() {
             )}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="border-2 border-dashed border-[var(--rule-base)] p-10 text-center">
+          <div className="border border-dashed border-[var(--rule-base)] p-10 text-center">
             <AlertTriangle className="w-8 h-8 mx-auto text-[var(--text-tertiary)] mb-2" />
             <p className="text-sm font-bold text-[var(--text-primary)]">
               Sin alertas con estos filtros

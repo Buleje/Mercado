@@ -96,13 +96,13 @@ const SEVERITY_META: Record<
   critical: {
     icon: ShieldAlert,
     label: "Crítica",
-    cls: "border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/15 dark:text-rose-300",
+    cls: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     dot: "bg-rose-500",
   },
   high: {
     icon: ShieldAlert,
     label: "Alta",
-    cls: "border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/15 dark:text-rose-300",
+    cls: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     dot: "bg-rose-500",
   },
   medium: {
@@ -195,7 +195,7 @@ function HealthRing({ score }: { score: number }) {
       ? { stroke: "stroke-emerald-500", text: "text-emerald-600 dark:text-emerald-400" }
       : score >= 70
         ? { stroke: "stroke-teal-500", text: "text-teal-600 dark:text-teal-400" }
-        : { stroke: "stroke-rose-500", text: "text-rose-600 dark:text-rose-400" };
+        : { stroke: "stroke-rose-500", text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" };
   return (
     <div className="relative inline-flex items-center justify-center shrink-0">
       <svg width="88" height="88" viewBox="0 0 88 88" className="-rotate-90" aria-hidden>
@@ -442,16 +442,16 @@ export function OverviewTab() {
     return (
       <div
         role="alert"
-        className="rounded-2xl border-2 border-rose-300 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/30 p-5"
+        className="rounded-2xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-rose-500/10 dark:border-[var(--data-error-500)] p-5"
       >
-        <div className="flex items-start gap-3 text-rose-700 dark:text-rose-300">
+        <div className="flex items-start gap-3 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
             <p className="font-display text-base font-extrabold">No se pudo cargar el panel</p>
             <p className="text-sm opacity-80 mt-0.5">{error}</p>
             <button
               onClick={() => reload()}
-              className="mt-3 inline-flex h-11 items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-3.5 text-sm font-bold transition"
+              className="mt-3 inline-flex h-11 items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-3.5 text-sm font-semibold transition"
             >
               <RefreshCw className="h-4 w-4" />
               Reintentar
@@ -477,14 +477,14 @@ export function OverviewTab() {
 
       {/* ─── Action bar ──────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] overflow-hidden">
+        <div className="inline-flex h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] overflow-hidden">
           {(["24h", "7d", "30d"] as const).map((r) => (
             <button
               key={r}
               onClick={() => setTimeRange(r)}
               aria-pressed={timeRange === r}
               className={cn(
-                "px-3 text-sm font-bold transition",
+                "px-3 text-sm font-semibold transition",
                 timeRange === r
                   ? "bg-[var(--accent)] text-white"
                   : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
@@ -498,12 +498,12 @@ export function OverviewTab() {
           onClick={() => reload()}
           disabled={refreshing}
           title="Recargar (R)"
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
         >
           <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} aria-hidden />
           Recargar
         </button>
-        <label className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
+        <label className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
           <input
             type="checkbox"
             checked={autoRefresh}
@@ -515,7 +515,7 @@ export function OverviewTab() {
         <button
           onClick={() => exportEventsCSV(filteredEvents)}
           disabled={filteredEvents.length === 0}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
         >
           <Download className="h-4 w-4" aria-hidden />
           CSV ({filteredEvents.length})
@@ -628,7 +628,7 @@ export function OverviewTab() {
               value={severityFilter}
               onChange={(e) => setSeverityFilter(e.target.value as Severity | "all")}
               aria-label="Filtrar por severidad"
-              className="h-9 rounded-lg border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="h-9 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             >
               <option value="all">Todas las severidades</option>
               <option value="critical">Críticas</option>
@@ -652,7 +652,7 @@ export function OverviewTab() {
               onChange={(e) => setSearchRaw(e.target.value)}
               placeholder="Buscar action, detalle, IP…"
               aria-label="Buscar eventos"
-              className="w-full h-9 rounded-lg border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+              className="w-full h-9 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
             />
           </div>
 
@@ -673,7 +673,7 @@ export function OverviewTab() {
                     setSearchRaw("");
                     setSeverityFilter("all");
                   }}
-                  className="mt-3 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+                  className="mt-3 h-10 px-4 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
                 >
                   Limpiar filtros
                 </button>
@@ -899,7 +899,7 @@ function PostureCheck({
       txt: "Revisar",
     },
     error: {
-      cls: "text-rose-700 dark:text-rose-300",
+      cls: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
       dot: "bg-rose-500",
       txt: "Inactivo",
     },

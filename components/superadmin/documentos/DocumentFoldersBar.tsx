@@ -102,7 +102,7 @@ export default function DocumentFoldersBar({
               setName("");
             }}
             aria-label="Cancelar"
-            className="grid place-items-center h-9 w-9 rounded-full border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            className="grid place-items-center h-9 w-9 rounded-full border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
           >
             <X className="h-4 w-4" />
           </button>

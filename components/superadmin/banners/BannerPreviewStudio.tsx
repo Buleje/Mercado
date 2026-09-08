@@ -351,14 +351,14 @@ export default function BannerPreviewStudio({
       data-studio-theme={theme}
       className={cn(
         "studio-root fixed inset-0 z-[100] flex flex-col",
-        theme === "dark" ? "bg-[#0c1015] text-[rgb(var(--st-fg))]" : "bg-[#f4f5f7] text-[#0c1015]",
+        theme === "dark" ? "bg-[#0c1015] text-[rgb(var(--st-fg))]" : "bg-[#f4f5f7] text-[var(--text-primary)]",
       )}
     >
       {/* ── Top bar ───────────────────────────────────────────────── */}
       <header
         className={cn(
           "shrink-0 px-4 sm:px-6 py-3 flex items-center gap-3 border-b",
-          theme === "dark" ? "border-[rgb(var(--st-fg)/0.1)] bg-black/60" : "border-black/10 bg-white",
+          theme === "dark" ? "border-[rgb(var(--st-fg)/0.1)] bg-black/60" : "border-black/10 bg-[var(--surface-raised)]",
         )}
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -393,7 +393,7 @@ export default function BannerPreviewStudio({
               "inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
               theme === "dark"
                 ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg))] hover:bg-[rgb(var(--st-fg)/0.2)]"
-                : "bg-black/5 text-[#0c1015] hover:bg-black/10",
+                : "bg-black/5 text-[var(--text-primary)] hover:bg-black/10",
             )}
           >
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -405,7 +405,7 @@ export default function BannerPreviewStudio({
               "ml-1 inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
               theme === "dark"
                 ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg))] hover:bg-[rgb(var(--st-fg)/0.2)]"
-                : "bg-black/5 text-[#0c1015] hover:bg-black/10",
+                : "bg-black/5 text-[var(--text-primary)] hover:bg-black/10",
             )}
             aria-label="Cerrar"
           >
@@ -544,7 +544,7 @@ function EditMode({
   colorPresets: Array<{ id: string; label: string; from: string; to: string }>;
 }) {
   const dark = theme === "dark";
-  const panelBg = dark ? "bg-black/40" : "bg-white";
+  const panelBg = dark ? "bg-black/40" : "bg-[var(--surface-raised)]";
   const panelBorder = dark ? "border-[rgb(var(--st-fg)/0.1)]" : "border-black/10";
   const subtleText = dark ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60";
   const canvasBg = dark
@@ -667,7 +667,7 @@ function EditMode({
                 onClick={() => setIdx(i)}
                 aria-current={i === idx}
                 className={cn(
-                  "w-full text-left rounded-lg overflow-hidden border-2 transition-all",
+                  "w-full text-left rounded-xl overflow-hidden border-2 transition-all",
                   i === idx
                     ? "border-[var(--accent)] shadow-md"
                     : "border-transparent hover:border-[rgb(var(--st-fg)/0.3)]",
@@ -693,7 +693,7 @@ function EditMode({
               <button
                 type="button"
                 onClick={onAddBanner}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-[rgb(var(--st-fg)/0.2)] hover:border-[var(--accent)] hover:text-[var(--accent)] text-[rgb(var(--st-fg)/0.6)] py-3 text-xs font-extrabold transition-colors"
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[rgb(var(--st-fg)/0.2)] hover:border-[var(--accent)] hover:text-[var(--accent)] text-[rgb(var(--st-fg)/0.6)] py-3 text-xs font-extrabold transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Nuevo banner
@@ -743,7 +743,7 @@ function EditMode({
                     ? "bg-[var(--accent)] text-[rgb(var(--st-fg))]"
                     : dark
                       ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.85)] hover:bg-[rgb(var(--st-fg)/0.18)]"
-                      : "bg-black/5 text-[#0c1015] hover:bg-black/10",
+                      : "bg-black/5 text-[var(--text-primary)] hover:bg-black/10",
                 )}
                 title="Aplicar una plantilla al banner actual"
               >
@@ -786,14 +786,14 @@ function EditMode({
                       setTemplatesOpen(false);
                     }}
                     className={cn(
-                      "shrink-0 rounded-lg border-2 px-3 py-2 text-left transition-all hover:scale-[1.02] hover:shadow-md min-w-[140px]",
+                      "shrink-0 rounded-xl border-2 px-3 min-h-10 text-left transition-all hover:scale-[1.02] hover:shadow-md min-w-[140px]",
                       dark
                         ? "border-[rgb(var(--st-fg)/0.15)] bg-[rgb(var(--st-fg)/0.05)] hover:border-[var(--accent)]"
-                        : "border-black/10 bg-white hover:border-[var(--accent)]",
+                        : "border-black/10 bg-[var(--surface-raised)] hover:border-[var(--accent)]",
                     )}
                   >
                     <div className="text-lg leading-none mb-1">{tpl.emoji}</div>
-                    <div className={cn("text-xs font-extrabold leading-tight", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+                    <div className={cn("text-xs font-extrabold leading-tight", dark ? "text-[rgb(var(--st-fg))]" : "text-[var(--text-primary)]")}>
                       {tpl.label}
                     </div>
                     <div className={cn("text-[length:var(--ts-2xs)] leading-snug mt-0.5 truncate", subtleText)}>
@@ -977,7 +977,7 @@ function SoloMode({
     <>
       <div className={cn(
         "flex-1 min-h-0 flex items-center justify-center p-4 sm:p-8 overflow-auto",
-        dark ? "bg-white" : "bg-[#0c1015]",
+        dark ? "bg-[var(--surface-raised)]" : "bg-[#0c1015]",
       )}>
         <div className="w-full" style={widthPx ? { maxWidth: `${widthPx}px` } : undefined}>
           <div key={animKey} className="animate-bs-fade">
@@ -995,7 +995,7 @@ function SoloMode({
       </div>
       <footer className={cn(
         "shrink-0 px-4 sm:px-6 py-3 flex items-center justify-between gap-3 border-t",
-        dark ? "border-[rgb(var(--st-fg)/0.1)] bg-black/60" : "border-black/10 bg-white",
+        dark ? "border-[rgb(var(--st-fg)/0.1)] bg-black/60" : "border-black/10 bg-[var(--surface-raised)]",
       )}>
         <div className="flex items-center gap-1.5">
           {(["1200", "1600", "full"] as Width[]).map((w) => (
@@ -1006,7 +1006,7 @@ function SoloMode({
               aria-pressed={width === w}
               className={cn(
                 "rounded-lg px-2.5 py-1 text-xs font-extrabold transition-colors",
-                width === w ? "bg-white text-[#0c1015]" : "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.8)] hover:bg-[rgb(var(--st-fg)/0.2)]",
+                width === w ? "bg-[var(--surface-raised)] text-[var(--text-primary)]" : "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.8)] hover:bg-[rgb(var(--st-fg)/0.2)]",
               )}
             >
               {w === "full" ? "100%" : `${w}px`}
@@ -1060,7 +1060,7 @@ function ShowMode({
     <>
       <div className={cn(
         "flex-1 min-h-0 flex items-center justify-center p-4 sm:p-8 overflow-auto",
-        dark ? "bg-[#0c1015]" : "bg-white",
+        dark ? "bg-[#0c1015]" : "bg-[var(--surface-raised)]",
       )}>
         <div className="w-full" style={{ maxWidth: "1600px" }}>
           <div
@@ -1077,7 +1077,7 @@ function ShowMode({
       </div>
       <footer className={cn(
         "shrink-0 px-4 sm:px-6 py-3 space-y-3 border-t",
-        dark ? "border-[rgb(var(--st-fg)/0.1)] bg-black/60" : "border-black/10 bg-white",
+        dark ? "border-[rgb(var(--st-fg)/0.1)] bg-black/60" : "border-black/10 bg-[var(--surface-raised)]",
       )}>
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -1106,7 +1106,7 @@ function ShowMode({
               aria-pressed={animation === a}
               className={cn(
                 "rounded-lg px-2.5 py-1 text-xs font-extrabold transition-colors capitalize",
-                animation === a ? "bg-white text-[#0c1015]" : "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.8)] hover:bg-[rgb(var(--st-fg)/0.2)]",
+                animation === a ? "bg-[var(--surface-raised)] text-[var(--text-primary)]" : "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.8)] hover:bg-[rgb(var(--st-fg)/0.2)]",
               )}
             >
               {a === "none" ? "Sin animación" : a}
@@ -1122,7 +1122,7 @@ function ShowMode({
                 aria-current={i === idx}
                 className={cn(
                   "h-1.5 rounded-full transition-all",
-                  i === idx ? "w-8 bg-white" : "w-2 bg-white/30 hover:bg-[rgb(var(--st-fg)/0.6)]",
+                  i === idx ? "w-8 bg-[var(--surface-raised)]" : "w-2 bg-white/30 hover:bg-[rgb(var(--st-fg)/0.6)]",
                 )}
               />
             ))}
@@ -1203,7 +1203,7 @@ function ImageTab({ banner, onPatch, uploadFolder }: { banner: StudioBanner; onP
           value={banner.imageUrl ?? ""}
           onChange={(e) => onPatch({ imageUrl: e.target.value || null })}
           placeholder="https://…"
-          className="w-full px-3 py-2 rounded-lg bg-[rgb(var(--st-fg)/0.05)] border border-[rgb(var(--st-fg)/0.1)] text-xs font-mono text-[rgb(var(--st-fg))] placeholder-[rgb(var(--st-fg)/0.3)] focus:border-[var(--accent)] outline-none"
+          className="w-full px-3 h-10 rounded-xl bg-[rgb(var(--st-fg)/0.05)] border border-[rgb(var(--st-fg)/0.1)] text-xs font-mono text-[rgb(var(--st-fg))] placeholder-[rgb(var(--st-fg)/0.3)] focus:border-[var(--accent)] outline-none"
         />
       </Section>
       <p className="text-[length:var(--ts-2xs)] text-[rgb(var(--st-fg)/0.5)] leading-snug">
@@ -1242,7 +1242,7 @@ function TextTab({ banner, onPatch }: { banner: StudioBanner; onPatch: (p: Parti
                 onClick={() => onPatch({ type: opt.id as StudioBanner["type"], ...(opt.id === "promo" && !banner.promo ? { promo: DEFAULT_PROMO } : {}) })}
                 aria-pressed={active}
                 className={cn(
-                  "rounded-lg border px-2 py-2 text-xs font-extrabold transition-all flex flex-col items-center gap-1",
+                  "rounded-xl border px-2 py-2 text-xs font-extrabold transition-all flex flex-col items-center gap-1",
                   active ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]" : "border-[rgb(var(--st-fg)/0.1)] bg-[rgb(var(--st-fg)/0.05)] text-[rgb(var(--st-fg)/0.7)] hover:border-[rgb(var(--st-fg)/0.3)]",
                 )}
               >
@@ -1301,7 +1301,7 @@ function ColorTab({
                 onClick={() => onPatch({ bgFrom: p.from, bgTo: p.to })}
                 aria-pressed={active}
                 className={cn(
-                  "rounded-lg border-2 p-2 transition-all text-left",
+                  "rounded-xl border-2 p-2 transition-all text-left",
                   active ? "border-[var(--accent)]" : "border-transparent hover:border-[rgb(var(--st-fg)/0.2)]",
                 )}
               >
@@ -1391,7 +1391,7 @@ function PromoTab({ banner, onPatch, uploadFolder, theme }: { banner: StudioBann
   };
 
   return (
-    <div className={cn("space-y-3", theme === "dark" ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+    <div className={cn("space-y-3", theme === "dark" ? "text-[rgb(var(--st-fg))]" : "text-[var(--text-primary)]")}>
       <div className={cn("rounded-lg p-2.5 border text-[length:var(--ts-2xs)] leading-snug",
         theme === "dark" ? "bg-[rgb(var(--st-fg)/0.05)] border-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.7)]" : "bg-black/5 border-black/10 text-black/70")}>
         Banner con <strong>{items.length}</strong> producto{items.length === 1 ? "" : "s"} · Si agregás más de uno se renderizan en grilla horizontal scrolleable.
@@ -1414,7 +1414,7 @@ function PromoTab({ banner, onPatch, uploadFolder, theme }: { banner: StudioBann
       <button
         type="button"
         onClick={addItem}
-        className={cn("w-full inline-flex items-center justify-center gap-1.5 rounded-lg border-2 border-dashed py-2.5 text-xs font-extrabold transition-colors",
+        className={cn("w-full inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed py-2.5 text-xs font-extrabold transition-colors",
           theme === "dark" ? "border-[rgb(var(--st-fg)/0.2)] text-[rgb(var(--st-fg)/0.6)] hover:border-[var(--accent)] hover:text-[var(--accent)]" : "border-black/20 text-black/60 hover:border-[var(--accent)] hover:text-[var(--accent)]")}
       >
         <Plus className="h-3.5 w-3.5" />
@@ -1460,7 +1460,7 @@ function PromoItemEditor({
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className={cn("flex-1 min-w-0 text-left text-xs font-extrabold truncate", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}
+          className={cn("flex-1 min-w-0 text-left text-xs font-extrabold truncate", dark ? "text-[rgb(var(--st-fg))]" : "text-[var(--text-primary)]")}
           aria-expanded={open}
         >
           {item.productName || "(sin nombre)"}
@@ -1764,7 +1764,7 @@ function SuggestionRow({
               "rounded-full px-2 py-1 text-[length:var(--ts-2xs)] font-bold transition-colors text-left max-w-full truncate",
               dark
                 ? "bg-[rgb(var(--st-fg)/0.08)] text-[rgb(var(--st-fg)/0.85)] hover:bg-[var(--accent)] hover:text-white"
-                : "bg-black/5 text-[#0c1015] hover:bg-[var(--accent)] hover:text-white",
+                : "bg-black/5 text-[var(--text-primary)] hover:bg-[var(--accent)] hover:text-white",
             )}
             title={s}
           >
@@ -1837,12 +1837,12 @@ function AnchorControl({
             <div className="flex items-center gap-2">
               <span className={cn("text-[length:var(--ts-2xs)] font-extrabold tabular-nums w-7", dark ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60")}>X</span>
               <input type="range" min={0} max={100} step={1} value={x} onChange={(e) => onChange({ x: Number(e.target.value), y })} className="flex-1 accent-[var(--accent)]" />
-              <span className={cn("text-[length:var(--ts-2xs)] font-extrabold tabular-nums w-9 text-right", dark ? "text-[rgb(var(--st-fg)/0.85)]" : "text-[#0c1015]")}>{x}%</span>
+              <span className={cn("text-[length:var(--ts-2xs)] font-extrabold tabular-nums w-9 text-right", dark ? "text-[rgb(var(--st-fg)/0.85)]" : "text-[var(--text-primary)]")}>{x}%</span>
             </div>
             <div className="flex items-center gap-2">
               <span className={cn("text-[length:var(--ts-2xs)] font-extrabold tabular-nums w-7", dark ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60")}>Y</span>
               <input type="range" min={0} max={100} step={1} value={y} onChange={(e) => onChange({ x, y: Number(e.target.value) })} className="flex-1 accent-[var(--accent)]" />
-              <span className={cn("text-[length:var(--ts-2xs)] font-extrabold tabular-nums w-9 text-right", dark ? "text-[rgb(var(--st-fg)/0.85)]" : "text-[#0c1015]")}>{y}%</span>
+              <span className={cn("text-[length:var(--ts-2xs)] font-extrabold tabular-nums w-9 text-right", dark ? "text-[rgb(var(--st-fg)/0.85)]" : "text-[var(--text-primary)]")}>{y}%</span>
             </div>
           </div>
         )}
@@ -1878,7 +1878,7 @@ function SourceBtn({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "rounded-lg border px-2 py-2 text-left transition-all flex items-start gap-1.5",
+        "rounded-xl border px-2 py-2 text-left transition-all flex items-start gap-1.5",
         active
           ? "border-[var(--accent)] bg-[var(--accent)]/15"
           : dark
@@ -1891,7 +1891,7 @@ function SourceBtn({
         {icon}
       </span>
       <div className="min-w-0">
-        <p className={cn("text-xs font-extrabold", active ? "text-[var(--accent)]" : dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>{label}</p>
+        <p className={cn("text-xs font-extrabold", active ? "text-[var(--accent)]" : dark ? "text-[rgb(var(--st-fg))]" : "text-[var(--text-primary)]")}>{label}</p>
         <p className={cn("text-[length:var(--ts-2xs)] leading-snug", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>{hint}</p>
       </div>
     </button>
@@ -1968,7 +1968,7 @@ function ItemImageAdjustMini({
         className={cn(
           "aspect-square w-full rounded-lg overflow-hidden border select-none touch-none",
           dragging ? "cursor-grabbing ring-2 ring-[var(--accent)]/50" : "cursor-grab",
-          dark ? "bg-white/95 border-[rgb(var(--st-fg)/0.1)]" : "bg-white border-black/10",
+          dark ? "bg-white/95 border-[rgb(var(--st-fg)/0.1)]" : "bg-[var(--surface-raised)] border-black/10",
         )}
         aria-label="Preview del producto — arrastrá para mover, scroll para zoom"
         style={{
@@ -2067,7 +2067,7 @@ function CatalogPickerLauncher({
         </div>
 
         {linked ? (
-          <div className={cn("rounded-lg p-2 border flex items-center gap-2", dark ? "bg-[rgb(var(--st-fg)/0.05)] border-[rgb(var(--st-fg)/0.1)]" : "bg-white border-black/10")}>
+          <div className={cn("rounded-lg p-2 border flex items-center gap-2", dark ? "bg-[rgb(var(--st-fg)/0.05)] border-[rgb(var(--st-fg)/0.1)]" : "bg-[var(--surface-raised)] border-black/10")}>
             <div className={cn("h-10 w-10 rounded-md overflow-hidden shrink-0", dark ? "bg-[rgb(var(--st-fg)/0.1)]" : "bg-black/5")}>
               {productImage ? (
                 <div role="img" aria-label={productName} className="h-full w-full" style={{ background: `url(${productImage}) center/cover` }} />
@@ -2078,7 +2078,7 @@ function CatalogPickerLauncher({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className={cn("text-xs font-extrabold truncate", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+              <p className={cn("text-xs font-extrabold truncate", dark ? "text-[rgb(var(--st-fg))]" : "text-[var(--text-primary)]")}>
                 {productName || "(sin nombre)"}
               </p>
               <p className={cn("text-[length:var(--ts-2xs)] truncate font-mono", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
@@ -2095,7 +2095,7 @@ function CatalogPickerLauncher({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] text-[rgb(var(--st-fg))] px-3 py-2 text-xs font-extrabold hover:opacity-90 transition-opacity"
+          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] text-[rgb(var(--st-fg))] px-3 py-2 text-xs font-extrabold hover:opacity-90 transition-opacity"
         >
           <Search className="h-3.5 w-3.5" />
           {linked ? "Cambiar producto…" : "Buscar producto…"}
@@ -2237,7 +2237,7 @@ function ProductCatalogModal({
         onClick={stopPropagation}
         className={cn(
           "w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden",
-          dark ? "bg-[#0c1015] border border-[rgb(var(--st-fg)/0.1)]" : "bg-white border border-black/10",
+          dark ? "bg-[#0c1015] border border-[rgb(var(--st-fg)/0.1)]" : "bg-[var(--surface-raised)] border border-black/10",
         )}
       >
         {/* Header */}
@@ -2246,7 +2246,7 @@ function ProductCatalogModal({
             <Search className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className={cn("text-sm font-extrabold leading-none", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+            <p className={cn("text-sm font-extrabold leading-none", dark ? "text-[rgb(var(--st-fg))]" : "text-[var(--text-primary)]")}>
               {step === "stores" ? "Elegí una tienda" : "Elegí un producto"}
             </p>
             <p className={cn("text-[length:var(--ts-2xs)] leading-tight mt-0.5 truncate", dark ? "text-[rgb(var(--st-fg)/0.6)]" : "text-black/60")}>
@@ -2270,7 +2270,7 @@ function ProductCatalogModal({
             type="button"
             onClick={onClose}
             className={cn("inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
-              dark ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg))] hover:bg-[rgb(var(--st-fg)/0.2)]" : "bg-black/5 text-[#0c1015] hover:bg-black/10")}
+              dark ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg))] hover:bg-[rgb(var(--st-fg)/0.2)]" : "bg-black/5 text-[var(--text-primary)] hover:bg-black/10")}
             aria-label="Cerrar"
           >
             <X className="h-4 w-4" />
@@ -2279,14 +2279,14 @@ function ProductCatalogModal({
 
         {/* Search */}
         <div className={cn("shrink-0 px-5 py-3 border-b", dark ? "border-[rgb(var(--st-fg)/0.1)]" : "border-black/10")}>
-          <div className={cn("flex items-center gap-2 rounded-lg px-3 py-2 border", dark ? "bg-[rgb(var(--st-fg)/0.05)] border-[rgb(var(--st-fg)/0.1)]" : "bg-white border-black/10")}>
+          <div className={cn("flex items-center gap-2 rounded-lg px-3 py-2 border", dark ? "bg-[rgb(var(--st-fg)/0.05)] border-[rgb(var(--st-fg)/0.1)]" : "bg-[var(--surface-raised)] border-black/10")}>
             <Search className={cn("h-4 w-4 shrink-0", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/40")} />
             {step === "stores" ? (
               <input
                 value={storeSearch}
                 onChange={(e) => setStoreSearch(e.target.value)}
                 placeholder="Buscar por nombre, categoría o zona…"
-                className={cn("flex-1 bg-transparent outline-none text-sm font-semibold", dark ? "text-[rgb(var(--st-fg))] placeholder-[rgb(var(--st-fg)/0.4)]" : "text-[#0c1015] placeholder-black/40")}
+                className={cn("flex-1 bg-transparent outline-none text-sm font-semibold", dark ? "text-[rgb(var(--st-fg))] placeholder-[rgb(var(--st-fg)/0.4)]" : "text-[var(--text-primary)] placeholder-black/40")}
                 autoFocus
               />
             ) : (
@@ -2294,7 +2294,7 @@ function ProductCatalogModal({
                 value={productSearch}
                 onChange={(e) => setProductSearch(e.target.value)}
                 placeholder="Buscar producto…"
-                className={cn("flex-1 bg-transparent outline-none text-sm font-semibold", dark ? "text-[rgb(var(--st-fg))] placeholder-[rgb(var(--st-fg)/0.4)]" : "text-[#0c1015] placeholder-black/40")}
+                className={cn("flex-1 bg-transparent outline-none text-sm font-semibold", dark ? "text-[rgb(var(--st-fg))] placeholder-[rgb(var(--st-fg)/0.4)]" : "text-[var(--text-primary)] placeholder-black/40")}
                 autoFocus
               />
             )}
@@ -2321,7 +2321,7 @@ function ProductCatalogModal({
                       "rounded-xl border-2 p-3 text-left transition-all hover:-translate-y-0.5",
                       dark
                         ? "border-[rgb(var(--st-fg)/0.1)] bg-[rgb(var(--st-fg)/0.05)] hover:border-[var(--accent)] hover:bg-[rgb(var(--st-fg)/0.1)]"
-                        : "border-black/10 bg-white hover:border-[var(--accent)] hover:shadow-md",
+                        : "border-black/10 bg-[var(--surface-raised)] hover:border-[var(--accent)] hover:shadow-md",
                     )}
                   >
                     <div className={cn("aspect-square rounded-lg overflow-hidden mb-2 flex items-center justify-center",
@@ -2334,7 +2334,7 @@ function ProductCatalogModal({
                         </span>
                       )}
                     </div>
-                    <p className={cn("text-xs font-extrabold truncate", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+                    <p className={cn("text-xs font-extrabold truncate", dark ? "text-[rgb(var(--st-fg))]" : "text-[var(--text-primary)]")}>
                       {s.name}
                     </p>
                     <div className={cn("flex items-center gap-1 mt-0.5 text-[length:var(--ts-2xs)]", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
@@ -2394,7 +2394,7 @@ function ProductCatalogModal({
                       )}>
                         <h3 className={cn(
                           "text-xs font-extrabold uppercase tracking-wider truncate flex-1",
-                          dark ? "text-[rgb(var(--st-fg)/0.85)]" : "text-[#0c1015]",
+                          dark ? "text-[rgb(var(--st-fg)/0.85)]" : "text-[var(--text-primary)]",
                         )}>
                           {cat.replace(/-/g, " ")}
                         </h3>
@@ -2445,7 +2445,7 @@ function ProductCard({
         "rounded-xl border-2 p-3 text-left transition-all hover:-translate-y-0.5",
         dark
           ? "border-[rgb(var(--st-fg)/0.1)] bg-[rgb(var(--st-fg)/0.05)] hover:border-[var(--accent)] hover:bg-[rgb(var(--st-fg)/0.1)]"
-          : "border-black/10 bg-white hover:border-[var(--accent)] hover:shadow-md",
+          : "border-black/10 bg-[var(--surface-raised)] hover:border-[var(--accent)] hover:shadow-md",
       )}
     >
       <div className={cn(
@@ -2458,11 +2458,11 @@ function ProductCard({
           <ImageIconLucide className={cn("h-8 w-8", dark ? "text-[rgb(var(--st-fg)/0.3)]" : "text-black/30")} strokeWidth={1.25} />
         )}
       </div>
-      <p className={cn("text-xs font-extrabold truncate leading-tight", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+      <p className={cn("text-xs font-extrabold truncate leading-tight", dark ? "text-[rgb(var(--st-fg))]" : "text-[var(--text-primary)]")}>
         {product.name}
       </p>
       <div className="flex items-baseline justify-between gap-1 mt-1">
-        <span className={cn("font-display text-sm font-extrabold tabular-nums", dark ? "text-[rgb(var(--st-fg))]" : "text-[#0c1015]")}>
+        <span className={cn("font-display text-sm font-extrabold tabular-nums", dark ? "text-[rgb(var(--st-fg))]" : "text-[var(--text-primary)]")}>
           {product.price !== null ? `S/ ${Number(product.price).toFixed(2)}` : "—"}
         </span>
         <span className={cn("text-[length:var(--ts-2xs)] truncate", dark ? "text-[rgb(var(--st-fg)/0.4)]" : "text-black/40")}>
@@ -2509,7 +2509,7 @@ function StateTab({
           type="button"
           onClick={() => onPatch({ active: !banner.active })}
           className={cn(
-            "w-full inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-extrabold transition-colors",
+            "w-full inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-extrabold transition-colors",
             banner.active
               ? "bg-[var(--data-success-500)]/20 text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/30"
               : "bg-teal-500/20 text-teal-500 hover:bg-teal-500/30",
@@ -2529,7 +2529,7 @@ function StateTab({
               type="datetime-local"
               value={isoToLocalInput(banner.startsAt)}
               onChange={(e) => onPatch({ startsAt: localInputToIso(e.target.value) })}
-              className="mt-1 w-full rounded-lg bg-[rgb(var(--st-fg)/0.06)] border border-[rgb(var(--st-fg)/0.12)] px-2 py-1.5 text-xs text-[rgb(var(--st-fg))]"
+              className="mt-1 w-full rounded-xl bg-[rgb(var(--st-fg)/0.06)] border border-[rgb(var(--st-fg)/0.12)] px-2 py-1.5 text-xs text-[rgb(var(--st-fg))]"
             />
           </label>
           <label className="text-[length:var(--ts-2xs)] font-bold text-[rgb(var(--st-fg)/0.6)]">
@@ -2538,7 +2538,7 @@ function StateTab({
               type="datetime-local"
               value={isoToLocalInput(banner.endsAt)}
               onChange={(e) => onPatch({ endsAt: localInputToIso(e.target.value) })}
-              className="mt-1 w-full rounded-lg bg-[rgb(var(--st-fg)/0.06)] border border-[rgb(var(--st-fg)/0.12)] px-2 py-1.5 text-xs text-[rgb(var(--st-fg))]"
+              className="mt-1 w-full rounded-xl bg-[rgb(var(--st-fg)/0.06)] border border-[rgb(var(--st-fg)/0.12)] px-2 py-1.5 text-xs text-[rgb(var(--st-fg))]"
             />
           </label>
           {(banner.startsAt || banner.endsAt) && (
@@ -2689,7 +2689,7 @@ function ModeBtn({
           ? "bg-[var(--accent)] text-[rgb(var(--st-fg))]"
           : theme === "dark"
             ? "bg-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.8)] hover:bg-[rgb(var(--st-fg)/0.2)]"
-            : "bg-black/5 text-[#0c1015]/70 hover:bg-black/10 hover:text-[#0c1015]",
+            : "bg-black/5 text-[#0c1015]/70 hover:bg-black/10 hover:text-[var(--text-primary)]",
       )}
     >
       {icon}
@@ -2732,7 +2732,7 @@ function ToolBtn({
       disabled={disabled}
       aria-pressed={active}
       className={cn(
-        "inline-flex h-8 items-center justify-center gap-1 rounded-md px-2 text-xs font-extrabold transition-colors",
+        "inline-flex h-8 items-center justify-center gap-1 rounded-lg px-2 text-xs font-extrabold transition-colors",
         active ? "bg-[var(--accent)] text-[rgb(var(--st-fg))]" : "bg-[rgb(var(--st-fg)/0.05)] hover:bg-[rgb(var(--st-fg)/0.15)] text-[rgb(var(--st-fg)/0.8)]",
         disabled && "opacity-30 cursor-not-allowed hover:bg-[rgb(var(--st-fg)/0.05)]",
       )}
@@ -2833,7 +2833,7 @@ function NumField({ label, value, min, max, step, onChange }: { label: string; v
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full px-2 py-1.5 rounded-md bg-[rgb(var(--st-fg)/0.05)] border border-[rgb(var(--st-fg)/0.1)] text-xs font-extrabold text-[rgb(var(--st-fg))] tabular-nums focus:border-[var(--accent)] outline-none"
+        className="w-full px-2 py-1.5 rounded-xl bg-[rgb(var(--st-fg)/0.05)] border border-[rgb(var(--st-fg)/0.1)] text-xs font-extrabold text-[rgb(var(--st-fg))] tabular-nums focus:border-[var(--accent)] outline-none"
       />
     </label>
   );
@@ -2846,7 +2846,7 @@ function FitChip({ active, onClick, label, hint }: { active: boolean; onClick: (
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "rounded-lg border px-2 py-2 text-left transition-all",
+        "rounded-xl border px-2 py-2 text-left transition-all",
         active ? "border-[var(--accent)] bg-[var(--accent)]/15" : "border-[rgb(var(--st-fg)/0.1)] bg-[rgb(var(--st-fg)/0.05)] hover:border-[rgb(var(--st-fg)/0.3)]",
       )}
     >
@@ -2871,7 +2871,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 px-2 py-1.5 rounded-md bg-[rgb(var(--st-fg)/0.05)] border border-[rgb(var(--st-fg)/0.1)] text-xs font-mono text-[rgb(var(--st-fg))] focus:border-[var(--accent)] outline-none"
+          className="flex-1 px-2 py-1.5 rounded-xl bg-[rgb(var(--st-fg)/0.05)] border border-[rgb(var(--st-fg)/0.1)] text-xs font-mono text-[rgb(var(--st-fg))] focus:border-[var(--accent)] outline-none"
         />
       </div>
     </label>
@@ -2981,14 +2981,14 @@ function PromoElementOverlay({
       {/* Snap guide lines — solo durante drag activo con match */}
       {snapLines.x != null && (
         <div
-          className="absolute top-0 bottom-0 w-px bg-fuchsia-400 shadow-[0_0_4px_rgba(217,70,239,0.8)] pointer-events-none"
+          className="absolute top-0 bottom-0 w-px bg-fuchsia-400 shadow-[var(--shadow-md)] pointer-events-none"
           style={{ left: `${snapLines.x}%` }}
           aria-hidden
         />
       )}
       {snapLines.y != null && (
         <div
-          className="absolute left-0 right-0 h-px bg-fuchsia-400 shadow-[0_0_4px_rgba(217,70,239,0.8)] pointer-events-none"
+          className="absolute left-0 right-0 h-px bg-fuchsia-400 shadow-[var(--shadow-md)] pointer-events-none"
           style={{ top: `${snapLines.y}%` }}
           aria-hidden
         />
@@ -3133,7 +3133,7 @@ function DraggableHandle({
         )}
         title={isFree ? `${label} · ${Math.round(anchor.x)}% / ${Math.round(anchor.y)}%` : `${label} · click para fijar y arrastrar`}
       >
-        <span className={cn("inline-block h-1.5 w-1.5 rounded-full", dark ? "bg-white/90" : "bg-white")} />
+        <span className={cn("inline-block h-1.5 w-1.5 rounded-full", dark ? "bg-white/90" : "bg-[var(--surface-raised)]")} />
         {label}
         {isFree && (
           <button

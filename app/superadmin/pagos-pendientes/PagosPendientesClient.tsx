@@ -578,7 +578,7 @@ export default function PagosPendientesClient() {
                       .then(() => pushToast(`${row.label} copiado`, "success"))
                       .catch((err) => console.warn("[creds] copy failed", String(err)));
                   }}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2.5 text-left transition-colors hover:border-[var(--accent)]"
+                  className="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 min-h-11 text-left transition-colors hover:border-[var(--accent)]"
                 >
                   <span className="min-w-0">
                     <span className="block text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
@@ -604,7 +604,7 @@ export default function PagosPendientesClient() {
               <button
                 type="button"
                 onClick={() => setNewCreds(null)}
-                className="h-11 w-full rounded-xl bg-[var(--text-primary)] text-sm font-bold text-[var(--surface-canvas)] transition hover:opacity-90"
+                className="h-11 w-full rounded-xl bg-[var(--text-primary)] text-sm font-semibold text-[var(--surface-canvas)] transition hover:opacity-90"
               >
                 Entendido
               </button>
@@ -672,7 +672,7 @@ export default function PagosPendientesClient() {
             onClick={() => load()}
             disabled={refreshing}
             title="Recargar (R)"
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
           >
             <RefreshCw
               className={cn("h-4 w-4", refreshing && "animate-spin")}
@@ -680,7 +680,7 @@ export default function PagosPendientesClient() {
             />
             Recargar
           </button>
-          <label className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
+          <label className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
             <input
               type="checkbox"
               checked={autoRefresh}
@@ -692,7 +692,7 @@ export default function PagosPendientesClient() {
           <button
             onClick={() => exportCSV(filtered)}
             disabled={filtered.length === 0}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
           >
             <Download className="h-4 w-4" aria-hidden />
             CSV ({filtered.length})
@@ -715,7 +715,7 @@ export default function PagosPendientesClient() {
                 onChange={(e) => setSearchRaw(e.target.value)}
                 placeholder="Buscar tienda, propietario, teléfono, ref, slug…"
                 aria-label="Buscar pagos"
-                className="w-full h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                className="w-full h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
               />
             </div>
           </div>
@@ -724,7 +724,7 @@ export default function PagosPendientesClient() {
               value={filter}
               onChange={(e) => setFilter(e.target.value as "pending" | "all")}
               aria-label="Filtrar por estado"
-              className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+              className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
             >
               <option value="pending">Pendientes</option>
               <option value="all">Todos (200 últimos)</option>
@@ -733,7 +733,7 @@ export default function PagosPendientesClient() {
               value={methodFilter}
               onChange={(e) => setMethodFilter(e.target.value)}
               aria-label="Filtrar por método"
-              className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+              className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
             >
               <option value="all">Todos los métodos</option>
               {methodOptions.map((m) => (
@@ -746,7 +746,7 @@ export default function PagosPendientesClient() {
               value={planFilter}
               onChange={(e) => setPlanFilter(e.target.value)}
               aria-label="Filtrar por plan"
-              className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+              className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
             >
               <option value="all">Todos los planes</option>
               {planOptions.map((p) => (
@@ -768,14 +768,14 @@ export default function PagosPendientesClient() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setSelectedIds(new Set())}
-                className="h-10 px-3 rounded-lg text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                className="h-10 px-3 rounded-xl text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
               >
                 Limpiar
               </button>
               <button
                 onClick={bulkApprove}
                 disabled={bulkBusy}
-                className="h-10 px-3.5 rounded-lg text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center gap-1.5"
+                className="h-10 px-3.5 rounded-xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center gap-1.5"
               >
                 {bulkBusy ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -828,7 +828,7 @@ export default function PagosPendientesClient() {
                   setMethodFilter("all");
                   setPlanFilter("all");
                 }}
-                className="mt-4 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+                className="mt-4 h-10 px-4 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
               >
                 Limpiar filtros
               </button>
@@ -1048,7 +1048,7 @@ function SkeletonGrid() {
       {Array.from({ length: 6 }).map((_, i) => (
         <div
           key={i}
-          className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden"
+          className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden"
         >
           <div className="aspect-[4/3] bg-[var(--surface-sunken)] animate-pulse" />
           <div className="p-4 space-y-2">
@@ -1255,7 +1255,7 @@ function ProofModal({
               <button
                 onClick={() => onCopy(proof.tenantSlug, "Slug")}
                 aria-label="Copiar slug"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-[var(--accent)]"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-[var(--accent)]"
               >
                 <Copy className="h-3.5 w-3.5" />
               </button>
@@ -1284,7 +1284,7 @@ function ProofModal({
                   href={`https://wa.me/51${proof.ownerPhone.replace(/\D/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] h-12 px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] h-12 px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400"
                 >
                   <MessageCircle
                     className="h-4 w-4"
@@ -1297,7 +1297,7 @@ function ProofModal({
                   type="button"
                   onClick={() => setRejectOpen(!rejectOpen)}
                   className={cn(
-                    "inline-flex items-center justify-center gap-2 rounded-xl border-2 h-12 px-4 text-sm font-bold transition",
+                    "inline-flex items-center justify-center gap-2 rounded-xl border-2 h-12 px-4 text-sm font-semibold transition",
                     rejectOpen
                       ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error)]"
                       : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error)]",
@@ -1321,12 +1321,12 @@ function ProofModal({
                     onChange={(e) => setRejectReason(e.target.value)}
                     placeholder="Ej: La captura no coincide con el monto del plan…"
                     autoFocus
-                    className="mt-1.5 h-20 w-full rounded-lg border-2 border-rose-300/60 bg-[var(--surface-raised)] px-3 py-2 text-sm outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 dark:border-rose-700/40"
+                    className="mt-1.5 h-20 w-full rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--surface-raised)] px-3 py-2 text-sm outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 dark:border-[var(--data-error-500)]"
                   />
                   <button
                     disabled={actioning || rejectReason.length < 5}
                     onClick={onReject}
-                    className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-rose-600 h-11 px-4 text-xs font-extrabold uppercase tracking-wider text-white transition hover:bg-rose-700 disabled:opacity-60"
+                    className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600 h-11 px-4 text-xs font-extrabold uppercase tracking-wider text-white transition hover:bg-rose-700 disabled:opacity-60"
                   >
                     {actioning ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1410,7 +1410,7 @@ function Field({
           <button
             onClick={onCopy}
             aria-label={`Copiar ${label}`}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)] shrink-0"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)] shrink-0"
           >
             <Copy className="h-3.5 w-3.5" />
           </button>

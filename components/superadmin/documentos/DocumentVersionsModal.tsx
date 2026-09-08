@@ -16,7 +16,7 @@ interface Props {
 const API_BASE = "/api/superadmin/documents";
 
 const FIELD =
-  "w-full h-12 text-base border-2 border-[var(--rule-base)] rounded-2xl px-3 bg-[var(--surface-raised)] text-[var(--text-primary)]";
+  "w-full h-12 text-base border border-[var(--rule-base)] rounded-2xl px-3 bg-[var(--surface-raised)] text-[var(--text-primary)]";
 
 export default function DocumentVersionsModal({ doc, onClose, onChanged }: Props) {
   const [versions, setVersions] = useState<DbDocumentVersion[]>([]);
@@ -107,7 +107,7 @@ export default function DocumentVersionsModal({ doc, onClose, onChanged }: Props
         role="dialog"
         aria-modal="true"
         aria-label="Historial de versiones"
-        className="flex w-full max-w-lg flex-col rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)] max-h-[90vh] gap-4"
+        className="flex w-full max-w-lg flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-lg)] max-h-[90vh] gap-4"
       >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between">
@@ -121,7 +121,7 @@ export default function DocumentVersionsModal({ doc, onClose, onChanged }: Props
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+            className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
           >
             <X className="h-5 w-5" />
           </button>
@@ -223,7 +223,7 @@ export default function DocumentVersionsModal({ doc, onClose, onChanged }: Props
               onClick={handleUpload}
               disabled={!file || uploading}
               aria-label="Subir nueva versión del documento"
-              className="flex h-12 items-center gap-2 rounded-2xl bg-primary px-5 text-base font-bold text-white hover:bg-primary/90 disabled:opacity-50"
+              className="flex h-12 items-center gap-2 rounded-2xl bg-primary px-5 text-base font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
             >
               {uploading && <Loader2 className="h-5 w-5 animate-spin" />}
               Subir versión

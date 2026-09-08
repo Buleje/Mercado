@@ -375,7 +375,7 @@ export default function HealthFillAllModal({
           )}
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 p-3 text-sm text-[var(--data-error-500)]">
+            <div className="flex items-start gap-2 rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error-500)] p-3 text-sm text-[var(--data-error-500)]">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -535,7 +535,7 @@ export default function HealthFillAllModal({
                     value={form.ruc}
                     onChange={(e) => update("ruc", e.target.value.replace(/[^0-9]/g, ""))}
                     placeholder="20XXXXXXXXX (RUC) o 0XXXXXXX (DNI)"
-                    className={`${inputCls} ${validationErrors.ruc ? "border-rose-400" : ""}`}
+                    className={`${inputCls} ${validationErrors.ruc ? "border-[var(--data-error-500)]" : ""}`}
                   />
                 </Field>
               </Section>
@@ -644,7 +644,7 @@ export default function HealthFillAllModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-bold rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-raised)]"
+            className="px-4 min-h-10 text-sm font-semibold rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-raised)]"
           >
             Cancelar
           </button>
@@ -652,7 +652,7 @@ export default function HealthFillAllModal({
             type="button"
             onClick={saveAll}
             disabled={saving || loading}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-lg bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 min-h-10 text-sm font-semibold rounded-xl bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90 disabled:opacity-50"
           >
             {saving ? (
               <>
@@ -714,7 +714,7 @@ function Section({
                     ? "bg-emerald-100 text-[var(--data-success-700)]"
                     : scorePct >= 50
                       ? "bg-teal-100 text-teal-700"
-                      : "bg-rose-100 text-[var(--data-error-500)]"
+                      : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
                 }`}
               >
                 {score.ok}/{score.total}

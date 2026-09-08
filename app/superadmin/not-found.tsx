@@ -4,8 +4,8 @@ export default function SuperAdminNotFound() {
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)] flex items-center justify-center p-4">
       <div className="bg-[var(--surface-raised)]/80 backdrop-blur-xl border border-[var(--rule-base)] rounded-3xl w-full max-w-md p-8 shadow-xl text-center">
-        <div className="mx-auto w-16 h-16 rounded-xl bg-[#0d9488] dark:bg-[#0d9488]/30 flex items-center justify-center mb-6">
-          <ShieldX className="w-8 h-8 text-[#0d9488] dark:text-[#0d9488]" />
+        <div className="mx-auto w-16 h-16 rounded-xl bg-[var(--accent)] dark:bg-primary/30 flex items-center justify-center mb-6">
+          <ShieldX className="w-8 h-8 text-[var(--accent-ink)] dark:text-[var(--accent)] dark:text-[var(--accent)]" />
         </div>
         <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
           Página no encontrada

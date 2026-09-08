@@ -75,7 +75,7 @@ export function InfoTip({ title, what, affects, example, side = "right", classNa
             </div>
             {affects && (
               <div>
-                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[#0d9488]">A dónde afecta</p>
+                <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent-ink)] dark:text-[var(--accent)]">A dónde afecta</p>
                 <p className="text-xs font-normal text-[var(--text-secondary)] leading-snug mt-0.5">{affects}</p>
               </div>
             )}

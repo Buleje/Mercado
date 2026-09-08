@@ -47,7 +47,7 @@ function pingAgo(iso: string | null): string {
 
 function Toggle({ on, onClick, icon: Icon, label }: { on: boolean; onClick: () => void; icon: typeof Store; label: string }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={on} className={["inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-bold transition-colors", on ? "bg-[var(--accent)] text-white" : "border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"].join(" ")}>
+    <button type="button" onClick={onClick} aria-pressed={on} className={["inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-bold transition-colors", on ? "bg-[var(--accent)] text-white" : "border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"].join(" ")}>
       <Icon className="h-4 w-4" /> {label}
     </button>
   );
@@ -116,10 +116,10 @@ export default function TenantsMapPage() {
               <span className="relative flex h-2.5 w-2.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--data-success-500)] opacity-60" /><span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]" /></span>
               EN VIVO · 15s{lastAt ? ` · ${pingAgo(lastAt)}` : ""}
             </span>
-            <button onClick={() => void load()} disabled={loading} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
+            <button onClick={() => void load()} disabled={loading} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualizar
             </button>
-            <Link href="/superadmin/tenants" className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40">
+            <Link href="/superadmin/tenants" className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40">
               <ArrowLeft className="h-4 w-4" /> Tiendas
             </Link>
           </div>
@@ -144,7 +144,7 @@ export default function TenantsMapPage() {
           <Toggle on={showRiders} onClick={() => setShowRiders((v) => !v)} icon={Truck} label="Repartidores" />
           <Toggle on={showZones} onClick={() => setShowZones((v) => !v)} icon={MapPin} label="Zonas" />
           <span className="ml-auto inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-tertiary)]">
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#00A0A0] border border-white shadow-sm" /> Tienda</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)] border border-white shadow-sm" /> Tienda</span>
             <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#10b981] border border-white shadow-sm" /> Repartidor online</span>
             <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#9ca3af] border border-white shadow-sm" /> Offline</span>
           </span>

@@ -90,7 +90,7 @@ function maskPhone(p: string): string {
 function InsightBadge({ tone, text }: { tone: "positive" | "negative" | "neutral"; text: string }) {
   const styles = {
     positive: "bg-emerald-50 text-[var(--data-success-700)] border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40",
-    negative: "bg-rose-50 text-[var(--data-error-500)] border-rose-200 dark:bg-rose-950/30 dark:text-[var(--data-error-500)] dark:border-rose-800/40",
+    negative: "bg-[var(--data-error-50)] text-[var(--data-error-500)] border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)]",
     neutral: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-[var(--accent)]/30",
   };
   return (
@@ -156,7 +156,7 @@ export default function ExecutiveAnalytics({
 
   if (error || !data) {
     return (
-      <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-base text-[var(--data-error-500)]">
+      <div className="rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-base text-[var(--data-error-500)]">
         {error ?? "Sin datos"}
       </div>
     );
@@ -572,7 +572,7 @@ export default function ExecutiveAnalytics({
                     className={[
                       "flex items-center gap-3 rounded-xl border px-4 py-3",
                       critical
-                        ? "border-rose-300 bg-rose-50 dark:bg-rose-950/20 dark:border-rose-900/40"
+                        ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-rose-950/20 dark:border-[var(--data-error-500)]"
                         : "border-teal-200 bg-teal-50 dark:bg-teal-950/20 dark:border-teal-900/40",
                     ].join(" ")}
                   >

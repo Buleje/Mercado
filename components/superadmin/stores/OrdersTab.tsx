@@ -17,7 +17,7 @@ function fmt(n: number) {
 }
 
 const ORDER_STATUS_COLORS: Record<string, string> = {
-  pendiente: "bg-[#0d9488] text-[#0d9488] dark:bg-[#0d9488]/30 dark:text-[#0d9488]",
+  pendiente: "bg-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/30 dark:text-[var(--accent)]",
   procesando: "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]",
   completado: "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]",
   cancelado: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]",
@@ -28,7 +28,7 @@ const ORDER_COLUMNS: SAColumn<MarketplaceOrder>[] = [
   {
     key: "id",
     label: "ID",
-    render: (row) => <span className="text-xs font-mono text-gray-400">{row.id.slice(0, 8)}…</span>,
+    render: (row) => <span className="text-xs font-mono text-[var(--text-tertiary)]">{row.id.slice(0, 8)}…</span>,
   },
   {
     key: "storeName",
@@ -36,7 +36,7 @@ const ORDER_COLUMNS: SAColumn<MarketplaceOrder>[] = [
     render: (row) => (
       <div>
         <div className="text-sm font-medium text-[var(--text-primary)]">{row.storeName}</div>
-        <div className="text-xs text-gray-400">{row.storeSlug}</div>
+        <div className="text-xs text-[var(--text-tertiary)]">{row.storeSlug}</div>
       </div>
     ),
   },
@@ -46,7 +46,7 @@ const ORDER_COLUMNS: SAColumn<MarketplaceOrder>[] = [
     render: (row) => (
       <div>
         <div className="text-sm text-[var(--text-primary)]">{row.customerName}</div>
-        <div className="text-xs text-gray-400">{row.customerPhone}</div>
+        <div className="text-xs text-[var(--text-tertiary)]">{row.customerPhone}</div>
       </div>
     ),
   },
@@ -70,7 +70,7 @@ const ORDER_COLUMNS: SAColumn<MarketplaceOrder>[] = [
     label: "Estado",
     render: (row) => (
       <span
-        className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${ORDER_STATUS_COLORS[row.status] ?? "bg-gray-100 text-gray-500"}`}
+        className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${ORDER_STATUS_COLORS[row.status] ?? "bg-[var(--rule-soft)] text-[var(--text-secondary)]"}`}
       >
         {row.status}
       </span>
@@ -81,7 +81,7 @@ const ORDER_COLUMNS: SAColumn<MarketplaceOrder>[] = [
     label: "Fecha",
     sortable: true,
     render: (row) => (
-      <span className="text-xs text-gray-400 tabular-nums">{fmtDate(row.createdAt)}</span>
+      <span className="text-xs text-[var(--text-tertiary)] tabular-nums">{fmtDate(row.createdAt)}</span>
     ),
   },
 ];
@@ -156,13 +156,13 @@ export function OrdersTab() {
       </div>
 
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" />
         <input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar pedido, cliente o tienda..."
-          className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30"
+          className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 h-10 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30"
         />
       </div>
 

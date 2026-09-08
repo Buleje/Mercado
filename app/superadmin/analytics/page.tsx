@@ -176,7 +176,7 @@ const PLAN_LABELS: Record<PlanId, { label: string; cls: string }> = {
   },
   business: {
     label: "Pro",
-    cls: "bg-violet-100 text-[var(--accent)] dark:bg-violet-950/40 dark:text-[var(--accent)]",
+    cls: "bg-primary/10 text-[var(--accent)] bg-primary/10 dark:text-[var(--accent)]",
   },
   enterprise: {
     label: "Business",
@@ -350,7 +350,7 @@ export default function AnalyticsPage() {
         {error && (
           <div
             role="alert"
-            className="flex items-center justify-between gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]"
+            className="flex items-center justify-between gap-3 rounded-xl border border-[var(--data-error-500)] bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]"
           >
             <span>{error}</span>
             <button
@@ -582,7 +582,7 @@ export default function AnalyticsPage() {
                             </span>
                           )}
                           {!t.active && (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-rose-300/60 bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--data-error-500)] bg-rose-50/60 px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]">
                               <XCircle className="h-2.5 w-2.5" />
                               Suspendida
                             </span>
@@ -705,7 +705,7 @@ function PeriodToolbar({ period, onChange }: { period: Period; onChange: (p: Per
                   const from = startOfDay(new Date(e.target.value + "T12:00:00"));
                   onChange({ ...period, from });
                 }}
-                className="h-9 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                className="h-9 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
               <span className="text-[var(--text-tertiary)] text-xs">→</span>
               <input
@@ -715,7 +715,7 @@ function PeriodToolbar({ period, onChange }: { period: Period; onChange: (p: Per
                   const to = endOfDay(new Date(e.target.value + "T12:00:00"));
                   onChange({ ...period, to });
                 }}
-                className="h-9 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                className="h-9 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
             </div>
           )}
@@ -728,7 +728,7 @@ function PeriodToolbar({ period, onChange }: { period: Period; onChange: (p: Per
                 const d = new Date(e.target.value + "T12:00:00");
                 onChange({ mode: "custom", from: startOfDay(d), to: endOfDay(d) });
               }}
-              className="h-9 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="h-9 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           )}
 

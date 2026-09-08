@@ -33,7 +33,7 @@ type Data = { queue: Row[]; kpis: Kpis };
 const RISK: Record<string, string> = {
   critical: "bg-[var(--data-error-600,#dc2626)] text-white",
   high: "bg-[var(--data-error-500)]/10 text-[var(--data-error-600,#dc2626)]",
-  medium: "bg-[#0d9488]/10 text-[#0d9488]",
+  medium: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
   low: "bg-[var(--data-success-500)]/10 text-[var(--data-success-600,#059669)]",
 };
 

@@ -3,7 +3,7 @@
 type PlanId = "free" | "pro" | "business" | "enterprise";
 
 const PLAN_STYLES: Record<PlanId, string> = {
-  free:       "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
+  free:       "bg-[var(--rule-soft)] text-[var(--text-secondary)] ",
   pro:        "bg-teal-100 text-[var(--accent-dark)] dark:bg-teal-900/40 dark:text-teal-300",
   business:   "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
   enterprise: "bg-teal-600 text-white dark:bg-teal-500 dark:text-white",
@@ -58,7 +58,7 @@ const STATUS_STYLES: Record<StatusVariant, string> = {
   trial:     "bg-[var(--data-success-100)] text-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/40 dark:text-[var(--data-success-500)]",
   pending:   "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
   settled:   "bg-teal-100 text-[var(--accent-dark)] dark:bg-teal-900/40 dark:text-teal-300",
-  cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  cancelled: "bg-[var(--rule-soft)] text-[var(--text-secondary)] ",
 };
 
 export function SAStatusBadge({

@@ -59,7 +59,7 @@ export default function TenantsGrowthPage() {
       actions={
         <Link
           href="/superadmin/tenants"
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
         >
           <ArrowLeft className="h-4 w-4" /> Volver a Tiendas
         </Link>

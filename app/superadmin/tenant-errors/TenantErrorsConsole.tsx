@@ -139,7 +139,7 @@ export function TenantErrorsConsole() {
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar por mensaje o source…"
                   aria-label="Buscar errores"
-                  className="w-full h-9 pl-8 pr-3 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  className="w-full h-9 pl-8 pr-3 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
               </div>
               <div className="flex flex-wrap items-center gap-2">

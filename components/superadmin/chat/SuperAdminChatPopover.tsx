@@ -127,7 +127,7 @@ export default function SuperAdminChatPopover() {
         onClick={() => setOpen((v) => !v)}
         aria-label="Chat con negocios"
         title="Chat con negocios"
-        className="relative p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)] transition-colors"
+        className="relative p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)] transition-colors"
       >
         <MessageSquare className="w-5 h-5" />
         {unread > 0 && (
@@ -262,7 +262,7 @@ export default function SuperAdminChatPopover() {
                   }}
                   rows={1}
                   placeholder={`Escribile a ${selected.tenantName}…`}
-                  className="flex-1 resize-none rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  className="flex-1 resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
                 <button
                   onClick={send}

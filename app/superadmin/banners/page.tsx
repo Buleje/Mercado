@@ -880,7 +880,7 @@ function EmptyState({
   onClearSearch: () => void;
 }) {
   return (
-    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 px-6 text-center">
+    <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 px-6 text-center">
       <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent)]">
         <ImageIcon className="h-7 w-7" strokeWidth={1.5} aria-hidden />
       </span>
@@ -981,7 +981,7 @@ function BannerCard({
             disabled={index === 0}
             title="Subir"
             aria-label="Subir banner"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ArrowUp className="h-3.5 w-3.5" aria-hidden />
           </button>
@@ -990,7 +990,7 @@ function BannerCard({
             disabled={index === total - 1}
             title="Bajar"
             aria-label="Bajar banner"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ArrowDown className="h-3.5 w-3.5" aria-hidden />
           </button>
@@ -1003,7 +1003,7 @@ function BannerCard({
             title={banner.active ? "Ocultar" : "Mostrar"}
             aria-pressed={banner.active}
             className={cn(
-              "inline-flex h-7 items-center gap-1 px-2 rounded-md text-xs font-bold transition-colors",
+              "inline-flex h-7 items-center gap-1 px-2 rounded-lg text-xs font-bold transition-colors",
               banner.active
                 ? "text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/10"
                 : "text-teal-500 hover:bg-teal-500/10",
@@ -1026,7 +1026,7 @@ function BannerCard({
             onClick={onDuplicate}
             title="Duplicar"
             aria-label="Duplicar banner"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >
             <Copy className="h-3.5 w-3.5" aria-hidden />
           </button>
@@ -1034,7 +1034,7 @@ function BannerCard({
             onClick={onRemove}
             title="Eliminar"
             aria-label="Eliminar banner"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)]"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)]"
           >
             <Trash2 className="h-3.5 w-3.5" aria-hidden />
           </button>
@@ -1147,7 +1147,7 @@ function BannerCard({
                   value={banner.title}
                   onChange={(e) => onPatch({ title: e.target.value })}
                   maxLength={120}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
                 />
               </Field>
               <Field label="Subtítulo" hint="Opcional · descriptivo">
@@ -1155,7 +1155,7 @@ function BannerCard({
                   value={banner.subtitle ?? ""}
                   onChange={(e) => onPatch({ subtitle: e.target.value })}
                   maxLength={200}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
                 />
               </Field>
             </div>
@@ -1170,7 +1170,7 @@ function BannerCard({
                   onChange={(e) => onPatch({ ctaHref: e.target.value })}
                   placeholder="/marketplace/ofertas"
                   className={cn(
-                    "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-sm font-mono focus:ring-1 outline-none",
+                    "w-full px-3 h-10 rounded-xl border bg-[var(--surface-raised)] text-sm font-mono focus:ring-1 outline-none",
                     banner.ctaHref.startsWith("/") || banner.ctaHref.startsWith("http")
                       ? "border-[var(--rule-base)] focus:border-[var(--accent)] focus:ring-[var(--accent)]/30"
                       : "border-[var(--data-error-500)] focus:border-[var(--data-error-500)] focus:ring-[var(--data-error-500)]/30",
@@ -1182,7 +1182,7 @@ function BannerCard({
                   value={banner.ctaLabel}
                   onChange={(e) => onPatch({ ctaLabel: e.target.value })}
                   maxLength={40}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
                 />
               </Field>
             </div>
@@ -1215,7 +1215,7 @@ function BannerCard({
                     value={banner.imageUrl ?? ""}
                     onChange={(e) => onPatch({ imageUrl: e.target.value || null })}
                     placeholder="O pegá una URL: https://…"
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-mono focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+                    className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-mono focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
                   />
                   <div className="rounded-md bg-primary/10 border border-[var(--rule-soft)] px-2.5 py-1.5">
                     <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)]">
@@ -1273,7 +1273,7 @@ function BannerCard({
                         aria-pressed={active}
                         aria-label={`Preset de color: ${p.label}`}
                         className={cn(
-                          "h-12 w-20 rounded-lg border-2 transition-all relative overflow-hidden",
+                          "h-12 w-20 rounded-xl border-2 transition-all relative overflow-hidden",
                           active
                             ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/30 scale-105"
                             : "border-[var(--rule-base)] hover:border-[var(--accent)]/50",
@@ -1417,7 +1417,7 @@ function PromoEmbedFields({
               value={promo.productName}
               onChange={(e) => onChange({ productName: e.target.value })}
               maxLength={120}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+              className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
             />
           </Field>
           <div className="grid grid-cols-3 gap-2">
@@ -1431,7 +1431,7 @@ function PromoEmbedFields({
                   onChange({ price: e.target.value === "" ? null : Number(e.target.value) })
                 }
                 placeholder="0.00"
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
               />
             </Field>
             <Field label="Precio anterior" hint="Tachado">
@@ -1444,7 +1444,7 @@ function PromoEmbedFields({
                   onChange({ oldPrice: e.target.value === "" ? null : Number(e.target.value) })
                 }
                 placeholder="0.00"
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm tabular-nums focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm tabular-nums focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
               />
             </Field>
             <Field label="Badge" hint="Ej. -30%">
@@ -1453,7 +1453,7 @@ function PromoEmbedFields({
                 onChange={(e) => onChange({ badge: e.target.value })}
                 maxLength={40}
                 placeholder="-30%"
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold uppercase focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold uppercase focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
               />
             </Field>
           </div>
@@ -1464,7 +1464,7 @@ function PromoEmbedFields({
                 onChange={(e) => onChange({ buyHref: e.target.value })}
                 placeholder="/tienda/mi-bodega/producto/combo-fam"
                 className={cn(
-                  "w-full px-3 py-2 rounded-lg border bg-[var(--surface-raised)] text-sm font-mono focus:ring-1 outline-none",
+                  "w-full px-3 h-10 rounded-xl border bg-[var(--surface-raised)] text-sm font-mono focus:ring-1 outline-none",
                   promo.buyHref.startsWith("/") || promo.buyHref.startsWith("http")
                     ? "border-[var(--rule-base)] focus:border-[var(--accent)] focus:ring-[var(--accent)]/30"
                     : "border-teal-500 focus:border-teal-500 focus:ring-teal-500/30",
@@ -1476,7 +1476,7 @@ function PromoEmbedFields({
                 value={promo.buyLabel}
                 onChange={(e) => onChange({ buyLabel: e.target.value })}
                 maxLength={40}
-                className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
               />
             </Field>
           </div>

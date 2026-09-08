@@ -626,7 +626,7 @@ export default function PagosYapeClient(_: Props) {
           onClick={() => void load()}
           disabled={refreshing}
           title="Recargar (R)"
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50 transition"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50 transition"
         >
           <RefreshCw
             className={cn("h-4 w-4", refreshing && "animate-spin")}
@@ -634,7 +634,7 @@ export default function PagosYapeClient(_: Props) {
           />
           Recargar
         </button>
-        <label className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
+        <label className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
           <input
             type="checkbox"
             checked={autoRefresh}
@@ -650,7 +650,7 @@ export default function PagosYapeClient(_: Props) {
           type="button"
           onClick={() => exportCSV(filtered)}
           disabled={filtered.length === 0}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50 transition"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50 transition"
         >
           <Download className="h-4 w-4" aria-hidden />
           CSV ({filtered.length})
@@ -684,7 +684,7 @@ export default function PagosYapeClient(_: Props) {
               value={searchRaw}
               onChange={(e) => setSearchRaw(e.target.value)}
               aria-label="Buscar pagos"
-              className="w-full h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+              className="w-full h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
             />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -728,14 +728,14 @@ export default function PagosYapeClient(_: Props) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSelectedIds(new Set())}
-              className="h-10 px-3 rounded-lg text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              className="h-10 px-3 rounded-xl text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             >
               Limpiar
             </button>
             <button
               onClick={bulkApprove}
               disabled={bulkBusy}
-              className="h-10 px-3.5 rounded-lg text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center gap-1.5"
+              className="h-10 px-3.5 rounded-xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center gap-1.5"
             >
               {bulkBusy ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -808,7 +808,7 @@ export default function PagosYapeClient(_: Props) {
               setSearchRaw("");
               setDeltaFilter("all");
             }}
-            className="mt-3 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+            className="mt-3 h-10 px-4 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
           >
             Limpiar filtros
           </button>
@@ -943,7 +943,7 @@ export default function PagosYapeClient(_: Props) {
           {/* Detalle (desktop) — drawer (mobile) */}
           <div className="hidden lg:block lg:col-span-7 xl:col-span-8">
             {!selected ? (
-              <div className="flex items-center justify-center h-64 rounded-xl border-2 border-dashed border-[var(--rule-base)] text-sm text-[var(--text-tertiary)]">
+              <div className="flex items-center justify-center h-64 rounded-xl border border-dashed border-[var(--rule-base)] text-sm text-[var(--text-tertiary)]">
                 Seleccioná un pago para revisar (o presioná{" "}
                 <kbd className="mx-1 px-1 rounded bg-[var(--surface-sunken)] font-mono text-xs">
                   J
@@ -1035,7 +1035,7 @@ export default function PagosYapeClient(_: Props) {
               placeholder="Ej: El monto no coincide con el pedido. Por favor, subí la captura correcta."
               rows={4}
               autoFocus
-              className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5 text-sm resize-none outline-none focus:border-[var(--accent)] transition-colors"
+              className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5 text-sm resize-none outline-none focus:border-[var(--accent)] transition-colors"
               aria-label="Motivo del rechazo"
               maxLength={500}
             />
@@ -1046,7 +1046,7 @@ export default function PagosYapeClient(_: Props) {
               <button
                 type="button"
                 onClick={() => setRejectOpen(false)}
-                className="flex-1 h-11 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition"
+                className="flex-1 h-11 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition"
               >
                 Cancelar
               </button>
@@ -1109,7 +1109,7 @@ function Skeleton() {
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] h-24"
+            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] h-24"
           />
         ))}
       </div>
@@ -1160,7 +1160,7 @@ function DetailPanel({
           type="button"
           onClick={onZoom}
           aria-label="Ampliar imagen"
-          className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 h-10 px-3 rounded-lg bg-black/70 text-white text-xs font-bold hover:bg-black/85 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
+          className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-black/70 text-white text-xs font-bold hover:bg-black/85 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
         >
           <ZoomIn className="w-3.5 h-3.5" />
           Ampliar
@@ -1249,7 +1249,7 @@ function DetailPanel({
                           onCopy(approval.yapeOpCode!, "Operación")
                         }
                         aria-label="Copiar operación"
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)]"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)]"
                       >
                         <Copy className="h-3 w-3" />
                       </button>
@@ -1299,7 +1299,7 @@ function DetailPanel({
                   <button
                     onClick={() => onCopy(approval.customerPhone, "Teléfono")}
                     aria-label="Copiar teléfono"
-                    className="inline-flex h-8 px-2 items-center gap-1 rounded-md text-xs text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)] font-bold"
+                    className="inline-flex h-8 px-2 items-center gap-1 rounded-lg text-xs text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)] font-bold"
                   >
                     <Copy className="h-3 w-3" />
                     Copiar

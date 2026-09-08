@@ -137,7 +137,7 @@ export function TenantGrowthChart({ range }: Props) {
             type="button"
             onClick={() => setMetric("orders")}
             className={[
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
               metric === "orders"
                 ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
@@ -149,7 +149,7 @@ export function TenantGrowthChart({ range }: Props) {
             type="button"
             onClick={() => setMetric("revenue")}
             className={[
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
               metric === "revenue"
                 ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
@@ -167,7 +167,7 @@ export function TenantGrowthChart({ range }: Props) {
       )}
 
       {error && (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-[var(--data-error-500)]">
+        <div className="rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-500)]">
           {error}
         </div>
       )}

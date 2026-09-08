@@ -21,7 +21,7 @@ interface Props {
 }
 
 const FIELD =
-  "w-full h-12 text-base border-2 border-[var(--rule-base)] rounded-2xl px-3 bg-[var(--surface-raised)] text-[var(--text-primary)]";
+  "w-full h-12 text-base border border-[var(--rule-base)] rounded-2xl px-3 bg-[var(--surface-raised)] text-[var(--text-primary)]";
 
 const DAYS_OPTIONS = [
   { value: 1, label: "1 día" },
@@ -136,7 +136,7 @@ export default function DocumentShareModal({ doc, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label="Compartir documento"
-        className="w-full max-w-lg rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-lg)] p-5 space-y-4 max-h-[90vh] flex flex-col"
+        className="w-full max-w-lg rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)] p-5 space-y-4 max-h-[90vh] flex flex-col"
       >
         {/* Header */}
         <div className="flex items-center justify-between shrink-0">
@@ -150,7 +150,7 @@ export default function DocumentShareModal({ doc, onClose }: Props) {
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+            className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
           >
             <X className="h-5 w-5" />
           </button>
@@ -166,7 +166,7 @@ export default function DocumentShareModal({ doc, onClose }: Props) {
         )}
 
         {/* Create form */}
-        <div className="shrink-0 space-y-3 rounded-xl border-2 border-[var(--rule-base)] p-4 bg-primary/10">
+        <div className="shrink-0 space-y-3 rounded-xl border border-[var(--rule-base)] p-4 bg-primary/10">
           <p className="text-sm font-semibold text-[var(--text-secondary)]">Crear link</p>
           <div className="flex gap-2">
             <label className="flex-1 space-y-1">
@@ -199,7 +199,7 @@ export default function DocumentShareModal({ doc, onClose }: Props) {
             onClick={() => void handleCreate()}
             disabled={creating}
             aria-label="Generar link público"
-            className="flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary/90 disabled:opacity-50"
+            className="flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-semibold hover:bg-primary/90 disabled:opacity-50"
           >
             {creating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
             Generar link
@@ -222,7 +222,7 @@ export default function DocumentShareModal({ doc, onClose }: Props) {
               return (
                 <div
                   key={share.id}
-                  className="flex items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-3"
+                  className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-3"
                 >
                   {/* Link info */}
                   <div className="flex-1 min-w-0">
@@ -250,7 +250,7 @@ export default function DocumentShareModal({ doc, onClose }: Props) {
                     type="button"
                     onClick={() => handleCopy(share.token, share.id)}
                     aria-label="Copiar link"
-                    className="shrink-0 flex items-center gap-1.5 h-9 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors"
+                    className="shrink-0 flex items-center gap-1.5 h-9 px-3 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors"
                   >
                     {copied ? (
                       <>
@@ -270,7 +270,7 @@ export default function DocumentShareModal({ doc, onClose }: Props) {
                     type="button"
                     onClick={() => void handleRevoke(share.id)}
                     aria-label="Revocar link"
-                    className="shrink-0 h-9 w-9 flex items-center justify-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--data-error-500)] hover:bg-[var(--data-error-soft)] transition-colors"
+                    className="shrink-0 h-9 w-9 flex items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--data-error-500)] hover:bg-[var(--data-error-soft)] transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

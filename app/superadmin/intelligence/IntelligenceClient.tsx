@@ -157,7 +157,7 @@ export default function IntelligenceClient() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="inline-flex items-center gap-2 px-4 min-h-10 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <RefreshCw className="w-4 h-4" aria-hidden />
             Reintentar

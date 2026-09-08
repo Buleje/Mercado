@@ -788,7 +788,7 @@ export default function VendorApplicationsModule() {
                 onClick={() => reload()}
                 disabled={refreshing}
                 title="Recargar (R)"
-                className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+                className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
               >
                 <RefreshCcw
                   className={cn(
@@ -875,12 +875,12 @@ export default function VendorApplicationsModule() {
                 value={searchRaw}
                 onChange={(e) => setSearchRaw(e.target.value)}
                 aria-label="Buscar aplicaciones"
-                className="w-full h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                className="w-full h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
               />
             </div>
             <button
               onClick={() => exportCSV(filtered)}
-              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
               title="Exportar CSV"
             >
               <Download className="h-4 w-4" strokeWidth={2.25} aria-hidden />
@@ -896,7 +896,7 @@ export default function VendorApplicationsModule() {
                 )
               }
               aria-label="Filtrar por estado"
-              className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+              className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
             >
               <option value="all">Todos los estados</option>
               <option value="pendiente">Pendientes</option>
@@ -908,7 +908,7 @@ export default function VendorApplicationsModule() {
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               aria-label="Filtrar por categoría"
-              className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+              className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
             >
               <option value="all">Todas categorías</option>
               {categoryOptions.map((c) => (
@@ -921,7 +921,7 @@ export default function VendorApplicationsModule() {
               value={districtFilter}
               onChange={(e) => setDistrictFilter(e.target.value)}
               aria-label="Filtrar por distrito"
-              className="col-span-2 sm:col-span-1 h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+              className="col-span-2 sm:col-span-1 h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
             >
               <option value="all">Todos los distritos</option>
               {districtOptions.map((d) => (
@@ -942,14 +942,14 @@ export default function VendorApplicationsModule() {
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setSelectedIds(new Set())}
-                className="h-10 px-3 rounded-lg text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                className="h-10 px-3 rounded-xl text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
               >
                 Limpiar
               </button>
               <button
                 onClick={bulkReject}
                 disabled={bulkBusy}
-                className="h-10 px-3.5 rounded-lg text-xs font-bold text-[var(--data-error)] bg-[var(--data-error-100)] hover:bg-[var(--data-error-500)]/20 disabled:opacity-50 inline-flex items-center gap-1.5"
+                className="h-10 px-3.5 rounded-xl text-xs font-bold text-[var(--data-error)] bg-[var(--data-error-100)] hover:bg-[var(--data-error-500)]/20 disabled:opacity-50 inline-flex items-center gap-1.5"
               >
                 <X className="h-3.5 w-3.5" />
                 Rechazar
@@ -957,7 +957,7 @@ export default function VendorApplicationsModule() {
               <button
                 onClick={bulkApprove}
                 disabled={bulkBusy}
-                className="h-10 px-3.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center gap-1.5"
+                className="h-10 px-3.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center gap-1.5"
               >
                 {bulkBusy ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1001,7 +1001,7 @@ export default function VendorApplicationsModule() {
                   setCategoryFilter("all");
                   setDistrictFilter("all");
                 }}
-                className="mt-4 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+                className="mt-4 h-10 px-4 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
               >
                 Limpiar filtros
               </button>
@@ -1093,7 +1093,7 @@ export default function VendorApplicationsModule() {
                     <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-[var(--rule-soft)]">
                       <button
                         onClick={() => openDetails(a)}
-                        className="inline-flex items-center gap-1.5 h-11 px-3 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+                        className="inline-flex items-center gap-1.5 h-11 px-3 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
                       >
                         <Eye className="h-4 w-4" />
                         Detalles
@@ -1219,7 +1219,7 @@ export default function VendorApplicationsModule() {
                               onClick={() => copy(a.ruc, "RUC")}
                               title="Copiar RUC"
                               aria-label="Copiar RUC"
-                              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)]"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)]"
                             >
                               <Copy className="h-3.5 w-3.5" />
                             </button>

@@ -105,7 +105,7 @@ export default function DocumentCard({
           onClick={() => onToggleSelect(doc.id)}
           aria-pressed={selected}
           aria-label={selected ? "Quitar de la selección" : "Seleccionar"}
-          className="absolute top-2 left-2 rounded-md bg-[var(--surface-raised)]/90 p-0.5"
+          className="absolute top-2 left-2 rounded-xl bg-[var(--surface-raised)]/90 p-0.5"
         >
           {selected ? (
             <CheckSquare className="h-5 w-5 text-primary" />
@@ -145,7 +145,7 @@ export default function DocumentCard({
             onClick={() => onToggleFavorite(doc)}
             title="Favorito"
             aria-label={doc.favorite ? "Quitar de favoritos" : "Marcar favorito"}
-            className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)]"
+            className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)]"
           >
             <Star
               className={cn(
@@ -162,7 +162,7 @@ export default function DocumentCard({
             disabled={busy}
             title="Descargar"
             aria-label="Descargar documento"
-            className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 disabled:opacity-50"
+            className="p-1.5 rounded-xl text-[var(--text-secondary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 disabled:opacity-50"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           </button>

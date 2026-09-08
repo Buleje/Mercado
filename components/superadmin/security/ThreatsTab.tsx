@@ -47,10 +47,10 @@ const TYPE_META: Record<ThreatType, { label: string; icon: LucideIcon }> = {
 };
 
 const SEV_META: Record<Severity, { label: string; chip: string; dot: string }> = {
-  critical: { label: "Crítica", chip: "bg-rose-100 text-[var(--data-error-700)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]", dot: "bg-rose-500" },
+  critical: { label: "Crítica", chip: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]", dot: "bg-rose-500" },
   high: { label: "Alta", chip: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300", dot: "bg-amber-500" },
   medium: { label: "Media", chip: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300", dot: "bg-sky-500" },
-  low: { label: "Baja", chip: "bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300", dot: "bg-slate-400" },
+  low: { label: "Baja", chip: "bg-[var(--rule-soft)] text-[var(--text-secondary)] ", dot: "bg-slate-400" },
 };
 
 function fmtWhen(iso: string): string {
@@ -122,7 +122,7 @@ export function ThreatsTab() {
 
   if (error || !data) {
     return (
-      <div role="alert" className="rounded-2xl border-2 border-rose-300 bg-rose-50 dark:border-rose-500/30 dark:bg-rose-500/10 p-4 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+      <div role="alert" className="rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:border-[var(--data-error-500)] dark:bg-rose-500/10 p-4 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
         No se pudo cargar el WAF ({error ?? "sin datos"}).
       </div>
     );
@@ -253,14 +253,14 @@ export function ThreatsTab() {
                   <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{fmtWhen(row.lastAt)}</span>
                   <div className="ml-auto">
                     {blocked ? (
-                      <span className="inline-flex items-center gap-1 rounded-lg bg-rose-100 px-2.5 py-1.5 text-[length:var(--ts-xs)] font-bold text-[var(--data-error-700)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]">
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-[var(--data-error-50)] px-2.5 py-1.5 text-[length:var(--ts-xs)] font-bold text-[var(--data-error-700)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]">
                         <Ban className="h-3.5 w-3.5" /> Bloqueada
                       </span>
                     ) : (
                       <button
                         onClick={() => act(row.ip, "block")}
                         disabled={busyIp === row.ip || !data.blocklistEnabled}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-rose-400 hover:text-[var(--data-error-500)] disabled:opacity-40"
+                        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-rose-400 hover:text-[var(--data-error-500)] disabled:opacity-40"
                         title={data.blocklistEnabled ? "Bloquear esta IP" : "Requiere Upstash Redis"}
                       >
                         {busyIp === row.ip ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Ban className="h-3.5 w-3.5" />} Bloquear
@@ -290,7 +290,7 @@ export function ThreatsTab() {
                 <button
                   onClick={() => act(b.ip, "unblock")}
                   disabled={busyIp === b.ip}
-                  className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-40"
+                  className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-40"
                 >
                   {busyIp === b.ip ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlock className="h-3.5 w-3.5" />} Desbloquear
                 </button>
@@ -339,7 +339,7 @@ function StatCell({ icon: Icon, tone, label, value, subtitle }: {
     info: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
     success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     warning: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-    danger: "bg-rose-100 text-[var(--data-error-700)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
+    danger: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
   }[tone];
   return (
     <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">

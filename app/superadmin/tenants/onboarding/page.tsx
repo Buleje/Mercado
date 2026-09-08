@@ -189,13 +189,13 @@ export default function TenantsOnboardingPage() {
         actions={
           <div className="flex items-center gap-2">
             {lastAt && <span className="hidden sm:inline text-xs text-[var(--text-tertiary)] tabular-nums">Actualizado {new Date(lastAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })} · auto 60s</span>}
-            <button onClick={() => exportCSV(sorted)} disabled={sorted.length === 0} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
+            <button onClick={() => exportCSV(sorted)} disabled={sorted.length === 0} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
               <Download className="h-4 w-4" /> CSV
             </button>
-            <button onClick={() => void load()} disabled={loading} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
+            <button onClick={() => void load()} disabled={loading} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualizar
             </button>
-            <Link href="/superadmin/tenants" className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40">
+            <Link href="/superadmin/tenants" className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40">
               <ArrowLeft className="h-4 w-4" /> Tiendas
             </Link>
           </div>
@@ -242,22 +242,22 @@ export default function TenantsOnboardingPage() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar tienda o slug…" className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-9 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]" />
-            {search && <button type="button" onClick={() => setSearch("")} aria-label="Limpiar" className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><X className="h-4 w-4" /></button>}
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar tienda o slug…" className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-9 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]" />
+            {search && <button type="button" onClick={() => setSearch("")} aria-label="Limpiar" className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-xl p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><X className="h-4 w-4" /></button>}
           </div>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)} aria-label="Filtrar por estado" className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer">
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)} aria-label="Filtrar por estado" className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer">
             <option value="all">Todas</option>
             <option value="stuck">Estancadas</option>
             <option value="complete">Activadas</option>
             {STEPS.map((s) => <option key={s} value={`stuck:${s}`}>Trabada en {STEP_META[s].label}</option>)}
           </select>
-          <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} aria-label="Ordenar" className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer">
+          <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} aria-label="Ordenar" className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer">
             <option value="progress">Orden: progreso</option>
             <option value="age">Orden: antigüedad</option>
             <option value="name">Orden: nombre</option>
           </select>
           {contactedCount > 0 && (
-            <button type="button" onClick={() => setHideContacted((v) => !v)} aria-pressed={hideContacted} className={["inline-flex h-11 items-center gap-1.5 rounded-xl px-3.5 text-sm font-bold transition-colors shrink-0", hideContacted ? "bg-[var(--accent)] text-white" : "border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"].join(" ")}>
+            <button type="button" onClick={() => setHideContacted((v) => !v)} aria-pressed={hideContacted} className={["inline-flex h-11 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold transition-colors shrink-0", hideContacted ? "bg-[var(--accent)] text-white" : "border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"].join(" ")}>
               <Check className="h-4 w-4" /> Ocultar contactadas <span className="tabular-nums opacity-80">{contactedCount}</span>
             </button>
           )}
@@ -266,7 +266,7 @@ export default function TenantsOnboardingPage() {
         {loading && rows.length === 0 ? (
           <div className="space-y-2">{[0,1,2,3,4].map((i) => <div key={i} className="h-16 animate-pulse bg-[var(--surface-sunken)] border border-[var(--rule-soft)]" />)}</div>
         ) : sorted.length === 0 ? (
-          <div className="border-2 border-dashed border-[var(--rule-base)] py-12 text-center">
+          <div className="border border-dashed border-[var(--rule-base)] py-12 text-center">
             <p className="text-sm font-bold text-[var(--text-primary)]">Ninguna tienda con estos filtros</p>
             {hasFilters && <button type="button" onClick={() => { setSearch(""); setStatusFilter("all"); }} className="mt-2 text-sm font-bold text-[var(--accent)] hover:underline">Limpiar filtros</button>}
           </div>
@@ -282,10 +282,10 @@ export default function TenantsOnboardingPage() {
                     <button type="button" onClick={() => setDetail(r)} className="min-w-[160px] flex-1 text-left">
                       <p className="text-sm font-bold text-[var(--text-primary)] truncate flex items-center gap-1.5">
                         {r.name}
-                        {risk && <span className="rounded-full bg-[var(--data-error-500)] px-1.5 py-0.5 text-[10px] font-extrabold text-white">trial −{r.trialDaysLeft}d</span>}
-                        {old && !risk && <span className="rounded-full bg-[#0d9488]/15 px-1.5 py-0.5 text-[10px] font-extrabold text-[#0d9488]">{r.ageDays}d</span>}
-                        {r.contactStatus === "contacted" && <span className="rounded-full bg-[var(--data-success-500)]/15 px-1.5 py-0.5 text-[10px] font-extrabold text-[var(--data-success-600,#059669)]">contactada</span>}
-                        {r.contactStatus === "snoozed" && <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[10px] font-extrabold text-[var(--text-tertiary)]">pospuesta</span>}
+                        {risk && <span className="rounded-full bg-[var(--data-error-500)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-white">trial −{r.trialDaysLeft}d</span>}
+                        {old && !risk && <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)]">{r.ageDays}d</span>}
+                        {r.contactStatus === "contacted" && <span className="rounded-full bg-[var(--data-success-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-success-600,#059669)]">contactada</span>}
+                        {r.contactStatus === "snoozed" && <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-[var(--text-tertiary)]">pospuesta</span>}
                       </p>
                       <p className="text-xs text-[var(--text-tertiary)]">{r.complete ? "Activada ✓" : `Estancada en: ${r.stuckAt ? STEP_META[r.stuckAt].label : "—"}`}</p>
                     </button>
@@ -336,7 +336,7 @@ export default function TenantsOnboardingPage() {
                 <h2 className="text-base font-bold text-[var(--text-primary)] truncate">{detail.name}</h2>
                 <p className="text-xs text-[var(--text-tertiary)] truncate font-mono">{detail.slug} · {detail.plan}</p>
               </div>
-              <button type="button" onClick={() => setDetail(null)} aria-label="Cerrar" className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] shrink-0"><X className="w-5 h-5" /></button>
+              <button type="button" onClick={() => setDetail(null)} aria-label="Cerrar" className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] shrink-0"><X className="w-5 h-5" /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -361,7 +361,7 @@ export default function TenantsOnboardingPage() {
                           {done ? <Check className="h-4 w-4" strokeWidth={3} /> : <Icon className="h-4 w-4" />}
                         </span>
                         <span className={done ? "text-[var(--text-primary)] font-semibold" : "text-[var(--text-tertiary)]"}>{STEP_META[s].label}</span>
-                        {!done && detail.stuckAt === s && <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-[#0d9488]">← se trabó acá</span>}
+                        {!done && detail.stuckAt === s && <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">← se trabó acá</span>}
                       </li>
                     );
                   })}
@@ -374,7 +374,7 @@ export default function TenantsOnboardingPage() {
                 </div>
               )}
               <div className="flex gap-2 pt-1">
-                <button type="button" onClick={() => void impersonate(detail.slug)} disabled={impersonating === detail.slug} className="inline-flex flex-1 h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
+                <button type="button" onClick={() => void impersonate(detail.slug)} disabled={impersonating === detail.slug} className="inline-flex flex-1 h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
                   <ExternalLink className="h-4 w-4" /> Impersonar
                 </button>
                 {!detail.complete && (

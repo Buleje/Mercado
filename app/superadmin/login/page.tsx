@@ -343,7 +343,7 @@ export default function SuperAdminLoginPage() {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full h-14 pl-12 pr-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all su-input"
+                    className="w-full h-14 pl-12 pr-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all su-input"
                     placeholder="superadmin"
                     autoComplete="username"
                     required
@@ -370,7 +370,7 @@ export default function SuperAdminLoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyDown={onPasswordKey}
                     onKeyUp={onPasswordKey}
-                    className="w-full h-14 pl-12 pr-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all su-input"
+                    className="w-full h-14 pl-12 pr-14 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-all su-input"
                     placeholder="••••••••"
                     autoComplete="current-password"
                     required
@@ -412,7 +412,7 @@ export default function SuperAdminLoginPage() {
               <button
                 type="submit"
                 disabled={loading || !username || !password || retryAfter > 0}
-                className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl text-white text-base font-extrabold tracking-tight active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl text-white text-base font-semibold tracking-tight active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   background: "var(--brand-purple)",
                   boxShadow: "0 12px 24px -8px color-mix(in oklab, var(--brand-purple) 50%, transparent)",
@@ -490,7 +490,7 @@ export default function SuperAdminLoginPage() {
               <button
                 type="submit"
                 disabled={loading || code.length !== 6}
-                className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl text-white text-base font-extrabold tracking-tight active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl text-white text-base font-semibold tracking-tight active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   background: "var(--brand-purple)",
                   boxShadow: "0 12px 24px -8px color-mix(in oklab, var(--brand-purple) 50%, transparent)",
@@ -623,13 +623,13 @@ function PlatformConsolePreview() {
         />
 
         {/* Card principal */}
-        <div className="relative rounded-[28px] bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-2xl overflow-hidden">
+        <div className="relative rounded-[28px] bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-2xl overflow-hidden">
           {/* Header tipo macOS */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--rule-soft)]">
             <div className="flex items-center gap-2">
               <span className="flex gap-1.5">
                 <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-500)]/60" />
-                <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[#0d9488]/60" />
+                <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-primary/60" />
                 <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)]/60" />
               </span>
               <p className="ml-2 text-xs font-bold text-[var(--text-tertiary)] tabular-nums">
@@ -835,7 +835,7 @@ function SwitchChip({
   return (
     <a
       href={href}
-      className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-current hover:bg-[var(--surface-sunken)]/40 transition-all group"
+      className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-current hover:bg-[var(--surface-sunken)]/40 transition-all group"
       style={{ borderColor: "var(--rule-base)" }}
     >
       <div className="flex items-center gap-3 min-w-0">

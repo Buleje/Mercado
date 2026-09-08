@@ -28,7 +28,7 @@ function KpiCard({ icon: Icon, label, value, sub, tone = "default" }: {
 }) {
   const valueColor =
     tone === "good" ? "text-[var(--data-success-600,#16a34a)]" :
-    tone === "warn" ? "text-[#0d9488]" : "text-[var(--text-primary)]";
+    tone === "warn" ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-primary)]";
   return (
     <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
       <div className="flex items-center gap-1.5 mb-2 text-[var(--text-tertiary)]">
@@ -58,7 +58,7 @@ export default function RepartidoresOverview() {
   const f = data?.fleet;
 
   return (
-    <section className="mb-6 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden">
+    <section className="mb-6 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-[var(--rule-soft)]">
         <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-2 min-w-0">
@@ -140,7 +140,7 @@ export default function RepartidoresOverview() {
 
                 <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <AlertTriangle className="h-4 w-4 text-[#0d9488]" />
+                    <AlertTriangle className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
                     <h3 className="text-sm font-extrabold text-[var(--text-primary)]">En riesgo / atención <span className="text-[var(--text-tertiary)] font-bold">{data.atRisk.length}</span></h3>
                   </div>
                   {data.atRisk.length === 0 ? (
@@ -155,7 +155,7 @@ export default function RepartidoresOverview() {
                           </div>
                           <div className="flex flex-wrap justify-end gap-1 shrink-0 max-w-[55%]">
                             {p.reasons.map((r) => (
-                              <span key={r} className="rounded-md bg-[color-mix(in_oklch,#0d9488_12%,transparent)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[#0d9488]">{r}</span>
+                              <span key={r} className="rounded-md bg-[color-mix(in_oklch,#0d9488_12%,transparent)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">{r}</span>
                             ))}
                           </div>
                         </li>

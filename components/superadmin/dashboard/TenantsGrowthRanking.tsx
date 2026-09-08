@@ -58,7 +58,7 @@ const RANGE_LABELS: Record<Range, string> = {
 };
 
 const PLAN_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  free: { bg: "bg-zinc-100 dark:bg-zinc-800", text: "text-zinc-700 dark:text-zinc-300", label: "Free" },
+  free: { bg: "bg-[var(--rule-soft)] ", text: "text-[var(--text-primary)] ", label: "Free" },
   pro: { bg: "bg-teal-100 dark:bg-teal-950/40", text: "text-teal-800 dark:text-teal-300", label: "Pro" },
   business: { bg: "bg-sky-100 dark:bg-sky-950/40", text: "text-sky-800 dark:text-sky-300", label: "Business" },
   enterprise: { bg: "bg-emerald-100 dark:bg-emerald-950/40", text: "text-emerald-800 dark:text-emerald-300", label: "Enterprise" },
@@ -72,7 +72,7 @@ function PodiumIcon({ position }: { position: number }) {
   // Paleta de marca: 1º teal, 2º plata (zinc), 3º cielo. Distintos y sin cálidos.
   const styles = [
     "bg-linear-to-br from-teal-300 to-teal-500 text-teal-950 ring-2 ring-teal-200",
-    "bg-linear-to-br from-zinc-300 to-zinc-400 text-zinc-900 ring-2 ring-zinc-200",
+    "bg-linear-to-br from-zinc-300 to-zinc-400 text-[var(--text-primary)] ring-2 ring-gray-200",
     "bg-linear-to-br from-sky-300 to-sky-400 text-sky-950 ring-2 ring-sky-200",
   ];
   return (
@@ -180,7 +180,7 @@ export default function TenantsGrowthRanking() {
       actions={
         <>
           {/* Range picker */}
-          <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] p-1 text-base">
+          <div className="inline-flex rounded-xl border border-[var(--rule-base)] p-1 text-base">
             {(["1d", "7d", "30d", "90d", "1y"] as const).map((r) => (
               <button
                 key={r}
@@ -199,7 +199,7 @@ export default function TenantsGrowthRanking() {
           </div>
 
           {/* Indicador combinado: ambas métricas siempre visibles */}
-          <div className="inline-flex items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] px-3 py-1.5">
+          <div className="inline-flex items-center gap-3 rounded-xl border border-[var(--rule-base)] px-3 py-1.5">
             <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)]">
               <ShoppingBag className="h-4 w-4" /> Pedidos
             </span>

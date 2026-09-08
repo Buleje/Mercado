@@ -254,7 +254,7 @@ export default function SuperAdminDocumentsModule() {
           <button
             type="button"
             onClick={() => setTemplatesOpen(true)}
-            className="flex items-center gap-2 px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
+            className="flex items-center gap-2 px-4 h-12 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
           >
             <Sparkles className="h-5 w-5" />
             <span className="hidden sm:inline">Plantilla</span>
@@ -263,7 +263,7 @@ export default function SuperAdminDocumentsModule() {
             type="button"
             onClick={() => scanInputRef.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-2 px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 h-12 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
           >
             <ScanLine className="h-5 w-5" />
             <span className="hidden sm:inline">Escanear</span>
@@ -271,7 +271,7 @@ export default function SuperAdminDocumentsModule() {
           <button
             type="button"
             onClick={openTrash}
-            className="flex items-center gap-2 px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
+            className="flex items-center gap-2 px-4 h-12 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
           >
             <Trash2 className="h-5 w-5" />
             <span className="hidden sm:inline">Papelera</span>
@@ -281,7 +281,7 @@ export default function SuperAdminDocumentsModule() {
             onClick={exportZip}
             disabled={exporting}
             title="Descargar todo el vault en un ZIP"
-            className="flex items-center gap-2 px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 h-12 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
           >
             {exporting ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -294,7 +294,7 @@ export default function SuperAdminDocumentsModule() {
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-2 px-4 h-12 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 h-12 rounded-2xl bg-primary text-white text-base font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             {uploading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -343,7 +343,7 @@ export default function SuperAdminDocumentsModule() {
             <button
               type="button"
               onClick={() => setTrashMode(false)}
-              className="flex items-center gap-1.5 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
+              className="flex items-center gap-1.5 h-10 px-3 rounded-xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
             >
               <ArrowLeft className="h-4 w-4" /> Volver
             </button>
@@ -446,18 +446,18 @@ export default function SuperAdminDocumentsModule() {
 
           {/* Contenido */}
           {showSpinner ? (
-            <div className="p-10 text-center bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl">
+            <div className="p-10 text-center bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl">
               <Loader2 className="h-6 w-6 animate-spin mx-auto text-[var(--text-tertiary)]" />
             </div>
           ) : contentTooShort ? (
-            <div className="p-10 text-center bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl">
+            <div className="p-10 text-center bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl">
               <FileText className="h-10 w-10 mx-auto text-[var(--text-tertiary)] mb-2" />
               <p className="text-base font-semibold text-[var(--text-secondary)]">
                 Escribí al menos 2 caracteres para buscar dentro del contenido.
               </p>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="p-10 text-center bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl">
+            <div className="p-10 text-center bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl">
               <FileText className="h-10 w-10 mx-auto text-[var(--text-tertiary)] mb-2" />
               <p className="text-base font-semibold text-[var(--text-secondary)]">
                 {contentMode
@@ -490,7 +490,7 @@ export default function SuperAdminDocumentsModule() {
               ))}
             </div>
           ) : (
-            <div className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
               <ul className="divide-y divide-[var(--rule-soft)]">
                 {filtered.map((d) => (
                   <DocumentRow

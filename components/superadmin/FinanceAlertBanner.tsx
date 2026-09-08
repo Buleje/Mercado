@@ -93,7 +93,7 @@ export function FinanceAlertBanner() {
       <button
         type="button"
         onClick={dismiss}
-        className="shrink-0 rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+        className="shrink-0 rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
         aria-label="Descartar aviso"
       >
         <X className="h-4 w-4" aria-hidden />

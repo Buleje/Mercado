@@ -16,7 +16,7 @@ interface Props {
 export default function DocumentTrashView({ docs, loading, busyId, onRestore, onPurge }: Props) {
   if (loading) {
     return (
-      <div className="p-10 text-center bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl">
+      <div className="p-10 text-center bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl">
         <Loader2 className="h-6 w-6 animate-spin mx-auto text-[var(--text-tertiary)]" />
       </div>
     );
@@ -24,7 +24,7 @@ export default function DocumentTrashView({ docs, loading, busyId, onRestore, on
 
   if (docs.length === 0) {
     return (
-      <div className="p-10 text-center bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl">
+      <div className="p-10 text-center bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl">
         <Trash2 className="h-10 w-10 mx-auto text-[var(--text-tertiary)] mb-2" />
         <p className="text-base font-semibold text-[var(--text-secondary)]">La papelera está vacía.</p>
       </div>
@@ -32,7 +32,7 @@ export default function DocumentTrashView({ docs, loading, busyId, onRestore, on
   }
 
   return (
-    <div className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
       <ul className="divide-y divide-[var(--rule-soft)]">
         {docs.map((d) => {
           const FileGlyph = isImage(d.mimeType) ? ImageIcon : FileText;
@@ -50,7 +50,7 @@ export default function DocumentTrashView({ docs, loading, busyId, onRestore, on
                 type="button"
                 onClick={() => onRestore(d)}
                 disabled={busy}
-                className="flex items-center gap-1.5 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors disabled:opacity-50"
               >
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
                 Restaurar

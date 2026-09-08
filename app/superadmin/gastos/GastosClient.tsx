@@ -103,7 +103,7 @@ export default function GastosClient() {
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-bold transition ${
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 min-h-10 text-sm font-semibold transition ${
                 tab === id
                   ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

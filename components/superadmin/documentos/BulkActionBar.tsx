@@ -57,7 +57,7 @@ export default function BulkActionBar({
               onMove(v === "__none__" ? null : v);
               e.target.value = "";
             }}
-            className="h-10 pl-8 pr-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-secondary)]"
+            className="h-10 pl-8 pr-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-secondary)]"
           >
             <option value="">Mover a…</option>
             {folders.map((f) => (
@@ -72,21 +72,21 @@ export default function BulkActionBar({
         <button
           type="button"
           onClick={onFavorite}
-          className="flex items-center gap-2 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-secondary)] hover:text-[var(--data-warning-500)] hover:border-[var(--data-warning-500)] transition-colors"
+          className="flex items-center gap-2 h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-secondary)] hover:text-[var(--data-warning-500)] hover:border-[var(--data-warning-500)] transition-colors"
         >
           <Star className="h-4 w-4" /> Favorito
         </button>
         <button
           type="button"
           onClick={onTag}
-          className="flex items-center gap-2 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors"
+          className="flex items-center gap-2 h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors"
         >
           <Tag className="h-4 w-4" /> Etiquetar
         </button>
         <button
           type="button"
           onClick={onDownload}
-          className="flex items-center gap-2 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors"
+          className="flex items-center gap-2 h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors"
         >
           <Download className="h-4 w-4" /> Descargar
         </button>
@@ -101,7 +101,7 @@ export default function BulkActionBar({
           type="button"
           onClick={onClear}
           aria-label="Cerrar selección"
-          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+          className="p-2 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
         >
           <X className="h-5 w-5" />
         </button>

@@ -62,7 +62,7 @@ function KpiCard({ icon: Icon, label, value, sub, tone = "default" }: {
 }) {
   const color =
     tone === "good" ? "text-[var(--data-success-600,#16a34a)]" :
-    tone === "warn" ? "text-[#0d9488]" :
+    tone === "warn" ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" :
     tone === "bad" ? "text-[var(--data-error-600,#dc2626)]" : "text-[var(--text-primary)]";
   return (
     <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
@@ -158,13 +158,13 @@ export default function TenantsUsagePage() {
         icon={Gauge}
         actions={
           <div className="flex items-center gap-2">
-            <button onClick={() => exportCSV(sorted)} disabled={sorted.length === 0} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
+            <button onClick={() => exportCSV(sorted)} disabled={sorted.length === 0} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
               <Download className="h-4 w-4" /> CSV
             </button>
-            <button onClick={() => void load()} disabled={loading} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
+            <button onClick={() => void load()} disabled={loading} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualizar
             </button>
-            <Link href="/superadmin/tenants" className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40">
+            <Link href="/superadmin/tenants" className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40">
               <ArrowLeft className="h-4 w-4" /> Tiendas
             </Link>
           </div>
@@ -183,12 +183,12 @@ export default function TenantsUsagePage() {
         {/* Resumen upsell */}
         {upsell.length > 0 && (
           <div className="mb-4 flex flex-wrap items-center gap-3 border-2 border-teal-500 bg-teal-50 dark:bg-teal-500/10 px-4 py-3">
-            <TrendingUp className="h-5 w-5 text-[#0d9488] shrink-0" />
-            <p className="text-sm font-bold text-[#0d9488]">
+            <TrendingUp className="h-5 w-5 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0" />
+            <p className="text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
               {upsell.length} {upsell.length === 1 ? "tienda cerca" : "tiendas cerca"} del límite — candidatas a upsell
             </p>
             {summary && summary.monthlyUpsidePEN > 0 && (
-              <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[#0d9488] px-3 py-1 text-sm font-extrabold text-white">
+              <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-3 py-1 text-sm font-extrabold text-white">
                 +{fmtPEN(summary.monthlyUpsidePEN)}/mes de MRR potencial
               </span>
             )}
@@ -203,10 +203,10 @@ export default function TenantsUsagePage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar tienda, slug o plan…"
-              className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-9 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+              className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-9 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
             />
             {search && (
-              <button type="button" onClick={() => setSearch("")} aria-label="Limpiar" className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
+              <button type="button" onClick={() => setSearch("")} aria-label="Limpiar" className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-xl p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
                 <X className="h-4 w-4" />
               </button>
             )}
@@ -215,7 +215,7 @@ export default function TenantsUsagePage() {
             value={planFilter}
             onChange={(e) => setPlanFilter(e.target.value)}
             aria-label="Filtrar por plan"
-            className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+            className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
           >
             <option value="all">Todos los planes</option>
             {planOptions.map((p) => <option key={p} value={p}>{PLAN_LABEL[p] ?? p}</option>)}
@@ -225,8 +225,8 @@ export default function TenantsUsagePage() {
             onClick={() => setNearOnly((v) => !v)}
             aria-pressed={nearOnly}
             className={[
-              "inline-flex h-11 items-center gap-1.5 rounded-xl px-3.5 text-sm font-bold transition-colors shrink-0",
-              nearOnly ? "bg-[var(--data-error-500)] text-white" : "border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+              "inline-flex h-11 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold transition-colors shrink-0",
+              nearOnly ? "bg-[var(--data-error-500)] text-white" : "border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
             ].join(" ")}
           >
             <AlertTriangle className="h-4 w-4" /> Cerca del límite
@@ -236,7 +236,7 @@ export default function TenantsUsagePage() {
         {loading && rows.length === 0 ? (
           <div className="space-y-2">{[0,1,2,3,4].map((i) => <div key={i} className="h-14 animate-pulse bg-[var(--surface-sunken)] border border-[var(--rule-soft)]" />)}</div>
         ) : sorted.length === 0 ? (
-          <div className="border-2 border-dashed border-[var(--rule-base)] py-12 text-center">
+          <div className="border border-dashed border-[var(--rule-base)] py-12 text-center">
             <p className="text-sm font-bold text-[var(--text-primary)]">Ninguna tienda con estos filtros</p>
             {hasFilters && (
               <button type="button" onClick={() => { setSearch(""); setPlanFilter("all"); setNearOnly(false); }} className="mt-2 text-sm font-bold text-[var(--accent)] hover:underline">Limpiar filtros</button>
@@ -249,11 +249,11 @@ export default function TenantsUsagePage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-                    <th className="px-3 py-2.5"><button type="button" onClick={() => toggleSort("name")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Tienda <span className="text-[10px]" aria-hidden>{arrow("name")}</span></button></th>
+                    <th className="px-3 py-2.5"><button type="button" onClick={() => toggleSort("name")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Tienda <span className="text-[length:var(--ts-2xs)]" aria-hidden>{arrow("name")}</span></button></th>
                     <th className="px-3 py-2.5">Plan</th>
-                    <th className="px-3 py-2.5 w-[34%]"><button type="button" onClick={() => toggleSort("usage")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Pedidos (mes) vs límite <span className="text-[10px]" aria-hidden>{arrow("usage")}</span></button></th>
-                    <th className="px-3 py-2.5 text-right"><button type="button" onClick={() => toggleSort("products")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Productos <span className="text-[10px]" aria-hidden>{arrow("products")}</span></button></th>
-                    <th className="px-3 py-2.5 text-right"><button type="button" onClick={() => toggleSort("users")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Usuarios <span className="text-[10px]" aria-hidden>{arrow("users")}</span></button></th>
+                    <th className="px-3 py-2.5 w-[34%]"><button type="button" onClick={() => toggleSort("usage")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Pedidos (mes) vs límite <span className="text-[length:var(--ts-2xs)]" aria-hidden>{arrow("usage")}</span></button></th>
+                    <th className="px-3 py-2.5 text-right"><button type="button" onClick={() => toggleSort("products")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Productos <span className="text-[length:var(--ts-2xs)]" aria-hidden>{arrow("products")}</span></button></th>
+                    <th className="px-3 py-2.5 text-right"><button type="button" onClick={() => toggleSort("users")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Usuarios <span className="text-[length:var(--ts-2xs)]" aria-hidden>{arrow("users")}</span></button></th>
                     <th className="px-3 py-2.5 text-right">Acción</th>
                   </tr>
                 </thead>
@@ -263,7 +263,7 @@ export default function TenantsUsagePage() {
                       <td className="px-3 py-2.5 max-w-[220px]">
                         <button type="button" onClick={() => setDetail(r)} className="flex items-center gap-1.5 max-w-full font-bold text-[var(--text-primary)] hover:text-[var(--accent)]">
                           <span className="truncate">{r.name}</span>
-                          {isDoubleRisk(r) && <span className="rounded-full bg-[var(--data-error-500)] px-1.5 py-0.5 text-[10px] font-extrabold text-white shrink-0">trial −{r.trialDaysLeft}d</span>}
+                          {isDoubleRisk(r) && <span className="rounded-full bg-[var(--data-error-500)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-white shrink-0">trial −{r.trialDaysLeft}d</span>}
                         </button>
                       </td>
                       <td className="px-3 py-2.5">
@@ -287,7 +287,7 @@ export default function TenantsUsagePage() {
                             <MessageSquare className="h-3.5 w-3.5 shrink-0" />
                             <span>→ {r.recommendation.recommendedLabel}</span>
                             {r.recommendation.upsidePEN > 0 && (
-                              <span className="rounded-full bg-[#0d9488]/15 px-1.5 py-0.5 font-extrabold text-[#0d9488] whitespace-nowrap">+{fmtPEN(r.recommendation.upsidePEN)}/mes</span>
+                              <span className="rounded-full bg-primary/15 px-1.5 py-0.5 font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)] whitespace-nowrap">+{fmtPEN(r.recommendation.upsidePEN)}/mes</span>
                             )}
                           </Link>
                         ) : r.nearLimit ? (
@@ -317,7 +317,7 @@ export default function TenantsUsagePage() {
                 <h2 className="text-base font-bold text-[var(--text-primary)] truncate">{detail.name}</h2>
                 <p className="text-xs text-[var(--text-tertiary)] truncate font-mono">{detail.slug} · {PLAN_LABEL[detail.plan] ?? detail.plan}</p>
               </div>
-              <button type="button" onClick={() => setDetail(null)} aria-label="Cerrar" className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] shrink-0"><X className="w-5 h-5" /></button>
+              <button type="button" onClick={() => setDetail(null)} aria-label="Cerrar" className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] shrink-0"><X className="w-5 h-5" /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               {/* Uso de pedidos */}
@@ -343,8 +343,8 @@ export default function TenantsUsagePage() {
                 </div>
               )}
               {detail.recommendation && (
-                <div className="border border-[#0d9488]/40 bg-[#0d9488]/5 p-3">
-                  <p className="text-sm font-bold text-[#0d9488]">Recomendación: subir a {detail.recommendation.recommendedLabel}</p>
+                <div className="border border-primary/40 bg-primary/5 p-3">
+                  <p className="text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">Recomendación: subir a {detail.recommendation.recommendedLabel}</p>
                   {detail.recommendation.upsidePEN > 0 && <p className="text-xs text-[var(--text-secondary)] mt-0.5">+{fmtPEN(detail.recommendation.upsidePEN)}/mes de MRR · nuevo límite {detail.recommendation.newOrderLimit ?? "∞"} pedidos</p>}
                 </div>
               )}

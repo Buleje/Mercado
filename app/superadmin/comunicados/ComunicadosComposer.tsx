@@ -65,7 +65,7 @@ export function ComunicadosComposer() {
           </div>
           <div className="flex flex-wrap gap-2">
             {segments.map((s) => (
-              <button key={s.key} type="button" onClick={() => setSelected(s.key)} className={`inline-flex flex-col items-start gap-0.5 rounded-xl border-2 px-3 py-2 text-left transition-colors ${selected === s.key ? "border-[var(--accent)] bg-[var(--accent)]/5" : "border-[var(--rule-base)] hover:border-[var(--accent)]/40"}`}>
+              <button key={s.key} type="button" onClick={() => setSelected(s.key)} className={`inline-flex flex-col items-start gap-0.5 rounded-xl border-2 px-3 min-h-10 text-left transition-colors ${selected === s.key ? "border-[var(--accent)] bg-[var(--accent)]/5" : "border-[var(--rule-base)] hover:border-[var(--accent)]/40"}`}>
                 <span className="text-sm font-bold text-[var(--text-primary)]">{s.label} <span className="tabular-nums text-[var(--accent)]">{s.recipients.length}</span></span>
                 <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{s.hint}</span>
               </button>
@@ -75,12 +75,12 @@ export function ComunicadosComposer() {
 
         <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4">
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">2 · Escribí el mensaje</p>
-          <textarea value={msg} onChange={(e) => setMsg(e.target.value)} rows={5} maxLength={2000} placeholder="¡Hola! Te escribo del equipo Buleje para contarte que…" className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] resize-y" />
+          <textarea value={msg} onChange={(e) => setMsg(e.target.value)} rows={5} maxLength={2000} placeholder="¡Hola! Te escribo del equipo Buleje para contarte que…" className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] resize-y" />
           <div className="mt-2.5 flex items-center justify-between gap-3 flex-wrap">
             <span className="text-xs text-[var(--text-tertiary)] tabular-nums">{msg.length}/2000 · llega a <strong className="text-[var(--text-primary)]">{seg?.recipients.length ?? 0}</strong> negocio(s)</span>
             <div className="flex items-center gap-2">
               {result && <span className={`text-xs font-bold ${result.includes("✓") ? "text-[var(--data-success-600,#059669)]" : "text-[var(--data-error-600,#dc2626)]"}`}>{result}</span>}
-              <button type="button" onClick={() => void send()} disabled={sending || !msg.trim() || !seg || seg.recipients.length === 0} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-110 disabled:opacity-50">
+              <button type="button" onClick={() => void send()} disabled={sending || !msg.trim() || !seg || seg.recipients.length === 0} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50">
                 {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} {sending ? "Enviando…" : "Enviar comunicado"}
               </button>
             </div>

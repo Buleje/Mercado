@@ -390,7 +390,7 @@ export function NotificationsBell() {
         {/* Header ejecutivo — gradient sutil del accent al canvas para
             dar peso visual sin gritar. Title 16px bold + counter chip
             grande. Botón cerrar con hit-area cómoda. */}
-        <header className="relative shrink-0 px-6 pt-5 pb-4 border-b border-[var(--rule-base)] bg-gradient-to-b from-[var(--accent-soft)]/40 to-transparent">
+        <header className="relative shrink-0 px-6 pt-5 pb-4 border-b border-[var(--rule-base)] bg-linear-to-b from-[var(--accent-soft)]/40 to-transparent">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2.5 mb-1">
@@ -415,7 +415,7 @@ export function NotificationsBell() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="p-2 -m-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
+              className="p-2 -m-1 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
               aria-label="Cerrar"
             >
               <X className="w-4 h-4" />
@@ -470,7 +470,7 @@ export function NotificationsBell() {
                       <Icon className="w-4 h-4" strokeWidth={2.25} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-bold text-[var(--text-primary)] leading-tight">
+                      <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-primary)] leading-tight">
                         {meta.label}
                       </p>
                       <p className="text-xs text-[var(--text-tertiary)] leading-snug mt-0.5">
@@ -545,7 +545,7 @@ export function NotificationsBell() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="relative p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+        className="relative p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
         title={hasUnread ? `${total} notificaciones pendientes` : "Notificaciones"}
         aria-label="Abrir notificaciones"
       >

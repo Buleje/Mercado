@@ -152,7 +152,7 @@ export default function DocumentActivityModal({ doc, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label="Registro de actividad"
-        className="w-full max-w-lg rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-lg)] flex flex-col"
+        className="w-full max-w-lg rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)] flex flex-col"
         style={{ maxHeight: "85vh" }}
       >
         {/* Header */}
@@ -169,7 +169,7 @@ export default function DocumentActivityModal({ doc, onClose }: Props) {
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="ml-3 p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] shrink-0"
+            className="ml-3 p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
@@ -213,7 +213,7 @@ export default function DocumentActivityModal({ doc, onClose }: Props) {
                   <li key={log.id} className="pl-6 pb-5 relative">
                     {/* Timeline dot */}
                     <span
-                      className="absolute -left-[11px] top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--surface-raised)] border-2 border-[var(--rule-base)]"
+                      className="absolute -left-[11px] top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)]"
                       aria-hidden="true"
                     >
                       <Icon className="h-3 w-3" style={{ color }} />

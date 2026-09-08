@@ -178,149 +178,149 @@ function exportCSV(rows: TenantBillingRow[]) {
   const a = document.createElement("a");
   a.href = url;
   a.download = `billing_${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+ a.click();
+ URL.revokeObjectURL(url);
 }
 
 // ── Status / source styles ─────────────────────────────────────────────────
 
 const STATUS_META: Record<
-  TenantBillingRow["status"],
-  { label: string; pill: string; dot: string }
+ TenantBillingRow["status"],
+ { label: string; pill: string; dot: string }
 > = {
-  paid: {
-    label: "Pago",
-    pill: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
-    dot: "bg-emerald-500",
-  },
-  trial: {
-    label: "Trial",
-    pill: "bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
-    dot: "bg-sky-500",
-  },
-  canceled: {
-    label: "Cancelado",
-    pill: "bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-200",
-    dot: "bg-rose-500",
-  },
-  free: {
-    label: "Free",
-    pill: "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300",
-    dot: "bg-slate-400",
-  },
+ paid: {
+ label: "Pago",
+ pill: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
+ dot: "bg-emerald-500",
+ },
+ trial: {
+ label: "Trial",
+ pill: "bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
+ dot: "bg-sky-500",
+ },
+ canceled: {
+ label: "Cancelado",
+ pill: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
+ dot: "bg-rose-500",
+ },
+ free: {
+ label: "Free",
+ pill: "bg-[var(--rule-soft)] text-[var(--text-primary)] ",
+ dot: "bg-slate-400",
+ },
 };
 
 const SOURCE_LABEL: Record<TenantBillingRow["source"], string> = {
-  stripe: "Stripe",
-  mp: "Mercado Pago",
-  none: "—",
+ stripe: "Stripe",
+ mp: "Mercado Pago",
+ none: "—",
 };
 
 // ── Stat Card ──────────────────────────────────────────────────────────────
 
 function Kpi({
-  label,
-  value,
-  sub,
-  tone = "default",
-  icon: Icon,
+ label,
+ value,
+ sub,
+ tone = "default",
+ icon: Icon,
 }: {
-  label: string;
-  value: string;
-  sub?: string;
-  tone?: "default" | "success" | "warning" | "danger" | "info";
-  icon?: React.ComponentType<{ className?: string; strokeWidth?: number; "aria-hidden"?: boolean }>;
+ label: string;
+ value: string;
+ sub?: string;
+ tone?: "default" | "success" | "warning" | "danger" | "info";
+ icon?: React.ComponentType<{ className?: string; strokeWidth?: number; "aria-hidden"?: boolean }>;
 }) {
-  const ring = {
-    default: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-    success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-    warning: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
-    danger: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
-    info: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
-  }[tone];
+ const ring = {
+ default: "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
+ success: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+ warning: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
+ danger: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
+ info: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+ }[tone];
 
-  return (
-    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        {Icon && (
-          <span
-            className={cn(
-              "inline-flex h-10 w-10 items-center justify-center rounded-xl",
-              ring,
-            )}
-          >
-            <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-          </span>
-        )}
-      </div>
-      <p className="mt-3 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-        {label}
-      </p>
-      <p className="mt-1 font-display text-2xl sm:text-3xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
-        {value}
-      </p>
-      {sub && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{sub}</p>}
-    </div>
-  );
+ return (
+ <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 sm:p-5">
+ <div className="flex items-start justify-between gap-3">
+ {Icon && (
+ <span
+ className={cn(
+ "inline-flex h-10 w-10 items-center justify-center rounded-xl",
+ ring,
+ )}
+ >
+ <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+ </span>
+ )}
+ </div>
+ <p className="mt-3 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
+ {label}
+ </p>
+ <p className="mt-1 font-display text-2xl sm:text-3xl font-extrabold tabular-nums tracking-tight text-[var(--text-primary)]">
+ {value}
+ </p>
+ {sub && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{sub}</p>}
+ </div>
+ );
 }
 
 // ── Skeleton ───────────────────────────────────────────────────────────────
 
 function Skeleton() {
-  return (
-    <div className="space-y-5 animate-pulse">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-2xl bg-[var(--surface-sunken)] h-28" />
-        ))}
-      </div>
-      <div className="rounded-2xl bg-[var(--surface-sunken)] h-40" />
-      <div className="rounded-2xl bg-[var(--surface-sunken)] h-64" />
-    </div>
-  );
+ return (
+ <div className="space-y-5 animate-pulse">
+ <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+ {Array.from({ length: 4 }).map((_, i) => (
+ <div key={i} className="rounded-2xl bg-[var(--surface-sunken)] h-28" />
+ ))}
+ </div>
+ <div className="rounded-2xl bg-[var(--surface-sunken)] h-40" />
+ <div className="rounded-2xl bg-[var(--surface-sunken)] h-64" />
+ </div>
+ );
 }
 
 // ── Plan bar (canónico) ────────────────────────────────────────────────────
 
 function PlanBar({
-  label,
-  value,
-  max,
-  amount,
-  pricePEN,
-  onClick,
-  active,
+ label,
+ value,
+ max,
+ amount,
+ pricePEN,
+ onClick,
+ active,
 }: {
-  label: string;
-  value: number;
-  max: number;
-  amount: number;
-  pricePEN: number;
-  /** Click → filtra la tabla por este plan (función nueva). */
-  onClick?: () => void;
-  active?: boolean;
+ label: string;
+ value: number;
+ max: number;
+ amount: number;
+ pricePEN: number;
+ /** Click → filtra la tabla por este plan (función nueva). */
+ onClick?: () => void;
+ active?: boolean;
 }) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  const inner = (
-    <>
-      <div className="flex items-baseline justify-between gap-2 mb-1">
-        <span className="font-extrabold text-sm text-[var(--text-primary)]">
-          {label}
-          <span className="ml-1.5 text-xs font-bold text-[var(--text-tertiary)]">
-            {fmtPEN(pricePEN)}/mes
-          </span>
-        </span>
-        <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
-          {value}{" "}
-          <span className="text-xs font-bold text-[var(--text-tertiary)]">
-            · {fmtPEN(amount)}
-          </span>
-        </span>
-      </div>
-      <div className="h-2.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
-        <div
-          className="h-full bg-[var(--accent)] transition-all duration-500"
-          style={{ width: `${pct}%` }}
+ const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+ const inner = (
+ <>
+ <div className="flex items-baseline justify-between gap-2 mb-1">
+ <span className="font-extrabold text-sm text-[var(--text-primary)]">
+ {label}
+ <span className="ml-1.5 text-xs font-bold text-[var(--text-tertiary)]">
+ {fmtPEN(pricePEN)}/mes
+ </span>
+ </span>
+ <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
+ {value}{" "}
+ <span className="text-xs font-bold text-[var(--text-tertiary)]">
+ · {fmtPEN(amount)}
+ </span>
+ </span>
+ </div>
+ <div className="h-2.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
+ <div
+ className="h-full bg-[var(--accent)] transition-all duration-500"
+ style={{ width: `${pct}%` }}
           aria-hidden
         />
       </div>
@@ -493,18 +493,18 @@ export default function BillingDashboard() {
     return (
       <div
         role="alert"
-        className="rounded-2xl border-2 border-rose-300 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/30 p-5"
+        className="rounded-2xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-rose-500/10 dark:border-[var(--data-error-500)] p-5"
       >
-        <p className="flex items-center gap-2 text-base font-bold text-rose-700 dark:text-rose-300">
+        <p className="flex items-center gap-2 text-base font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-5 w-5" aria-hidden />
           No se pudo cargar el resumen de billing
         </p>
-        <p className="mt-1 text-sm text-rose-600 dark:text-rose-300/80">
+        <p className="mt-1 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           {error}
         </p>
         <button
           onClick={() => load()}
-          className="mt-3 inline-flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold text-white bg-rose-600 hover:bg-rose-700"
+          className="mt-3 inline-flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700"
         >
           <RefreshCw className="h-4 w-4" />
           Reintentar
@@ -536,7 +536,7 @@ export default function BillingDashboard() {
           onClick={() => void load()}
           disabled={refreshing}
           title="Recargar (R)"
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
         >
           <RefreshCw
             className={cn("h-4 w-4", refreshing && "animate-spin")}
@@ -544,7 +544,7 @@ export default function BillingDashboard() {
           />
           Recargar
         </button>
-        <label className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
+        <label className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
           <input
             type="checkbox"
             checked={autoRefresh}
@@ -556,7 +556,7 @@ export default function BillingDashboard() {
         <button
           onClick={() => exportCSV(filtered)}
           disabled={filtered.length === 0}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50 transition"
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50 transition"
         >
           <Download className="h-4 w-4" aria-hidden />
           CSV ({filtered.length})
@@ -680,7 +680,7 @@ export default function BillingDashboard() {
               className={cn(
                 "text-xs font-extrabold",
                 (r.trialDaysLeft ?? 99) <= 3
-                  ? "text-rose-700 dark:text-rose-300"
+                  ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
                   : (r.trialDaysLeft ?? 99) <= 7
                     ? "text-teal-700 dark:text-teal-300"
                     : "text-emerald-700 dark:text-emerald-300",
@@ -721,7 +721,7 @@ export default function BillingDashboard() {
             onChange={(e) => setSearchRaw(e.target.value)}
             placeholder="Buscar tenant, slug, industria, plan…"
             aria-label="Buscar tenants"
-            className="w-full h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+            className="w-full h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-9 pr-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
           />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -733,7 +733,7 @@ export default function BillingDashboard() {
               )
             }
             aria-label="Filtrar por estado"
-            className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+            className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
           >
             <option value="all">Todos los estados</option>
             <option value="paid">Pagados</option>
@@ -745,7 +745,7 @@ export default function BillingDashboard() {
             value={planFilter}
             onChange={(e) => setPlanFilter(e.target.value)}
             aria-label="Filtrar por plan"
-            className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+            className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
           >
             <option value="all">Todos los planes</option>
             {planOptions.map(([plan, label]) => (
@@ -758,7 +758,7 @@ export default function BillingDashboard() {
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value as "all" | "stripe" | "mp" | "none")}
             aria-label="Filtrar por fuente de pago"
-            className="h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
+            className="h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
           >
             <option value="all">Toda fuente</option>
             <option value="stripe">Stripe</option>
@@ -786,7 +786,7 @@ export default function BillingDashboard() {
 
       {/* ── Tabla / cards ──────────────────────────────── */}
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-12 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-12 text-center">
           <p className="text-sm font-bold text-[var(--text-primary)]">
             Ningún tenant coincide con los filtros
           </p>
@@ -798,7 +798,7 @@ export default function BillingDashboard() {
               setSourceFilter("all");
               setAtRiskOnly(false);
             }}
-            className="mt-3 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+            className="mt-3 h-10 px-4 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
           >
             Limpiar filtros
           </button>
@@ -819,7 +819,7 @@ export default function BillingDashboard() {
                 <tr className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-left text-[length:var(--ts-2xs)] uppercase tracking-wider text-[var(--text-tertiary)]">
                   <th className="px-4 py-3">
                     <button type="button" onClick={() => toggleSort("name")} className="inline-flex items-center gap-1 font-extrabold uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors">
-                      Tienda <span className="text-[10px]" aria-hidden>{sort.key === "name" ? (sort.dir === "asc" ? "▲" : "▼") : "⇅"}</span>
+                      Tienda <span className="text-[length:var(--ts-2xs)]" aria-hidden>{sort.key === "name" ? (sort.dir === "asc" ? "▲" : "▼") : "⇅"}</span>
                     </button>
                   </th>
                   <th className="px-3 py-3 font-extrabold">Plan</th>
@@ -828,12 +828,12 @@ export default function BillingDashboard() {
                   </th>
                   <th className="px-3 py-3 text-right">
                     <button type="button" onClick={() => toggleSort("mrr")} className="inline-flex items-center gap-1 font-extrabold uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors">
-                      MRR (PEN) <span className="text-[10px]" aria-hidden>{sort.key === "mrr" ? (sort.dir === "asc" ? "▲" : "▼") : "⇅"}</span>
+                      MRR (PEN) <span className="text-[length:var(--ts-2xs)]" aria-hidden>{sort.key === "mrr" ? (sort.dir === "asc" ? "▲" : "▼") : "⇅"}</span>
                     </button>
                   </th>
                   <th className="px-3 py-3 hidden lg:table-cell">
                     <button type="button" onClick={() => toggleSort("next")} className="inline-flex items-center gap-1 font-extrabold uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors">
-                      Próximo <span className="text-[10px]" aria-hidden>{sort.key === "next" ? (sort.dir === "asc" ? "▲" : "▼") : "⇅"}</span>
+                      Próximo <span className="text-[length:var(--ts-2xs)]" aria-hidden>{sort.key === "next" ? (sort.dir === "asc" ? "▲" : "▼") : "⇅"}</span>
                     </button>
                   </th>
                   <th className="px-3 py-3 font-extrabold hidden xl:table-cell">
@@ -876,7 +876,7 @@ export default function BillingDashboard() {
                           {s.label}
                         </span>
                         {t.cancelAtPeriodEnd && (
-                          <p className="text-[length:var(--ts-2xs)] text-rose-700 dark:text-rose-300 mt-0.5">
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] mt-0.5">
                             cancela
                           </p>
                         )}
@@ -991,7 +991,7 @@ function Panel({
 function TenantCard({ t }: { t: TenantBillingRow }) {
   const s = STATUS_META[t.status];
   return (
-    <li className="rounded-2xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3.5">
+    <li className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-3.5">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="font-extrabold text-base text-[var(--text-primary)] truncate">

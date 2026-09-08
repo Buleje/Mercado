@@ -60,7 +60,7 @@ export default function SupportInbox() {
         <button
           type="button"
           onClick={reload}
-          className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl bg-primary text-white"
+          className="flex items-center gap-2 text-sm font-semibold px-4 min-h-10 rounded-xl bg-primary text-white"
         >
           <RotateCcw className="w-4 h-4" aria-hidden="true" />
           Reintentar

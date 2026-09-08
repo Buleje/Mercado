@@ -80,7 +80,7 @@ const STATUS_META: Record<HealthCheck["status"], { label: string; cls: string; d
   },
   error: {
     label: "Error",
-    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
+    cls: "border-[var(--data-error-500)] bg-rose-50/60 text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]",
     dot: "bg-rose-500",
   },
   checking: {
@@ -352,8 +352,8 @@ export default function SystemHealthPage() {
     error: {
       icon: XCircle,
       label: "Problemas detectados",
-      bg: "border-rose-300/60 bg-rose-50/40 dark:border-rose-700/40 dark:bg-rose-950/20",
-      iconCls: "text-rose-600 dark:text-rose-400",
+      bg: "border-[var(--data-error-500)] bg-rose-50/40 dark:border-[var(--data-error-500)] dark:bg-rose-950/20",
+      iconCls: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
     },
     checking: {
       icon: RefreshCw,
@@ -454,7 +454,7 @@ export default function SystemHealthPage() {
               }}
               disabled={loading}
               title="Verificar (R)"
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
             >
               <RefreshCw
                 className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
@@ -466,7 +466,7 @@ export default function SystemHealthPage() {
               onClick={exportCsv}
               disabled={checks.length === 0}
               title="Exportar CSV"
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
             >
               <Download className="h-3.5 w-3.5" strokeWidth={2.25} />
               CSV
@@ -514,9 +514,9 @@ export default function SystemHealthPage() {
           <>
             {/* ─── Active incidents ──────────────────────────────── */}
             {incidents.length > 0 && (
-              <section className="rounded-2xl border-2 border-rose-300/60 bg-rose-50/40 dark:border-rose-700/40 dark:bg-rose-950/30 overflow-hidden">
-                <header className="flex items-center gap-3 border-b border-rose-300/40 dark:border-rose-700/30 px-5 py-3.5">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]">
+              <section className="rounded-2xl border-2 border-[var(--data-error-500)] bg-rose-50/40 dark:border-[var(--data-error-500)] dark:bg-rose-950/30 overflow-hidden">
+                <header className="flex items-center gap-3 border-b border-[var(--data-error-500)] dark:border-[var(--data-error-500)] px-5 py-3.5">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]">
                     <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                   </span>
                   <div>
@@ -564,7 +564,7 @@ export default function SystemHealthPage() {
                     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
                     warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
                     danger:
-                      "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
+                      "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
                   }[tone];
                   const valueTone =
                     m.status === "ok"

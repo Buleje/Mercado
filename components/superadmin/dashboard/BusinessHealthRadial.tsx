@@ -138,13 +138,13 @@ export function BusinessHealthRadial({
             "flex items-start gap-2 rounded-lg border p-2.5 " +
             (isHealthy
               ? "border-[var(--data-success,#10b981)]/30 bg-[var(--data-success,#10b981)]/5"
-              : "border-[#0d9488]/30 bg-[#0d9488]/5")
+              : "border-primary/30 bg-primary/5")
           }
         >
           {isHealthy ? (
             <CheckCircle className="h-4 w-4 mt-0.5 shrink-0 text-[var(--data-success,#10b981)]" />
           ) : (
-            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-[#0d9488]" />
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
           )}
           <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] leading-snug">
             {isHealthy ? (

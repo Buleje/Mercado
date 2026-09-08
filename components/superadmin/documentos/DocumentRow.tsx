@@ -124,7 +124,7 @@ export default function DocumentRow({
         value={doc.category}
         onChange={(e) => onChangeCategory(doc, e.target.value)}
         aria-label="Categoría"
-        className="hidden md:block text-sm border-2 border-[var(--rule-base)] rounded-xl px-2 h-9 bg-[var(--surface-raised)] text-[var(--text-secondary)]"
+        className="hidden md:block text-sm border border-[var(--rule-base)] rounded-xl px-2 h-9 bg-[var(--surface-raised)] text-[var(--text-secondary)]"
       >
         {DOC_CATEGORIES.map((c) => (
           <option key={c} value={c}>
@@ -138,7 +138,7 @@ export default function DocumentRow({
         onClick={() => onToggleFavorite(doc)}
         title="Favorito"
         aria-label={doc.favorite ? "Quitar de favoritos" : "Marcar favorito"}
-        className="p-2 rounded-lg hover:bg-[var(--surface-sunken)]"
+        className="p-2 rounded-xl hover:bg-[var(--surface-sunken)]"
       >
         <Star
           className={cn(
@@ -155,7 +155,7 @@ export default function DocumentRow({
         disabled={busy}
         title="Descargar"
         aria-label="Descargar documento"
-        className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 disabled:opacity-50"
+        className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 disabled:opacity-50"
       >
         {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}
       </button>

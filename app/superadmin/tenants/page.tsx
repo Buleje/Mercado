@@ -534,11 +534,11 @@ export default function TenantsPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por nombre, slug o email…"
                 aria-label="Buscar tenants (atajo: tecla /)"
-                className="w-full h-10 pl-10 pr-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors"
+                className="w-full h-10 pl-10 pr-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors"
               />
               <kbd
                 aria-hidden
-                className="hidden lg:inline-flex absolute right-2 top-1/2 -translate-y-1/2 items-center justify-center h-6 px-1.5 rounded border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[10px] font-bold text-[var(--text-tertiary)] pointer-events-none"
+                className="hidden lg:inline-flex absolute right-2 top-1/2 -translate-y-1/2 items-center justify-center h-6 px-1.5 rounded border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] pointer-events-none"
               >
                 /
               </kbd>
@@ -570,17 +570,17 @@ export default function TenantsPage() {
             <div className="flex items-center bg-[var(--surface-sunken)] rounded-xl p-1 shrink-0">
               <button type="button" onClick={() => setViewMode("table")} title="Vista tabla"
                 aria-pressed={viewMode === "table"}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === "table" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
+                className={`p-1.5 rounded-xl transition-colors ${viewMode === "table" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
                 <List className="w-4 h-4" />
               </button>
               <button type="button" onClick={() => setViewMode("cards")} title="Vista tarjetas"
                 aria-pressed={viewMode === "cards"}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === "cards" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
+                className={`p-1.5 rounded-xl transition-colors ${viewMode === "cards" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
                 <LayoutGrid className="w-4 h-4" />
               </button>
               <button type="button" onClick={() => setViewMode("compact")} title="Vista compacta — más tiendas en menos espacio"
                 aria-pressed={viewMode === "compact"}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === "compact" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
+                className={`p-1.5 rounded-xl transition-colors ${viewMode === "compact" ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}>
                 <Grid3x3 className="w-4 h-4" />
               </button>
             </div>
@@ -604,7 +604,7 @@ export default function TenantsPage() {
                 type="button"
                 onClick={() => void loadTenants()}
                 disabled={loading}
-                className="inline-flex items-center justify-center h-10 w-10 rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors disabled:opacity-40"
+                className="inline-flex items-center justify-center h-10 w-10 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors disabled:opacity-40"
                 aria-label="Actualizar"
                 title="Actualizar"
               >
@@ -613,7 +613,7 @@ export default function TenantsPage() {
               <button
                 type="button"
                 onClick={() => setNuclearResetOpen(true)}
-                className="inline-flex items-center justify-center h-10 w-10 rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/10 transition-colors"
+                className="inline-flex items-center justify-center h-10 w-10 rounded-xl border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/10 transition-colors"
                 aria-label="Reinicio total del sistema (acción destructiva)"
                 title="Mantenimiento — reinicio total"
               >
@@ -647,7 +647,7 @@ export default function TenantsPage() {
 
           {/* Empty state compartido por cards + compacta */}
           {!loading && viewMode !== "table" && sortedFinal.length === 0 && (
-            <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] py-16 px-6 text-center">
+            <div className="rounded-2xl border border-dashed border-[var(--rule-base)] py-16 px-6 text-center">
               <Building2 className="w-12 h-12 mx-auto mb-3 text-[var(--text-tertiary)] opacity-50" />
               <p className="text-base font-bold text-[var(--text-primary)]">
                 {tenants.length === 0 ? "Sin tenants registrados" : "Sin coincidencias con los filtros"}
@@ -730,7 +730,7 @@ export default function TenantsPage() {
                       <button
                         type="button"
                         onClick={() => toggleSelected(tenant.id)}
-                        className={`absolute -top-2 -left-2 z-20 inline-flex h-6 w-6 items-center justify-center rounded-md border-2 transition-colors ${
+                        className={`absolute -top-2 -left-2 z-20 inline-flex h-6 w-6 items-center justify-center rounded-lg border-2 transition-colors ${
                           isSelected
                             ? "border-[var(--accent)] bg-[var(--accent)] text-white"
                             : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:border-[var(--accent)]"
@@ -869,7 +869,7 @@ export default function TenantsPage() {
             aria-label="Cambiar plan de la selección"
             defaultValue=""
             onChange={(e) => { const v = e.target.value as PlanId; if (v) { void bulkSetPlan(v); e.currentTarget.value = ""; } }}
-            className="h-8 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)]"
+            className="h-8 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)]"
           >
             <option value="">Plan…</option>
             <option value="free">→ Free</option>
@@ -880,7 +880,7 @@ export default function TenantsPage() {
           <button
             type="button"
             onClick={() => void bulkExtendTrial()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#0d9488] hover:bg-[#0d9488] transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent-600)] transition-colors"
           >
             <Clock className="h-3.5 w-3.5" />
             Trial +14d
@@ -958,7 +958,7 @@ function AlertsBanner({ alerts }: { alerts: AlertItemShape[] }) {
       : "sky";
   const toneCls = {
     amber: "border-teal-500/40 bg-teal-500/8 text-teal-700 dark:text-teal-300",
-    rose: "border-rose-500/40 bg-rose-500/8 text-rose-700 dark:text-rose-300",
+    rose: "border-[var(--data-error-500)] bg-rose-500/8 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
     sky: "border-sky-500/40 bg-sky-500/8 text-sky-700 dark:text-sky-300",
   }[worstTone];
 
@@ -997,7 +997,7 @@ function AlertsBanner({ alerts }: { alerts: AlertItemShape[] }) {
               >
                 <Icon className="h-3.5 w-3.5 shrink-0" />
                 <span className="text-xs font-semibold flex-1 min-w-0 truncate">{a.label}</span>
-                <span className="shrink-0 inline-flex h-5 min-w-[20px] px-1.5 items-center justify-center rounded-full bg-white/60 dark:bg-black/30 text-[10px] font-bold tabular-nums">
+                <span className="shrink-0 inline-flex h-5 min-w-[20px] px-1.5 items-center justify-center rounded-full bg-white/60 dark:bg-black/30 text-[length:var(--ts-2xs)] font-bold tabular-nums">
                   {a.count}
                 </span>
               </button>
@@ -1090,10 +1090,10 @@ function QuickFilters({
               className="fixed inset-0 z-10"
               tabIndex={-1}
             />
-            <div className="absolute z-20 mt-2 right-0 sm:left-0 sm:right-auto w-64 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl p-3 space-y-3">
+            <div className="absolute z-20 mt-2 right-0 sm:left-0 sm:right-auto w-64 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl p-3 space-y-3">
               {/* Plan */}
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
                   Plan
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -1106,14 +1106,14 @@ function QuickFilters({
                         key={p}
                         type="button"
                         onClick={() => setFilterPlan(p)}
-                        className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold transition-colors ${
+                        className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition-colors ${
                           isActive
                             ? "bg-[var(--accent)] text-white"
                             : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"
                         }`}
                       >
                         {label}
-                        <span className={`tabular-nums text-[10px] ${isActive ? "text-white/80" : "text-[var(--text-tertiary)]"}`}>
+                        <span className={`tabular-nums text-[length:var(--ts-2xs)] ${isActive ? "text-white/80" : "text-[var(--text-tertiary)]"}`}>
                           {count}
                         </span>
                       </button>
@@ -1123,7 +1123,7 @@ function QuickFilters({
               </div>
               {/* Estado */}
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
                   Estado
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -1138,14 +1138,14 @@ function QuickFilters({
                         key={s.id}
                         type="button"
                         onClick={() => setFilterActive(s.id)}
-                        className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold transition-colors ${
+                        className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition-colors ${
                           isActive
                             ? "bg-[var(--accent)] text-white"
                             : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"
                         }`}
                       >
                         {s.label}
-                        <span className={`tabular-nums text-[10px] ${isActive ? "text-white/80" : "text-[var(--text-tertiary)]"}`}>
+                        <span className={`tabular-nums text-[length:var(--ts-2xs)] ${isActive ? "text-white/80" : "text-[var(--text-tertiary)]"}`}>
                           {s.count}
                         </span>
                       </button>

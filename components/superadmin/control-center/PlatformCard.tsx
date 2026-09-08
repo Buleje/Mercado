@@ -77,7 +77,7 @@ const TONE_GRADIENT: Record<NonNullable<PlatformCardProps["tone"]>, string> = {
   rose: "from-[var(--data-error-500)]/15 to-[var(--data-error-500)]/5 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] ring-[var(--data-error-500)]/30",
   emerald:
     "from-emerald-500/15 to-green-500/5 text-emerald-600 dark:text-emerald-300 ring-emerald-500/30",
-  slate: "from-slate-500/15 to-zinc-500/5 text-slate-600 dark:text-slate-300 ring-slate-500/30",
+  slate: "from-slate-500/15 to-zinc-500/5 text-[var(--text-secondary)] ring-slate-500/30",
 };
 
 export function PlatformCard({
@@ -179,7 +179,7 @@ export function PlatformCard({
             onClick={handleCopy}
             aria-label={copied ? "URL copiada" : "Copiar URL"}
             className={cn(
-              "rounded-md p-1.5 transition-colors",
+              "rounded-xl p-1.5 transition-colors",
               "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
             )}
           >

@@ -17,7 +17,7 @@ type Data = { cohorts: Cohort[]; maxMonths: number; kpis: { tenants: number; coh
 function cellClass(v: number | null): string {
   if (v == null) return "bg-[var(--surface-sunken)]/40 text-transparent";
   if (v >= 70) return "bg-[var(--data-success-500)]/20 text-[var(--data-success-700,#047857)] dark:text-[var(--data-success-300,#6ee7b7)]";
-  if (v >= 40) return "bg-[#0d9488]/15 text-[#0d9488]";
+  if (v >= 40) return "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]";
   if (v > 0) return "bg-[var(--data-error-500)]/15 text-[var(--data-error-600,#dc2626)]";
   return "bg-[var(--data-error-500)]/25 text-[var(--data-error-600,#dc2626)]";
 }

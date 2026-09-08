@@ -160,13 +160,13 @@ export function ExpensesTable({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar concepto o proveedor…"
-            className="h-12 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] pl-9 pr-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
+            className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] pl-9 pr-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
           />
         </div>
         <select
           value={cat}
           onChange={(e) => setCat(e.target.value)}
-          className="h-12 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold text-[var(--text-secondary)] focus:border-[var(--accent)] outline-none"
+          className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold text-[var(--text-secondary)] focus:border-[var(--accent)] outline-none"
         >
           <option value="all">Todas las categorías</option>
           {cats.map((c) => (
@@ -294,7 +294,7 @@ function FxRateEditor({
       <DollarSign className="h-4 w-4" />
       <span>Cambio USD→S/:</span>
       <input
-        className="h-9 w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 text-right tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
+        className="h-9 w-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 text-right tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
         type="number"
         step="0.01"
         min="0.5"

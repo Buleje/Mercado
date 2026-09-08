@@ -74,7 +74,7 @@ export default function DocumentPreviewModal({ doc, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="h-10 px-5 rounded-2xl border-2 border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-primary/10"
+            className="h-10 px-5 rounded-2xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-primary/10"
           >
             Cerrar
           </button>
@@ -100,7 +100,7 @@ export default function DocumentPreviewModal({ doc, onClose }: Props) {
         <div className="flex flex-1 p-4">
           <iframe
             src={signedUrl}
-            className="w-full h-[75vh] rounded-xl border-2 border-[var(--rule-base)]"
+            className="w-full h-[75vh] rounded-xl border border-[var(--rule-base)]"
             title={doc.name}
           />
         </div>
@@ -117,7 +117,7 @@ export default function DocumentPreviewModal({ doc, onClose }: Props) {
           type="button"
           onClick={handleDownload}
           aria-label="Descargar documento"
-          className="flex items-center gap-2 h-10 px-5 rounded-2xl bg-primary text-white text-sm font-bold hover:bg-primary/90"
+          className="flex items-center gap-2 h-10 px-5 rounded-2xl bg-primary text-white text-sm font-semibold hover:bg-primary/90"
         >
           <Download className="h-4 w-4" />
           Descargar
@@ -137,7 +137,7 @@ export default function DocumentPreviewModal({ doc, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label={`Vista previa: ${doc.name}`}
-        className="flex flex-col w-full max-w-4xl max-h-[90vh] rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-lg)]"
+        className="flex flex-col w-full max-w-4xl max-h-[90vh] rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)]"
       >
         {/* Header */}
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b-2 border-[var(--rule-base)] shrink-0">
@@ -156,7 +156,7 @@ export default function DocumentPreviewModal({ doc, onClose }: Props) {
                 type="button"
                 onClick={handleDownload}
                 aria-label="Descargar documento"
-                className="flex items-center gap-1.5 h-9 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-primary/10"
+                className="flex items-center gap-1.5 h-9 px-3 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-primary/10"
               >
                 <Download className="h-4 w-4" />
                 Descargar
@@ -166,7 +166,7 @@ export default function DocumentPreviewModal({ doc, onClose }: Props) {
               type="button"
               onClick={onClose}
               aria-label="Cerrar vista previa"
-              className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+              className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
             >
               <X className="h-5 w-5" />
             </button>

@@ -79,7 +79,7 @@ export function AuditLogConsole() {
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-tertiary)] pointer-events-none" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar negocio, operador…" aria-label="Buscar" className="h-9 w-52 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-8 pr-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar negocio, operador…" aria-label="Buscar" className="h-9 w-52 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-8 pr-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
             </div>
             <button type="button" onClick={() => exportCSV(filtered)} disabled={filtered.length === 0} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50"><Download className="h-3.5 w-3.5" /> CSV</button>
             <button type="button" onClick={() => void load()} className="inline-flex h-9 items-center rounded-lg border border-[var(--rule-base)] px-2 text-[var(--text-tertiary)] hover:border-[var(--accent)]/40"><RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /></button>

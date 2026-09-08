@@ -291,7 +291,7 @@ const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 // admin de negocio). Paleta del proyecto: teal de marca + acentos legibles sobre
 // el slate near-black. Sin naranja/ámbar (constraint de marca).
 const GROUP_ICON_COLOR: Record<NavGroupId, string> = {
-  inicio: "text-[#5eead4]", // teal de marca
+  inicio: "text-[var(--accent)]", // teal de marca
   tiendas: "text-[#60a5fa]", // azul
   marketplace: "text-[#a78bfa]", // violeta
   finanzas: "text-[#34d399]", // verde (dinero)
@@ -578,9 +578,9 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   // blanco con drop-shadow para legibilidad sobre cualquier theme.
   // Logo = círculo BLANCO con la marca Buleje en teal (referencia Brandon
   // 2026-06-16: "redondo con fondo blanco", igual que el admin). Sin ámbar.
-  const logoBoxClass = "bg-white text-[#00A0A0] shadow-md ring-1 ring-black/[0.06]";
+  const logoBoxClass = "bg-[var(--surface-raised)] text-[var(--accent)] shadow-md ring-1 ring-black/[0.06]";
   const logoLabelClass = isBuleje ? "text-white" : "text-white dark:text-white drop-shadow-sm";
-  const logoSubLabelClass = isBuleje ? "text-[#5eead4]" : "text-teal-300 dark:text-teal-300";
+  const logoSubLabelClass = isBuleje ? "text-[var(--accent)]" : "text-teal-300 dark:text-teal-300";
   const logoBorderClass = isBuleje ? "border-white/[0.08]" : "border-white/[0.10]";
   const collapseBtnClass = isBuleje
     ? "text-white/85 hover:bg-white/[0.08] hover:text-white"
@@ -916,7 +916,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             onClick={() => setConfigOpen(true)}
             title="Configurar barra lateral"
             className={[
-              "flex items-center gap-3 w-full rounded-lg text-sm font-medium transition-colors",
+              "flex items-center gap-3 w-full rounded-xl text-sm font-medium transition-colors",
               navItemIdleClass,
               collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5",
             ].join(" ")}
@@ -931,7 +931,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
             onClick={() => setCollapsed((v) => !v)}
             title={collapsed ? "Expandir barra lateral" : "Compactar barra lateral"}
             className={[
-              "flex items-center gap-3 w-full rounded-lg text-sm font-medium transition-colors",
+              "flex items-center gap-3 w-full rounded-xl text-sm font-medium transition-colors",
               collapseBtnClass,
               collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5",
             ].join(" ")}
@@ -1108,7 +1108,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className={`md:hidden p-1.5 rounded-lg transition-colors ${headerIconBtnClass}`}
+                className={`md:hidden p-1.5 rounded-xl transition-colors ${headerIconBtnClass}`}
                 aria-label="Abrir menú"
               >
                 <Menu className="w-5 h-5" />
@@ -1179,7 +1179,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
               <button
                 type="button"
                 onClick={toggle}
-                className={`p-2 rounded-lg transition-colors ${headerIconBtnClass}`}
+                className={`p-2 rounded-xl transition-colors ${headerIconBtnClass}`}
                 title={dark ? "Modo claro" : "Modo oscuro"}
                 aria-label="Cambiar tema"
               >
@@ -1241,7 +1241,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 type="button"
                 onClick={() => setConfigOpen(false)}
                 aria-label="Cerrar"
-                className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
+                className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1279,7 +1279,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                 // login como documento fresco — nunca se cuelga.
                 window.location.href = "/superadmin/login?reason=expired";
               }}
-              className="w-full px-4 py-2.5 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-medium hover:brightness-110 transition-colors"
+              className="w-full px-4 min-h-11 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-medium hover:brightness-110 transition-colors"
             >
               Iniciar sesión
             </button>
@@ -1376,12 +1376,12 @@ function NavGroupsFlyout({
 
   // Estilos coherentes con el theme buleje (slate + teal).
   const headerActiveClass = isBuleje
-    ? "bg-[rgba(0,160,160,0.18)] text-[#5eead4] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
+    ? "bg-[rgba(0,160,160,0.18)] text-[var(--accent)] font-semibold shadow-[inset_2px_0_0_#14C2C2]"
     : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold";
   const headerIdleClass = isBuleje
     ? "text-white/75 hover:bg-white/[0.08] hover:text-white"
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
-  const dotClass = isBuleje ? "bg-[#14C2C2]" : "bg-[var(--accent)]";
+  const dotClass = isBuleje ? "bg-[var(--accent)]" : "bg-[var(--accent)]";
 
   const sidebarWidth = sidebarCollapsed ? "var(--sa-sidebar-w-compact)" : "var(--sa-sidebar-w)";
   const hoveredGroup = hoveredId ? (groups.find((g) => g.id === hoveredId) ?? null) : null;
@@ -1472,7 +1472,7 @@ function NavGroupsFlyout({
             aria-expanded={isHovered}
             aria-label={`Grupo ${group.label}`}
             className={[
-              "group/nav w-full flex items-center gap-2.5 rounded-lg transition-all",
+              "group/nav w-full flex items-center gap-2.5 rounded-xl transition-all",
               headerPad,
               sidebarCollapsed ? "justify-center" : "",
               "text-sm font-semibold",
@@ -1494,7 +1494,7 @@ function NavGroupsFlyout({
                       : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] group-hover/nav:text-[var(--text-secondary)]",
                     hasActive
                       ? isBuleje
-                        ? "bg-[#14C2C2]/20 text-[#5eead4]"
+                        ? "bg-[var(--accent)]/20 text-[var(--accent)]"
                         : "bg-[var(--accent)]/15 text-[var(--accent)]"
                       : "",
                   ].join(" ")}
@@ -1751,7 +1751,7 @@ function NavGroupsAccordion({
   // Item activo: pill teal (marca) más nítida — barra lateral 3px + ring interno
   // sutil para separarlo del fondo. Idle: texto tenue. Pulido fino 2026-06-19.
   const itemActive = isBuleje
-    ? "bg-[rgba(0,160,160,0.16)] text-[#5eead4] font-semibold shadow-[inset_3px_0_0_#14C2C2] ring-1 ring-inset ring-[rgba(20,194,194,0.16)]"
+    ? "bg-[rgba(0,160,160,0.16)] text-[var(--accent)] font-semibold shadow-[inset_3px_0_0_#14C2C2] ring-1 ring-inset ring-[rgba(20,194,194,0.16)]"
     : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-semibold shadow-[inset_3px_0_0_var(--accent)]";
   const itemIdle = isBuleje
     ? "text-white/75 hover:bg-white/[0.08] hover:text-white"
@@ -1761,7 +1761,7 @@ function NavGroupsAccordion({
   const labelClass = isBuleje
     ? "text-white/75 hover:text-white"
     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]";
-  const dotClass = isBuleje ? "bg-[#14C2C2]" : "bg-[var(--accent)]";
+  const dotClass = isBuleje ? "bg-[var(--accent)]" : "bg-[var(--accent)]";
 
   return (
     <div className="space-y-1.5">
@@ -1827,7 +1827,7 @@ function NavGroupsAccordion({
               aria-controls={panelId}
               aria-haspopup="menu"
               className={[
-                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors",
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-medium transition-colors",
                 labelClass,
               ].join(" ")}
             >

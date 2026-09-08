@@ -18,10 +18,10 @@ interface Props {
 }
 
 const FIELD =
-  "w-full h-12 text-base border-2 border-[var(--rule-base)] rounded-2xl px-3 bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]";
+  "w-full h-12 text-base border border-[var(--rule-base)] rounded-2xl px-3 bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]";
 
 const TEXTAREA =
-  "w-full text-base border-2 border-[var(--rule-base)] rounded-2xl px-3 py-3 bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] resize-none";
+  "w-full text-base border border-[var(--rule-base)] rounded-2xl px-3 py-3 bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] resize-none";
 
 export default function DocumentTemplatesModal({ onClose, onGenerated }: Props) {
   const [templates, setTemplates] = useState<DbDocumentTemplate[]>([]);
@@ -174,7 +174,7 @@ export default function DocumentTemplatesModal({ onClose, onGenerated }: Props) 
         role="dialog"
         aria-modal="true"
         aria-label="Generar documento desde plantilla"
-        className="w-full max-w-3xl max-h-[85vh] flex flex-col rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-lg)]"
+        className="w-full max-w-3xl max-h-[85vh] flex flex-col rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-lg)]"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
@@ -188,7 +188,7 @@ export default function DocumentTemplatesModal({ onClose, onGenerated }: Props) 
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+            className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
           >
             <X className="h-5 w-5" />
           </button>
@@ -217,7 +217,7 @@ export default function DocumentTemplatesModal({ onClose, onGenerated }: Props) 
                     <button
                       type="button"
                       onClick={() => selectTemplate(t)}
-                      className={`w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                      className={`w-full text-left flex items-center gap-2 px-3 min-h-11 rounded-xl text-sm font-medium transition-colors ${
                         selected?.id === t.id
                           ? "bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]"
                           : "hover:bg-[var(--surface-raised)] text-[var(--text-secondary)]"
@@ -281,7 +281,7 @@ export default function DocumentTemplatesModal({ onClose, onGenerated }: Props) 
                     type="button"
                     onClick={handleGenerate}
                     disabled={generating}
-                    className="flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary/90 disabled:opacity-50"
+                    className="flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-semibold hover:bg-primary/90 disabled:opacity-50"
                   >
                     {generating ? (
                       <Loader2 className="h-5 w-5 animate-spin" />

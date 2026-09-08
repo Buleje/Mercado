@@ -67,7 +67,7 @@ export function BudgetPanel({
         <button
           onClick={saveGlobal}
           disabled={busy}
-          className="h-10 rounded-lg bg-[var(--surface-sunken)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--rule-soft)] disabled:opacity-50"
+          className="h-10 rounded-xl bg-[var(--surface-sunken)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--rule-soft)] disabled:opacity-50"
         >
           Guardar
         </button>
@@ -123,7 +123,7 @@ export function BudgetPanel({
                   {fmtPen(spent)}
                 </span>
                 <input
-                  className="h-10 w-24 shrink-0 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 text-right text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
+                  className="h-10 w-24 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 text-right text-sm tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
                   type="number"
                   min="0"
                   step="10"
@@ -138,7 +138,7 @@ export function BudgetPanel({
             <button
               onClick={saveCats}
               disabled={busy}
-              className="h-10 rounded-lg bg-[var(--accent)] px-4 text-sm font-extrabold text-[var(--accent-contrast,#fff)] disabled:opacity-50"
+              className="h-10 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-contrast,#fff)] disabled:opacity-50"
             >
               Guardar topes
             </button>

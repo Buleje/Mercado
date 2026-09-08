@@ -21,7 +21,7 @@ interface Props {
 }
 
 const SELECT_CLASS =
-  "h-12 text-base border-2 border-[var(--rule-base)] rounded-2xl px-3 bg-[var(--surface-raised)] text-[var(--text-primary)]";
+  "h-12 text-base border border-[var(--rule-base)] rounded-2xl px-3 bg-[var(--surface-raised)] text-[var(--text-primary)]";
 
 export default function DocumentToolbar({
   search,
@@ -48,7 +48,7 @@ export default function DocumentToolbar({
             placeholder={
               contentMode ? "Buscar dentro del contenido (OCR)…" : "Buscar por nombre o etiqueta…"
             }
-            className="w-full pl-10 pr-3 h-12 text-base border-2 border-[var(--rule-base)] rounded-2xl bg-[var(--surface-raised)] text-[var(--text-primary)]"
+            className="w-full pl-10 pr-3 h-12 text-base border border-[var(--rule-base)] rounded-2xl bg-[var(--surface-raised)] text-[var(--text-primary)]"
           />
         </div>
         <button
@@ -117,7 +117,7 @@ export default function DocumentToolbar({
         </button>
 
         {/* Toggle vista lista / grid */}
-        <div className="flex h-12 rounded-2xl border-2 border-[var(--rule-base)] overflow-hidden">
+        <div className="flex h-12 rounded-2xl border border-[var(--rule-base)] overflow-hidden">
           <button
             type="button"
             onClick={() => onView("list")}

@@ -92,7 +92,7 @@ function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (act
         {tenant.ownerPhone && (
           <button
             onClick={() => onAction("whatsapp", tenant)}
-            className="p-1.5 rounded-md hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success-500)]/20 text-[var(--data-success-500)] transition-colors"
+            className="p-1.5 rounded-xl hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success-500)]/20 text-[var(--data-success-500)] transition-colors"
             title="WhatsApp"
           >
             <MessageCircle className="h-3.5 w-3.5" />
@@ -101,7 +101,7 @@ function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (act
         {tenant.ownerEmail && (
           <button
             onClick={() => onAction("email", tenant)}
-            className="p-1.5 rounded-md hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success-500)]/20 text-[var(--data-success-500)] transition-colors"
+            className="p-1.5 rounded-xl hover:bg-[var(--data-success-50)] dark:hover:bg-[var(--data-success-500)]/20 text-[var(--data-success-500)] transition-colors"
             title="Email"
           >
             <Mail className="h-3.5 w-3.5" />
@@ -109,7 +109,7 @@ function TenantCardUI({ tenant, onAction }: { tenant: TenantCard; onAction: (act
         )}
         <button
           onClick={() => onAction("impersonate", tenant)}
-          className="p-1.5 rounded-md hover:bg-[var(--surface-sunken)] text-muted transition-colors ml-auto"
+          className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-muted transition-colors ml-auto"
           title="Impersonar"
         >
           <ExternalLink className="h-3.5 w-3.5" />

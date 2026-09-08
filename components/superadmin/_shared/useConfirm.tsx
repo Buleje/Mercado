@@ -63,7 +63,7 @@ export function useConfirm() {
       role="presentation"
     >
       <div
-        className="w-full max-w-sm rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)] p-6"
+        className="w-full max-w-sm rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] p-6"
         onClick={(e) => e.stopPropagation()}
         role="alertdialog"
         aria-modal="true"
@@ -73,14 +73,14 @@ export function useConfirm() {
           <div
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
               state.danger
-                ? "bg-rose-100 dark:bg-rose-950/40"
+                ? "bg-[var(--data-error-50)] dark:bg-rose-950/40"
                 : "bg-emerald-100 dark:bg-emerald-950/40"
             }`}
           >
             <AlertTriangle
               className={`h-5 w-5 ${
                 state.danger
-                  ? "text-rose-600 dark:text-rose-400"
+                  ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
                   : "text-emerald-600 dark:text-emerald-400"
               }`}
             />
@@ -98,7 +98,7 @@ export function useConfirm() {
           <button
             type="button"
             onClick={() => close(false)}
-            className="h-11 px-4 rounded-xl text-sm font-bold bg-gray-200 dark:bg-gray-800 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="h-11 px-4 rounded-xl text-sm font-semibold bg-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           >
             {state.cancelLabel ?? "Cancelar"}
           </button>
@@ -106,7 +106,7 @@ export function useConfirm() {
             type="button"
             autoFocus
             onClick={() => close(true)}
-            className={`h-11 px-4 rounded-xl text-sm font-bold text-white ${
+            className={`h-11 px-4 rounded-xl text-sm font-semibold text-white ${
               state.danger
                 ? "bg-rose-600 hover:bg-rose-700"
                 : "bg-emerald-600 hover:bg-emerald-700"

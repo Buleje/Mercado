@@ -148,7 +148,7 @@ export default function SpecializationsClient({
       <div>
         {/* Filtros */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 h-12">
+          <div className="flex flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 h-12">
             <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
             <input
               type="text"
@@ -158,7 +158,7 @@ export default function SpecializationsClient({
               className="w-full bg-transparent outline-none text-base text-[var(--text-primary)]"
             />
           </div>
-          <div className="flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 h-12">
+          <div className="flex items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 h-12">
             <Filter className="h-4 w-4 text-[var(--text-tertiary)]" />
             <select
               value={verticalFilter}
@@ -182,7 +182,7 @@ export default function SpecializationsClient({
             return (
               <div
                 key={spec.key}
-                className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
+                className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
@@ -198,7 +198,7 @@ export default function SpecializationsClient({
                       spec.status === "available"
                         ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
                         : spec.status === "beta"
-                          ? "bg-[#0d9488] text-[#0d9488]"
+                          ? "bg-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
                     }`}
                   >
@@ -224,7 +224,7 @@ export default function SpecializationsClient({
         </div>
 
         {/* Matriz tenants × specs */}
-        <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <table className="w-full text-sm">
             <thead className="bg-[var(--surface-sunken)] text-left">
               <tr>
@@ -282,9 +282,9 @@ export default function SpecializationsClient({
                           }`}
                         >
                           <span
-                            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                              enabled ? "translate-x-6" : "translate-x-1"
-                            }`}
+                            className={`inline-block h-5 w-5 transform rounded-full bg-[var(--surface-raised)] shadow transition-transform ${
+ enabled ? "translate-x-6" : "translate-x-1"
+ }`}
                           />
                           {isPending && (
                             <Loader2
@@ -315,7 +315,7 @@ export default function SpecializationsClient({
         </div>
 
         {filteredTenants.length === 0 && (
-          <div className="mt-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
+          <div className="mt-6 rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
             Sin tenants que coincidan con la búsqueda.
           </div>
         )}

@@ -182,11 +182,11 @@ export default async function SuperadminMarketplaceHubPage() {
       {/* ── HERO envolvente con accent strip y KPIs grandes ─────────────── */}
       <header className="relative overflow-hidden border-b border-[var(--rule-base)] bg-[var(--surface-raised)]">
         {/* Accent strip superior */}
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[var(--accent)] via-[var(--accent)]/60 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-[var(--accent)] via-[var(--accent)]/60 to-transparent" />
         {/* Glow decorativo derecho */}
         <div
           aria-hidden
-          className="pointer-events-none absolute right-0 top-0 hidden h-full w-1/2 bg-gradient-to-l from-[var(--accent)]/[0.06] to-transparent lg:block"
+          className="pointer-events-none absolute right-0 top-0 hidden h-full w-1/2 bg-linear-to-l from-[var(--accent)]/[0.06] to-transparent lg:block"
         />
 
         <div className="relative w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -229,7 +229,7 @@ export default async function SuperadminMarketplaceHubPage() {
             {m.pendingSuppliers > 0 && (
               <Link
                 href="/superadmin/marketplace/suppliers"
-                className="group inline-flex items-center gap-2.5 rounded-2xl border border-[#0d9488]/30 bg-[#0d9488]/10 px-4 py-2.5 text-sm font-bold text-[#0d9488] transition hover:border-[#0d9488]/50 hover:bg-[#0d9488]/15 dark:text-[#0d9488]"
+                className="group inline-flex items-center gap-2.5 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] transition hover:border-[#0d9488]/50 hover:bg-primary/15 dark:text-[var(--accent)]"
               >
                 <AlertCircle className="h-4 w-4" strokeWidth={2} aria-hidden />
                 <span>
@@ -336,7 +336,7 @@ function KpiTile({
       : tone === "success"
         ? "border-[var(--data-success-500)]/25 bg-[var(--data-success-500)]/[0.05]"
         : tone === "warn"
-          ? "border-[#0d9488]/30 bg-[#0d9488]/[0.06]"
+          ? "border-primary/30 bg-[#0d9488]/[0.06]"
           : "border-[var(--rule-base)] bg-[var(--surface-canvas)]";
 
   const valueClass =
@@ -345,7 +345,7 @@ function KpiTile({
       : tone === "success"
         ? "text-[var(--data-success-500)]"
         : tone === "warn"
-          ? "text-[#0d9488] dark:text-[#0d9488]"
+          ? "text-[var(--accent-ink)] dark:text-[var(--accent)] dark:text-[var(--accent)]"
           : "text-[var(--text-primary)]";
 
   return (
@@ -419,7 +419,7 @@ function LiveCard({
   const hasPulse = metric?.tone === "warn";
   const metricColor =
     metric?.tone === "warn"
-      ? "text-[#0d9488] dark:text-[#0d9488]"
+      ? "text-[var(--accent-ink)] dark:text-[var(--accent)] dark:text-[var(--accent)]"
       : metric?.tone === "accent"
         ? "text-[var(--accent)]"
         : "text-[var(--text-primary)]";
@@ -433,7 +433,7 @@ function LiveCard({
       {/* Accent edge top */}
       <div
         aria-hidden
-        className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-[var(--accent)]/0 via-[var(--accent)]/40 to-[var(--accent)]/0 opacity-0 transition-opacity group-hover:opacity-100"
+        className="absolute inset-x-0 top-0 h-0.5 bg-linear-to-r from-[var(--accent)]/0 via-[var(--accent)]/40 to-[var(--accent)]/0 opacity-0 transition-opacity group-hover:opacity-100"
       />
 
       <div className="flex items-start justify-between gap-3 p-5">
@@ -445,8 +445,8 @@ function LiveCard({
           <div className="relative text-right">
             {hasPulse && (
               <span aria-hidden className="absolute -right-1 -top-1 inline-flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#0d9488]/50" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#0d9488]" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/50" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
               </span>
             )}
             <p
@@ -493,7 +493,7 @@ function SoonCard({ section }: { section: Section }) {
       {/* Shimmer sutil aspiracional */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--accent)]/[0.03] via-transparent to-transparent"
+        className="pointer-events-none absolute inset-0 bg-linear-to-br from-[var(--accent)]/[0.03] via-transparent to-transparent"
       />
 
       <div className="relative flex items-start justify-between gap-3 p-5">

@@ -63,7 +63,7 @@ export default function SetupItemCard({
             <h3
               className={[
                 "text-base font-bold",
-                isDone ? "text-gray-400 line-through" : "text-[var(--text-primary)]",
+                isDone ? "text-[var(--text-tertiary)] line-through" : "text-[var(--text-primary)]",
               ].join(" ")}
             >
               {item.title}
@@ -139,7 +139,7 @@ export default function SetupItemCard({
                   "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
                   isBlocked
                     ? "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
-                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200",
+                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)]",
                 ].join(" ")}
               >
                 {isBlocked ? "✓ Bloqueado" : "Marcar bloqueado"}

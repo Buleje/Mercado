@@ -256,7 +256,7 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar módulo… (ej. inventario, SUNAT, IA)"
               aria-label="Buscar módulo"
-              className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-4 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors"
+              className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-4 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors"
             />
           </div>
         </div>
@@ -274,7 +274,7 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
         ) : (
           <div className="space-y-4">
             {grouped.length === 0 && (
-              <div className="rounded-xl border-2 border-dashed border-[var(--rule-base)] py-10 text-center">
+              <div className="rounded-xl border border-dashed border-[var(--rule-base)] py-10 text-center">
                 <p className="text-sm font-bold text-[var(--text-primary)]">
                   Sin módulos que coincidan
                 </p>
@@ -365,9 +365,9 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
                           >
                             <span
                               aria-hidden
-                              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
-                                effective ? "left-[22px]" : "left-0.5"
-                              }`}
+                              className={`absolute top-0.5 h-5 w-5 rounded-full bg-[var(--surface-raised)] shadow transition-all ${
+ effective ? "left-[22px]" : "left-0.5"
+ }`}
                             />
                           </button>
                         </div>
@@ -387,7 +387,7 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
               type="button"
               onClick={() => void save({})}
               disabled={saving || loading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 py-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
               title="Eliminar todos los overrides — la tienda vuelve a la plantilla global"
             >
               <RotateCcw className="h-3.5 w-3.5" /> Restaurar plantilla
@@ -398,7 +398,7 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-4 py-2 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-4 min-h-10 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
           >
             <XCircle className="h-4 w-4" /> Cancelar
           </button>
@@ -406,7 +406,7 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
             type="button"
             onClick={() => void save(draft)}
             disabled={saving || loading}
-            className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-5 py-2 text-sm font-extrabold text-white shadow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 min-h-10 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 animate-spin" />

@@ -133,13 +133,13 @@ export default function IntegrationsPage() {
         actions={
           <div className="flex items-center gap-2">
             {lastAt && <span className="hidden sm:inline text-xs text-[var(--text-tertiary)] tabular-nums">Actualizado {new Date(lastAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })} · auto 60s</span>}
-            <button onClick={() => exportCSV(sorted)} disabled={sorted.length === 0} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
+            <button onClick={() => exportCSV(sorted)} disabled={sorted.length === 0} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
               <Download className="h-4 w-4" /> CSV
             </button>
-            <button onClick={() => void load()} disabled={loading} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
+            <button onClick={() => void load()} disabled={loading} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualizar
             </button>
-            <Link href="/superadmin/tenants" className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40">
+            <Link href="/superadmin/tenants" className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40">
               <ArrowLeft className="h-4 w-4" /> Tiendas
             </Link>
           </div>
@@ -183,16 +183,16 @@ export default function IntegrationsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar tienda o slug…" className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-9 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]" />
-            {search && <button type="button" onClick={() => setSearch("")} aria-label="Limpiar" className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><X className="h-4 w-4" /></button>}
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar tienda o slug…" className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-9 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]" />
+            {search && <button type="button" onClick={() => setSearch("")} aria-label="Limpiar" className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-xl p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"><X className="h-4 w-4" /></button>}
           </div>
-          <select value={filter} onChange={(e) => setFilter(e.target.value as FilterKey)} aria-label="Filtrar" className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer">
+          <select value={filter} onChange={(e) => setFilter(e.target.value as FilterKey)} aria-label="Filtrar" className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer">
             <option value="all">Todas</option>
             <option value="incomplete">Incompletas</option>
             <option value="nocobros">Sin cobros (Yape+Plin)</option>
             {COLS.map((c) => <option key={c.key} value={`no:${c.key}`}>Sin {c.label}</option>)}
           </select>
-          <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} aria-label="Ordenar" className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer">
+          <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} aria-label="Ordenar" className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer">
             <option value="missing">Orden: faltan</option>
             <option value="name">Orden: nombre</option>
           </select>
@@ -201,7 +201,7 @@ export default function IntegrationsPage() {
         {loading && rows.length === 0 ? (
           <div className="space-y-2">{[0,1,2,3,4].map((i) => <div key={i} className="h-12 animate-pulse bg-[var(--surface-sunken)] border border-[var(--rule-soft)]" />)}</div>
         ) : sorted.length === 0 ? (
-          <div className="border-2 border-dashed border-[var(--rule-base)] py-12 text-center">
+          <div className="border border-dashed border-[var(--rule-base)] py-12 text-center">
             <p className="text-sm font-bold text-[var(--text-primary)]">Ninguna tienda con estos filtros</p>
             {hasFilters && <button type="button" onClick={() => { setSearch(""); setFilter("all"); }} className="mt-2 text-sm font-bold text-[var(--accent)] hover:underline">Limpiar filtros</button>}
           </div>
@@ -212,7 +212,7 @@ export default function IntegrationsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-                    <th className="px-3 py-2.5"><button type="button" onClick={() => setSort(sort === "name" ? "missing" : "name")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Tienda <span className="text-[10px]" aria-hidden>{sort === "name" ? "▲" : "⇅"}</span></button></th>
+                    <th className="px-3 py-2.5"><button type="button" onClick={() => setSort(sort === "name" ? "missing" : "name")} className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-[var(--text-primary)]">Tienda <span className="text-[length:var(--ts-2xs)]" aria-hidden>{sort === "name" ? "▲" : "⇅"}</span></button></th>
                     {COLS.map((c) => <th key={c.key} className="px-3 py-2.5 text-center">{c.label}</th>)}
                     <th className="px-3 py-2.5 text-right">Acción</th>
                   </tr>
@@ -225,7 +225,7 @@ export default function IntegrationsPage() {
                         <td className="px-3 py-2.5 font-bold text-[var(--text-primary)] truncate max-w-[220px]">
                           <span className="flex items-center gap-1.5">
                             {r.name}
-                            {nc && <span className="rounded-full bg-[var(--data-error-500)] px-1.5 py-0.5 text-[10px] font-extrabold text-white shrink-0">no cobra</span>}
+                            {nc && <span className="rounded-full bg-[var(--data-error-500)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-extrabold text-white shrink-0">no cobra</span>}
                           </span>
                         </td>
                         {COLS.map((c) => <td key={c.key} className="px-3 py-2.5 text-center"><div className="flex justify-center"><Cell on={r.integrations[c.key]} /></div></td>)}

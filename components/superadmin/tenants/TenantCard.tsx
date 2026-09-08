@@ -192,7 +192,7 @@ export function TenantCard({
                   ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-500/30"
                   : healthProp === "warning"
                     ? "bg-teal-500/15 text-teal-700 dark:text-teal-300 ring-teal-500/30"
-                    : "bg-rose-500/15 text-rose-700 dark:text-rose-300 ring-rose-500/30"
+                    : "bg-rose-500/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] ring-rose-500/30"
               }`}
               title={
                 healthProp === "healthy"
@@ -505,7 +505,7 @@ export function TenantCard({
           <button
             type="button"
             onClick={() => onImpersonate(t.slug)}
-            className="flex-[1.5] inline-flex items-center justify-center gap-2 h-11 rounded-lg text-sm font-extrabold text-white transition-all active:scale-[0.98] shadow-[0_4px_12px_-4px_color-mix(in_oklab,var(--accent)_55%,transparent)] hover:shadow-[0_6px_16px_-4px_color-mix(in_oklab,var(--accent)_70%,transparent)]"
+            className="flex-[1.5] inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold text-white transition-all active:scale-[0.98] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-md)]"
             style={{
               background:
                 "linear-gradient(135deg, var(--accent), color-mix(in oklab, var(--accent) 75%, black))",
@@ -522,7 +522,7 @@ export function TenantCard({
           <button
             type="button"
             onClick={() => onAddProduct(t)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold border-2 border-dashed border-[var(--accent)]/40 text-[var(--accent)] hover:bg-primary/10 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold border-2 border-dashed border-[var(--accent)]/40 text-[var(--accent)] hover:bg-primary/10 transition-colors"
           >
             <Package className="w-4 h-4" /> Agregar producto a esta tienda
           </button>
@@ -571,7 +571,7 @@ export function TenantCard({
             <button
               type="button"
               onClick={() => onInvite(t.slug, t.name)}
-              className="sm:flex-1 inline-flex items-center justify-center gap-1.5 h-10 sm:h-9 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+              className="sm:flex-1 inline-flex items-center justify-center gap-1.5 h-10 sm:h-9 rounded-xl text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
               aria-label="Invitar usuario"
             >
               <Mail className="w-3.5 h-3.5" /> Invitar
@@ -580,7 +580,7 @@ export function TenantCard({
               type="button"
               onClick={() => onToggleActive(t.slug, t.active)}
               disabled={actionLoading === `${t.slug}-active`}
-              className="sm:flex-1 inline-flex items-center justify-center gap-1.5 h-10 sm:h-9 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
+              className="sm:flex-1 inline-flex items-center justify-center gap-1.5 h-10 sm:h-9 rounded-xl text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
               aria-label={t.active ? "Suspender tienda" : "Activar tienda"}
             >
               {actionLoading === `${t.slug}-active` ? (
@@ -602,7 +602,7 @@ export function TenantCard({
               type="button"
               onClick={() => onPurge(t.slug, t.name)}
               disabled={actionLoading === `${t.slug}-purge`}
-              className="inline-flex items-center justify-center h-10 w-full sm:w-10 sm:h-9 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
+              className="inline-flex items-center justify-center h-10 w-full sm:w-10 sm:h-9 rounded-xl text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50"
               title="Limpiar datos de esta tienda (productos, pedidos, movimientos)"
               aria-label="Limpiar datos"
             >
@@ -616,7 +616,7 @@ export function TenantCard({
               type="button"
               onClick={() => onDelete(t.slug, t.name)}
               disabled={actionLoading === `${t.slug}-delete` || t.slug === "main"}
-              className="inline-flex items-center justify-center h-10 w-full sm:w-10 sm:h-9 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-500)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center h-10 w-full sm:w-10 sm:h-9 rounded-xl text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-500)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               title={
                 t.slug === "main" ? "No se puede eliminar la tienda principal" : "Eliminar tienda"
               }
@@ -631,7 +631,7 @@ export function TenantCard({
             <button
               type="button"
               onClick={() => onDetail(t)}
-              className="inline-flex items-center justify-center h-10 w-full sm:w-10 sm:h-9 rounded-lg text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+              className="inline-flex items-center justify-center h-10 w-full sm:w-10 sm:h-9 rounded-xl text-xs border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
               title="Ver detalle / analytics"
               aria-label="Ver detalle"
             >

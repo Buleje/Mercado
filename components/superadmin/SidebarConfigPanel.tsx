@@ -129,11 +129,11 @@ const ACCENT_COLORS: Array<{ id: AccentColor; label: string; hex: string }> = [
 ];
 
 const THEMES: Array<{ id: SidebarTheme; label: string; preview: string }> = [
-  { id: "buleje",  label: "Buleje",  preview: "bg-[linear-gradient(135deg,#0b1f2b_0%,#00A0A0_100%)] border border-[#00A0A0]/40" },
-  { id: "light",   label: "Claro",   preview: "bg-white border border-gray-200" },
-  { id: "dark",    label: "Oscuro",  preview: "bg-zinc-900 border border-zinc-700" },
+  { id: "buleje",  label: "Buleje",  preview: "bg-[linear-gradient(135deg,#0b1f2b_0%,#00A0A0_100%)] border border-[var(--accent)]/40" },
+  { id: "light",   label: "Claro",   preview: "bg-[var(--surface-raised)] border border-[var(--rule-base)]" },
+  { id: "dark",    label: "Oscuro",  preview: "bg-gray-900 border border-gray-700" },
   { id: "cristal", label: "Cristal", preview: "bg-linear-to-br from-white/80 to-white/40 border border-white/40 backdrop-blur" },
-  { id: "shaded",  label: "Sombra",  preview: "bg-linear-to-b from-zinc-100 to-zinc-200 border border-zinc-300" },
+  { id: "shaded",  label: "Sombra",  preview: "bg-linear-to-b from-zinc-100 to-zinc-200 border border-[var(--rule-base)]" },
 ];
 
 const DENSITIES: Density[] = ["compact", "normal", "spacious"];
@@ -205,7 +205,7 @@ function SortableNavItem({
         type="button"
         onClick={onToggle}
         className={[
-          "h-8 w-8 rounded-md flex items-center justify-center shrink-0 transition-colors",
+          "h-8 w-8 rounded-lg flex items-center justify-center shrink-0 transition-colors",
           hidden
             ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-[var(--accent)]"
             : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/15",
@@ -228,7 +228,7 @@ function SortableNavItem({
       <button
         {...attributes}
         {...listeners}
-        className="p-2 rounded-md cursor-grab active:cursor-grabbing text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] touch-none"
+        className="p-2 rounded-xl cursor-grab active:cursor-grabbing text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] touch-none"
         aria-label="Arrastrar para reordenar"
       >
         <GripVertical className="h-4 w-4" />
@@ -385,7 +385,7 @@ export default function SidebarConfigPanel({ items }: Props) {
                   type="button"
                   onClick={() => update({ theme: t.id })}
                   className={[
-                    "rounded-lg border px-3 py-2 text-left transition-colors",
+                    "rounded-xl border px-3 py-2 text-left transition-colors",
                     active
                       ? "border-[var(--accent)] bg-primary/10"
                       : "border-[var(--rule-soft)] hover:border-[var(--rule-strong)]",
@@ -414,7 +414,7 @@ export default function SidebarConfigPanel({ items }: Props) {
                   type="button"
                   onClick={() => update({ accent: c.id })}
                   className={[
-                    "h-12 rounded-lg flex items-center justify-center transition-all",
+                    "h-12 rounded-xl flex items-center justify-center transition-all",
                     active ? "ring-2 ring-offset-2 ring-offset-[var(--surface-canvas)]" : "hover:scale-105",
                   ].join(" ")}
                   style={{ backgroundColor: c.hex, ...(active ? { boxShadow: `0 0 0 2px ${c.hex}` } : {}) }}
@@ -445,7 +445,7 @@ export default function SidebarConfigPanel({ items }: Props) {
                   type="button"
                   onClick={() => update({ density: d })}
                   className={[
-                    "rounded-lg border px-3 py-2 text-sm font-semibold capitalize transition-colors",
+                    "rounded-xl border px-3 py-2 text-sm font-semibold capitalize transition-colors",
                     active
                       ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]",
@@ -471,7 +471,7 @@ export default function SidebarConfigPanel({ items }: Props) {
                   type="button"
                   onClick={() => update({ iconStyle: s })}
                   className={[
-                    "rounded-lg border px-3 py-2 text-sm font-semibold transition-colors",
+                    "rounded-xl border px-3 py-2 text-sm font-semibold transition-colors",
                     active
                       ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]",

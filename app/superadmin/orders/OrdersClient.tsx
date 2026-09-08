@@ -196,7 +196,7 @@ function customerWaLink(phone: string | null | undefined, message?: string): str
 const SLA_CLS: Record<"good" | "warn" | "bad", string> = {
   good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
   warn: "bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
-  bad: "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+  bad: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
 };
 
 function Toasts({ toasts }: { toasts: Toast[] }) {
@@ -504,269 +504,269 @@ export function OrdersClient() {
         <KpiCard label="En camino" value={loading ? "—" : kpis.grouped.en_camino} tone="var(--accent)" icon={Truck} />
         <KpiCard label="Entregados" value={loading ? "—" : kpis.grouped.entregado} tone="var(--data-success-500)" icon={CheckCircle2} />
         <KpiCard label="GMV total" value={loading ? "—" : `S/${Number(kpis.totalRev).toFixed(0)}`} tone="var(--accent)" icon={CreditCard} />
-      </div>
+ </div>
 
-      {/* Action bar */}
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        <button
-          type="button"
-          onClick={() => void load()}
-          disabled={refreshing}
-          title="Recargar (R)"
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
-        >
-          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} aria-hidden />
-          Recargar
-        </button>
-        <label className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
-          <input
-            type="checkbox"
-            checked={autoRefresh}
-            onChange={(e) => setAutoRefresh(e.target.checked)}
-            className="h-4 w-4 accent-[var(--accent)]"
-          />
-          Auto 30s
-        </label>
-        {/* Densidad de vista */}
-        <div className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1" role="group" aria-label="Densidad de vista">
-          <button
-            type="button"
-            onClick={() => changeViewMode("compact")}
-            aria-pressed={viewMode === "compact"}
-            title="Vista compacta (más pedidos en pantalla)"
-            className={cn(
-              "inline-flex h-full items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors",
-              viewMode === "compact" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-            )}
-          >
-            <List className="h-4 w-4" aria-hidden /> Compacto
-          </button>
-          <button
-            type="button"
-            onClick={() => changeViewMode("comfort")}
-            aria-pressed={viewMode === "comfort"}
-            title="Vista cómoda (tarjetas con detalle)"
-            className={cn(
-              "inline-flex h-full items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors",
-              viewMode === "comfort" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-            )}
-          >
-            <LayoutGrid className="h-4 w-4" aria-hidden /> Cómodo
-          </button>
-        </div>
-        <select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as SortKey)}
-          aria-label="Ordenar por"
-          className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer focus:outline-none focus:border-[var(--accent)]"
-        >
-          <option value="recent">Recientes primero</option>
-          <option value="oldest">Antiguas primero</option>
-          <option value="total_desc">Mayor monto</option>
-          <option value="total_asc">Menor monto</option>
-        </select>
-        <button
-          onClick={() => exportOrdersCSV(visible)}
-          disabled={visible.length === 0}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
-        >
-          <Download className="h-4 w-4" aria-hidden />
-          CSV ({visible.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowAnalytics((v) => !v)}
-          aria-pressed={showAnalytics}
-          className={cn(
-            "inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 px-3.5 text-sm font-bold transition",
-            showAnalytics
-              ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-              : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]",
-          )}
-        >
-          <BarChart3 className="h-4 w-4" aria-hidden />
-          Analítica
-        </button>
-        <span className="ml-auto text-xs text-[var(--text-tertiary)]">
-          Atajos:{" "}
-          <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono border border-[var(--rule-soft)]">/</kbd>{" "}
-          buscar ·{" "}
-          <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono border border-[var(--rule-soft)]">R</kbd>{" "}
-          recargar
-        </span>
-      </div>
+ {/* Action bar */}
+ <div className="flex flex-wrap items-center gap-2 mb-3">
+ <button
+ type="button"
+ onClick={() => void load()}
+ disabled={refreshing}
+ title="Recargar (R)"
+ className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+ >
+ <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} aria-hidden />
+ Recargar
+ </button>
+ <label className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer hover:border-[var(--accent)]/40">
+ <input
+ type="checkbox"
+ checked={autoRefresh}
+ onChange={(e) => setAutoRefresh(e.target.checked)}
+ className="h-4 w-4 accent-[var(--accent)]"
+ />
+ Auto 30s
+ </label>
+ {/* Densidad de vista */}
+ <div className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-1" role="group" aria-label="Densidad de vista">
+ <button
+ type="button"
+ onClick={() => changeViewMode("compact")}
+ aria-pressed={viewMode === "compact"}
+ title="Vista compacta (más pedidos en pantalla)"
+ className={cn(
+ "inline-flex h-full items-center gap-1.5 rounded-xl px-2.5 text-sm font-semibold transition-colors",
+ viewMode === "compact" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+ )}
+ >
+ <List className="h-4 w-4" aria-hidden /> Compacto
+ </button>
+ <button
+ type="button"
+ onClick={() => changeViewMode("comfort")}
+ aria-pressed={viewMode === "comfort"}
+ title="Vista cómoda (tarjetas con detalle)"
+ className={cn(
+ "inline-flex h-full items-center gap-1.5 rounded-xl px-2.5 text-sm font-semibold transition-colors",
+ viewMode === "comfort" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+ )}
+ >
+ <LayoutGrid className="h-4 w-4" aria-hidden /> Cómodo
+ </button>
+ </div>
+ <select
+ value={sort}
+ onChange={(e) => setSort(e.target.value as SortKey)}
+ aria-label="Ordenar por"
+ className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] cursor-pointer focus:outline-none focus:border-[var(--accent)]"
+ >
+ <option value="recent">Recientes primero</option>
+ <option value="oldest">Antiguas primero</option>
+ <option value="total_desc">Mayor monto</option>
+ <option value="total_asc">Menor monto</option>
+ </select>
+ <button
+ onClick={() => exportOrdersCSV(visible)}
+ disabled={visible.length === 0}
+ className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition disabled:opacity-50"
+ >
+ <Download className="h-4 w-4" aria-hidden />
+ CSV ({visible.length})
+ </button>
+ <button
+ type="button"
+ onClick={() => setShowAnalytics((v) => !v)}
+ aria-pressed={showAnalytics}
+ className={cn(
+ "inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 px-3.5 text-sm font-semibold transition",
+ showAnalytics
+ ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+ : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]",
+ )}
+ >
+ <BarChart3 className="h-4 w-4" aria-hidden />
+ Analítica
+ </button>
+ <span className="ml-auto text-xs text-[var(--text-tertiary)]">
+ Atajos:{" "}
+ <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono border border-[var(--rule-soft)]">/</kbd>{" "}
+ buscar ·{" "}
+ <kbd className="px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] font-mono border border-[var(--rule-soft)]">R</kbd>{" "}
+ recargar
+ </span>
+ </div>
 
-      {/* Filtros search + tenant */}
-      <div className="flex flex-wrap gap-2 mb-5">
-        <div className="flex-1 min-w-[240px] relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
-          <input
-            ref={searchInputRef}
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por cliente, ID, teléfono o tienda…"
-            aria-label="Buscar pedidos"
-            className="w-full h-12 pl-10 pr-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)]"
-          />
-        </div>
-        <select
-          value={tenantFilter}
-          onChange={(e) => setTenantFilter(e.target.value)}
-          aria-label="Filtrar por tienda"
-          className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--accent)]"
-        >
-          <option value="all">Todas las tiendas</option>
-          {tenantOptions.map(([slug, name]) => (
-            <option key={slug} value={slug}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </div>
+ {/* Filtros search + tenant */}
+ <div className="flex flex-wrap gap-2 mb-5">
+ <div className="flex-1 min-w-[240px] relative">
+ <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] pointer-events-none" />
+ <input
+ ref={searchInputRef}
+ type="search"
+ value={search}
+ onChange={(e) => setSearch(e.target.value)}
+ placeholder="Buscar por cliente, ID, teléfono o tienda…"
+ aria-label="Buscar pedidos"
+ className="w-full h-12 pl-10 pr-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)]"
+ />
+ </div>
+ <select
+ value={tenantFilter}
+ onChange={(e) => setTenantFilter(e.target.value)}
+ aria-label="Filtrar por tienda"
+ className="h-12 px-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--accent)]"
+ >
+ <option value="all">Todas las tiendas</option>
+ {tenantOptions.map(([slug, name]) => (
+ <option key={slug} value={slug}>
+ {name}
+ </option>
+ ))}
+ </select>
+ </div>
 
-      {/* Status pills */}
-      <div className="flex gap-2 overflow-x-auto pb-3 mb-3 -mx-1 px-1">
-        {STATUS_FILTERS.map((f) => {
-          const active = statusFilter === f.key;
-          return (
-            <button
-              key={f.key}
-              type="button"
-              onClick={() => setStatusFilter(f.key)}
-              aria-pressed={active}
-              className={cn(
-                "shrink-0 px-4 h-11 rounded-full text-sm font-semibold border-2 transition-colors",
-                active
-                  ? "bg-[var(--accent)] border-[var(--accent)] text-white"
-                  : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]",
-              )}
-            >
-              {f.label}
-            </button>
-          );
-        })}
-      </div>
+ {/* Status pills */}
+ <div className="flex gap-2 overflow-x-auto pb-3 mb-3 -mx-1 px-1">
+ {STATUS_FILTERS.map((f) => {
+ const active = statusFilter === f.key;
+ return (
+ <button
+ key={f.key}
+ type="button"
+ onClick={() => setStatusFilter(f.key)}
+ aria-pressed={active}
+ className={cn(
+ "shrink-0 px-4 h-11 rounded-full text-sm font-semibold border-2 transition-colors",
+ active
+ ? "bg-[var(--accent)] border-[var(--accent)] text-white"
+ : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]",
+ )}
+ >
+ {f.label}
+ </button>
+ );
+ })}
+ </div>
 
-      {/* Banner SLA en vivo */}
-      {slaBrokenIds.size > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-2xl border-2 border-rose-300 dark:border-rose-500/40 bg-rose-50 dark:bg-rose-500/10 px-4 py-3">
-          <AlertTriangle className="h-5 w-5 text-rose-600 dark:text-rose-300 shrink-0" aria-hidden />
-          <p className="text-sm font-bold text-rose-700 dark:text-rose-300">
-            {slaBrokenIds.size} {slaBrokenIds.size === 1 ? "pedido pendiente" : "pedidos pendientes"} &gt;2h sin atender
-          </p>
-          <button
-            type="button"
-            onClick={() => setSlaBrokenOnly((v) => !v)}
-            aria-pressed={slaBrokenOnly}
-            className={cn(
-              "ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-bold transition",
-              slaBrokenOnly
-                ? "bg-rose-600 text-white"
-                : "bg-white dark:bg-transparent border border-rose-300 dark:border-rose-500/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/15",
-            )}
-          >
-            <Clock className="h-4 w-4" aria-hidden />
-            {slaBrokenOnly ? "Ver todos" : "Ver solo SLA roto"}
-          </button>
-        </div>
-      )}
+ {/* Banner SLA en vivo */}
+ {slaBrokenIds.size > 0 && (
+ <div className="mb-3 flex flex-wrap items-center gap-3 rounded-2xl border-2 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-rose-500/10 px-4 py-3">
+ <AlertTriangle className="h-5 w-5 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] shrink-0" aria-hidden />
+ <p className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+ {slaBrokenIds.size} {slaBrokenIds.size === 1 ? "pedido pendiente" : "pedidos pendientes"} &gt;2h sin atender
+ </p>
+ <button
+ type="button"
+ onClick={() => setSlaBrokenOnly((v) => !v)}
+ aria-pressed={slaBrokenOnly}
+ className={cn(
+ "ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-bold transition",
+ slaBrokenOnly
+ ? "bg-rose-600 text-white"
+ : "bg-[var(--surface-raised)] dark:bg-transparent border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] hover:bg-rose-100 dark:hover:bg-rose-500/15",
+ )}
+ >
+ <Clock className="h-4 w-4" aria-hidden />
+ {slaBrokenOnly ? "Ver todos" : "Ver solo SLA roto"}
+ </button>
+ </div>
+ )}
 
-      {/* Panel de analítica (sobre la muestra cargada) */}
-      {showAnalytics && <AnalyticsPanel data={analytics} />}
+ {/* Panel de analítica (sobre la muestra cargada) */}
+ {showAnalytics && <AnalyticsPanel data={analytics} />}
 
-      {/* Lista */}
-      {loading && orders.length === 0 ? (
-        <SkeletonRows />
-      ) : visible.length === 0 ? (
-        <EmptyState
-          isFiltered={!!search || statusFilter !== "all" || tenantFilter !== "all" || slaBrokenOnly}
-          onClear={() => {
-            setSearch("");
-            setStatusFilter("all");
-            setTenantFilter("all");
-            setSlaBrokenOnly(false);
-          }}
-        />
-      ) : viewMode === "compact" ? (
-        <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] divide-y divide-[var(--rule-base)]">
-          {visible.map((o) => (
-            <OrderRowCompact
-              key={o.id}
-              order={o}
-              onOpen={() => setSelected(o)}
-              selected={selectedIds.has(o.id)}
-              onToggleSelect={() => toggleSelect(o.id)}
-              slaBroken={slaBrokenIds.has(o.id)}
-              onCopy={copy}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {visible.map((o) => (
-            <OrderCard key={o.id} order={o} onOpen={() => setSelected(o)} onCopy={copy} />
-          ))}
-        </div>
-      )}
+ {/* Lista */}
+ {loading && orders.length === 0 ? (
+ <SkeletonRows />
+ ) : visible.length === 0 ? (
+ <EmptyState
+ isFiltered={!!search || statusFilter !== "all" || tenantFilter !== "all" || slaBrokenOnly}
+ onClear={() => {
+ setSearch("");
+ setStatusFilter("all");
+ setTenantFilter("all");
+ setSlaBrokenOnly(false);
+ }}
+ />
+ ) : viewMode === "compact" ? (
+ <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] divide-y divide-[var(--rule-base)]">
+ {visible.map((o) => (
+ <OrderRowCompact
+ key={o.id}
+ order={o}
+ onOpen={() => setSelected(o)}
+ selected={selectedIds.has(o.id)}
+ onToggleSelect={() => toggleSelect(o.id)}
+ slaBroken={slaBrokenIds.has(o.id)}
+ onCopy={copy}
+ />
+ ))}
+ </div>
+ ) : (
+ <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+ {visible.map((o) => (
+ <OrderCard key={o.id} order={o} onOpen={() => setSelected(o)} onCopy={copy} />
+ ))}
+ </div>
+ )}
 
-      {/* Barra de acciones masivas */}
-      {selectedIds.size > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-2 rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-2xl)]">
-          <span className="px-1 text-sm font-bold text-[var(--text-primary)] tabular-nums">{selectedIds.size} seleccionado{selectedIds.size === 1 ? "" : "s"}</span>
-          <button
-            onClick={() => exportOrdersCSV(orders.filter((o) => selectedIds.has(o.id)))}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-sm font-bold text-white hover:brightness-110"
-          >
-            <Download className="h-4 w-4" /> CSV selección
-          </button>
-          <button
-            onClick={copySelectedPhones}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40"
-          >
-            <Copy className="h-4 w-4" /> Copiar teléfonos
-          </button>
-          <button
-            onClick={clearSelection}
-            aria-label="Limpiar selección"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+ {/* Barra de acciones masivas */}
+ {selectedIds.size > 0 && (
+ <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-2 rounded-2xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-2xl)]">
+ <span className="px-1 text-sm font-bold text-[var(--text-primary)] tabular-nums">{selectedIds.size} seleccionado{selectedIds.size === 1 ? "" : "s"}</span>
+ <button
+ onClick={() => exportOrdersCSV(orders.filter((o) => selectedIds.has(o.id)))}
+ className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-sm font-bold text-white hover:brightness-110"
+ >
+ <Download className="h-4 w-4" /> CSV selección
+ </button>
+ <button
+ onClick={copySelectedPhones}
+ className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40"
+ >
+ <Copy className="h-4 w-4" /> Copiar teléfonos
+ </button>
+ <button
+ onClick={clearSelection}
+ aria-label="Limpiar selección"
+ className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+ >
+ <X className="h-4 w-4" />
+ </button>
+ </div>
+ )}
 
-      {selected && (
-        <OrderDetailDrawer
-          order={selected}
-          onClose={() => setSelected(null)}
-          onCopy={copy}
-        />
-      )}
-    </AdminTabShell>
-  );
+ {selected && (
+ <OrderDetailDrawer
+ order={selected}
+ onClose={() => setSelected(null)}
+ onCopy={copy}
+ />
+ )}
+ </AdminTabShell>
+ );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 function KpiCard({
-  label,
-  value,
-  tone,
-  icon: Icon,
+ label,
+ value,
+ tone,
+ icon: Icon,
 }: {
-  label: string;
-  value: string | number;
-  tone: string;
-  icon: typeof Clock;
+ label: string;
+ value: string | number;
+ tone: string;
+ icon: typeof Clock;
 }) {
-  return (
-    <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex items-center gap-2.5">
-        <span
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl shrink-0"
-          style={{
-            background: `color-mix(in oklch, ${tone} 12%, transparent)`,
+ return (
+ <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 transition hover:-translate-y-0.5 hover:shadow-md">
+ <div className="flex items-center gap-2.5">
+ <span
+ className="inline-flex h-9 w-9 items-center justify-center rounded-xl shrink-0"
+ style={{
+ background: `color-mix(in oklch, ${tone} 12%, transparent)`,
             color: tone,
           }}
         >
@@ -796,7 +796,7 @@ function OrderCard({ order, onOpen, onCopy }: { order: OrderRow; onOpen: () => v
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
-      className="cursor-pointer text-left rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--rule-strong)] hover:shadow-[var(--shadow-md)] transition-all overflow-hidden"
+      className="cursor-pointer text-left rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--rule-strong)] hover:shadow-[var(--shadow-md)] transition-all overflow-hidden"
     >
       {/* Top: tienda + status */}
       <div className="px-4 py-3 flex items-center gap-3 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
@@ -886,7 +886,7 @@ function OrderCard({ order, onOpen, onCopy }: { order: OrderRow; onOpen: () => v
               </div>
             ))}
             {order.items.length > 3 && (
-              <div className="w-9 h-9 rounded-lg border-2 border-[var(--surface-canvas)] bg-[var(--surface-sunken)] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
+              <div className="w-9 h-9 rounded-lg border border-[var(--surface-canvas)] bg-[var(--surface-sunken)] flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
                 +{order.items.length - 3}
               </div>
             )}
@@ -947,7 +947,7 @@ function OrderRowCompact({
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
       className={cn(
         "group w-full text-left flex items-center gap-2.5 px-3 py-2.5 cursor-pointer transition-colors",
-        slaBroken ? "bg-rose-50/60 dark:bg-rose-500/10 border-l-4 border-rose-500" : "bg-[var(--surface-canvas)] hover:bg-[var(--surface-sunken)]",
+        slaBroken ? "bg-rose-50/60 dark:bg-rose-500/10 border-l-4 border-[var(--data-error-500)]" : "bg-[var(--surface-canvas)] hover:bg-[var(--surface-sunken)]",
         selected && "bg-[var(--accent)]/10",
       )}
     >
@@ -1106,7 +1106,7 @@ function OrderDetailDrawer({
                   onCopy(order.id, "Order ID");
                 }}
                 aria-label="Copiar Order ID"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-canvas)] shrink-0"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-canvas)] shrink-0"
               >
                 <Copy className="h-3 w-3" />
               </button>
@@ -1115,7 +1115,7 @@ function OrderDetailDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] shrink-0"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] shrink-0"
             aria-label="Cerrar"
           >
             <X className="w-5 h-5" />
@@ -1150,7 +1150,7 @@ function OrderDetailDrawer({
             <h3 className="text-xs uppercase tracking-wider text-[var(--text-tertiary)] font-bold mb-2">
               Cliente
             </h3>
-            <div className="rounded-2xl border-2 border-[var(--rule-base)] p-4 space-y-2">
+            <div className="rounded-2xl border border-[var(--rule-base)] p-4 space-y-2">
               <p className="text-base font-bold text-[var(--text-primary)]">
                 {order.customer.name}
               </p>
@@ -1166,7 +1166,7 @@ function OrderDetailDrawer({
                   <button
                     onClick={() => onCopy(order.customer.phone!, "Teléfono")}
                     aria-label="Copiar teléfono"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)]"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--surface-sunken)]"
                   >
                     <Copy className="h-3.5 w-3.5" />
                   </button>
@@ -1198,7 +1198,7 @@ function OrderDetailDrawer({
               {order.items.map((it) => (
                 <li
                   key={it.id}
-                  className="rounded-2xl border-2 border-[var(--rule-base)] p-3 flex items-center gap-3"
+                  className="rounded-2xl border border-[var(--rule-base)] p-3 flex items-center gap-3"
                 >
                   <div className="w-14 h-14 rounded-xl overflow-hidden bg-[var(--surface-sunken)] shrink-0 border border-[var(--rule-soft)]">
                     {it.image ? (
@@ -1232,7 +1232,7 @@ function OrderDetailDrawer({
             <h3 className="text-xs uppercase tracking-wider text-[var(--text-tertiary)] font-bold mb-2">
               Detalle
             </h3>
-            <dl className="rounded-2xl border-2 border-[var(--rule-base)] p-4 space-y-2 text-sm">
+            <dl className="rounded-2xl border border-[var(--rule-base)] p-4 space-y-2 text-sm">
               <Field label="Origen" value={order.source ?? "—"} />
               <Field label="Pago" value={order.paymentMethod ?? "—"} />
               <Field label="Repartidor" value={order.riderName ?? "Sin asignar"} />
@@ -1308,7 +1308,7 @@ function AnalyticsPanel({
           </div>
           <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Cancelación</p>
-            <p className={cn("mt-1 font-display text-xl font-extrabold tabular-nums", data.cancelRate >= 15 ? "text-rose-600 dark:text-rose-400" : "text-[var(--text-primary)]")}>{data.cancelRate}%</p>
+            <p className={cn("mt-1 font-display text-xl font-extrabold tabular-nums", data.cancelRate >= 15 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-primary)]")}>{data.cancelRate}%</p>
           </div>
         </div>
         {/* Pedidos por día */}
@@ -1355,7 +1355,7 @@ function SkeletonRows() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 h-44 animate-pulse"
+          className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 h-44 animate-pulse"
         />
       ))}
     </div>
@@ -1370,7 +1370,7 @@ function EmptyState({
   onClear: () => void;
 }) {
   return (
-    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-12 text-center">
+    <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center">
       <ShoppingBag className="w-10 h-10 mx-auto text-[var(--text-tertiary)] mb-3" />
       <p className="text-base font-bold text-[var(--text-primary)]">
         {isFiltered ? "Sin pedidos que coincidan" : "Sin pedidos"}
@@ -1383,7 +1383,7 @@ function EmptyState({
       {isFiltered && (
         <button
           onClick={onClear}
-          className="mt-4 h-10 px-4 rounded-xl text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/10"
+          className="mt-4 h-10 px-4 rounded-xl text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10"
         >
           Limpiar filtros
         </button>

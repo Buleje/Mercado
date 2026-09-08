@@ -252,7 +252,7 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
                               disabled={busy}
                               onClick={() => patchStore(store.id, { benefits: { [b.key]: !on } })}
                               title={b.desc}
-                              className={`group flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition-colors disabled:opacity-50 ${
+                              className={`group flex w-full items-center gap-2.5 rounded-xl border px-3 min-h-10 text-left transition-colors disabled:opacity-50 ${
                                 on
                                   ? "border-[var(--accent)] bg-primary/10"
                                   : "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)]/40"
@@ -281,7 +281,7 @@ export function BeneficiosTab({ stores, onRefresh }: BeneficiosTabProps) {
                                 className={`relative h-4 w-7 shrink-0 rounded-full transition-colors ${on ? "bg-[var(--accent)]" : "bg-[var(--rule-base)]"}`}
                               >
                                 <span
-                                  className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-all ${on ? "left-3.5" : "left-0.5"}`}
+                                  className={`absolute top-0.5 h-3 w-3 rounded-full bg-[var(--surface-raised)] shadow transition-all ${on ? "left-3.5" : "left-0.5"}`}
                                 />
                               </span>
                             </button>

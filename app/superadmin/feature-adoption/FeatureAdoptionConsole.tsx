@@ -63,7 +63,7 @@ export function FeatureAdoptionConsole() {
               <div key={f.key} className="flex items-center gap-3">
                 <span className="w-32 shrink-0 text-sm font-bold text-[var(--text-primary)] truncate flex items-center gap-1">{f.label}{f.growth && <Sparkles className="h-3 w-3 text-[var(--accent)] shrink-0" />}</span>
                 <div className="flex-1 h-3 rounded bg-[var(--surface-sunken)] overflow-hidden">
-                  <div className={`h-full ${f.adoptionPct < 25 ? "bg-[var(--data-error-500)]" : f.adoptionPct < 60 ? "bg-[#0d9488]" : "bg-[var(--data-success-500)]"}`} style={{ width: `${Math.max(3, f.adoptionPct)}%` }} />
+                  <div className={`h-full ${f.adoptionPct < 25 ? "bg-[var(--data-error-500)]" : f.adoptionPct < 60 ? "bg-[var(--accent)]" : "bg-[var(--data-success-500)]"}`} style={{ width: `${Math.max(3, f.adoptionPct)}%` }} />
                 </div>
                 <span className="w-20 shrink-0 text-right text-xs tabular-nums text-[var(--text-tertiary)]">{f.adoptionPct}% · {f.tenantsUsing}/{k.activeTenants}</span>
               </div>

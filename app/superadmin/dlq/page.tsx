@@ -41,7 +41,7 @@ export default async function DLQDashboardPage() {
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
               Superadmin · Operations
             </p>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.025em] text-[var(--text-primary)] leading-none inline-flex items-center gap-2 flex-wrap">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--text-primary)] leading-none inline-flex items-center gap-2 flex-wrap">
               Dead Letter Queue
               <InfoTip
                 side="bottom"
@@ -58,7 +58,7 @@ export default async function DLQDashboardPage() {
           </div>
           <Link
             href="/superadmin"
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
           >
             ← Superadmin
           </Link>
@@ -248,7 +248,7 @@ function DLQSkeleton() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-2xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 h-24"
+            className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 h-24"
           />
         ))}
       </div>
@@ -279,7 +279,7 @@ function StatCard({
         critical
           ? "border-[var(--data-error-500)] bg-[var(--data-error-50,#fef2f2)]/30"
           : warn
-            ? "border-[#0d9488] bg-[#0d9488]/30"
+            ? "border-[var(--accent)] bg-primary/30"
             : "border-[var(--rule-soft)] bg-[var(--surface-raised)]"
       }`}
     >

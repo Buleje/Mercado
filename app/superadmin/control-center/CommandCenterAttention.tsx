@@ -17,7 +17,7 @@ type Data = { items: Item[]; totalUrgent: number; generatedAt: string };
 
 const TONE: Record<string, { ring: string; num: string }> = {
   bad: { ring: "border-[var(--data-error-500)]/40 hover:border-[var(--data-error-500)]", num: "text-[var(--data-error-600,#dc2626)]" },
-  warn: { ring: "border-[#0d9488]/40 hover:border-[#0d9488]", num: "text-[#0d9488]" },
+  warn: { ring: "border-primary/40 hover:border-[#0d9488]", num: "text-[var(--accent-ink)] dark:text-[var(--accent)]" },
   good: { ring: "border-[var(--rule-soft)] hover:border-[var(--accent)]/40", num: "text-[var(--text-tertiary)]" },
 };
 
@@ -39,7 +39,7 @@ export function CommandCenterAttention() {
   if (!d) return null;
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 sm:p-5">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-2.5">
           <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${d.totalUrgent > 0 ? "bg-[var(--data-error-500)]/10 text-[var(--data-error-600,#dc2626)]" : "bg-[var(--data-success-500)]/10 text-[var(--data-success-600,#059669)]"}`}>

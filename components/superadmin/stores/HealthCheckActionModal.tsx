@@ -230,7 +230,7 @@ export default function HealthCheckActionModal({
                 }}
                 className={`relative w-full ${
                   checkId === "banner" ? "aspect-[16/7]" : "aspect-[4/3]"
-                } rounded-lg overflow-hidden border-2 transition-all ${
+                } rounded-xl overflow-hidden border-2 transition-all ${
                   isDragging
                     ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/30"
                     : "border-dashed border-[var(--rule-base)] hover:border-[var(--accent)]/50"
@@ -303,7 +303,7 @@ export default function HealthCheckActionModal({
                 onChange={(e) => setYapePhone(e.target.value.replace(/[^0-9]/g, ""))}
                 placeholder="Número Yape (9 dígitos)"
                 disabled={!yapeEnabled}
-                className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm font-bold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none disabled:opacity-60"
+                className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm font-bold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none disabled:opacity-60"
               />
             </>
           )}
@@ -315,7 +315,7 @@ export default function HealthCheckActionModal({
               value={value}
               onChange={(e) => setValue(e.target.value.replace(/[^0-9+\s-]/g, ""))}
               placeholder="Número de teléfono"
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm font-bold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+              className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm font-bold focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
             />
           )}
 
@@ -339,13 +339,13 @@ export default function HealthCheckActionModal({
               onChange={(e) => setValue(e.target.value)}
               rows={checkId === "description" ? 3 : 2}
               placeholder={`Escribir ${checkLabel.toLowerCase()}...`}
-              className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
+              className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none"
             />
           )}
 
           {/* Errores */}
           {errorMsg && (
-            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-[var(--data-error-500)]">
+            <div className="flex items-start gap-2 rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error-500)] px-3 py-2 text-xs text-[var(--data-error-500)]">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
@@ -366,7 +366,7 @@ export default function HealthCheckActionModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-bold rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-raised)]"
+            className="px-4 min-h-10 text-sm font-semibold rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-raised)]"
           >
             Cancelar
           </button>
@@ -374,7 +374,7 @@ export default function HealthCheckActionModal({
             type="button"
             onClick={save}
             disabled={status === "uploading" || status === "saving"}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-lg transition-colors ${
+            className={`inline-flex items-center gap-1.5 px-4 min-h-10 text-sm font-semibold rounded-xl transition-colors ${
               status === "saved"
                 ? "bg-[var(--data-success-500)] text-white"
                 : "bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90 disabled:opacity-50"

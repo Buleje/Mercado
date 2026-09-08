@@ -105,7 +105,7 @@ export default function CustomDateRangePicker({ active, value, onChange, onActiv
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Cerrar"
-              className="p-1 rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+              className="p-1 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
             >
               <X className="h-4 w-4" />
             </button>
@@ -117,7 +117,7 @@ export default function CustomDateRangePicker({ active, value, onChange, onActiv
               value={from}
               onChange={(e) => setFrom(e.target.value)}
               max={to || undefined}
-              className="mt-1 block w-full rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm bg-[var(--surface-canvas)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+              className="mt-1 block w-full rounded-xl border border-[var(--rule-base)] px-3 h-10 text-sm bg-[var(--surface-canvas)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
             />
           </label>
           <label className="block">
@@ -127,7 +127,7 @@ export default function CustomDateRangePicker({ active, value, onChange, onActiv
               value={to}
               onChange={(e) => setTo(e.target.value)}
               min={from || undefined}
-              className="mt-1 block w-full rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm bg-[var(--surface-canvas)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+              className="mt-1 block w-full rounded-xl border border-[var(--rule-base)] px-3 h-10 text-sm bg-[var(--surface-canvas)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
             />
           </label>
           <div className="flex justify-end gap-2 pt-1">

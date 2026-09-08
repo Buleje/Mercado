@@ -181,10 +181,10 @@ export default function ConfiguracionClient() {
     <div className="space-y-6">
       {/* Barra de acción primaria — sticky top-right; reemplaza el <header>
           inline que duplicaba kicker/título con el AdminTabShell del wrapper. */}
-      <div className="sticky top-2 z-20 flex items-center justify-between gap-3 flex-wrap rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur px-5 py-3.5">
+      <div className="sticky top-2 z-20 flex items-center justify-between gap-3 flex-wrap rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur px-5 py-3.5">
         {dirty ? (
-          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[#0d9488]">
-            <span aria-hidden className="inline-flex h-1.5 w-1.5 rounded-full bg-[#0d9488]" />
+          <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent-ink)] dark:text-[var(--accent)]">
+            <span aria-hidden className="inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
             Cambios sin guardar
           </p>
         ) : (
@@ -391,10 +391,10 @@ export default function ConfiguracionClient() {
           </Row>
 
           {/* Preview en vivo de la marca */}
-          <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 p-4">
+          <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 p-4">
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">Vista previa</p>
             <div className="flex items-center gap-4 flex-wrap">
-              <div className="relative h-14 w-14 shrink-0 rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-white">
+              <div className="relative h-14 w-14 shrink-0 rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
                 {config.brand.logoUrl ? (
                   <Image src={config.brand.logoUrl} alt="logo" fill sizes="56px" className="object-contain" unoptimized />
                 ) : (
@@ -522,7 +522,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-24 rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+    <section id={id} className="scroll-mt-24 rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
       <div className="px-5 sm:px-7 py-4 sm:py-5 border-b-2 border-[var(--rule-soft)] bg-linear-to-br from-[var(--surface-sunken)]/60 to-transparent flex items-start gap-3">
         <span className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
           {icon}
@@ -564,7 +564,7 @@ function SectionNav({ sections }: { sections: NavSection[] }) {
   const doneCount = sections.filter((s) => s.done).length;
   return (
     <nav aria-label="Secciones de configuración" className="lg:sticky lg:top-20 lg:self-start">
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
         <div className="px-3 py-2">
           <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Secciones</p>
           <p className="mt-0.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">{doneCount}/{sections.length} configuradas</p>
@@ -641,7 +641,7 @@ function TextField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           rows={3}
-          className="w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2.5 text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/15"
+          className="w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2.5 text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/15"
         />
       ) : (
         <input
@@ -650,7 +650,7 @@ function TextField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/15"
+          className="w-full h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/15"
         />
       )}
     </div>
@@ -673,7 +673,7 @@ function ColorField({
       >
         {label}
       </label>
-      <div className="flex items-center gap-2 h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 transition-colors focus-within:border-[var(--accent)] focus-within:ring-4 focus-within:ring-[var(--accent)]/15">
+      <div className="flex items-center gap-2 h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 transition-colors focus-within:border-[var(--accent)] focus-within:ring-4 focus-within:ring-[var(--accent)]/15">
         <input
           id={id}
           type="color"
@@ -724,13 +724,13 @@ function ImageField({
       >
         {label}
       </label>
-      <div className="flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+      <div className="flex items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
         {url ? (
-          <div className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-white">
+          <div className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
             <Image src={url} alt={label} fill sizes="80px" className="object-contain" unoptimized />
           </div>
         ) : (
-          <div className="h-20 w-20 shrink-0 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-tertiary)]">
+          <div className="h-20 w-20 shrink-0 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-tertiary)]">
             <Upload className="h-5 w-5" strokeWidth={1.75} />
           </div>
         )}
@@ -756,7 +756,7 @@ function ImageField({
           {url && (
             <button
               onClick={onClear}
-              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full border-2 border-[var(--rule-base)] text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-600)] transition-colors"
+              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full border border-[var(--rule-base)] text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-600)] transition-colors"
             >
               <X className="h-3 w-3" strokeWidth={2.5} /> Quitar
             </button>

@@ -435,7 +435,7 @@ export default function SuperadminMarcaPage() {
                   onChange={(e) => setSectionSearch(e.target.value)}
                   placeholder="Filtrar secciones…"
                   aria-label="Filtrar secciones"
-                  className="w-full h-9 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-8 pr-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+                  className="w-full h-9 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] pl-8 pr-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
                 />
               </div>
               <div className="space-y-1">
@@ -657,7 +657,7 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
     <input
       {...props}
       className={cn(
-        "w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none",
+        "w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none",
         props.className,
       )}
     />
@@ -669,7 +669,7 @@ function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
     <textarea
       {...props}
       className={cn(
-        "w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none min-h-[80px]",
+        "w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none min-h-[80px]",
         props.className,
       )}
     />
@@ -933,7 +933,7 @@ function TypographySection({
           <select
             value={brand.typography.fontFamily}
             onChange={(e) => onPatch({ fontFamily: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold focus:border-[var(--accent)] outline-none"
+            className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold focus:border-[var(--accent)] outline-none"
           >
             {FONT_OPTIONS.map((f) => (
               <option key={f} value={f}>
@@ -946,7 +946,7 @@ function TypographySection({
           <select
             value={brand.typography.fontDisplay}
             onChange={(e) => onPatch({ fontDisplay: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold focus:border-[var(--accent)] outline-none"
+            className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-bold focus:border-[var(--accent)] outline-none"
           >
             {DISPLAY_OPTIONS.map((f) => (
               <option key={f} value={f}>

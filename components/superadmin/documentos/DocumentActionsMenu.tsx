@@ -88,7 +88,7 @@ export default function DocumentActionsMenu({
         aria-label="Más acciones"
         title="Más acciones"
         className={cn(
-          "rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-[var(--surface-sunken)] disabled:opacity-50",
+          "rounded-xl text-[var(--text-tertiary)] hover:text-primary hover:bg-[var(--surface-sunken)] disabled:opacity-50",
           iconBtn,
         )}
       >
@@ -107,7 +107,7 @@ export default function DocumentActionsMenu({
           />
           <div
             role="menu"
-            className="absolute right-0 z-50 mt-1 w-52 overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)] py-1"
+            className="absolute right-0 z-50 mt-1 w-52 overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)] py-1"
           >
             {items.map(({ key, label, Icon, onClick, danger }) => (
               <button
@@ -116,7 +116,7 @@ export default function DocumentActionsMenu({
                 role="menuitem"
                 onClick={onClick}
                 className={cn(
-                  "flex w-full items-center gap-2 px-3 py-2 text-sm font-semibold transition-colors",
+                  "flex w-full items-center gap-2 px-3 min-h-10 text-sm font-semibold transition-colors",
                   danger
                     ? "text-[var(--data-error-500)] hover:bg-[var(--data-error-50)]"
                     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-primary",

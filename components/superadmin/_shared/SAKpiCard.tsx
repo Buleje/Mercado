@@ -11,7 +11,7 @@ export type SAKpiTone = "default" | "good" | "warn" | "bad";
 
 const TONE: Record<SAKpiTone, string> = {
   good: "text-[var(--data-success-600,#059669)]",
-  warn: "text-[#0d9488]",
+  warn: "text-[var(--accent-ink)] dark:text-[var(--accent)]",
   bad: "text-[var(--data-error-600,#dc2626)]",
   default: "text-[var(--text-primary)]",
 };

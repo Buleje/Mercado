@@ -28,8 +28,8 @@ const SA_STAT_TONES: Record<SAStatTone, { bg: string; text: string; border: stri
     border: "border-teal-500/30",
   },
   violet: {
-    bg: "bg-violet-500/10 dark:bg-violet-500/15",
-    text: "text-violet-700 dark:text-violet-300",
+    bg: "bg-primary/10 bg-primary/10",
+    text: "text-[var(--accent-ink)] dark:text-[var(--accent)]",
     border: "border-violet-500/30",
   },
   amber: {
@@ -44,8 +44,8 @@ const SA_STAT_TONES: Record<SAStatTone, { bg: string; text: string; border: stri
   },
   rose: {
     bg: "bg-rose-500/10 dark:bg-rose-500/15",
-    text: "text-rose-700 dark:text-rose-300",
-    border: "border-rose-500/30",
+    text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
+    border: "border-[var(--data-error-500)]",
   },
   emerald: {
     bg: "bg-emerald-500/10 dark:bg-emerald-500/15",
@@ -54,7 +54,7 @@ const SA_STAT_TONES: Record<SAStatTone, { bg: string; text: string; border: stri
   },
   slate: {
     bg: "bg-slate-500/10 dark:bg-slate-500/15",
-    text: "text-slate-700 dark:text-slate-300",
+    text: "text-[var(--text-primary)] ",
     border: "border-slate-500/30",
   },
 };

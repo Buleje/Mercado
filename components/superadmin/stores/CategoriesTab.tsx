@@ -443,7 +443,7 @@ export function CategoriesTab() {
           <button
             type="button"
             onClick={() => load()}
-            className="shrink-0 inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+            className="shrink-0 inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
           >
             <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.25} />
             Refrescar
@@ -471,7 +471,7 @@ export function CategoriesTab() {
 
       {/* ── Error banner ───────────────────────────────────────── */}
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -538,7 +538,7 @@ export function CategoriesTab() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar categoría, subcategoría o slug…"
-              className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+              className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] h-10 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
             />
           </div>
           <button
@@ -574,7 +574,7 @@ export function CategoriesTab() {
 
       {/* ── Empty search ─────────────────────────────────────── */}
       {items && filteredItems.length === 0 && search && (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-12 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-12 text-center">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
             <Search className="h-5 w-5 text-[var(--text-tertiary)]" aria-hidden />
           </div>
@@ -838,7 +838,7 @@ function CategoryRow({
                     value={cat.label}
                     onChange={(e) => onPatch({ label: e.target.value })}
                     placeholder={cat.defaultLabel}
-                    className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] h-12 px-3.5 text-base font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                    className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] h-12 px-3.5 text-base font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
                   />
                 </FieldLabel>
                 <FieldLabel
@@ -853,14 +853,14 @@ function CategoryRow({
                     placeholder={cat.defaultDescription}
                     rows={2}
                     maxLength={120}
-                    className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 resize-none"
+                    className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 resize-none"
                   />
                 </FieldLabel>
                 <FieldLabel
                   text="URL (slug)"
                   hint="No editable — se conserva al renombrar"
                 >
-                  <div className="inline-flex items-center w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60 h-11 px-3.5 text-sm font-mono text-[var(--text-tertiary)]">
+                  <div className="inline-flex items-center w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60 h-11 px-3.5 text-sm font-mono text-[var(--text-tertiary)]">
                     <LinkIcon className="h-3.5 w-3.5 mr-2 shrink-0" strokeWidth={2.25} />
                     /tiendas?categoria=
                     <span className="text-[var(--text-primary)] font-bold ml-0.5">
@@ -872,7 +872,7 @@ function CategoryRow({
                   <button
                     type="button"
                     onClick={() => onPatch({ active: !cat.active })}
-                    className={`inline-flex h-11 items-center gap-1.5 rounded-xl border-2 px-4 text-sm font-bold transition ${
+                    className={`inline-flex h-11 items-center gap-1.5 rounded-xl border px-4 text-sm font-semibold transition ${
                       isHidden
                         ? "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300"
                         : "border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)]/40"
@@ -895,7 +895,7 @@ function CategoryRow({
               </div>
             </div>
             {status === "error" && errorMsg && (
-              <div className="mt-3 flex items-start gap-2 rounded-xl border border-rose-300/60 bg-rose-50/40 px-3 py-2 text-xs font-bold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
+              <div className="mt-3 flex items-start gap-2 rounded-xl border border-[var(--data-error-500)] bg-rose-50/40 px-3 py-2 text-xs font-bold text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                 <span>{errorMsg}</span>
               </div>
@@ -1338,7 +1338,7 @@ function SubCategoryCard({
             value={sub.label}
             onChange={(e) => onPatch({ label: e.target.value })}
             placeholder="Ej: Pizzería, Frutas, Pintura…"
-            className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] h-12 px-3.5 text-base font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+            className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] h-12 px-3.5 text-base font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
           />
         </FieldLabel>
 
@@ -1349,12 +1349,12 @@ function SubCategoryCard({
             placeholder="Frase corta que verá el cliente…"
             rows={2}
             maxLength={80}
-            className="w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 resize-none"
+            className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 resize-none"
           />
         </FieldLabel>
 
         <FieldLabel text="URL (slug)" hint="Se genera del título">
-          <div className="inline-flex items-center w-full rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60 h-10 px-3 text-xs font-mono">
+          <div className="inline-flex items-center w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]/60 h-10 px-3 text-xs font-mono">
             <LinkIcon
               className="h-3 w-3 mr-1.5 shrink-0 text-[var(--text-tertiary)]"
               strokeWidth={2.25}
@@ -1538,7 +1538,7 @@ function PrimaryStoreLinker({
                       onChange={(e) => onZoneDraftChange(s.slug, e.target.value)}
                       placeholder="Zona…"
                       aria-label={`Zona manual para ${s.name}`}
-                      className="w-[110px] rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-semibold outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                      className="w-[110px] rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-semibold outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
                     />
                   )}
                 </div>

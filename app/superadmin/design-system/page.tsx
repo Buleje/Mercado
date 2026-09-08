@@ -258,7 +258,7 @@ export default function DesignSystemPage() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-40 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] animate-pulse"
+              className="h-40 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] animate-pulse"
             />
           ))}
         </div>
@@ -352,7 +352,7 @@ export default function DesignSystemPage() {
               <button
                 type="button"
                 onClick={startNew}
-                className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/25 transition hover:brightness-110 active:scale-[0.99]"
+                className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 min-h-10 text-sm font-extrabold uppercase tracking-wider text-white shadow-md shadow-[var(--accent)]/25 transition hover:brightness-110 active:scale-[0.99]"
               >
                 <Plus className="h-4 w-4" strokeWidth={2.5} />
                 Crear preset
@@ -499,11 +499,11 @@ function PresetCard({
 
   return (
     <article
-      className={`relative rounded-2xl overflow-hidden bg-white dark:bg-[var(--surface-raised)] transition-all ${
-        isActive
-          ? "border-2 border-[var(--accent)] shadow-lg shadow-[var(--accent)]/15"
-          : "border-2 border-[var(--rule-base)] hover:border-[var(--rule-strong)] hover:shadow-md"
-      }`}
+      className={`relative rounded-2xl overflow-hidden bg-[var(--surface-raised)] transition-all ${
+ isActive
+ ? "border-2 border-[var(--accent)] shadow-lg shadow-[var(--accent)]/15"
+ : "border border-[var(--rule-base)] hover:border-[var(--rule-strong)] hover:shadow-md"
+ }`}
     >
       {isActive && (
         <span className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-[var(--accent)] text-white text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider shadow-md">
@@ -603,7 +603,7 @@ function PresetCard({
           <button
             type="button"
             onClick={onEdit}
-            className="inline-flex items-center justify-center gap-1.5 h-11 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 h-11 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             title="Abrir en editor"
           >
             <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} /> Editar
@@ -650,14 +650,14 @@ function GalleryView({
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar preset por nombre…"
           aria-label="Buscar preset"
-          className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-9 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+          className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-10 pr-9 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
         />
         {q && (
           <button
             type="button"
             onClick={() => setQ("")}
             aria-label="Limpiar"
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-xl p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -756,7 +756,7 @@ function LibraryView({
 }) {
   if (savedPresets.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-12 text-center">
+      <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] p-12 text-center">
         <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)] mb-4">
           <Sparkles className="h-6 w-6" strokeWidth={1.75} aria-hidden />
         </div>
@@ -794,7 +794,7 @@ function LibraryView({
               <button
                 type="button"
                 onClick={() => onDuplicate(preset)}
-                className="inline-flex items-center justify-center h-11 w-11 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                className="inline-flex items-center justify-center h-11 w-11 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
                 title="Duplicar"
                 aria-label="Duplicar"
               >
@@ -909,7 +909,7 @@ function EditorView({
     <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,400px)_minmax(0,1fr)] gap-6">
       {/* Controles */}
       <div className="space-y-4">
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] p-2 sticky top-4 z-10">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 sticky top-4 z-10">
           <nav className="flex flex-wrap gap-1">
             {tabs.map(({ key, label, icon: Icon }) => (
               <button
@@ -929,7 +929,7 @@ function EditorView({
           </nav>
         </div>
 
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] p-5 space-y-5">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-5">
           {/* Header de la sección activa con InfoTip (qué hace · a dónde afecta · ejemplo) */}
           <div className="flex items-center gap-2 pb-3 -mt-0.5 border-b border-[var(--rule-soft)]">
             <activeTab.icon className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.25} />
@@ -953,7 +953,7 @@ function EditorView({
         </div>
 
         {/* Acciones — sticky bottom */}
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] p-4 space-y-3 sticky bottom-4 shadow-lg">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-3 sticky bottom-4 shadow-lg">
           <button
             type="button"
             onClick={onApply}
@@ -979,7 +979,7 @@ function EditorView({
             <button
               type="button"
               onClick={onReset}
-              className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] text-xs font-extrabold uppercase tracking-wider hover:bg-[var(--surface-sunken)] transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] text-xs font-extrabold uppercase tracking-wider hover:bg-[var(--surface-sunken)] transition-colors"
             >
               <RotateCcw className="h-3.5 w-3.5" strokeWidth={2.5} /> Reset
             </button>
@@ -1043,7 +1043,7 @@ function MetaPanel({
           value={tokens.meta.description}
           onChange={(e) => setField("meta", "description", e.target.value)}
           rows={3}
-          className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 py-2.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors"
+          className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors"
           placeholder="Para qué tipo de negocio funciona mejor…"
         />
       </div>
@@ -1255,7 +1255,7 @@ function ShadowsPanel({ tokens, setField }: { tokens: DesignTokens; setField: Se
             mono
           />
           <div
-            className="mt-2 h-12 rounded-xl bg-white dark:bg-[var(--surface-raised)] border-2 border-[var(--rule-base)]"
+            className="mt-2 h-12 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)]"
             style={{ boxShadow: tokens.shadows[k] }}
           />
         </div>
@@ -1388,9 +1388,9 @@ function FieldText({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors disabled:opacity-50 ${
-          mono ? "font-mono text-xs" : ""
-        }`}
+        className={`w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors disabled:opacity-50 ${
+ mono ? "font-mono text-xs" : ""
+ }`}
       />
       {hint && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{hint}</p>}
     </div>
@@ -1409,7 +1409,7 @@ function FieldColor({
   return (
     <div className="flex items-center gap-3">
       <span
-        className="h-10 w-10 rounded-xl border-2 border-[var(--rule-base)] shrink-0"
+        className="h-10 w-10 rounded-xl border border-[var(--rule-base)] shrink-0"
         style={{ background: value }}
         aria-hidden
       />
@@ -1421,7 +1421,7 @@ function FieldColor({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full h-8 rounded-md border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-2 text-xs font-mono text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+          className="w-full h-8 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-mono text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
           placeholder="oklch(...) / #hex / rgb(...)"
         />
       </div>
@@ -1513,7 +1513,7 @@ function FieldNumber({
           const n = parseInt(e.target.value, 10);
           if (Number.isFinite(n)) onChange(n);
         }}
-        className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+        className="w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
       />
     </div>
   );
@@ -1542,7 +1542,7 @@ function FieldSelect({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors"
+        className="w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none transition-colors"
       >
         {allOptions.map((o) => (
           <option key={o.value} value={o.value}>
@@ -1570,7 +1570,7 @@ function FieldToggle({
       <button
         type="button"
         onClick={() => onChange(!value)}
-        className="w-full inline-flex items-center justify-between gap-3 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] px-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+        className="w-full inline-flex items-center justify-between gap-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
       >
         <span>{label}</span>
         <span
@@ -1578,7 +1578,7 @@ function FieldToggle({
             value ? "bg-[var(--accent)] justify-end" : "bg-[var(--rule-strong)] justify-start"
           }`}
         >
-          <span className="h-5 w-5 rounded-full bg-white shadow-sm" />
+          <span className="h-5 w-5 rounded-full bg-[var(--surface-raised)] shadow-sm" />
         </span>
       </button>
       {hint && <p className="mt-1 text-xs text-[var(--text-tertiary)]">{hint}</p>}
@@ -1605,7 +1605,7 @@ function PreviewPane({ tokens }: { tokens: DesignTokens }) {
             Así se va a ver el admin del negocio con este preset.
           </p>
         </div>
-        <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] p-0.5">
+        <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
           {(["desktop", "mobile"] as const).map((d) => (
             <button
               key={d}
@@ -1622,7 +1622,7 @@ function PreviewPane({ tokens }: { tokens: DesignTokens }) {
       </div>
 
       <div
-        className={`mx-auto rounded-2xl border-2 border-[var(--rule-base)] overflow-hidden shadow-xl transition-all ${
+        className={`mx-auto rounded-2xl border border-[var(--rule-base)] overflow-hidden shadow-xl transition-all ${
           device === "mobile" ? "max-w-[380px]" : "w-full"
         }`}
         style={{

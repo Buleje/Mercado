@@ -104,7 +104,7 @@ const STATUS_META: Record<
   fail: {
     label: "No cumple",
     icon: XCircle,
-    cls: "border-rose-300/60 bg-rose-50 text-rose-700 dark:border-rose-700/40 dark:bg-rose-500/15 dark:text-rose-300",
+    cls: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
     dot: "bg-rose-500",
   },
   na: {
@@ -118,7 +118,7 @@ const STATUS_META: Record<
 const SEVERITY_META: Record<Severity, { label: string; cls: string }> = {
   high: {
     label: "Alta",
-    cls: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+    cls: "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] dark:bg-rose-500/15 dark:text-[var(--data-error-500)]",
   },
   medium: {
     label: "Media",
@@ -301,9 +301,9 @@ export function ComplianceTab() {
     return (
       <div
         role="alert"
-        className="rounded-2xl border-2 border-rose-300 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/30 p-5"
+        className="rounded-2xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-rose-500/10 dark:border-[var(--data-error-500)] p-5"
       >
-        <p className="flex items-center gap-2 text-sm font-bold text-rose-700 dark:text-rose-300">
+        <p className="flex items-center gap-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           No se pudo cargar el checklist ({error ?? "unknown"})
         </p>
@@ -345,7 +345,7 @@ export function ComplianceTab() {
               </strong>{" "}
               de <strong>{overall.total}</strong> controles cumplen.{" "}
               {overall.highSeverityFails > 0 ? (
-                <span className="text-rose-700 dark:text-rose-300 font-bold">
+                <span className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)] font-bold">
                   {overall.highSeverityFails} de severidad alta requieren acción
                 </span>
               ) : (
@@ -456,7 +456,7 @@ export function ComplianceTab() {
                 onClick={() => setFilter(f)}
                 aria-pressed={isActive}
                 className={cn(
-                  "inline-flex h-10 items-center gap-1.5 rounded-lg px-3.5 text-sm font-bold transition",
+                  "inline-flex h-10 items-center gap-1.5 rounded-xl px-3.5 text-sm font-semibold transition",
                   isActive
                     ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                     : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
@@ -490,12 +490,12 @@ export function ComplianceTab() {
               onChange={(e) => setSearchRaw(e.target.value)}
               placeholder="Buscar control o referencia…"
               aria-label="Buscar control"
-              className="w-full sm:w-64 h-11 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+              className="w-full sm:w-64 h-11 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
             />
           </div>
           <button
             onClick={() => exportComplianceCSV(data)}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition"
           >
             <Download className="h-4 w-4" aria-hidden />
             CSV
@@ -858,7 +858,7 @@ function ExportDialog({
                 value={tenantSlug}
                 onChange={(e) => setTenantSlug(e.target.value)}
                 placeholder="ej: bodega-rosita"
-                className="w-full h-11 px-3 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)]"
+                className="w-full h-11 px-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)]"
               />
             </label>
             <label className="block">
@@ -869,13 +869,13 @@ function ExportDialog({
                 value={dni}
                 onChange={(e) => setDni(e.target.value)}
                 placeholder="ej: 12345678"
-                className="w-full h-11 px-3 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)]"
+                className="w-full h-11 px-3 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] text-sm outline-none focus:border-[var(--accent)]"
               />
             </label>
             {error && (
               <p
                 role="alert"
-                className="flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-300"
+                className="flex items-center gap-1.5 text-xs font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
               >
                 <AlertTriangle className="h-3 w-3 shrink-0" />
                 {error}
@@ -884,7 +884,7 @@ function ExportDialog({
           </div>
           <div className="flex justify-end gap-2 border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
             <Dialog.Close asChild>
-              <button className="h-11 px-4 rounded-xl text-sm font-bold border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--rule-base)]">
+              <button className="h-11 px-4 rounded-xl text-sm font-semibold border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--rule-base)]">
                 Cancelar
               </button>
             </Dialog.Close>

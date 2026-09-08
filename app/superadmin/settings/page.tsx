@@ -530,7 +530,7 @@ function JumpNav() {
   return (
     <nav
       aria-label="Ir a sección"
-      className="sticky top-2 z-20 -mx-1 overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-2 py-1.5 backdrop-blur"
+      className="sticky top-2 z-20 -mx-1 overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-2 py-1.5 backdrop-blur"
     >
       <ul className="flex min-w-full items-center gap-1">
         {JUMP_SECTIONS.map((s) => {
@@ -581,7 +581,7 @@ function PlanPriceCard({
     violet: {
       border: "border-violet-300/40 dark:border-violet-700/40",
       badge:
-        "bg-violet-100 dark:bg-violet-950/40 text-[var(--accent)] dark:text-[var(--accent)]",
+        "bg-primary/10 bg-primary/10 text-[var(--accent)] dark:text-[var(--accent)]",
       ring: "focus-within:ring-violet-400/40",
     },
     indigo: {
@@ -758,9 +758,9 @@ function ToggleCard({
             aria-label={title}
           >
             <span
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${
-                active ? "translate-x-5" : "translate-x-0"
-              }`}
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-[var(--surface-raised)] shadow ring-0 transition-transform ${
+ active ? "translate-x-5" : "translate-x-0"
+ }`}
             />
           </button>
         </div>

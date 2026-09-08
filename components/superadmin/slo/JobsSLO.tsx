@@ -78,7 +78,7 @@ export function JobsSLO() {
             <span className="tabular-nums">{o.budgetConsumedPct}%</span>
           </div>
           <div className="h-2.5 rounded bg-[var(--surface-sunken)] overflow-hidden">
-            <div className={`h-full ${o.budgetConsumedPct >= 100 ? "bg-[var(--data-error-500)]" : o.budgetConsumedPct >= 75 ? "bg-[#0d9488]" : "bg-[var(--data-success-500)]"}`} style={{ width: `${Math.min(100, o.budgetConsumedPct)}%` }} />
+            <div className={`h-full ${o.budgetConsumedPct >= 100 ? "bg-[var(--data-error-500)]" : o.budgetConsumedPct >= 75 ? "bg-[var(--accent)]" : "bg-[var(--data-success-500)]"}`} style={{ width: `${Math.min(100, o.budgetConsumedPct)}%` }} />
           </div>
         </div>
 
@@ -88,13 +88,13 @@ export function JobsSLO() {
           <div className="border border-[var(--rule-soft)] divide-y divide-[var(--rule-soft)] max-h-[420px] overflow-y-auto">
             {d.jobs.map((j) => (
               <div key={j.jobName} className="flex items-center gap-3 px-3 py-2.5">
-                {j.failures > 0 ? <AlertTriangle className="h-4 w-4 text-[var(--data-error-600,#dc2626)] shrink-0" /> : j.stale ? <Clock className="h-4 w-4 text-[#0d9488] shrink-0" /> : <CheckCircle2 className="h-4 w-4 text-[var(--data-success-600,#059669)] shrink-0" />}
+                {j.failures > 0 ? <AlertTriangle className="h-4 w-4 text-[var(--data-error-600,#dc2626)] shrink-0" /> : j.stale ? <Clock className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0" /> : <CheckCircle2 className="h-4 w-4 text-[var(--data-success-600,#059669)] shrink-0" />}
                 <div className="min-w-0 flex-1">
                   <p className="font-mono text-xs font-bold text-[var(--text-primary)] truncate">{j.jobName}</p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{j.runs} corridas · última {ago(j.lastRun)}{j.stale && <span className="text-[#0d9488] font-bold"> · stale</span>}</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{j.runs} corridas · última {ago(j.lastRun)}{j.stale && <span className="text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold"> · stale</span>}</p>
                 </div>
                 <span className="hidden sm:block w-24 text-right text-xs tabular-nums text-[var(--text-secondary)]">p95 {ms(j.p95Ms)}</span>
-                <span className={`w-16 text-right text-sm font-extrabold tabular-nums shrink-0 ${j.successRate >= 99 ? "text-[var(--data-success-600,#059669)]" : j.successRate >= 90 ? "text-[#0d9488]" : "text-[var(--data-error-600,#dc2626)]"}`}>{j.successRate}%</span>
+                <span className={`w-16 text-right text-sm font-extrabold tabular-nums shrink-0 ${j.successRate >= 99 ? "text-[var(--data-success-600,#059669)]" : j.successRate >= 90 ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--data-error-600,#dc2626)]"}`}>{j.successRate}%</span>
               </div>
             ))}
           </div>

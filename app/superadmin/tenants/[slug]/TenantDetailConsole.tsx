@@ -38,7 +38,7 @@ const timeAgo = (iso: string) => {
 };
 const RISK: Record<string, { label: string; cls: string }> = {
   low: { label: "Saludable", cls: "text-[var(--data-success-600,#059669)] bg-[var(--data-success-500)]/10" },
-  medium: { label: "Atención", cls: "text-[#0d9488] bg-[#0d9488]/10" },
+  medium: { label: "Atención", cls: "text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10" },
   high: { label: "En riesgo", cls: "text-[var(--data-error-600,#dc2626)] bg-[var(--data-error-500)]/10" },
   critical: { label: "Crítico", cls: "text-white bg-[var(--data-error-600,#dc2626)]" },
 };
@@ -111,7 +111,7 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
   }, [d]);
 
   if (loading && !d) return <div className="h-96 animate-pulse rounded-2xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]" />;
-  if (notFound) return <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-10 text-center"><p className="text-sm font-bold text-[var(--text-primary)]">Negocio no encontrado: <span className="font-mono">{slug}</span></p></div>;
+  if (notFound) return <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-10 text-center"><p className="text-sm font-bold text-[var(--text-primary)]">Negocio no encontrado: <span className="font-mono">{slug}</span></p></div>;
   if (!d) return null;
 
   const t = d.tenant;
@@ -138,10 +138,10 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
             {t.address && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{t.address}</p>}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <button type="button" onClick={() => void impersonate()} disabled={busy} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 text-sm font-bold text-white hover:brightness-110 disabled:opacity-50"><LogIn className="h-4 w-4" /> Impersonar</button>
-            <Link href={`/superadmin/chat?tenant=${encodeURIComponent(t.slug)}&msg=${encodeURIComponent(msg)}`} className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40"><MessageSquare className="h-4 w-4" /> Contactar</Link>
-            <Link href={`/marketplace/${encodeURIComponent(t.slug)}`} target="_blank" className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40"><ExternalLink className="h-4 w-4" /> Ver tienda</Link>
-            <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>
+            <button type="button" onClick={() => void impersonate()} disabled={busy} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50"><LogIn className="h-4 w-4" /> Impersonar</button>
+            <Link href={`/superadmin/chat?tenant=${encodeURIComponent(t.slug)}&msg=${encodeURIComponent(msg)}`} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40"><MessageSquare className="h-4 w-4" /> Contactar</Link>
+            <Link href={`/marketplace/${encodeURIComponent(t.slug)}`} target="_blank" className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40"><ExternalLink className="h-4 w-4" /> Ver tienda</Link>
+            <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>
           </div>
         </div>
       </section>
@@ -151,7 +151,7 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
         <Card title={`Salud & engagement · medido ${timeAgo(h.calculatedAt)}`}>
           <div className="flex items-start gap-5 flex-wrap">
             <div className="text-center shrink-0">
-              <p className={`font-display text-5xl font-extrabold tabular-nums ${h.score >= 70 ? "text-[var(--data-success-600,#059669)]" : h.score >= 40 ? "text-[#0d9488]" : "text-[var(--data-error-600,#dc2626)]"}`}>{h.score}</p>
+              <p className={`font-display text-5xl font-extrabold tabular-nums ${h.score >= 70 ? "text-[var(--data-success-600,#059669)]" : h.score >= 40 ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--data-error-600,#dc2626)]"}`}>{h.score}</p>
               <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">health /100</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 flex-1 min-w-[260px]">
@@ -178,7 +178,7 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
       <Card title="Co-piloto IA" action={ai && <button type="button" onClick={() => void askCopilot()} disabled={aiLoading} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent)] hover:underline disabled:opacity-50">{aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Regenerar</button>}>
         {!ai ? (
           <div className="flex items-center gap-3 flex-wrap">
-            <button type="button" onClick={() => void askCopilot()} disabled={aiLoading} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-110 disabled:opacity-50">
+            <button type="button" onClick={() => void askCopilot()} disabled={aiLoading} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50">
               {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {aiLoading ? "Analizando el negocio…" : "Pedir análisis IA"}
             </button>
             <span className="text-xs text-[var(--text-tertiary)]">La IA resume la situación, sugiere una acción y redacta el mensaje para el dueño.</span>
@@ -190,7 +190,7 @@ export function TenantDetailConsole({ slug }: { slug: string }) {
               <p className="text-sm text-[var(--text-secondary)]">{ai.summary}</p>
             </div>
             <div>
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[#0d9488] mb-0.5">Acción recomendada</p>
+              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent-ink)] dark:text-[var(--accent)] mb-0.5">Acción recomendada</p>
               <div className="text-sm text-[var(--text-secondary)]">{ai.action}</div>
             </div>
             <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">

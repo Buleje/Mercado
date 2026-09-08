@@ -24,7 +24,7 @@ export function DeleteConfirmModal({ name, slug, onConfirm, onCancel, loading }:
           </div>
           <div>
             <h3 className="text-lg font-bold text-[var(--text-primary)]">Eliminar tienda</h3>
-            <p className="text-sm text-gray-500">Esta acción no se puede deshacer</p>
+            <p className="text-sm text-[var(--text-secondary)]">Esta acción no se puede deshacer</p>
           </div>
         </div>
 
@@ -49,20 +49,20 @@ export function DeleteConfirmModal({ name, slug, onConfirm, onCancel, loading }:
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
             placeholder={slug}
-            className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-error-500)]/40 font-mono"
+            className="w-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl px-4 h-11 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-error-500)]/40 font-mono"
             autoFocus
           />
         </div>
 
         <div className="flex gap-3">
-          <button type="button" onClick={onCancel} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
+          <button type="button" onClick={onCancel} className="flex-1 min-h-11 rounded-xl text-sm font-semibold border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
             Cancelar
           </button>
           <button
             type="button"
             onClick={onConfirm}
             disabled={!confirmed || loading}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
             Eliminar permanentemente

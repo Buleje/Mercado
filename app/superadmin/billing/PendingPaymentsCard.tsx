@@ -45,7 +45,7 @@ export function PendingPaymentsCard() {
   const oldest = proofs.length ? Math.max(...proofs.map((p) => Math.floor((Date.now() - new Date(p.createdAt).getTime()) / 86_400_000))) : 0;
 
   return (
-    <section className="mb-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 sm:p-5">
+    <section className="mb-5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3 mb-3">
         <h3 className="inline-flex items-center gap-2 text-base font-extrabold text-[var(--text-primary)]">
           <Wallet className="h-4 w-4 text-[var(--accent)]" /> Pagos manuales pendientes

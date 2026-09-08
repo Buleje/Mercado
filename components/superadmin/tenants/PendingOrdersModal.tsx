@@ -229,7 +229,7 @@ export function PendingOrdersModal({
           )}
 
           {data && data.orders.length === 0 && (
-            <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
+            <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
                 <ShoppingBag className="h-5 w-5" />
               </div>
@@ -245,13 +245,13 @@ export function PendingOrdersModal({
           {data && data.orders.length > 0 && (
             <ul className="space-y-3">
               {data.orders.map((o) => {
-                const tone = STATUS_TONE[o.status] ?? { bg: "bg-gray-100", fg: "text-gray-700" };
+                const tone = STATUS_TONE[o.status] ?? { bg: "bg-[var(--rule-soft)]", fg: "text-[var(--text-primary)]" };
                 const isExpanded = expandedOrder === o.id;
                 const isOld = o.minutesWaiting > 30;
                 return (
                   <li
                     key={o.id}
-                    className={`rounded-2xl border-2 ${
+                    className={`rounded-2xl border ${
                       isOld
                         ? "border-[var(--brand-danger,#ef4444)]/40 bg-[var(--brand-danger,#ef4444)]/5"
                         : "border-[var(--rule-base)] bg-[var(--surface-raised)]"

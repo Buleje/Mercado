@@ -278,7 +278,7 @@ export default function SuperAdminMessenger() {
           </div>
         </div>
         <div className="px-3 py-2.5 border-b border-[var(--rule-base)]">
-          <div className="flex items-center gap-2 h-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 focus-within:border-[var(--accent)]">
+          <div className="flex items-center gap-2 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 focus-within:border-[var(--accent)]">
             <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
             <input
               value={search}
@@ -387,7 +387,7 @@ export default function SuperAdminMessenger() {
                   onChange={(e) =>
                     patchConversation({ priority: e.target.value as PlatformPriority })
                   }
-                  className="h-8 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)]"
+                  className="h-8 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)]"
                 >
                   <option value="high">Prioridad alta</option>
                   <option value="medium">Prioridad media</option>
@@ -398,7 +398,7 @@ export default function SuperAdminMessenger() {
                   onChange={(e) =>
                     patchConversation({ status: e.target.value as PlatformConvStatus })
                   }
-                  className="h-8 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)]"
+                  className="h-8 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)]"
                 >
                   <option value="open">Abierta</option>
                   <option value="closed">Cerrada</option>
@@ -475,7 +475,7 @@ export default function SuperAdminMessenger() {
                             setText(resolveTemplate(t.body));
                             setShowTemplates(false);
                           }}
-                          className="block w-full text-left rounded-lg px-3 py-2 text-sm hover:bg-[var(--surface-sunken)]"
+                          className="block w-full text-left rounded-xl px-3 py-2 text-sm hover:bg-[var(--surface-sunken)]"
                         >
                           <span className="font-bold text-[var(--text-primary)]">{t.label}</span>
                           <span className="block truncate text-xs text-[var(--text-tertiary)]">
@@ -503,31 +503,31 @@ export default function SuperAdminMessenger() {
                     <div className="absolute bottom-full left-0 mb-1 w-52 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-lg p-1 z-20">
                       <button
                         onClick={() => runAi("draft")}
-                        className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
+                        className="block w-full text-left rounded-xl px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
                       >
                         ✨ Redactar respuesta
                       </button>
                       <button
                         onClick={() => runAi("summary")}
-                        className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
+                        className="block w-full text-left rounded-xl px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
                       >
                         📋 Resumir hilo
                       </button>
                       <button
                         onClick={() => runAi("tone", "formal")}
-                        className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
+                        className="block w-full text-left rounded-xl px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
                       >
                         Tono: formal
                       </button>
                       <button
                         onClick={() => runAi("tone", "cercano")}
-                        className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
+                        className="block w-full text-left rounded-xl px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
                       >
                         Tono: cercano
                       </button>
                       <button
                         onClick={() => runAi("tone", "breve")}
-                        className="block w-full text-left rounded-lg px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
+                        className="block w-full text-left rounded-xl px-3 py-2 text-sm font-medium hover:bg-[var(--surface-sunken)]"
                       >
                         Tono: breve
                       </button>

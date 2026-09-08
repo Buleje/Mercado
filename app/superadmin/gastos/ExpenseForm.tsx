@@ -115,7 +115,7 @@ export function ExpenseForm({
         <button
           type="submit"
           disabled={busy}
-          className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] text-sm font-extrabold text-[var(--accent-contrast,#fff)] disabled:opacity-50"
+          className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] text-sm font-semibold text-[var(--accent-contrast,#fff)] disabled:opacity-50"
         >
           {editing ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           {busy ? "Guardando…" : editing ? "Guardar cambios" : "Agregar gasto"}
@@ -124,7 +124,7 @@ export function ExpenseForm({
           <button
             type="button"
             onClick={onCancel}
-            className="inline-flex h-12 items-center justify-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           >
             <X className="h-4 w-4" /> Cancelar
           </button>

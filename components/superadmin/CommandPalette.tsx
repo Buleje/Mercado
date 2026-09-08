@@ -301,7 +301,7 @@ export default function CommandPalette({
       <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl w-full max-w-2xl shadow-[var(--shadow-xl)] overflow-hidden">
         {/* Input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--rule-base)]">
-          <Search className="w-5 h-5 text-gray-400 shrink-0" />
+          <Search className="w-5 h-5 text-[var(--text-tertiary)] shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -309,9 +309,9 @@ export default function CommandPalette({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleInputKeyDown}
             placeholder="Buscar página o acción... (Ctrl+K)"
-            className="flex-1 bg-transparent outline-none text-sm text-[var(--text-primary)] placeholder-gray-400"
+            className="flex-1 bg-transparent outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
           />
-          <kbd className="text-[length:var(--ts-2xs)] font-mono bg-[var(--surface-sunken)] text-gray-500 px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
+          <kbd className="text-[length:var(--ts-2xs)] font-mono bg-[var(--surface-sunken)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
             Esc
           </kbd>
         </div>
@@ -350,7 +350,7 @@ export default function CommandPalette({
                       <Icon className="w-4 h-4 shrink-0" />
                       <span className="text-sm font-medium flex-1">{cmd.label}</span>
                       {isSelected && (
-                        <kbd className="text-[length:var(--ts-2xs)] font-mono bg-[var(--surface-raised)] text-gray-500 px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
+                        <kbd className="text-[length:var(--ts-2xs)] font-mono bg-[var(--surface-raised)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded border border-[var(--rule-base)]">
                           ↵
                         </kbd>
                       )}

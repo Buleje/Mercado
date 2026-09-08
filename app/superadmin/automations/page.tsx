@@ -66,7 +66,7 @@ export default function AutomationsPage() {
       description="Reglas que detectan tiendas y disparan un aviso. Activá, mirá a cuántas afecta y ejecutá."
       icon={Webhook}
       actions={
-        <button onClick={() => void load()} disabled={loading} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
+        <button onClick={() => void load()} disabled={loading} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]/40 disabled:opacity-50">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Actualizar
         </button>
       }
@@ -97,7 +97,7 @@ export default function AutomationsPage() {
                   aria-pressed={r.enabled}
                   className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${r.enabled ? "bg-[var(--accent)]" : "bg-[var(--surface-sunken)] border border-[var(--rule-base)]"}`}
                 >
-                  <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${r.enabled ? "translate-x-6" : "translate-x-1"}`} />
+                  <span className={`inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transition-transform ${r.enabled ? "translate-x-6" : "translate-x-1"}`} />
                 </button>
               </div>
 
@@ -108,7 +108,7 @@ export default function AutomationsPage() {
                     onClick={() => setExpanded((cur) => (cur === r.key ? null : r.key))}
                     disabled={r.matchCount === 0}
                     title={r.matchCount > 0 ? "Ver qué tiendas matchean (dry-run)" : "Ninguna tienda matchea"}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-colors ${r.matchCount > 0 ? "bg-teal-500/15 text-[#0d9488] hover:bg-teal-500/25" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-default"}`}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-colors ${r.matchCount > 0 ? "bg-teal-500/15 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-teal-500/25" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-default"}`}
                   >
                     <Zap className="h-3 w-3" /> {r.matchCount} {r.matchCount === 1 ? "tienda" : "tiendas"}
                     {r.matchCount > 0 && (expanded === r.key ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />)}

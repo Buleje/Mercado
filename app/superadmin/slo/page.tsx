@@ -168,7 +168,7 @@ function SloCard({
 }) {
   const colors = {
     ok: "border-[var(--data-success-500)] text-[var(--data-success-500)]",
-    warning: "border-[#0d9488] text-[#0d9488]",
+    warning: "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]",
     error: "border-[var(--data-error-500)] text-[var(--data-error-500)]",
   };
   const bg = {
@@ -206,10 +206,10 @@ function DeployBadge({ state }: { state: string }) {
   const cfg = {
     READY: { label: "Exitoso", cls: "bg-[var(--data-success-100)] text-[var(--data-success-500)]" },
     ERROR: { label: "Fallido", cls: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" },
-    BUILDING: { label: "En proceso", cls: "bg-[#0d9488] text-[#0d9488]" },
-    CANCELED: { label: "Cancelado", cls: "bg-gray-100 text-gray-500" },
+    BUILDING: { label: "En proceso", cls: "bg-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]" },
+    CANCELED: { label: "Cancelado", cls: "bg-[var(--rule-soft)] text-[var(--text-secondary)]" },
   } as Record<string, { label: string; cls: string }>;
-  const { label, cls } = cfg[state] ?? { label: state, cls: "bg-gray-100 text-gray-500" };
+  const { label, cls } = cfg[state] ?? { label: state, cls: "bg-[var(--rule-soft)] text-[var(--text-secondary)]" };
   return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${cls}`}>{label}</span>;
 }
 
@@ -313,10 +313,10 @@ export default function SLODashboardPage() {
         {/* Banner honesto: qué fuentes faltan conectar. Sin esto NO se muestra
           ningún dato inventado — cada sección dice "no configurado". */}
         {unconfigured.length > 0 && (
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-[color-mix(in_oklch,#0d9488_8%,transparent)] border border-[#0d9488]">
-            <AlertTriangle className="w-5 h-5 text-[#0d9488] shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-[color-mix(in_oklch,#0d9488_8%,transparent)] border border-[var(--accent)]">
+            <AlertTriangle className="w-5 h-5 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0 mt-0.5" />
             <div className="text-sm">
-              <p className="font-semibold text-[#0d9488]">
+              <p className="font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]">
                 {unconfigured.length} fuente{unconfigured.length > 1 ? "s" : ""} sin conectar
               </p>
               <p className="text-[var(--text-secondary)] mt-0.5">
@@ -437,7 +437,7 @@ export default function SLODashboardPage() {
         {/* Sentry error rate */}
         <div className="bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-xl p-6">
           <h3 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2 mb-4">
-            <AlertTriangle className="w-5 h-5 text-[#0d9488]" />
+            <AlertTriangle className="w-5 h-5 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
             Sentry — Error rate últimas 24h
             <SourceBadge status={sources.sentry} />
           </h3>
@@ -451,7 +451,7 @@ export default function SLODashboardPage() {
                   <div className="flex items-center gap-2">
                     <div className="w-32 h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all ${e.count === 0 ? "bg-[var(--data-success-500)]" : e.count < 10 ? "bg-[#0d9488]" : "bg-[var(--data-error-500)]"}`}
+                        className={`h-full rounded-full transition-all ${e.count === 0 ? "bg-[var(--data-success-500)]" : e.count < 10 ? "bg-[var(--accent)]" : "bg-[var(--data-error-500)]"}`}
                         style={{ width: `${Math.min(100, (e.count / 50) * 100)}%` }}
                       />
                     </div>
@@ -545,7 +545,7 @@ export default function SLODashboardPage() {
                   </span>
                   <div className="w-16 text-right">
                     <span
-                      className={`text-xs font-bold ${cron.successRate24h >= 0.9 ? "text-[var(--data-success-500)]" : cron.successRate24h >= 0.7 ? "text-[#0d9488]" : "text-[var(--data-error-500)]"}`}
+                      className={`text-xs font-bold ${cron.successRate24h >= 0.9 ? "text-[var(--data-success-500)]" : cron.successRate24h >= 0.7 ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--data-error-500)]"}`}
                     >
                       {Math.round(cron.successRate24h * 100)}%
                     </span>

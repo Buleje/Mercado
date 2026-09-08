@@ -104,7 +104,7 @@ export function BroadcastModal({ onClose, onSent }: { onClose: () => void; onSen
         <div className="px-5 py-4 space-y-4">
           <label className="block">
             <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Plantilla</span>
-            <select value={templateId} onChange={(e) => pickTemplate(e.target.value)} className="w-full h-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-medium text-[var(--text-primary)]">
+            <select value={templateId} onChange={(e) => pickTemplate(e.target.value)} className="w-full h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-medium text-[var(--text-primary)]">
               <option value="">Sin plantilla (escribir libre)</option>
               {BROADCAST_TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
             </select>
@@ -112,13 +112,13 @@ export function BroadcastModal({ onClose, onSent }: { onClose: () => void; onSen
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Estado</span>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full h-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-medium text-[var(--text-primary)]">
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-medium text-[var(--text-primary)]">
                 {STATUS_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
               </select>
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Plan</span>
-              <select value={plan} onChange={(e) => setPlan(e.target.value)} className="w-full h-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-medium text-[var(--text-primary)]">
+              <select value={plan} onChange={(e) => setPlan(e.target.value)} className="w-full h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-medium text-[var(--text-primary)]">
                 {PLAN_OPTIONS.map((p) => <option key={p} value={p}>{p === "" ? "Todos los planes" : p}</option>)}
               </select>
             </label>
@@ -152,7 +152,7 @@ export function BroadcastModal({ onClose, onSent }: { onClose: () => void; onSen
               onChange={(e) => { setBody(e.target.value); setTemplateId(""); }}
               rows={4}
               placeholder="Mensaje del anuncio. Usa {{tienda}}, {{plan}} o {{dias_trial}} para personalizar…"
-              className="w-full resize-none rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </div>
 
@@ -167,8 +167,8 @@ export function BroadcastModal({ onClose, onSent }: { onClose: () => void; onSen
           {err && <p className="text-sm font-semibold text-[var(--data-error-600)]">{err}</p>}
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-4">
-          <button onClick={onClose} className="rounded-xl px-4 h-10 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button onClick={handleSend} disabled={sending || !body.trim() || !count} className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 h-10 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40">
+          <button onClick={onClose} className="rounded-xl px-4 h-10 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button onClick={handleSend} disabled={sending || !body.trim() || !count} className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 h-10 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40">
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             Enviar a {count ?? 0}
           </button>
