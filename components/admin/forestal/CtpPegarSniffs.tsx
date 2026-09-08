@@ -16,9 +16,12 @@
  * consumido, margen bajo el tope del 56 %— y las diferencias se dicen. Nada se
  * corrige solo: una captura de otro lote tiene que saltar a la vista, no
  * entrar callada.
+ *
+ * Con `detalleInicial` (la captura ya pegada en el paso 1 del lote, ADR-398)
+ * arranca directo en la revisión: un pegado, un click.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { AlertTriangle, Check, ClipboardPaste, Loader2, ScanText, X } from "@buleje/design-system/icons";
 import { TIPOS_PRODUCTO_SALIDA } from "@/lib/forestal/loctp-catalogos";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -31,7 +34,7 @@ import {
   type DetalleProduccionSniffs,
   type ProductoSniffs,
 } from "@/lib/forestal/sniffs-produccion-parse";
-import { leerTextoDeImagen, liberarOcr, type ProgresoOcr } from "@/lib/ocr/ocr-navegador";
+import { useLecturaPegada, type FuenteLectura, type LecturaPegada } from "./hooks/use-lectura-pegada";
 import { Btn } from "./ctp-shared";
 import { TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
 
@@ -40,11 +43,101 @@ const CAMPO =
 
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
 
-const fmtDia = (iso: string | null) => {
+export const fmtDiaSniffs = (iso: string | null) => {
   if (!iso) return null;
   const [a, m, d] = iso.split("-");
   return `${d}/${m}/${a}`;
 };
+
+/**
+ * La zona para pegar, en sus dos estados: esperando y leyendo. La comparten las
+ * tres puertas de «Traer del SNIFFS»; lo que cambia es el texto que explica qué
+ * pegar.
+ */
+export function ZonaPegarSniffs({
+  lectura,
+  titulo = "Traer del SNIFFS",
+  texto,
+  compacto = false,
+}: {
+  lectura: LecturaPegada;
+  titulo?: string;
+  texto: React.ReactNode;
+  compacto?: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [arrastrando, setArrastrando] = useState(false);
+
+  if (lectura.leyendo) {
+    const pct = Math.round((lectura.progreso?.progreso ?? 0) * 100);
+    return (
+      <div className="mb-3 flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
+        {lectura.miniatura && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={lectura.miniatura} alt="" className="h-12 w-20 shrink-0 rounded-lg object-cover object-left-top" />
+        )}
+        <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[var(--accent)]" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-[var(--text-primary)]">
+            {lectura.progreso?.etapa ?? "Leyendo"}… <span className="font-mono tabular-nums text-[var(--text-tertiary)]">{pct} %</span>
+          </p>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--surface-raised)]" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+            <div className="h-full rounded-full bg-[var(--accent)] transition-[width]" style={{ width: `${pct}%` }} />
+          </div>
+          <p className="mt-1 text-xs text-[var(--text-tertiary)]">Se lee en tu navegador: la captura no se sube a ningún lado.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-3">
+      <div
+        onDragOver={(e) => { e.preventDefault(); setArrastrando(true); }}
+        onDragLeave={() => setArrastrando(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setArrastrando(false);
+          const archivo = Array.from(e.dataTransfer.files).find((f) => f.type.startsWith("image/"));
+          if (archivo) void lectura.procesarImagen(archivo);
+        }}
+        className={`flex flex-wrap items-center gap-3 rounded-xl border-2 border-dashed px-3 ${compacto ? "py-1.5" : "py-2.5"} transition-colors ${
+          arrastrando ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)] bg-[var(--surface-sunken)]"
+        }`}
+      >
+        <ScanText className="h-5 w-5 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
+        <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
+          <b className="text-[var(--text-primary)]">{titulo}</b> · {texto}
+        </p>
+        <Btn variant="secondary" onClick={() => inputRef.current?.click()}>
+          <ClipboardPaste className="h-4 w-4" /> Elegir imagen
+        </Btn>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => {
+            const archivo = e.target.files?.[0];
+            e.target.value = "";
+            if (archivo) void lectura.procesarImagen(archivo);
+          }}
+        />
+      </div>
+      {lectura.error && (
+        <p className="mt-2 flex items-start gap-2 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <span>{lectura.error}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** El atajo de teclado, dibujado como tecla. */
+export const Tecla = ({ children }: { children: React.ReactNode }) => (
+  <kbd className="rounded border border-[var(--rule-base)] px-1 font-mono text-xs">{children}</kbd>
+);
 
 interface FilaRevisar {
   id: string;
@@ -55,10 +148,14 @@ interface FilaRevisar {
   leida: ProductoSniffs;
 }
 
-type Fase =
-  | { tipo: "idle" }
-  | { tipo: "leyendo"; progreso: ProgresoOcr }
-  | { tipo: "revisar"; detalle: DetalleProduccionSniffs; fuente: "captura" | "texto" };
+const filasDe = (d: DetalleProduccionSniffs): FilaRevisar[] =>
+  d.productos.map((p, i) => ({
+    id: `${i}-${p.productoCrudo}`,
+    incluir: true,
+    productType: p.productType,
+    volumenM3: String(p.volumenM3),
+    leida: p,
+  }));
 
 export default function CtpPegarSniffs({
   material,
@@ -67,6 +164,7 @@ export default function CtpPegarSniffs({
   onAgregar,
   onUsarFecha,
   compacto = false,
+  detalleInicial = null,
 }: {
   /** Contra qué se coteja lo leído. */
   material: { especie: string; volumenM3: number };
@@ -79,101 +177,30 @@ export default function CtpPegarSniffs({
   onUsarFecha?: (iso: string) => void;
   /** Con paquetes ya cargados, la zona ocupa un renglón. */
   compacto?: boolean;
+  /** Lo que ya se pegó en el paso anterior: arranca en la revisión (ADR-398). */
+  detalleInicial?: DetalleProduccionSniffs | null;
 }) {
-  const [fase, setFase] = useState<Fase>({ tipo: "idle" });
-  const [filas, setFilas] = useState<FilaRevisar[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [miniatura, setMiniatura] = useState<string | null>(null);
-  const [arrastrando, setArrastrando] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const leyendo = fase.tipo === "leyendo";
-
-  /* La miniatura es un object URL: se suelta al reemplazarla y al desmontar. */
-  useEffect(() => () => { if (miniatura) URL.revokeObjectURL(miniatura); }, [miniatura]);
-  /* El worker del OCR pesa ~50 MB: se suelta con el modal. */
-  useEffect(() => () => { void liberarOcr(); }, []);
-
-  const procesarTexto = useCallback(
-    (texto: string, fuente: "captura" | "texto") => {
-      const detalle = interpretarDetalleProduccionSniffs(texto, { consumidoM3: material.volumenM3 });
-      if (detalle.productos.length === 0) {
-        setError(
-          fuente === "captura"
-            ? "Leí la captura pero no encontré la tabla «Resumen de Producción por PMF y Producto». Probá con una captura donde se vea entera, o copiá el texto de la tabla y pegalo acá."
-            : (detalle.avisos[0] ?? "No encontré filas de producto en lo que pegaste."),
-        );
-        setFase({ tipo: "idle" });
-        return;
-      }
-      setError(null);
-      setFilas(
-        detalle.productos.map((p, i) => ({
-          id: `${i}-${p.productoCrudo}`,
-          incluir: true,
-          productType: p.productType,
-          volumenM3: String(p.volumenM3),
-          leida: p,
-        })),
-      );
-      setFase({ tipo: "revisar", detalle, fuente });
-    },
-    [material.volumenM3],
+  const [revisar, setRevisar] = useState<{ detalle: DetalleProduccionSniffs; fuente: FuenteLectura } | null>(() =>
+    detalleInicial && detalleInicial.productos.length > 0 ? { detalle: detalleInicial, fuente: "captura" } : null,
   );
+  const [filas, setFilas] = useState<FilaRevisar[]>(() => (detalleInicial ? filasDe(detalleInicial) : []));
 
-  const procesarImagen = useCallback(
-    async (archivo: Blob) => {
-      setError(null);
-      setMiniatura(URL.createObjectURL(archivo));
-      setFase({ tipo: "leyendo", progreso: { etapa: "Preparando la imagen", progreso: 0 } });
-      try {
-        const { texto } = await leerTextoDeImagen(archivo, (progreso) => setFase({ tipo: "leyendo", progreso }));
-        procesarTexto(texto, "captura");
-      } catch (e) {
-        setError(
-          `No pude leer la captura (${e instanceof Error ? e.message : String(e)}). ` +
-            "Copiá el texto de la tabla en el SNIFFS (seleccionarla y Ctrl+C) y pegalo acá.",
-        );
-        setFase({ tipo: "idle" });
-      }
+  const lectura = useLecturaPegada<DetalleProduccionSniffs>({
+    interpretar: (texto) => interpretarDetalleProduccionSniffs(texto, { consumidoM3: material.volumenM3 }),
+    validar: (d, fuente) =>
+      d.productos.length === 0
+        ? fuente === "captura"
+          ? "Leí la captura pero no encontré la tabla «Resumen de Producción por PMF y Producto». Probá con una captura donde se vea entera, o copiá el texto de la tabla y pegalo acá."
+          : (d.avisos[0] ?? "No encontré filas de producto en lo que pegaste.")
+        : null,
+    parece: pareceDetalleSniffs,
+    onLeido: (d, fuente) => {
+      setFilas(filasDe(d));
+      setRevisar({ detalle: d, fuente });
     },
-    [procesarTexto],
-  );
+  });
 
-  /**
-   * Ctrl+V en cualquier parte del modal.
-   *
-   * Una imagen se lee siempre: ningún campo del formulario la puede recibir.
-   * Un texto sólo si parece esta pantalla y, con el foco en un campo, sólo si
-   * además es una tabla (tabs o varias líneas) — pegar «Tornillo» en una
-   * observación no tiene que disparar una importación.
-   */
-  useEffect(() => {
-    const alPegar = (e: ClipboardEvent) => {
-      if (leyendo) return;
-      const dt = e.clipboardData;
-      if (!dt) return;
-      const imagen = Array.from(dt.items)
-        .find((it) => it.kind === "file" && it.type.startsWith("image/"))
-        ?.getAsFile();
-      if (imagen) {
-        e.preventDefault();
-        void procesarImagen(imagen);
-        return;
-      }
-      const texto = dt.getData("text/plain");
-      if (!texto || !pareceDetalleSniffs(texto)) return;
-      const t = e.target as HTMLElement | null;
-      const enCampo =
-        t != null && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable);
-      if (enCampo && !/[\t\n]/.test(texto.trim())) return;
-      e.preventDefault();
-      procesarTexto(texto, "texto");
-    };
-    document.addEventListener("paste", alPegar);
-    return () => document.removeEventListener("paste", alPegar);
-  }, [leyendo, procesarImagen, procesarTexto]);
-
-  const detalle = fase.tipo === "revisar" ? fase.detalle : null;
+  const detalle = revisar?.detalle ?? null;
   const incluidas = useMemo(() => filas.filter((f) => f.incluir), [filas]);
   const suma = useMemo(() => r4(incluidas.reduce((a, f) => a + (Number(f.volumenM3) || 0), 0)), [incluidas]);
   const sinProducto = incluidas.filter((f) => !f.productType).length;
@@ -210,10 +237,9 @@ export default function CtpPegarSniffs({
   }, [detalle, material.especie, material.volumenM3, suma, margenM3]);
 
   function descartar() {
-    setFase({ tipo: "idle" });
+    setRevisar(null);
     setFilas([]);
-    setError(null);
-    setMiniatura(null);
+    lectura.limpiar();
   }
 
   function confirmar() {
@@ -229,35 +255,12 @@ export default function CtpPegarSniffs({
   const editarFila = (id: string, cambio: Partial<FilaRevisar>) =>
     setFilas((prev) => prev.map((f) => (f.id === id ? { ...f, ...cambio } : f)));
 
-  // ── Leyendo ──
-  if (fase.tipo === "leyendo") {
-    const pct = Math.round(fase.progreso.progreso * 100);
-    return (
-      <div className="mb-3 flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
-        {miniatura && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={miniatura} alt="" className="h-12 w-20 shrink-0 rounded-lg object-cover object-left-top" />
-        )}
-        <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[var(--accent)]" aria-hidden />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[var(--text-primary)]">
-            {fase.progreso.etapa}… <span className="font-mono tabular-nums text-[var(--text-tertiary)]">{pct} %</span>
-          </p>
-          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--surface-raised)]" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-            <div className="h-full rounded-full bg-[var(--accent)] transition-[width]" style={{ width: `${pct}%` }} />
-          </div>
-          <p className="mt-1 text-xs text-[var(--text-tertiary)]">Se lee en tu navegador: la captura no se sube a ningún lado.</p>
-        </div>
-      </div>
-    );
-  }
-
   // ── Revisar ──
-  if (fase.tipo === "revisar" && detalle) {
+  if (revisar && detalle && !lectura.leyendo) {
     const puedeAgregar = incluidas.length > 0 && sinProducto === 0 && sinVolumen === 0;
     const cabecera = [
       detalle.lote ? `lote ${detalle.lote}` : null,
-      detalle.fechaInicio ? `${fmtDia(detalle.fechaInicio)}${detalle.fechaFin ? ` → ${fmtDia(detalle.fechaFin)}` : ""}` : null,
+      detalle.fechaInicio ? `${fmtDiaSniffs(detalle.fechaInicio)}${detalle.fechaFin ? ` → ${fmtDiaSniffs(detalle.fechaFin)}` : ""}` : null,
       detalle.especieCientifica || detalle.especieComun
         ? [detalle.especieCientifica, detalle.especieComun].filter(Boolean).join(" · ")
         : null,
@@ -268,7 +271,7 @@ export default function CtpPegarSniffs({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-t-xl bg-primary/10 px-3 py-2 text-sm">
           <ScanText className="h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
           <b className="text-[var(--text-primary)]">
-            {fase.fuente === "captura" ? "Leído de la captura" : "Leído del texto pegado"}
+            {revisar.fuente === "captura" ? "Leído de la captura" : "Leído del texto pegado"}
           </b>
           {cabecera.length > 0 && (
             <span className="min-w-0 flex-1 truncate font-mono text-xs tabular-nums text-[var(--text-secondary)]">
@@ -281,7 +284,7 @@ export default function CtpPegarSniffs({
               onClick={() => onUsarFecha(detalle.fechaInicio as string)}
               className="shrink-0 text-xs font-bold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]"
             >
-              usar {fmtDia(detalle.fechaInicio)} como fecha de producción
+              usar {fmtDiaSniffs(detalle.fechaInicio)} como fecha de producción
             </button>
           )}
         </div>
@@ -305,10 +308,10 @@ export default function CtpPegarSniffs({
         )}
 
         <div className="flex gap-3 p-3">
-          {miniatura && (
+          {lectura.miniatura && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={miniatura}
+              src={lectura.miniatura}
               alt="La captura que se leyó"
               className="hidden h-24 w-36 shrink-0 rounded-lg border border-[var(--rule-base)] object-cover object-left-top sm:block"
             />
@@ -416,49 +419,16 @@ export default function CtpPegarSniffs({
     );
   }
 
-  // ── Idle: la zona para pegar ──
   return (
-    <div className="mb-3">
-      <div
-        onDragOver={(e) => { e.preventDefault(); setArrastrando(true); }}
-        onDragLeave={() => setArrastrando(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setArrastrando(false);
-          const archivo = Array.from(e.dataTransfer.files).find((f) => f.type.startsWith("image/"));
-          if (archivo) void procesarImagen(archivo);
-        }}
-        className={`flex flex-wrap items-center gap-3 rounded-xl border-2 border-dashed px-3 ${compacto ? "py-1.5" : "py-2.5"} transition-colors ${
-          arrastrando ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)] bg-[var(--surface-sunken)]"
-        }`}
-      >
-        <ScanText className="h-5 w-5 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
-        <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
-          <b className="text-[var(--text-primary)]">Traer del SNIFFS</b> · pegá la captura del «Detalle de la programación
-          de producción» (<kbd className="rounded border border-[var(--rule-base)] px-1 font-mono text-xs">Ctrl+V</kbd>) o el
-          texto copiado de su tabla{compacto ? "" : ". Los productos y sus m³ entran solos, para revisar antes de agregar"}.
-        </p>
-        <Btn variant="secondary" onClick={() => inputRef.current?.click()}>
-          <ClipboardPaste className="h-4 w-4" /> Elegir imagen
-        </Btn>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={(e) => {
-            const archivo = e.target.files?.[0];
-            e.target.value = "";
-            if (archivo) void procesarImagen(archivo);
-          }}
-        />
-      </div>
-      {error && (
-        <p className="mt-2 flex items-start gap-2 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          <span>{error}</span>
-        </p>
-      )}
-    </div>
+    <ZonaPegarSniffs
+      lectura={lectura}
+      compacto={compacto}
+      texto={
+        <>
+          pegá la captura del «Detalle de la programación de producción» (<Tecla>Ctrl+V</Tecla>) o el texto copiado de
+          su tabla{compacto ? "" : ". Los productos y sus m³ entran solos, para revisar antes de agregar"}.
+        </>
+      }
+    />
   );
 }

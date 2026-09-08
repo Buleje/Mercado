@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   interpretarDetalleProduccionSniffs,
+  interpretarListaProgramacionesSniffs,
   mismaEspecie,
   normalizarProductoLoctp,
   paquetesDesdeSniffs,
   pareceDetalleSniffs,
+  pareceListaProgramaciones,
+  sniffsRefDesdeDetalle,
 } from "@/lib/forestal/sniffs-produccion-parse";
 
 /**
@@ -204,5 +207,87 @@ describe("paquetesDesdeSniffs", () => {
       observations: "Traído del SNIFFS · lote 18-2026",
     });
     expect(paquetes[1].presentacion).toBe("PAQUETES");
+  });
+});
+
+/**
+ * La LISTA de programaciones (ADR-398): la pantalla anterior al detalle, una
+ * fila por lote programado. Es la que se importa de golpe.
+ */
+const LISTA_OCR = `Programacion de produccion
+N° de Lote Fecha Inicio Fecha Fin Especie Volumen consumido Estado
+18-2026 01/08/2026 01/10/2026 Cedrelinga cateniformis - TORNILLO 27.522 Finalizado por fecha limite
+17-2026 04/07/2026 31/08/2026 Cedrelinga cateniformis - TORNILLO 40.115 Finalizado por fecha limite
+16-2026 12/06/2026 12/08/2026 Dipteryx micrantha - SHIHUAHUACO 15.300 En proceso`;
+
+const LISTA_TSV = [
+  "N° de Lote\tFecha Inicio\tFecha Fin\tEspecie\tVolumen consumido\tEstado",
+  "18-2026\t01/08/2026\t01/10/2026\tCedrelinga cateniformis - TORNILLO\t27.522\tFinalizado por fecha límite",
+  "17-2026\t04/07/2026\t31/08/2026\tCedrelinga cateniformis - TORNILLO\t40.115\tEn proceso",
+].join("\n");
+
+describe("interpretarListaProgramacionesSniffs", () => {
+  it("saca una fila por programación, con lote, fechas, especie, volumen y estado", () => {
+    const { filas } = interpretarListaProgramacionesSniffs(LISTA_OCR);
+    expect(filas.map((f) => [f.lote, f.fechaInicio, f.fechaFin, f.especieComun, f.volumenConsumidoM3])).toEqual([
+      ["18-2026", "2026-08-01", "2026-10-01", "TORNILLO", 27.522],
+      ["17-2026", "2026-07-04", "2026-08-31", "TORNILLO", 40.115],
+      ["16-2026", "2026-06-12", "2026-08-12", "SHIHUAHUACO", 15.3],
+    ]);
+    expect(filas[0].estado).toMatch(/Finalizado/i);
+    expect(filas[2].estado).toMatch(/En proceso/i);
+    expect(filas[0].especieCientifica).toBe("Cedrelinga cateniformis");
+  });
+
+  it("no toma el encabezado ni el título como programación", () => {
+    expect(interpretarListaProgramacionesSniffs(LISTA_OCR).filas).toHaveLength(3);
+  });
+
+  it("lee igual el texto copiado con tabs y con acento en el estado", () => {
+    const { filas } = interpretarListaProgramacionesSniffs(LISTA_TSV);
+    expect(filas).toHaveLength(2);
+    expect(filas[1]).toMatchObject({ lote: "17-2026", volumenConsumidoM3: 40.115, especieComun: "TORNILLO" });
+  });
+
+  it("avisa de lo que falta en vez de inventarlo", () => {
+    const r = interpretarListaProgramacionesSniffs("01/08/2026 01/10/2026 Cedrelinga cateniformis - TORNILLO");
+    expect(r.filas[0].lote).toBeNull();
+    expect(r.filas[0].volumenConsumidoM3).toBeNull();
+    expect(r.avisos.some((a) => a.includes("sin N° de lote"))).toBe(true);
+    expect(r.avisos.some((a) => a.includes("sin volumen consumido"))).toBe(true);
+  });
+
+  it("no confunde la fecha con el volumen ni con el N° de lote", () => {
+    const { filas } = interpretarListaProgramacionesSniffs(LISTA_OCR);
+    expect(filas.every((f) => f.volumenConsumidoM3! < 1000)).toBe(true);
+    expect(filas.map((f) => f.lote)).not.toContain("01/08/2026");
+  });
+
+  it("un texto sin filas de fecha no es una lista", () => {
+    expect(pareceListaProgramaciones("hola")).toBe(false);
+    expect(pareceListaProgramaciones(LISTA_OCR)).toBe(true);
+    expect(pareceListaProgramaciones("una sola fila 01/08/2026 TORNILLO")).toBe(false);
+  });
+});
+
+describe("sniffsRefDesdeDetalle", () => {
+  it("guarda sólo la foto para cotejar: sin avisos ni marcas de lectura", () => {
+    const d = interpretarDetalleProduccionSniffs(OCR_2X, { consumidoM3: 27.522 });
+    const ref = sniffsRefDesdeDetalle(d, "captura", new Date("2026-09-08T12:00:00.000Z"));
+    expect(ref).toMatchObject({
+      lote: "18-2026",
+      fechaInicio: "2026-08-01",
+      especieComun: "TORNILLO",
+      fuente: "captura",
+      leidoEn: "2026-09-08T12:00:00.000Z",
+    });
+    expect(ref.productos).toHaveLength(3);
+    expect(ref.productos[1]).toEqual({
+      productType: "MADERA ASERRADA (PAQUETERIA CORTA)",
+      productoCrudo: "MADERA ASERRADA (PAQUETERIA CORTA)",
+      volumenM3: 9.753,
+      pctAprovechado: 35.44,
+    });
+    expect(ref).not.toHaveProperty("avisos");
   });
 });

@@ -17,6 +17,7 @@
 import { PT_POR_M3 } from "./cubicacion";
 import { juzgarRendimientoConsumo } from "./loctp-consumos-analisis";
 import { corridasAMedioDeclarar, type CorridaAMedioDeclarar } from "./produccion-paquetes";
+import type { SniffsRefLote } from "./sniffs-produccion-parse";
 
 export type EstadoLoteAserrio = "abierto" | "consumido" | "cerrado";
 
@@ -160,6 +161,83 @@ export interface LoteAserrio {
   piezas: number;
   volumenM3: number;
   trozas: TrozaDelLote[];
+  /** Lo que el SNIFFS declaró de este lote, si se armó desde su pantalla (ADR-398). */
+  sniffs?: SniffsRefLote | null;
+}
+
+/** Cómo cuadra el lote con lo que el SNIFFS declaró de él (ADR-398). */
+export interface CuadreSniffs {
+  /** El N° de lote en el SNIFFS. */
+  lote: string | null;
+  /**
+   * `pendiente` = el SNIFFS declaró producción y el libro todavía no;
+   * `cuadra` = lo que el SNIFFS afirma coincide con el libro (a 1 litro);
+   * `difiere` = algo no coincide, y `delta*` dice cuánto.
+   */
+  estado: "cuadra" | "difiere" | "pendiente";
+  consumidoSniffsM3: number | null;
+  consumidoLoteM3: number;
+  producidoSniffsM3: number;
+  producidoLoteM3: number;
+  /** SNIFFS − libro. `null` si el SNIFFS no trajo el consumido. */
+  deltaConsumidoM3: number | null;
+  /**
+   * SNIFFS − libro. **`null` cuando la referencia no trae productos** — la
+   * LISTA de programaciones (ADR-398) no los lleva, y tomar su ausencia como
+   * «declaró 0 m³» marcaría en rojo todo lote ya producido. Lo que el
+   * documento no dice no se compara.
+   */
+  deltaProducidoM3: number | null;
+  productosSniffs: number;
+}
+
+/**
+ * Un litro: el SNIFFS imprime tres decimales y el libro guarda cuatro. Una
+ * tolerancia más fina que la del documento de origen sólo fabrica rojos falsos.
+ */
+export const TOLERANCIA_CUADRE_SNIFFS_M3 = 0.001;
+
+export function cuadreSniffs(
+  lote: Pick<LoteAserrio, "sniffs" | "volumenM3" | "produccion" | "corridas">,
+): CuadreSniffs | null {
+  const s = lote.sniffs;
+  if (!s) return null;
+  const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
+  const corridas = (lote.corridas && lote.corridas.length > 0 ? lote.corridas : lote.produccion ? [lote.produccion] : []).filter(
+    (c) => c.viva && (c.unit ?? "m3") === "m3",
+  );
+  const producidoLoteM3 = r4(corridas.reduce((a, c) => a + (Number(c.quantity) || 0), 0));
+  const productos = s.productos ?? [];
+  const producidoSniffsM3 = r4(productos.reduce((a, p) => a + (Number(p.volumenM3) || 0), 0));
+  const consumidoLoteM3 = r4(Number(lote.volumenM3) || 0);
+  const deltaConsumidoM3 = s.volumenConsumidoM3 != null ? r4(s.volumenConsumidoM3 - consumidoLoteM3) : null;
+  const deltaProducidoM3 = productos.length > 0 ? r4(producidoSniffsM3 - producidoLoteM3) : null;
+  const TOL = TOLERANCIA_CUADRE_SNIFFS_M3;
+  const consumidoCuadra = deltaConsumidoM3 == null || Math.abs(deltaConsumidoM3) <= TOL;
+  const estado: CuadreSniffs["estado"] =
+    deltaProducidoM3 == null
+      ? /* Sin productos que comparar, lo único que el documento afirma es el
+           consumido. Un lote traído de la lista y todavía sin producir NO está
+           «pendiente» contra el SNIFFS: allá tampoco se declaró nada. */
+        consumidoCuadra
+        ? "cuadra"
+        : "difiere"
+      : producidoLoteM3 === 0
+        ? "pendiente"
+        : Math.abs(deltaProducidoM3) <= TOL && consumidoCuadra
+          ? "cuadra"
+          : "difiere";
+  return {
+    lote: s.lote,
+    estado,
+    consumidoSniffsM3: s.volumenConsumidoM3,
+    consumidoLoteM3,
+    producidoSniffsM3,
+    producidoLoteM3,
+    deltaConsumidoM3,
+    deltaProducidoM3,
+    productosSniffs: (s.productos ?? []).length,
+  };
 }
 
 export const ESTADO_LOTE: Record<

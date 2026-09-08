@@ -33,6 +33,8 @@ import { PRODUCTOS_CONSUMIBLES_LOTE, disponiblePorEspecie, disponiblePorPermiso 
 import { TIPOS_PRODUCTO_SALIDA } from "@/lib/forestal/loctp-catalogos";
 import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import CtpPegarSniffsLote from "./CtpPegarSniffsLote";
+import type { DetalleProduccionSniffs } from "@/lib/forestal/sniffs-produccion-parse";
 
 export interface LoteProgramado {
   speciesCommon: string;
@@ -61,6 +63,12 @@ export interface MaterialDeInventario {
   productType?: string | null;
   code?: string | null;
   notes?: string | null;
+  /**
+   * La pantalla del SNIFFS que se pegó acá (ADR-398): viaja al paso 2 para que
+   * sus productos aparezcan listos para revisar, y se guarda con el lote para
+   * poder cotejarlo después.
+   */
+  sniffs?: DetalleProduccionSniffs | null;
 }
 
 export default function CtpLoteArmarModal({
@@ -101,6 +109,28 @@ export default function CtpLoteArmarModal({
   const [codigo, setCodigo] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * La pantalla del SNIFFS pegada acá (ADR-398). Llena los campos de abajo —que
+   * siguen siendo editables— y viaja al paso 2 con sus productos.
+   */
+  const [sniffs, setSniffs] = useState<DetalleProduccionSniffs | null>(null);
+
+  /** Lo leído se VUELCA a los campos; no se guarda aparte hasta confirmar. */
+  function tomarDelSniffs(d: DetalleProduccionSniffs) {
+    setSniffs(d);
+    setModo("inventario");
+    if (d.lote) setCodigo(d.lote);
+    if (d.especieComun) setEspecie(d.especieComun);
+    if (d.fechaInicio) setInicio(d.fechaInicio);
+    if (d.fechaFin) setFin(d.fechaFin);
+    if (d.volumenConsumidoM3 != null && d.volumenConsumidoM3 > 0) {
+      setVolumenConsumido(String(d.volumenConsumidoM3));
+    }
+    /* El producto del paso 2 sale del primero que declaró el SNIFFS: es el que
+       más veces acierta, y se puede cambiar allá igual. */
+    const primero = d.productos.find((p) => p.productType)?.productType;
+    if (primero) setProductoAserrado(primero);
+  }
 
   /**
    * Las especies del patio con lo que hay de cada una. Se cuenta sólo lo libre
@@ -143,6 +173,7 @@ export default function CtpLoteArmarModal({
         productType: productoAserrado || null,
         code: codigo.trim() || null,
         notes: descripcion.trim() || null,
+        sniffs,
       });
       onClose();
       return;
@@ -235,6 +266,15 @@ export default function CtpLoteArmarModal({
             </button>
           ))}
         </div>
+
+        {/**
+         * Traer del SNIFFS (ADR-398): la misma captura llena el lote entero.
+         * Va ARRIBA del formulario porque lo llena: ofrecerlo después sería
+         * pedir que se tipee primero y se corrija con lo pegado.
+         */}
+        {modo === "inventario" && (
+          <CtpPegarSniffsLote detalle={sniffs} onDetalle={tomarDelSniffs} onDescartar={() => setSniffs(null)} />
+        )}
 
         {modo === "inventario" && (
           <Seccion numero={1} title="El material" hint="Lo que ya se sabe de esta madera, sin ir pieza por pieza">

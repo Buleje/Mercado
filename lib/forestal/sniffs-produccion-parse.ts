@@ -57,6 +57,51 @@ export interface DetalleProduccionSniffs {
   avisos: string[];
 }
 
+/**
+ * Lo que se GUARDA en el lote de lo que dijo el SNIFFS (ADR-398): la foto para
+ * cotejar después, no el detalle de pantalla. Vive en `ForestLoteAserrio.sniffs`.
+ */
+export interface SniffsRefLote {
+  lote: string | null;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  especieCientifica: string | null;
+  especieComun: string | null;
+  volumenConsumidoM3: number | null;
+  productos: {
+    productType: string | null;
+    productoCrudo: string;
+    volumenM3: number;
+    pctAprovechado: number | null;
+  }[];
+  /** ISO de cuándo se leyó. */
+  leidoEn: string;
+  fuente: "captura" | "texto" | "lista";
+}
+
+export function sniffsRefDesdeDetalle(
+  d: DetalleProduccionSniffs,
+  fuente: SniffsRefLote["fuente"],
+  ahora: Date = new Date(),
+): SniffsRefLote {
+  return {
+    lote: d.lote,
+    fechaInicio: d.fechaInicio,
+    fechaFin: d.fechaFin,
+    especieCientifica: d.especieCientifica,
+    especieComun: d.especieComun,
+    volumenConsumidoM3: d.volumenConsumidoM3,
+    productos: d.productos.map((p) => ({
+      productType: p.productType,
+      productoCrudo: p.productoCrudo,
+      volumenM3: r4(p.volumenM3),
+      pctAprovechado: p.pctAprovechado,
+    })),
+    leidoEn: ahora.toISOString(),
+    fuente,
+  };
+}
+
 /** Sin acentos, en mayúsculas, sólo letras/números separados por un espacio. */
 export function normalizarTexto(s: string): string {
   return quitarAcentos(s)
@@ -148,7 +193,20 @@ function filaProducto(linea: string): ProductoSniffs | null {
   const m = cat.regex.exec(plano.replace(/CEPILLADA/gi, "CEBILLADA"));
   if (!m) return null;
   const antes = plano.slice(0, m.index);
-  const despues = plano.slice(m.index + m[0].length);
+  /**
+   * El paréntesis que cierra.
+   *
+   * La regex se arma de los TOKENS del catálogo unidos por separadores, así que
+   * termina en la última letra: «MADERA ASERRADA (PAQUETERIA CORTA)» matcheaba
+   * sin su `)` y lo leído se mostraba mutilado. Se recupera el cierre cuando el
+   * match dejó un paréntesis abierto.
+   */
+  const cierra =
+    (m[0].match(/\(/g)?.length ?? 0) > (m[0].match(/\)/g)?.length ?? 0) &&
+    plano[m.index + m[0].length] === ")";
+  const largo = m[0].length + (cierra ? 1 : 0);
+  const crudo = plano.slice(m.index, m.index + largo).trim();
+  const despues = plano.slice(m.index + largo);
   const numeros = despues.match(NUMERO) ?? [];
   const primero = numeros[0];
   const segundo = numeros[1];
@@ -156,7 +214,7 @@ function filaProducto(linea: string): ProductoSniffs | null {
   const vol = volumenLeido(primero);
   const esp = ESPECIE.exec(antes);
   return {
-    productoCrudo: m[0].trim(),
+    productoCrudo: crudo,
     productType: cat.valor,
     volumenM3: vol.valor,
     pctAprovechado: segundo != null ? aNumero(segundo) : null,
@@ -323,4 +381,94 @@ export function paquetesDesdeSniffs(
         observations,
       };
     });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// La LISTA de programaciones del SNIFFS (ADR-398): una fila por lote programado
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Una fila de la lista «Programación de producción» del SNIFFS. */
+export interface ProgramacionSniffs {
+  lote: string | null;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  especieCientifica: string | null;
+  especieComun: string | null;
+  /** Si la lista lo trae; muchas veces sólo está en el detalle. */
+  volumenConsumidoM3: number | null;
+  /** «Finalizado por fecha límite», «En proceso»… tal como lo escribe el SNIFFS. */
+  estado: string | null;
+  /** La línea tal cual, para cotejar lo leído. */
+  crudo: string;
+}
+
+const ESTADO_SNIFFS = /(finalizad[oa][^\t\n]*|en\s+proceso|registrad[oa]|anulad[oa]|vigente|cerrad[oa]|pendiente)/i;
+/** Un decimal que no es parte de una fecha ni de un código con guión. */
+const DECIMAL_SUELTO = /(?<![\d/\-])\d{1,6}[.,]\d{1,4}(?![\d/\-])/g;
+/** `FECHA` sin la bandera global: para preguntar «¿hay una fecha?» sin arrastrar `lastIndex`. */
+const HAY_FECHA = /\d{1,2}\/\d{1,2}\/\d{4}/;
+
+function filaProgramacion(linea: string): ProgramacionSniffs | null {
+  const plano = quitarAcentos(linea).trim();
+  if (!plano) return null;
+  /* El encabezado de la tabla nombra las columnas, no una programación. */
+  if (/Fecha\s*Inicio|Fecha\s*Fin|N\W{0,3}\s*(de\s*)?Lote/i.test(plano) && !HAY_FECHA.test(plano)) return null;
+  const fechas = [...plano.matchAll(FECHA)];
+  const esp = ESPECIE.exec(plano);
+  if (fechas.length === 0 && !esp) return null;
+
+  const fechaInicio = fechas[0] ? aIso(fechas[0][1], fechas[0][2], fechas[0][3]) : null;
+  const fechaFin = fechas[1] ? aIso(fechas[1][1], fechas[1][2], fechas[1][3]) : null;
+
+  /* El N° de lote: el primer token con un dígito que aparece ANTES de la
+     primera fecha y no es un número decimal ni una fecha. */
+  const hastaFecha = fechas[0] ? plano.slice(0, fechas[0].index) : plano.slice(0, esp?.index ?? plano.length);
+  const lote =
+    hastaFecha
+      .split(/[\s:|]+/)
+      .filter(Boolean)
+      .find((t) => /\d/.test(t) && !/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(t) && !/^\d+[.,]\d+$/.test(t) && t.length <= 24) ??
+    null;
+
+  const despuesDeFechas = fechas[1] ? plano.slice(fechas[1].index + fechas[1][0].length) : fechas[0] ? plano.slice(fechas[0].index + fechas[0][0].length) : plano;
+  const decimales = despuesDeFechas.match(DECIMAL_SUELTO) ?? [];
+  const volumenConsumidoM3 = decimales[0] != null ? aNumero(decimales[0]) : null;
+  const estado = ESTADO_SNIFFS.exec(plano)?.[1]?.trim() ?? null;
+
+  return {
+    lote,
+    fechaInicio,
+    fechaFin,
+    especieCientifica: esp ? esp[1].trim() : null,
+    especieComun: esp ? esp[2].trim() : null,
+    volumenConsumidoM3,
+    estado,
+    crudo: linea.trim(),
+  };
+}
+
+/**
+ * Interpreta la lista de programaciones (la tabla de fondo del SNIFFS, con una
+ * fila por lote): N° de lote, inicio, fin, especie y —si la columna existe—
+ * volumen consumido y estado. Acepta el texto copiado (tabs) o el OCR de una
+ * captura (espacios).
+ */
+export function interpretarListaProgramacionesSniffs(texto: string): { filas: ProgramacionSniffs[]; avisos: string[] } {
+  const filas: ProgramacionSniffs[] = [];
+  for (const linea of (texto ?? "").replace(/\r/g, "").split("\n")) {
+    const f = filaProgramacion(linea);
+    if (f) filas.push(f);
+  }
+  const avisos: string[] = [];
+  if (filas.length === 0) avisos.push("No encontré filas con fecha y especie. Pegá la lista de programaciones del SNIFFS (una fila por lote).");
+  const sinLote = filas.filter((f) => !f.lote).length;
+  if (sinLote > 0) avisos.push(`${sinLote} fila(s) sin N° de lote: se les asigna el correlativo automático si las importás.`);
+  const sinVolumen = filas.filter((f) => f.volumenConsumidoM3 == null).length;
+  if (sinVolumen > 0) avisos.push(`${sinVolumen} fila(s) sin volumen consumido: completalo antes de importar.`);
+  return { filas, avisos };
+}
+
+/** ¿El texto pegado parece la lista de programaciones? Dos filas con fecha alcanzan. */
+export function pareceListaProgramaciones(texto: string): boolean {
+  return (texto ?? "").split("\n").filter((l) => HAY_FECHA.test(l)).length >= 2;
 }

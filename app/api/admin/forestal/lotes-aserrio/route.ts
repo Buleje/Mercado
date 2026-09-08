@@ -81,6 +81,33 @@ const paqueteSchema = z.object({
 /** Código a mano (Brandon, 2026-08-31): vacío = correlativo automático. */
 const codigoLote = z.string().trim().min(1).max(60).nullish();
 
+/**
+ * Lo que el SNIFFS declaró del lote (ADR-398), tal como lo leyó el navegador.
+ * Es una foto para cotejar: se valida la forma, no se re-interpreta.
+ */
+const sniffsSchema = z
+  .object({
+    lote: z.string().trim().max(60).nullable(),
+    fechaInicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+    fechaFin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+    especieCientifica: z.string().trim().max(160).nullable(),
+    especieComun: z.string().trim().max(120).nullable(),
+    volumenConsumidoM3: z.number().nonnegative().max(999999).nullable(),
+    productos: z
+      .array(
+        z.object({
+          productType: z.string().trim().max(80).nullable(),
+          productoCrudo: z.string().trim().max(160),
+          volumenM3: z.number().nonnegative().max(999999),
+          pctAprovechado: z.number().nullable(),
+        }),
+      )
+      .max(50),
+    leidoEn: z.string().max(40),
+    fuente: z.enum(["captura", "texto", "lista"]),
+  })
+  .nullish();
+
 const postSchema = z.discriminatedUnion("modo", [
   z.object({
     modo: z.literal("abierto"),
@@ -105,7 +132,10 @@ const postSchema = z.discriminatedUnion("modo", [
     fecha: dia,
     finProceso: dia,
     notes: z.string().trim().max(500).nullish(),
-    paquetes: z.array(paqueteSchema).min(1).max(200),
+    /* Vacío = programación desde el SNIFFS (ADR-398): consumo declarado y
+       producción pendiente. El formulario de paquetes sigue exigiendo ≥1. */
+    paquetes: z.array(paqueteSchema).max(200),
+    sniffs: sniffsSchema,
   }),
 ]);
 

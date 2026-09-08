@@ -15,7 +15,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Boxes, Gauge, Layers, Loader2, PackageOpen, Plus, RefreshCw, Search, TreePine, X } from "@buleje/design-system/icons";
+import { Boxes, Gauge, Layers, Loader2, PackageOpen, Plus, RefreshCw, Search, TreePine, Upload, X } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import { libresDelPatio } from "@/lib/forestal/patio-resumen";
 import {
@@ -32,8 +32,10 @@ import { useEspeciesFotos } from "./hooks/use-especies-fotos";
 import CtpLoteCard from "./CtpLoteCard";
 import CtpLoteArmarModal, { type MaterialDeInventario } from "./CtpLoteArmarModal";
 import CtpLoteDetalleModal from "./CtpLoteDetalleModal";
+import CtpImportarProgramacionesModal from "./CtpImportarProgramacionesModal";
 import CtpRegistrarProduccionModal, { type ProduccionRegistrada } from "./CtpRegistrarProduccionModal";
 import { Btn, CtpKpisPlegables, PanelSkeleton, VistaHeader } from "./ctp-shared";
+import { sniffsRefDesdeDetalle } from "@/lib/forestal/sniffs-produccion-parse";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const CAMPO =
@@ -65,6 +67,8 @@ export default function CtpLotesView({
   const [especie, setEspecie] = useState("");
   const [estado, setEstado] = useState<EstadoLoteAserrio | "">("");
   const [armar, setArmar] = useState(false);
+  /** Importar la lista de programaciones del SNIFFS (ADR-398). */
+  const [importar, setImportar] = useState(false);
   const [detalleId, setDetalleId] = useState<string | null>(null);
   const [aviso, setAviso] = useState<{ tono: "ok" | "aviso"; texto: string } | null>(null);
 
@@ -90,6 +94,11 @@ export default function CtpLotesView({
         finProceso: materialInventario.finProceso,
         code: materialInventario.code,
         notes: materialInventario.notes,
+        /* La foto de lo que declaró el SNIFFS (ADR-398): con ella la tarjeta
+           puede decir después si el libro cuadra con lo declarado allá. */
+        sniffs: materialInventario.sniffs
+          ? sniffsRefDesdeDetalle(materialInventario.sniffs, "captura")
+          : null,
         paquetes: datos.paquetes.map((p) => ({
           codigo: p.codigo,
           productType: p.productType,
@@ -149,6 +158,11 @@ export default function CtpLotesView({
       >
         <Btn variant="secondary" onClick={() => void recargar()} disabled={cargando}>
           <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} /> Recargar
+        </Btn>
+        {/* La lista entera del SNIFFS de una (ADR-398): un CTP que empieza a
+            llevar el libro tiene decenas ya declaradas allá. */}
+        <Btn variant="secondary" onClick={() => setImportar(true)}>
+          <Upload className="h-4 w-4" /> Traer del SNIFFS
         </Btn>
         <Btn variant="primary" onClick={() => setArmar(true)}>
           <Plus className="h-4 w-4" /> Armar lote
@@ -376,6 +390,50 @@ export default function CtpLotesView({
         </p>
       )}
 
+      {/* Importar la lista de programaciones (ADR-398): cada fila nace como un
+          lote con su consumo declarado y la producción pendiente. */}
+      {importar && (
+        <CtpImportarProgramacionesModal
+          lotes={lotes}
+          crearProgramacion={async (input) => {
+            const r = await crearInventario({
+              code: input.code,
+              speciesCommon: input.speciesCommon,
+              speciesScientific: input.speciesScientific,
+              volumenConsumidoM3: input.volumenConsumidoM3,
+              fecha: input.fecha,
+              finProceso: input.finProceso,
+              notes: input.leida.estado ? `SNIFFS: ${input.leida.estado}` : null,
+              /* Vacío = programación: el consumo entra al libro y la producción
+                 queda pendiente, que es lo que la lista del SNIFFS afirma. */
+              paquetes: [],
+              sniffs: {
+                lote: input.leida.lote,
+                fechaInicio: input.leida.fechaInicio,
+                fechaFin: input.leida.fechaFin,
+                especieCientifica: input.leida.especieCientifica,
+                especieComun: input.leida.especieComun,
+                volumenConsumidoM3: input.volumenConsumidoM3,
+                productos: [],
+                leidoEn: new Date().toISOString(),
+                fuente: "lista",
+              },
+            });
+            return { code: r.lote.code, lineNo: r.corrida.lineNo };
+          }}
+          onListo={({ creados, fallados }) =>
+            setAviso({
+              tono: fallados.length > 0 ? "aviso" : "ok",
+              texto:
+                `Entraron ${creados.length} lote${creados.length === 1 ? "" : "s"} del SNIFFS con su consumo declarado ` +
+                `(${creados.map((c) => c.code).join(", ")}). La producción de cada uno se declara desde la tabla de Producción.` +
+                (fallados.length > 0 ? ` ${fallados.length} no se pudieron importar.` : ""),
+            })
+          }
+          onClose={() => setImportar(false)}
+        />
+      )}
+
       {armar && (
         <CtpLoteArmarModal
           trozas={trozas}
@@ -408,6 +466,8 @@ export default function CtpLotesView({
           }}
           fecha={materialInventario.fecha}
           productoInicial={materialInventario.productType}
+          /* Lo pegado en el paso 1 llega revisado acá: un pegado, un click. */
+          sniffsInicial={materialInventario.sniffs}
           guardando={guardandoInventario}
           error={errorInventario}
           ctaLabel="Declarar el inventario"

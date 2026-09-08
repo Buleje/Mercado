@@ -17,6 +17,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import type { LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import type { SniffsRefLote } from "@/lib/forestal/sniffs-produccion-parse";
 
 const API = "/api/admin/forestal/lotes-aserrio";
 
@@ -107,6 +108,7 @@ export interface EstadoLotesAserrio {
     /** Código a mano; vacío = correlativo automático `LA-2026-00N`. */
     code?: string | null;
     notes?: string | null;
+    /** Vacío = programación (ADR-398): consumo declarado, producción pendiente. */
     paquetes: {
       codigo: string;
       productType?: string | null;
@@ -118,6 +120,8 @@ export interface EstadoLotesAserrio {
       largoM?: number | null;
       observations?: string | null;
     }[];
+    /** Lo que el SNIFFS declaró del lote, para cotejar (ADR-398). */
+    sniffs?: SniffsRefLote | null;
   }) => Promise<{ lote: { id: string; code: string }; corrida: { id: string; lineNo: number } }>;
   /**
    * Consumir en el patio (ADR-340): las piezas entran al lote y a la sierra con

@@ -8,6 +8,7 @@ import { invalidateByPrefix } from "@/lib/cache";
 import { vivaLinea } from "./wood-entries.db";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { ORIGEN_LOTE_INVENTARIO } from "@/lib/forestal/lotes-aserrio";
+import type { SniffsRefLote } from "@/lib/forestal/sniffs-produccion-parse";
 import { construirHistoriaLote } from "@/lib/forestal/historia-lote";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 
@@ -104,9 +105,16 @@ export interface LoteInventarioInput {
   /** Cierre de la ventana del proceso (ADR-342). Sin fecha = sigue abierta. */
   finProceso?: Date | null;
   notes?: string | null;
+  /**
+   * Vacío = PROGRAMACIÓN (ADR-398): el consumo queda declarado y la producción
+   * pendiente, como una corrida abierta de `consumirEnPatio`. Se completa
+   * después con «Agregar producción a esta corrida» (ADR-365).
+   */
   paquetes: PaqueteInventarioInput[];
   /** Código elegido a mano; sin esto, correlativo automático. */
   code?: string | null;
+  /** Lo que el SNIFFS declaró de este lote, para cotejar después (ADR-398). */
+  sniffs?: SniffsRefLote | null;
   createdBy: string;
 }
 
@@ -764,18 +772,21 @@ export class ForestLoteAserrioDB {
         "LOTE_INVENTARIO_INVALIDO",
       );
     }
-    if (input.paquetes.length === 0) {
-      throw new CtpInvariantError(
-        "Declará al menos un paquete de producción.",
-        "LOTE_INVENTARIO_INVALIDO",
-      );
-    }
+    /* Sin paquetes es una PROGRAMACIÓN (ADR-398): consumo declarado, producción
+       pendiente — la forma en que el SNIFFS lista un lote antes de producirlo. */
+    const programacion = input.paquetes.length === 0;
 
     const code = await ForestLoteAserrioDB.codigoAUsar(tenantId, input.code);
     const piezas = input.paquetes.reduce((a, p) => a + Math.max(0, Math.round(p.cantidad)), 0);
     const volumenProducido =
       Math.round(input.paquetes.reduce((a, p) => a + Number(p.volumenM3 || 0), 0) * 10000) / 10000;
-    const notas = [ORIGEN_LOTE_INVENTARIO, input.notes?.trim()].filter(Boolean).join(" · ");
+    const notas = [
+      ORIGEN_LOTE_INVENTARIO,
+      programacion ? "Producción pendiente de declarar" : null,
+      input.notes?.trim(),
+    ]
+      .filter(Boolean)
+      .join(" · ");
 
     /* La corrida entra con su materia prima y sin declarar, igual que
        `consumirEnPatio`: si el paso siguiente falla, no queda un asiento a
@@ -792,23 +803,28 @@ export class ForestLoteAserrioDB {
     });
 
     try {
-      const declarada = await ForestCtpDB.declararProduccion(
-        tenantId,
-        corrida.id,
-        {
-          quantity: volumenProducido,
-          unit: "m3",
-          pieces: piezas,
-          productType: input.paquetes[0]?.productType ?? null,
-          codigoProducto: input.paquetes[0]?.codigo ?? null,
-          /* `declararProduccion` REEMPLAZA `observations` (no lo concatena):
-             sin pasarla acá, queda en null y se pierde la marca de origen que
-             `create()` recién puso — medido en vivo contra el tenant real. */
-          observations: notas,
-          paquetes: input.paquetes,
-        },
-        input.createdBy,
-      );
+      /* Una programación deja la corrida ABIERTA (con materia prima y sin
+         `quantity`), que es exactamente el estado que ADR-364/365 ya saben
+         completar desde la tabla de Producción. */
+      const declarada = programacion
+        ? corrida
+        : await ForestCtpDB.declararProduccion(
+            tenantId,
+            corrida.id,
+            {
+              quantity: volumenProducido,
+              unit: "m3",
+              pieces: piezas,
+              productType: input.paquetes[0]?.productType ?? null,
+              codigoProducto: input.paquetes[0]?.codigo ?? null,
+              /* `declararProduccion` REEMPLAZA `observations` (no lo concatena):
+                 sin pasarla acá, queda en null y se pierde la marca de origen que
+                 `create()` recién puso — medido en vivo contra el tenant real. */
+              observations: notas,
+              paquetes: input.paquetes,
+            },
+            input.createdBy,
+          );
 
       const lote = await prisma.forestLoteAserrio.create({
         data: {
@@ -822,6 +838,8 @@ export class ForestLoteAserrioDB {
           inicioProceso: input.fecha ?? null,
           finProceso: input.finProceso ?? null,
           produccionEntryId: corrida.id,
+          /* La foto del SNIFFS, tal cual se leyó: es lo que la tarjeta coteja. */
+          sniffs: input.sniffs ? (input.sniffs as unknown as Prisma.InputJsonValue) : undefined,
           createdBy: input.createdBy,
         },
       });
@@ -831,9 +849,12 @@ export class ForestLoteAserrioDB {
         action: "ctp_lote_aserrio_inventario_create",
         entity: "ForestLoteAserrio",
         entityId: lote.id,
-        detail:
-          `Declaró el lote ${lote.code} como inventario: ${input.volumenConsumidoM3} m³ consumidos → ` +
-          `${volumenProducido} m³ producidos en ${input.paquetes.length} paquete(s), sin trozas reales`,
+        detail: programacion
+          ? `Programó el lote ${lote.code} desde el SNIFFS${input.sniffs?.lote ? ` (N° ${input.sniffs.lote})` : ""}: ` +
+            `${input.volumenConsumidoM3} m³ consumidos, producción pendiente de declarar`
+          : `Declaró el lote ${lote.code} como inventario: ${input.volumenConsumidoM3} m³ consumidos → ` +
+            `${volumenProducido} m³ producidos en ${input.paquetes.length} paquete(s), sin trozas reales` +
+            (input.sniffs?.lote ? ` · SNIFFS N° ${input.sniffs.lote}` : ""),
         user: input.createdBy,
       });
       try {

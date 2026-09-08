@@ -30,6 +30,7 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import CtpMaterialPanel, { type PaquetePrevio } from "./CtpMaterialPanel";
 import CtpPegarSniffs from "./CtpPegarSniffs";
+import type { DetalleProduccionSniffs } from "@/lib/forestal/sniffs-produccion-parse";
 import { juzgarRendimientoLote, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import {
   motivosParaGuardar,
@@ -190,6 +191,7 @@ export default function CtpRegistrarProduccionModal({
   ctaLabel,
   trozas,
   productoInicial,
+  sniffsInicial,
   onConfirmar,
   onClose,
 }: {
@@ -238,6 +240,11 @@ export default function CtpRegistrarProduccionModal({
    * ignorar lo que el operador ya contestó. Sigue siendo editable.
    */
   productoInicial?: string | null;
+  /**
+   * La pantalla del SNIFFS que ya se pegó en el paso 1 del lote (ADR-398): la
+   * zona «Traer del SNIFFS» arranca en la revisión con esos productos.
+   */
+  sniffsInicial?: DetalleProduccionSniffs | null;
   onConfirmar: (datos: ProduccionRegistrada) => void;
   onClose: () => void;
 }) {
@@ -1253,6 +1260,7 @@ export default function CtpRegistrarProduccionModal({
             /* Ampliando, la fecha es la del asiento que ya existe: no se ofrece. */
             onUsarFecha={previo > 0 ? undefined : setDia}
             compacto={paquetes.length > 0}
+            detalleInicial={sniffsInicial}
           />
           <TablaCtp altoMax="max-h-[45vh]">
             <TheadCtp>

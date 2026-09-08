@@ -6296,6 +6296,13 @@ model ForestLoteAserrio {
   /// La corrida que se hizo con este lote, cuando ya se produjo.
   produccionEntryId String?
 
+  /// Lo que el SNIFFS declaró de este lote (ADR-398): N° de lote SNIFFS,
+  /// fechas, especie, volumen consumido y productos con sus m³, tal como se
+  /// leyeron de la captura o de la lista. Es la foto de un documento externo
+  /// para COTEJAR (cuadra / difiere), no datos propios del libro. Forma:
+  /// `SniffsRefLote` en lib/forestal/sniffs-produccion-parse.ts.
+  sniffs Json?
+
   createdBy String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   alertasDeLote,
+  cuadreSniffs,
   diasDeEspera,
   filtrarLotes,
   loteAserrioPorCorrida,
@@ -15,6 +16,7 @@ import {
   type LoteAserrio,
   type TrozaDelLote,
 } from "@/lib/forestal/lotes-aserrio";
+import type { SniffsRefLote } from "@/lib/forestal/sniffs-produccion-parse";
 
 /**
  * Lo que la pestaña de Lotes de aserrío afirma en pantalla (ADR-334).
@@ -362,5 +364,144 @@ describe("alertas del lote", () => {
   it("un lote consumido por una corrida anulada queda señalado", () => {
     const l = lote({ status: "consumido", produccion: corrida({ viva: false }) });
     expect(alertasDeLote(l, HOY).some((a) => a.texto.includes("anuló"))).toBe(true);
+  });
+});
+
+/**
+ * El cuadre contra el SNIFFS (ADR-398): lo que el lote afirma en la tarjeta
+ * cuando se armó pegando la pantalla del SNIFFS. Es lo que un fiscalizador
+ * cruzaría a mano entre los dos sistemas.
+ */
+function refSniffs(extra: Partial<SniffsRefLote> = {}): SniffsRefLote {
+  return {
+    lote: "18-2026",
+    fechaInicio: "2026-08-01",
+    fechaFin: "2026-10-01",
+    especieCientifica: "Cedrelinga cateniformis",
+    especieComun: "TORNILLO",
+    volumenConsumidoM3: 5,
+    productos: [
+      { productType: "MADERA ASERRADA (COMERCIAL)", productoCrudo: "MADERA ASERRADA (COMERCIAL)", volumenM3: 1, pctAprovechado: 20 },
+      { productType: "MADERA ASERRADA (TABLA)", productoCrudo: "MADERA ASERRADA (TABLA)", volumenM3: 2, pctAprovechado: 40 },
+    ],
+    leidoEn: "2026-09-08T12:00:00.000Z",
+    fuente: "captura",
+    ...extra,
+  };
+}
+
+describe("cuadreSniffs", () => {
+  it("sin referencia del SNIFFS no hay nada que cotejar", () => {
+    expect(cuadreSniffs(lote({ status: "consumido", produccion: corrida() }))).toBeNull();
+  });
+
+  it("cuadra cuando el libro declaró lo mismo que el SNIFFS", () => {
+    const c = cuadreSniffs(lote({ status: "consumido", produccion: corrida({ quantity: 3 }), sniffs: refSniffs() }));
+    expect(c).toMatchObject({
+      estado: "cuadra",
+      lote: "18-2026",
+      producidoSniffsM3: 3,
+      producidoLoteM3: 3,
+      deltaProducidoM3: 0,
+      deltaConsumidoM3: 0,
+      productosSniffs: 2,
+    });
+  });
+
+  it("es «pendiente» —no un error— mientras la producción no se declaró", () => {
+    const c = cuadreSniffs(lote({ status: "consumido", produccion: corrida({ quantity: null }), sniffs: refSniffs() }));
+    expect(c?.estado).toBe("pendiente");
+    expect(c?.producidoSniffsM3).toBe(3);
+    expect(c?.producidoLoteM3).toBe(0);
+  });
+
+  it("difiere y dice cuánto cuando el libro declaró de menos", () => {
+    const c = cuadreSniffs(lote({ status: "consumido", produccion: corrida({ quantity: 2 }), sniffs: refSniffs() }));
+    expect(c?.estado).toBe("difiere");
+    expect(c?.deltaProducidoM3).toBe(1);
+  });
+
+  it("un litro de diferencia todavía cuadra: el SNIFFS imprime 3 decimales", () => {
+    const c = cuadreSniffs(lote({ status: "consumido", produccion: corrida({ quantity: 3.001 }), sniffs: refSniffs() }));
+    expect(c?.estado).toBe("cuadra");
+  });
+
+  it("suma TODAS las corridas vivas del lote, no sólo la que lo cerró", () => {
+    const c = cuadreSniffs(
+      lote({
+        status: "consumido",
+        produccion: corrida({ quantity: 2 }),
+        corridas: [corrida({ id: "c1", quantity: 2 }), corrida({ id: "c2", lineNo: 13, quantity: 1 })],
+        sniffs: refSniffs(),
+      }),
+    );
+    expect(c?.producidoLoteM3).toBe(3);
+    expect(c?.estado).toBe("cuadra");
+  });
+
+  it("ignora la corrida anulada y la declarada en otra unidad", () => {
+    const anulada = cuadreSniffs(
+      lote({
+        status: "consumido",
+        corridas: [corrida({ id: "c1", quantity: 3, viva: false }), corrida({ id: "c2", quantity: 1200, unit: "pt" })],
+        sniffs: refSniffs(),
+      }),
+    );
+    expect(anulada?.producidoLoteM3).toBe(0);
+    expect(anulada?.estado).toBe("pendiente");
+  });
+
+  it("marca la diferencia de consumido aunque lo producido coincida", () => {
+    const c = cuadreSniffs(
+      lote({
+        status: "consumido",
+        produccion: corrida({ quantity: 3 }),
+        sniffs: refSniffs({ volumenConsumidoM3: 9 }),
+      }),
+    );
+    expect(c?.estado).toBe("difiere");
+    expect(c?.deltaConsumidoM3).toBe(4);
+    expect(c?.deltaProducidoM3).toBe(0);
+  });
+
+  it("sin volumen consumido leído, no lo compara — no lo asume 0", () => {
+    const c = cuadreSniffs(
+      lote({
+        status: "consumido",
+        produccion: corrida({ quantity: 3 }),
+        sniffs: refSniffs({ volumenConsumidoM3: null }),
+      }),
+    );
+    expect(c?.deltaConsumidoM3).toBeNull();
+    expect(c?.estado).toBe("cuadra");
+  });
+});
+
+describe("cuadreSniffs — la LISTA de programaciones no trae productos (ADR-398)", () => {
+  const deLista = (extra: Partial<SniffsRefLote> = {}) =>
+    refSniffs({ productos: [], fuente: "lista", ...extra });
+
+  it("no compara producción: sin productos, `deltaProducidoM3` es null", () => {
+    const c = cuadreSniffs(lote({ status: "consumido", produccion: corrida({ quantity: 3 }), sniffs: deLista() }));
+    expect(c?.deltaProducidoM3).toBeNull();
+    expect(c?.productosSniffs).toBe(0);
+  });
+
+  it("un lote YA producido no se marca en rojo por lo que la lista no dice", () => {
+    const c = cuadreSniffs(lote({ status: "consumido", produccion: corrida({ quantity: 3 }), sniffs: deLista() }));
+    expect(c?.estado).toBe("cuadra");
+  });
+
+  it("recién importado, sin producción declarada todavía, tampoco es «pendiente»", () => {
+    const c = cuadreSniffs(lote({ status: "consumido", produccion: corrida({ quantity: null }), sniffs: deLista() }));
+    expect(c?.estado).toBe("cuadra");
+  });
+
+  it("pero el consumido sí se compara", () => {
+    const c = cuadreSniffs(
+      lote({ status: "consumido", produccion: corrida({ quantity: 3 }), sniffs: deLista({ volumenConsumidoM3: 9 }) }),
+    );
+    expect(c?.estado).toBe("difiere");
+    expect(c?.deltaConsumidoM3).toBe(4);
   });
 });

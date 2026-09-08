@@ -13,13 +13,15 @@
  * grande tiene que ser el verdadero y la diferencia se explica al lado.
  */
 
-import { Archive, Boxes, ChevronRight, Play, Plus, Trash2, TreePine } from "@buleje/design-system/icons";
+import { Archive, Boxes, ChevronRight, Play, Plus, ScanText, Trash2, TreePine } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import type { FotoEspecie } from "@/lib/forestal/especies-fotos";
 import {
   ESTADO_LOTE,
   TONO_ESTADO_LOTE,
+  TOLERANCIA_CUADRE_SNIFFS_M3,
   alertasDeLote,
+  cuadreSniffs,
   diasDeEspera,
   esLoteDeInventario,
   juzgarRendimientoLote,
@@ -78,6 +80,9 @@ export default function CtpLoteCard({
   const rend = rendimientoLote(lote);
   const veredicto = juzgarRendimientoLote(rend);
   const margen = margenLote(lote);
+  /* Cómo cuadra con lo que el SNIFFS declaró de este lote (ADR-398). `null` =
+     el lote no vino de ahí y no hay nada contra qué cotejar. */
+  const cuadre = cuadreSniffs(lote);
   const vencido = loteVencido(lote, ahora);
   const corrida = lote.produccion;
   /* ¿La madera de este lote ya se fue? La regla es la MISMA que usa la tabla de
@@ -262,6 +267,55 @@ export default function CtpLoteCard({
           {/* El "quedan X por declarar" ya se muestra arriba, en el badge
               "Sobra para Producción" — mismo número (`margen.margenM3`), no
               se repite acá. */}
+        </p>
+      )}
+
+      {/**
+       * Cómo cuadra con el SNIFFS (ADR-398).
+       *
+       * El lote se armó pegando la pantalla del SNIFFS, así que se puede
+       * afirmar algo que antes había que cruzar a mano entre dos sistemas: si
+       * lo que dice el libro es lo mismo que quedó declarado allá. `pendiente`
+       * es un estado legítimo —la programación existe y la producción todavía
+       * no se declaró—, no un error.
+       */}
+      {cuadre && (
+        <p
+          title={
+            cuadre.deltaProducidoM3 == null
+              ? `La lista del SNIFFS no trae los productos, así que sólo se compara el consumido: allá ${cuadre.consumidoSniffsM3 != null ? `${fmtM3(cuadre.consumidoSniffsM3)} m³` : "no se leyó"}, acá ${fmtM3(cuadre.consumidoLoteM3)} m³. Pegá el detalle del lote para comparar también la producción.`
+              : cuadre.estado === "pendiente"
+                ? `El SNIFFS declara ${fmtM3(cuadre.producidoSniffsM3)} m³ en ${cuadre.productosSniffs} producto(s); el libro todavía no declaró producción para este lote.`
+                : `SNIFFS: ${fmtM3(cuadre.producidoSniffsM3)} m³ producidos${cuadre.consumidoSniffsM3 != null ? ` de ${fmtM3(cuadre.consumidoSniffsM3)} m³ consumidos` : ""} · Libro: ${fmtM3(cuadre.producidoLoteM3)} m³ de ${fmtM3(cuadre.consumidoLoteM3)} m³`
+          }
+          className={`flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl px-3 py-2 text-sm font-bold ${
+            cuadre.estado === "cuadra"
+              ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+              : cuadre.estado === "difiere"
+                ? "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+          }`}
+        >
+          <ScanText className="h-4 w-4 shrink-0" aria-hidden />
+          <span>
+            SNIFFS{cuadre.lote ? ` N° ${cuadre.lote}` : ""}:{" "}
+            {cuadre.deltaProducidoM3 == null
+              ? /* Vino de la LISTA, que no trae productos: lo único comparable
+                   es el consumido, y decir «cuadra con el libro» a secas
+                   prometería una comparación que no se hizo. */
+                cuadre.estado === "cuadra"
+                ? "el consumo cuadra · pegá el detalle para comparar la producción"
+                : `el consumo difiere en ${fmtM3(Math.abs(cuadre.deltaConsumidoM3 ?? 0))} m³`
+              : cuadre.estado === "cuadra"
+                ? "cuadra con el libro"
+                : cuadre.estado === "pendiente"
+                  ? `${fmtM3(cuadre.producidoSniffsM3)} m³ declarados allá, falta declararlos acá`
+                  : `difiere en ${fmtM3(Math.abs(cuadre.deltaProducidoM3))} m³ producidos${
+                      cuadre.deltaConsumidoM3 != null && Math.abs(cuadre.deltaConsumidoM3) > TOLERANCIA_CUADRE_SNIFFS_M3
+                        ? ` y ${fmtM3(Math.abs(cuadre.deltaConsumidoM3))} m³ consumidos`
+                        : ""
+                    }`}
+          </span>
         </p>
       )}
 
