@@ -222,7 +222,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
             {cadena && <CtpCadenaLote cadena={cadena} />}
 
             {/* Miembros */}
-            <section className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]">
+            <section className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]">
               <div className="flex items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
                 <div className="flex items-center gap-2"><Link2 className="h-4 w-4 text-[var(--text-tertiary)]" /><CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Corridas del lote</CardTitle></div>
                 {!editing && lote.status === "abierto" && (
@@ -269,7 +269,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
                 esto dice qué palos — que es lo que se cuenta en la pila y lo que
                 ahora también sale impreso en el certificado (ADR-334). */}
             {(traza.lotesDeAserrio?.length ?? 0) > 0 && (
-              <section className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]">
+              <section className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]">
                 <div className="flex items-center gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
                   <Layers className="h-4 w-4 text-[var(--text-tertiary)]" />
                   <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
@@ -342,7 +342,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
               </div>
             )}
             {lote.status === "despachado" && (
-              <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-secondary)]"><CheckCircle2 className="h-4 w-4 text-[var(--data-success-600)]" /> Lote despachado — cerrado para cambios.</p>
+              <p className="flex items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-secondary)]"><CheckCircle2 className="h-4 w-4 text-[var(--data-success-600)]" /> Lote despachado — cerrado para cambios.</p>
             )}
 
             {/* Confirmación de anulación inline */}
@@ -357,7 +357,7 @@ export default function LoteDetailModal({ loteId, onClose, onChanged }: { loteId
               </div>
             )}
 
-            {lote.notes && <p className="rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 text-sm text-[var(--text-secondary)]">{lote.notes}</p>}
+            {lote.notes && <p className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 text-sm text-[var(--text-secondary)]">{lote.notes}</p>}
             </div>
           </div>
         )}

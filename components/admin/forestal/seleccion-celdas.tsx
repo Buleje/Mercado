@@ -261,7 +261,7 @@ export function BarraSeleccion({
           <button
             type="button"
             onClick={() => void copiar()}
-            className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-2.5 py-1 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:bg-primary/10"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:bg-primary/10"
           >
             <Copy className="h-3.5 w-3.5" aria-hidden /> {copiado ? "Copiado" : "Copiar"}
           </button>
@@ -269,7 +269,7 @@ export function BarraSeleccion({
             type="button"
             onClick={onLimpiar}
             aria-label="Quitar la selección"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
           >
             <X className="h-3.5 w-3.5" aria-hidden />
           </button>

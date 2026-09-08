@@ -159,7 +159,7 @@ export default function TramitesCatalogo({
       <TirasResumen total={FORMATOS_TRAMITE.length} guardados={tramites.length} enCurso={enCurso} resueltos={porEstado.resuelto} />
 
       <div className="space-y-3">
-        <div className="flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5">
+        <div className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5">
           <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
           <input
             type="text"
@@ -192,7 +192,7 @@ export default function TramitesCatalogo({
 
       {activo ? (
         resultados.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-[var(--rule-base)] py-10 text-center">
+          <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-[var(--rule-base)] py-10 text-center">
             <Search className="h-8 w-8 text-[var(--text-tertiary)]" aria-hidden="true" />
             <p className="font-bold text-[var(--text-primary)]">Ningún formato coincide</p>
             <p className="text-sm text-[var(--text-tertiary)]">Probá con otra palabra o quitá el filtro de autoridad.</p>
@@ -277,7 +277,7 @@ function TirasResumen({
     success: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
   };
   return (
-    <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
+    <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
       {items.map((it) => (
         <div key={it.label} className="flex items-baseline gap-1.5">
           <span className={`font-display text-xl leading-none tabular-nums ${TONO[it.tono]}`}>{it.value}</span>
@@ -305,7 +305,7 @@ function FiltroChip({
       type="button"
       onClick={onClick}
       aria-pressed={activo}
-      className={`inline-flex h-9 items-center rounded-full border-2 px-3.5 text-sm font-bold transition ${
+      className={`inline-flex h-9 items-center rounded-full border px-3.5 text-sm font-bold transition ${
         activo
           ? TONO_CHIP[tono]
           : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
@@ -430,7 +430,7 @@ function Card({
     </>
   );
   const base =
-    `group relative w-full overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-left transition-all before:absolute before:inset-x-0 before:top-0 before:h-1 before:content-[''] hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)] ${TONO_FRANJA[tono]}`;
+    `group relative w-full overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-left transition-all before:absolute before:inset-x-0 before:top-0 before:h-1 before:content-[''] hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--shadow-md)] ${TONO_FRANJA[tono]}`;
 
   if (ancha) {
     return (

@@ -158,7 +158,7 @@ export default function ImageBankPicker({ open, onOpenChange, onPick }: Props) {
                     <button
                       key={item.id}
                       onClick={() => handlePick(item)}
-                      className="group rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden hover:border-primary hover:shadow-md transition-all text-left"
+                      className="group rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden hover:border-primary hover:shadow-md transition-all text-left"
                     >
                       <div className="aspect-square bg-[var(--surface-sunken)] relative">
                         {/* eslint-disable-next-line @next/next/no-img-element */}

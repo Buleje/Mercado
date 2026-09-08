@@ -67,7 +67,7 @@ export function TablaCtp({
   className?: string;
 }) {
   return (
-    <div className={`overflow-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] ${altoMax ?? ""} ${className}`}>
+    <div className={`overflow-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] ${altoMax ?? ""} ${className}`}>
       <DataTable className="w-full text-sm">{children}</DataTable>
     </div>
   );
@@ -102,7 +102,7 @@ export function FilaVacia({ cols, children }: { cols: number; children: React.Re
 }
 
 const BOTON =
-  "grid h-9 min-w-9 place-items-center rounded-lg border-2 border-[var(--rule-base)] px-2 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-30 disabled:hover:border-[var(--rule-base)]";
+  "grid h-9 min-w-9 place-items-center rounded-lg border border-[var(--rule-base)] px-2 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-30 disabled:hover:border-[var(--rule-base)]";
 
 export function CtpPaginacion({
   rango,
@@ -143,7 +143,7 @@ export function CtpPaginacion({
             value={porPagina}
             onChange={(e) => onPorPagina(Number(e.target.value))}
             aria-label="Cuántas filas por página"
-            className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           >
             {FILAS_POR_PAGINA.map((n) => (
               <option key={n} value={n}>

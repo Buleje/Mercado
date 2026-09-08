@@ -54,7 +54,7 @@ export function Bloque({
   className?: string;
 }) {
   return (
-    <section className={`overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] ${className}`}>
+    <section className={`overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] ${className}`}>
       {/* Título y ayuda en la MISMA línea: son sesenta casilleros repartidos en
           seis bloques, y dos renglones de cabecera por bloque son media pantalla
           de encabezados antes de llegar al primer campo. */}

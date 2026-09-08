@@ -33,7 +33,7 @@ const LiveMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full w-full items-center justify-center rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]">
         <div className="flex flex-col items-center gap-2 text-[var(--text-tertiary)]">
           <MapPin className="h-8 w-8 animate-pulse" />
           <p className="text-sm font-bold">Cargando mapa…</p>

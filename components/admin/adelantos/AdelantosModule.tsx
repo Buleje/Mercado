@@ -558,7 +558,7 @@ function AdelantosView({
             <button
               onClick={() => setPlanilla(true)}
               title="Descontar los adelantos de sueldo del período, todos de una"
-              className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+              className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
             >
               <Users className="h-5 w-5" /> Descuentos de planilla
             </button>
@@ -616,7 +616,7 @@ function AdelantosView({
               onClick={() => descargarCsvAdelantos(filtrados, `adelantos-${new Date().toISOString().slice(0, 10)}.csv`)}
               disabled={filtrados.length === 0}
               title="Baja exactamente lo que estás viendo, con filtro y búsqueda aplicados"
-              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
+              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
             >
               <Download className="h-4 w-4" /> CSV ({filtrados.length})
             </button>
@@ -832,7 +832,7 @@ function PersonasView({
               onClick={() => descargarCsvPersonas(ordenados, `personas-${new Date().toISOString().slice(0, 10)}.csv`)}
               disabled={ordenados.length === 0}
               title="Baja exactamente lo que estás viendo, con filtro y búsqueda aplicados"
-              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
+              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
             >
               <Download className="h-4 w-4" /> CSV ({ordenados.length})
             </button>
@@ -870,7 +870,7 @@ function PersonasView({
                   onClick={() => setPagina(pag.pagina - 1)}
                   disabled={pag.pagina <= 1}
                   aria-label="Página anterior"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -881,7 +881,7 @@ function PersonasView({
                   onClick={() => setPagina(pag.pagina + 1)}
                   disabled={pag.pagina >= pag.totalPaginas}
                   aria-label="Página siguiente"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -958,7 +958,7 @@ function EliminarPersonaModal({ persona, onClose, onDeleted }: { persona: Benefi
       </p>
       {err && <p className="mt-3 text-base font-semibold text-[var(--data-error)]">{err}</p>}
       <div className="mt-5 flex justify-end gap-2">
-        <button onClick={onClose} className="h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+        <button onClick={onClose} className="h-12 px-5 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
         <button onClick={submit} disabled={saving} className="h-12 px-5 rounded-2xl bg-[var(--data-error)] text-white text-base font-semibold hover:opacity-90 disabled:opacity-50">
           {saving ? "Eliminando…" : "Eliminar"}
         </button>
@@ -1071,7 +1071,7 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
         {/* min-w-* es clase muerta acá (memoria min-width-utilities-muertas) — inline style. */}
         <div className="relative ml-auto flex-1 sm:flex-none" style={{ minWidth: 200 }}>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por persona, código (ADL-2026-7) o recibo…" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por persona, código (ADL-2026-7) o recibo…" className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary" />
         </div>
         <button onClick={exportarPdf} disabled={filtrados.length === 0} className="inline-flex items-center gap-1 h-12 px-4 rounded-xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50">
           <FileText className="h-5 w-5" /> PDF

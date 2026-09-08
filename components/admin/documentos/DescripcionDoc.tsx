@@ -172,7 +172,7 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) guardar();
               }}
               placeholder="Ej: es el contrato del puesto 3 del mercado, el que firmamos con don Julio."
-              className="w-full resize-y rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="w-full resize-y rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
             <div className="flex items-center gap-2">
               <button
@@ -184,7 +184,7 @@ export default function DescripcionDoc({ doc, onPatched, onAnalizado }: Props) {
               </button>
               <button
                 onClick={() => { setBorrador(descPropia); setEditando(false); }}
-                className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
               >
                 <X className="h-3.5 w-3.5" /> Cancelar
               </button>

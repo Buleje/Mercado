@@ -528,7 +528,7 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
           const file = e.dataTransfer.files?.[0];
           if (file && onDropImage) onDropImage(file);
         }}
-        className="relative h-16 w-16 rounded-xl overflow-hidden border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary shrink-0 bg-[var(--surface-sunken)] group transition-all"
+        className="relative h-16 w-16 rounded-xl overflow-hidden border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary shrink-0 bg-[var(--surface-sunken)] group transition-all"
         title="Click para elegir o arrastrá una imagen aquí"
       >
         {previewImg ? (

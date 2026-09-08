@@ -36,7 +36,7 @@ import type {
 } from "@/lib/forestal/capacidad-de-planta";
 
 const SELECT =
-  "h-9 w-56 max-w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-medium text-[var(--text-primary)]";
+  "h-9 w-56 max-w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-medium text-[var(--text-primary)]";
 
 /** Un filtro con sus opciones; cada una dice cuánta madera tiene detrás. */
 function Filtro({
@@ -97,7 +97,7 @@ export default function BalanceDeCapacidad({
   if (!hayAlgo && !conFiltro) return null;
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <p className="mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
         Capacidad de la planta
       </p>

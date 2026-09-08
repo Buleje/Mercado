@@ -874,7 +874,7 @@ export default function CtpIngresosView({
             value={bulkReason}
             onChange={(e) => setBulkReason(e.target.value)}
             placeholder="Ej: volumen no coincide con la guía (mín. 3 caracteres)"
-            className="h-10 min-w-0 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-error-500)]"
+            className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-error-500)]"
             autoFocus
           />
           <button
@@ -895,7 +895,7 @@ export default function CtpIngresosView({
           <button
             type="button"
             onClick={() => setBulkRejecting(false)}
-            className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)]"
+            className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)]"
           >
             Cancelar
           </button>

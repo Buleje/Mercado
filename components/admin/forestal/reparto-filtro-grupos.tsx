@@ -125,7 +125,7 @@ export function FiltroGruposCelda({
               <button
                 type="button"
                 onClick={() => { limpiar(); setAbierto(false); }}
-                className="mt-1.5 inline-flex w-full items-center justify-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="mt-1.5 inline-flex w-full items-center justify-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
                 <X className="h-3.5 w-3.5" aria-hidden /> Que lleve de todo
               </button>

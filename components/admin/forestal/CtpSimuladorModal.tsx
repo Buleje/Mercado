@@ -145,14 +145,14 @@ export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) 
             <div>
               <CardTitle as="h3" className="mb-2 text-sm font-bold text-[var(--text-primary)]">Guías de ingreso disponibles</CardTitle>
               {guias.length === 0 ? (
-                <p className="rounded-xl border-2 border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">No hay materia prima validada sin consumir. Validá ingresos primero.</p>
+                <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">No hay materia prima validada sin consumir. Validá ingresos primero.</p>
               ) : (
                 <div className="space-y-2">
                   {guias.map((g) => {
                     const on = sel[g.id] != null;
                     return (
-                      <div key={g.id} className={`flex flex-wrap items-center gap-3 rounded-xl border-2 p-3 ${on ? "border-[var(--brand-ink)] bg-[var(--surface-canvas)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)]"}`}>
-                        <button type="button" onClick={() => toggle(g)} className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg border-2 text-xs font-bold ${on ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white" : "border-[var(--rule-base)] text-transparent"}`} aria-label={on ? "Quitar" : "Agregar"}>✓</button>
+                      <div key={g.id} className={`flex flex-wrap items-center gap-3 rounded-xl border p-3 ${on ? "border-[var(--brand-ink)] bg-[var(--surface-canvas)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)]"}`}>
+                        <button type="button" onClick={() => toggle(g)} className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg border text-xs font-bold ${on ? "border-[var(--brand-ink)] bg-[var(--brand-ink)] text-white" : "border-[var(--rule-base)] text-transparent"}`} aria-label={on ? "Quitar" : "Agregar"}>✓</button>
                         <div className="min-w-[8rem] flex-1">
                           <div className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">{g.species ?? "—"}{g.cites && <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)]">CITES</span>}</div>
                           <div className="font-mono text-xs text-[var(--text-tertiary)]">GTF {g.code ?? "—"} · disp. {fmtM3(g.disponible)} m³ · {g.costoUnitario != null ? `${money(g.costoUnitario, g.moneda)}/m³` : "sin costo"}</div>
@@ -160,7 +160,7 @@ export default function CtpSimuladorModal({ onClose }: { onClose: () => void }) 
                         {on && (
                           <label className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
                             consumir
-                            <input className="h-9 w-24 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm text-[var(--text-primary)] outline-none" value={sel[g.id]} onChange={(e) => setVol(g.id, Math.min(Number(e.target.value.replace(/[^\d.]/g, "")) || 0, g.disponible))} inputMode="decimal" /> m³
+                            <input className="h-9 w-24 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm text-[var(--text-primary)] outline-none" value={sel[g.id]} onChange={(e) => setVol(g.id, Math.min(Number(e.target.value.replace(/[^\d.]/g, "")) || 0, g.disponible))} inputMode="decimal" /> m³
                           </label>
                         )}
                       </div>
@@ -187,7 +187,7 @@ function cogsMotivo(m: string): string {
   return "";
 }
 
-const I = "w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-ink)]";
+const I = "w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--brand-ink)]";
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (

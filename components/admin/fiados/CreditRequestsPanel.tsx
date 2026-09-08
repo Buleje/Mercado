@@ -138,7 +138,7 @@ export default function CreditRequestsPanel() {
                   value={amounts[r.id] ?? ""}
                   onChange={(e) => setAmounts((a) => ({ ...a, [r.id]: e.target.value }))}
                   placeholder="Monto de la línea"
-                  className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-8 pr-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-8 pr-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
               </div>
               <button
@@ -159,7 +159,7 @@ export default function CreditRequestsPanel() {
                 onClick={() => decide(r.id, "reject")}
                 disabled={busy[r.id]}
                 aria-label={`Rechazar solicitud de ${r.customerName ?? r.customerId}`}
-                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--data-error-500)] hover:text-[var(--data-error-600)] disabled:opacity-50"
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--data-error-500)] hover:text-[var(--data-error-600)] disabled:opacity-50"
               >
                 <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
               </button>

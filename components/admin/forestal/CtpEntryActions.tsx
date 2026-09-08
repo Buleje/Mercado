@@ -69,7 +69,7 @@ export default function CtpEntryActions({
           onChange={(ev) => setRejectReason(ev.target.value)}
           placeholder={e.status === "validado" ? "Motivo de anulación (min 3)" : "Motivo (min 3 chars)"}
           aria-label={e.status === "validado" ? "Motivo de la anulación" : "Motivo del rechazo"}
-          className="h-9 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm outline-none focus:border-[var(--data-error-500)] sm:w-48"
+          className="h-9 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm outline-none focus:border-[var(--data-error-500)] sm:w-48"
           autoFocus
         />
         <div className="flex gap-2">
@@ -84,7 +84,7 @@ export default function CtpEntryActions({
           <button
             type="button"
             onClick={onCancelReject}
-            className="inline-flex h-9 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)]"
+            className="inline-flex h-9 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)]"
           >
             Cancelar
           </button>
@@ -162,7 +162,7 @@ export default function CtpEntryActions({
         type="button"
         onClick={() => onDetail(e)}
         title="Ver ficha completa"
-        className={`inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
+        className={`inline-flex h-9 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
       >
         <Eye className="h-3.5 w-3.5" />
         Ver
@@ -172,7 +172,7 @@ export default function CtpEntryActions({
           type="button"
           onClick={() => onDuplicate(e)}
           title="Nuevo ingreso con estos datos (mismo proveedor, origen y especie)"
-          className={`inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
+          className={`inline-flex h-9 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
         >
           <Copy className="h-3.5 w-3.5" />
           Duplicar
@@ -194,7 +194,7 @@ export default function CtpEntryActions({
           type="button"
           onClick={() => onEdit(e)}
           title="Corregir los datos del ingreso"
-          className={`inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
+          className={`inline-flex h-9 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
         >
           <Pencil className="h-3.5 w-3.5" />
           Corregir

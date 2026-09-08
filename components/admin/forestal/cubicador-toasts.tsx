@@ -118,7 +118,7 @@ function ToastItem({ t, onDismiss }: { t: ActionToast; onDismiss: (id: number) =
         <button
           type="button"
           onClick={() => { t.undo?.(); onDismiss(t.id); }}
-          className="inline-flex shrink-0 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
           <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Deshacer
         </button>

@@ -399,10 +399,10 @@ export default function DocumentosModule() {
                 placeholder="Buscar por nombre, tag o tipo…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full pl-9 pr-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
-            <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+            <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
               <button
                 onClick={() => setView("grid")}
                 className={cn(
@@ -548,7 +548,7 @@ function DocCard({
   const { Icon, tint, bg } = getFileIcon(doc.type);
   const isImage = doc.type.startsWith("image/") && doc.dataUrl;
   return (
-    <div className="group relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-primary/40 hover:shadow-md transition-all">
+    <div className="group relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-primary/40 hover:shadow-md transition-all">
       {/* Thumbnail */}
       <button
         onClick={onPreview}
@@ -768,7 +768,7 @@ function PreviewModal({
                   ))
                 )}
               </div>
-              <div className="flex items-stretch rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+              <div className="flex items-stretch rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
                 <input
                   type="text"
                   value={tagInput}
@@ -820,7 +820,7 @@ function PreviewModal({
 function EmptyState({ category, onUpload }: { category: DocCategory; onUpload: () => void }) {
   const isFiltered = category !== "all";
   return (
-    <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
+    <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
       <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
         <Upload className="h-7 w-7" />
       </div>

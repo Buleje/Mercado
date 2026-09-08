@@ -78,7 +78,7 @@ export function StampModal({ doc, onClose, onDone }: { doc: DbDocument; onClose:
             onChange={(e) => setCustom(e.target.value.slice(0, 24))}
             placeholder="Ej: PROFORMA"
             maxLength={24}
-            className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] uppercase outline-none focus:border-primary"
+            className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] uppercase outline-none focus:border-primary"
           />
         </label>
 

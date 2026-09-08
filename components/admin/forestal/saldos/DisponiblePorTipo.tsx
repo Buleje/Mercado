@@ -326,7 +326,7 @@ export default function DisponiblePorTipo({
                           <button
                             type="button"
                             onClick={() => onKardex(f.nombre)}
-                            className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-1 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:bg-primary/10 hover:text-[var(--text-primary)]"
+                            className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:bg-primary/10 hover:text-[var(--text-primary)]"
                             title={`Movimiento de ${f.nombre}, fila por fila`}
                           >
                             <History className="h-4 w-4" aria-hidden /> Kardex

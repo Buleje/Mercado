@@ -84,7 +84,7 @@ export default function LothSeccionTabla({
   const todasElegidas = entries.length > 0 && entries.every((e) => seleccion.has(e.id));
 
   return (
-    <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <DataTable className="w-full text-sm">
         <thead className="bg-[var(--surface-sunken)]">
           <tr>

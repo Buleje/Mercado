@@ -132,7 +132,7 @@ export default function CtpApartarEnLoteModal({ piezas, onClose, onListo }: CtpA
         )}
 
         {lotes && !mezcla && compatibles.length === 0 && (
-          <p className="rounded-xl border-2 border-dashed border-[var(--rule-base)] p-5 text-center text-sm text-[var(--text-secondary)]">
+          <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-5 text-center text-sm text-[var(--text-secondary)]">
             No hay ningún lote abierto de {especies[0] ?? "esa especie"}. Creá uno desde la pestaña Lotes y volvé.
           </p>
         )}

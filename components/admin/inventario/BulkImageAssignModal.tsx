@@ -266,7 +266,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                   value={bankSearch}
                   onChange={(e) => setBankSearch(e.target.value)}
                   placeholder="Buscar en el banco..."
-                  className="w-full pl-10 pr-3 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
+                  className="w-full pl-10 pr-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
                 />
               </div>
               {categories.length > 0 && (
@@ -380,7 +380,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
                   placeholder="Buscar producto por nombre o código..."
-                  className="w-full pl-10 pr-3 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
+                  className="w-full pl-10 pr-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-primary"
                 />
               </div>
               {productCategories.length > 1 && (
@@ -452,7 +452,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
                     <div
                       className={cn(
                         "h-14 w-14 sm:h-16 sm:w-16 rounded-xl overflow-hidden shrink-0 flex items-center justify-center",
-                        assigned ? "bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30" : "bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)]",
+                        assigned ? "bg-[var(--surface-raised)] border border-[var(--data-success-500)]/30" : "bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)]",
                       )}
                     >
                       {assigned ? (

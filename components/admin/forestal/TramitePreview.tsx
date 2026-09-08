@@ -74,7 +74,7 @@ export default function TramitePreview({
   const { srcDoc, onLoad } = useTramiteDocumentoEditor({ iframeRef, html, formato, onCampoChange });
 
   return (
-    <div className={`overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] ${className}`}>
+    <div className={`overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] ${className}`}>
       <div className="flex items-center gap-2 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2.5">
         <FileText className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden="true" />
         <span className="text-sm font-bold text-[var(--text-primary)]">Así se va a presentar</span>

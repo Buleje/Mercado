@@ -251,7 +251,7 @@ export function BloqueEspecie({
            depender de ver un color. */
         <div
           key={b.bloque.id}
-          className="overflow-hidden rounded-xl border-2 border-l-[6px] border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-md"
+          className="overflow-hidden rounded-xl border border-l-[6px] border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-md"
           style={{ borderLeftColor: color }}
         >
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-3">
@@ -679,7 +679,7 @@ function AgregarLineaBloque({
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="m-2 inline-flex items-center gap-1.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] px-2.5 py-1.5 text-sm font-bold text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] print:hidden"
+        className="m-2 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] px-2.5 py-1.5 text-sm font-bold text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] print:hidden"
       >
         <Plus className="h-4 w-4" aria-hidden /> Agregar tipo a este bloque
       </button>
@@ -692,7 +692,7 @@ function AgregarLineaBloque({
   // que no explica por qué no tiene opciones.
   if (opciones.length === 0) {
     return (
-      <div className="m-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2.5 text-sm text-[var(--text-tertiary)] print:hidden">
+      <div className="m-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2.5 text-sm text-[var(--text-tertiary)] print:hidden">
         <span>
           Nada de esta especie sin asignar todavía: todo lo que existe ya está en algún bloque o en «Falta por
           distribuir». Un tipo nuevo tiene que aserrarse primero para poder agregarlo acá.
@@ -715,7 +715,7 @@ function AgregarLineaBloque({
           value={clave}
           onChange={(ev) => setClave(ev.target.value)}
           aria-label="Tipo a agregar a este bloque"
-          className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
         >
           <option value="">Elegir…</option>
           {opciones.map((o) => <option key={o.clave} value={o.clave}>{o.label}</option>)}
@@ -731,7 +731,7 @@ function AgregarLineaBloque({
               inputMode="numeric"
               placeholder="0"
               aria-label={`Piezas de ${opcionElegida?.label ?? "el tipo elegido"} a agregar`}
-              className="h-9 w-20 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="h-9 w-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </label>
           <label className="text-sm">
@@ -743,7 +743,7 @@ function AgregarLineaBloque({
               inputMode="decimal"
               placeholder="0"
               aria-label={`Metros cúbicos de ${opcionElegida?.label ?? "el tipo elegido"} a agregar`}
-              className="h-9 w-24 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="h-9 w-24 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </label>
         </>
@@ -751,7 +751,7 @@ function AgregarLineaBloque({
       <button
         type="button"
         onClick={() => { setAbierto(false); setClave(""); }}
-        className="h-9 rounded-lg border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+        className="h-9 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
       >
         Listo
       </button>
@@ -851,7 +851,7 @@ function FilaConMedidas({
               placeholder={fmtPiezas(a.piezas)}
               aria-label={`Piezas de ${a.label}, editable`}
               title="Piezas declaradas a mano para ESTA línea. Vacío = lo que reparte el cálculo — el resto del bloque se reparte de nuevo con lo que sobre."
-              className={`h-8 w-20 rounded-xl border-2 bg-[var(--surface-raised)] px-1.5 text-right font-mono text-sm tabular-nums outline-none focus:border-[var(--accent)] ${overrideActual?.piezas == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`}
+              className={`h-8 w-20 rounded-xl border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-sm tabular-nums outline-none focus:border-[var(--accent)] ${overrideActual?.piezas == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`}
             />
           ) : fmtPiezas(a.piezas)}
         </td>

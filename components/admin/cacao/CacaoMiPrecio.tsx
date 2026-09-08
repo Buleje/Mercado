@@ -165,7 +165,7 @@ export default function CacaoMiPrecio({
   );
 
   return (
-    <div ref={rootRef} className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div ref={rootRef} className="group relative rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       {onPresent && <CacaoChartPresent title="Mi precio en el tiempo · S//kg" onClick={onPresent} className="absolute right-4 top-4 z-10" />}
       {content()}
     </div>

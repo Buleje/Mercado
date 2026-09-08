@@ -67,7 +67,7 @@ export default function SpeciesAggregateChart({ period }: { period: CtpPeriod })
   const top = data?.aggregates.slice(0, 15) ?? [];
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" />
@@ -82,7 +82,7 @@ export default function SpeciesAggregateChart({ period }: { period: CtpPeriod })
             onClick={load}
             disabled={loading}
             aria-label="Recargar dashboard"
-            className="inline-flex h-10 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -119,7 +119,7 @@ export default function SpeciesAggregateChart({ period }: { period: CtpPeriod })
         )}
 
         {!loading && top.length === 0 && (
-          <div className="rounded-xl border-2 border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+          <div className="rounded-xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
             Sin datos en este período. Probá un rango más amplio o registrá
             ingresos validados.
           </div>
@@ -167,7 +167,7 @@ function Kpi({
   sub?: string;
 }) {
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
       <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
         {label}
       </div>

@@ -110,7 +110,7 @@ export default function BuscarEnDocumento({ docId, ocrText, origen, escaneo, con
             }}
             placeholder="Buscar adentro del documento…"
             aria-label="Buscar adentro del documento"
-            className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+            className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         {consulta.trim().length >= 2 && (
@@ -119,10 +119,10 @@ export default function BuscarEnDocumento({ docId, ocrText, origen, escaneo, con
           </span>
         )}
         <span className="inline-flex items-center gap-1">
-          <button onClick={() => ir(-1)} disabled={hits.length === 0} className="rounded-xl border-2 border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-40" aria-label="Coincidencia anterior" title="Anterior (Shift+Enter)">
+          <button onClick={() => ir(-1)} disabled={hits.length === 0} className="rounded-xl border border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-40" aria-label="Coincidencia anterior" title="Anterior (Shift+Enter)">
             <ChevronUp className="h-4 w-4" />
           </button>
-          <button onClick={() => ir(1)} disabled={hits.length === 0} className="rounded-xl border-2 border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-40" aria-label="Coincidencia siguiente" title="Siguiente (Enter)">
+          <button onClick={() => ir(1)} disabled={hits.length === 0} className="rounded-xl border border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-40" aria-label="Coincidencia siguiente" title="Siguiente (Enter)">
             <ChevronDown className="h-4 w-4" />
           </button>
           {consulta && (

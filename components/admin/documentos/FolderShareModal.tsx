@@ -62,7 +62,7 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-[32rem] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-[32rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><FolderArchive className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
@@ -79,7 +79,7 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
               : "Cualquiera con este enlace podrá ver y descargar los documentos de la carpeta. Caduca en 30 días."}
           </p>
 
-          <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             <div className="flex items-start gap-2.5">
               <input
                 id="carpeta-con-clave"
@@ -103,7 +103,7 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
                   value={clave}
                   onChange={(e) => setClave(e.target.value)}
                   placeholder="Clave (mínimo 4 caracteres)"
-                  className="h-11 min-w-[180px] flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"
+                  className="h-11 min-w-[180px] flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"
                 />
                 <button
                   onClick={() => generar(clave.trim())}
@@ -117,7 +117,7 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
             )}
           </div>
 
-          <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             <div className="mb-1.5 flex items-center gap-1.5 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               <Link2 className="h-3.5 w-3.5" /> Enlace de la carpeta
             </div>
@@ -130,7 +130,7 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
             ) : (
               <div className="flex items-center gap-2">
                 <code className="min-w-0 flex-1 truncate rounded-md bg-[var(--surface-raised)] px-2 py-1.5 text-xs text-[var(--text-secondary)]">{link}</code>
-                <button onClick={copy} className="inline-flex shrink-0 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary">
+                <button onClick={copy} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary">
                   {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} {copied ? "Copiado" : "Copiar"}
                 </button>
               </div>

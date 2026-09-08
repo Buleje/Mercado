@@ -383,7 +383,7 @@ export default function CtpEntriesTabla({
     <>
       {/* ── Desktop: tabla (≥640px). El `hidden` a <640px gana sobre la
              auto-conversión genérica del shell, dejando lugar a las cards. ── */}
-      <div className="hidden overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
+      <div className="hidden overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
         <DataTable className="w-full text-sm">
           {/* `align-top`: con el autofiltro debajo del título, las cabeceras sin
               filtro tienen que quedar arriba y no centradas contra los selects. */}

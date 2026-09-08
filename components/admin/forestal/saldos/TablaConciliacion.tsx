@@ -72,7 +72,7 @@ export default function TablaConciliacion({
   const negativas = filas.filter((f) => f.negativa);
 
   return (
-    <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="border-b-2 border-[var(--rule-base)] px-4 py-3">
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
           Conciliación del período · apertura → cierre
@@ -144,7 +144,7 @@ export default function TablaConciliacion({
                   <button
                     type="button"
                     onClick={() => onKardex(s.especie)}
-                    className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:bg-primary/10 hover:text-[var(--text-primary)]"
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:bg-primary/10 hover:text-[var(--text-primary)]"
                     title={`Movimiento de ${s.especie}, fila por fila`}
                   >
                     <History className="h-3.5 w-3.5" aria-hidden /> Kardex

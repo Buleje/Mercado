@@ -374,7 +374,7 @@ export default function SimpleMovementsTab() {
                 type="button"
                 onClick={() => void cargarMas()}
                 disabled={cargandoMas}
-                className="ml-3 inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-raised)] disabled:opacity-50"
+                className="ml-3 inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-raised)] disabled:opacity-50"
               >
                 {cargandoMas ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : null}
                 Traer más
@@ -511,7 +511,7 @@ function RegisterMovementModal({ products, onClose, onSaved }: { products: Produ
           )}
 
           <div className="flex items-center gap-3 pt-1">
-            <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+            <button type="button" onClick={onClose} className="h-11 rounded-xl border border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
             <button type="button" onClick={save} disabled={saving} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
               {saving ? "Guardando…" : "Registrar"}

@@ -100,7 +100,7 @@ export function Kpi({
     error: "bg-[var(--data-error-500)]",
   }[tono];
   return (
-    <div className="flex flex-col justify-between rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-sm)]">
+    <div className="flex flex-col justify-between rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-sm)]">
       <div className="flex items-start justify-between gap-2">
         <span className="text-[length:var(--ts-2xs)] font-bold uppercase leading-tight tracking-wide text-[var(--text-tertiary)]">{label}</span>
         <Icon className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
@@ -135,7 +135,7 @@ const NODO_COLOR: Record<NodoTipo, string> = {
 export function FlujoPanel({ f }: { f: FlujoAprovechamiento }) {
   const merma = (key: string) => f.mermas.find((m) => m.key === key);
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)]">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-sm)]">
       <header className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
         <CardTitle as="h3" className="text-base text-[var(--text-primary)]">¿Dónde terminó cada m³ del bosque?</CardTitle>
         <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-tertiary)]">
@@ -251,7 +251,7 @@ function FilaEspecie({ r }: { r: RankingItem }) {
   }[margenTono];
 
   return (
-    <article className={`rounded-2xl border-2 p-4 ${r.potencial ? "border-[var(--rule-soft)] bg-[var(--surface-raised)] opacity-80" : "border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"}`}>
+    <article className={`rounded-2xl border p-4 ${r.potencial ? "border-[var(--rule-soft)] bg-[var(--surface-raised)] opacity-80" : "border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h4 className="flex flex-wrap items-center gap-2 text-sm font-bold text-[var(--text-primary)]">

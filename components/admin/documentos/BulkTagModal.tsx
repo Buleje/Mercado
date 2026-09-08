@@ -44,7 +44,7 @@ export function BulkTagModal({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
-        className="flex max-h-[85vh] w-full max-w-[26rem] flex-col overflow-visible rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        className="flex max-h-[85vh] w-full max-w-[26rem] flex-col overflow-visible rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
@@ -91,7 +91,7 @@ export function BulkTagModal({
             excluir={aplicadas}
             placeholder="Crear etiqueta nueva…"
             ariaLabel="Crear y aplicar etiqueta nueva a la selección"
-            inputClassName="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+            inputClassName="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
           />
 
           {aplicadas.length > 0 && (

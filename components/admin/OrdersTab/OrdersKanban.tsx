@@ -535,7 +535,7 @@ const KanbanColumn = memo(function KanbanColumn({
       {/* Cards */}
       <div className="flex-1 space-y-3 min-h-[200px]">
         {orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 px-4 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]/60 text-center">
+          <div className="flex flex-col items-center justify-center py-10 px-4 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]/60 text-center">
             <Icon className={cn("h-8 w-8 opacity-40", iconColor)} strokeWidth={1.5} />
             <p className="mt-2 text-xs font-bold text-[var(--text-tertiary)]">{emptyMessage}</p>
           </div>

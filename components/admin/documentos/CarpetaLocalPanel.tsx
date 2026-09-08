@@ -90,7 +90,7 @@ export default function CarpetaLocalPanel({
 
   if (!c.soportado) {
     return (
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <p className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
           <span>
@@ -105,7 +105,7 @@ export default function CarpetaLocalPanel({
   // ── Sin vincular ──
   if (!c.vinculo) {
     return (
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
           <FolderOpen className="h-5 w-5 text-primary" aria-hidden="true" />
           Vincular una carpeta de tu PC
@@ -121,7 +121,7 @@ export default function CarpetaLocalPanel({
         <select
           value={destino ?? ""}
           onChange={(e) => setDestino(e.target.value || null)}
-          className="mt-1 h-12 w-full max-w-md rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)]"
+          className="mt-1 h-12 w-full max-w-md rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)]"
         >
           <option value="">Todo el drive</option>
           {filas.map(({ folder, depth }) => (
@@ -142,7 +142,7 @@ export default function CarpetaLocalPanel({
   }
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
@@ -174,7 +174,7 @@ export default function CarpetaLocalPanel({
           <button
             type="button"
             onClick={() => void c.alternarPausa()}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             {c.vinculo.pausado ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
             {c.vinculo.pausado ? "Reanudar" : "Pausar"}
@@ -182,7 +182,7 @@ export default function CarpetaLocalPanel({
           <button
             type="button"
             onClick={() => void c.desvincular()}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >
             <Link2Off className="h-3.5 w-3.5" /> Desvincular
           </button>
@@ -246,7 +246,7 @@ export default function CarpetaLocalPanel({
             <button
               type="button"
               onClick={c.descartarPlan}
-              className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             >
               Ahora no
             </button>

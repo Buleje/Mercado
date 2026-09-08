@@ -184,7 +184,7 @@ export default function DetalleAdelantoModal({
                 modalidad: a.modalidad,
                 notas: a.notas,
               })}
-              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
             >
               <FileText className="h-4 w-4" /> Comprobante para firmar
             </button>
@@ -232,7 +232,7 @@ export default function DetalleAdelantoModal({
 
             <div className="space-y-4">
               {a.status !== "CANCELADO" && (
-                <div className="space-y-3 rounded-2xl border-2 border-[var(--rule-base)] p-4">
+                <div className="space-y-3 rounded-2xl border border-[var(--rule-base)] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Registrar entrega</CardTitle>
                     {pactada && (
@@ -320,7 +320,7 @@ export default function DetalleAdelantoModal({
                 ) : (
                   <ul className="space-y-2">
                     {a.entregas.map((e) => (
-                      <li key={e.id} className="flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-soft)] px-4 py-3">
+                      <li key={e.id} className="flex items-center gap-3 rounded-2xl border border-[var(--rule-soft)] px-4 py-3">
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--data-success)]/10 text-[var(--data-success)]">
                           {e.tipo === "PRODUCTO" ? <Package className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
                         </span>

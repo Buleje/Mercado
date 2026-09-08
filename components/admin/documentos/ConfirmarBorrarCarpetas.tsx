@@ -78,7 +78,7 @@ export function ConfirmarBorrarCarpetas({
         role="dialog"
         aria-modal="true"
         aria-label={`Eliminar ${nombres.length} carpeta(s)`}
-        className="w-full max-w-[34rem] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        className="w-full max-w-[34rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
@@ -153,7 +153,7 @@ export function ConfirmarBorrarCarpetas({
             <button
               onClick={() => correr(false)}
               disabled={!!ocupado}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 min-h-11 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 min-h-11 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-60"
             >
               {ocupado === "sueltos" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
               Sólo {carpetasQueSeVan === 1 ? "la carpeta" : "las carpetas"} — dejar los documentos sueltos en el drive

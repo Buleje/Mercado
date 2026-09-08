@@ -171,7 +171,7 @@ export default function TramiteRelacionGuias({
   }
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3 border-b-2 border-[var(--rule-soft)] pb-3">
         <div className="flex items-center gap-2.5">
           {numero != null ? (
@@ -269,7 +269,7 @@ function FilaEditable({
 }) {
   return (
     <li
-      className={`rounded-xl border-2 p-3 transition-colors ${
+      className={`rounded-xl border p-3 transition-colors ${
         fila.anulada
           ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] opacity-80"
           : "border-[var(--rule-base)] bg-[var(--surface-canvas)]"
@@ -333,7 +333,7 @@ function FilaEditable({
           type="button"
           onClick={() => onEditar({ anulada: !fila.anulada, motivo: fila.anulada ? "" : fila.motivo })}
           aria-pressed={fila.anulada}
-          className={`inline-flex h-8 items-center gap-1.5 rounded-full border-2 px-2.5 text-xs font-bold transition ${
+          className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs font-bold transition ${
             fila.anulada
               ? "border-[var(--text-tertiary)] bg-[var(--surface-raised)] text-[var(--text-primary)]"
               : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:border-[var(--rule-strong)]"

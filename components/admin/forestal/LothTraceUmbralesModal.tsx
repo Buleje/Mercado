@@ -23,7 +23,7 @@ import {
 } from "@/lib/forestal/loth-trace-umbrales";
 
 const INPUT =
-  "h-11 w-20 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-center font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]";
+  "h-11 w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-center font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]";
 
 export default function LothTraceUmbralesModal({
   open,
@@ -89,7 +89,7 @@ export default function LothTraceUmbralesModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[88vh] w-full max-w-[38rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
+      <div className="flex max-h-[88vh] w-full max-w-[38rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
         <header className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3">
           <div>
             <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">Umbrales de merma</p>
@@ -101,14 +101,14 @@ export default function LothTraceUmbralesModal({
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
             <X className="h-4 w-4" />
           </button>
         </header>
 
         <div className="min-h-0 flex-1 overflow-auto px-5 py-4">
-          <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-bold text-[var(--text-primary)]">Todas las especies</p>
@@ -166,7 +166,7 @@ export default function LothTraceUmbralesModal({
           <button
             type="button"
             onClick={() => setDraft(UMBRALES_DEFAULT)}
-            className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
             <RotateCcw className="h-4 w-4" /> Volver al default
           </button>

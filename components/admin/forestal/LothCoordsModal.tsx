@@ -83,7 +83,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[88vh] w-full max-w-[44rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
+      <div className="flex max-h-[88vh] w-full max-w-[44rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
         <header className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3">
           <div>
             <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">Importar coordenadas</p>
@@ -95,7 +95,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -109,13 +109,13 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
                 value={zona}
                 onChange={(e) => setZona(e.target.value)}
                 placeholder="18L"
-                className="mt-1 block h-12 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-base font-bold text-[var(--text-primary)]"
+                className="mt-1 block h-12 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-base font-bold text-[var(--text-primary)]"
               />
             </label>
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
             >
               <Upload className="h-4 w-4" /> Subir archivo
             </button>
@@ -154,7 +154,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
               rows={10}
               spellCheck={false}
               placeholder={EJEMPLO}
-              className="mt-1 block w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 font-mono text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+              className="mt-1 block w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 font-mono text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
             />
           </label>
 
@@ -164,7 +164,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
             </p>
           )}
 
-          <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
             <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Lectura</p>
             {listo ? (
               <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
@@ -192,7 +192,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-12 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             Cancelar
           </button>

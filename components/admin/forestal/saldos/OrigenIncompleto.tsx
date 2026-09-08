@@ -41,7 +41,7 @@ export default function OrigenIncompleto({
   /* Sólo apertura: no hay hueco que corregir; se dice en calma, sin rojo. */
   if (corridas.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <CardTitle
           as="h3"
           className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"

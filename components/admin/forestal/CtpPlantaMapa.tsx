@@ -688,37 +688,37 @@ export default function CtpPlantaMapa({
         {drawing ? (
           <>
             <span className="inline-flex h-9 items-center rounded-xl bg-[var(--data-warning-50)] px-3 text-sm font-bold text-[var(--data-warning-700)]">Tocá el mapa para marcar la zona ({nVerts}){drawPerim > 0 ? ` · ${formatDist(drawPerim)}` : ""}{drawArea > 0 ? ` · ${fmtArea(drawArea)}` : ""}</span>
-            <button type="button" onClick={addGpsPoint} disabled={locating} title="Agregar un vértice en mi ubicación GPS (caminar la planta)" className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden sm:inline">Punto GPS</span></button>
-            <button type="button" onClick={undo} disabled={nVerts === 0} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
+            <button type="button" onClick={addGpsPoint} disabled={locating} title="Agregar un vértice en mi ubicación GPS (caminar la planta)" className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden sm:inline">Punto GPS</span></button>
+            <button type="button" onClick={undo} disabled={nVerts === 0} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
             <button type="button" onClick={finishDraw} disabled={nVerts < 3} className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Check className="h-4 w-4" />Terminar ({nVerts})</button>
-            <button type="button" onClick={cancelDraw} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
+            <button type="button" onClick={cancelDraw} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
           </>
         ) : editing ? (
           editSel ? (
             <>
               <span className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-700)]"><Edit3 className="h-4 w-4" />Moviendo {editSel.codigo} · {fmtArea(editArea)}</span>
               <button type="button" onClick={saveEdit} disabled={savingEdit} className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar</button>
-              <button type="button" onClick={exitEdit} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Salir</button>
+              <button type="button" onClick={exitEdit} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Salir</button>
             </>
           ) : (
             <>
               <span className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-700)]"><Edit3 className="h-4 w-4" />Tocá una zona para mover sus límites</span>
-              <button type="button" onClick={exitEdit} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Salir</button>
+              <button type="button" onClick={exitEdit} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Salir</button>
             </>
           )
         ) : measuring ? (
           <>
-            <span className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold text-[var(--text-primary)]"><Route className="h-4 w-4 text-[var(--accent)]" />{measurePts < 2 ? "Tocá el mapa para medir" : formatDist(measureDist)}{measureArea > 0 ? ` · ${fmtArea(measureArea)}` : ""}</span>
-            <button type="button" onClick={undoMeasure} disabled={measurePts === 0} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
-            <button type="button" onClick={clearMeasure} disabled={measurePts === 0} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><X className="h-4 w-4" />Limpiar</button>
-            <button type="button" onClick={exitMeasure} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Check className="h-4 w-4" />Listo</button>
+            <span className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold text-[var(--text-primary)]"><Route className="h-4 w-4 text-[var(--accent)]" />{measurePts < 2 ? "Tocá el mapa para medir" : formatDist(measureDist)}{measureArea > 0 ? ` · ${fmtArea(measureArea)}` : ""}</span>
+            <button type="button" onClick={undoMeasure} disabled={measurePts === 0} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Undo2 className="h-4 w-4" />Deshacer</button>
+            <button type="button" onClick={clearMeasure} disabled={measurePts === 0} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><X className="h-4 w-4" />Limpiar</button>
+            <button type="button" onClick={exitMeasure} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Check className="h-4 w-4" />Listo</button>
           </>
         ) : (
           <>
             <button type="button" onClick={startDraw} disabled={!ready} className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"><Pencil className="h-4 w-4" /><span className="hidden sm:inline">Dibujar zona</span></button>
-            {hasZonas && <button type="button" onClick={enterEdit} disabled={!ready} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Edit3 className="h-4 w-4" /><span className="hidden sm:inline">Editar</span></button>}
-            <button type="button" onClick={startMeasure} disabled={!ready} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Route className="h-4 w-4" /><span className="hidden sm:inline">Medir</span></button>
-            <button type="button" onClick={() => setCoordModal(true)} disabled={!ready} title="Crear o ir a una zona por coordenadas GPS" className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Navigation className="h-4 w-4" /><span className="hidden lg:inline">Coordenadas</span></button>
+            {hasZonas && <button type="button" onClick={enterEdit} disabled={!ready} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Edit3 className="h-4 w-4" /><span className="hidden sm:inline">Editar</span></button>}
+            <button type="button" onClick={startMeasure} disabled={!ready} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Route className="h-4 w-4" /><span className="hidden sm:inline">Medir</span></button>
+            <button type="button" onClick={() => setCoordModal(true)} disabled={!ready} title="Crear o ir a una zona por coordenadas GPS" className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Navigation className="h-4 w-4" /><span className="hidden lg:inline">Coordenadas</span></button>
           </>
         )}
         {/*
@@ -738,16 +738,16 @@ export default function CtpPlantaMapa({
         <span aria-hidden className="mx-0.5 hidden h-6 w-px shrink-0 bg-[var(--rule-base)] lg:block" />
         <div className="flex flex-wrap items-center gap-1.5">
           {conGeom.length > 0 && (
-            <select value="" onChange={(e) => { if (e.target.value) flyTo(e.target.value); }} title="Ir a una zona" className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
+            <select value="" onChange={(e) => { if (e.target.value) flyTo(e.target.value); }} title="Ir a una zona" className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
               <option value="">Ir a zona…</option>
               {conGeom.map((z) => <option key={z.id} value={z.id}>{z.codigo}</option>)}
             </select>
           )}
-          <button type="button" onClick={locate} disabled={locating} title="Centrar el mapa en mi ubicación (GPS)" className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden xl:inline">Mi ubicación</span></button>
+          <button type="button" onClick={locate} disabled={locating} title="Centrar el mapa en mi ubicación (GPS)" className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50">{locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}<span className="hidden xl:inline">Mi ubicación</span></button>
           {hasZonas && <button type="button" onClick={toggleLabels} title="Mostrar los códigos sobre las zonas" className={`inline-flex h-9 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold hover:bg-[var(--surface-canvas)] ${showLabels ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"}`}><Tag className="h-4 w-4" /><span className="hidden xl:inline">Etiquetas</span></button>}
-          {conGeom.some((z) => parseCoords(z.poligono ?? null)) && <button type="button" onClick={exportGeoJSON} title="Exportar las zonas como GeoJSON (SIG / plano de planta)" className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" /><span className="hidden xl:inline">Exportar</span></button>}
-          <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} title={layer === "sat" ? "Ver el mapa de calles" : "Ver la imagen satelital"} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Layers className="h-4 w-4" /><span className="hidden xl:inline">{layer === "sat" ? "Satélite" : "Calles"}</span></button>
-          <button type="button" onClick={() => setFullscreen((v) => !v)} title={fullscreen ? "Salir de pantalla completa (Esc)" : "Ver el mapa a pantalla completa"} className="inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">{fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}<span className="hidden xl:inline">{fullscreen ? "Salir" : "Pantalla completa"}</span></button>
+          {conGeom.some((z) => parseCoords(z.poligono ?? null)) && <button type="button" onClick={exportGeoJSON} title="Exportar las zonas como GeoJSON (SIG / plano de planta)" className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" /><span className="hidden xl:inline">Exportar</span></button>}
+          <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} title={layer === "sat" ? "Ver el mapa de calles" : "Ver la imagen satelital"} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Layers className="h-4 w-4" /><span className="hidden xl:inline">{layer === "sat" ? "Satélite" : "Calles"}</span></button>
+          <button type="button" onClick={() => setFullscreen((v) => !v)} title={fullscreen ? "Salir de pantalla completa (Esc)" : "Ver el mapa a pantalla completa"} className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">{fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}<span className="hidden xl:inline">{fullscreen ? "Salir" : "Pantalla completa"}</span></button>
         </div>
       </div>
 
@@ -758,7 +758,7 @@ export default function CtpPlantaMapa({
           onDragLeave={() => setSobreZona(null)}
           onDrop={onDropItem}
           style={{ height: fullscreen ? "100%" : 480, cursor: drawing || measuring ? "crosshair" : enMano ? "copy" : "" }}
-          className="isolate w-full overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]"
+          className="isolate w-full overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]"
         />
         {/* Realce de «hay algo en la mano». Va SUPERPUESTO y no sobre el div del
             mapa: Leaflet escribe sus propias clases ahí (un className de React
@@ -774,7 +774,7 @@ export default function CtpPlantaMapa({
         )}
         {ready && !hasZonas && !drawing && !measuring && (
           <div className="absolute inset-0 flex items-center justify-center p-6">
-            <div className="max-w-xs rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-center shadow-[var(--shadow-lg)]">
+            <div className="max-w-xs rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 text-center shadow-[var(--shadow-lg)]">
               <span className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Pencil className="h-6 w-6" /></span>
               <p className="text-sm font-bold text-[var(--text-primary)]">Dibujá la primera zona de tu aserradero</p>
               <p className="mt-1 text-xs text-[var(--text-secondary)]">Tocá “Dibujar zona”, marcá el contorno del patio de trozas, la sierra o el despacho, y asignale su tipo. Aparecerá coloreada en el mapa.</p>
@@ -797,7 +797,7 @@ export default function CtpPlantaMapa({
         {ready && tiposPresentes.length > 0 && (
           <details
             open
-            className="pointer-events-auto absolute right-3 top-3 z-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-md)] [&_summary::-webkit-details-marker]:hidden"
+            className="pointer-events-auto absolute right-3 top-3 z-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 shadow-[var(--shadow-md)] [&_summary::-webkit-details-marker]:hidden"
           >
             <summary className="cursor-pointer list-none text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
               Tipo de zona
@@ -807,7 +807,7 @@ export default function CtpPlantaMapa({
             </div>
           </details>
         )}
-        {cursor && <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">{Number(cursor.lat).toFixed(5)}, {Number(cursor.lng).toFixed(5)}</div>}
+        {cursor && <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">{Number(cursor.lat).toFixed(5)}, {Number(cursor.lng).toFixed(5)}</div>}
         {/* Aviso de zoom digital: el satélite no tiene más detalle a este zoom en
             zonas remotas — la imagen se ve borrosa (upscale), NO está rota. */}
         {ready && layer === "sat" && zoom > SAT_MAX_NATIVE && (

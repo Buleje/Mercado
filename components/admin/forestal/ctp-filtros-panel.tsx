@@ -51,7 +51,7 @@ export interface FiltroToggle {
 }
 
 export const BTN_FILTRO =
-  "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-60 max-sm:w-12 max-sm:px-0";
+  "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-60 max-sm:w-12 max-sm:px-0";
 const BTN_ACTIVO =
   "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] max-sm:w-auto max-sm:px-3 dark:text-[var(--accent)]";
 
@@ -126,7 +126,7 @@ export default function CtpFiltrosPanel({
   return (
     <div
       id={id}
-      className="grid gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:grid-cols-2 lg:grid-cols-4"
+      className="grid gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:grid-cols-2 lg:grid-cols-4"
     >
       {selects.map((s) => (
         <SelectFaceta key={s.id} filtro={s} onChange={(v) => onSelect(s.id, v)} />
@@ -342,7 +342,7 @@ export function FiltroColumnaRango({
       </summary>
       <div
         style={estilo}
-        className="z-50 w-60 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)]"
+        className="z-50 w-60 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)]"
       >
         <p className="mb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           {label} {unidad ? `(${unidad})` : ""}
@@ -418,7 +418,7 @@ export function FiltroColumnaMulti({
         role="group"
         aria-label={`Valores de ${label}`}
         style={estilo}
-        className="z-50 max-h-64 w-64 overflow-y-auto rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
+        className="z-50 max-h-64 w-64 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
       >
         {options.length === 0 && <p className="px-2 py-1.5 text-sm text-[var(--text-tertiary)]">Sin valores</p>}
         {options.map((o) => (

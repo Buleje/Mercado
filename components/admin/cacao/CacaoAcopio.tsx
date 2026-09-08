@@ -387,7 +387,7 @@ export default function CacaoAcopio() {
               disabled={loading}
               aria-label="Recargar"
               title="Recargar los lotes"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-60"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             </button>
@@ -476,14 +476,14 @@ export default function CacaoAcopio() {
               type="button"
               onClick={exportCsv}
               disabled={lotes.length === 0}
-              className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+              className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
             >
               <Download className="h-4 w-4" />
               CSV
             </button>
           </div>
           {showFilters && (
-            <div className="grid grid-cols-2 gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4 sm:grid-cols-4">
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">
                   Variedad
@@ -491,7 +491,7 @@ export default function CacaoAcopio() {
                 <select
                   value={fVariedad}
                   onChange={(e) => setFVariedad(e.target.value)}
-                  className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--accent)]"
+                  className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--accent)]"
                 >
                   <option value="">Todas</option>
                   {CACAO_VARIEDADES.map((v) => (
@@ -508,7 +508,7 @@ export default function CacaoAcopio() {
                 <select
                   value={fGrado}
                   onChange={(e) => setFGrado(e.target.value)}
-                  className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--accent)]"
+                  className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--accent)]"
                 >
                   <option value="">Todos</option>
                   <option value="I">Grado I</option>
@@ -524,7 +524,7 @@ export default function CacaoAcopio() {
                   type="date"
                   value={fFrom}
                   onChange={(e) => setFFrom(e.target.value)}
-                  className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--accent)]"
+                  className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--accent)]"
                 />
               </label>
               <label className="block">
@@ -535,7 +535,7 @@ export default function CacaoAcopio() {
                   type="date"
                   value={fTo}
                   onChange={(e) => setFTo(e.target.value)}
-                  className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--accent)]"
+                  className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm outline-none focus:border-[var(--accent)]"
                 />
               </label>
               <div className="col-span-2 flex gap-2 sm:col-span-4">
@@ -556,7 +556,7 @@ export default function CacaoAcopio() {
                       setFTo("");
                       load("acopio", { variedad: "", grado: "", from: "", to: "" });
                     }}
-                    className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                    className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                   >
                     Limpiar
                   </button>
@@ -592,7 +592,7 @@ export default function CacaoAcopio() {
           {/* Desktop: tabla. Móvil: cards a medida (abajo) — la conversión
               automática `.admin-mobile-cards` dejaba tarjetas de 120px de ancho
               con la fecha partida en tres líneas. */}
-          <div className="hidden overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
+          <div className="hidden overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] sm:block">
             <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] text-left">
                 <tr>
@@ -766,7 +766,7 @@ export default function CacaoAcopio() {
                 />
               ))}
               {/* El total también en móvil: es el número con el que se cierra el día. */}
-              <p className="flex items-center justify-between rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm">
+              <p className="flex items-center justify-between rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm">
                 <span className="font-bold text-[var(--text-secondary)]">Total · {rows.length} lote{rows.length === 1 ? "" : "s"}</span>
                 <span className="text-right">
                   <b className="block font-mono tabular-nums text-[var(--text-primary)]">{n2(rowTotals.kg)} kg · S/ {n2(rowTotals.liquidacion)}</b>
@@ -780,7 +780,7 @@ export default function CacaoAcopio() {
             </div>
           )}
 
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] empty:hidden">
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] empty:hidden">
             <EmptyOrLoading
               loading={loading}
               empty={rows.length === 0}
@@ -877,7 +877,7 @@ export default function CacaoAcopio() {
                   if (e.key === "Enter" && annulReason.trim().length >= 3) annul();
                 }}
                 placeholder="Ej: error de pesaje, lote duplicado…"
-                className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-error-500)]"
+                className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-error-500)]"
               />
               <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
                 Mínimo 3 caracteres.
@@ -887,7 +887,7 @@ export default function CacaoAcopio() {
               <button
                 type="button"
                 onClick={() => setAnnulId(null)}
-                className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
               >
                 Cancelar
               </button>
@@ -931,7 +931,7 @@ export default function CacaoAcopio() {
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-3 text-center">
+                <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-3 text-center">
                   <div>
                     <span className="block text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                       Debido
@@ -980,7 +980,7 @@ export default function CacaoAcopio() {
                       if (e.key === "Enter" && !invalido && !paying) pagar();
                     }}
                     placeholder="0.00"
-                    className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]"
+                    className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]"
                   />
                   <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
                     Es el total acumulado pagado por este lote (adelanto + abonos), no solo el último
@@ -992,7 +992,7 @@ export default function CacaoAcopio() {
                   <button
                     type="button"
                     onClick={() => setPayId(null)}
-                    className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                    className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                   >
                     Cancelar
                   </button>
@@ -1086,7 +1086,7 @@ function SearchBar({
   placeholder: string;
 }) {
   return (
-    <div className="flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
+    <div className="flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
       <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
       <input
         value={value}

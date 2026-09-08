@@ -180,9 +180,9 @@ export default function CtpDocumentoVisor({
   };
 
   const btn =
-    "inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]";
+    "inline-flex h-11 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]";
   const icono =
-    "grid h-11 w-11 shrink-0 place-items-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
+    "grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
 
   return (
     <div
@@ -192,7 +192,7 @@ export default function CtpDocumentoVisor({
       aria-modal="true"
       aria-label={doc?.nombre ?? "Documento"}
     >
-      <div className="flex h-[min(94vh,62rem)] w-full max-w-[72rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
+      <div className="flex h-[min(94vh,62rem)] w-full max-w-[72rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
         <header className="flex items-center gap-3 border-b-2 border-[var(--rule-base)] px-4 py-3">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <FileText className="h-5 w-5" aria-hidden />
@@ -238,7 +238,7 @@ export default function CtpDocumentoVisor({
             ))}
 
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 rounded-2xl border-2 border-[var(--rule-base)] p-1">
+            <div className="flex items-center gap-1 rounded-2xl border border-[var(--rule-base)] p-1">
               <button type="button" onClick={() => zoomear(-1)} aria-label="Alejar" className={`${icono} h-9 w-9 border-0`}>
                 <Minus className="h-4 w-4" aria-hidden />
               </button>

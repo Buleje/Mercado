@@ -127,7 +127,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
                   Tocá el mapa para marcar la parcela, o usá el GPS del teléfono si estás ahí. Sirve
                   para logística de recojo y trazabilidad de origen.
                 </p>
-                <div className="overflow-hidden rounded-xl border-2 border-[var(--rule-base)]">
+                <div className="overflow-hidden rounded-xl border border-[var(--rule-base)]">
                   <LeafletMap
                     lat={f.latitud ? Number(f.latitud) : BRAND_GEO.lat}
                     lon={f.longitud ? Number(f.longitud) : BRAND_GEO.lng}
@@ -149,7 +149,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
             {/* Tarjeta viva */}
             <aside className="border-t-2 border-[var(--rule-soft)] bg-[var(--surface-canvas)]/40 px-5 py-5 lg:sticky lg:top-0 lg:self-start lg:border-l-2 lg:border-t-0">
               <p className="mb-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Tarjeta del productor</p>
-              <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
                 <div className="flex items-center gap-3">
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Users className="h-6 w-6" /></span>
                   <div className="min-w-0">

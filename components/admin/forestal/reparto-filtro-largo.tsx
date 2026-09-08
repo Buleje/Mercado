@@ -74,7 +74,7 @@ export function FiltroLargoCelda({ valor, onChange }: {
           list="largos-disponibles"
           placeholder={lista.length === 0 ? "cualquiera" : "+ largo"}
           aria-label="Agregar un largo (pies) al filtro — elegí de la lista o escribí el tuyo"
-          className="h-7 w-16 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 text-right font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
+          className="h-7 w-16 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 text-right font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)]"
         />
       </div>
       {activo && (
@@ -94,7 +94,7 @@ export function FiltroLargoCelda({ valor, onChange }: {
             value={activo.pct}
             onChange={(e) => setPct(activo.largo, Number(e.target.value))}
             aria-label={`Porcentaje del pendiente de ${activo.largo} pies que se lleva este bloque`}
-            className="h-6 w-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-right font-mono tabular-nums outline-none focus:border-[var(--accent)]"
+            className="h-6 w-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-right font-mono tabular-nums outline-none focus:border-[var(--accent)]"
           />
           <span className="text-[var(--text-tertiary)]">%</span>
         </div>

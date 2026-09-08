@@ -49,7 +49,7 @@ export default function ReporteDeImport({
     reporte.avisosDeFila.length > 0;
 
   return (
-    <div className="space-y-3 rounded-xl border-2 border-[var(--rule-base)] p-4">
+    <div className="space-y-3 rounded-xl border border-[var(--rule-base)] p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-lg font-extrabold text-[var(--text-primary)]">

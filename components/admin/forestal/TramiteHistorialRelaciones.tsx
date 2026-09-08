@@ -31,7 +31,7 @@ export default function TramiteHistorialRelaciones({
   if (otras.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
       <div className="mb-3 flex items-center gap-2">
         <History className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
         <h4 className="text-sm font-bold text-[var(--text-primary)]">

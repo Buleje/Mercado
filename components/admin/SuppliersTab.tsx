@@ -464,7 +464,7 @@ export default function SuppliersTab() {
         });
         if (visible.length === 0) {
           return (
-            <div className="text-center py-10 border-2 border-dashed border-[var(--rule-base)] rounded-xl">
+            <div className="text-center py-10 border border-dashed border-[var(--rule-base)] rounded-xl">
               <p className="text-sm font-semibold text-[var(--text-secondary)]">No hay proveedores en este filtro</p>
               <button onClick={() => { setFilter("todos"); setSearch(""); }} className="mt-2 text-xs text-primary font-semibold hover:underline">Ver todos</button>
             </div>

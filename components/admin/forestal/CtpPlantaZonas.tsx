@@ -63,7 +63,7 @@ export default function CtpPlantaZonas({ zonas, itemsPorZona, onIrAZona, onDespa
   if (zonas.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Layers className="h-4 w-4 text-[var(--accent)]" /> Zonas de la planta
@@ -75,7 +75,7 @@ export default function CtpPlantaZonas({ zonas, itemsPorZona, onIrAZona, onDespa
 
       {/* Ocupación: cómo se reparte el terreno dibujado. */}
       {filas.total > 0 && (
-        <div className="mb-2 flex h-3 w-full overflow-hidden rounded-full border-2 border-[var(--rule-base)]">
+        <div className="mb-2 flex h-3 w-full overflow-hidden rounded-full border border-[var(--rule-base)]">
           {filas.list.map((f) => (
             <div key={f.z.id} style={{ width: `${f.pct}%`, background: f.meta.ring }} title={`${f.z.codigo} · ${f.pct.toFixed(0)}%`} />
           ))}

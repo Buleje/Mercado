@@ -80,7 +80,7 @@ export default function CacaoCampo() {
 
       {/* Toolbar + leyenda */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-2xl border-2 border-[var(--rule-base)] p-0.5">
+        <div className="inline-flex rounded-2xl border border-[var(--rule-base)] p-0.5">
           <button type="button" onClick={() => setVista("grilla")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-semibold ${vista === "grilla" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><LayoutGrid className="h-4 w-4" />Grilla</button>
           <button type="button" onClick={() => setVista("mapa")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-semibold ${vista === "mapa" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><MapIcon className="h-4 w-4" />Mapa</button>
           <button type="button" onClick={() => setVista("agenda")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-semibold ${vista === "agenda" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><Calendar className="h-4 w-4" />Agenda</button>
@@ -94,7 +94,7 @@ export default function CacaoCampo() {
           })}
         </div>
         <button type="button" onClick={() => setIncludeInactive((v) => !v)} className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-semibold ${includeInactive ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"} hover:bg-[var(--surface-canvas)]`}>{includeInactive ? "Todas" : "Activas"}</button>
-        <button type="button" onClick={load} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" />Actualizar</button>
+        <button type="button" onClick={load} className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" />Actualizar</button>
         <button type="button" onClick={() => setShowNew(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-base font-semibold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Nueva sección</button>
       </div>
 
@@ -108,9 +108,9 @@ export default function CacaoCampo() {
       ) : vista === "sanidad" ? (
         <CacaoCampoSanidad parcelas={parcelas} onOpenParcela={setDrawerId} onChanged={load} />
       ) : loading && parcelas.length === 0 ? (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
+        <div className="rounded-2xl border border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
       ) : parcelas.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
           <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Trees className="h-7 w-7" /></span>
           <p className="text-base font-bold text-[var(--text-primary)]">Dibujá tu chacra</p>
           <p className="mx-auto mt-1 max-w-sm text-sm">Agregá cada sección de tu terreno (ej. una hectárea = un código). Después registrás poda, fertilización, cosecha y las ves acá por color.</p>
@@ -175,7 +175,7 @@ function NuevaParcelaModal({ onClose, onSaved }: { onClose: () => void; onSaved:
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); setSubmitting(false); }
   }
 
-  const I = "h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  const I = "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
     <AdminModal open onClose={onClose} variant="default" icon={Trees} title="Nueva sección" description="Una parte de tu chacra con su propio código (ej. una hectárea).">
       <form onSubmit={submit} className="space-y-4 p-5">
@@ -189,7 +189,7 @@ function NuevaParcelaModal({ onClose, onSaved }: { onClose: () => void; onSaved:
         </div>
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
+          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
           <button type="submit" disabled={!valido || submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Crear sección</button>
         </div>
       </form>

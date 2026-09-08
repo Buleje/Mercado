@@ -67,7 +67,7 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-12 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             Cancelar
           </button>
@@ -87,7 +87,7 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
 
         <div className="flex-1 space-y-3 overflow-auto px-5 py-4">
           <div className="flex flex-wrap items-center gap-2">
-            <label className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+            <label className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
               <Upload className="h-4 w-4" /> Subir CSV
               <input type="file" accept=".csv,.txt,.tsv" className="hidden" onChange={(e) => void onFile(e.target.files?.[0])} />
             </label>
@@ -105,7 +105,7 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
             rows={6}
             spellCheck={false}
             placeholder={EJEMPLO}
-            className="block w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 font-mono text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+            className="block w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 font-mono text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
           />
 
           {fileError && (
@@ -116,13 +116,13 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
 
           {res.filas.length > 0 && (
             <>
-              <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-bold">
+              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-bold">
                 <span className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">{res.validas} lista(s) para importar</span>
                 {res.conAviso > 0 && <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{res.conAviso} con aviso</span>}
                 {res.conError > 0 && <span className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{res.conError} con error (no se importan)</span>}
               </div>
 
-              <div className="max-h-[320px] overflow-auto rounded-xl border-2 border-[var(--rule-base)]">
+              <div className="max-h-[320px] overflow-auto rounded-xl border border-[var(--rule-base)]">
                 <DataTable className="w-full border-collapse text-sm">
                   <thead className="sticky top-0 bg-[var(--surface-canvas)]">
                     <tr className="text-[length:var(--ts-2xs)] uppercase tracking-wide text-[var(--text-tertiary)]">

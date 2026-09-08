@@ -113,7 +113,7 @@ export default function DescargarLotes({
       </Btn>
 
       {abierto && (
-        <div className="absolute right-0 z-30 mt-2 w-[22rem] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
+        <div className="absolute right-0 z-30 mt-2 w-[22rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
           <div className="flex items-baseline justify-between gap-2">
             <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
               Qué lotes bajar

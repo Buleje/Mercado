@@ -44,7 +44,7 @@ export function HeroResumen({ total, renglones, porEspecie, porTipo, conValor, a
 }) {
   const frase = lecturaCorta(porEspecie, porTipo);
   return (
-    <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       {/* Velo de acento: da profundidad a la cabecera sin teñir el texto.
           `pointer-events-none` porque tapa los botones si no. */}
       {/* `bg-linear-to-b` es el prefijo de Tailwind 4; el de v3 lo marca el gate

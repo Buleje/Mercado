@@ -471,7 +471,7 @@ export default function AdminLoginPage() {
                   type="button"
                   disabled={loading || redirecting}
                   onClick={() => handleSubmit(undefined, t.slug)}
-                  className="w-full flex items-center justify-between gap-3 h-14 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-left font-semibold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--accent)]/8 disabled:opacity-50 transition-all"
+                  className="w-full flex items-center justify-between gap-3 h-14 px-5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-left font-semibold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--accent)]/8 disabled:opacity-50 transition-all"
                 >
                   <span className="truncate">{t.name}</span>
                   <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] shrink-0">{t.slug}</span>
@@ -508,7 +508,7 @@ export default function AdminLoginPage() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full h-14 pl-12 pr-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/12 hover:border-[var(--accent)]/40 transition-all"
+                  className="w-full h-14 pl-12 pr-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/12 hover:border-[var(--accent)]/40 transition-all"
                   placeholder="qaadmin"
                   autoComplete="username"
                   autoCapitalize="none"
@@ -538,7 +538,7 @@ export default function AdminLoginPage() {
                   onKeyDown={detectCapsLock}
                   onKeyUp={detectCapsLock}
                   aria-describedby={capsLock ? "caps-lock-warn" : undefined}
-                  className="w-full h-14 pl-12 pr-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/12 hover:border-[var(--accent)]/40 transition-all"
+                  className="w-full h-14 pl-12 pr-14 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/12 hover:border-[var(--accent)]/40 transition-all"
                   placeholder="••••••••"
                   autoComplete="current-password"
                   required
@@ -672,7 +672,7 @@ export default function AdminLoginPage() {
                 type="button"
                 onClick={handleBypass}
                 disabled={bypassLoading}
-                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-transparent text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition-colors disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-dashed border-[var(--rule-base)] bg-transparent text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition-colors disabled:opacity-50"
               >
                 {bypassLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Modo demo (solo dev)
@@ -790,7 +790,7 @@ function DashboardPreview() {
         />
 
         {/* Card principal con shadow profunda */}
-        <div className="relative rounded-[28px] bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden">
+        <div className="relative rounded-[28px] bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden">
           {/* Header del dashboard mock */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[var(--rule-soft)]">
             <div className="flex items-center gap-2">
@@ -967,7 +967,7 @@ function SwitchChip({
   return (
     <a
       href={href}
-      className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:bg-primary/10 transition-all group"
+      className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:bg-primary/10 transition-all group"
     >
       <div className="flex items-center gap-3 min-w-0">
         <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0 group-hover:bg-[var(--accent-600,var(--accent))] group-hover:text-white transition-colors">

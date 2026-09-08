@@ -157,7 +157,7 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
         <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Análisis del módulo</CardTitle>
         <div className="flex items-center gap-2">
           {monedas.length > 1 && (
-            <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] overflow-hidden">
+            <div className="inline-flex rounded-xl border border-[var(--rule-base)] overflow-hidden">
               {monedas.map((c) => (
                 <button
                   key={c}

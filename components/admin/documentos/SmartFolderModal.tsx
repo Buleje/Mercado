@@ -33,7 +33,7 @@ export function SmartFolderModal({ initial, onSave, onClose }: { initial?: Smart
     onClose();
   };
 
-  const inputCls = "mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary";
+  const inputCls = "mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary";
   const labelCls = "text-xs font-bold text-[var(--text-secondary)]";
 
   return (

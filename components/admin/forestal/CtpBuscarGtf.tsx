@@ -142,7 +142,7 @@ export default function CtpBuscarGtf({
       onClick={onCerrar}
     >
       <div
-        className="w-full max-w-[42rem] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        className="w-full max-w-[42rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Barra de búsqueda: el foco entra acá y Enter busca. */}
@@ -217,7 +217,7 @@ export default function CtpBuscarGtf({
                     <button
                       type="button"
                       onClick={() => { onVerPaquete(p.codigo); onCerrar(); }}
-                      className="group flex w-full items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-left transition-colors hover:border-[var(--accent)]"
+                      className="group flex w-full items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-left transition-colors hover:border-[var(--accent)]"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -255,7 +255,7 @@ export default function CtpBuscarGtf({
                         onVerIngreso(e);
                         onCerrar();
                       }}
-                      className="group flex w-full items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-left transition-colors hover:border-[var(--accent)]"
+                      className="group flex w-full items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-left transition-colors hover:border-[var(--accent)]"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -293,7 +293,7 @@ export default function CtpBuscarGtf({
                         onIrA("despacho");
                         onCerrar();
                       }}
-                      className="group flex w-full items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-left transition-colors hover:border-[var(--accent)]"
+                      className="group flex w-full items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 text-left transition-colors hover:border-[var(--accent)]"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">

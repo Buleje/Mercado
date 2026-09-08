@@ -163,7 +163,7 @@ export default function ExpensesTab() {
 
       {/* Los fijos configurados: existen, pero todavía no son plata gastada. */}
       {templates.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
           <Calendar className="h-5 w-5 shrink-0 text-[var(--text-secondary)]" />
           <p className="flex-1 min-w-[200px] text-sm text-[var(--text-secondary)]">
             <span className="font-bold text-[var(--text-primary)]">
@@ -174,7 +174,7 @@ export default function ExpensesTab() {
           </p>
           <a
             href="?tab=compras&vista=punto-compra"
-            className="inline-flex h-9 items-center rounded-lg border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
+            className="inline-flex h-9 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
           >
             Ver el catálogo
           </a>

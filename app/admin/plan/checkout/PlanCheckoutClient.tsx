@@ -255,7 +255,7 @@ export default function PlanCheckoutClient() {
             <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
               <Link
                 href="/admin?tab=config"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 text-sm font-bold text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 text-sm font-bold text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
               >
                 Volver a Config
               </Link>
@@ -318,7 +318,7 @@ export default function PlanCheckoutClient() {
             {step === "select" && (
               <>
                 {/* Selector de método */}
-                <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 sm:p-8 shadow-sm">
+                <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 sm:p-8 shadow-sm">
                   <div className="mb-5 flex items-center gap-3">
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-base font-black text-white shadow-sm">
                       1
@@ -474,7 +474,7 @@ export default function PlanCheckoutClient() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-2.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 text-xs leading-relaxed text-[var(--text-secondary)]">
+              <div className="flex items-start gap-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 text-xs leading-relaxed text-[var(--text-secondary)]">
                 <ShieldCheck
                   className="h-4 w-4 mt-0.5 shrink-0 text-[var(--data-success-500)]"
                   strokeWidth={2.5}
@@ -519,7 +519,7 @@ function PayInstructions({
   onBack,
 }: PayInstructionsProps) {
   return (
-    <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 sm:p-8 shadow-sm">
+    <div className="rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-6 sm:p-8 shadow-sm">
       <div className="mb-5 flex items-center gap-3">
         <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-base font-black text-white shadow-sm">
           2
@@ -543,7 +543,7 @@ function PayInstructions({
       {/* ── Yape / Plin ──────────────────────────────────────── */}
       {(method === "yape" || method === "plin") && (
         <div className="space-y-5">
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 text-center">
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 text-center">
             <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
               Escaneá este QR desde {method === "yape" ? "Yape" : "Plin"}
             </p>
@@ -588,7 +588,7 @@ function PayInstructions({
       {/* ── Stripe ──────────────────────────────────────────── */}
       {method === "stripe" && (
         <div className="space-y-5">
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5">
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5">
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
               Te llevamos a la pasarela segura de{" "}
               <strong className="text-[var(--text-primary)]">Stripe</strong> para
@@ -606,7 +606,7 @@ function PayInstructions({
       {/* ── Transferencia ───────────────────────────────────── */}
       {method === "transfer" && (
         <div className="space-y-5">
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 space-y-3">
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 space-y-3">
             <div>
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 Cuenta BCP soles
@@ -651,7 +651,7 @@ function PayInstructions({
       {/* ── Efectivo ────────────────────────────────────────── */}
       {method === "cash" && (
         <div className="space-y-5">
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 flex items-start gap-3">
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 flex items-start gap-3">
             <Phone className="h-5 w-5 mt-0.5 shrink-0 text-[var(--accent)]" strokeWidth={2.5} />
             <div className="text-sm leading-relaxed text-[var(--text-primary)]">
               Apretá <strong>&ldquo;Solicitar contacto&rdquo;</strong> y un agente
@@ -669,7 +669,7 @@ function PayInstructions({
           type="button"
           onClick={onBack}
           disabled={submitting}
-          className="inline-flex h-14 items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 text-sm font-semibold text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+          className="inline-flex h-14 items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 text-sm font-semibold text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
           Volver

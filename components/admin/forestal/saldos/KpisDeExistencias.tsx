@@ -140,7 +140,7 @@ export default function KpisDeExistencias({
 
   return (
     <section
-      className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]"
+      className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
       aria-label="Existencias del período"
     >
       {/* ── 1. El saldo: el único número que se firma ─────────────────────── */}

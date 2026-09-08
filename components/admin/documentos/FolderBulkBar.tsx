@@ -194,7 +194,7 @@ export default function FolderBulkBar({
       )}
 
       {panel === "emoji" && (
-        <div className="mt-2 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+        <div className="mt-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
           <div className="grid grid-cols-8 gap-1">
             {EMOJIS.map((e) => (
               <button
@@ -214,7 +214,7 @@ export default function FolderBulkBar({
               type="text"
               maxLength={8}
               placeholder="Pegá otro…"
-              className="w-24 rounded-xl border-2 border-[var(--rule-base)] px-2 py-1 text-sm outline-none focus:border-primary"
+              className="w-24 rounded-xl border border-[var(--rule-base)] px-2 py-1 text-sm outline-none focus:border-primary"
               onKeyDown={(e) => {
                 const v = (e.target as HTMLInputElement).value.trim();
                 if (e.key === "Enter" && v) void correr("emoji-custom", { action: "emoji", emoji: v });
@@ -233,7 +233,7 @@ export default function FolderBulkBar({
       )}
 
       {panel === "tags" && (
-        <div className="mt-2 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+        <div className="mt-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
           {/* El input va en su propia fila: el sidebar es angosto y con los dos
               botones al lado quedaba de dos centímetros. */}
           <input
@@ -245,7 +245,7 @@ export default function FolderBulkBar({
             placeholder="legal, sunat, 2026…"
             autoFocus
             aria-label="Etiqueta para las carpetas marcadas"
-            className="w-full rounded-xl border-2 border-[var(--rule-base)] px-2 py-1.5 text-sm outline-none focus:border-primary"
+            className="w-full rounded-xl border border-[var(--rule-base)] px-2 py-1.5 text-sm outline-none focus:border-primary"
           />
           <div className="mt-1.5 flex items-center gap-1.5">
             <button
@@ -260,7 +260,7 @@ export default function FolderBulkBar({
               type="button"
               disabled={!tag.trim() || ocupado !== null}
               onClick={() => void correr("tag-del", { action: "removeTags", tags: [tag.trim()] }, false)}
-              className="flex-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] disabled:opacity-50"
+              className="flex-1 rounded-lg border border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] disabled:opacity-50"
               title="Quitar esta etiqueta de las carpetas marcadas"
             >
               Quitar
@@ -285,7 +285,7 @@ export default function FolderBulkBar({
       )}
 
       {panel === "color" && (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
           {FOLDER_COLORS.map((c) => (
             <button
               key={c.key}

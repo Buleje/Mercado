@@ -97,7 +97,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
           "flex flex-col overflow-hidden",
           "bg-[var(--surface-raised)] text-[var(--text-primary)]",
           "rounded-t-3xl sm:rounded-3xl",
-          "border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)]",
+          "border border-[var(--rule-base)] shadow-[var(--shadow-xl)]",
         )}
         onClick={(e) => e.stopPropagation()}
       >
@@ -188,7 +188,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
                   <User className="h-3.5 w-3.5" />
                   Cliente
                 </CardTitle>
-                <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
+                <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
                   <div className="flex items-center gap-3">
                     <div className="h-12 w-12 shrink-0 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center text-base font-extrabold">
                       {initials}
@@ -244,7 +244,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
                   </span>
                   <span className="text-[var(--text-secondary)]">{order.items.length} ítem{order.items.length !== 1 ? "s" : ""}</span>
                 </CardTitle>
-                <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] overflow-hidden">
+                <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] overflow-hidden">
                   <ul className="divide-y-2 divide-[var(--rule-base)]">
                     {order.items.map((it) => (
                       <li key={it.id} className="flex items-center gap-3 p-3">
@@ -253,10 +253,10 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
                           <img
                             src={it.image}
                             alt={it.name}
-                            className="h-14 w-14 shrink-0 rounded-xl object-cover border-2 border-[var(--rule-base)]"
+                            className="h-14 w-14 shrink-0 rounded-xl object-cover border border-[var(--rule-base)]"
                           />
                         ) : (
-                          <div className="h-14 w-14 shrink-0 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] flex items-center justify-center">
+                          <div className="h-14 w-14 shrink-0 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] flex items-center justify-center">
                             <Package className="h-5 w-5 text-[var(--text-tertiary)]" />
                           </div>
                         )}

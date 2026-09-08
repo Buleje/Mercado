@@ -106,7 +106,7 @@ export default function LothEspecieFichas({
   const [abierta, setAbierta] = useState<string | null>(null);
 
   return (
-    <section className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <section className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
         <div className="min-w-0">
           <CardTitle as="h3" className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
@@ -121,7 +121,7 @@ export default function LothEspecieFichas({
             <button
               type="button"
               onClick={onImprimir}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
             >
               <Printer className="h-3.5 w-3.5" /> Imprimir
             </button>
@@ -234,7 +234,7 @@ export default function LothEspecieFichas({
                         <button
                           type="button"
                           onClick={() => onEditar(f.speciesId!)}
-                          className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
+                          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
                         >
                           <Pencil className="h-3.5 w-3.5" /> Editar
                         </button>

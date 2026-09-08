@@ -727,7 +727,7 @@ const BTN_SIZE: Record<"md" | "sm", string> = {
 const BTN_VARIANT: Record<BtnVariant, string> = {
   primary: "bg-[var(--data-success-700)] text-white shadow-sm hover:opacity-90",
   dark: "bg-[var(--brand-ink)] text-white shadow-sm hover:opacity-90",
-  secondary: "border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]",
+  secondary: "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]",
   ghost: "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
   danger: "border-2 border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]",
 };
@@ -938,7 +938,7 @@ export function ColumnasMenu<K extends string>({
       </button>
       {abierto && (
         <div
-          className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
+          className="absolute right-0 top-full z-50 mt-1 min-w-[200px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
           onClick={(e) => e.stopPropagation()}
         >
           <p className="px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
@@ -953,7 +953,7 @@ export function ColumnasMenu<K extends string>({
                 type="checkbox"
                 checked={visibles[c.key]}
                 onChange={(e) => onChange({ ...visibles, [c.key]: e.target.checked })}
-                className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)]"
+                className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)]"
               />
               {c.label}
             </label>

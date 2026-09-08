@@ -289,7 +289,7 @@ export default function Anexo04Modal({
       className="modal-backdrop fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 pt-[3vh]"
       onClick={(e) => { if (e.target === e.currentTarget) onCerrar(); }}
     >
-      <div role="dialog" aria-modal="true" aria-label="Vista previa del Anexo N° 04" className="w-full max-w-[76rem] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
+      <div role="dialog" aria-modal="true" aria-label="Vista previa del Anexo N° 04" className="w-full max-w-[76rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
@@ -385,7 +385,7 @@ export default function Anexo04Modal({
           </div>
 
           {/* Preview del papel */}
-          <div ref={areaRef} className="min-w-0 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+          <div ref={areaRef} className="min-w-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             {/* Los dos papeles del camión. La guía sólo se ofrece si el despacho
                 ya tiene número: sin GTF emitida no hay guía que mirar, y una
                 pestaña que abre un papel vacío hace pensar que se perdió algo. */}
@@ -441,7 +441,7 @@ export default function Anexo04Modal({
               }
               duenoSelector={
                 duenosDisponibles.length > 1 ? (
-                  <div className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
+                  <div className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
                     <button
                       type="button"
                       onClick={() => setDuenoFiltro("todos")}

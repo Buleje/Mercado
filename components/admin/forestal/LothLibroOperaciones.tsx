@@ -691,7 +691,7 @@ export default function LothLibroOperaciones() {
             disabled={loading}
             aria-label="Recargar"
             title="Recargar el libro"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -856,7 +856,7 @@ export default function LothLibroOperaciones() {
 
       {/* Búsqueda + etiquetas */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
+        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             type="text"
@@ -872,7 +872,7 @@ export default function LothLibroOperaciones() {
           onClick={() => doPrintLabels()}
           disabled={printingLabels || entries.length === 0}
           title="Imprimir etiquetas con QR de origen para las trozas de esta sección"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
         >
           {printingLabels ? <RefreshCw className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
           <span>Etiquetas QR</span>
@@ -890,7 +890,7 @@ export default function LothLibroOperaciones() {
 
       {/* Filtros del libro: período (el libro cierra por mes), estado y especie. */}
       <div className="flex flex-wrap items-center gap-2">
-        <label className="flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
+        <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
           <span className="text-[var(--text-tertiary)]">Período</span>
           <select
             value={filtro.periodo}
@@ -905,7 +905,7 @@ export default function LothLibroOperaciones() {
             ))}
           </select>
         </label>
-        <label className="flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
+        <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
           <span className="text-[var(--text-tertiary)]">Estado</span>
           <select
             value={filtro.estado}
@@ -920,7 +920,7 @@ export default function LothLibroOperaciones() {
           </select>
         </label>
         {especiesSeccion.length > 1 && (
-          <label className="flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
+          <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
             <span className="text-[var(--text-tertiary)]">Especie</span>
             <select
               value={filtro.especie}
@@ -941,7 +941,7 @@ export default function LothLibroOperaciones() {
             type="button"
             onClick={() => setShowTrozar(true)}
             title="Registrar todas las trozas de un mismo árbol en una sola pantalla"
-            className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             <Scissors className="h-4 w-4" /> Trozar árbol
           </button>
@@ -950,7 +950,7 @@ export default function LothLibroOperaciones() {
           type="button"
           onClick={() => setShowImport(true)}
           title="Pegar un cuadro de Excel o subir un CSV con muchas líneas"
-          className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+          className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
         >
           <Upload className="h-4 w-4" /> Importar
         </button>
@@ -958,7 +958,7 @@ export default function LothLibroOperaciones() {
           type="button"
           onClick={() => descargarCsv(visibles, `libro-th-${section}.csv`)}
           disabled={visibles.length === 0}
-          className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
         >
           <FileSpreadsheet className="h-4 w-4" /> CSV
         </button>
@@ -981,7 +981,7 @@ export default function LothLibroOperaciones() {
           <button
             type="button"
             onClick={() => descargarCsv(seleccionadas, `libro-th-${section}-seleccion.csv`)}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             CSV de la selección
           </button>
@@ -1040,7 +1040,7 @@ export default function LothLibroOperaciones() {
       />
 
       {!loading && visibles.length === 0 && (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
           <TreePine className="mx-auto mb-3 h-10 w-10 opacity-30" />
           <p className="text-base font-medium">
             {entries.length === 0
@@ -1053,7 +1053,7 @@ export default function LothLibroOperaciones() {
         </div>
       )}
       {loading && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] p-8 text-center text-[var(--text-tertiary)]">
+        <div className="rounded-2xl border border-[var(--rule-base)] p-8 text-center text-[var(--text-tertiary)]">
           <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
           <p className="mt-2 text-sm">Cargando registros...</p>
         </div>
@@ -1074,7 +1074,7 @@ export default function LothLibroOperaciones() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0 || loading}
-                className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+                className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
               >
                 Anterior
               </button>
@@ -1085,7 +1085,7 @@ export default function LothLibroOperaciones() {
                 type="button"
                 onClick={() => setPage((p) => p + 1)}
                 disabled={(page + 1) * POR_PAGINA >= totalSeccion || loading}
-                className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+                className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
               >
                 Siguiente
               </button>
@@ -1203,7 +1203,7 @@ export default function LothLibroOperaciones() {
             onChange={(e) => setAnnulReason(e.target.value)}
             placeholder="Motivo de la anulación (mínimo 3 caracteres)"
             autoFocus
-            className="h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--data-error-500)]"
+            className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--data-error-500)]"
           />
           <div className="flex flex-wrap justify-end gap-2">
             <button
@@ -1212,7 +1212,7 @@ export default function LothLibroOperaciones() {
                 setAnularLineas([]);
                 setAnnulReason("");
               }}
-              className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
+              className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
             >
               Cancelar
             </button>

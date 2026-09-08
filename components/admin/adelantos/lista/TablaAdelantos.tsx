@@ -372,7 +372,7 @@ function FilaAcciones({
           align="end"
           sideOffset={4}
           onClick={(e) => e.stopPropagation()}
-          className="z-50 min-w-[12rem] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-xl)]"
+          className="z-50 min-w-[12rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-xl)]"
         >
           <DropdownMenu.Item
             onSelect={onEditarNotas}
@@ -428,7 +428,7 @@ function BotonPagina({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
+      className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
     >
       {children}
     </button>

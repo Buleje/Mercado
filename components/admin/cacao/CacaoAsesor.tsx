@@ -81,11 +81,11 @@ export default function CacaoAsesor() {
           {a && (
             <>
               <button type="button" onClick={descargarPDF} disabled={pdfBusy} title="Descargar PDF" className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[var(--accent)] px-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">{pdfBusy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}<span className="hidden sm:inline">PDF</span></button>
-              <button type="button" onClick={() => printCacaoAsesor(a, data?.local ?? null, data?.narrative ?? null)} title="Informe imprimible" className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" /><span className="hidden sm:inline">Imprimir</span></button>
+              <button type="button" onClick={() => printCacaoAsesor(a, data?.local ?? null, data?.narrative ?? null)} title="Informe imprimible" className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" /><span className="hidden sm:inline">Imprimir</span></button>
               <button type="button" onClick={() => shareCacaoText("Asesor de cacao", asesorTexto(a, data?.local ?? null))} title="Compartir por WhatsApp" className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--data-success-500)] px-3 text-sm font-semibold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]"><MessageCircle className="h-4 w-4" /><span className="hidden sm:inline">Compartir</span></button>
             </>
           )}
-          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
+          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
         </div>
       </div>
 
@@ -456,7 +456,7 @@ export default function CacaoAsesor() {
 
 function Card({ icon: Icon, title, children }: { icon: typeof MapPin; title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Icon className="h-4 w-4 text-[var(--accent)]" /> {title}</CardTitle>
       {children}
     </div>
@@ -486,7 +486,7 @@ function Reading({ children }: { children: React.ReactNode }) {
 function MetricChip({ label, value, Icon, tone, title }: { label: string; value: string; Icon?: typeof Minus; tone?: number | null; title?: string }) {
   const color = tone == null ? "var(--text-primary)" : tone > 0 ? "var(--data-success-700)" : tone < 0 ? "var(--data-error-700)" : "var(--text-primary)";
   return (
-    <div title={title} className={`rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 px-3 py-2.5 text-center${title ? " cursor-help" : ""}`}>
+    <div title={title} className={`rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 px-3 py-2.5 text-center${title ? " cursor-help" : ""}`}>
       <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</div>
       <div className="mt-0.5 flex items-center justify-center gap-1 font-mono text-base font-extrabold tabular-nums" style={{ color }}>
         {Icon && <Icon className="h-3.5 w-3.5" />}{value}

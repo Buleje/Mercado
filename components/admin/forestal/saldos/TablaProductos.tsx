@@ -107,7 +107,7 @@ export default function TablaProductos({
   );
 
   return (
-    <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
           Stock de productos transformados

@@ -143,7 +143,7 @@ export function MarketplaceFidelidadTab() {
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Por número de WhatsApp para ver y gestionar puntos</p>
           </div>
         </header>
-        <div className="flex items-stretch gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+        <div className="flex items-stretch gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
           <span className="inline-flex items-center px-3 text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-r-2 border-[var(--rule-base)] whitespace-nowrap">
             +51
           </span>
@@ -236,7 +236,7 @@ export function MarketplaceFidelidadTab() {
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Para premios fuera de compra (eventos, referidos, fidelidad)</p>
               </div>
             </header>
-            <div className="flex items-stretch gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+            <div className="flex items-stretch gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
               <input
                 type="number"
                 placeholder="100"
@@ -305,7 +305,7 @@ export function MarketplaceFidelidadTab() {
 
       {/* ── Empty state: sin búsqueda ── */}
       {!data && !loading && (
-        <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-8 sm:p-10">
+        <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-2xl p-8 sm:p-10">
           <div className="text-center max-w-md mx-auto">
             <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
               <Gift className="h-6 w-6" />

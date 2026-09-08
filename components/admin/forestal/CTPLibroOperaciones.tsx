@@ -504,7 +504,7 @@ export default function CTPLibroOperaciones() {
               onClick={() => setBuscarGtf(true)}
               title="Buscar una guía en el libro (atajo: B)"
               aria-label="Buscar una guía en el libro"
-              className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)]"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)]"
             >
               <Search className="h-4 w-4" />
               <span className="max-lg:sr-only">Buscar guía</span>
@@ -521,7 +521,7 @@ export default function CTPLibroOperaciones() {
             <a
               href="/admin/patio"
               title="Abrir el modo patio: consultar una troza por su número y recibir guías desde la pila"
-              className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--surface-canvas)]"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:bg-[var(--surface-canvas)]"
             >
               <TreePine className="h-4 w-4" />
               <span className="max-lg:sr-only">Modo patio</span>

@@ -137,7 +137,7 @@ export default function LotesConSaldo({
   if (lotes.length === 0) {
     if (!vacioMotivo) return null;
     return (
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
           Lo que resta en cada lote
         </CardTitle>
@@ -228,7 +228,7 @@ export default function LotesConSaldo({
   ).length;
 
   return (
-    <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
         <div>
           <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">

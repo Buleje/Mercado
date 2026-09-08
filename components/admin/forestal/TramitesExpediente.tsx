@@ -119,7 +119,7 @@ export default function TramitesExpediente({
           con 14 formatos y trámites que se repiten (la Relación de guías se
           presenta todos los meses), encontrar "el de julio" a ojo deja de
           alcanzar antes de llegar a la vista de estados. */}
-      <div className="flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5">
+      <div className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5">
         <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
         <input
           type="text"
@@ -147,7 +147,7 @@ export default function TramitesExpediente({
           type="button"
           onClick={onRecargar}
           disabled={cargando}
-          className="ml-auto inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+          className="ml-auto inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-60"
         >
           <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} /> Recargar
         </button>
@@ -173,7 +173,7 @@ export default function TramitesExpediente({
       )}
 
       {visibles.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-12 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center">
           <Inbox className="mx-auto mb-3 h-10 w-10 text-[var(--text-tertiary)] opacity-40" aria-hidden="true" />
           <p className="text-xl font-bold text-[var(--text-primary)]">
             {busqueda.trim() ? "Ningún trámite coincide con la búsqueda" : filtro ? "Ningún trámite en ese estado" : "Todavía no hay trámites guardados"}
@@ -199,7 +199,7 @@ export default function TramitesExpediente({
               <motion.li
                 key={t.id}
                 variants={staggerChild}
-                className="flex items-stretch gap-0 overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] transition-shadow hover:shadow-[var(--shadow-sm)]"
+                className="flex items-stretch gap-0 overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-shadow hover:shadow-[var(--shadow-sm)]"
               >
                 {/* Barra de estado + sello de fecha: se lee de lejos. */}
                 <div className={`w-1.5 shrink-0 ${tono.barra}`} aria-hidden="true" />

@@ -21,7 +21,7 @@ import { printCacaoReporte } from "@/lib/cacao/cacao-reporte";
 // Gráfico central grande (recharts) fuera del bundle inicial.
 const CacaoResumenChart = dynamic(() => import("./CacaoResumenChart"), {
   ssr: false,
-  loading: () => <div className="flex h-[420px] items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]"><RefreshCw className="h-6 w-6 animate-spin" /></div>,
+  loading: () => <div className="flex h-[420px] items-center justify-center rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)]"><RefreshCw className="h-6 w-6 animate-spin" /></div>,
 });
 
 interface Stats {
@@ -142,14 +142,14 @@ export default function CacaoResumen() {
             value={rango}
             onChange={(e) => setRango(e.target.value)}
             aria-label="Campaña / rango"
-            className="h-10 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-10 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           >
             {RANGO_OPCIONES.map((o) => (
               <option key={o.v} value={o.v}>{o.label}</option>
             ))}
           </select>
-          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>
-          <button type="button" onClick={() => printCacaoReporte(stats, trends)} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" />Imprimir reporte</button>
+          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>
+          <button type="button" onClick={() => printCacaoReporte(stats, trends)} className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" />Imprimir reporte</button>
         </div>
       </div>
 
@@ -261,7 +261,7 @@ function CacaoResultado({
   const gano = resultado >= 0;
   const color = gano ? "var(--data-success-700,#047857)" : "var(--data-error-700,#b91c1c)";
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
       <div className="mb-3 flex items-center gap-2">
         <Banknote className="h-4 w-4 text-[var(--accent)]" aria-hidden />
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Resultado del cacao</CardTitle>
@@ -348,7 +348,7 @@ function CampaignVerdict({ stats, inv }: { stats: Stats; inv: Inventory | null }
 function Mini({ icon: Icon, label, value, hint, tone }: { icon: typeof Leaf; label: string; value: string; hint?: string; tone?: "ok" | "warn" }) {
   const c = tone === "ok" ? "text-[var(--data-success-700)]" : tone === "warn" ? "text-[var(--data-warning-700)]" : "text-[var(--text-primary)]";
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 px-3 py-2.5">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 px-3 py-2.5">
       <div className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]"><Icon className="h-3.5 w-3.5" />{label}</div>
       <div className={`mt-0.5 font-mono text-lg font-extrabold tabular-nums ${c}`}>{value}</div>
       {hint && <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{hint}</div>}
@@ -357,7 +357,7 @@ function Mini({ icon: Icon, label, value, hint, tone }: { icon: typeof Leaf; lab
 }
 function Panel({ icon: Icon, title, children }: { icon: typeof Leaf; title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Icon className="h-4 w-4 text-[var(--accent)]" />{title}</CardTitle>
       <div className="space-y-2">{children}</div>
     </div>

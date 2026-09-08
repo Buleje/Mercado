@@ -409,7 +409,7 @@ export default function CacaoBeneficio() {
           type="button"
           onClick={exportCsv}
           disabled={view.length === 0}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
         >
           <Download className="h-4 w-4" />
           CSV
@@ -425,7 +425,7 @@ export default function CacaoBeneficio() {
       </div>
 
       {/* Tabla */}
-      <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
@@ -677,7 +677,7 @@ export default function CacaoBeneficio() {
                       Método de secado{" "}
                       <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span>
                     </span>
-                    <div className="inline-flex w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+                    <div className="inline-flex w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
                       {METODOS.map((m) => (
                         <button
                           key={m.v}
@@ -711,7 +711,7 @@ export default function CacaoBeneficio() {
                           value={advPesoSeco}
                           onChange={(e) => setAdvPesoSeco(e.target.value)}
                           placeholder={pesoHum != null ? `≤ ${pesoHum}` : "0.00"}
-                          className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                          className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                         />
                       </Field>
                       <Field
@@ -732,7 +732,7 @@ export default function CacaoBeneficio() {
                           value={advHumedad}
                           onChange={(e) => setAdvHumedad(e.target.value)}
                           placeholder="≤ 7"
-                          className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                          className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                         />
                       </Field>
                     </div>
@@ -775,7 +775,7 @@ export default function CacaoBeneficio() {
                   <button
                     type="button"
                     onClick={() => setAdvance(null)}
-                    className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                    className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                   >
                     Cancelar
                   </button>
@@ -820,7 +820,7 @@ export default function CacaoBeneficio() {
               <button
                 type="button"
                 onClick={() => setAnnulId(null)}
-                className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
               >
                 Cancelar
               </button>

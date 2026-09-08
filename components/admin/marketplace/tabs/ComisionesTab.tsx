@@ -114,7 +114,7 @@ export function MarketplaceComisionesTab() {
       </div>
 
       {filtered.length === 0 && !error ? (
-        <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="text-center py-20 px-6 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             <DollarSign className="h-6 w-6" />
           </div>

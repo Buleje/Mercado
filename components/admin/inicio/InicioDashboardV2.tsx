@@ -317,7 +317,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
             </div>
             <div className="flex items-center gap-2 flex-wrap shrink-0">
               {peakHourLabel && (
-                <span className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
                   <span className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                     Hora pico
                   </span>
@@ -326,7 +326,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
                   </span>
                 </span>
               )}
-              <span className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-1.5">
                 <span className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                   {PRESET_PROYECCION[presetKey] ?? PRESET_PROYECCION.mensual}
                 </span>

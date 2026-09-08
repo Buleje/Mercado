@@ -37,7 +37,7 @@ const nuevoRenglon = (i: number): Renglon => ({
 });
 
 const INPUT =
-  "h-11 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-center font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  "h-11 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-center font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 
 export default function LothTrozadoMultipleModal({
   open,
@@ -110,7 +110,7 @@ export default function LothTrozadoMultipleModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[90vh] w-full max-w-[52rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
+      <div className="flex max-h-[90vh] w-full max-w-[52rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
         <header className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3">
           <div>
             <p className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
@@ -124,7 +124,7 @@ export default function LothTrozadoMultipleModal({
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -151,7 +151,7 @@ export default function LothTrozadoMultipleModal({
                 <select
                   value={arbolId}
                   onChange={(e) => setArbolId(e.target.value)}
-                  className="mt-1 h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-bold text-[var(--text-primary)] outline-none"
+                  className="mt-1 h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-bold text-[var(--text-primary)] outline-none"
                 >
                   <option value="">Elegí el árbol a trozar…</option>
                   {talas.map((t) => (
@@ -164,7 +164,7 @@ export default function LothTrozadoMultipleModal({
 
               {arbol && (
                 <>
-                  <div className="overflow-x-auto rounded-xl border-2 border-[var(--rule-base)]">
+                  <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
                     <DataTable className="w-full text-sm">
                       <thead className="bg-[var(--surface-sunken)] text-left">
                         <tr>
@@ -243,7 +243,7 @@ export default function LothTrozadoMultipleModal({
                   <button
                     type="button"
                     onClick={() => setRenglones((rs) => [...rs, nuevoRenglon(rs.length)])}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-dashed border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
                   >
                     <Plus className="h-4 w-4" /> Agregar troza
                   </button>
@@ -285,7 +285,7 @@ export default function LothTrozadoMultipleModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
+            className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
           >
             {resultado ? "Cerrar" : "Cancelar"}
           </button>

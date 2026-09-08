@@ -419,7 +419,7 @@ function SectionEditorModal({
   return (
     <div className="modal-backdrop flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col shadow-[var(--shadow-xl)]"
+        className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col shadow-[var(--shadow-xl)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header con kicker descriptivo + counter */}
@@ -462,7 +462,7 @@ function SectionEditorModal({
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={sectionLabel}
                 maxLength={50}
-                className="w-full px-4 h-12 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-4 h-12 rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
               </Field>
               <div className="flex items-center justify-between">
@@ -514,7 +514,7 @@ function SectionEditorModal({
               </div>
 
               {assignedProducts.length === 0 ? (
-                <div className="p-8 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-center">
+                <div className="p-8 rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-center">
                   <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
                     <Package className="h-7 w-7 text-primary" />
                   </div>
@@ -524,7 +524,7 @@ function SectionEditorModal({
               ) : (
                 <div className="space-y-2">
                   {assignedProducts.map((p, idx) => (
-                    <div key={p.id} className="group flex items-center gap-3 p-3 rounded-2xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 transition-all">
+                    <div key={p.id} className="group flex items-center gap-3 p-3 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 transition-all">
                       <span className="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold tabular-nums shrink-0">
                         {idx + 1}
                       </span>
@@ -596,7 +596,7 @@ function SectionEditorModal({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Buscar por nombre…"
-                  className="w-full pl-12 pr-12 h-12 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  className="w-full pl-12 pr-12 h-12 rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 />
                 {searchQuery && (
                   <button
@@ -653,7 +653,7 @@ function SectionEditorModal({
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : availableFiltered.length === 0 ? (
-                <div className="text-center py-12 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+                <div className="text-center py-12 rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   <Search className="h-10 w-10 mx-auto text-muted mb-2" />
                   <p className="text-base font-bold text-[var(--text-primary)]">
                     {searchQuery || categoryFilter !== "todos" ? "Sin resultados" : "Todos los productos están asignados"}
@@ -669,7 +669,7 @@ function SectionEditorModal({
                       key={p.id}
                       type="button"
                       onClick={() => addProduct(p.id)}
-                      className="group flex items-center gap-3 p-2.5 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all text-left"
+                      className="group flex items-center gap-3 p-2.5 rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all text-left"
                     >
                       <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-[var(--rule-soft)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
                         {p.image ? (
@@ -1249,7 +1249,7 @@ export default function StorefrontEditor() {
             href={previewHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3.5 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-primary/40 transition-colors"
+            className="flex items-center gap-1.5 px-3.5 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-primary/40 transition-colors"
           >
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Vista previa</span>
@@ -1379,7 +1379,7 @@ export default function StorefrontEditor() {
            cambia cuando activa/desactiva un link. */
         <div className="space-y-5">
           {/* ── Preview del menu navbar real ────────────────────────── */}
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-linear-to-br from-gray-50 to-gray-100 dark:from-surface dark:to-card overflow-hidden">
+          <div className="rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-linear-to-br from-gray-50 to-gray-100 dark:from-surface dark:to-card overflow-hidden">
             <div className="px-4 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-white/50 dark:bg-[var(--surface-raised)]/50">
               Vista previa de tu menú
             </div>

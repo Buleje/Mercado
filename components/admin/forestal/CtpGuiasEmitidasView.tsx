@@ -187,7 +187,7 @@ export default function CtpGuiasEmitidasView({
           {visibles.map((g) => (
             <li
               key={g.despachoId}
-              className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5"
+              className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5"
             >
               <span className="w-16 shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
                 {fecha(g.fecha)}

@@ -101,7 +101,7 @@ export function filtrarElegibles(lista: readonly PaqueteElegible[], termino: str
   );
 }
 
-const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-40";
+const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-40";
 
 export default function RepartoPaquetesPicker({
   yaCargados, onAgregar, onCerrar,
@@ -163,7 +163,7 @@ export default function RepartoPaquetesPicker({
           onChange={(e) => setTexto(e.target.value)}
           placeholder="Buscar por código, especie, producto o N° de corrida"
           aria-label="Buscar paquetes disponibles"
-          className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
         />
       </label>
 

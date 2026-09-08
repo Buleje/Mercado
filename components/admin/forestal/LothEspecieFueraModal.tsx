@@ -125,7 +125,7 @@ export default function LothEspecieFueraModal({
             <button
               type="button"
               onClick={() => setModo("agregar")}
-              className="rounded-xl border-2 border-[var(--rule-base)] p-3 text-left transition-colors hover:bg-[var(--surface-sunken)]"
+              className="rounded-xl border border-[var(--rule-base)] p-3 text-left transition-colors hover:bg-[var(--surface-sunken)]"
             >
               <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
                 <Plus className="h-4 w-4 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" />
@@ -138,7 +138,7 @@ export default function LothEspecieFueraModal({
             <button
               type="button"
               onClick={() => setModo("descartar")}
-              className="rounded-xl border-2 border-[var(--rule-base)] p-3 text-left transition-colors hover:bg-[var(--surface-sunken)]"
+              className="rounded-xl border border-[var(--rule-base)] p-3 text-left transition-colors hover:bg-[var(--surface-sunken)]"
             >
               <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
                 <Ban className="h-4 w-4 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" />
@@ -164,14 +164,14 @@ export default function LothEspecieFueraModal({
                 <input
                   type="number" step="0.0001" value={vol} onChange={(e) => setVol(e.target.value)}
                   placeholder="según la resolución" autoFocus
-                  className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"
+                  className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"
                 />
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">N° de árboles</span>
                 <input
                   type="number" value={narb} onChange={(e) => setNarb(e.target.value)}
-                  className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"
+                  className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"
                 />
               </label>
               <label className="flex items-end gap-2 pb-3">

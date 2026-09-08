@@ -110,7 +110,7 @@ export default function CtpApartados({
   return (
     <nav
       aria-label="Apartados de la vista"
-      className="flex flex-wrap items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2"
+      className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2"
     >
       <button
         type="button"
@@ -118,7 +118,7 @@ export default function CtpApartados({
         disabled={!anterior}
         aria-label={anterior ? `Ir a ${anterior.label}` : "No hay apartado anterior"}
         title={anterior ? anterior.label : undefined}
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-30"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-30"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
@@ -158,7 +158,7 @@ export default function CtpApartados({
         disabled={!siguiente}
         aria-label={siguiente ? `Ir a ${siguiente.label}` : "No hay apartado siguiente"}
         title={siguiente ? siguiente.label : undefined}
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-30"
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-30"
       >
         <ChevronRight className="h-4 w-4" />
       </button>

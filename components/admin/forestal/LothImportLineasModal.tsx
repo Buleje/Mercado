@@ -81,7 +81,7 @@ export default function LothImportLineasModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[90vh] w-full max-w-[60rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
+      <div className="flex max-h-[90vh] w-full max-w-[60rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
         <header className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3">
           <div>
             <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
@@ -95,7 +95,7 @@ export default function LothImportLineasModal({
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -131,7 +131,7 @@ export default function LothImportLineasModal({
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
                 >
                   <FileUp className="h-4 w-4" /> Subir CSV
                 </button>
@@ -164,7 +164,7 @@ export default function LothImportLineasModal({
                 rows={5}
                 spellCheck={false}
                 placeholder={`Pegá acá el cuadro con su fila de encabezados.\n\n${EJEMPLO[section] ?? ""}`}
-                className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 font-mono text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 font-mono text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
 
               {previa.filas.length > 0 && (
@@ -185,7 +185,7 @@ export default function LothImportLineasModal({
                     )}
                   </div>
 
-                  <div className="max-h-[38vh] overflow-auto rounded-xl border-2 border-[var(--rule-base)]">
+                  <div className="max-h-[38vh] overflow-auto rounded-xl border border-[var(--rule-base)]">
                     <DataTable className="w-full text-xs">
                       <thead className="sticky top-0 bg-[var(--surface-sunken)]">
                         <tr className="text-left">
@@ -227,7 +227,7 @@ export default function LothImportLineasModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
+            className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
           >
             {resultado ? "Cerrar" : "Cancelar"}
           </button>

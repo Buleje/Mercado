@@ -395,7 +395,7 @@ export function AsignacionesTab() {
                 value={assignModal.orderId ?? ""}
                 onChange={(e) => setAssignModal((p) => ({ ...p, orderId: e.target.value }))}
                 placeholder="Ej: ORD-12345"
-                className="w-full px-4 h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full px-4 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </Field>
 
@@ -407,7 +407,7 @@ export function AsignacionesTab() {
                       id={id}
                       value={selectedPartner}
                       onChange={(e) => setSelectedPartner(e.target.value)}
-                      className="w-full px-4 h-12 pr-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
+                      className="w-full px-4 h-12 pr-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
                     >
                       <option value="">Seleccionar repartidor...</option>
                       {partners.map((p) => (

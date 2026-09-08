@@ -70,7 +70,7 @@ export default function CacaoMarketPulse({
   const horiz = Object.fromEntries((stats?.horizontes ?? []).map((h) => [h.key, h.pct])) as Partial<Record<"1S" | "1M" | "3M" | "1A", number>>;
 
   return (
-    <div className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div className="group relative rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Activity className="h-4 w-4 text-[var(--accent)]" />

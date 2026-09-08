@@ -116,7 +116,7 @@ export default function CacaoAlertsBell({ onNavigate }: { onNavigate: (view: Cac
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
-          <div className="absolute right-0 z-50 mt-2 w-[min(92vw,380px)] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl">
+          <div className="absolute right-0 z-50 mt-2 w-[min(92vw,380px)] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl">
             <div className="flex items-center justify-between gap-2 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
               <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
                 <Bell className="h-4 w-4 text-[var(--accent)]" />

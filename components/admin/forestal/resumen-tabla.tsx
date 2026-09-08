@@ -50,7 +50,7 @@ export function SeccionResumen({ id, icon: Icono, titulo, hint, ayuda, acciones,
       id={id}
       /* `scroll-mt`: los chips de la cabecera saltan acá y el header pegajoso
          del admin se comía el título de la sección al aterrizar. */
-      className={`scroll-mt-24 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5 ${className}`}
+      className={`scroll-mt-24 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5 ${className}`}
     >
       <div className="mb-3 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
         <div className="min-w-0">

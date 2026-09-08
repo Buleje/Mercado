@@ -101,7 +101,7 @@ export default function PanelEntradaVoz({
     columnas: CARGA_COLUMNAS,
   });
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Calculator className="h-4 w-4 text-[var(--accent)]" /> Cubicador de madera por voz
@@ -158,7 +158,7 @@ export default function PanelEntradaVoz({
             </label>
             <label className="block">
               <span className="text-xs font-bold text-[var(--text-secondary)]">Tono / voz</span>
-              <select value={config.voiceURI} onChange={(e) => onUpdateConfig({ voiceURI: e.target.value })} className="mt-1 h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
+              <select value={config.voiceURI} onChange={(e) => onUpdateConfig({ voiceURI: e.target.value })} className="mt-1 h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
                 <option value="">Voz por defecto</option>
                 {voices.filter((v) => v.lang.toLowerCase().startsWith("es")).map((v) => <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>)}
               </select>
@@ -258,7 +258,7 @@ export default function PanelEntradaVoz({
                 )}
               </div>
               {/* Especie: menú que se aplica a lo que dictes */}
-              <label className="mt-2 inline-flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
+              <label className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
                 <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Especie</span>
                 <select value={especie} onChange={(ev) => onEspecieChange(ev.target.value)} className="bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none">
                   <option value="">Sin especie</option>
@@ -269,7 +269,7 @@ export default function PanelEntradaVoz({
               {/* Dueño: sin catálogo cerrado — combobox (input + datalist) para
                   poder CREAR uno nuevo o ESCOGER uno ya usado. Se pone fijo al
                   elegirlo, igual que la especie, hasta que se cambie a mano. */}
-              <label className="mt-2 inline-flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
+              <label className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
                 <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Dueño</span>
                 <input
                   type="text"
@@ -416,7 +416,7 @@ export default function PanelEntradaVoz({
             fijo={fijas.largo != null}
             onFijar={() => onAplicarFijas(fijas.largo != null ? (() => { const n = { ...fijas }; delete n.largo; return n; })() : { ...fijas, largo: Number(manual.largo) || 0 })}
           />
-          <button type="button" onClick={() => onConfirmarCarga(grillaId)} className="col-span-2 inline-flex h-11 items-center justify-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] sm:col-auto sm:h-10"><Plus className="h-4 w-4" /> Agregar a mano</button>
+          <button type="button" onClick={() => onConfirmarCarga(grillaId)} className="col-span-2 inline-flex h-11 items-center justify-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] sm:col-auto sm:h-10"><Plus className="h-4 w-4" /> Agregar a mano</button>
           {/* Precarga la medida típica del Comercial mínimo (2×8×10, Brandon
               2026-09-01) — NO agrega nada sola: sólo llena los campos para que
               el operario confirme la cantidad real que sacó y la agregue con
@@ -426,7 +426,7 @@ export default function PanelEntradaVoz({
             type="button"
             onClick={() => onManualChange({ cantidad: "1", espesor: "2", ancho: "8", largo: "10" })}
             title="Precarga 2×8×10 (Comercial) — confirmá la cantidad real que sacaste y tocá «Agregar a mano»"
-            className="col-span-2 inline-flex h-11 items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] sm:col-auto sm:h-10"
+            className="col-span-2 inline-flex h-11 items-center justify-center gap-1 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] sm:col-auto sm:h-10"
           >
             <Plus className="h-4 w-4" /> Comercial mínimo
           </button>
@@ -516,7 +516,7 @@ function CmdField({ label, value, onChange }: { label: string; value: string; on
   return (
     <label className="block">
       <span className="text-xs font-bold text-[var(--text-secondary)]">{label}</span>
-      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 h-9 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 h-9 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
     </label>
   );
 }

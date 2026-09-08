@@ -240,7 +240,7 @@ export default function PresupuestoPanel() {
                             if (e.key === "Enter") guardar(c.category);
                             if (e.key === "Escape") setEditando(null);
                           }}
-                          className="h-10 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 "
+                          className="h-10 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 "
                         />
                       </label>
                       <button
@@ -257,7 +257,7 @@ export default function PresupuestoPanel() {
                     <button
                       type="button"
                       onClick={() => { setEditando(c.category); setBorrador(String(c.presupuesto ?? "")); }}
-                      className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                      className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                     >
                       <Pencil className="h-3.5 w-3.5" aria-hidden />
                       {c.presupuesto ? `Techo ${fmt(c.presupuesto)}` : "Poner techo"}

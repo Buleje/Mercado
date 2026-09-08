@@ -201,7 +201,7 @@ export default function CubicadorTrozas() {
   return (
     <div className="space-y-4">
       {/* Panel de voz */}
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <CardTitle as="h3" className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Ruler className="h-4 w-4 text-[var(--accent)]" /> Cubicador de trozas (rolliza · Smalian)
         </CardTitle>
@@ -222,7 +222,7 @@ export default function CubicadorTrozas() {
               <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
                 Tres números por troza: <span className="font-semibold text-[var(--text-secondary)]">&ldquo;cuarenta cuarenta y cinco tres punto cinco&rdquo;</span> = Ø menor 40 cm · Ø mayor 45 cm · largo 3.5 m. Con una sola medida de diámetro, repetila.
               </p>
-              <label className="mt-2 inline-flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
+              <label className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
                 <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Especie</span>
                 <select value={especie} onChange={(ev) => setEspecie(ev.target.value)} className="bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none">
                   <option value="">Sin especie</option>
@@ -280,20 +280,20 @@ export default function CubicadorTrozas() {
           <CampoNum label="Ø menor (cm)" value={manual.d1} onChange={(v) => setManual({ ...manual, d1: v })} />
           <CampoNum label="Ø mayor (cm)" value={manual.d2} onChange={(v) => setManual({ ...manual, d2: v })} placeholder="= menor" />
           <CampoNum label="Largo (m)" value={manual.largo} onChange={(v) => setManual({ ...manual, largo: v })} />
-          <button type="button" onClick={addManual} className="inline-flex h-10 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+          <button type="button" onClick={addManual} className="inline-flex h-10 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
             <Plus className="h-4 w-4" /> Agregar a mano
           </button>
         </div>
       </div>
 
       {/* Tabla + comparación con la GTF */}
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <Table className="h-4 w-4 text-[var(--accent)]" /> Trozas del patio ({rows.length})
           </CardTitle>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => setImportando(true)} className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
+            <button type="button" onClick={() => setImportando(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
               <Upload className="h-3.5 w-3.5" /> Importar
             </button>
             {/* Columnas opcionales: ocultar/mostrar Especie y m³ — queda
@@ -312,7 +312,7 @@ export default function CubicadorTrozas() {
               {colsMenuOpen && (
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="absolute right-0 top-full z-20 mt-1 min-w-[170px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
+                  className="absolute right-0 top-full z-20 mt-1 min-w-[170px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]"
                 >
                   <p className="px-2 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Columnas visibles</p>
                   {COLS_OPCIONALES_TROZA.map(({ key, label }) => (
@@ -321,7 +321,7 @@ export default function CubicadorTrozas() {
                         type="checkbox"
                         checked={colsVisibles[key]}
                         onChange={(e) => setColsVisibles((c) => ({ ...c, [key]: e.target.checked }))}
-                        className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
+                        className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
                       />
                       {label}
                     </label>
@@ -397,11 +397,11 @@ export default function CubicadorTrozas() {
         )}
 
         {/* Contra la guía: ¿lo que llegó coincide con lo declarado? */}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3">
           <label className="flex items-center gap-2">
             <Scale className="h-4 w-4 text-[var(--accent)]" />
             <span className="text-sm font-bold text-[var(--text-primary)]">Según la GTF</span>
-            <input type="number" inputMode="decimal" value={gtfM3} onChange={(e) => setGtfM3(e.target.value)} placeholder="0.000" className="h-9 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+            <input type="number" inputMode="decimal" value={gtfM3} onChange={(e) => setGtfM3(e.target.value)} placeholder="0.000" className="h-9 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
             <span className="text-sm text-[var(--text-tertiary)]">m³ declarados</span>
           </label>
           {cmpGtf ? (
@@ -441,7 +441,7 @@ function CampoNum({ label, value, onChange, placeholder }: { label: string; valu
   return (
     <label className="flex flex-col gap-0.5">
       <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
-      <input type="number" inputMode="decimal" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="h-10 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+      <input type="number" inputMode="decimal" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="h-10 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
     </label>
   );
 }

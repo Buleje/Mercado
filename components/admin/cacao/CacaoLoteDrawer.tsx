@@ -384,7 +384,7 @@ export default function CacaoLoteDrawer({
                   )}
                 </Section>
               ) : (
-                <div className="flex items-center gap-2 rounded-xl border-2 border-dashed border-[var(--rule-base)] p-3 text-[var(--text-tertiary)]">
+                <div className="flex items-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] p-3 text-[var(--text-tertiary)]">
                   <FlaskConical className="h-4 w-4" /> Sin beneficio registrado para este lote.
                 </div>
               )}
@@ -443,10 +443,10 @@ export default function CacaoLoteDrawer({
                     <img
                       src={qrUrl}
                       alt="QR de trazabilidad"
-                      className="h-28 w-28 shrink-0 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1"
+                      className="h-28 w-28 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1"
                     />
                   ) : (
-                    <div className="grid h-28 w-28 shrink-0 place-items-center rounded-xl border-2 border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]">
+                    <div className="grid h-28 w-28 shrink-0 place-items-center rounded-xl border border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]">
                       <QrCode className="h-8 w-8" />
                     </div>
                   )}
@@ -463,7 +463,7 @@ export default function CacaoLoteDrawer({
                           setCopied(true);
                           setTimeout(() => setCopied(false), 1800);
                         }}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                        className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                       >
                         {copied ? (
                           <Check className="h-3.5 w-3.5 text-[var(--data-success-600)]" />
@@ -476,7 +476,7 @@ export default function CacaoLoteDrawer({
                         href={publicUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                        className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                         Ver página
@@ -503,7 +503,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4">
       <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
         <Icon className="h-4 w-4 text-[var(--accent)]" /> {title}
       </CardTitle>

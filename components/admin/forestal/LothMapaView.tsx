@@ -888,8 +888,8 @@ export default function LothMapaView({
           <div
             className={
               fullscreen
-                ? "fixed inset-3 z-[55] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
-                : "relative h-[560px] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)]"
+                ? "fixed inset-3 z-[55] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+                : "relative h-[560px] overflow-hidden rounded-2xl border border-[var(--rule-base)]"
             }
           >
             <LothMapaCanvas
@@ -959,7 +959,7 @@ export default function LothMapaView({
                     type="button"
                     onClick={() => setViaDraft((d) => (d ? d.slice(0, -1) : d))}
                     disabled={viaDraft.length === 0}
-                    className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+                    className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
                   >
                     <Undo2 className="h-3.5 w-3.5" /> Deshacer
                   </button>
@@ -974,7 +974,7 @@ export default function LothMapaView({
                   <button
                     type="button"
                     onClick={() => setViaDraft(null)}
-                    className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                    className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
                   >
                     <X className="h-3.5 w-3.5" /> Cancelar
                   </button>
@@ -985,7 +985,7 @@ export default function LothMapaView({
             {/* Estado vacío */}
             {raw !== null && totalPuntos === 0 && !declarada && !drawMode && (
               <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center p-6">
-                <div className="pointer-events-auto max-w-md rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 p-5 text-center shadow-lg backdrop-blur">
+                <div className="pointer-events-auto max-w-md rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 p-5 text-center shadow-lg backdrop-blur">
                   <MapPin className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" />
                   <p className="text-sm font-bold text-[var(--text-primary)]">Todavía no hay geolocalización</p>
                   <p className="mt-1 text-xs text-[var(--text-tertiary)]">

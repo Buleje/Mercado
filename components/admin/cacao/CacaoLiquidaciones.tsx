@@ -133,7 +133,7 @@ export default function CacaoLiquidaciones() {
                     <div className="text-xs text-[var(--text-tertiary)]">de S/ {n2(g.totalDebido)}</div>
                   </div>
                   {g.telefono && (
-                    <a href={waLink(g.telefono, g.nombre, g.totalSaldo)} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]" aria-label={`WhatsApp a ${g.nombre}`}><MessageCircle className="h-4 w-4" /></a>
+                    <a href={waLink(g.telefono, g.nombre, g.totalSaldo)} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]" aria-label={`WhatsApp a ${g.nombre}`}><MessageCircle className="h-4 w-4" /></a>
                   )}
                   <button type="button" onClick={() => setPayFor(g)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90"><HandCoins className="h-4 w-4" />Pagar</button>
                 </div>
@@ -228,7 +228,7 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
             <p className="text-sm text-[var(--text-secondary)]">pagados a {grupo.nombre}. {done.saldoRestante > 0 ? `Queda S/ ${n2(done.saldoRestante)} pendiente.` : "Cuenta saldada."}</p>
           </div>
           <div className="flex justify-center gap-2">
-            <button type="button" onClick={() => openPrintable(receiptHtml(grupo, done.aplicado, done.saldoRestante, done.fecha))} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" />Imprimir comprobante</button>
+            <button type="button" onClick={() => openPrintable(receiptHtml(grupo, done.aplicado, done.saldoRestante, done.fecha))} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" />Imprimir comprobante</button>
             <button type="button" onClick={onPaid} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90">Listo</button>
           </div>
         </div>
@@ -241,7 +241,7 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
       <div className="space-y-4 p-5">
         <div>
           <label htmlFor="cacao-liq-monto" className="mb-1 block text-sm font-bold text-[var(--text-primary)]">Monto a pagar (S/)</label>
-          <input id="cacao-liq-monto" type="number" inputMode="decimal" step="0.01" min="0" max={grupo.totalSaldo} value={monto} onChange={(e) => setMonto(e.target.value)} className="h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" autoFocus />
+          <input id="cacao-liq-monto" type="number" inputMode="decimal" step="0.01" min="0" max={grupo.totalSaldo} value={monto} onChange={(e) => setMonto(e.target.value)} className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" autoFocus />
           <div className="mt-2 flex flex-wrap gap-2">
             <button type="button" onClick={() => setMonto(Number(grupo.totalSaldo).toFixed(2))} className="rounded-lg border border-[var(--rule-base)] px-3 py-1 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">Todo · S/ {n2(grupo.totalSaldo)}</button>
             <button type="button" onClick={() => setMonto((Number(grupo.totalSaldo) / 2).toFixed(2))} className="rounded-lg border border-[var(--rule-base)] px-3 py-1 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">Mitad</button>
@@ -250,7 +250,7 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
         </div>
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">Cancelar</button>
+          <button type="button" onClick={onClose} className="h-11 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">Cancelar</button>
           <button type="button" disabled={!valido || submitting} onClick={pagar} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <HandCoins className="h-4 w-4" />}Registrar pago
           </button>

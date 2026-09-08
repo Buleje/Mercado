@@ -184,17 +184,17 @@ export default function CacaoPriceChart({
         </CardTitle>
         <div className="flex flex-wrap items-center gap-2">
           {canSol && (
-            <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+            <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
               <button type="button" onClick={() => setUnit("usd")} className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${!isSol ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>USD/t</button>
               <button type="button" onClick={() => setUnit("sol")} className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${isSol ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>S//kg chacra</button>
             </div>
           )}
-          <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+          <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
             {RANGES.map((r) => (
               <button key={r.key} type="button" onClick={() => setRange(r.key)} className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${range === r.key ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>{r.key}</button>
             ))}
           </div>
-          <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+          <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
             <OverlayToggle active={showMA} onClick={() => setShowMA((v) => !v)} label="MM" title="Medias móviles 7 y 30 días" />
             <OverlayToggle active={showForecast} onClick={() => setShowForecast((v) => !v)} label="Proy." title="Proyección a 30 días (regresión + banda)" />
             <OverlayToggle active={show52} onClick={() => setShow52((v) => !v)} label="52sem" title="Máximo y mínimo de 52 semanas" />
@@ -294,7 +294,7 @@ export default function CacaoPriceChart({
   );
 
   return (
-    <div ref={rootRef} className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div ref={rootRef} className="group relative rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       {content(onPresent ? <CacaoChartPresent title={title} onClick={onPresent} /> : null)}
     </div>
   );

@@ -120,7 +120,7 @@ export default function CurvaDeSaldo({
 
   if (curva.puntos.length < 2) {
     return (
-      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <Encabezado paso={curva.paso} periodoLabel={periodoLabel} />
         <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">
           El período no tiene suficientes movimientos para dibujar una tendencia. Con dos fechas
@@ -131,7 +131,7 @@ export default function CurvaDeSaldo({
   }
 
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <Encabezado paso={curva.paso} periodoLabel={periodoLabel} />
 
       {/* El recorrido en números, antes del dibujo: quien no lee gráficos se

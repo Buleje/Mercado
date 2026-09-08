@@ -200,7 +200,7 @@ export default function PlantacionPasoMapa({
             id="rpf-bloque-activo"
             value={activoValido ?? ""}
             onChange={(e) => setActivo(e.target.value === "" ? null : Number(e.target.value))}
-            className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
+            className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
           >
             <option value="">Ningún bloque (sólo ver)</option>
             {bloques.map((b, i) => (
@@ -213,7 +213,7 @@ export default function PlantacionPasoMapa({
         </div>
       )}
 
-      <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)]">
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)]">
         {/* className ESTÁTICO (gotcha Leaflet). */}
         <div ref={containerRef} className="h-[420px] w-full bg-[var(--surface-sunken)]" />
 
@@ -221,7 +221,7 @@ export default function PlantacionPasoMapa({
           <button
             type="button"
             onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))}
-            className="absolute right-2 top-2 z-[400] inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 text-xs font-bold text-[var(--text-primary)] shadow-md backdrop-blur hover:bg-[var(--surface-canvas)]"
+            className="absolute right-2 top-2 z-[400] inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 text-xs font-bold text-[var(--text-primary)] shadow-md backdrop-blur hover:bg-[var(--surface-canvas)]"
           >
             <Layers className="h-3.5 w-3.5" /> {layer === "sat" ? "Ver calles" : "Ver satélite"}
           </button>
@@ -229,7 +229,7 @@ export default function PlantacionPasoMapa({
 
         {bloques.length === 0 && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center p-6">
-            <div className="pointer-events-auto max-w-sm rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 p-5 text-center shadow-lg backdrop-blur">
+            <div className="pointer-events-auto max-w-sm rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 p-5 text-center shadow-lg backdrop-blur">
               <MapPin className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)]" aria-hidden="true" />
               <p className="text-sm font-bold text-[var(--text-primary)]">Agregá un bloque en el paso anterior para verlo acá</p>
               <p className="mt-1 text-xs text-[var(--text-tertiary)]">El mapa dibuja el polígono de cada bloque en cuanto tenga sus vértices.</p>

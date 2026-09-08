@@ -150,7 +150,7 @@ export default function MovementDetailModal({
 
         <div className="space-y-4 p-6">
           {/* Lo que pasó con el stock, en una línea que se lee sola. */}
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
             <div className="flex items-center gap-2">
               <m.Icon className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
               <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">{m.label}</span>
@@ -175,7 +175,7 @@ export default function MovementDetailModal({
           </dl>
 
           {bloqueo ? (
-            <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
+            <p className="flex items-start gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-secondary)]" aria-hidden />
               {bloqueo}
             </p>
@@ -201,7 +201,7 @@ export default function MovementDetailModal({
                   type="button"
                   onClick={() => setConfirma(false)}
                   disabled={revirtiendo}
-                  className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] disabled:opacity-50"
+                  className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] disabled:opacity-50"
                 >
                   No
                 </button>
@@ -212,7 +212,7 @@ export default function MovementDetailModal({
               type="button"
               onClick={() => setConfirma(true)}
               className={cn(
-                "inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--data-warning-500)]/50 hover:text-[var(--data-warning-600)] dark:hover:text-[var(--data-warning-500)]",
+                "inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--data-warning-500)]/50 hover:text-[var(--data-warning-600)] dark:hover:text-[var(--data-warning-500)]",
               )}
             >
               <Undo2 className="h-4 w-4" aria-hidden />

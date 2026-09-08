@@ -308,7 +308,7 @@ export default function CategoriesEditorTab() {
       {cats.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {SUMMARY.map(({ label, value, icon: Icon }) => (
-            <div key={label} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+            <div key={label} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
               <div className="flex items-center gap-2">
                 <Icon className="h-4 w-4 text-[var(--accent)]" aria-hidden />
                 <p className="text-sm font-semibold text-[var(--text-secondary)]">{label}</p>
@@ -336,7 +336,7 @@ export default function CategoriesEditorTab() {
           <button
             onClick={bulkGenerateSeo}
             disabled={cats.length === 0}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-40"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-40"
           >
             <Sparkles className="h-4 w-4" />
             Auto-generar SEO
@@ -368,7 +368,7 @@ export default function CategoriesEditorTab() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar categoría..."
-            className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-12 pr-4 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
+            className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-12 pr-4 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
           />
         </div>
       )}
@@ -387,7 +387,7 @@ export default function CategoriesEditorTab() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
+            className="w-full max-w-md rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
           >
             <header className="flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)]">
               <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
@@ -428,7 +428,7 @@ export default function CategoriesEditorTab() {
                     if (e.key === "Enter" && newCatName.trim()) handleCreateCategory();
                   }}
                   placeholder="Ej: Snacks importados, Cuidado personal…"
-                  className="w-full h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] focus:border-[var(--accent)] focus:bg-[var(--surface-raised)] outline-none transition-colors"
+                  className="w-full h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-base font-semibold text-[var(--text-primary)] focus:border-[var(--accent)] focus:bg-[var(--surface-raised)] outline-none transition-colors"
                 />
               </div>
 
@@ -481,7 +481,7 @@ export default function CategoriesEditorTab() {
 
       {/* Empty state — negocio nuevo sin categorías creadas */}
       {cats.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-14 text-center">
+        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-14 text-center">
           <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Layers className="h-7 w-7" strokeWidth={2} />
           </span>
@@ -507,7 +507,7 @@ export default function CategoriesEditorTab() {
       /* Category list */
       <div className="space-y-2">
         {shownCats.length === 0 && (
-          <p className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] px-6 py-10 text-center text-sm text-[var(--text-secondary)]">
+          <p className="rounded-2xl border border-dashed border-[var(--rule-base)] px-6 py-10 text-center text-sm text-[var(--text-secondary)]">
             Ninguna categoría coincide con &quot;{search}&quot;.
           </p>
         )}
@@ -547,14 +547,14 @@ export default function CategoriesEditorTab() {
                   value={cat.label}
                   onChange={(e) => updateField(i, "label", e.target.value)}
                   aria-label="Nombre de la categoría"
-                  className="h-11 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:bg-[var(--surface-raised)] focus:outline-none"
+                  className="h-11 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:bg-[var(--surface-raised)] focus:outline-none"
                 />
                 <span className="font-mono text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{cat.id}</span>
 
                 {/* SEO Score Indicator — bg neutro, color solo en icono + dot */}
                 <button
                   onClick={() => toggleSeoExpanded(cat.id)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2.5 py-1.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-2.5 py-1.5 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
                   title="Editar SEO"
                 >
                   <span className={cn(

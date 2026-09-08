@@ -419,7 +419,7 @@ export default function ConteoFisicoWizard() {
                       onKeyDown={e => { if (e.key === 'Enter') guardarConteo(); }}
                       min={0}
                       placeholder="Ingresa cantidad..."
-                      className="w-full px-4 h-11 border-2 border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] text-2xl text-center font-bold focus:border-primary focus:outline-none"
+                      className="w-full px-4 h-11 border border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] text-2xl text-center font-bold focus:border-primary focus:outline-none"
                       autoFocus
                     />
                   </Field>

@@ -446,7 +446,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
                 const f = e.dataTransfer.files?.[0];
                 if (f) void tomarArchivo(f);
               }}
-              className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[var(--rule-base)] px-6 py-8 transition-colors hover:border-primary hover:bg-primary/5"
+              className="flex w-full flex-col items-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] px-6 py-8 transition-colors hover:border-primary hover:bg-primary/5"
             >
               <Upload className="h-8 w-8 text-[var(--text-tertiary)]" aria-hidden />
               <span className="text-base font-bold text-[var(--text-primary)]">

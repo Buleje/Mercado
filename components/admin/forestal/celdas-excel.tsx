@@ -261,7 +261,7 @@ export function CeldaNum({
         }}
         onKeyDown={onKeyDown}
         onFocus={(e) => e.currentTarget.select()}
-        className={`${ancho} ${alto} rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-center font-mono text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/25 ${className}`}
+        className={`${ancho} ${alto} rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-center font-mono text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/25 ${className}`}
       />
       {listaId && sugerencias && (
         <datalist id={listaId}>

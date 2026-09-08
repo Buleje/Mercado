@@ -96,7 +96,7 @@ const COLUMNAS_DISPONIBLES_OPCIONALES = [
 ] as const;
 
 const CAMPO =
-  "h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
+  "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
 export default function CtpProductosDisponibles({ period }: { period: CtpPeriod }) {
   const [corridas, setCorridas] = useState<CorridaDisponible[]>([]);

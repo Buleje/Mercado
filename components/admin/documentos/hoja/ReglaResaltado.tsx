@@ -50,7 +50,7 @@ export default function ReglaResaltado({
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4" onClick={onCerrar}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[26rem] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        className="w-full max-w-[26rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
         <div className="flex items-center gap-2 border-b border-[var(--rule-base)] px-4 py-3">
           <Paintbrush className="h-4 w-4 text-[var(--accent)]" />
@@ -69,7 +69,7 @@ export default function ReglaResaltado({
             <select
               value={comparador}
               onChange={(e) => setComparador(e.target.value as Comparador)}
-              className="h-11 min-w-0 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary"
+              className="h-11 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary"
             >
               {COMPARADORES.map((c) => <option key={c.valor} value={c.valor}>{c.etiqueta}</option>)}
             </select>
@@ -79,7 +79,7 @@ export default function ReglaResaltado({
                 onChange={(e) => setValor(e.target.value)}
                 placeholder={comparador === "contiene" ? "texto" : "5"}
                 aria-label="Valor de la regla"
-                className="h-11 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+                className="h-11 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
               />
             )}
           </div>

@@ -140,7 +140,7 @@ export default function CtpAnalisis() {
       )}
 
       {reorden && (
-        <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="border-b-2 border-[var(--rule-base)] px-4 py-3">
             <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><TrendingUp className="h-4 w-4" /> Reorden predictivo de materia prima</CardTitle>
             <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">Días de stock al ritmo de consumo de los últimos 90 días. Repone antes de que llegue a cero.</p>
@@ -343,7 +343,7 @@ function DeltaStat({
   const sparkTrend: "up" | "down" | "neutral" = tone === "neutral" || delta == null || delta === 0 ? "neutral" : up ? "up" : "down";
   const sparkData = spark && spark.length >= 2 && spark.some((v) => v > 0) ? spark : null;
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
         <Icon className="h-4 w-4 text-[var(--text-tertiary)]" />
@@ -374,7 +374,7 @@ function ChartCard({ title, subtitle, legend, children }: {
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="mb-1 flex items-start justify-between gap-3">
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">{title}</CardTitle>
         {legend && (

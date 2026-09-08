@@ -355,7 +355,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
             role="dialog"
             aria-label="Dictado por voz"
             onClick={(e) => e.stopPropagation()}
-            className="w-full sm:max-w-xl bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] border-2 border-[var(--rule-base)] overflow-hidden flex flex-col max-h-[85vh]"
+            className="w-full sm:max-w-xl bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] overflow-hidden flex flex-col max-h-[85vh]"
           >
             {/* Header */}
             <header className="px-5 sm:px-6 py-4 flex items-start justify-between gap-3 border-b border-[var(--rule-soft)]">
@@ -442,7 +442,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
 
               {/* Transcript grande */}
               {(transcript || interimTranscript) && (
-                <div className="rounded-2xl bg-[var(--surface-sunken)] border-2 border-[var(--rule-soft)] px-5 py-4 mb-4">
+                <div className="rounded-2xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] px-5 py-4 mb-4">
                   <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] leading-snug">
                     {transcript}
                     {interimTranscript && (
@@ -466,7 +466,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                       <button
                         key={prompt}
                         onClick={() => handleQuickPrompt(prompt)}
-                        className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-1.5 text-sm font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:border-[var(--accent)]/40 transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-1.5 text-sm font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:border-[var(--accent)]/40 transition-colors"
                       >
                         <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" aria-hidden />
                         {prompt}
@@ -644,7 +644,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                   {items.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3"
+                      className="flex items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3"
                     >
                       <span
                         aria-hidden
