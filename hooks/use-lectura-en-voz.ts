@@ -29,6 +29,12 @@ export interface EstadoLectura {
   /** Posición 0-based de la fila que suena. */
   idx: number;
   total: number;
+  /**
+   * Llegó al final. El control NO se cierra solo por esto: se queda con el
+   * «leer de nuevo» a mano. Un panel que desaparece justo cuando terminás de
+   * anotar la última fila te deja sin saber si leyó todo o se cortó.
+   */
+  terminada: boolean;
 }
 
 export interface OpcionesLectura {
@@ -55,15 +61,25 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
   const optsRef = useRef(opts);
   optsRef.current = opts;
 
-  const detener = useCallback(() => {
+  /** Corta la voz sin tocar el panel. */
+  const callar = useCallback(() => {
     activaRef.current = false;
     pausaRef.current = false;
-    pasoRef.current = null;
-    idxRef.current = 0;
     setLeyendoId(null);
-    setEstado(null);
     try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
   }, []);
+
+  /**
+   * Corta Y cierra el panel. Es lo que hace la «X», y lo que corre cuando algo
+   * externo tiene que quedarse con el audio (prender el micrófono, editar una
+   * fila por voz).
+   */
+  const detener = useCallback(() => {
+    callar();
+    pasoRef.current = null;
+    idxRef.current = 0;
+    setEstado(null);
+  }, [callar]);
 
   /** Arranca (o corta, si ya estaba leyendo) una secuencia. */
   const leer = useCallback((
@@ -84,14 +100,20 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
 
     const paso = () => {
       const lista = obtenerLista();
-      if (!activaRef.current || idxRef.current >= lista.length) { detener(); return; }
+      if (!activaRef.current) { detener(); return; }
+      /* Terminó: se calla, pero el panel SE QUEDA marcando el final. */
+      if (idxRef.current >= lista.length) {
+        callar();
+        setEstado({ pausada: false, idx: Math.max(0, lista.length - 1), total: lista.length, terminada: true });
+        return;
+      }
       if (pausaRef.current) {
-        setEstado({ pausada: true, idx: idxRef.current, total: lista.length });
+        setEstado({ pausada: true, idx: idxRef.current, total: lista.length, terminada: false });
         return;
       }
       const fila = lista[idxRef.current];
       setLeyendoId(fila.id);
-      setEstado({ pausada: false, idx: idxRef.current, total: lista.length });
+      setEstado({ pausada: false, idx: idxRef.current, total: lista.length, terminada: false });
       const idDom = optsRef.current.idDeFila?.(fila.id);
       if (idDom) {
         try { document.getElementById(idDom)?.scrollIntoView({ block: "center", behavior: "auto" }); } catch { /* ignore */ }
@@ -112,7 +134,7 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
 
     pasoRef.current = paso;
     paso();
-  }, [detener]);
+  }, [callar, detener]);
 
   /** Arranca desde una fila concreta, buscada por id (no por posición: entre
    *  elegirla y arrancar, la lista pudo cambiar). */
@@ -140,10 +162,15 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
     pasoRef.current();
   }, []);
 
+  /**
+   * Vuelve a la primera fila. Sirve leyendo, en pausa y TERMINADA — ahí es el
+   * «leer de nuevo», que es la razón de que el panel siga abierto al final.
+   */
   const reiniciar = useCallback(() => {
-    if (!activaRef.current || !pasoRef.current) return;
+    if (!pasoRef.current) return;
     idxRef.current = 0;
     pausaRef.current = false;
+    activaRef.current = true;
     try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
     setTimeout(() => pasoRef.current?.(), 0);
   }, []);

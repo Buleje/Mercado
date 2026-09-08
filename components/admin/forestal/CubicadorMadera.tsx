@@ -1678,14 +1678,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         addedFlash={addedFlash}
         onDeshacer={deshacer}
         fmtPt={fmtPt}
-        fmtM3={fmtM3}
         manual={manual}
         onManualChange={setManualSync}
         onConfirmarCarga={confirmarCarga}
-        apartadoEnCurso={totalCandidatasAp}
-        proximoApartado={siguienteApartado(asignados)}
-        onCerrarApartado={cerrarApartado}
-        onEscucharApartado={leerMedidas}
       />
       )}
 
@@ -1729,6 +1724,39 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               catorce botones del mismo peso no tenían jerarquía — «Vaciar» se
               veía igual que «CSV» y las dos que mueven el trabajo se perdían. */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* El apartado en curso, en la MISMA fila que las demás decisiones
+                sobre el lote: cerrarlo es una acción del lote, como Guardar o
+                Enviar al Libro. Vivía arriba, dentro del panel de voz, donde
+                además repetía los tres números del resumen. */}
+            {totalCandidatasAp.piezas > 0 && (
+              <div className="inline-flex items-center gap-2 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10 px-2.5 py-1.5">
+                <div className="min-w-0 leading-tight">
+                  <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                    Apartado {siguienteApartado(asignados)} sin guardar
+                  </div>
+                  <div className="font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
+                    {totalCandidatasAp.piezas} {totalCandidatasAp.piezas === 1 ? "pieza" : "piezas"} ·{" "}
+                    {fmtPt(totalCandidatasAp.pieTablar)} PT
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => leerMedidas(totalCandidatasAp.ids)}
+                  title="Dicta en voz espesor · ancho · largo de estas piezas, una por una"
+                  aria-label="Leer en voz alta las piezas del apartado"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                >
+                  <Volume2 className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={cerrarApartado}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-2.5 text-xs font-bold text-white transition hover:brightness-95"
+                >
+                  <Layers className="h-3.5 w-3.5" /> Cerrar apartado {siguienteApartado(asignados)}
+                </button>
+              </div>
+            )}
             {rows.length > 0 && (
               <>
                 <AccionLote
@@ -2423,7 +2451,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         onPausar={lecturaVoz.pausar}
         onReanudar={lecturaVoz.reanudar}
         onReiniciar={lecturaVoz.reiniciar}
-        onDetener={lecturaVoz.detener}
+        onCerrar={lecturaVoz.detener}
       />
 
       {showImportar && (

@@ -13,44 +13,45 @@
  * Por eso flota: mientras lee, el control tiene que estar donde estén los ojos,
  * y los ojos están siguiendo la fila que suena.
  *
- * Tres acciones, ninguna escondida:
+ * **El panel se queda hasta que lo cierres con la X.** No se va al pausar, ni
+ * al terminar de leer: desaparecer justo cuando terminás de anotar la última
+ * fila deja sin saber si leyó todo o se cortó a mitad de camino — y obliga a
+ * volver a buscar el botón de arriba para releer.
+ *
+ * Dos acciones y una salida:
  *  - **Pausar / Seguir** — frena donde está y retoma por esa misma fila.
- *  - **Reiniciar** — vuelve a la primera y sigue leyendo.
- *  - **Detener** — corta y cierra el control.
+ *  - **Reiniciar / Leer de nuevo** — vuelve a la primera y sigue leyendo.
+ *  - **X** — corta la voz y cierra el panel. Es lo único que lo cierra.
  *
  * Y el progreso con todas las letras («fila 34 de 300»): sin eso, una pausa
  * larga deja sin saber por dónde iba, que es justo lo que la pausa vino a
  * resolver.
  */
 
-import { Pause, Play, RotateCcw, Square, Volume2 } from "@buleje/design-system/icons";
-
-export interface EstadoLectura {
-  pausada: boolean;
-  /** Posición 0-based de la fila que suena. */
-  idx: number;
-  total: number;
-}
+import { Pause, Play, RotateCcw, Volume2, X } from "@buleje/design-system/icons";
+import type { EstadoLectura } from "@/hooks/use-lectura-en-voz";
 
 export default function ControlLecturaFlotante({
   estado,
   onPausar,
   onReanudar,
   onReiniciar,
-  onDetener,
+  onCerrar,
   etiqueta = "Leyendo la tabla",
 }: {
-  /** `null` = no hay lectura en curso y el control no existe. */
+  /** `null` = el panel está cerrado. Sólo la X lo pone en `null`. */
   estado: EstadoLectura | null;
   onPausar: () => void;
   onReanudar: () => void;
   onReiniciar: () => void;
-  onDetener: () => void;
+  /** Corta la voz y cierra el panel. */
+  onCerrar: () => void;
   etiqueta?: string;
 }) {
   if (!estado) return null;
-  const actual = Math.min(estado.idx + 1, estado.total);
+  const actual = estado.terminada ? estado.total : Math.min(estado.idx + 1, estado.total);
   const pct = estado.total > 0 ? (actual / estado.total) * 100 : 0;
+  const titulo = estado.terminada ? "Terminó de leer" : estado.pausada ? "En pausa" : etiqueta;
 
   return (
     <div
@@ -62,17 +63,29 @@ export default function ControlLecturaFlotante({
          cuando más se usa. */
       className="fixed bottom-4 left-1/2 z-[9996] w-[min(24rem,calc(100vw-2rem))] -translate-x-1/2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)]"
     >
-      <div className="mb-2 flex items-baseline justify-between gap-2">
-        <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="inline-flex min-w-0 items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
           <Volume2
-            className={`h-4 w-4 text-[var(--accent)] ${estado.pausada ? "" : "animate-pulse"}`}
+            className={`h-4 w-4 shrink-0 text-[var(--accent)] ${estado.pausada || estado.terminada ? "" : "animate-pulse"}`}
             aria-hidden
           />
-          {estado.pausada ? "En pausa" : etiqueta}
+          <span className="truncate">{titulo}</span>
         </p>
-        <p className="font-mono text-xs font-bold tabular-nums text-[var(--text-tertiary)]">
-          fila {actual.toLocaleString("es-PE")} de {estado.total.toLocaleString("es-PE")}
-        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          <p className="font-mono text-xs font-bold tabular-nums text-[var(--text-tertiary)]">
+            fila {actual.toLocaleString("es-PE")} de {estado.total.toLocaleString("es-PE")}
+          </p>
+          {/* La única salida: cerrar es una decisión, no algo que pase solo. */}
+          <button
+            type="button"
+            onClick={onCerrar}
+            title="Cerrar el control de lectura"
+            aria-label="Cerrar el control de lectura"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
       </div>
 
       <div className="mb-2.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
@@ -80,13 +93,20 @@ export default function ControlLecturaFlotante({
       </div>
 
       <div className="flex gap-2">
-        {estado.pausada ? (
-          <Boton onClick={onReanudar} Icono={Play} label="Seguir" destacado />
+        {/* Terminada, «pausar» no tiene qué pausar: el botón grande pasa a ser
+            volver a empezar, que es lo que se quiere después de escuchar todo. */}
+        {estado.terminada ? (
+          <Boton onClick={onReiniciar} Icono={RotateCcw} label="Leer de nuevo" destacado />
         ) : (
-          <Boton onClick={onPausar} Icono={Pause} label="Pausar" destacado />
+          <>
+            {estado.pausada ? (
+              <Boton onClick={onReanudar} Icono={Play} label="Seguir" destacado />
+            ) : (
+              <Boton onClick={onPausar} Icono={Pause} label="Pausar" destacado />
+            )}
+            <Boton onClick={onReiniciar} Icono={RotateCcw} label="Reiniciar" hint="Volver a la primera fila" />
+          </>
         )}
-        <Boton onClick={onReiniciar} Icono={RotateCcw} label="Reiniciar" hint="Volver a la primera fila" />
-        <Boton onClick={onDetener} Icono={Square} label="Detener" />
       </div>
     </div>
   );

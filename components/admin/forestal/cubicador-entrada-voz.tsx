@@ -15,7 +15,7 @@
  */
 import {
   Calculator, FileSpreadsheet, Settings, Mic, MicOff, Volume2, VolumeX,
-  AlertTriangle, Lock, Unlock, X, Check, RotateCcw, Plus, Layers,
+  AlertTriangle, Lock, Unlock, X, Check, RotateCcw, Plus,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -28,7 +28,6 @@ import {
   frasesToText, textToFrases, CONFIG_DEFAULT,
   type CubicadorConfig,
 } from "@/lib/forestal/cubicador-config";
-import type { TotalPiezas } from "@/lib/forestal/cubicacion-apartados";
 import { CeldaNum, useTecladoGrilla } from "./celdas-excel";
 import CacaoChartPresent from "@/components/admin/cacao/CacaoChartPresent";
 
@@ -73,17 +72,9 @@ interface PanelEntradaVozProps {
   addedFlash: number;
   onDeshacer: () => void;
   fmtPt: (v: number) => string;
-  fmtM3: (v: number) => string;
   manual: Manual;
   onManualChange: (v: Manual) => void;
   onConfirmarCarga: (grillaId: string) => void;
-  /** Lo que entraría al próximo apartado si se cierra ahora (marcado si hay
-   *  algo marcado, si no todo lo pendiente) — mismo dato que ve el panel de
-   *  Apartados, mostrado acá para no tener que ir y volver mientras se dicta. */
-  apartadoEnCurso: TotalPiezas;
-  proximoApartado: number;
-  onCerrarApartado: () => void;
-  onEscucharApartado: (ids: string[]) => void;
 }
 
 export default function PanelEntradaVoz({
@@ -92,9 +83,8 @@ export default function PanelEntradaVoz({
   supported, listening, onToggleListen, paused,
   fijas, onAplicarFijas, especie, onEspecieChange,
   dueno, onDuenoChange, duenosConocidos, onAbrirDuenos,
-  liveGroups, errMsg, lastAdded, addedFlash, onDeshacer, fmtPt, fmtM3,
+  liveGroups, errMsg, lastAdded, addedFlash, onDeshacer, fmtPt,
   manual, onManualChange, onConfirmarCarga,
-  apartadoEnCurso, proximoApartado, onCerrarApartado, onEscucharApartado,
 }: PanelEntradaVozProps) {
   const speakOn = config.speak;
   const teclasCarga = useTecladoGrilla({
@@ -135,35 +125,10 @@ export default function PanelEntradaVoz({
         </div>
       </div>
 
-      {/* Apartado en curso — sin abrir el panel de Apartados, para no perder
-          el hilo mientras se dicta rápido. Sólo aparece si hay algo pendiente. */}
-      {apartadoEnCurso.piezas > 0 && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10 px-3 py-2.5">
-          <div className="min-w-0">
-            <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Apartado {proximoApartado} sin guardar</div>
-            <div className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
-              {apartadoEnCurso.piezas} {apartadoEnCurso.piezas === 1 ? "pieza" : "piezas"} · {fmtPt(apartadoEnCurso.pieTablar)} PT · {fmtM3(apartadoEnCurso.m3)} m³
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onEscucharApartado(apartadoEnCurso.ids)}
-              title="Dicta en voz espesor · ancho · largo de estas piezas, una por una"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
-            >
-              <Volume2 className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={onCerrarApartado}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white transition hover:brightness-95"
-            >
-              <Layers className="h-3.5 w-3.5" /> Cerrar apartado {proximoApartado}
-            </button>
-          </div>
-        </div>
-      )}
+      {/* El apartado en curso vivía acá. Se mudó a la fila de acciones del lote
+          (Brandon, 2026-09-08): repetía los mismos tres números que el resumen
+          de arriba y partía en dos el lugar donde se decide sobre el lote —
+          «Cerrar apartado» es una acción del lote, como Guardar o Enviar. */}
 
       {/* Panel de AJUSTES — voz (velocidad/tono/qué dicta) + comandos editables */}
       {showAjustes && (
