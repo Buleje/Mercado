@@ -1953,8 +1953,20 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3">
                           {p.image ? (
-                            <span className="relative inline-block shrink-0">
-                              <Image src={p.image} alt={p.name} width={40} height={40} className="w-10 h-10 rounded-md object-cover" />
+                            /* El `overflow-hidden` va en un envoltorio INTERNO,
+                               no en el span de afuera: cuando la URL de la foto
+                               no carga (el catálogo trae enlaces externos que
+                               se caen), el navegador dibuja el texto alternativo
+                               —el nombre completo del producto— y sin recorte
+                               estiraba la fila de 70 a 161px. Medido en el
+                               inventario real: filas de 70, 70, 121, 141 y 161px
+                               en la misma tabla. Afuera queda el badge de aviso,
+                               que se posiciona sobre el borde y sí tiene que
+                               poder salirse. */
+                            <span className="relative inline-block shrink-0 h-10 w-10">
+                              <span className="block h-10 w-10 overflow-hidden rounded-md">
+                                <Image src={p.image} alt={p.name} width={40} height={40} className="h-10 w-10 object-cover" />
+                              </span>
                               <ImageWarningBadge image={p.image} />
                             </span>
                           ) : (
