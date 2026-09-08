@@ -10,9 +10,9 @@
  * corrige sola. Persiste por tenant en localStorage; sin DB — el ingreso
  * legal se registra en el Libro CTP con su GTF.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Check, Columns3, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Table, Trash2, AlertTriangle, Upload,
+  Check, Columns3, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Square, Table, Trash2, AlertTriangle, Upload, Volume2,
 } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { detectarComando, ESPECIES_MADERA, mejoresNumeros, PT_POR_M3 } from "@/lib/forestal/cubicacion";
@@ -22,6 +22,8 @@ import {
 import type { TrozaImportada } from "@/lib/forestal/cubicacion-trozas-import";
 import { loadConfig } from "@/lib/forestal/cubicador-config";
 import { useVozContinua } from "@/hooks/use-voz-continua";
+import { useLecturaEnVoz } from "@/hooks/use-lectura-en-voz";
+import ControlLecturaFlotante from "./cubicador-lectura-flotante";
 import ImportarTrozasModal from "./ImportarTrozasModal";
 
 interface Fila extends TrozaCubicada {
@@ -171,6 +173,30 @@ export default function CubicadorTrozas() {
   };
 
   const totales = useMemo(() => totalesTrozas(rows), [rows]);
+
+  /**
+   * Leer el patio en voz alta, troza por troza — la misma mecánica que el
+   * cubicador de madera (`use-lectura-en-voz`), no una segunda con otras
+   * reglas. Sirve para cotejar contra la guía sin despegar los ojos del papel.
+   */
+  const rowsRef = useRef<Fila[]>(rows);
+  rowsRef.current = rows;
+  const lectura = useLecturaEnVoz<Fila>({
+    rate: () => loadConfig().voiceRate,
+    voiceURI: () => loadConfig().voiceURI,
+    /* El micrófono y el parlante no pueden estar prendidos a la vez: lo que
+       dicta la tabla entraría como si fuera una troza nueva. */
+    onAntesDeArrancar: () => { if (voz.listening) voz.toggle(); },
+    idDeFila: (id) => `troza-row-${id}`,
+  });
+  const textoTroza = useCallback(
+    (t: Fila) => `${t.d1}, ${t.d2}, ${t.largo}${t.especie ? `, ${t.especie}` : ""}`,
+    [],
+  );
+  const leerPatio = useCallback(
+    () => lectura.leer(() => rowsRef.current, textoTroza),
+    [lectura, textoTroza],
+  );
   const cmpGtf = useMemo(() => compararConGtf(totales.m3, Number(gtfM3) || 0), [totales.m3, gtfM3]);
   const sospechosas = rows.filter((r) => r.sospechosa).length;
   const especiesActuales = useMemo(
@@ -340,6 +366,14 @@ export default function CubicadorTrozas() {
             </div>
             {rows.length > 0 && (
               <>
+                <button
+                  type="button"
+                  onClick={leerPatio}
+                  title="Leer las trozas en voz alta, una por una"
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${lectura.estado ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                >
+                  {lectura.estado ? <><Square className="h-3.5 w-3.5" /> Detener</> : <><Volume2 className="h-3.5 w-3.5" /> Leer el patio</>}
+                </button>
                 <button type="button" onClick={exportarCSV} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">CSV</button>
                 <button type="button" onClick={limpiar} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/12">Vaciar</button>
               </>
@@ -370,17 +404,42 @@ export default function CubicadorTrozas() {
               </thead>
               <tbody>
                 {rows.map((r, i) => (
-                  <tr key={r.id} className={`border-t border-[var(--rule-soft)] ${r.sospechosa ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12" : lastAdded?.id === r.id ? "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/10" : ""}`}>
+                  <tr
+                    key={r.id}
+                    id={`troza-row-${r.id}`}
+                    className={`border-t border-[var(--rule-soft)] ${
+                      lectura.leyendoId === r.id
+                        ? "bg-primary/10 outline outline-2 -outline-offset-2 outline-[var(--accent)]"
+                        : r.sospechosa
+                          ? "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12"
+                          : lastAdded?.id === r.id
+                            ? "bg-[var(--data-success-50)] dark:bg-[var(--data-success-500)]/10"
+                            : ""
+                    }`}
+                  >
                     <td className="px-3 py-2 font-mono tabular-nums text-[var(--text-tertiary)]">{i + 1}</td>
                     <td className="px-3 py-2"><CeldaNum value={r.d1} onChange={(v) => editar(r.id, "d1", v)} /></td>
                     <td className="px-3 py-2"><CeldaNum value={r.d2} onChange={(v) => editar(r.id, "d2", v)} /></td>
                     <td className="px-3 py-2"><CeldaNum value={r.largo} onChange={(v) => editar(r.id, "largo", v)} /></td>
                     {colsVisibles.especie && <td className="px-3 py-2 text-[var(--text-secondary)]">{r.especie ?? "—"}</td>}
                     {colsVisibles.m3 && <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(r.m3)}</td>}
-                    <td className="px-3 py-2 text-right">
-                      <button type="button" onClick={() => borrar(r.id)} aria-label={`Borrar troza ${i + 1}`} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {/* Leer DESDE acá: se cortó a mitad del patio y no hay
+                            por qué escuchar de nuevo lo ya cotejado. */}
+                        <button
+                          type="button"
+                          onClick={() => lectura.leerDesde(() => rowsRef.current, textoTroza, r.id)}
+                          aria-label={`Leer en voz alta desde la troza ${i + 1}`}
+                          title="Leer en voz alta desde esta troza en adelante"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                        >
+                          <Volume2 className="h-3.5 w-3.5" />
+                        </button>
+                        <button type="button" onClick={() => borrar(r.id)} aria-label={`Borrar troza ${i + 1}`} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -424,6 +483,16 @@ export default function CubicadorTrozas() {
           <Ref label="Fórmula" value="Smalian" hint="promedio de áreas × largo" />
         </div>
       </div>
+
+      {/* Mientras lee, el control va con los ojos. */}
+      <ControlLecturaFlotante
+        estado={lectura.estado}
+        onPausar={lectura.pausar}
+        onReanudar={lectura.reanudar}
+        onReiniciar={lectura.reiniciar}
+        onDetener={lectura.detener}
+        etiqueta="Leyendo el patio"
+      />
 
       {importando && (
         <ImportarTrozasModal

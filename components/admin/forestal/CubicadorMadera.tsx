@@ -53,6 +53,7 @@ import {
 import PanelEntradaVoz from "./cubicador-entrada-voz";
 import CubicadorKpis from "./cubicador-kpis";
 import ControlLecturaFlotante from "./cubicador-lectura-flotante";
+import { useLecturaEnVoz } from "@/hooks/use-lectura-en-voz";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -251,7 +252,6 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [showAjustes, setShowAjustes] = useState(false);
   const avisarRaras = config.avisarRaras;
   const [editingId, setEditingId] = useState<string | null>(null); // fila que se edita por voz
-  const [readingId, setReadingId] = useState<string | null>(null); // fila que se está leyendo
   const [manual, setManual] = useState({ cantidad: "1", espesor: "", ancho: "", largo: "" });
   /**
    * Espejo SÍNCRONO de `manual`. Cargando rápido, el Enter de "cerrar esta
@@ -448,7 +448,6 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const pausedRef = useRef(false);
   // Modo del dictado: agregar filas nuevas, o EDITAR una fila puntual por voz.
   const modeRef = useRef<{ type: "add" } | { type: "edit"; id: string }>({ type: "add" });
-  const readingRef = useRef(false);                    // lectura de la tabla en curso
   const rowsRef = useRef<PiezaCubicada[]>([]);
   useEffect(() => { rowsRef.current = rows; }, [rows]);
   const resetVoz = () => { carryRef.current = { nums: [], ts: 0 }; lastFinalRef.current = -1; ecoRef.current = { hasta: 0, texto: "" }; };
@@ -748,23 +747,34 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   }, [addPieza, updateRow, borrarUltimo, hablar, aplicarFijas, aplicarDueno]);
 
   /**
-   * Estado de la lectura en voz alta, para el control flotante.
-   *
-   * `idxRef` vive fuera del closure de `leerSecuencia` justo para poder pausar:
-   * antes el índice era una variable local y la única forma de frenar era
-   * cortar la lectura entera y volver a empezar desde la primera fila.
+   * La lectura en voz alta vive en `use-lectura-en-voz`, compartida con el
+   * cubicador de trozas: dos lecturas con reglas propias es como se termina
+   * arreglando la pausa en una y no en la otra.
    */
-  const idxRef = useRef(0);
-  const pausaRef = useRef(false);
-  const pasoRef = useRef<(() => void) | null>(null);
-  const [lectura, setLectura] = useState<{ pausada: boolean; idx: number; total: number } | null>(null);
-
-  const stopLeer = useCallback(() => {
-    readingRef.current = false; setReadingId(null);
-    pausaRef.current = false; pasoRef.current = null; idxRef.current = 0;
-    setLectura(null);
-    try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
-  }, []);
+  const lecturaVoz = useLecturaEnVoz<PiezaCubicada>({
+    rate: () => configRef.current.voiceRate,
+    voiceURI: () => configRef.current.voiceURI,
+    /* El micrófono y el parlante no pueden estar prendidos a la vez: lo que
+       dicta la tabla entraría como una pieza nueva. Y se sale del modo edición,
+       que apunta a una fila que la lectura va a dejar atrás. */
+    onAntesDeArrancar: () => {
+      if (wantListeningRef.current) {
+        wantListeningRef.current = false;
+        try { recRef.current?.stop(); } catch { /* ignore */ }
+        setListening(false);
+      }
+      modeRef.current = { type: "add" };
+      setEditingId(null);
+    },
+    onError: (msg) => setErrMsg(msg),
+    idDeFila: (id) => `cub-row-${id}`,
+  });
+  const readingId = lecturaVoz.leyendoId;
+  const stopLeer = lecturaVoz.detener;
+  const medidaEnVoz = useCallback(
+    (r: PiezaCubicada) => `${r.espesor}, ${r.ancho}, ${r.largo}${r.especie ? `, ${r.especie}` : ""}`,
+    [],
+  );
 
   /**
    * Mantiene la pantalla encendida mientras se dicta: en el patio el celular
@@ -836,117 +846,20 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     }
   }, [editingId, stopLeer]);
 
-  /**
-   * Motor compartido de lectura en voz: una fila por vez, resaltando y
-   * siguiendo cada una. `obtenerLista` se llama de nuevo en CADA paso (no una
-   * lista congelada al arrancar) — así una fila borrada mientras lee
-   * desaparece sola, y "Leer tabla" sigue enterándose de piezas agregadas
-   * a mano en el medio, como ya hacía antes de este refactor.
-   */
-  const leerSecuencia = useCallback((
-    obtenerLista: () => PiezaCubicada[],
-    texto: (r: PiezaCubicada) => string,
-    /** Desde qué posición de esa lista arranca. Por defecto, la primera. */
-    desde = 0,
-  ) => {
-    if (readingRef.current) { stopLeer(); return; }
-    if (!obtenerLista().length) return;
-    // cortar cualquier escucha activa
-    if (wantListeningRef.current) { wantListeningRef.current = false; try { recRef.current?.stop(); } catch { /* ignore */ } setListening(false); }
-    modeRef.current = { type: "add" }; setEditingId(null);
-    const synth = window.speechSynthesis;
-    if (!synth) { setErrMsg("Este navegador no puede leer en voz alta."); return; }
-    readingRef.current = true;
-    pausaRef.current = false;
-    idxRef.current = Math.max(0, Math.min(desde, obtenerLista().length - 1));
-    const step = () => {
-      const list = obtenerLista();
-      if (!readingRef.current || idxRef.current >= list.length) { stopLeer(); return; }
-      /* En pausa NO se avanza ni se habla: se deja el índice donde está para
-         que «reanudar» siga por la fila que venía, no por la primera. */
-      if (pausaRef.current) { setLectura({ pausada: true, idx: idxRef.current, total: list.length }); return; }
-      const r = list[idxRef.current];
-      setReadingId(r.id);
-      setLectura({ pausada: false, idx: idxRef.current, total: list.length });
-      try { document.getElementById(`cub-row-${r.id}`)?.scrollIntoView({ block: "center", behavior: "auto" }); } catch { /* ignore */ }
-      const u = new SpeechSynthesisUtterance(texto(r));
-      // Dictado = rápido a propósito (no "seguir el ritmo de escribir a
-      // mano" como antes): un poco MÁS rápido que la voz de confirmación,
-      // tope 3 para no volverse ininteligible.
-      u.lang = "es-PE"; u.rate = Math.min(3, configRef.current.voiceRate + 0.3);
-      if (configRef.current.voiceURI) { const v = synth.getVoices().find((x) => x.voiceURI === configRef.current.voiceURI); if (v) u.voice = v; }
-      /* `cancel()` también dispara `onend` en Chrome: sin este guard, pausar
-         avanzaría una fila y al reanudar se saltearía justo la que se estaba
-         escuchando. */
-      u.onend = () => { if (pausaRef.current || !readingRef.current) return; idxRef.current++; step(); };
-      // Sin esto, un fallo de síntesis (voz no disponible, motor caído) deja
-      // `readingRef` trabado en "leyendo" para siempre — nunca llega el
-      // `onend` que lo destraba, y CADA botón de "leer/dictar" del cubicador
-      // queda muerto hasta recargar la página, porque todos comparten esta
-      // misma ref. Se corta la lectura entera (un fallo suele repetirse en
-      // toda la tanda) en vez de reintentar fila por fila en silencio.
-      u.onerror = () => { setErrMsg("No se pudo leer en voz alta — revisá el motor de voz del navegador."); stopLeer(); };
-      synth.cancel();
-      // Mismo bug de Chrome/SAPI que en `decir()`: un tick de por medio antes
-      // de `speak()` para que el `cancel()` no se coma la voz siguiente.
-      setTimeout(() => synth.speak(u), 0);
-    };
-    pasoRef.current = step;
-    step();
-  }, [stopLeer]);
-
-  /** Frena donde está, sin perder el lugar. */
-  const pausarLectura = useCallback(() => {
-    if (!readingRef.current) return;
-    pausaRef.current = true;
-    try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
-    setLectura((v) => (v ? { ...v, pausada: true } : v));
-  }, []);
-
-  /** Sigue por la fila donde quedó. */
-  const reanudarLectura = useCallback(() => {
-    if (!readingRef.current || !pasoRef.current) return;
-    pausaRef.current = false;
-    pasoRef.current();
-  }, []);
-
-  /** Vuelve a la primera fila y sigue leyendo desde ahí. */
-  const reiniciarLectura = useCallback(() => {
-    if (!readingRef.current || !pasoRef.current) return;
-    idxRef.current = 0;
-    pausaRef.current = false;
-    try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
-    /* Un tick de por medio: el `cancel()` de arriba se come el `speak()`
-       inmediato (el mismo bug de Chrome que ya documenta `decir()`). */
-    setTimeout(() => pasoRef.current?.(), 0);
-  }, []);
-
   // Leer toda la tabla en voz alta, resaltando y siguiendo cada fila.
-  const leerTabla = useCallback(() => {
-    leerSecuencia(() => rowsRef.current, (r) => `${r.espesor}, ${r.ancho}, ${r.largo}${r.especie ? `, ${r.especie}` : ""}`);
-  }, [leerSecuencia]);
+  const leerTabla = useCallback(
+    () => lecturaVoz.leer(() => rowsRef.current, medidaEnVoz),
+    [lecturaVoz, medidaEnVoz],
+  );
 
   /**
    * Arranca la lectura DESDE una fila. Es lo que se pide en la práctica: se
    * cortó en la 120 de 300 y no hay por qué escuchar las 119 de antes.
-   *
-   * Va por `id` y no por posición: entre que se elige la fila y arranca la
-   * lectura, la lista puede haber cambiado (una pieza nueva dictada, una
-   * borrada) y la posición 120 sería otra fila.
    */
-  const leerDesdeFila = useCallback((id: string) => {
-    if (readingRef.current) stopLeer();
-    const lista = rowsRef.current;
-    const pos = lista.findIndex((r) => r.id === id);
-    if (pos < 0) return;
-    /* `stopLeer` deja `readingRef` en false de forma síncrona, así que no hace
-       falta esperar: la lectura nueva arranca en el mismo tick. */
-    leerSecuencia(
-      () => rowsRef.current,
-      (r) => `${r.espesor}, ${r.ancho}, ${r.largo}${r.especie ? `, ${r.especie}` : ""}`,
-      pos,
-    );
-  }, [leerSecuencia, stopLeer]);
+  const leerDesdeFila = useCallback(
+    (id: string) => lecturaVoz.leerDesde(() => rowsRef.current, medidaEnVoz, id),
+    [lecturaVoz, medidaEnVoz],
+  );
 
   /**
    * Dicta SOLO espesor · ancho · largo de un grupo de filas (un apartado, o
@@ -956,8 +869,11 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
    */
   const leerMedidas = useCallback((ids: string[]) => {
     const idSet = new Set(ids);
-    leerSecuencia(() => rowsRef.current.filter((r) => idSet.has(r.id)), (r) => `${r.espesor}, ${r.ancho}, ${r.largo}`);
-  }, [leerSecuencia]);
+    lecturaVoz.leer(
+      () => rowsRef.current.filter((r) => idSet.has(r.id)),
+      (r) => `${r.espesor}, ${r.ancho}, ${r.largo}`,
+    );
+  }, [lecturaVoz]);
 
   const addManual = useCallback(() => {
     // SIEMPRE por ref (manualRef/fijasRef), nunca por el `manual`/`fijas` del
@@ -2503,11 +2419,11 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       {/* Mientras lee, el control va con los ojos: pausar, seguir por la misma
           fila, volver a la primera o cortar. */}
       <ControlLecturaFlotante
-        estado={lectura}
-        onPausar={pausarLectura}
-        onReanudar={reanudarLectura}
-        onReiniciar={reiniciarLectura}
-        onDetener={stopLeer}
+        estado={lecturaVoz.estado}
+        onPausar={lecturaVoz.pausar}
+        onReanudar={lecturaVoz.reanudar}
+        onReiniciar={lecturaVoz.reiniciar}
+        onDetener={lecturaVoz.detener}
       />
 
       {showImportar && (
