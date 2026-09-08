@@ -205,7 +205,7 @@ export default function ColasTab() {
         <button
           type="button"
           onClick={() => fetchStats(true)}
-          className="rounded-xl bg-[var(--accent-dark)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-dark)] dark:bg-[var(--accent)] dark:hover:bg-[var(--accent-dark)]"
+          className="rounded-xl bg-[var(--accent-dark)] px-4 min-h-10 text-sm font-medium text-white hover:bg-[var(--accent-dark)] dark:bg-[var(--accent)] dark:hover:bg-[var(--accent-dark)]"
         >
           Reintentar
         </button>

@@ -125,7 +125,7 @@ export function CounterChip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "text-left rounded-xl border-2 px-3.5 py-2.5 transition-colors",
+        "text-left rounded-xl border-2 px-3.5 min-h-11 transition-colors",
         active
           ? cn(t.border, t.bg)
           : cn("border-[var(--rule-base)] bg-[var(--surface-raised)]", `hover:${t.border}`, `hover:${t.bg}`),

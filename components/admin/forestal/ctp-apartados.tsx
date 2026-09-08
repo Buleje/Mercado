@@ -133,7 +133,7 @@ export default function CtpApartados({
                 onClick={() => onIr(a.id)}
                 aria-current={esActivo ? "step" : undefined}
                 title={a.hint}
-                className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-bold transition-colors ${
+                className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 min-h-10 text-sm font-bold transition-colors ${
                   esActivo
                     ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]"

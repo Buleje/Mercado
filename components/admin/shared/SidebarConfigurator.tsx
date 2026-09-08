@@ -636,7 +636,7 @@ export default function SidebarConfigurator({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar módulo..."
-            className="w-full bg-zinc-800 text-zinc-100 placeholder-zinc-500 text-sm rounded-xl pl-9 pr-8 py-2 border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40"
+            className="w-full bg-zinc-800 text-zinc-100 placeholder-zinc-500 text-sm rounded-xl pl-9 pr-8 h-10 border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40"
           />
           {query && (
             <button
@@ -922,7 +922,7 @@ export default function SidebarConfigurator({
           onClick={handleSave}
           disabled={!isDirty}
           className={cn(
-            "rounded-xl py-2.5 w-full font-semibold text-sm transition-all",
+            "rounded-xl min-h-11 w-full font-semibold text-sm transition-all",
             isDirty
               ? "bg-[var(--accent-600,var(--accent))] text-white hover:bg-[var(--accent-dark)] shadow-[0_4px_14px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
               : "bg-zinc-800 text-zinc-500 cursor-not-allowed",

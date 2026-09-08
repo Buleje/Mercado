@@ -657,7 +657,7 @@ export default function CashRegisterTab() {
           <div className="relative">
             <button
               onClick={() => setShowToleranceConfig(p => !p)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] text-sm font-medium text-[var(--text-secondary)] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] text-sm font-medium text-[var(--text-secondary)] transition-colors"
               title={`Tolerancia: ±S/${cashTolerance}`}
             >
               <Settings className="h-4 w-4" />
@@ -678,18 +678,18 @@ export default function CashRegisterTab() {
                       setCashTolerance(v);
                       try { localStorage.setItem("cash-tolerance", String(v)); } catch {}
                     }}
-                    className="flex-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base font-bold tabular-nums text-center text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-raised)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    className="flex-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base font-bold tabular-nums text-center text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-raised)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
                 <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">Diferencias dentro de este rango se marcan como aceptables.</p>
-                <button onClick={() => setShowToleranceConfig(false)} className="mt-3 w-full py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors">
+                <button onClick={() => setShowToleranceConfig(false)} className="mt-3 w-full min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors">
                   Listo
                 </button>
               </div>
             )}
           </div>
           <AdminTooltip content="Refrescar datos de caja">
-            <button onClick={fetchData} aria-label="Refrescar" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] text-sm font-medium text-[var(--text-secondary)] transition-colors">
+            <button onClick={fetchData} aria-label="Refrescar" className="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] text-sm font-medium text-[var(--text-secondary)] transition-colors">
               <RefreshCw className="h-4 w-4" />
               Refrescar
             </button>
@@ -697,13 +697,13 @@ export default function CashRegisterTab() {
           <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-xl p-1">
             <button
               onClick={() => setView("current")}
-              className={cn("px-4 py-2 rounded-xl text-sm font-semibold transition-all", view === "current" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+              className={cn("px-4 min-h-10 rounded-xl text-sm font-semibold transition-all", view === "current" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
             >
               Actual
             </button>
             <button
               onClick={() => setView("history")}
-              className={cn("px-4 py-2 rounded-xl text-sm font-semibold transition-all", view === "history" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+              className={cn("px-4 min-h-10 rounded-xl text-sm font-semibold transition-all", view === "history" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
             >
               Historial
             </button>
@@ -717,13 +717,13 @@ export default function CashRegisterTab() {
                     .catch(() => setTrail([]));
                 }
               }}
-              className={cn("px-4 py-2 rounded-xl text-sm font-semibold transition-all", view === "auditoria" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+              className={cn("px-4 min-h-10 rounded-xl text-sm font-semibold transition-all", view === "auditoria" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
             >
               Quién la tocó
             </button>
             <button
               onClick={() => setView("reconcile")}
-              className={cn("px-4 py-2 rounded-xl text-sm font-semibold transition-all", view === "reconcile" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+              className={cn("px-4 min-h-10 rounded-xl text-sm font-semibold transition-all", view === "reconcile" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
             >
               Reconciliación
             </button>
@@ -750,7 +750,7 @@ export default function CashRegisterTab() {
                 <div className="flex justify-end">
                   <button
                     onClick={() => setShowOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors shadow-[var(--shadow-sm)]"
+                    className="inline-flex items-center justify-center gap-2 px-8 min-h-11 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors shadow-[var(--shadow-sm)]"
                   >
                     <Unlock className="h-5 w-5" strokeWidth={2} aria-hidden />
                     Abrir caja
@@ -1188,7 +1188,7 @@ export default function CashRegisterTab() {
                 value={historySearch}
                 onChange={e => setHistorySearch(e.target.value)}
                 placeholder="Buscar por fecha o notas..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:text-[var(--text-primary)]"
+                className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:text-[var(--text-primary)]"
               />
             </div>
           )}
@@ -1517,7 +1517,7 @@ export default function CashRegisterTab() {
                         value={openAmount}
                         onChange={e => setOpenAmount(e.target.value)}
                         placeholder="0.00"
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        className="w-full pl-12 pr-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                         autoFocus
                       />
                     </div>
@@ -1530,7 +1530,7 @@ export default function CashRegisterTab() {
                             type="button"
                             onClick={() => setOpenAmount(String(amount))}
                             className={cn(
-                              "px-4 py-2 rounded-xl text-sm font-semibold border transition-colors",
+                              "px-4 min-h-10 rounded-xl text-sm font-semibold border transition-colors",
                               active
                                 ? "bg-primary text-white border-primary"
                                 : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
@@ -1561,14 +1561,14 @@ export default function CashRegisterTab() {
             <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-alt)]/50 flex gap-3">
               <button
                 onClick={() => setShowOpen(false)}
-                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
+                className="flex-1 min-h-11 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleOpen}
                 disabled={opening}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
               >
                 {opening ? <Loader2 className="h-5 w-5 animate-spin" /> : <Unlock className="h-5 w-5" />}
                 Abrir caja
@@ -1731,7 +1731,7 @@ export default function CashRegisterTab() {
                         value={closeAmount}
                         onChange={e => setCloseAmount(e.target.value)}
                         placeholder="0.00"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                        className="w-full pl-10 pr-4 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                         autoFocus
                       />
                     </div>
@@ -1752,7 +1752,7 @@ export default function CashRegisterTab() {
                   value={closeNotes}
                   onChange={e => setCloseNotes(e.target.value)}
                   placeholder="Observaciones"
-                  className="w-full mt-1 px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                  className="w-full mt-1 px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                 />
               </Field>
             </div>
@@ -1762,14 +1762,14 @@ export default function CashRegisterTab() {
             <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-alt)]/50 flex gap-3">
               <button
                 onClick={() => { setShowClose(false); setDenominations({}); }}
-                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
+                className="flex-1 min-h-11 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleClose}
                 disabled={closing || !closeAmount}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-50 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-50 transition-colors"
               >
                 {closing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-5 w-5" />}
                 Confirmar cierre
@@ -1823,7 +1823,7 @@ export default function CashRegisterTab() {
                       value={mvAmount}
                       onChange={e => setMvAmount(e.target.value)}
                       placeholder="0.00"
-                      className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      className="w-full pl-12 pr-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       autoFocus
                     />
                   </div>
@@ -1837,7 +1837,7 @@ export default function CashRegisterTab() {
                       id={id}
                       value={mvMotivo}
                       onChange={e => setMvMotivo(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      className="w-full px-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
                       {/* QA Brandon 2026-06-10 #8: motivos separados por tipo —
                           antes la lista era única y Egreso ofrecía "Ingreso extra"
@@ -1882,7 +1882,7 @@ export default function CashRegisterTab() {
             <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-alt)]/50 flex gap-3">
               <button
                 onClick={() => setShowMovement(false)}
-                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
+                className="flex-1 min-h-11 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
               >
                 Cancelar
               </button>
@@ -1890,7 +1890,7 @@ export default function CashRegisterTab() {
                 onClick={handleAddMovement}
                 disabled={addingMv || !mvAmount || (mvType === "egreso" && !mvMotivo && !mvDescription.trim())}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white disabled:opacity-50 transition-colors",
+                  "flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-bold text-white disabled:opacity-50 transition-colors",
                   mvType === "ingreso" ? "bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/90" : "bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90"
                 )}
               >
@@ -1977,7 +1977,7 @@ export default function CashRegisterTab() {
                       <button
                         key={d}
                         onClick={() => handleArqueoDenomClick(d)}
-                        className="relative px-3 py-3 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                        className="relative px-3 min-h-11 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                       >
                         S/{d}
                         {(arqueoDenoms[String(d)] ?? 0) > 0 && (
@@ -2008,7 +2008,7 @@ export default function CashRegisterTab() {
                         value={arqueoAmount}
                         onChange={e => setArqueoAmount(e.target.value)}
                         placeholder="0.00"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                        className="w-full pl-10 pr-4 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                         autoFocus
                       />
                     </div>
@@ -2078,14 +2078,14 @@ export default function CashRegisterTab() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => { setShowArqueo(false); setArqueoDenoms({}); setArqueoError(null); }}
-                    className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
+                    className="flex-1 min-h-11 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleArqueoExpress}
                     disabled={addingArqueo || !arqueoAmount}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/90 disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-bold text-white bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/90 disabled:opacity-50 transition-colors"
                   >
                     {addingArqueo ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
                     Registrar arqueo
@@ -2219,7 +2219,7 @@ export default function CashRegisterTab() {
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
                         <input id={id} type="number" min="0" step="0.10" value={arqueoYape} onChange={e => setArqueoYape(e.target.value)} placeholder="0.00"
-                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--text-primary)]" />
+                          className="w-full pl-8 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--text-primary)]" />
                       </div>
                       <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Yape del dia</p>
                     </>
@@ -2233,7 +2233,7 @@ export default function CashRegisterTab() {
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
                         <input id={id} type="number" min="0" step="0.10" value={arqueoPlin} onChange={e => setArqueoPlin(e.target.value)} placeholder="0.00"
-                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]" />
+                          className="w-full pl-8 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]" />
                       </div>
                       <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los comprobantes de Plin del dia</p>
                     </>
@@ -2247,7 +2247,7 @@ export default function CashRegisterTab() {
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">S/</span>
                         <input id={id} type="number" min="0" step="0.10" value={arqueoTarjeta} onChange={e => setArqueoTarjeta(e.target.value)} placeholder="0.00"
-                          className="w-full pl-8 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]/30" />
+                          className="w-full pl-8 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]/30" />
                       </div>
                       <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma los vouchers de tarjeta del dia</p>
                     </>
@@ -2373,14 +2373,14 @@ export default function CashRegisterTab() {
             <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-alt)]/50 flex gap-3">
               <button
                 onClick={() => { setShowArqueoGuiado(false); setGuiadoBilletes({}); setGuiadoMonedas({}); }}
-                className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
+                className="flex-1 min-h-11 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleArqueoGuiado}
                 disabled={addingArqueoGuiado || guiadoTotal <= 0}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
               >
                 {addingArqueoGuiado ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
                 {/* El botón dice lo que hace: esto cierra la caja del día. */}

@@ -149,7 +149,7 @@ export default function PredictiveAnalyticsTab() {
         <p className="text-sm text-[var(--text-tertiary)]">{error}</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold"
         >
           <RefreshCw className="h-3.5 w-3.5" /> Reintentar
         </button>

@@ -137,7 +137,7 @@ export default function ModuleLayout({
               key={tab.id}
               onClick={() => onTabChange?.(tab.id)}
               className={cn(
-                "px-4 py-2 text-sm font-medium rounded-xl transition-all",
+                "px-4 min-h-10 text-sm font-medium rounded-xl transition-all",
                 activeTab === tab.id
                   ? "bg-[var(--surface-raised)] text-[var(--text-primary)] "
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",

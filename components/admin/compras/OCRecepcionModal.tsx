@@ -419,7 +419,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
           {step < 3 ? (
             <button
               onClick={() => setStep((s) => s + 1)}
-              className="flex items-center gap-1 px-4 py-2 bg-primary hover:bg-primary/90 text-white font-bold text-sm rounded-xl transition-colors"
+              className="flex items-center gap-1 px-4 min-h-10 bg-primary hover:bg-primary/90 text-white font-bold text-sm rounded-xl transition-colors"
             >
               Siguiente <ChevronRight className="h-4 w-4" />
             </button>
@@ -427,7 +427,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
             <button
               onClick={handleConfirm}
               disabled={saving || itemsRecibidos.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/10 disabled:opacity-50 text-white font-bold text-sm rounded-xl transition-colors"
+              className="flex items-center gap-2 px-4 min-h-10 bg-primary/10 hover:bg-primary/10 disabled:opacity-50 text-white font-bold text-sm rounded-xl transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Confirmar recepción

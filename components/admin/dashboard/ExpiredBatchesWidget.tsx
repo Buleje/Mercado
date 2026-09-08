@@ -519,7 +519,7 @@ export default function ExpiredBatchesWidget() {
                       onClick={() => toggleBatch(b.id)}
                       disabled={modal.submitting}
                       className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2 rounded-xl border text-left transition-colors",
+                        "w-full flex items-center gap-3 px-3 min-h-10 rounded-xl border text-left transition-colors",
                         checked
                           ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-red-950/20"
                           : "border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/40"
@@ -552,7 +552,7 @@ export default function ExpiredBatchesWidget() {
                   value={modal.reason}
                   onChange={(e) => setModal((prev) => ({ ...prev, reason: e.target.value as MermaReason }))}
                   disabled={modal.submitting}
-                  className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                  className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] px-3 h-10 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
                 >
                   <option value="vencimiento">Vencimiento</option>
                   <option value="deterioro">Deterioro / Daño</option>

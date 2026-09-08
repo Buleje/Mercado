@@ -219,7 +219,7 @@ export default function CtpParteBarra({ rol, valor, opciones, onAplicar, onElegi
                   <button
                     type="button"
                     onClick={() => usar(p)}
-                    className="flex w-full items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 text-left transition-colors hover:border-[var(--accent)] hover:bg-primary/5"
+                    className="flex w-full items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 min-h-10 text-left transition-colors hover:border-[var(--accent)] hover:bg-primary/5"
                   >
                     <div className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-bold text-[var(--text-primary)]">{p.nombre}</span>
@@ -287,7 +287,7 @@ export function CtpVehiculoBarra({
                   onElegir?.(v.id);
                   setAbierta(false);
                 }}
-                className="flex w-full items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 py-2 text-left transition-colors hover:border-[var(--accent)] hover:bg-primary/5"
+                className="flex w-full items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 min-h-10 text-left transition-colors hover:border-[var(--accent)] hover:bg-primary/5"
               >
                 <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{formatearPlaca(v.placa)}</span>
                 <span className="min-w-0 flex-1 truncate text-xs text-[var(--text-tertiary)]">

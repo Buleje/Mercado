@@ -66,7 +66,7 @@ export default function ExportButton({
         type="button"
         onClick={handleClick}
         className={cn(
-          "inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors",
+          "inline-flex items-center gap-1.5 px-3 min-h-10 rounded-xl border text-sm font-semibold transition-colors",
           "border-[var(--rule-base)] bg-[var(--surface-raised)] ",
           "text-[var(--text-primary)] hover:bg-[var(--surface-alt)] ",
           className,

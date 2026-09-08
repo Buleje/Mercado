@@ -107,7 +107,7 @@ export function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
         <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] ">
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors"
+            className="w-full min-h-11 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors"
           >
             Cerrar
           </button>
@@ -296,13 +296,13 @@ export function ClearDataModal({
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button onClick={handleCancel} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] transition-colors">
+              <button onClick={handleCancel} className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] transition-colors">
                 Cancelar
               </button>
               <button
                 onClick={() => setClearConfirmStep(2)}
                 disabled={clearCategories.size === 0}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50"
+                className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50"
               >
                 Siguiente →
               </button>
@@ -326,10 +326,10 @@ export function ClearDataModal({
               </ul>
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setClearConfirmStep(1)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] transition-colors">
+              <button onClick={() => setClearConfirmStep(1)} className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] transition-colors">
                 ← Volver
               </button>
-              <button onClick={() => setClearConfirmStep(3)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors">
+              <button onClick={() => setClearConfirmStep(3)} className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors">
                 Entiendo, continuar →
               </button>
             </div>
@@ -349,17 +349,17 @@ export function ClearDataModal({
                 onChange={e => setClearConfirmText(e.target.value)}
                 placeholder="Escribe BORRAR_TODO"
                 autoFocus
-                className="w-full px-4 py-3 text-center text-lg font-mono rounded-xl border-2 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] outline-none focus:border-[var(--data-error-500)] focus:ring-2 focus:ring-[var(--data-error-500)] dark:bg-surface text-[var(--data-error-500)] dark:text-[var(--data-error-500)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted"
+                className="w-full px-4 h-11 text-center text-lg font-mono rounded-xl border-2 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] outline-none focus:border-[var(--data-error-500)] focus:ring-2 focus:ring-[var(--data-error-500)] dark:bg-surface text-[var(--data-error-500)] dark:text-[var(--data-error-500)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted"
               />
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setClearConfirmStep(2)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] transition-colors">
+              <button onClick={() => setClearConfirmStep(2)} className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] transition-colors">
                 ← Volver
               </button>
               <button
                 onClick={handleExecute}
                 disabled={clearConfirmText !== "BORRAR_TODO" || clearingData}
-                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {clearingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 Borrar datos seleccionados

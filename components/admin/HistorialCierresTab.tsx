@@ -108,7 +108,7 @@ export default function HistorialCierresTab() {
         <button
           onClick={handleExport}
           disabled={!data?.items.length}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           <Download className="h-4 w-4" />
           Descargar Excel

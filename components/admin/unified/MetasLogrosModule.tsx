@@ -854,7 +854,7 @@ function LogrosTab() {
   }, [filter, activeCategory, unlocked]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header de estado: error + last updated + refresh manual */}
       <div className="flex items-center justify-end gap-2 text-xs text-[var(--text-tertiary)]">
         {error && <span className="text-[var(--data-error-500)] font-semibold">⚠ {error}</span>}

@@ -405,7 +405,7 @@ export default function BudgetVsRealTab() {
         <p className="text-[var(--text-secondary)] text-sm">Error cargando datos</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold"
         >
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>

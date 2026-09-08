@@ -2232,7 +2232,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => { setShowPicker(false); setShowAdd(true); }}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 py-2 text-sm font-bold text-white hover:bg-[var(--accent)]/90 transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 min-h-10 text-sm font-bold text-white hover:bg-[var(--accent)]/90 transition-colors"
                   >
                     <Plus className="h-4 w-4" strokeWidth={2.4} /> <span className="hidden sm:inline">Crear nuevo</span><span className="sm:hidden">Nuevo</span>
                   </button>
@@ -2248,14 +2248,14 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     value={pickerSearch}
                     onChange={e => setPickerSearch(e.target.value)}
                     placeholder="Buscar producto..."
-                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                    className="w-full pl-10 pr-4 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
                     autoFocus
                   />
                 </div>
                 <select
                   value={pickerCat}
                   onChange={e => setPickerCat(e.target.value)}
-                  className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none"
+                  className="px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none"
                 >
                   <option value="todos">Todos</option>
                   {formCategories.map(c => (
@@ -2279,7 +2279,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     </p>
                     <button
                       onClick={() => { setShowPicker(false); setShowAdd(true); }}
-                      className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-bold text-white hover:bg-[var(--accent)]/90 transition-colors"
+                      className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 min-h-11 text-sm font-bold text-white hover:bg-[var(--accent)]/90 transition-colors"
                     >
                       <Plus className="h-4 w-4" strokeWidth={2.4} /> Crear producto
                     </button>
@@ -2368,7 +2368,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     onClick={() => setAddForm(f => ({ ...f, type: val }))}
                     title={hint}
                     className={cn(
-                      "flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors",
+                      "flex-1 rounded-xl px-3 min-h-11 text-sm font-bold transition-colors",
                       addForm.type === val
                         ? "bg-[var(--accent)] text-white shadow-sm"
                         : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",
@@ -2391,13 +2391,13 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     onChange={(e) => setDbQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleDbSearch())}
                     placeholder="Ej: arroz costeño, aceite vegetal…"
-                    className="flex-1 px-3 py-2 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--data-success-500)]/30 outline-none text-sm"
+                    className="flex-1 px-3 h-10 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--data-success-500)]/30 outline-none text-sm"
                   />
                   <button
                     type="button"
                     onClick={handleDbSearch}
                     disabled={dbSearching || !dbQuery.trim()}
-                    className="px-3 py-2 rounded-xl bg-primary/10 text-white hover:bg-primary/10 transition-colors disabled:opacity-50 flex items-center gap-1 text-sm font-bold"
+                    className="px-3 min-h-10 rounded-xl bg-primary/10 text-white hover:bg-primary/10 transition-colors disabled:opacity-50 flex items-center gap-1 text-sm font-bold"
                   >
                     {dbSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   </button>
@@ -2985,7 +2985,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     type="button"
                     onClick={() => setEditForm(f => ({ ...f, type: val }))}
                     className={cn(
-                      "flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors",
+                      "flex-1 rounded-xl px-3 min-h-11 text-sm font-bold transition-colors",
                       (editForm.type ?? "product") === val
                         ? "bg-[var(--accent)] text-white shadow-sm"
                         : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",
@@ -3175,7 +3175,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <button
                     type="button"
                     onClick={() => editModalProduct && setModifiersProduct({ id: editModalProduct.id, name: editModalProduct.name })}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shrink-0"
                   >
                     <Sliders className="h-4 w-4" />
                     Configurar adicionales
@@ -3232,7 +3232,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                           type="button"
                           onClick={() => editImgRef.current?.click()}
                           disabled={imgUploading}
-                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-xl bg-primary text-white hover:bg-primary-dark transition-colors text-sm font-bold disabled:opacity-50"
+                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 min-h-10 rounded-xl bg-primary text-white hover:bg-primary-dark transition-colors text-sm font-bold disabled:opacity-50"
                         >
                           <Camera className="h-4 w-4" />
                           {imgUploading ? "Procesando…" : "Subir foto"}
@@ -3240,7 +3240,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         <button
                           type="button"
                           onClick={() => setShowImageBank(true)}
-                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white hover:opacity-90 transition-all text-sm font-bold"
+                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 min-h-10 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white hover:opacity-90 transition-all text-sm font-bold"
                           title="Elegir una imagen del banco global mantenido por el superadmin"
                         >
                           <BookOpen className="h-4 w-4" />
@@ -3461,7 +3461,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               <div className="flex gap-3">
                 <button
                   onClick={() => setBulkClearImagesConfirm(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   Cancelar
                 </button>
@@ -3475,7 +3475,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     executeBulkClearImages();
                   }}
                   disabled={bulkClearingImages}
-                  className="flex-1 py-2.5 rounded-xl bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/90 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                  className="flex-1 min-h-11 rounded-xl bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/90 text-white text-sm font-semibold transition-colors disabled:opacity-50"
                 >
                   {bulkClearingImages ? "Quitando…" : `Sí, quitar ${selectedIds.size}`}
                 </button>
@@ -3505,14 +3505,14 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               <div className="flex gap-3">
                 <button
                   onClick={() => setBulkDeleteConfirm(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={executeBulkDelete}
                   disabled={bulkDeleting}
-                  className="flex-1 py-2.5 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                  className="flex-1 min-h-11 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] text-white text-sm font-semibold transition-colors disabled:opacity-50"
                 >
                   {bulkDeleting ? "Eliminando…" : `Sí, eliminar ${selectedIds.size}`}
                 </button>
@@ -3533,7 +3533,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
             <div className="px-3 sm:px-6 py-5 space-y-4">
               <Field label="Campo a modificar" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <select value={bulkField} onChange={e => { const v = e.target.value as typeof bulkField; setBulkField(v); setBulkValue(v === "active" ? "true" : ""); }}
-                  className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm">
+                  className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm">
                   <optgroup label="General">
                     <option value="active">Estado (activo / inactivo)</option>
                     <option value="category">Categoría</option>
@@ -3555,20 +3555,20 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 {(bulkValId) => (<>
                 {bulkField === "active" ? (
                   <select id={bulkValId} value={bulkValue} onChange={e => setBulkValue(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm">
+                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm">
                     <option value="true">Activo</option>
                     <option value="false">Inactivo</option>
                   </select>
                 ) : bulkField === "category" ? (
                   <select value={bulkValue} onChange={e => setBulkValue(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm">
+                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm">
                     <option value="">Seleccionar…</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 ) : bulkField === "badge" ? (
                   <div className="mt-1 space-y-2">
                     <input type="text" maxLength={50} value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: Oferta, Nuevo, Combo…"
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                     <div className="flex flex-wrap gap-1.5">
                       {["Nuevo", "Oferta", "Combo", "Recomendado", "Más vendido"].map(b => (
                         <button key={b} type="button" onClick={() => setBulkValue(b)}
@@ -3582,19 +3582,19 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 ) : bulkField === "price" ? (
                   <div className="mt-1">
                     <input type="number" min="0.01" step="0.01" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 12.50"
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">Fija el mismo precio en {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}.</p>
                   </div>
                 ) : bulkField === "priceDelta" ? (
                   <div className="mt-1">
                     <input type="number" step="0.01" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 1.50 sube · -2 baja"
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma o resta soles al precio actual de cada producto.</p>
                   </div>
                 ) : bulkField === "pricePercent" ? (
                   <div className="mt-1">
                     <input type="number" step="1" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 10 = +10% · -5 = -5%"
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">
                       Ajusta el precio {bulkValue ? `un ${bulkValue}%` : "un …%"} en {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}.
                     </p>
@@ -3602,26 +3602,26 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 ) : bulkField === "stockMin" ? (
                   <div className="mt-1">
                     <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 5"
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">Umbral para la alerta de “stock bajo”.</p>
                   </div>
                 ) : bulkField === "stockMax" ? (
                   <div className="mt-1">
                     <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 100"
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">Capacidad máxima sugerida (para reposición).</p>
                   </div>
                 ) : (
                   <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Cantidad"
-                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
+                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm" />
                 )}
                 </>)}
               </Field>
             </div>
             <div className="px-3 sm:px-6 py-4 bg-[var(--surface-alt)] border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3">
-              <button onClick={() => setBulkModal(false)} className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
+              <button onClick={() => setBulkModal(false)} className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
               <button onClick={executeBulk} disabled={bulkSaving || (!bulkValue && bulkField !== "active" && bulkField !== "badge")}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+                className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                 {bulkSaving ? "Aplicando…" : "Aplicar"}
               </button>
             </div>
@@ -3759,14 +3759,14 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               <Field label="Reordenar cuando stock sea menor o igual a:" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <input
                   type="number" min="1" value={arThreshold} onChange={e => setArThreshold(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="5"
                 />
               </Field>
               <Field label="Cantidad a pedir:" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <input
                   type="number" min="1" value={arQty} onChange={e => setArQty(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="10"
                 />
               </Field>
@@ -3774,7 +3774,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 <button onClick={() => setShowAutoReorder(null)} className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                   Cancelar
                 </button>
-                <button onClick={() => saveAutoReorder(showAutoReorder)} className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
+                <button onClick={() => saveAutoReorder(showAutoReorder)} className="flex-1 px-4 min-h-10 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
                   Guardar
                 </button>
               </div>

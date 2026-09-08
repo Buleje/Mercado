@@ -162,7 +162,7 @@ export default function TabClientes() {
             {selected.phone && recs.length > 0 && (
               <button
                 onClick={handleWhatsApp}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#1fbb58] transition-colors shrink-0"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 min-h-11 text-sm font-bold text-white hover:bg-[#1fbb58] transition-colors shrink-0"
               >
                 <MessageCircle className="h-4 w-4" />
                 Enviar por WhatsApp

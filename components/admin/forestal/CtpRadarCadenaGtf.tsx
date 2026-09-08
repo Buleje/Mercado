@@ -127,7 +127,7 @@ function Paso({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-left transition hover:border-[var(--accent)] hover:bg-[var(--surface-canvas)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+      className="flex w-full items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 min-h-11 text-left transition hover:border-[var(--accent)] hover:bg-[var(--surface-canvas)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
         <Icon className="h-4.5 w-4.5" style={{ color }} aria-hidden="true" />

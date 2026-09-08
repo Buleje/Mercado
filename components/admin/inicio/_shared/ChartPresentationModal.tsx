@@ -359,7 +359,7 @@ export function ChartPresentationModal({
             aria-label={autoplay ? "Pausar modo TV" : "Iniciar modo TV"}
             title={autoplay ? "Pausar rotación automática" : `Modo TV — rota cada ${Math.round(intervalMs / 1000)}s (o pulsa espacio)`}
             className={cn(
-              "inline-flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors",
+              "inline-flex items-center gap-2 px-3 min-h-10 rounded-xl border text-sm font-semibold transition-colors",
               autoplay
                 ? "bg-[var(--accent)] text-white border-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",

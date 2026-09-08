@@ -204,7 +204,7 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
         <button
           onClick={() => void cargar()}
           disabled={cargando}
-          className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 py-2 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-primary disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 min-h-10 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-primary disabled:opacity-50"
         >
           {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
           Recalcular

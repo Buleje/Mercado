@@ -348,7 +348,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
           <button
             onClick={savePage}
             disabled={saving}
-            className="px-4 py-2 bg-primary/10 text-white rounded-xl hover:bg-primary/10 flex items-center gap-2"
+            className="px-4 min-h-10 bg-primary/10 text-white rounded-xl hover:bg-primary/10 flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
             {saving ? "Guardando..." : "Guardar"}
@@ -502,7 +502,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                         {field.type === "boolean" ? (
                           <button
                             onClick={() => setDraftProps((p) => ({ ...p, [field.key]: !val }))}
-                            className={`flex items-center gap-2 w-full px-3 py-2 rounded-xl border text-sm font-semibold transition-colors ${
+                            className={`flex items-center gap-2 w-full px-3 min-h-10 rounded-xl border text-sm font-semibold transition-colors ${
  val ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
  }`}
                           >
@@ -524,7 +524,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                               value={val ?? ""}
                               onChange={(e) => setDraftProps((p) => ({ ...p, [field.key]: e.target.value }))}
                               placeholder="#312e81"
-                              className="flex-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 focus:border-[var(--data-success-500)]/30 font-mono"
+                              className="flex-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 focus:border-[var(--data-success-500)]/30 font-mono"
                             />
                           </div>
                         ) : field.type === "textarea" ? (
@@ -541,7 +541,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                             value={val ?? ""}
                             onChange={(e) => setDraftProps((p) => ({ ...p, [field.key]: e.target.value }))}
                             placeholder={field.placeholder}
-                            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 focus:border-[var(--data-success-500)]/30"
+                            className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 focus:border-[var(--data-success-500)]/30"
                           />
                         )}
 
@@ -562,7 +562,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                 <button
                   onClick={saveBlockProps}
                   disabled={savingProps}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary/10 text-white text-sm font-bold rounded-xl hover:bg-primary/10 disabled:opacity-60 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 min-h-11 bg-primary/10 text-white text-sm font-bold rounded-xl hover:bg-primary/10 disabled:opacity-60 transition-colors"
                 >
                   <Save className="w-4 h-4" />
                   {savingProps ? "Guardando cambios..." : "Guardar cambios"}

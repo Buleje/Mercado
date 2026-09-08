@@ -557,7 +557,7 @@ export default function PlanTab() {
                   value={domainInput}
                   onChange={(e) => setDomainInput(e.target.value)}
                   placeholder="www.mitienda.com"
-                  className="w-full bg-transparent border border-(--color-card-border) rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full bg-transparent border border-(--color-card-border) rounded-xl pl-9 pr-4 h-11 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <button

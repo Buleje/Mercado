@@ -265,7 +265,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
                   setBorradores(prev => prev.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))
                 }
                 placeholder="Nombre completo"
-                className="w-full px-2.5 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+                className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
               />
               <div className="grid grid-cols-2 gap-1.5">
                 <input
@@ -276,7 +276,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
                     )
                   }
                   placeholder="DNI o RUC"
-                  className="px-2.5 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+                  className="px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
                 />
                 <input
                   value={b.telefono}
@@ -287,7 +287,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
                   }
                   placeholder="WhatsApp (9 dígitos)"
                   inputMode="tel"
-                  className="px-2.5 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+                  className="px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
                 />
               </div>
             </div>

@@ -365,7 +365,7 @@ export default function MobilePOS() {
               placeholder="Buscar producto..."
               value={query}
               onChange={e => setQuery(e.target.value)}
-              className="w-full bg-gray-900 text-white placeholder-gray-500 border border-gray-700 rounded-xl pl-9 pr-9 py-3 text-base focus:outline-none focus:border-[var(--data-success-500)]/30"
+              className="w-full bg-gray-900 text-white placeholder-gray-500 border border-gray-700 rounded-xl pl-9 pr-9 h-11 text-base focus:outline-none focus:border-[var(--data-success-500)]/30"
               style={{ fontSize: 16 }}
             />
             {query && (

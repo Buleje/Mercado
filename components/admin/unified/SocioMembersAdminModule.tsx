@@ -223,13 +223,13 @@ function MembersTab({
             placeholder="Buscar por nombre, teléfono o ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
         </div>
         <select
           value={planFilter}
           onChange={(e) => setPlanFilter(e.target.value as SocioMember["plan"] | "all")}
-          className="px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
+          className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
         >
           <option value="all">Todos los planes</option>
           <option value="mensual">Mensual</option>
@@ -238,7 +238,7 @@ function MembersTab({
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as SocioMember["status"] | "all")}
-          className="px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
+          className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
         >
           <option value="all">Todos los estados</option>
           <option value="activo">Activos</option>

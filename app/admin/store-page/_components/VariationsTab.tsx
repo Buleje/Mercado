@@ -205,7 +205,7 @@ export default function VariationsTab() {
                 placeholder="Buscar producto…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                className="w-full pl-9 pr-3 h-10 text-sm rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
               />
             </div>
           </div>

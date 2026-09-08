@@ -193,7 +193,7 @@ export default function EspeciesFotosBiblioteca() {
                 type="button"
                 disabled={subiendo !== null}
                 onClick={() => pedirArchivo(e, cientificoDe(e))}
-                className="flex items-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] px-3 py-2 text-sm text-[var(--text-secondary)] hover:border-primary hover:text-[var(--text-primary)] disabled:opacity-40"
+                className="flex items-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] px-3 min-h-10 text-sm text-[var(--text-secondary)] hover:border-primary hover:text-[var(--text-primary)] disabled:opacity-40"
               >
                 {subiendo === e ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

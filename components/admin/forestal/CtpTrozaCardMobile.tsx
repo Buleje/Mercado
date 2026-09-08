@@ -36,7 +36,7 @@ export default function CtpTrozaCardMobile({
         onClick={onToggle}
         aria-pressed={elegida}
         className={cn(
-          "flex w-full items-center gap-3 rounded-2xl border-2 px-3 py-3 text-left transition-colors",
+          "flex w-full items-center gap-3 rounded-2xl border-2 px-3 min-h-11 text-left transition-colors",
           bloqueo
             ? "border-[var(--rule-soft)] opacity-60"
             : elegida

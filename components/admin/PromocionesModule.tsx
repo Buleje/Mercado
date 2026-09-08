@@ -386,7 +386,7 @@ export default function PromocionesModule() {
                 value={form.nombre}
                 onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
                 placeholder="Ej: Descuento fin de semana"
-                className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-10 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </Field>
 
@@ -394,7 +394,7 @@ export default function PromocionesModule() {
               <select
                 value={form.tipo}
                 onChange={e => setForm(f => ({ ...f, tipo: e.target.value as PromoType }))}
-                className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-10 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               >
                 {(Object.keys(TIPO_LABELS) as PromoType[]).map(t => (
                   <option key={t} value={t}>{TIPO_LABELS[t]}</option>
@@ -411,7 +411,7 @@ export default function PromocionesModule() {
                   value={form.valor}
                   onChange={e => setForm(f => ({ ...f, valor: e.target.value }))}
                   placeholder={form.tipo === "porcentaje" ? "20" : "5.00"}
-                  className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                  className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-10 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                 />
               </Field>
             )}
@@ -422,7 +422,7 @@ export default function PromocionesModule() {
                 value={form.categorias}
                 onChange={e => setForm(f => ({ ...f, categorias: e.target.value }))}
                 placeholder="Lácteos, Bebidas"
-                className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-10 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </Field>
 
@@ -431,7 +431,7 @@ export default function PromocionesModule() {
                 type="date"
                 value={form.fechaInicio}
                 onChange={e => setForm(f => ({ ...f, fechaInicio: e.target.value }))}
-                className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-10 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </Field>
 
@@ -440,7 +440,7 @@ export default function PromocionesModule() {
                 type="date"
                 value={form.fechaFin}
                 onChange={e => setForm(f => ({ ...f, fechaFin: e.target.value }))}
-                className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-10 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </Field>
 
@@ -450,7 +450,7 @@ export default function PromocionesModule() {
                 value={form.condicion}
                 onChange={e => setForm(f => ({ ...f, condicion: e.target.value }))}
                 placeholder='Ej: "min_cantidad:3" o "min_monto:50"'
-                className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+                className="w-full text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-10 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </Field>
           </div>

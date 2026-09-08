@@ -75,7 +75,7 @@ export default function ProductSpecsEditor({
         <button
           type="button"
           onClick={add}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] px-3 min-h-10 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
           <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
           Agregar especificación

@@ -591,7 +591,7 @@ function VersionsTab({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Nota del cambio (opcional)…"
-          className="w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary mb-2"
+          className="w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary mb-2"
         />
         <input
           ref={fileRef}
@@ -896,14 +896,14 @@ function ApprovalSection({ doc, onChanged }: { doc: DbDocument; onChanged: (d: D
         <>
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (opcional)" className="mb-2 h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
           <div className="flex gap-2">
-            <button onClick={() => act("approve")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--data-success-700)] px-3 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]"><Check className="h-4 w-4" /> Aprobar</button>
+            <button onClick={() => act("approve")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--data-success-700)] px-3 min-h-10 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]"><Check className="h-4 w-4" /> Aprobar</button>
             <button onClick={() => act("reject")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--data-error-500)]/40 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-50 dark:text-[var(--data-error-500)]"><X className="h-4 w-4" /> Rechazar</button>
           </div>
         </>
       ) : status === "approved" ? (
         <button onClick={() => act("request")} disabled={busy} className="text-xs font-semibold text-[var(--text-tertiary)] hover:text-primary disabled:opacity-50">Reabrir revisión</button>
       ) : (
-        <button onClick={() => act("request")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50"><PencilLine className="h-4 w-4" /> Solicitar aprobación</button>
+        <button onClick={() => act("request")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 min-h-10 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50"><PencilLine className="h-4 w-4" /> Solicitar aprobación</button>
       )}
     </section>
   );
@@ -1080,7 +1080,7 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
             type="date"
             defaultValue={expiryValue}
             onChange={(e) => save("expiry", { expiresAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
-            className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+            className="px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
           />
           {doc.expiresAt && (
             <button
@@ -1116,7 +1116,7 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
             <select
               value={doc.customerId ?? ""}
               onChange={(e) => save("customer", { customerId: e.target.value || null })}
-              className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
+              className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
             >
               <option value="">— Ninguno —</option>
               {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -1127,7 +1127,7 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
             <select
               value={doc.supplierId ?? ""}
               onChange={(e) => save("supplier", { supplierId: e.target.value || null })}
-              className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
+              className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
             >
               <option value="">— Ninguno —</option>
               {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -1200,7 +1200,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
             <input
               type="number" min={1} max={90} value={days}
               onChange={(e) => setDays(Math.max(1, Math.min(90, Number(e.target.value))))}
-              className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+              className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
             />
           </label>
           <label className="block">
@@ -1211,7 +1211,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
             {usePwd && (
               <input
                 type="text" value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="Mínimo 4 caracteres"
-                className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
               />
             )}
           </label>
@@ -1430,7 +1430,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
             <span className="text-xs font-bold text-[var(--text-secondary)]">Tu nombre</span>
             <input
               type="text" value={signerName} onChange={(e) => setSignerName(e.target.value)}
-              className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+              className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
             />
           </label>
           <label className="block">
@@ -1438,7 +1438,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
             <input
               type="text" value={signerRole} onChange={(e) => setSignerRole(e.target.value)}
               placeholder="Gerente, Contador…"
-              className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+              className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
             />
           </label>
         </div>

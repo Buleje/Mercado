@@ -187,7 +187,7 @@ export default function ChartManager({ moduleId, charts, className, emptyState }
         {/* Add chart button */}
         <button
           onClick={() => setModalOpen(true)}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-gray-300 dark:hover:border-gray-600 hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors text-sm font-medium"
+          className="w-full flex items-center justify-center gap-2 min-h-11 px-4 rounded-xl border-2 border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-gray-300 dark:hover:border-gray-600 hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-tertiary)] transition-colors text-sm font-medium"
         >
           <Plus className="h-4 w-4" />
           Agregar gráfico

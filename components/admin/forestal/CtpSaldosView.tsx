@@ -643,7 +643,7 @@ export function CtpSaldosView({
                     ) as HTMLElement | null
                   )?.focus();
                 }}
-                className={`flex-1 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-bold transition-colors ${
+                className={`flex-1 whitespace-nowrap rounded-xl px-3 min-h-10 text-sm font-bold transition-colors ${
                   seccion === s.id
                     ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

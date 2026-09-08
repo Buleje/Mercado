@@ -294,7 +294,7 @@ export default function TeamTab() {
                   value={form.username}
                   onChange={(e) => setForm({ ...form, username: e.target.value.toLowerCase() })}
                   placeholder="ej: cajero1"
-                  className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface)"
+                  className="w-full border border-(--color-card-border) rounded-xl px-3 h-10 text-sm bg-(--color-surface)"
                 />
               </Field>
             )}
@@ -306,7 +306,7 @@ export default function TeamTab() {
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="ej: María García"
-                className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface)"
+                className="w-full border border-(--color-card-border) rounded-xl px-3 h-10 text-sm bg-(--color-surface)"
               />
             </Field>
 
@@ -315,7 +315,7 @@ export default function TeamTab() {
               <select
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
-                className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface)"
+                className="w-full border border-(--color-card-border) rounded-xl px-3 h-10 text-sm bg-(--color-surface)"
               >
                 <option value="admin">Administrador — acceso total</option>
                 <option value="cajero">Cajero — POS + pedidos</option>
@@ -337,7 +337,7 @@ export default function TeamTab() {
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                     placeholder={editingId ? "Nueva contraseña (opcional)" : "Mínimo 6 caracteres"}
-                    className="w-full border border-(--color-card-border) rounded-xl px-3 py-2 text-sm bg-(--color-surface) pr-10"
+                    className="w-full border border-(--color-card-border) rounded-xl px-3 h-10 text-sm bg-(--color-surface) pr-10"
                   />
                   <button
                     type="button"
@@ -374,7 +374,7 @@ export default function TeamTab() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1"
+                className="flex-1 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {editingId ? "Guardar cambios" : "Crear usuario"}

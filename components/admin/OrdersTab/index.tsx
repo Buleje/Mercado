@@ -168,7 +168,7 @@ export default function OrdersTab() {
         <button
           type="button"
           onClick={() => setShowAdvancedFilters(true)}
-          className="relative flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+          className="relative flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <SlidersHorizontal className="h-4 w-4" /> Filtros
           {activeFiltersCount > 0 && (

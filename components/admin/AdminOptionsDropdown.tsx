@@ -189,7 +189,7 @@ export default function AdminOptionsDropdown({
                     role="menuitem"
                     onClick={it.onClick}
                     className={cn(
-                      "w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-left transition-colors",
+                      "w-full flex items-start gap-3 px-3 min-h-11 rounded-xl text-left transition-colors",
                       "hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-sunken)]",
                       it.tone === "warning" &&
                         "hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20",

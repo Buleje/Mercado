@@ -304,7 +304,7 @@ export default function PlantacionWizard({
                 type="button"
                 onClick={() => setPaso(p.id)}
                 aria-current={paso === p.id ? "step" : undefined}
-                className={`flex items-center gap-2.5 rounded-xl border-2 px-3 py-2.5 text-left text-sm font-bold transition ${
+                className={`flex items-center gap-2.5 rounded-xl border-2 px-3 min-h-11 text-left text-sm font-bold transition ${
                   paso === p.id
                     ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"

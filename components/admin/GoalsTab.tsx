@@ -652,7 +652,7 @@ export default function GoalsTab() {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" /> Nueva Meta
         </button>
@@ -847,7 +847,7 @@ export default function GoalsTab() {
           </div>
           <button
             onClick={() => { setShowTemplates(false); setForm(EMPTY_FORM); setEditId(null); setShowForm(true); }}
-            className="w-full py-2.5 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors"
+            className="w-full min-h-11 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors"
           >
             Crear meta personalizada
           </button>
@@ -863,7 +863,7 @@ export default function GoalsTab() {
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="ej. Ventas del mes"
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                  className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                 />
               </Field>
               <div className="grid grid-cols-2 gap-3">
@@ -871,7 +871,7 @@ export default function GoalsTab() {
                   <select
                     value={form.category}
                     onChange={e => setForm(f => ({ ...f, category: e.target.value as GoalCategory }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   >
                     {Object.entries(CATEGORY_META).map(([k, v]) => (
                       <option key={k} value={k}>{v.label}</option>
@@ -882,7 +882,7 @@ export default function GoalsTab() {
                   <select
                     value={form.period}
                     onChange={e => setForm(f => ({ ...f, period: e.target.value as GoalPeriod }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   >
                     {Object.entries(PERIOD_LABELS).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
@@ -898,7 +898,7 @@ export default function GoalsTab() {
                     value={form.target}
                     onChange={e => setForm(f => ({ ...f, target: e.target.value }))}
                     placeholder="5000"
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
                 </Field>
                 <Field label="Unidad" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
@@ -907,7 +907,7 @@ export default function GoalsTab() {
                     value={form.unit}
                     onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
                     placeholder="S/ ó pedidos"
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
                 </Field>
               </div>
@@ -936,7 +936,7 @@ export default function GoalsTab() {
                   type="date"
                   value={form.dueDate}
                   onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                  className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                 />
               </Field>
 
@@ -947,19 +947,19 @@ export default function GoalsTab() {
                     min={0}
                     value={form.current}
                     onChange={e => setForm(f => ({ ...f, current: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary transition-all"
                   />
                 </Field>
               )}
 
           <div className="flex gap-3 pt-1">
-            <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-alt)] transition-colors">
+            <button onClick={() => setShowForm(false)} className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-alt)] transition-colors">
               Cancelar
             </button>
             <button
               onClick={save}
               disabled={saving || !form.name.trim() || !form.target}
-              className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
             >
               {saving ? "Guardando…" : <><Check className="h-4 w-4" />{editId ? "Guardar" : "Crear meta"}</>}
             </button>

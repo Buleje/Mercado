@@ -143,7 +143,7 @@ export default function CtpCuadreSniffs({
             <button
               type="button"
               onClick={onNavigate}
-              className="flex w-full items-center gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-3 py-2 text-left text-sm text-[var(--data-warning-700)] transition-colors hover:border-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
+              className="flex w-full items-center gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-3 min-h-10 text-left text-sm text-[var(--data-warning-700)] transition-colors hover:border-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
             >
               <span className="min-w-0 flex-1">
                 <b>

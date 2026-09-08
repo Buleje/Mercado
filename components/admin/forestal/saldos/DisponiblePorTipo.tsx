@@ -114,7 +114,7 @@ export default function DisponiblePorTipo({
             role="tab"
             aria-selected={vista === v}
             onClick={() => setVista(v)}
-            className={`flex-1 rounded-xl border-2 px-4 py-3 text-left transition-colors ${
+            className={`flex-1 rounded-xl border-2 px-4 min-h-11 text-left transition-colors ${
               vista === v
                 ? "border-primary bg-primary/10"
                 : "border-[var(--rule-base)] hover:border-primary/50"

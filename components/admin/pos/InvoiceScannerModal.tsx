@@ -330,14 +330,14 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={reset}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   <X className="h-4 w-4" /> Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={capturePhoto}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
                 >
                   <Camera className="h-4 w-4" /> Capturar
                 </button>
@@ -374,7 +374,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
               <button
                 type="button"
                 onClick={reset}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 <RotateCcw className="h-4 w-4" /> Intentar de nuevo
               </button>
@@ -516,7 +516,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
           <button
             type="button"
             onClick={reset}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <RotateCcw className="h-4 w-4" /> Otra foto
           </button>
@@ -524,7 +524,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
             type="button"
             onClick={handleConfirm}
             disabled={editItems.filter((i) => i.nombre.trim() && i.cantidad > 0).length === 0}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ShoppingCart className="h-4 w-4" /> Agregar al carrito
           </button>

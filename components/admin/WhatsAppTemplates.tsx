@@ -141,7 +141,7 @@ export default function WhatsAppTemplates() {
             value={newName}
             onChange={e => setNewName(e.target.value)}
             placeholder="Nombre (ej: Recordatorio pago)"
-            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           <textarea
             value={newText}

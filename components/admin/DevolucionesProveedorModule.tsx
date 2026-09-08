@@ -647,7 +647,7 @@ export default function DevolucionesProveedorModule() {
                     id={id}
                     value={proveedorId}
                     onChange={e => setProveedorId(e.target.value)}
-                    className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                    className="w-full px-3 h-10 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
                   >
                     <option value="">Seleccionar proveedor...</option>
                     {proveedores.map(p => (
@@ -661,7 +661,7 @@ export default function DevolucionesProveedorModule() {
               <select
                 value={motivo}
                 onChange={e => setMotivo(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                className="w-full px-3 h-10 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
               >
                 {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
@@ -695,12 +695,12 @@ export default function DevolucionesProveedorModule() {
                   min={1}
                   value={item.cantidad}
                   onChange={e => actualizarItem(index, "cantidad", Number(e.target.value))}
-                  className="w-16 px-2 py-2 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] text-center focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  className="w-16 px-2 h-10 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] text-center focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 />
                 <select
                   value={item.unidad}
                   onChange={e => actualizarItem(index, "unidad", e.target.value)}
-                  className="w-20 px-2 py-2 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  className="w-20 px-2 h-10 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 >
                   <option value="und">und</option>
                   <option value="kg">kg</option>

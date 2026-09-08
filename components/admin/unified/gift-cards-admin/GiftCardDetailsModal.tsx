@@ -203,7 +203,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
                   type="date"
                   value={newExpiry}
                   onChange={(e) => setNewExpiry(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm"
+                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm"
                 />
               </Field>
               <div className="flex gap-2">

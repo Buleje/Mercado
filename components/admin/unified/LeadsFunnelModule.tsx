@@ -164,7 +164,7 @@ export default function LeadsFunnelModule() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
         eyebrow="Clientes · CEO Dashboard"
         title="Funnel de Leads"
@@ -243,7 +243,7 @@ export default function LeadsFunnelModule() {
                       key={source}
                       onClick={() => setSourceFilter(source === sourceFilter ? "" : source)}
                       className={cn(
-                        "w-full flex justify-between items-center px-3 py-2 rounded-xl text-base transition-colors",
+                        "w-full flex justify-between items-center px-3 min-h-10 rounded-xl text-base transition-colors",
                         source === sourceFilter
                           ? "bg-[var(--accent)] text-[var(--accent-foreground)]"
                           : "bg-[var(--surface-base)] text-[var(--text-primary)] hover:bg-[var(--surface-hover)]",

@@ -34,7 +34,7 @@ export default function RendimientoModule() {
   const [sub, setSub] = useState(TABS[0].id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* El título va DENTRO de la barra de pestañas (patrón acordado con
           Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
           pestañas a la derecha, una sola regla. Recupera ~90px verticales,

@@ -346,23 +346,23 @@ export default function ComisionesTab() {
             <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mb-3">Nueva regla</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Cajero ID" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
-                <select value={newTier.cashierId} onChange={e => setNewTier(v => ({ ...v, cashierId: e.target.value }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                <select value={newTier.cashierId} onChange={e => setNewTier(v => ({ ...v, cashierId: e.target.value }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                   <option value="">Seleccionar cajero…</option>
                   {stats.map(s => <option key={s.cashierId} value={s.cashierId}>{s.cashierName} ({s.cashierId})</option>)}
                 </select>
               </Field>
               <Field label="Etiqueta (opcional)" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
-                <input value={newTier.label} onChange={e => setNewTier(v => ({ ...v, label: e.target.value }))} placeholder="ej: Objetivo Q1" className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+                <input value={newTier.label} onChange={e => setNewTier(v => ({ ...v, label: e.target.value }))} placeholder="ej: Objetivo Q1" className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
               </Field>
               <Field label="Ingresos mín. (S/)" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
-                <input type="number" min={0} value={newTier.minSales} onChange={e => setNewTier(v => ({ ...v, minSales: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+                <input type="number" min={0} value={newTier.minSales} onChange={e => setNewTier(v => ({ ...v, minSales: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
               </Field>
               <Field label="Ingresos máx. (S/, vacío = sin límite)" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
-                <input type="number" min={0} value={newTier.maxSales} onChange={e => setNewTier(v => ({ ...v, maxSales: e.target.value }))} placeholder="Sin límite" className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+                <input type="number" min={0} value={newTier.maxSales} onChange={e => setNewTier(v => ({ ...v, maxSales: e.target.value }))} placeholder="Sin límite" className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
               </Field>
               <div className="sm:col-span-2 flex flex-wrap items-end gap-3">
                 <Field label="Tasa (%)" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1" className="flex-1">
-                  <input type="number" min={0} max={20} step={0.5} value={newTier.rate} onChange={e => setNewTier(v => ({ ...v, rate: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+                  <input type="number" min={0} max={20} step={0.5} value={newTier.rate} onChange={e => setNewTier(v => ({ ...v, rate: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
                 </Field>
                 <button onClick={handleAddTier} disabled={savingRule || !newTier.cashierId || newTier.rate <= 0} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   {savingRule ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Guardar

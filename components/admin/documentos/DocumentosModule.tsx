@@ -1326,7 +1326,7 @@ export default function DocumentosModule() {
         />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"
         >
           {uploadProgress ? (
             <>
@@ -1914,7 +1914,7 @@ export default function DocumentosModule() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className={cn(
-                  "w-full pl-9 pr-3 py-2.5 rounded-xl border-2 bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all",
+                  "w-full pl-9 pr-3 h-11 rounded-xl border-2 bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all",
                   semantic ? "border-[var(--accent)]" : "border-[var(--rule-base)]"
                 )}
               />
@@ -1922,7 +1922,7 @@ export default function DocumentosModule() {
             <button
               onClick={() => setSemantic((s) => !s)}
               className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition-colors",
+                "inline-flex items-center gap-1.5 px-3 min-h-11 rounded-xl border-2 text-sm font-bold transition-colors",
                 semantic ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]" : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)]/40"
               )}
               title="Búsqueda inteligente: entiende lo que querés decir, no solo palabras exactas"
@@ -1959,14 +1959,14 @@ export default function DocumentosModule() {
             <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
               <button
                 onClick={() => setView("grid")}
-                className={cn("px-3 py-2 transition-colors", view === "grid" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
+                className={cn("px-3 min-h-10 transition-colors", view === "grid" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
                 aria-label="Vista grilla"
               >
                 <Grid3x3 className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setView("list")}
-                className={cn("px-3 py-2 transition-colors border-l-2 border-[var(--rule-base)]", view === "list" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
+                className={cn("px-3 min-h-10 transition-colors border-l-2 border-[var(--rule-base)]", view === "list" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
                 aria-label="Vista lista"
               >
                 <List className="h-4 w-4" />
@@ -2189,7 +2189,7 @@ export default function DocumentosModule() {
                   <select
                     onChange={(e) => { const v = e.target.value; if (v) { bulkMove(v === "__none__" ? null : v); } setBulkMoreOpen(false); }}
                     defaultValue=""
-                    className="w-full px-3 py-2 text-sm font-medium text-[var(--text-secondary)] bg-transparent outline-none cursor-pointer hover:bg-[var(--surface-sunken)]"
+                    className="w-full px-3 h-10 text-sm font-medium text-[var(--text-secondary)] bg-transparent outline-none cursor-pointer hover:bg-[var(--surface-sunken)]"
                     aria-label="Mover a carpeta"
                   >
                   <option value="" disabled>Mover a…</option>
@@ -3332,7 +3332,7 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
       <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-md mx-auto">
         Arrastrá y soltá archivos en cualquier parte de la pantalla, o usá el botón. Aceptamos PDF, imágenes, planillas, Word, ZIP y más (hasta 50 MB c/u).
       </p>
-      <button onClick={onUpload} className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors">
+      <button onClick={onUpload} className="mt-5 inline-flex items-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors">
         <Upload className="h-4 w-4" /> Subir archivos
       </button>
     </div>

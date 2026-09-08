@@ -1371,7 +1371,7 @@ export default function PuntoCompraView() {
             }}
             placeholder="Escanea o escribe el código de barras..."
             autoFocus
-            className="flex-1 px-3 py-2 border border-primary rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:ring-2 focus:ring-primary"
+            className="flex-1 px-3 h-10 border border-primary rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:ring-2 focus:ring-primary"
           />
           <button
             type="button"
@@ -2263,7 +2263,7 @@ export default function PuntoCompraView() {
                     inputMode="numeric"
                     autoFocus
                     placeholder="20XXXXXXXXX"
-                    className="w-full pl-3 pr-10 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono"
+                    className="w-full pl-3 pr-10 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono"
                   />
                   {rucLookup.status === "loading" && (
                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
@@ -2296,7 +2296,7 @@ export default function PuntoCompraView() {
                   onChange={(e) => setNewSupplier((s) => ({ ...s, name: e.target.value }))}
                   onKeyDown={(e) => e.key === "Enter" && newSupplier.name.trim() && void handleCreateSupplier()}
                   placeholder="ej. Distribuidora ABC"
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                  className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                 />
               </div>
 
@@ -2310,7 +2310,7 @@ export default function PuntoCompraView() {
                     type="text"
                     value={newSupplier.razonSocial}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, razonSocial: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
               )}
@@ -2325,7 +2325,7 @@ export default function PuntoCompraView() {
                     type="text"
                     value={newSupplier.address}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, address: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
               )}
@@ -2341,7 +2341,7 @@ export default function PuntoCompraView() {
                     value={newSupplier.phone}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, phone: e.target.value }))}
                     placeholder="+51 9XX XXX XXX"
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
                 <div>
@@ -2354,7 +2354,7 @@ export default function PuntoCompraView() {
                     value={newSupplier.email}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, email: e.target.value }))}
                     placeholder="ventas@proveedor.com"
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
               </div>
@@ -2368,7 +2368,7 @@ export default function PuntoCompraView() {
                 type="button"
                 onClick={() => !creatingSupplier && setShowNewSupplier(false)}
                 disabled={creatingSupplier}
-                className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
+                className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -2376,7 +2376,7 @@ export default function PuntoCompraView() {
                 type="button"
                 onClick={() => void handleCreateSupplier()}
                 disabled={creatingSupplier || !newSupplier.name.trim()}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
               >
                 {creatingSupplier ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

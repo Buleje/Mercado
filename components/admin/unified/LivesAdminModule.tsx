@@ -191,7 +191,7 @@ export default function LivesAdminModule() {
             </button>
             <button
               onClick={() => setShowStart(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors shadow-sm"
             >
               <Play className="h-4 w-4" />
               Empezar ahora

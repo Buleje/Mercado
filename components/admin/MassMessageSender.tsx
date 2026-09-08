@@ -249,7 +249,7 @@ export default function MassMessageSender({
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar en el segmento..."
             className={cn(
-              "w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] py-2 pl-9 pr-3 text-sm",
+              "w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] h-10 pl-9 pr-3 text-sm",
               "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
             )}
           />

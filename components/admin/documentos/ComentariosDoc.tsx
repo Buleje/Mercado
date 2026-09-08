@@ -117,7 +117,7 @@ export default function ComentariosDoc({ docId }: { docId: string }) {
           <button
             onClick={comentar}
             disabled={!texto.trim() || enviando}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 min-h-10 text-sm font-bold text-white disabled:opacity-40"
           >
             {enviando && <Loader2 className="h-4 w-4 animate-spin" />} Publicar
           </button>

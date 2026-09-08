@@ -175,7 +175,7 @@ export default function AuditTrailModule() {
               type="button"
               onClick={() => { setPeriod(p.id); setPage(0); }}
               className={cn(
-                "rounded-xl px-4 py-2 text-sm font-bold transition-colors",
+                "rounded-xl px-4 min-h-10 text-sm font-bold transition-colors",
                 period === p.id
                   ? "bg-[var(--accent)] text-white"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",

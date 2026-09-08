@@ -394,7 +394,7 @@ export default function TabCompras() {
             </div>
             <button
               onClick={() => (window.location.href = "/admin/compras")}
-              className="inline-flex items-center gap-2 rounded-xl bg-[var(--text-primary)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--text-secondary)]"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--text-primary)] px-4 min-h-10 text-sm font-bold text-white hover:bg-[var(--text-secondary)]"
             >
               <ShoppingCart className="h-4 w-4" />
               Crear orden de compra

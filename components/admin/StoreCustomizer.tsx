@@ -740,7 +740,7 @@ function HeroTab({
                   >
                     <button
                       type="button"
-                      className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white shadow-[var(--shadow-lg)] pointer-events-none"
+                      className="inline-flex items-center justify-center gap-2 px-5 min-h-11 rounded-xl text-sm font-bold text-white shadow-[var(--shadow-lg)] pointer-events-none"
                       style={{ backgroundColor: accent, boxShadow: `0 10px 25px ${accent}40` }}
                     >
                       <ShoppingBag className="h-4 w-4" />
@@ -748,7 +748,7 @@ function HeroTab({
                     </button>
                     <button
                       type="button"
-                      className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-white/20 bg-white/5 text-white font-semibold text-sm pointer-events-none"
+                      className="inline-flex items-center justify-center gap-2 px-5 min-h-11 rounded-xl border border-white/20 bg-white/5 text-white font-semibold text-sm pointer-events-none"
                     >
                       <ShoppingBag className="h-4 w-4" />
                       Mi carrito
@@ -889,7 +889,7 @@ function HeroTab({
                   type="button"
                   onClick={() => update("heroSubtitle", s)}
                   className={cn(
-                    "px-3 py-2 rounded-xl text-sm font-semibold border-2 text-left transition-all max-w-md",
+                    "px-3 min-h-10 rounded-xl text-sm font-semibold border-2 text-left transition-all max-w-md",
                     theme.heroSubtitle === s
                       ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:border-primary/40 hover:bg-primary/5"
@@ -1175,7 +1175,7 @@ function HeroTab({
                     onClick={() => update("heroVariant", v.value)}
                     aria-pressed={active}
                     className={cn(
-                      "flex flex-col items-start gap-0.5 rounded-xl border-2 px-3 py-2.5 text-left transition-all",
+                      "flex flex-col items-start gap-0.5 rounded-xl border-2 px-3 min-h-11 text-left transition-all",
                       active ? "border-primary bg-primary/10" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40",
                     )}
                   >
@@ -2433,14 +2433,14 @@ export default function StoreCustomizer() {
                       <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
-                          className="px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-md)] hover:opacity-90 transition-all pointer-events-none"
+                          className="px-5 min-h-11 text-sm font-bold text-white shadow-[var(--shadow-md)] hover:opacity-90 transition-all pointer-events-none"
                           style={{ backgroundColor: theme.primaryColor, borderRadius: `${theme.borderRadius}px` }}
                         >
                           {theme.heroCTA || "Comprar ahora"}
                         </button>
                         <button
                           type="button"
-                          className="px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-md)] hover:opacity-90 transition-all pointer-events-none"
+                          className="px-5 min-h-11 text-sm font-bold text-white shadow-[var(--shadow-md)] hover:opacity-90 transition-all pointer-events-none"
                           style={{ backgroundColor: theme.secondaryColor, borderRadius: `${theme.borderRadius}px` }}
                         >
                           Ver oferta

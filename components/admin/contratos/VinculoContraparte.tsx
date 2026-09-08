@@ -151,7 +151,7 @@ export default function VinculoContraparte({
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por nombre o RUC…"
-            className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+            className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 h-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
           />
 
           {cargando && <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />}

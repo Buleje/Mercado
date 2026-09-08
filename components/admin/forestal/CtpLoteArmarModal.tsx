@@ -218,7 +218,7 @@ export default function CtpLoteArmarModal({
               role="tab"
               aria-selected={modo === m}
               onClick={() => setModo(m)}
-              className={`flex-1 rounded-xl border-2 px-3 py-2 text-left transition-colors ${
+              className={`flex-1 rounded-xl border-2 px-3 min-h-10 text-left transition-colors ${
                 modo === m ? "border-primary bg-primary/10" : "border-[var(--rule-base)] hover:border-primary/50"
               }`}
             >

@@ -212,19 +212,19 @@ export default function ShrinkageTab() {
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-5 dark:border-[var(--rule-base)] ">
           <div className="mb-4 flex flex-wrap items-center gap-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]"><Plus className="h-4 w-4 text-primary" /> Registrar pérdida</div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <select value={form.productId} onChange={(event) => setForm((prev) => ({ ...prev, productId: event.target.value }))} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm dark:border-[var(--rule-base)] ">
+            <select value={form.productId} onChange={(event) => setForm((prev) => ({ ...prev, productId: event.target.value }))} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-11 text-sm dark:border-[var(--rule-base)] ">
               <option value="">Selecciona producto</option>
               {products.map((product) => (
                 <option key={product.id} value={product.id}>{product.name}</option>
               ))}
             </select>
-            <input type="number" min={1} value={form.quantity} onChange={(event) => setForm((prev) => ({ ...prev, quantity: event.target.value }))} placeholder="Cantidad" className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm dark:border-[var(--rule-base)] " />
-            <select value={form.cause} onChange={(event) => setForm((prev) => ({ ...prev, cause: event.target.value as ShrinkageCause }))} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm dark:border-[var(--rule-base)] ">
+            <input type="number" min={1} value={form.quantity} onChange={(event) => setForm((prev) => ({ ...prev, quantity: event.target.value }))} placeholder="Cantidad" className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-11 text-sm dark:border-[var(--rule-base)] " />
+            <select value={form.cause} onChange={(event) => setForm((prev) => ({ ...prev, cause: event.target.value as ShrinkageCause }))} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-11 text-sm dark:border-[var(--rule-base)] ">
               {Object.entries(CAUSE_META).map(([key, meta]) => (
                 <option key={key} value={key}>{meta.label}</option>
               ))}
             </select>
-            <input value={form.reportedBy} onChange={(event) => setForm((prev) => ({ ...prev, reportedBy: event.target.value }))} placeholder="Reportado por" className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm dark:border-[var(--rule-base)] " />
+            <input value={form.reportedBy} onChange={(event) => setForm((prev) => ({ ...prev, reportedBy: event.target.value }))} placeholder="Reportado por" className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-11 text-sm dark:border-[var(--rule-base)] " />
             <textarea value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} placeholder="Notas" rows={3} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm sm:col-span-2 dark:border-[var(--rule-base)] " />
           </div>
           <button onClick={handleAdd} disabled={saving || !form.productId || !form.quantity} className="mt-4 rounded-xl bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50">
@@ -246,7 +246,7 @@ export default function ShrinkageTab() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o categoria..." className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-2.5 pl-10 pr-4 text-sm dark:border-[var(--rule-base)] " />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o categoria..." className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] h-11 pl-10 pr-4 text-sm dark:border-[var(--rule-base)] " />
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setFilterCause("todos")} className={cn("rounded-xl px-3 py-2 text-xs font-bold", filterCause === "todos" ? "bg-primary text-white" : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:text-muted")}>Todos</button>

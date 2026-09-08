@@ -185,7 +185,7 @@ export default function PresupuestoMensualTab() {
         </div>
         <button
           onClick={openEdit}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
+          className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
         >
           <Plus className="h-4 w-4" />
           Crear presupuesto

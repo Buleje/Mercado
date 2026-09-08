@@ -364,12 +364,12 @@ function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: s
       <div className="flex flex-wrap gap-2">
         {quickAmounts.map(a => (
           <button key={a} onClick={() => abonar(a)} disabled={paying}
-            className="px-4 py-2 rounded-xl text-sm font-semibold bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)] hover:text-white transition-colors disabled:opacity-50">
+            className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)] hover:text-white transition-colors disabled:opacity-50">
             S/{a}
           </button>
         ))}
         <button onClick={() => abonar(fiado.saldo)} disabled={paying}
-          className="px-4 py-2 rounded-xl text-sm font-semibold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-[var(--data-success-500)] hover:text-white transition-colors disabled:opacity-50">
+          className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-[var(--data-success-500)] hover:text-white transition-colors disabled:opacity-50">
           Todo S/{Number(fiado.saldo).toFixed(2)}
         </button>
         <button onClick={() => setFiado(null)} className="px-4 py-2 rounded-xl text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">No, gracias</button>
@@ -592,7 +592,7 @@ function SaleCompleteModal({
                     value={manualPhone}
                     onChange={(e) => setManualPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
                     placeholder="Número del cliente"
-                    className="w-full pl-12 pr-3 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    className="w-full pl-12 pr-3 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                   />
                 </div>
                 {manualPhone.length >= 9 ? (
@@ -633,7 +633,7 @@ function SaleCompleteModal({
             </a>
             <button
               onClick={onNewSale}
-              className="py-3 rounded-xl bg-primary text-white font-bold text-base hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+              className="min-h-11 rounded-xl bg-primary text-white font-bold text-base hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
             >
               Nueva venta
               <span aria-hidden>&rarr;</span>
@@ -2253,7 +2253,7 @@ export default function POSView() {
               <div className="flex gap-2">
                 <button
                   onClick={openPaymentModal}
-                  className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-colors flex flex-wrap items-center justify-center gap-2"
+                  className="flex-1 min-h-11 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-colors flex flex-wrap items-center justify-center gap-2"
                 >
                   <Banknote className="h-4 w-4" />
                   Cobrar {fmt(cartTotal)}
@@ -2262,7 +2262,7 @@ export default function POSView() {
                 {/* Idea 12: Trueque button */}
                 <button
                   onClick={() => setShowTrueque(true)}
-                  className="px-4 py-3 rounded-xl border-2 border-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-bold text-sm hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20 transition-colors flex items-center gap-1.5"
+                  className="px-4 min-h-11 rounded-xl border-2 border-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-bold text-sm hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20 transition-colors flex items-center gap-1.5"
                   title="Trueque Digital"
                 >
                   <RefreshCcw className="h-4 w-4" aria-hidden /> Trueque
@@ -2321,7 +2321,7 @@ export default function POSView() {
                   setShowNoCajaWarning(false);
                   window.dispatchEvent(new CustomEvent(turnoAbierto === false ? "buleje:navigate-turnos" : "buleje:navigate-caja"));
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-[var(--text-primary)] text-[var(--surface-raised)] font-bold text-sm hover:opacity-90 transition-opacity"
+                className="flex-1 min-h-11 rounded-xl bg-[var(--text-primary)] text-[var(--surface-raised)] font-bold text-sm hover:opacity-90 transition-opacity"
               >
                 {turnoAbierto === false ? "Abrir turno primero" : "Abrir caja primero"}
               </button>
@@ -2331,7 +2331,7 @@ export default function POSView() {
                   setShowNoCajaWarning(false);
                   setShowPayment(true);
                 }}
-                className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] font-bold text-sm hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+                className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] font-bold text-sm hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
               >
                 {turnoAbierto === false && cashRegisterOpen === false
                   ? "Vender sin turno ni caja"
@@ -2355,7 +2355,7 @@ export default function POSView() {
               <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{cartCount} items</span>
               <span className="text-lg font-bold font-mono ml-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/ {cartTotal.toFixed(2)}</span>
             </div>
-            <button onClick={openPaymentModal} className="bg-primary text-white px-6 py-2.5 rounded-xl font-semibold text-sm">
+            <button onClick={openPaymentModal} className="bg-primary text-white px-6 min-h-11 rounded-xl font-semibold text-sm">
               Cobrar
             </button>
           </div>
@@ -2443,7 +2443,7 @@ export default function POSView() {
                           setWaParsedItems([]);
                         }}
                         disabled={resolved.length === 0}
-                        className="w-full py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <ShoppingBasket className="h-4 w-4" /> Agregar todo al carrito
                       </button>
@@ -2536,7 +2536,7 @@ export default function POSView() {
                   value={truequeValor}
                   onChange={e => setTruequeValor(e.target.value)}
                   placeholder="0.00"
-                  className="w-32 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-32 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </Field>
               {Number(truequeValor) > 0 && cartTotal > 0 && (
@@ -2565,11 +2565,11 @@ export default function POSView() {
                     setTruequeDesc("");
                     setTruequeValor("");
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  className="flex-1 min-h-11 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
                 >
                   Confirmar trueque
                 </button>
-                <button onClick={() => setShowTrueque(false)} className="px-4 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
+                <button onClick={() => setShowTrueque(false)} className="px-4 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
                   Cancelar
                 </button>
               </div>

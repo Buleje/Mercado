@@ -255,7 +255,7 @@ export function AssistantView({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") ask(input); }}
             placeholder="Preguntá algo sobre tus documentos…"
-            className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-[var(--text-primary)] outline-none"
+            className="min-w-0 flex-1 bg-transparent h-11 text-sm text-[var(--text-primary)] outline-none"
           />
           <button
             onClick={() => ask(input)}

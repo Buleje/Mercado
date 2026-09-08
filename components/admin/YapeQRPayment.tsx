@@ -160,7 +160,7 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
               key={p}
               onClick={() => setProvider(p)}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold transition-all",
+                "flex-1 flex items-center justify-center gap-2 min-h-11 text-sm font-bold transition-all",
                 active
                   ? "text-white"
                   : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] bg-[var(--surface-sunken)] "
@@ -253,7 +253,7 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
         <div className="flex gap-2">
           <button
             onClick={onCancel}
-            className="flex-1 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted font-bold text-sm hover:bg-[var(--surface-sunken)] transition-colors flex items-center justify-center gap-1.5"
+            className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted font-bold text-sm hover:bg-[var(--surface-sunken)] transition-colors flex items-center justify-center gap-1.5"
           >
             <X className="h-4 w-4" />
             Cancelar
@@ -261,7 +261,7 @@ export default function YapeQRPayment({ amount, onConfirm, onCancel }: YapeQRPay
           <button
             onClick={onConfirm}
             disabled={expired}
-            className="flex-1 py-3 rounded-xl text-white font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 bg-primary/10 hover:bg-primary/10 disabled:bg-gray-400"
+            className="flex-1 min-h-11 rounded-xl text-white font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 bg-primary/10 hover:bg-primary/10 disabled:bg-gray-400"
           >
             <Check className="h-4 w-4" />
             Pago recibido

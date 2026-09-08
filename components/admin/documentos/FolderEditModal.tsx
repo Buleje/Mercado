@@ -63,7 +63,7 @@ export function FolderEditModal({
               onKeyDown={(e) => { if (e.key === "Enter") save(); }}
               autoFocus
               maxLength={80}
-              className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary"
+              className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-11 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary"
             />
           </div>
 
@@ -121,7 +121,7 @@ export function FolderEditModal({
           <button
             onClick={save}
             disabled={saving || !name.trim()}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-11 text-sm font-bold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
           >
             <Check className="h-4 w-4" /> Guardar
           </button>

@@ -255,7 +255,7 @@ function SimuladorTab({
               setSelectedId(e.target.value);
               setResult(null);
             }}
-            className="w-full border border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
+            className="w-full border border-[var(--rule-base)] rounded-xl px-3 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
           >
             {products.map((p) => (
               <option key={p.id} value={String(p.id)}>
@@ -277,7 +277,7 @@ function SimuladorTab({
                 setResult(null);
               }}
               placeholder="5"
-              className="w-full border border-[var(--rule-base)] rounded-xl pl-3 pr-7 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
+              className="w-full border border-[var(--rule-base)] rounded-xl pl-3 pr-7 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
             />
             <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)]">
               %
@@ -289,7 +289,7 @@ function SimuladorTab({
         <button
           onClick={handleSimulate}
           disabled={!selectedProduct}
-          className="px-4 py-2 bg-primary/10 hover:bg-primary/10 disabled:opacity-40 text-white text-sm font-medium rounded-xl transition-colors"
+          className="px-4 min-h-10 bg-primary/10 hover:bg-primary/10 disabled:opacity-40 text-white text-sm font-medium rounded-xl transition-colors"
         >
           Simular
         </button>
@@ -401,7 +401,7 @@ function CalculadoraTab() {
             value={cost}
             onChange={(e) => setCost(e.target.value)}
             placeholder="0.00"
-            className="w-full border border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
+            className="w-full border border-[var(--rule-base)] rounded-xl px-3 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40"
           />
         </Field>
 
@@ -418,7 +418,7 @@ function CalculadoraTab() {
             value={desiredMargin}
             onChange={(e) => setDesiredMargin(e.target.value)}
             className={cn(
-              "w-full border rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40",
+              "w-full border rounded-xl px-3 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--data-success-500)]/40",
               showWarning
                 ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]"
                 : "border-[var(--rule-base)]",

@@ -129,7 +129,7 @@ export default function LoteMiembrosEditor({
                   ]);
                   setQuery("");
                 }}
-                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-[var(--data-success-50)]"
+                className="flex w-full items-center justify-between gap-3 px-3 min-h-10 text-left transition-colors hover:bg-[var(--data-success-50)]"
               >
                 <span className="flex min-w-0 items-center gap-2 truncate">
                   <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{it.code ?? "—"}</span>

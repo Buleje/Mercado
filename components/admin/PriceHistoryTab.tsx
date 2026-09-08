@@ -127,7 +127,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
               "historial-precios"
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+          className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -142,7 +142,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Producto o usuario…"
-              className="w-full pl-9 pr-9 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full pl-9 pr-9 h-10 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -153,7 +153,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
           <select
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+            className="px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           >
             <option value="">Todos los productos</option>
             {[...new Set(history.map(h => h.productId))].map(pid => (

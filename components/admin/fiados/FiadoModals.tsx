@@ -143,7 +143,7 @@ export default function FiadoModals({
                       value={pagoMonto}
                       onChange={e => setPagoMonto(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </Field>
                   <Field label="Notas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
@@ -152,7 +152,7 @@ export default function FiadoModals({
                       value={pagoNotas}
                       onChange={e => setPagoNotas(e.target.value)}
                       placeholder="Ej: Pagó con Yape"
-                      className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </Field>
                 </div>
@@ -171,7 +171,7 @@ export default function FiadoModals({
                   <button
                     onClick={handlePago}
                     disabled={paying}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                   >
                     {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                     Pagar
@@ -268,7 +268,7 @@ export default function FiadoModals({
                     value={cobroMonto}
                     onChange={e => setCobroMonto(e.target.value)}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </Field>
 
@@ -302,7 +302,7 @@ export default function FiadoModals({
                   <button
                     onClick={handleCobroMasivo}
                     disabled={cobroPaying || !cobroMonto || parseFloat(cobroMonto) <= 0}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                   >
                     {cobroPaying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                     Confirmar cobro
@@ -397,7 +397,7 @@ export default function FiadoModals({
                 <div className="flex flex-col gap-2 print:hidden">
                   <button
                     onClick={() => window.print()}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-primary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-[var(--text-primary)] border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
                   >
                     <Printer className="h-4 w-4" />
                     Imprimir
@@ -466,7 +466,7 @@ export default function FiadoModals({
                       step="0.01"
                       value={compromisoMonto}
                       onChange={e => setCompromisoMonto(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </Field>
                   <Field label="Fecha prometida" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
@@ -474,7 +474,7 @@ export default function FiadoModals({
                       type="date"
                       value={compromisoFecha}
                       onChange={e => setCompromisoFecha(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </Field>
                   <div>
@@ -645,7 +645,7 @@ export default function FiadoModals({
                       }
                       window.print();
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
                   >
                     <Printer className="h-4 w-4" />
                     Confirmar e Imprimir

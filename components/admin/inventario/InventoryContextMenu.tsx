@@ -68,7 +68,7 @@ export function InventoryContextMenu({ product, x, y, onClose, onEdit, onView, o
             <button
               onClick={item.onClick}
               className={cn(
-                "w-full px-3 py-2 text-sm flex items-center gap-2 cursor-pointer transition-colors",
+                "w-full px-3 min-h-10 text-sm flex items-center gap-2 cursor-pointer transition-colors",
                 item.variant === "danger"
                   ? "text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] ",

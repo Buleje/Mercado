@@ -652,7 +652,7 @@ export default function SugerenciasCompraTab() {
         <button
           type="button"
           onClick={() => setFilter("sin-proveedor")}
-          className="w-full text-left flex items-start gap-3 rounded-2xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 px-4 py-3 text-sm text-[var(--data-warning-500)] hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning-500)]/15 transition-colors"
+          className="w-full text-left flex items-start gap-3 rounded-2xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 px-4 min-h-11 text-sm text-[var(--data-warning-500)] hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning-500)]/15 transition-colors"
         >
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
           <span className="flex-1">
@@ -897,7 +897,7 @@ export default function SugerenciasCompraTab() {
             type="button"
             onClick={() => setVerSinRotacion((v) => !v)}
             aria-expanded={verSinRotacion}
-            className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-raised)]"
+            className="flex w-full items-center gap-3 px-4 min-h-11 text-left transition-colors hover:bg-[var(--surface-raised)]"
           >
             <Package className="h-5 w-5 shrink-0 text-[var(--text-secondary)]" />
             <span className="min-w-0 flex-1">

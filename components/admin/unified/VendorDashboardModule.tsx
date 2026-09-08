@@ -255,7 +255,7 @@ export default function VendorDashboardModule() {
         moduleId={MODULE_ID}
       >
         {tab === "general" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Brandon 2026-06-07 (idea #2): puente admin ↔ tienda pública —
                 ver / compartir / editar la portada del storefront. */}
             <StorePublicCard storeSlug={storeSlug} />
@@ -290,7 +290,7 @@ export default function VendorDashboardModule() {
                 <p className="text-sm font-medium text-[var(--text-primary)] text-center">{error}</p>
                 <button
                   onClick={() => void fetchDashboard(false)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/10 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/10 transition-colors"
                 >
                   <RefreshCw className="h-4 w-4" /> Reintentar
                 </button>

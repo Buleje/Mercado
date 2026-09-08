@@ -92,7 +92,7 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
             <select
               value={form.reason}
               onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))}
-              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             >
               <option value="compensacion">Compensación por incidencia</option>
               <option value="premio">Premio de campaña</option>
@@ -108,7 +108,7 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
               step={0.5}
               value={form.amount}
               onChange={(e) => setForm((p) => ({ ...p, amount: parseFloat(e.target.value) || 0 }))}
-              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
           </Field>
 
@@ -118,7 +118,7 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
               value={form.recipientName}
               onChange={(e) => setForm((p) => ({ ...p, recipientName: e.target.value }))}
               placeholder="Nombre completo"
-              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
           </Field>
 
@@ -128,7 +128,7 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
               value={form.recipientPhone}
               onChange={(e) => setForm((p) => ({ ...p, recipientPhone: e.target.value }))}
               placeholder="987654321"
-              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
           </Field>
 
@@ -147,7 +147,7 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
               type="date"
               value={form.expiresAt || defaultExpiry}
               onChange={(e) => setForm((p) => ({ ...p, expiresAt: e.target.value }))}
-              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
           </Field>
 

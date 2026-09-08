@@ -345,7 +345,7 @@ export default function InicioDashboard({ dateRange }: { dateRange: DateRange })
       <div className="flex flex-col items-center justify-center gap-4 py-20">
         <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
         <p className="text-sm font-medium text-[var(--text-secondary)]">{error}</p>
-        <button onClick={() => void load()} className="px-4 py-2 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition">
+        <button onClick={() => void load()} className="px-4 min-h-10 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition">
           <RefreshCw className="h-4 w-4 inline mr-2" />Reintentar
         </button>
       </div>

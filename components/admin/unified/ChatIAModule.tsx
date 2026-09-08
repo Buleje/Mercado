@@ -358,7 +358,7 @@ function SettingsPanel({
                 type="button"
                 onClick={() => onUpdate("model", m)}
                 className={cn(
-                  "w-full text-left px-3 py-2.5 rounded-xl border text-sm transition-colors flex items-start gap-3",
+                  "w-full text-left px-3 min-h-11 rounded-xl border text-sm transition-colors flex items-start gap-3",
                   active
                     ? "border-[var(--text-primary)] bg-[var(--surface-sunken)]"
                     : "border-[var(--rule-soft)] hover:border-[var(--rule-base)]",
@@ -403,7 +403,7 @@ function SettingsPanel({
                 type="button"
                 onClick={() => onUpdate("tone", t)}
                 className={cn(
-                  "w-full text-left px-3 py-2.5 rounded-xl border text-sm transition-colors",
+                  "w-full text-left px-3 min-h-11 rounded-xl border text-sm transition-colors",
                   active
                     ? "border-[var(--text-primary)] bg-[var(--surface-sunken)]"
                     : "border-[var(--rule-soft)] hover:border-[var(--rule-base)]",

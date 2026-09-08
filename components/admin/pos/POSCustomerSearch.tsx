@@ -483,7 +483,7 @@ export default function POSCustomerSearch({
           }}
           onFocus={() => setShowResults(true)}
           placeholder="Buscar cliente por nombre o teléfono..."
-          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+          className="w-full pl-12 pr-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-base text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
           autoComplete="off"
         />
       </div>
@@ -506,7 +506,7 @@ export default function POSCustomerSearch({
               <button
                 key={c.phone}
                 onClick={() => handleSelect(c)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--surface-sunken)] transition-colors text-left border-b border-[var(--rule-base)] last:border-0"
+                className="w-full flex items-center gap-3 px-4 min-h-11 hover:bg-[var(--surface-sunken)] transition-colors text-left border-b border-[var(--rule-base)] last:border-0"
               >
                 <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <User className="h-4 w-4 text-primary" />

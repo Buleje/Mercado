@@ -145,7 +145,7 @@ export default function POSExpressMode({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Codigo + Enter (ej: 003x5 = producto 003, cant. 5)"
-          className="w-full px-3 py-2.5 rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-[var(--surface-raised)] text-center"
+          className="w-full px-3 h-11 rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-[var(--surface-raised)] text-center"
           autoComplete="off"
         />
       </form>

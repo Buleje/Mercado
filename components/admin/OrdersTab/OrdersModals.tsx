@@ -69,7 +69,7 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
               key={t}
               onClick={() => onReasonChange(t)}
               className={cn(
-                "text-left px-3 py-2 rounded-xl text-sm border transition-colors",
+                "text-left px-3 min-h-10 rounded-xl text-sm border transition-colors",
                 rejectReason === t
                   ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-500)] font-semibold"
                   : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
@@ -83,7 +83,7 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
           value={rejectReason}
           onChange={e => onReasonChange(e.target.value)}
           placeholder="O escribe un motivo personalizado..."
-          className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-[var(--data-error-500)]"
+          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-[var(--data-error-500)]"
         />
         <div className="flex gap-2 pt-1">
           <button

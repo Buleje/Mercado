@@ -66,7 +66,7 @@ export default function CRMClientesModule({ initialTab }: { initialTab?: string 
   const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* El título va DENTRO de la barra de pestañas (patrón acordado con
           Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
           pestañas a la derecha, una sola regla. Recupera ~90px verticales,

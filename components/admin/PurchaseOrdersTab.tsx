@@ -1103,7 +1103,7 @@ export default function PurchaseOrdersTab() {
                     key={d}
                     onClick={() => setRecurringInterval(d)}
                     className={cn(
-                      "flex-1 py-2 rounded-xl text-sm font-bold transition-colors",
+                      "flex-1 min-h-10 rounded-xl text-sm font-bold transition-colors",
                       recurringInterval === d ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                     )}
                   >
@@ -1122,7 +1122,7 @@ export default function PurchaseOrdersTab() {
               <select
                 value={recurringNotifyDays}
                 onChange={e => setRecurringNotifyDays(Number(e.target.value))}
-                className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-3 h-10 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
               >
                 <option value={1}>1 dia antes</option>
                 <option value={2}>2 dias antes</option>
@@ -2040,7 +2040,7 @@ export default function PurchaseOrdersTab() {
                     value={addItemSearch}
                     onChange={(e) => { setAddItemSearch(e.target.value); setAddItemSel(null); }}
                     placeholder="Buscar por nombre o código de barras…"
-                    className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                    className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                   />
                   <div className="space-y-1 max-h-52 overflow-y-auto">
                     {(addItemSearch.length > 0
@@ -2052,7 +2052,7 @@ export default function PurchaseOrdersTab() {
                         type="button"
                         onClick={() => { setAddItemSel(p); setAddItemCost(p.costPrice ?? p.price); setAddItemQty(1); }}
                         className={cn(
-                          "w-full text-left px-3 py-2 rounded-xl border text-sm transition-colors",
+                          "w-full text-left px-3 min-h-10 rounded-xl border text-sm transition-colors",
                           addItemSel?.id === p.id
                             ? "border-primary bg-primary/5"
                             : "border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-gray-300"
@@ -2072,14 +2072,14 @@ export default function PurchaseOrdersTab() {
                           <input
                             type="number" min="1" step="1" value={addItemQty}
                             onChange={(e) => setAddItemQty(Number(e.target.value))}
-                            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                            className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                           />
                         </Field>
                         <Field label="Costo unitario (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                           <input
                             type="number" min="0" step="0.01" value={addItemCost}
                             onChange={(e) => setAddItemCost(Number(e.target.value))}
-                            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                            className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                           />
                         </Field>
                       </div>
@@ -2089,7 +2089,7 @@ export default function PurchaseOrdersTab() {
                           setItemQueries(prev => [...prev, addItemSel!.name]);
                           setShowAddItemModal(false);
                         }}
-                        className="w-full py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+                        className="w-full min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
                       >
                         Agregar a la orden
                       </button>
@@ -2122,12 +2122,12 @@ export default function PurchaseOrdersTab() {
                         required value={newProdForm.name}
                         onChange={(e) => setNewProdForm(p => ({ ...p, name: e.target.value }))}
                         placeholder="Nombre del producto"
-                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </Field>
                     <Field label="Categoría" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <select value={newProdForm.category} onChange={(e) => setNewProdForm(p => ({ ...p, category: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none">
+                        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none">
                         <option value="abarrotes">Abarrotes</option>
                         <option value="bebidas">Bebidas</option>
                         <option value="lacteos">Lácteos</option>
@@ -2141,37 +2141,37 @@ export default function PurchaseOrdersTab() {
                     <Field label="Unidad" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input value={newProdForm.unit} onChange={(e) => setNewProdForm(p => ({ ...p, unit: e.target.value }))}
                         placeholder="und, kg, L…"
-                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </Field>
                     <Field label="Precio venta (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input type="number" min="0" step="0.01" value={newProdForm.price}
                         onChange={(e) => setNewProdForm(p => ({ ...p, price: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </Field>
                     <Field label="Costo compra (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input type="number" min="0" step="0.01" value={newProdForm.costPrice}
                         onChange={(e) => setNewProdForm(p => ({ ...p, costPrice: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </Field>
                     <Field label="Cantidad inicial" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input type="number" min="0" step="1" value={newProdForm.stock}
                         onChange={(e) => setNewProdForm(p => ({ ...p, stock: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </Field>
                     <Field label="Código de barras" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input value={newProdForm.barcode} onChange={(e) => setNewProdForm(p => ({ ...p, barcode: e.target.value }))}
                         placeholder="Opcional"
-                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </Field>
                   </div>
                   <button
                     type="submit" disabled={savingNewProd || !newProdForm.name}
-                    className="w-full py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60"
+                    className="w-full min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60"
                   >
                     {savingNewProd ? "Creando…" : "Crear producto y agregar a orden"}
                   </button>

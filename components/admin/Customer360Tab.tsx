@@ -802,14 +802,14 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           <div className="flex gap-2 shrink-0 flex-wrap">
             <button
               onClick={() => setShowEditModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-white text-sm font-bold transition-colors"
+              className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl border-2 border-primary text-primary hover:bg-primary hover:text-white text-sm font-bold transition-colors"
             >
               <FileText className="h-4 w-4" />
               Editar ficha
             </button>
             <button
               onClick={() => setShowEstadoCuenta(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-colors"
+              className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-colors"
             >
               <FileText className="h-4 w-4" />
               Estado de Cuenta

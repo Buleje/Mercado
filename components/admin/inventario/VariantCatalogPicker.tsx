@@ -187,7 +187,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar plantilla, categoría o opción…"
-              className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 h-10 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
             {categories.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
@@ -274,7 +274,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
             </span>
             <button
               onClick={() => { onImported(); }}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 min-h-10 text-sm font-bold text-white hover:bg-primary/90"
             >
               <Check className="h-4 w-4" />
               Listo
