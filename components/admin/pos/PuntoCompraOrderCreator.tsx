@@ -169,7 +169,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-4 px-6 py-2 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary-dark transition-colors"
+                className="mt-4 px-6 py-2 bg-primary text-white rounded-xl text-xs font-medium hover:bg-primary-dark transition-colors"
               >
                 Cerrar
               </button>
@@ -211,7 +211,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
                       placeholder="Buscar por nombre o teléfono..."
-                      className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+                      className="w-full pl-9 pr-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
                     />
                     {searchLoading && (
                       <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-tertiary)] animate-spin" />
@@ -231,7 +231,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                           setCustomers([]);
                           setCustomerSearch("");
                         }}
-                        className="w-full flex items-center gap-2 p-2 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0"
+                        className="w-full flex items-center gap-2 p-2 text-left hover:bg-[var(--surface-sunken)] transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0"
                       >
                         <User className="h-3 w-3 text-[var(--text-tertiary)] shrink-0" />
                         <div className="min-w-0">
@@ -260,10 +260,10 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                         type="button"
                         onClick={() => toggleItem(item.product.id)}
                         className={cn(
-                          "w-full flex items-center gap-2 p-2 rounded-lg text-left transition-colors",
+                          "w-full flex items-center gap-2 p-2 rounded-xl text-left transition-colors",
                           checked
                             ? "bg-primary/10 border border-primary/30"
-                            : "bg-gray-50 dark:bg-white/5 border border-transparent",
+                            : "bg-[var(--surface-sunken)] border border-transparent",
                         )}
                       >
                         <div
@@ -271,7 +271,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                             "h-4 w-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors",
                             checked
                               ? "bg-primary border-primary text-white"
-                              : "border-[var(--rule-base)] dark:border-gray-600",
+                              : "border-[var(--rule-base)] ",
                           )}
                         >
                           {checked && <span className="text-[length:var(--ts-2xs)] font-bold">&#10003;</span>}
@@ -301,7 +301,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
               </div>
 
               {/* Total */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
+              <div className="flex items-center justify-between p-3 bg-[var(--surface-sunken)] rounded-xl">
                 <span className="text-xs font-medium text-[var(--text-secondary)]">
                   Total seleccionado
                 </span>

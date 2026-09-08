@@ -65,16 +65,16 @@ export default function WaTemplatePicker({ phoneNumberId, sending, onSend, onClo
   const canSend = selected && params.every((p) => p.trim().length > 0);
 
   return (
-    <div className="border-t border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+    <div className="border-t border-[var(--rule-base)] bg-[var(--surface-raised)] ">
       <div className="flex items-center justify-between px-4 pt-3">
-        <p className="flex items-center gap-1.5 text-sm font-bold text-slate-900 dark:text-white">
+        <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)] ">
           <FileText className="h-4 w-4 text-primary" />
           Plantillas aprobadas
         </p>
         <button
           type="button"
           onClick={onClose}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-secondary)] transition hover:bg-[var(--rule-soft)] "
           aria-label="Cerrar plantillas"
         >
           <X className="h-4 w-4" />
@@ -82,10 +82,10 @@ export default function WaTemplatePicker({ phoneNumberId, sending, onSend, onClo
       </div>
 
       <div className="max-h-64 overflow-y-auto p-3">
-        {loading && <p className="p-2 text-sm text-slate-500">Cargando plantillas…</p>}
+        {loading && <p className="p-2 text-sm text-[var(--text-secondary)]">Cargando plantillas…</p>}
 
         {!loading && needsWabaId && (
-          <p className="flex items-start gap-2 rounded-xl bg-[var(--data-warning-50)] p-3 text-sm text-slate-700 dark:bg-[var(--data-warning-500)]/10 dark:text-slate-200">
+          <p className="flex items-start gap-2 rounded-xl bg-[var(--data-warning-50)] p-3 text-sm text-[var(--text-primary)] dark:bg-[var(--data-warning-500)]/10 ">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-700)]" />
             Este número no tiene <strong>WABA ID</strong>. Agrégalo en Mensajes → Bot
             WhatsApp → Editar número, y las plantillas aparecen acá.
@@ -93,7 +93,7 @@ export default function WaTemplatePicker({ phoneNumberId, sending, onSend, onClo
         )}
 
         {!loading && !needsWabaId && templates.length === 0 && (
-          <p className="p-2 text-sm text-slate-500">
+          <p className="p-2 text-sm text-[var(--text-secondary)]">
             No hay plantillas aprobadas en tu cuenta de Meta. Créalas en el WhatsApp
             Manager de Meta Business.
           </p>
@@ -106,15 +106,15 @@ export default function WaTemplatePicker({ phoneNumberId, sending, onSend, onClo
                 <button
                   type="button"
                   onClick={() => pick(t)}
-                  className="w-full rounded-xl border-2 border-slate-200 p-3 text-left transition hover:border-primary/60 dark:border-slate-700"
+                  className="w-full rounded-xl border-2 border-[var(--rule-base)] p-3 text-left transition hover:border-primary/60 "
                 >
                   <span className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">{t.name}</span>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-slate-500 dark:bg-slate-800">
+                    <span className="text-sm font-bold text-[var(--text-primary)] ">{t.name}</span>
+                    <span className="rounded-full bg-[var(--rule-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-secondary)] ">
                       {t.language}
                     </span>
                   </span>
-                  <span className="mt-1 line-clamp-2 block text-sm text-slate-500 dark:text-slate-400">
+                  <span className="mt-1 line-clamp-2 block text-sm text-[var(--text-secondary)] ">
                     {t.body}
                   </span>
                 </button>
@@ -132,7 +132,7 @@ export default function WaTemplatePicker({ phoneNumberId, sending, onSend, onClo
             >
               ← Elegir otra plantilla
             </button>
-            <p className="whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+            <p className="whitespace-pre-wrap rounded-xl bg-[var(--surface-sunken)] p-3 text-sm text-[var(--text-primary)] ">
               {selected.body}
             </p>
             {params.map((p, i) => (
@@ -143,7 +143,7 @@ export default function WaTemplatePicker({ phoneNumberId, sending, onSend, onClo
                   setParams((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))
                 }
                 placeholder={`Variable {{${i + 1}}}`}
-                className="h-12 w-full rounded-2xl border-2 border-slate-200 bg-white px-4 text-base text-slate-900 outline-none transition focus:border-primary dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none transition focus:border-primary "
               />
             ))}
             <button

@@ -32,13 +32,13 @@ export default function WaNoteBar({
 
   if (!editing) {
     return (
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-[var(--data-warning-50)]/60 px-4 py-1.5 dark:border-slate-700 dark:bg-[var(--data-warning-500)]/5">
+      <div className="flex items-center gap-2 border-b border-[var(--rule-base)] bg-[var(--data-warning-50)]/60 px-4 py-1.5 dark:bg-[var(--data-warning-500)]/5">
         <StickyNote className="h-3.5 w-3.5 shrink-0 text-[var(--data-warning-700)]" aria-hidden />
         {note ? (
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="min-w-0 flex-1 truncate text-left text-[length:var(--ts-xs)] font-semibold text-slate-700 hover:underline dark:text-slate-200"
+            className="min-w-0 flex-1 truncate text-left text-[length:var(--ts-xs)] font-semibold text-[var(--text-primary)] hover:underline "
             title="Editar nota interna (el cliente no la ve)"
           >
             {note}
@@ -47,7 +47,7 @@ export default function WaNoteBar({
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="text-[length:var(--ts-xs)] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            className="text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-slate-600 dark:hover:text-slate-300"
           >
             + Nota interna (solo la ve tu equipo)
           </button>
@@ -57,7 +57,7 @@ export default function WaNoteBar({
   }
 
   return (
-    <div className="flex items-center gap-2 border-b border-slate-200 bg-[var(--data-warning-50)]/60 px-4 py-2 dark:border-slate-700 dark:bg-[var(--data-warning-500)]/5">
+    <div className="flex items-center gap-2 border-b border-[var(--rule-base)] bg-[var(--data-warning-50)]/60 px-4 py-2 dark:bg-[var(--data-warning-500)]/5">
       <StickyNote className="h-3.5 w-3.5 shrink-0 text-[var(--data-warning-700)]" aria-hidden />
       <input
         // El foco es respuesta directa al click "editar nota" (no autofocus de
@@ -73,7 +73,7 @@ export default function WaNoteBar({
         }}
         onBlur={save}
         placeholder="Ej: quedó en pasar el viernes a recoger…"
-        className="h-9 min-w-0 flex-1 rounded-xl border-2 border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-primary dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+        className="h-9 min-w-0 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-primary "
       />
       <button
         type="button"

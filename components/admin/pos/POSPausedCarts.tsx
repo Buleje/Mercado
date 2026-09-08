@@ -139,7 +139,7 @@ export default function POSPausedCarts({
                     if (e.key === "Escape") setShowNameInput(false);
                   }}
                   placeholder="Nombre (opc.)"
-                  className="w-24 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg outline-none focus:border-primary text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                  className="w-24 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl outline-none focus:border-primary text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                   autoFocus
                 />
                 <button
@@ -193,7 +193,7 @@ export default function POSPausedCarts({
 
       {/* Paused carts list */}
       {showList && paused.length > 0 && (
-        <div className="mt-2 space-y-1.5 bg-gray-50 dark:bg-surface rounded-xl p-2 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+        <div className="mt-2 space-y-1.5 bg-[var(--surface-sunken)] rounded-xl p-2 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
           {paused.map((cart) => (
             <div
               key={cart.id}

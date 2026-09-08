@@ -81,10 +81,10 @@ export function InactiveCustomersCard({ orders, sales, loading }: Props) {
   if (loading) return null;
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex items-center gap-2 mb-3">
         <Users className="w-4 h-4 text-[var(--text-tertiary)]" />
-        <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-zinc-300">Clientes que no vuelven</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)] ">Clientes que no vuelven</span>
       </div>
       {inactiveCustomers.length === 0 ? (
         <div className="flex items-center gap-2 py-2 text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-semibold">
@@ -93,10 +93,10 @@ export function InactiveCustomersCard({ orders, sales, loading }: Props) {
       ) : (
         <div className="space-y-2">
           {inactiveCustomers.map((c, i) => (
-            <div key={i} className="flex items-center gap-3 bg-gray-50 dark:bg-zinc-700/50 rounded-lg px-3 py-2.5">
+            <div key={i} className="flex items-center gap-3 bg-[var(--surface-sunken)] rounded-lg px-3 py-2.5">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-zinc-200 truncate">{c.name}</p>
-                <p className="text-xs text-[var(--text-tertiary)] dark:text-zinc-500">
+                <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{c.name}</p>
+                <p className="text-xs text-[var(--text-tertiary)] ">
                   Última compra: hace {c.daysSince} dias &middot; Gasto total S/{Number(c.totalSpent).toFixed(0)}
                 </p>
               </div>

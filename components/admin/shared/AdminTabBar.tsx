@@ -344,7 +344,7 @@ export default function AdminTabBar({
                     activeTab === tab.id
                       ? "bg-primary/10 font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] border-l-[3px] border-l-primary dark:bg-primary/15"
                       : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] dark:hover:bg-white/[0.06] border-l-[3px] border-l-transparent",
-                    "rounded-lg lg:rounded-none lg:rounded-r-lg",
+                    "rounded-xl lg:rounded-none lg:rounded-r-lg",
                     tab.disabled && "cursor-not-allowed opacity-40",
                   )}
                 >
@@ -363,7 +363,7 @@ export default function AdminTabBar({
           {isReordered && (
             <button
               onClick={resetOrder}
-              className="mt-1.5 w-full border-t border-[var(--rule-soft)] px-3 pt-1.5 text-left text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] transition-colors hover:text-primary dark:border-white/10"
+              className="mt-1.5 w-full border-t border-[var(--rule-soft)] px-3 pt-1.5 text-left text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] transition-colors hover:text-primary "
             >
               Restablecer orden
             </button>
@@ -409,7 +409,7 @@ export default function AdminTabBar({
         <div className={cn("flex min-w-0 items-start gap-2.5 pb-2", !tituloEnLinea && "basis-full")}>
           {heading.icon && (
             <heading.icon
-              className="mt-1 h-5 w-5 shrink-0 text-[var(--text-tertiary)] dark:text-zinc-500"
+              className="mt-1 h-5 w-5 shrink-0 text-[var(--text-tertiary)] "
               strokeWidth={1.5}
               aria-hidden
             />
@@ -425,7 +425,7 @@ export default function AdminTabBar({
             {heading.description && (
               <div
                 data-tabbar-desc=""
-                className="mt-0.5 hidden truncate text-[length:var(--ts-sm)] text-[var(--text-secondary)] @min-[60rem]:block dark:text-zinc-400"
+                className="mt-0.5 hidden truncate text-[length:var(--ts-sm)] text-[var(--text-secondary)] @min-[60rem]:block "
               >
                 {heading.description}
               </div>

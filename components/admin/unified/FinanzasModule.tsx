@@ -541,7 +541,7 @@ function FinanzasDashboard() {
   if (Object.values(kpis).every(v => v === 0) && monthlyData.every(m => m.ingresos === 0 && m.gastos === 0)) {
     return (
       <div className="text-center py-16">
-        <div className="h-16 w-16 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface flex items-center justify-center mx-auto mb-4">
+        <div className="h-16 w-16 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-4">
           <BarChart3 className="h-8 w-8 text-[var(--text-tertiary)] dark:text-muted" />
         </div>
         <CardTitle className="text-lg font-semibold text-[var(--text-primary)]">Sin datos financieros</CardTitle>
@@ -929,7 +929,7 @@ function FinanzasDashboard() {
                   <th className="text-right py-2 text-xs font-bold text-[var(--text-tertiary)]">Monto</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
                 <tr>
                   <td className="py-2.5 text-[var(--text-secondary)]">Ventas gravadas</td>
                   <td className="py-2.5 text-right font-bold font-mono text-[var(--text-primary)]">{formatCurrency(Math.round(fiscal.ventas), { decimals: 0 })}</td>
@@ -1152,11 +1152,11 @@ function FinanzasDashboard() {
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <p className="text-sm font-bold text-[var(--text-primary)]">Comparar Meses</p>
             <div className="flex items-center gap-2">
-              <select value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-[var(--surface-raised)] text-[var(--text-primary)]">
+              <select value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-xl px-2 py-1 bg-[var(--surface-raised)] text-[var(--text-primary)]">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
               <span className="text-xs text-[var(--text-tertiary)]">vs</span>
-              <select value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-lg px-2 py-1 bg-[var(--surface-raised)] text-[var(--text-primary)]">
+              <select value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-xl px-2 py-1 bg-[var(--surface-raised)] text-[var(--text-primary)]">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
             </div>
@@ -1413,11 +1413,11 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
       {sub === "reportes" && (
         <div className="space-y-6">
           <ReporteMensualTab />
-          <div className="border-t border-[var(--rule-base)] dark:border-white/10 pt-6">
+          <div className="border-t border-[var(--rule-base)] pt-6">
             <ReportsTab />
             <div className="mt-4"><ImportExportTab /></div>
           </div>
-          <div className="border-t border-[var(--rule-base)] dark:border-white/10 pt-6">
+          <div className="border-t border-[var(--rule-base)] pt-6">
             <HistorialCierresTab />
           </div>
         </div>

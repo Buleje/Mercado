@@ -77,7 +77,7 @@ const FREQUENCY_LABELS: Record<SubFrequency, string> = {
 const STATUS_STYLES: Record<SubStatus, string> = {
   active: "bg-[var(--data-success-100)] text-[var(--data-success-500)]",
   paused: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]",
-  cancelled: "bg-gray-100 text-[var(--text-secondary)]",
+  cancelled: "bg-[var(--rule-soft)] text-[var(--text-secondary)]",
 };
 
 const STATUS_LABELS: Record<SubStatus, string> = {
@@ -160,13 +160,13 @@ function SubscriptionList({
             placeholder="Buscar por cliente, teléfono, producto o ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
         </div>
         <select
           value={freqFilter}
           onChange={(e) => setFreqFilter(e.target.value as SubFrequency | "all")}
-          className="px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer"
+          className="px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
         >
           <option value="all">Todas las frecuencias</option>
           <option value="weekly">Semanal</option>
@@ -176,7 +176,7 @@ function SubscriptionList({
         </select>
         <button
           onClick={() => exportCSV(filtered)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
         >
           <Download className="h-4 w-4" />
           Exportar
@@ -191,10 +191,10 @@ function SubscriptionList({
           <p className="text-xs mt-1">Los clientes que contraten Bodega al Mes aparecerán aquí.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <DataTable className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Cliente</th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">Producto</th>
@@ -205,15 +205,15 @@ function SubscriptionList({
                   <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
                 {filtered.map((s) => (
-                  <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={s.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
                     <td className="px-4 py-3">
                       <p className="font-bold text-[var(--text-primary)]">{s.customerName}</p>
                       <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{s.customerPhone}</p>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
+                      <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--rule-soft)] text-[var(--text-primary)]">
                         {s.productName}
                       </span>
                     </td>
@@ -236,7 +236,7 @@ function SubscriptionList({
                         {s.status === "active" && (
                           <button
                             onClick={() => onAction(s.id, "pausar")}
-                            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] transition-colors"
+                            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] transition-colors"
                             title="Pausar"
                           >
                             <Pause className="h-4 w-4" />
@@ -245,7 +245,7 @@ function SubscriptionList({
                         {s.status === "paused" && (
                           <button
                             onClick={() => onAction(s.id, "reanudar")}
-                            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] transition-colors"
+                            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-[var(--data-success-50)] transition-colors"
                             title="Reanudar"
                           >
                             <Play className="h-4 w-4" />
@@ -254,7 +254,7 @@ function SubscriptionList({
                         {s.status !== "cancelled" && (
                           <button
                             onClick={() => onAction(s.id, "cancelar")}
-                            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
+                            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                             title="Cancelar"
                           >
                             <X className="h-4 w-4" />

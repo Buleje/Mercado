@@ -313,7 +313,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
                 "px-3 py-2 text-xs font-semibold rounded-t-lg transition-colors",
                 activeTab === t.id
                   ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-b-2 border-primary"
-                  : "text-[var(--text-secondary)] hover:bg-gray-50"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
               )}
             >
               {t.label}
@@ -394,7 +394,7 @@ function Top10Clientes({ refreshKey, reportEmpty = true }: { refreshKey: number;
           </thead>
           <tbody>
             {customers.map((c, i) => (
-              <tr key={c.id || `cust-${i}`} className="border-b border-[var(--rule-soft)] hover:bg-gray-50 cursor-pointer transition-colors">
+              <tr key={c.id || `cust-${i}`} className="border-b border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)] cursor-pointer transition-colors">
                 <td className="px-3 py-3 text-center">
                   {i < 3 ? <span className="text-lg">{medals[i]}</span> : <span className="text-xs font-bold text-[var(--text-tertiary)]">{i + 1}</span>}
                 </td>
@@ -479,8 +479,8 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="h-5 w-40 bg-gray-200 rounded mb-4" />
-        <div className="h-8 w-56 bg-gray-200 rounded" />
+        <div className="h-5 w-40 bg-[var(--rule-base)] rounded mb-4" />
+        <div className="h-8 w-56 bg-[var(--rule-base)] rounded" />
       </div>
     );
   }

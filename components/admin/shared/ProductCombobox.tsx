@@ -95,7 +95,7 @@ export default function ProductCombobox({
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
           className={cn(
-            "w-full pl-8 pr-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30",
+            "w-full pl-8 pr-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30",
             inputClassName,
           )}
         />

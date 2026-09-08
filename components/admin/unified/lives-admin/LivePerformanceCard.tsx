@@ -47,7 +47,7 @@ export function LivePerformanceCard({ live, onClick }: Props) {
     <button
       onClick={onClick}
       className={cn(
-        "w-full text-left bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl p-4 shadow-sm",
+        "w-full text-left bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4 shadow-sm",
         onClick && "hover:border-primary/40 hover:shadow-md transition-all"
       )}
     >
@@ -61,7 +61,7 @@ export function LivePerformanceCard({ live, onClick }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 pt-3 border-t border-gray-100">
+      <div className="grid grid-cols-4 gap-2 pt-3 border-t border-[var(--rule-soft)]">
         <div>
           <div className="flex items-center gap-1 text-[var(--text-tertiary)] mb-0.5">
             <Eye className="h-3 w-3" />

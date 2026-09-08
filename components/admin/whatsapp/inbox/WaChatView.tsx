@@ -132,11 +132,11 @@ export default function WaChatView({
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Mensajes (min-h-0: puede encogerse — el scroll es interno) */}
       <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-3">
-        {loading && <p className="p-4 text-sm text-slate-500">Cargando mensajes…</p>}
+        {loading && <p className="p-4 text-sm text-[var(--text-secondary)]">Cargando mensajes…</p>}
         {!loading && messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
             <MessageCircle className="h-8 w-8 text-slate-300 dark:text-slate-600" />
-            <p className="text-sm text-slate-500">Todavía no hay mensajes en este hilo.</p>
+            <p className="text-sm text-[var(--text-secondary)]">Todavía no hay mensajes en este hilo.</p>
           </div>
         )}
         {messages.map((m, i) => {
@@ -148,7 +148,7 @@ export default function WaChatView({
             <div key={m.id}>
               {day !== prevDay && (
                 <div className="my-3 flex justify-center">
-                  <span className="rounded-full bg-slate-200/70 px-3 py-1 text-[length:var(--ts-xs)] font-semibold capitalize text-slate-600 dark:bg-slate-700/70 dark:text-slate-300">
+                  <span className="rounded-full bg-slate-200/70 px-3 py-1 text-[length:var(--ts-xs)] font-semibold capitalize text-[var(--text-secondary)] dark:bg-slate-700/70 ">
                     {day}
                   </span>
                 </div>
@@ -159,7 +159,7 @@ export default function WaChatView({
                     "max-w-[75%] rounded-2xl px-3.5 py-2 shadow-[var(--shadow-xs)]",
                     isOut
                       ? "rounded-br-md bg-primary/15 dark:bg-primary/25"
-                      : "rounded-bl-md bg-white dark:bg-slate-800",
+                      : "rounded-bl-md bg-[var(--surface-raised)] ",
                     failed && "border-2 border-[var(--data-error-500)]",
                   )}
                 >
@@ -205,15 +205,15 @@ export default function WaChatView({
                         href={`/api/admin/whatsapp/media/${m.mediaId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mb-1 inline-block rounded-xl bg-slate-100 px-3 py-2 text-sm font-bold text-primary underline underline-offset-2 dark:bg-slate-700"
+                        className="mb-1 inline-block rounded-xl bg-[var(--rule-soft)] px-3 py-2 text-sm font-bold text-primary underline underline-offset-2 "
                       >
                         📄 Abrir documento
                       </a>
                     )}
-                  <p className="whitespace-pre-wrap break-words text-sm text-slate-900 dark:text-white">
+                  <p className="whitespace-pre-wrap break-words text-sm text-[var(--text-primary)] ">
                     {m.body}
                   </p>
-                  <p className="mt-1 flex items-center justify-end gap-1 text-[length:var(--ts-xs)] text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 flex items-center justify-end gap-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)] ">
                     {isOut && m.sentBy === "ai" && <Bot className="h-3 w-3" aria-hidden />}
                     {isOut && (
                       <span className="font-semibold">{SENT_BY_LABEL[m.sentBy] ?? m.sentBy}</span>
@@ -286,13 +286,13 @@ export default function WaChatView({
 
       {/* Respuestas rápidas: un click y el texto queda en el composer */}
       {showQuick && (
-        <div className="border-t border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+        <div className="border-t border-[var(--rule-base)] bg-[var(--surface-raised)] ">
           <div className="flex items-center justify-between px-4 pt-2.5">
-            <p className="flex items-center gap-1.5 text-sm font-bold text-slate-900 dark:text-white">
+            <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)] ">
               <Zap className="h-4 w-4 text-primary" />
               Respuestas rápidas
             </p>
-            <span className="text-[length:var(--ts-2xs)] text-slate-400">
+            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               se editan en Plantillas WhatsApp
             </span>
           </div>
@@ -307,7 +307,7 @@ export default function WaChatView({
                   setShowQuick(false);
                   draftRef.current?.focus();
                 }}
-                className="shrink-0 rounded-full border-2 border-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:border-primary/60 hover:text-primary dark:border-slate-700 dark:text-slate-200"
+                className="shrink-0 rounded-full border-2 border-[var(--rule-base)] px-3.5 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:border-primary/60 hover:text-primary "
               >
                 {q.nombre}
               </button>
@@ -318,7 +318,7 @@ export default function WaChatView({
 
       {/* Sugerencias IA (click = queda en el composer para editar/enviar) */}
       {suggestions.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto border-t border-slate-200 bg-white px-3 pt-2.5 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex gap-2 overflow-x-auto border-t border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 pt-2.5 ">
           {suggestions.map((s) => (
             <button
               key={s}
@@ -338,7 +338,7 @@ export default function WaChatView({
       )}
 
       {/* Composer */}
-      <div className="border-t border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+      <div className="border-t border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 ">
         <div className="flex items-end gap-2">
           <button
             type="button"
@@ -361,7 +361,7 @@ export default function WaChatView({
               "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 transition",
               showQuick
                 ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/50 hover:text-primary ",
               !canSend && "cursor-not-allowed opacity-40",
             )}
             aria-label="Respuestas rápidas"
@@ -377,7 +377,7 @@ export default function WaChatView({
               "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 transition",
               showProducts
                 ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/50 hover:text-primary ",
               !canSend && "cursor-not-allowed opacity-40",
             )}
             aria-label="Compartir producto"
@@ -390,7 +390,7 @@ export default function WaChatView({
             onClick={() => fileRef.current?.click()}
             disabled={!canSend || sending}
             className={cn(
-              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-slate-200 text-slate-500 transition hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
+              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] transition hover:border-primary/50 hover:text-primary ",
               (!canSend || sending) && "cursor-not-allowed opacity-40",
             )}
             aria-label="Adjuntar archivo"
@@ -417,7 +417,7 @@ export default function WaChatView({
               "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 transition",
               showTemplates
                 ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                : "border-slate-200 text-slate-500 hover:border-primary/50 hover:text-primary dark:border-slate-700 dark:text-slate-400",
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/50 hover:text-primary ",
               !canSend && "cursor-not-allowed opacity-40",
             )}
             aria-label="Plantillas de WhatsApp"
@@ -438,7 +438,7 @@ export default function WaChatView({
             placeholder={canSend ? "Escribe un mensaje…" : "Conecta tu número para responder"}
             disabled={!canSend || sending}
             rows={1}
-            className="max-h-32 min-h-12 flex-1 resize-y rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+            className="max-h-32 min-h-12 flex-1 resize-y rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-base text-[var(--text-primary)] outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:opacity-60 "
           />
           <button
             type="button"

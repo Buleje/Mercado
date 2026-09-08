@@ -56,7 +56,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
   return (
     <div className="space-y-6">
       {/* Summary bar */}
-      <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 space-y-2">
+      <div className="bg-[var(--surface-sunken)] rounded-xl p-3 space-y-2">
         <div className="flex items-center justify-between">
           <p className="text-xs font-bold text-[var(--text-secondary)]">
             {pagadas} de {totalCuotas} cuotas pagadas ({porcentaje}%)
@@ -72,7 +72,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
             {porcentaje}%
           </span>
         </div>
-        <div className="h-2 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
+        <div className="h-2 rounded-full bg-[var(--rule-base)] overflow-hidden">
           <div
             className="h-full rounded-full bg-primary/10 transition-all duration-[var(--dur-slow)]"
             style={{ width: `${porcentaje}%` }}
@@ -101,7 +101,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                   "absolute left-[-14px] top-5 w-0.5 h-[calc(100%-4px)]",
                   currentPaid && (i + 1 < cuotas.length && cuotas[i + 1].pagadoEn)
                     ? "bg-primary/10 dark:bg-primary/10"
-                    : "bg-gray-200 dark:bg-white/10"
+                    : "bg-[var(--rule-base)] "
                 )} />
               )}
 
@@ -123,7 +123,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                   </div>
                 )}
                 {status === "futura" && (
-                  <div className="h-6 w-6 rounded-full border-2 border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] flex items-center justify-center">
+                  <div className="h-6 w-6 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] flex items-center justify-center">
                     <Circle className="h-3 w-3 text-[var(--text-tertiary)]" />
                   </div>
                 )}

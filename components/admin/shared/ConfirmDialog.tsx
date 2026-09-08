@@ -131,7 +131,7 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] transition-colors"
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] transition-colors"
                 >
                   {params?.cancelLabel ?? "Cancelar"}
                 </button>
@@ -141,7 +141,7 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
                   type="button"
                   onClick={handleConfirm}
                   className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity",
+                    "px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity",
                     styles.btn,
                   )}
                 >

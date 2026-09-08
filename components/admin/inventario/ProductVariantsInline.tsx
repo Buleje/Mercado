@@ -454,7 +454,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
                       key={tpl.id}
                       type="button"
                       onClick={() => handleGenerateFromTemplate(tpl.id)}
-                      className="w-full text-left px-3 py-2.5 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-b-0"
+                      className="w-full text-left px-3 py-2.5 hover:bg-[var(--surface-sunken)] transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-b-0"
                     >
                       <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{tpl.label}</p>
                       <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">{tpl.description}</p>
@@ -528,7 +528,7 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
           const file = e.dataTransfer.files?.[0];
           if (file && onDropImage) onDropImage(file);
         }}
-        className="relative h-16 w-16 rounded-lg overflow-hidden border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary shrink-0 bg-[var(--surface-sunken)] dark:bg-surface group transition-all"
+        className="relative h-16 w-16 rounded-xl overflow-hidden border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary shrink-0 bg-[var(--surface-sunken)] group transition-all"
         title="Click para elegir o arrastrá una imagen aquí"
       >
         {previewImg ? (
@@ -563,13 +563,13 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
           value={row.name}
           onChange={(e) => onChange({ name: e.target.value })}
           placeholder="Nombre (ej: Talla M)"
-          className="sm:col-span-2 px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+          className="sm:col-span-2 px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
         />
         <input
           value={row.attr}
           onChange={(e) => onChange({ attr: e.target.value })}
           placeholder="Atributo (500ml, M, rojo)"
-          className="sm:col-span-2 px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+          className="sm:col-span-2 px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
         />
         <div className="flex items-center gap-1">
           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-bold">±S/</span>
@@ -579,7 +579,7 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
             value={row.priceModifier}
             onChange={(e) => onChange({ priceModifier: Number(e.target.value) || 0 })}
             placeholder="0.00"
-            className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+            className="flex-1 min-w-0 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
             title="Diferencia de precio respecto al padre"
           />
         </div>
@@ -591,14 +591,14 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
             value={row.stock ?? ""}
             onChange={(e) => onChange({ stock: e.target.value === "" ? null : Number(e.target.value) })}
             placeholder="—"
-            className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+            className="flex-1 min-w-0 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <input
           value={row.sku ?? ""}
           onChange={(e) => onChange({ sku: e.target.value || null })}
           placeholder="SKU (opcional)"
-          className="sm:col-span-2 px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-mono text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+          className="sm:col-span-2 px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
         />
 
         {/* Resumen precio final */}
@@ -627,7 +627,7 @@ function VariantCard({ row, basePrice, parentImage, saving, isDraft, onChange, o
         <button
           type="button"
           onClick={onDelete}
-          className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--data-error-500)] text-xs font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
+          className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--data-error-500)] text-xs font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors"
           title={isDraft ? "Cancelar" : "Eliminar"}
         >
           <Trash2 className="h-3.5 w-3.5" />

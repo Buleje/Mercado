@@ -367,7 +367,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
               onKeyDown={(e) => { if (e.key === "Enter") handleStartNewChat(); }}
               placeholder="917 013 738 (agrega 51 si no es Perú)"
               className={cn(
-                "h-12 w-full rounded-2xl border-2 bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none transition focus:border-primary dark:bg-[var(--surface-canvas)] dark:text-white",
+                "h-12 w-full rounded-2xl border-2 bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none transition focus:border-primary dark:bg-[var(--surface-canvas)] ",
                 newPhoneError
                   ? "border-[var(--data-error-500)]"
                   : "border-[var(--rule-base)]",
@@ -389,7 +389,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleStartNewChat(); }}
               placeholder="Juan Pérez"
-              className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none transition focus:border-primary dark:border-[var(--rule-base)] dark:bg-[var(--surface-canvas)] dark:text-white"
+              className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none transition focus:border-primary dark:border-[var(--rule-base)] dark:bg-[var(--surface-canvas)] "
             />
           </div>
           <button

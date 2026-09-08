@@ -133,7 +133,7 @@ function OfferModal({
               value={form.productName}
               onChange={(e) => setForm((p) => ({ ...p, productName: e.target.value }))}
               placeholder="Nombre del producto"
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               autoFocus
             />
           </Field>
@@ -146,7 +146,7 @@ function OfferModal({
                 step={0.5}
                 value={form.regularPrice}
                 onChange={(e) => setForm((p) => ({ ...p, regularPrice: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               />
             </Field>
             <Field label="Precio Socio (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
@@ -156,7 +156,7 @@ function OfferModal({
                 step={0.5}
                 value={form.socioPrice}
                 onChange={(e) => setForm((p) => ({ ...p, socioPrice: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
               />
             </Field>
           </div>
@@ -166,7 +166,7 @@ function OfferModal({
             <span className="text-lg font-extrabold text-[var(--data-success-500)]">{discount}%</span>
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200">
+          <div className="flex items-center justify-between p-3 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)]">
             <p className="text-sm font-semibold text-[var(--text-primary)]">Oferta activa</p>
             <button
               type="button"
@@ -177,7 +177,7 @@ function OfferModal({
               )}
             >
               <span className={cn(
-                "inline-block h-4 w-4 transform rounded-full bg-white dark:bg-[var(--color-card)] shadow-sm transition-transform",
+                "inline-block h-4 w-4 transform rounded-full bg-[var(--surface-raised)] shadow-sm transition-transform",
                 form.active ? "translate-x-6" : "translate-x-1"
               )} />
             </button>
@@ -187,7 +187,7 @@ function OfferModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-10 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="flex-1 h-10 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
             >
               Cancelar
             </button>
@@ -262,10 +262,10 @@ export function ExclusiveOffersTab() {
           <p className="text-xs mt-1">Crea tu primera oferta para miembros Socio.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <DataTable className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Producto</th>
                   <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">Regular</th>
@@ -276,9 +276,9 @@ export function ExclusiveOffersTab() {
                   <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
                 {offers.map((o) => (
-                  <tr key={o.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={o.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
                     <td className="px-4 py-3">
                       <p className="font-bold text-[var(--text-primary)]">{o.productName}</p>
                       <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{o.id}</p>
@@ -301,7 +301,7 @@ export function ExclusiveOffersTab() {
                     <td className="px-4 py-3 text-center">
                       <span className={cn(
                         "inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
-                        o.active ? "bg-[var(--data-success-100)] text-[var(--data-success-500)]" : "bg-gray-100 text-[var(--text-secondary)]"
+                        o.active ? "bg-[var(--data-success-100)] text-[var(--data-success-500)]" : "bg-[var(--rule-soft)] text-[var(--text-secondary)]"
                       )}>
                         {o.active ? "Activa" : "Inactiva"}
                       </span>
@@ -310,14 +310,14 @@ export function ExclusiveOffersTab() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setModal({ open: true, offer: o })}
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
+                          className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                           title="Editar"
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(o.id)}
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
+                          className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />

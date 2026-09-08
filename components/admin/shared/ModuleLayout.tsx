@@ -62,7 +62,7 @@ function KpiSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="h-24 animate-pulse rounded-xl bg-[var(--surface-sunken)] dark:bg-zinc-800"
+          className="h-24 animate-pulse rounded-xl bg-[var(--surface-sunken)] "
         />
       ))}
     </div>
@@ -75,7 +75,7 @@ function ContentSkeleton() {
       {Array.from({ length: 5 }).map((_, i) => (
         <div
           key={i}
-          className="h-12 rounded-lg bg-[var(--surface-sunken)] dark:bg-zinc-800"
+          className="h-12 rounded-lg bg-[var(--surface-sunken)] "
         />
       ))}
     </div>
@@ -117,7 +117,7 @@ export default function ModuleLayout({
             {title}
           </SectionTitle>
           {subtitle && (
-            <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">
+            <p className="text-sm text-[var(--text-secondary)] mt-0.5">
               {subtitle}
             </p>
           )}
@@ -131,16 +131,16 @@ export default function ModuleLayout({
 
       {/* 2. TABS */}
       {tabs && tabs.length > 0 && (
-        <div className="flex items-center gap-1 p-1 bg-[var(--surface-sunken)] dark:bg-zinc-800 rounded-xl w-fit">
+        <div className="flex items-center gap-1 p-1 bg-[var(--surface-sunken)] rounded-xl w-fit">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => onTabChange?.(tab.id)}
               className={cn(
-                "px-4 py-2 text-sm font-medium rounded-lg transition-all",
+                "px-4 py-2 text-sm font-medium rounded-xl transition-all",
                 activeTab === tab.id
-                  ? "bg-white dark:bg-zinc-700 text-[var(--text-primary)] "
-                  : "text-[var(--text-secondary)] dark:text-zinc-400 hover:text-[var(--text-primary)]",
+                  ? "bg-[var(--surface-raised)] text-[var(--text-primary)] "
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
               )}
             >
               {tab.label}

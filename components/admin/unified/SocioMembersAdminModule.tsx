@@ -223,13 +223,13 @@ function MembersTab({
             placeholder="Buscar por nombre, teléfono o ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
         </div>
         <select
           value={planFilter}
           onChange={(e) => setPlanFilter(e.target.value as SocioMember["plan"] | "all")}
-          className="px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer"
+          className="px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
         >
           <option value="all">Todos los planes</option>
           <option value="mensual">Mensual</option>
@@ -238,7 +238,7 @@ function MembersTab({
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as SocioMember["status"] | "all")}
-          className="px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer"
+          className="px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
         >
           <option value="all">Todos los estados</option>
           <option value="activo">Activos</option>
@@ -262,10 +262,10 @@ function MembersTab({
           <p className="text-xs mt-1">Ajusta los filtros o espera nuevas suscripciones.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <DataTable className="w-full text-sm">
-              <thead className="bg-[var(--surface-alt)] border-b border-gray-200">
+              <thead className="bg-[var(--surface-alt)] border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Miembro</th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">Plan</th>
@@ -276,7 +276,7 @@ function MembersTab({
                   <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
                 {filtered.map((m) => (
                   <tr key={m.id} className="hover:bg-[var(--surface-alt)] transition-colors">
                     <td className="px-4 py-3">
@@ -291,7 +291,7 @@ function MembersTab({
                       </div>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
+                      <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--rule-soft)] text-[var(--text-primary)]">
                         {PLAN_LABELS[m.plan]}
                       </span>
                     </td>
@@ -312,7 +312,7 @@ function MembersTab({
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => onSelect(m)}
-                        className="inline-flex items-center gap-1 p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
+                        className="inline-flex items-center gap-1 p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                         title="Ver perfil"
                       >
                         <Eye className="h-4 w-4" />

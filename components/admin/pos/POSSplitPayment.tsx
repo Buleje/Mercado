@@ -81,7 +81,7 @@ export default function POSSplitPayment({
             <button
               key={n}
               onClick={() => setupSplit(n)}
-              className="flex-1 min-w-16 py-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:border-primary hover:bg-primary/5 transition-colors"
+              className="flex-1 min-w-16 py-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:border-primary hover:bg-primary/5 transition-colors"
             >
               {n}
             </button>
@@ -141,7 +141,7 @@ export default function POSSplitPayment({
         {payments.map((line, idx) => (
           <div
             key={idx}
-            className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
+            className="flex items-center gap-2 p-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]"
           >
             <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-20 shrink-0">
               Persona {idx + 1}
@@ -173,7 +173,7 @@ export default function POSSplitPayment({
       <div className="flex gap-2">
         <button
           onClick={onCancel}
-          className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
+          className="flex-1 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           Cancelar
         </button>
@@ -182,7 +182,7 @@ export default function POSSplitPayment({
           disabled={!isPaymentsValid}
           aria-disabled={!isPaymentsValid}
           title={!isPaymentsValid ? `Suma de pagos (${fmt(sumPayments)}) no coincide con total (${fmt(total)})` : undefined}
-          className="flex-1 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
+          className="flex-1 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
         >
           Confirmar division
         </button>

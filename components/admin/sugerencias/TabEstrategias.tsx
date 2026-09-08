@@ -170,7 +170,7 @@ export default function TabEstrategias() {
 
           {/* Tips */}
           <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-soft)] p-4">
+            <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-4">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 flex items-center gap-1.5">
                 <TrendingUp className="h-3 w-3" />
                 Estrategia de venta
@@ -184,7 +184,7 @@ export default function TabEstrategias() {
                 ))}
               </ul>
             </div>
-            <div className="rounded-xl bg-white dark:bg-[var(--color-card)] border border-[var(--rule-soft)] p-4">
+            <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-4">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2 flex items-center gap-1.5">
                 <Calendar className="h-3 w-3" />
                 Productos a stockear
@@ -218,7 +218,7 @@ export default function TabEstrategias() {
             {seasons.slice(1).map((s) => (
               <article
                 key={s.id}
-                className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4"
+                className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">

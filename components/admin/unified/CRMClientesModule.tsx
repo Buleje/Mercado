@@ -46,7 +46,7 @@ function ExpandableMapSection() {
         </CardTitle>
         <button
           onClick={() => setMaximized(v => !v)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors"
         >
           {maximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           {maximized ? "Minimizar" : "Maximizar mapa"}

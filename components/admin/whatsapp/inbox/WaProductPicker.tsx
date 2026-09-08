@@ -65,16 +65,16 @@ export default function WaProductPicker({ sending, onSendImage, onInsertText, on
   }
 
   return (
-    <div className="border-t border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+    <div className="border-t border-[var(--rule-base)] bg-[var(--surface-raised)] ">
       <div className="flex items-center justify-between px-4 pt-3">
-        <p className="flex items-center gap-1.5 text-sm font-bold text-slate-900 dark:text-white">
+        <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)] ">
           <ShoppingBag className="h-4 w-4 text-primary" />
           Compartir producto
         </p>
         <button
           type="button"
           onClick={onClose}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-secondary)] transition hover:bg-[var(--rule-soft)] "
           aria-label="Cerrar productos"
         >
           <X className="h-4 w-4" />
@@ -82,22 +82,22 @@ export default function WaProductPicker({ sending, onSendImage, onInsertText, on
       </div>
       <div className="p-3">
         <div className="relative mb-2">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar producto…"
-            className="h-11 w-full rounded-2xl border-2 border-slate-200 bg-white pl-9 pr-3 text-base text-slate-900 outline-none transition focus:border-primary dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+            className="h-11 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-base text-[var(--text-primary)] outline-none transition focus:border-primary "
           />
         </div>
         <div className="max-h-56 space-y-1.5 overflow-y-auto">
           {loading && (
-            <p className="flex items-center gap-2 p-2 text-sm text-slate-500">
+            <p className="flex items-center gap-2 p-2 text-sm text-[var(--text-secondary)]">
               <Loader2 className="h-4 w-4 animate-spin" /> Buscando…
             </p>
           )}
           {!loading && products.length === 0 && (
-            <p className="p-2 text-sm text-slate-500">Sin resultados en tu catálogo.</p>
+            <p className="p-2 text-sm text-[var(--text-secondary)]">Sin resultados en tu catálogo.</p>
           )}
           {products.map((p) => (
             <button
@@ -105,7 +105,7 @@ export default function WaProductPicker({ sending, onSendImage, onInsertText, on
               type="button"
               disabled={sending}
               onClick={() => void share(p)}
-              className="flex w-full items-center gap-3 rounded-xl border-2 border-slate-200 p-2 text-left transition hover:border-primary/60 disabled:opacity-50 dark:border-slate-700"
+              className="flex w-full items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] p-2 text-left transition hover:border-primary/60 disabled:opacity-50 "
             >
               {p.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -116,15 +116,15 @@ export default function WaProductPicker({ sending, onSendImage, onInsertText, on
                   className="h-10 w-10 shrink-0 rounded-lg object-cover"
                 />
               ) : (
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
-                  <ShoppingBag className="h-4 w-4 text-slate-400" />
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--rule-soft)] ">
+                  <ShoppingBag className="h-4 w-4 text-[var(--text-tertiary)]" />
                 </span>
               )}
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold text-slate-900 dark:text-white">
+                <span className="block truncate text-sm font-bold text-[var(--text-primary)] ">
                   {p.name}
                 </span>
-                <span className="text-[length:var(--ts-xs)] text-slate-500">
+                <span className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
                   {p.imageUrl ? "envía la foto con precio" : "inserta el texto (sin foto)"}
                 </span>
               </span>

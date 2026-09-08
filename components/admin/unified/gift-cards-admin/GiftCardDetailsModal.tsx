@@ -106,7 +106,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
               </p>
               <button
                 onClick={copyCode}
-                className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
+                className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                 title="Copiar código"
               >
                 {copied ? <CheckCircle className="h-4 w-4 text-[var(--data-success-500)]" /> : <Copy className="h-4 w-4" />}
@@ -116,11 +116,11 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
 
           {/* Monto y estado */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl p-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Monto inicial</p>
               <p className="text-xl font-extrabold text-[var(--text-primary)] mt-1">{fmt(card.amount)}</p>
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl p-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Saldo disponible</p>
               <p className="text-xl font-extrabold text-primary mt-1">{fmt(card.balance)}</p>
             </div>
@@ -137,7 +137,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
           {/* Destinatario */}
           <div className="space-y-2">
             <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Destinatario</p>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl p-3">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3">
               <div className="flex items-center gap-3">
                 <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
                   <User className="h-4 w-4 text-primary" />
@@ -168,7 +168,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
           {/* Fechas */}
           <div className="space-y-2">
             <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Cronología</p>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-xl divide-y divide-gray-100">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl divide-y divide-[var(--rule-soft)]">
               <div className="flex items-center justify-between px-3 py-2.5">
                 <span className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />
@@ -203,20 +203,20 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
                   type="date"
                   value={newExpiry}
                   onChange={(e) => setNewExpiry(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm"
                 />
               </Field>
               <div className="flex gap-2">
                 <button
                   onClick={() => setExtending(false)}
-                  className="flex-1 py-2 rounded-lg text-xs font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)]"
+                  className="flex-1 py-2 rounded-xl text-xs font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)]"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleExtend}
                   disabled={!newExpiry}
-                  className="flex-1 py-2 rounded-lg text-xs font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50"
+                  className="flex-1 py-2 rounded-xl text-xs font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50"
                 >
                   Extender
                 </button>

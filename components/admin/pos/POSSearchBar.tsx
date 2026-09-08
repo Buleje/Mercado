@@ -217,7 +217,7 @@ export default function POSSearchBar({
           onFocus={() => setShowResults(true)}
           placeholder="Buscar producto, código de barras..."
           aria-label="Buscar productos"
-          className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary transition-colors"
+          className="w-full pl-10 pr-4 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary transition-colors"
           autoComplete="off"
         />
         <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-muted px-1.5 py-0.5 rounded font-mono">
@@ -242,12 +242,12 @@ export default function POSSearchBar({
                   key={p.id}
                   onClick={() => handleAdd(p)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left border-b border-[var(--rule-base)] last:border-0",
+                    "w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[var(--surface-sunken)] transition-colors text-left border-b border-[var(--rule-base)] last:border-0",
                     outOfStock && "opacity-50",
                     isFirstHighlight && "ring-2 ring-primary bg-primary/5"
                   )}
                 >
-                  <div className="h-10 w-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-surface shrink-0 relative">
+                  <div className="h-10 w-10 rounded-lg overflow-hidden bg-[var(--rule-soft)] shrink-0 relative">
                     {p.image ? (
                       <Image
                         src={p.image}

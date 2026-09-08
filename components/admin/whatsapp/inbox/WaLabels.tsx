@@ -88,7 +88,7 @@ export function WaLabelPicker({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <Tag className="h-3.5 w-3.5 text-slate-400" aria-hidden />
+      <Tag className="h-3.5 w-3.5 text-[var(--text-tertiary)]" aria-hidden />
       {WA_LABELS.map((l) => {
         const active = value.includes(l.id);
         return (
@@ -100,7 +100,7 @@ export function WaLabelPicker({
               "rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold transition",
               active
                 ? l.chip
-                : "bg-slate-100 text-slate-400 hover:text-slate-600 dark:bg-slate-800 dark:hover:text-slate-300",
+                : "bg-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-slate-600 dark:hover:text-slate-300",
             )}
             title={active ? `Quitar etiqueta ${l.nombre}` : `Etiquetar como ${l.nombre}`}
           >

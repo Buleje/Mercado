@@ -171,7 +171,7 @@ export default function ChartManager({ moduleId, charts, className, emptyState }
                 {/* Remove button on hover */}
                 <button
                   onClick={() => removeChart(chart.id)}
-                  className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg bg-white/90 dark:bg-gray-900/90 border border-[var(--rule-base)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:border-[var(--data-error-500)] dark:hover:border-[var(--data-error-500)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] "
+                  className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-xl bg-white/90 dark:bg-gray-900/90 border border-[var(--rule-base)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 hover:border-[var(--data-error-500)] dark:hover:border-[var(--data-error-500)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] "
                   title="Quitar gráfico"
                 >
                   <X className="h-4 w-4" />
@@ -215,7 +215,7 @@ export default function ChartManager({ moduleId, charts, className, emptyState }
                   addChart(chart.id);
                   if (hiddenCharts.length <= 1) setModalOpen(false);
                 }}
-                className="w-full flex items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] hover:border-gray-300 dark:hover:border-gray-600 hover:bg-[var(--surface-sunken)]/50 transition-colors text-left"
+                className="w-full flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] hover:border-gray-300 dark:hover:border-gray-600 hover:bg-[var(--surface-sunken)]/50 transition-colors text-left"
               >
                 <div className="h-9 w-9 rounded-lg bg-[var(--surface-sunken)] flex items-center justify-center shrink-0">
                   <Plus className="h-4 w-4 text-[var(--text-secondary)]" />

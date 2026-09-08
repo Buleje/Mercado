@@ -81,7 +81,7 @@ export default memo(function PuntoCompraProductCard({
       {/* Imagen o inicial */}
       <div className="flex justify-center mb-2 mt-1">
         {product.image ? (
-          <div className="relative h-20 w-20 rounded-xl overflow-hidden bg-gray-50 dark:bg-white/5">
+          <div className="relative h-20 w-20 rounded-xl overflow-hidden bg-[var(--surface-sunken)] ">
             <Image
               src={product.image}
               alt={displayName}

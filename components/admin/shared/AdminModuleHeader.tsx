@@ -144,7 +144,7 @@ export default function AdminModuleHeader({
             <Icon
               // Antes hidden sm:block — en mobile el header perdia ancla
               // visual. Ahora se muestra desde mobile, un poco mas chico.
-              className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-tertiary)] dark:text-zinc-500 shrink-0 mt-1 sm:mt-1.5"
+              className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-tertiary)] shrink-0 mt-1 sm:mt-1.5"
               strokeWidth={1.5}
               aria-hidden
             />
@@ -164,7 +164,7 @@ export default function AdminModuleHeader({
                 `sr-only` gana por orden en el CSS generado y el texto quedaba
                 oculto SIEMPRE, también en escritorio (verificado en navegador). */}
             {description && (
-              <div className="hidden @min-[32rem]:block mt-1.5 text-sm text-[var(--text-secondary)] dark:text-zinc-400 max-w-2xl leading-relaxed">
+              <div className="hidden @min-[32rem]:block mt-1.5 text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
                 {description}
               </div>
             )}

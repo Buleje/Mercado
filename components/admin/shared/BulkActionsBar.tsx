@@ -61,7 +61,7 @@ export default function BulkActionsBar({
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
               action.variant === "danger"
                 ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]"
-                : "bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
+                : "bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] border border-[var(--rule-base)]",
             )}
           >
             <Icon className="h-3.5 w-3.5" />
@@ -73,11 +73,11 @@ export default function BulkActionsBar({
       {/* Overflow menu */}
       {overflowActions.length > 0 && (
         <div className="relative">
-          <button onClick={() => setShowMore(!showMore)} className="p-1.5 rounded-lg hover:bg-white/50 transition-colors">
+          <button onClick={() => setShowMore(!showMore)} className="p-1.5 rounded-xl hover:bg-white/50 transition-colors">
             <MoreHorizontal className="h-4 w-4 text-[var(--text-secondary)]" />
           </button>
           {showMore && (
-            <div className="absolute top-full right-0 mt-1 w-44 bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl py-1 z-30">
+            <div className="absolute top-full right-0 mt-1 w-44 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl py-1 z-30">
               {overflowActions.map(action => {
                 const Icon = action.icon;
                 return (

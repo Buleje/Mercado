@@ -141,7 +141,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+            className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors"
           >
             <X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
           </button>
@@ -193,7 +193,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                     "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
                       ? "bg-primary text-white "
-                      : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                      : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
@@ -215,7 +215,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                   <span className="truncate">{label}</span>
                 </button>
               ))}
-              <div className="h-px bg-gray-100 dark:bg-card-border mx-2 my-1.5" />
+              <div className="h-px bg-[var(--rule-soft)] dark:bg-card-border mx-2 my-1.5" />
             </div>
           )}
 
@@ -239,14 +239,14 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                     "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
                     tab === id
                       ? "bg-primary text-white "
-                      : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                      : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="truncate">{label}</span>
                 </button>
               ))}
-              <div className="h-px bg-gray-100 dark:bg-card-border mx-2 my-1.5" />
+              <div className="h-px bg-[var(--rule-soft)] dark:bg-card-border mx-2 my-1.5" />
             </div>
           )}
 
@@ -290,7 +290,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                 "group w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all mb-1",
                 tab === id
                   ? "bg-primary text-white "
-                  : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                  : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
               )}
             >
               <Icon className="h-5 w-5 shrink-0" />
@@ -385,7 +385,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                     "flex-1 flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium transition-all",
                     tab === s.id
                       ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                      : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                      : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
                   )}
                 >
                   <s.icon className="h-4 w-4 shrink-0" />
@@ -411,7 +411,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
               <div className="relative">
                 <button
                   onClick={onToggleShowAddShortcut}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 rounded-lg text-sm font-medium text-[var(--accent-ink)] dark:text-[var(--accent)]/70 hover:bg-primary/5 transition-all border border-dashed border-primary/30"
+                  className="w-full flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium text-[var(--accent-ink)] dark:text-[var(--accent)]/70 hover:bg-primary/5 transition-all border border-dashed border-primary/30"
                 >
                   <Plus className="h-4 w-4" /> Agregar acceso
                 </button>
@@ -421,7 +421,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
                       <button
                         key={t.id}
                         onClick={() => onAddShortcut(t.id)}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
                       >
                         <t.icon className="h-4 w-4 shrink-0" /> {t.label}
                       </button>
@@ -451,7 +451,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
           </Link>
           <button
             onClick={() => { onOpenCierreDiario(); onClose(); }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-all"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/30 transition-all"
           >
             <Power className="h-5 w-5" /> Cerrar día
           </button>

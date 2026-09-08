@@ -105,7 +105,7 @@ export default function CategoryDonutChart({ data, fmtR }: Props) {
             <button
               key={item.name}
               onClick={() => toggleCategory(item.name)}
-              className="flex items-center gap-2 w-full text-left rounded-lg px-2 py-1 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+              className="flex items-center gap-2 w-full text-left rounded-lg px-2 py-1 hover:bg-[var(--surface-sunken)] transition-colors"
             >
               <div
                 className="w-2.5 h-2.5 rounded-full shrink-0 transition-opacity"
@@ -114,13 +114,13 @@ export default function CategoryDonutChart({ data, fmtR }: Props) {
                   opacity: isHidden ? 0.2 : 1,
                 }}
               />
-              <span className={`text-xs flex-1 truncate ${isHidden ? "text-[var(--text-tertiary)] dark:text-zinc-600 line-through" : "text-[var(--text-primary)] dark:text-zinc-300"}`}>
+              <span className={`text-xs flex-1 truncate ${isHidden ? "text-[var(--text-tertiary)] line-through" : "text-[var(--text-primary)] "}`}>
                 {item.name}
               </span>
-              <span className={`text-xs font-mono tabular-nums ${isHidden ? "text-[var(--text-tertiary)] dark:text-zinc-600" : "text-[var(--text-secondary)] dark:text-zinc-400"}`}>
+              <span className={`text-xs font-mono tabular-nums ${isHidden ? "text-[var(--text-tertiary)] " : "text-[var(--text-secondary)] "}`}>
                 {isHidden ? "--" : `${pct}%`}
               </span>
-              <span className={`text-xs font-semibold tabular-nums ${isHidden ? "text-[var(--text-tertiary)] dark:text-zinc-600" : "text-[var(--text-primary)]"}`}>
+              <span className={`text-xs font-semibold tabular-nums ${isHidden ? "text-[var(--text-tertiary)] " : "text-[var(--text-primary)]"}`}>
                 {isHidden ? "--" : fmtR(item.value)}
               </span>
             </button>

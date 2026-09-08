@@ -90,7 +90,7 @@ function QuotaBar({ used, limit, light, event }: QuotaBarProps) {
   return (
     <div className="w-full" role="group" aria-label={`Cuota de ${label}`}>
       <div
-        className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
+        className="h-2 w-full rounded-full bg-[var(--rule-base)] overflow-hidden"
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
@@ -163,7 +163,7 @@ interface PlanBadgeProps {
 }
 
 const PLAN_BADGE_STYLES: Record<MeteringSnapshot["plan"], string> = {
-  free:       "bg-gray-100 text-[var(--text-secondary)] dark:bg-gray-700 dark:text-[var(--text-tertiary)]",
+  free:       "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]",
   starter:    "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   pro:        "bg-primary-dark/10 text-primary-dark dark:bg-primary/15 dark:text-[var(--data-success-500)]",
   enterprise: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/40 dark:text-[var(--data-warning-500)]",
@@ -254,7 +254,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
           {(snapshot.plan === "free" || snapshot.plan === "starter") && (
             <button
               onClick={onUpgrade}
-              className="min-h-[44px] min-w-[44px] px-4 py-2 rounded-lg bg-primary-dark hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
+              className="min-h-[44px] min-w-[44px] px-4 py-2 rounded-xl bg-primary-dark hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
               aria-label="Mejorar plan de facturación"
             >
               Mejorar plan

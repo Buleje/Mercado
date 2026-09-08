@@ -125,15 +125,15 @@ export default function WaConversationList({
   return (
     <div className="flex h-full flex-col">
       {/* Buscador */}
-      <div className="space-y-2 border-b border-slate-200 p-3 dark:border-slate-700">
+      <div className="space-y-2 border-b border-[var(--rule-base)] p-3 ">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre o número…"
-            className="h-12 w-full rounded-2xl border-2 border-slate-200 bg-white pl-9 pr-3 text-base text-slate-900 outline-none transition focus:border-primary dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-base text-[var(--text-primary)] outline-none transition focus:border-primary "
           />
         </div>
         {/* Clasificar: no leídos + etiqueta + archivadas */}
@@ -145,7 +145,7 @@ export default function WaConversationList({
               "inline-flex h-9 items-center gap-1 rounded-full border-2 px-3 text-sm font-bold transition",
               unreadOnly
                 ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                : "border-slate-200 text-slate-500 hover:border-primary/50 dark:border-slate-700 dark:text-slate-400",
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/50 ",
             )}
           >
             No leídos{totalUnread > 0 ? ` (${totalUnread})` : ""}
@@ -155,10 +155,10 @@ export default function WaConversationList({
             onChange={(e) => setLabelFilter(e.target.value)}
             aria-label="Filtrar por etiqueta"
             className={cn(
-              "h-9 rounded-full border-2 bg-white px-2.5 text-sm font-bold outline-none transition dark:bg-slate-900",
+              "h-9 rounded-full border-2 bg-[var(--surface-raised)] px-2.5 text-sm font-bold outline-none transition ",
               labelFilter
                 ? "border-primary text-primary"
-                : "border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400",
+                : "border-[var(--rule-base)] text-[var(--text-secondary)] ",
             )}
           >
             <option value="">Etiqueta: todas</option>
@@ -167,12 +167,12 @@ export default function WaConversationList({
             ))}
           </select>
           <span className="relative inline-flex items-center">
-            <ArrowDownUp className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-slate-400" aria-hidden />
+            <ArrowDownUp className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-[var(--text-tertiary)]" aria-hidden />
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as SortMode)}
               aria-label="Ordenar conversaciones"
-              className="h-9 rounded-full border-2 border-slate-200 bg-white pl-8 pr-2.5 text-sm font-bold text-slate-500 outline-none transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+              className="h-9 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-8 pr-2.5 text-sm font-bold text-[var(--text-secondary)] outline-none transition "
             >
               <option value="recientes">Recientes</option>
               <option value="no-leidos">No leídos 1º</option>
@@ -187,7 +187,7 @@ export default function WaConversationList({
                 "inline-flex h-9 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
                 showArchived
                   ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                  : "border-slate-200 text-slate-500 hover:border-primary/50 dark:border-slate-700 dark:text-slate-400",
+                  : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/50 ",
               )}
             >
               <Archive className="h-4 w-4" />
@@ -200,12 +200,12 @@ export default function WaConversationList({
       {/* Lista (min-h-0: scroll interno, no empuja el contenedor) */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         {loading && (
-          <p className="p-4 text-sm text-slate-500">Cargando conversaciones…</p>
+          <p className="p-4 text-sm text-[var(--text-secondary)]">Cargando conversaciones…</p>
         )}
         {!loading && filtered.length === 0 && (
           <div className="flex flex-col items-center gap-2 p-8 text-center">
             <MessageCircle className="h-8 w-8 text-slate-300 dark:text-slate-600" />
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-[var(--text-secondary)]">
               {search || unreadOnly || labelFilter
                 ? "Nada coincide con los filtros"
                 : "Cuando un cliente escriba a tu WhatsApp, la conversación aparece acá."}
@@ -225,7 +225,7 @@ export default function WaConversationList({
                     "flex w-full items-center gap-3 px-3 py-3 text-left transition",
                     active
                       ? "bg-primary/10"
-                      : "hover:bg-slate-50 dark:hover:bg-slate-800/60",
+                      : "hover:bg-[var(--surface-sunken)] ",
                   )}
                 >
                   {/* Avatar iniciales */}
@@ -238,7 +238,7 @@ export default function WaConversationList({
                       <span className="flex min-w-0 items-center gap-1.5">
                         <span
                           className={cn(
-                            "truncate text-sm text-slate-900 dark:text-white",
+                            "truncate text-sm text-[var(--text-primary)] ",
                             unread ? "font-bold" : "font-semibold",
                           )}
                         >
@@ -249,7 +249,7 @@ export default function WaConversationList({
                       <span
                         className={cn(
                           "shrink-0 text-[length:var(--ts-xs)] tabular-nums",
-                          unread ? "font-bold text-primary" : "text-slate-400",
+                          unread ? "font-bold text-primary" : "text-[var(--text-tertiary)]",
                         )}
                       >
                         {formatTime(c.lastAt)}
@@ -260,15 +260,15 @@ export default function WaConversationList({
                         className={cn(
                           "flex min-w-0 items-center gap-1 truncate text-sm",
                           unread
-                            ? "font-semibold text-slate-700 dark:text-slate-200"
-                            : "text-slate-500 dark:text-slate-400",
+                            ? "font-semibold text-[var(--text-primary)] "
+                            : "text-[var(--text-secondary)] ",
                         )}
                       >
                         {c.lastDirection === "out" && c.lastSentBy === "ai" && (
-                          <Bot className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-label="Respondió el bot" />
+                          <Bot className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-label="Respondió el bot" />
                         )}
                         {c.lastDirection === "out" && c.lastSentBy === "admin" && (
-                          <span className="shrink-0 text-slate-400">Tú:</span>
+                          <span className="shrink-0 text-[var(--text-tertiary)]">Tú:</span>
                         )}
                         <span className="truncate">{c.lastMessage}</span>
                       </span>
@@ -287,8 +287,8 @@ export default function WaConversationList({
 
         {/* Matches dentro de mensajes ("¿quién me habló del arroz?") */}
         {msgHits.length > 0 && (
-          <div className="border-t border-slate-200 dark:border-slate-700">
-            <p className="px-3 pb-1 pt-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-slate-400">
+          <div className="border-t border-[var(--rule-base)] ">
+            <p className="px-3 pb-1 pt-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               En mensajes
             </p>
             <ul>
@@ -297,12 +297,12 @@ export default function WaConversationList({
                   <button
                     type="button"
                     onClick={() => onSelect(h.customerPhone)}
-                    className="flex w-full flex-col gap-0.5 px-3 py-2 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                    className="flex w-full flex-col gap-0.5 px-3 py-2 text-left transition hover:bg-[var(--surface-sunken)] "
                   >
-                    <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                    <span className="text-sm font-semibold text-[var(--text-primary)] ">
                       {h.customerName !== "Cliente" ? h.customerName : prettyPhone(h.customerPhone)}
                     </span>
-                    <span className="truncate text-[length:var(--ts-xs)] text-slate-500">
+                    <span className="truncate text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
                       “{h.body}”
                     </span>
                   </button>

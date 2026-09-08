@@ -67,8 +67,8 @@ export default function ExportButton({
         onClick={handleClick}
         className={cn(
           "inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors",
-          "border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900",
-          "text-[var(--text-primary)] dark:text-zinc-300 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800",
+          "border-[var(--rule-base)] bg-[var(--surface-raised)] ",
+          "text-[var(--text-primary)] hover:bg-[var(--surface-alt)] ",
           className,
         )}
       >
@@ -77,7 +77,7 @@ export default function ExportButton({
       </button>
 
       {open && options.length > 1 && (
-        <div className="absolute right-0 mt-1 w-32 rounded-xl border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900 z-20 overflow-hidden">
+        <div className="absolute right-0 mt-1 w-32 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] z-20 overflow-hidden">
           {options.map(opt => (
             <button
               key={opt.key}
@@ -86,7 +86,7 @@ export default function ExportButton({
                 opt.action();
                 setOpen(false);
               }}
-              className="w-full text-left px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] dark:text-zinc-300 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800 transition-colors"
+              className="w-full text-left px-4 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors"
             >
               {opt.label}
             </button>

@@ -96,7 +96,7 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
           onClick={() => onAddToCart(item.productId, item.avgQuantity)}
           className={cn(
             "w-full flex items-center gap-2 p-2 rounded-xl text-left transition-colors",
-            "bg-gray-50 dark:bg-white/5 hover:bg-primary/10 dark:hover:bg-primary/20",
+            "bg-[var(--surface-sunken)] hover:bg-primary/10 dark:hover:bg-primary/20",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
           )}
         >

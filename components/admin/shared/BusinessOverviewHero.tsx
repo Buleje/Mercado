@@ -56,7 +56,7 @@ function getEmphasisClasses(emphasis: HeroEmphasis): string {
   if (emphasis === "danger") {
     return "border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/20 text-[var(--data-error-700)] dark:text-red-300";
   }
-  return "border-white/70 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/60 text-[var(--text-primary)] dark:text-zinc-100";
+  return "border-white/70 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/60 text-[var(--text-primary)] ";
 }
 
 export function BusinessOverviewHero({
@@ -78,9 +78,9 @@ export function BusinessOverviewHero({
       <div className={cn("rounded-xl border p-5 ", getToneClasses(tone))}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-400">{eyebrow}</p>
+            <p className="text-xs font-bold text-[var(--text-secondary)] ">{eyebrow}</p>
             <SectionTitle className="text-xl font-extrabold mt-1">{title}</SectionTitle>
-            <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-300 mt-1 max-w-2xl">{description}</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">{description}</p>
           </div>
           <div className="h-12 w-12 rounded-xl bg-white/80 dark:bg-zinc-900/60 border border-white/70 dark:border-zinc-800 flex items-center justify-center shrink-0">
             <Icon className="h-5 w-5 text-primary" />
@@ -93,9 +93,9 @@ export function BusinessOverviewHero({
               key={metric.label}
               className={cn("rounded-xl border p-4", getEmphasisClasses(metric.emphasis ?? "default"))}
             >
-              <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-zinc-400">{metric.label}</p>
+              <p className="text-xs font-semibold text-[var(--text-secondary)] ">{metric.label}</p>
               <p className="text-2xl font-extrabold font-mono mt-1">{metric.value}</p>
-              <p className="text-xs mt-1 text-[var(--text-secondary)] dark:text-zinc-400">{metric.detail}</p>
+              <p className="text-xs mt-1 text-[var(--text-secondary)] ">{metric.detail}</p>
             </div>
           ))}
         </div>
@@ -107,21 +107,21 @@ export function BusinessOverviewHero({
                 key={highlight.label}
                 className={cn("rounded-xl border p-4", getEmphasisClasses(highlight.emphasis ?? "default"))}
               >
-                <p className="text-xs font-semibold text-[var(--text-secondary)] dark:text-zinc-400">{highlight.label}</p>
+                <p className="text-xs font-semibold text-[var(--text-secondary)] ">{highlight.label}</p>
                 <p className="text-sm font-bold mt-1">{highlight.value}</p>
-                <p className="text-xs mt-1 text-[var(--text-secondary)] dark:text-zinc-400">{highlight.detail}</p>
+                <p className="text-xs mt-1 text-[var(--text-secondary)] ">{highlight.detail}</p>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      <div className="rounded-xl border border-[var(--rule-base)] dark:border-zinc-700 bg-white dark:bg-zinc-900/70 p-5 ">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 ">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
-            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-400">Foco inmediato</p>
+            <p className="text-xs font-bold text-[var(--text-secondary)] ">Foco inmediato</p>
             <CardTitle className="text-lg font-extrabold mt-1">{actionsTitle}</CardTitle>
-            <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 mt-1">{actionsDescription}</p>
+            <p className="text-sm text-[var(--text-secondary)] mt-1">{actionsDescription}</p>
           </div>
           <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0" />
         </div>

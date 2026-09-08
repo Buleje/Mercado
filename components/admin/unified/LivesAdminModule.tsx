@@ -170,7 +170,7 @@ export default function LivesAdminModule() {
       />
 
       {/* Hero CTA */}
-      <div className="bg-white dark:bg-[var(--color-card)] border-2 border-primary/20 rounded-2xl p-5 shadow-sm">
+      <div className="bg-[var(--surface-raised)] border-2 border-primary/20 rounded-2xl p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="h-14 w-14 rounded-2xl bg-linear-to-br from-[var(--data-error-500)] to-[var(--accent)] text-white flex items-center justify-center shrink-0">
             <Radio className="h-7 w-7" />
@@ -248,7 +248,7 @@ export default function LivesAdminModule() {
         </div>
 
         {scheduled.length === 0 ? (
-          <div className="text-center py-8 text-[var(--text-tertiary)] bg-white dark:bg-[var(--color-card)] border border-gray-100 rounded-2xl">
+          <div className="text-center py-8 text-[var(--text-tertiary)] bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-2xl">
             <Calendar className="h-8 w-8 mx-auto mb-2 opacity-40" />
             <p className="text-sm font-semibold">Sin transmisiones programadas</p>
             <p className="text-xs mt-1">Programa tu próxima transmisión.</p>
@@ -258,7 +258,7 @@ export default function LivesAdminModule() {
             {scheduled.map((s) => (
               <div
                 key={s.id}
-                className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl p-4 shadow-sm hover:border-primary/40 transition-colors"
+                className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4 shadow-sm hover:border-primary/40 transition-colors"
               >
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0 flex-1">
@@ -272,20 +272,20 @@ export default function LivesAdminModule() {
                     <p className="text-xs text-[var(--text-secondary)] line-clamp-2">{s.description}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between pt-3 border-t border-[var(--rule-soft)]">
                   <p className="text-xs text-[var(--text-secondary)]">
                     <span className="font-bold text-[var(--text-primary)]">{s.featuredProductCount}</span> producto{s.featuredProductCount !== 1 ? "s" : ""} destacado{s.featuredProductCount !== 1 ? "s" : ""}
                   </p>
                   <div className="flex items-center gap-1">
                     <button
-                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
+                      className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                       title="Editar"
                     >
                       <Edit2 className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => handleCancelScheduled(s.id)}
-                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
+                      className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                       title="Cancelar"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -305,7 +305,7 @@ export default function LivesAdminModule() {
         </CardTitle>
 
         {past.length === 0 ? (
-          <div className="text-center py-8 text-[var(--text-tertiary)] bg-white dark:bg-[var(--color-card)] border border-gray-100 rounded-2xl">
+          <div className="text-center py-8 text-[var(--text-tertiary)] bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-2xl">
             <Radio className="h-8 w-8 mx-auto mb-2 opacity-40" />
             <p className="text-sm font-semibold">Sin transmisiones históricas</p>
           </div>

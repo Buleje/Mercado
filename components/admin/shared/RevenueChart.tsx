@@ -34,7 +34,7 @@ function RevenueChart({
   prefix = "S/",
 }: RevenueChartProps) {
   return (
-    <div className="col-span-full bg-white dark:bg-zinc-900 border border-[var(--rule-base)] dark:border-zinc-800 rounded-xl p-6">
+    <div className="col-span-full bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>

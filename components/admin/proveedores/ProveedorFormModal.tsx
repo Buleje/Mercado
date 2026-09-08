@@ -125,7 +125,7 @@ function Section({ title, defaultOpen, children }: { title: string; defaultOpen?
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-[var(--surface-sunken)] text-sm font-bold text-[var(--text-primary)] dark:text-foreground hover:bg-[var(--rule-soft)] transition-colors"
       >
         {title}
         {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -303,7 +303,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
     }
   };
 
-  const inputCls = "w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground bg-white dark:bg-surface focus:border-primary outline-none text-sm placeholder:text-[var(--text-tertiary)]";
+  const inputCls = "w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground bg-[var(--surface-raised)] focus:border-primary outline-none text-sm placeholder:text-[var(--text-tertiary)]";
   const labelCls = "block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1";
   const selectCls = cn(inputCls, "appearance-none");
 
@@ -323,7 +323,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors",
             format === 'simple'
               ? "bg-primary text-white"
-              : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+              : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-base)] "
           )}
         >
           <Zap className="h-3.5 w-3.5" /> Simple
@@ -335,7 +335,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors",
             format === 'completo'
               ? "bg-primary text-white"
-              : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+              : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-base)] "
           )}
         >
           <ClipboardList className="h-3.5 w-3.5" /> Completo
@@ -356,10 +356,10 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                     type="button"
                     onClick={() => set('tipoPersona', t)}
                     className={cn(
-                      "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
+                      "flex-1 py-2 rounded-xl text-sm font-bold border transition-colors",
                       form.tipoPersona === t
                         ? "bg-primary text-white border-primary"
-                        : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                        : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
                     )}
                   >
                     {t === 'natural' ? 'Natural' : 'Juridica'}
@@ -461,10 +461,10 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                       type="button"
                       onClick={() => set('tipoPersona', t)}
                       className={cn(
-                        "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
+                        "flex-1 py-2 rounded-xl text-sm font-bold border transition-colors",
                         form.tipoPersona === t
                           ? "bg-primary text-white border-primary"
-                          : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+                          : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
                       )}
                     >
                       {t === 'natural' ? 'Natural' : 'Juridica'}
@@ -656,14 +656,14 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 h-10 rounded-lg border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="flex-1 h-10 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 h-10 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+            className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {saving ? 'Guardando...' : isEdit ? 'Guardar proveedor' : format === 'simple' ? 'Crear proveedor' : 'Guardar proveedor'}

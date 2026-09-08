@@ -26,7 +26,7 @@ const iconBgMap: Record<string, string> = {
   amber: "bg-amber-50 dark:bg-amber-900/20",
   red: "bg-red-50 dark:bg-red-900/20",
   violet: "bg-[var(--surface-sunken)]",
-  gray: "bg-[var(--surface-alt)] dark:bg-zinc-800",
+  gray: "bg-[var(--surface-alt)] ",
 };
 
 function getIconBg(color?: string): string {
@@ -63,7 +63,7 @@ function AdminSectionHeader({ title, subtitle, icon: Icon, iconColor, actions, t
             </SectionTitle>
             {/* Igual que en AdminModuleHeader: en angosto manda el título. */}
             {subtitle && (
-              <p className="hidden @min-[28rem]:block text-sm text-[var(--text-secondary)] dark:text-zinc-400 truncate">
+              <p className="hidden @min-[28rem]:block text-sm text-[var(--text-secondary)] truncate">
                 {subtitle}
               </p>
             )}
@@ -78,7 +78,7 @@ function AdminSectionHeader({ title, subtitle, icon: Icon, iconColor, actions, t
       </div>
 
       {tabs && tabs.length > 0 && (
-        <div className="flex items-center gap-1 border-b border-[var(--rule-soft)] dark:border-zinc-800">
+        <div className="flex items-center gap-1 border-b border-[var(--rule-soft)] ">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -87,7 +87,7 @@ function AdminSectionHeader({ title, subtitle, icon: Icon, iconColor, actions, t
                 "px-3 py-2 text-sm font-medium transition-colors relative",
                 tab.active
                   ? "text-[var(--text-primary)]"
-                  : "text-[var(--text-secondary)] dark:text-zinc-400 hover:text-[var(--text-primary)] dark:hover:text-zinc-300",
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-zinc-300",
               )}
             >
               {tab.label}

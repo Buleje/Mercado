@@ -114,7 +114,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Ej: Ofertas de fin de semana"
-            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             autoFocus
           />
         </Field>
@@ -125,7 +125,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
             placeholder="Describe qué verán los espectadores"
-            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
+            className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
           />
         </Field>
 
@@ -135,7 +135,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
           </Field>
           <Field label="Hora *" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
@@ -143,7 +143,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
           </Field>
         </div>
@@ -156,9 +156,9 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
             placeholder="Buscar producto..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
-          <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-xl divide-y divide-gray-100">
+          <div className="max-h-48 overflow-y-auto border border-[var(--rule-base)] rounded-xl divide-y divide-[var(--rule-soft)]">
             {filteredProducts.map((p) => {
               const selected = selectedIds.has(p.id);
               return (
@@ -167,14 +167,14 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
                   type="button"
                   onClick={() => toggleProduct(p.id)}
                   className={cn(
-                    "w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 transition-colors",
+                    "w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-[var(--surface-sunken)] transition-colors",
                     selected && "bg-primary/5"
                   )}
                 >
                   <div className="flex items-center gap-2">
                     <div className={cn(
                       "h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0",
-                      selected ? "border-primary bg-primary" : "border-gray-300"
+                      selected ? "border-primary bg-primary" : "border-[var(--rule-base)]"
                     )}>
                       {selected && <Check className="h-3 w-3 text-white" />}
                     </div>
@@ -195,7 +195,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
           >
             Cancelar
           </button>
