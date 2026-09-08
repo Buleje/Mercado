@@ -298,7 +298,11 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                   {/* El colSpan cuenta las columnas VIVAS: con una apagada, un
                       número fijo corría el total una celda y el m³ caía bajo
                       «Estado». */}
-                  <td colSpan={3 + (cols.documento ? 1 : 0) + (cols.proveedor ? 1 : 0) + (cols.permiso ? 1 : 0)} className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">
+                  {/* Las CUATRO fijas de la izquierda —casilla, N° de libro, fecha
+                      y especies— más las opcionales que estén prendidas. Con 3
+                      el total caía una celda a la izquierda y el m³ terminaba
+                      bajo «Estado» (visto en pantalla, no por el tipo). */}
+                  <td colSpan={4 + (cols.documento ? 1 : 0) + (cols.proveedor ? 1 : 0) + (cols.permiso ? 1 : 0)} className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">
                     {guias.length} guía{guias.length === 1 ? "" : "s"} en pantalla · {totalPagina.lineas} asiento
                     {totalPagina.lineas === 1 ? "" : "s"} del libro
                   </td>
