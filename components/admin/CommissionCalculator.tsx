@@ -403,7 +403,7 @@ export default function CommissionCalculator() {
           <button
             type="button"
             onClick={() => setShowSettings(true)}
-            className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+            className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
           >
             <Settings className="h-4 w-4" /> Ajustar el porcentaje
           </button>

@@ -185,7 +185,7 @@ export default function PresupuestoMensualTab() {
         </div>
         <button
           onClick={openEdit}
-          className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
+          className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark  transition-colors"
         >
           <Plus className="h-4 w-4" />
           Crear presupuesto
@@ -360,14 +360,14 @@ export default function PresupuestoMensualTab() {
           <div className="flex gap-2 pt-1">
             <button
               onClick={() => setShowEdit(false)}
-              className="flex-1 h-10 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
+              className="flex-1 h-10 rounded-xl text-sm font-semibold text-[var(--text-secondary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
             >
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               Guardar

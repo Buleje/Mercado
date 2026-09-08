@@ -103,7 +103,7 @@ export default function CtpParteLogo({
             type="button"
             onClick={() => input.current?.click()}
             disabled={cargando}
-            className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-base font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-60"
+            className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-60"
           >
             {cargando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Upload className="h-4 w-4" aria-hidden />}
             {logo ? "Cambiar logo" : "Subir logo"}
@@ -112,7 +112,7 @@ export default function CtpParteLogo({
             <button
               type="button"
               onClick={() => onCambio("")}
-              className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--data-error-500)] px-4 text-base font-bold text-[var(--data-error-700)] transition-colors hover:bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:hover:bg-transparent"
+              className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--data-error-500)] px-4 text-base font-semibold text-[var(--data-error-700)] transition-colors hover:bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:hover:bg-transparent"
             >
               <Trash2 className="h-4 w-4" aria-hidden /> Quitar
             </button>

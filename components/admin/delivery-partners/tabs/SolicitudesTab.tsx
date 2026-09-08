@@ -103,7 +103,7 @@ export function SolicitudesTab() {
             type="button"
             onClick={fetchApps}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
             Actualizar
@@ -199,7 +199,7 @@ export function SolicitudesTab() {
               type="button"
               onClick={() => setFilter("pending")}
               className={cn(
-                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
                 filter === "pending"
                   ? "bg-primary text-white border-primary"
                   : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
@@ -217,7 +217,7 @@ export function SolicitudesTab() {
               type="button"
               onClick={() => setFilter("all")}
               className={cn(
-                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
                 filter === "all"
                   ? "bg-primary text-white border-primary"
                   : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
@@ -370,7 +370,7 @@ export function SolicitudesTab() {
                         onClick={() => handleAction(app.id, "approve")}
                         disabled={isProcessing || !canApprove}
                         title={canApprove ? "Aprobar repartidor" : `Falta: ${kycCheck.missing.join(", ")}`}
-                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-semibold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         <ThumbsUp className="h-4 w-4" />
                         {isProcessing ? "..." : "Aprobar"}
@@ -379,7 +379,7 @@ export function SolicitudesTab() {
                         type="button"
                         onClick={() => handleAction(app.id, "reject")}
                         disabled={isProcessing}
-                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-bold bg-[var(--data-error-50)] text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-semibold bg-[var(--data-error-50)] text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
                       >
                         <ThumbsDown className="h-4 w-4" />
                         Rechazar

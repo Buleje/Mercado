@@ -1,13 +1,13 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, StatCard } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef, useMemo, type FormEvent } from "react";
 import {
   Package, AlertTriangle, ArrowUp, ArrowDown, RefreshCw,
   Search, Loader2, ClipboardList, Plus, Pencil, Trash2,
   ScanBarcode, X, Camera, Download, Filter, ChevronDown,
   TrendingUp, PackagePlus, Eye, EyeOff, Layers, ChevronRight, Upload, CheckCircle, BookOpen,
-  Maximize2, Sliders, LayoutGrid, LayoutList, Sparkles,
+  Maximize2, Sliders, LayoutGrid, LayoutList, Sparkles, Clock, Wallet,
 } from "@buleje/design-system/icons";
 import ProductModifiersEditor from "@/components/admin/inventario/ProductModifiersEditor";
 import ProductVariantsInline from "@/components/admin/inventario/ProductVariantsInline";
@@ -1492,29 +1492,41 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           Compactas a propósito: esta franja empujaba el primer producto de la
           tabla fuera de la pantalla, y a Inventario se entra a ver productos. */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <p className="text-xs font-medium text-[var(--text-secondary)] ">Productos</p>
-          <p className="mt-1 font-mono text-2xl font-bold text-[var(--text-primary)]">{totalProducts}</p>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] ">
-            {activeProducts} activos
-            {totalProducts - activeProducts > 0 && ` · ${totalProducts - activeProducts} inactivo${totalProducts - activeProducts === 1 ? "" : "s"}`}
-          </p>
-        </div>
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <p className="text-xs font-medium text-[var(--text-secondary)] ">Bajo stock</p>
-          <p className={cn("mt-1 font-mono text-2xl font-bold", lowStockCount > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{lowStockCount}</p>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] ">{lowStockCount > 0 ? "Requieren reposición" : "Stock saludable"}</p>
-        </div>
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <p className="text-xs font-medium text-[var(--text-secondary)] ">Próx. a vencer</p>
-          <p className={cn("mt-1 font-mono text-2xl font-bold", expiringSoonCount > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{expiringSoonCount}</p>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] ">Próximos 30 días</p>
-        </div>
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <p className="text-xs font-medium text-[var(--text-secondary)] ">Valor inventario</p>
-          <p className="mt-1 font-mono text-2xl font-bold text-primary">{fmt(totalStockValue)}</p>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] ">Valuado a costo</p>
-        </div>
+        <StatCard
+          label="Productos"
+          value={totalProducts}
+          subValue={
+            <>
+              {activeProducts} activos
+              {totalProducts - activeProducts > 0 && ` · ${totalProducts - activeProducts} inactivo${totalProducts - activeProducts === 1 ? "" : "s"}`}
+            </>
+          }
+          icon={Package}
+          density="compact"
+        />
+        <StatCard
+          label="Bajo stock"
+          value={lowStockCount}
+          subValue={lowStockCount > 0 ? "Requieren reposición" : "Stock saludable"}
+          icon={AlertTriangle}
+          emphasis={lowStockCount > 0 ? "warning" : "neutral"}
+          density="compact"
+        />
+        <StatCard
+          label="Próx. a vencer"
+          value={expiringSoonCount}
+          subValue="Próximos 30 días"
+          icon={Clock}
+          emphasis={expiringSoonCount > 0 ? "warning" : "neutral"}
+          density="compact"
+        />
+        <StatCard
+          label="Valor inventario"
+          value={fmt(totalStockValue)}
+          subValue="Valuado a costo"
+          icon={Wallet}
+          density="compact"
+        />
       </div>
 
       {/* Mejora P-7: Duplicados detectados */}
@@ -2232,7 +2244,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => { setShowPicker(false); setShowAdd(true); }}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 min-h-10 text-sm font-bold text-white hover:bg-[var(--accent)]/90 transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 min-h-10 text-sm font-semibold text-white hover:bg-[var(--accent)]/90 transition-colors"
                   >
                     <Plus className="h-4 w-4" strokeWidth={2.4} /> <span className="hidden sm:inline">Crear nuevo</span><span className="sm:hidden">Nuevo</span>
                   </button>
@@ -2279,7 +2291,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     </p>
                     <button
                       onClick={() => { setShowPicker(false); setShowAdd(true); }}
-                      className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 min-h-11 text-sm font-bold text-white hover:bg-[var(--accent)]/90 transition-colors"
+                      className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 min-h-11 text-sm font-semibold text-white hover:bg-[var(--accent)]/90 transition-colors"
                     >
                       <Plus className="h-4 w-4" strokeWidth={2.4} /> Crear producto
                     </button>
@@ -2368,7 +2380,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     onClick={() => setAddForm(f => ({ ...f, type: val }))}
                     title={hint}
                     className={cn(
-                      "flex-1 rounded-xl px-3 min-h-11 text-sm font-bold transition-colors",
+                      "flex-1 rounded-xl px-3 min-h-11 text-sm font-semibold transition-colors",
                       addForm.type === val
                         ? "bg-[var(--accent)] text-white shadow-sm"
                         : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",
@@ -2397,7 +2409,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     type="button"
                     onClick={handleDbSearch}
                     disabled={dbSearching || !dbQuery.trim()}
-                    className="px-3 min-h-10 rounded-xl bg-primary/10 text-white hover:bg-primary/10 transition-colors disabled:opacity-50 flex items-center gap-1 text-sm font-bold"
+                    className="px-3 min-h-10 rounded-xl bg-primary/10 text-white hover:bg-primary/10 transition-colors disabled:opacity-50 flex items-center gap-1 text-sm font-semibold"
                   >
                     {dbSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   </button>
@@ -2931,11 +2943,11 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               </div>
 
               <div className="sticky bottom-0 -mx-6 -mb-6 flex items-center gap-3 border-t-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-4">
-                <button type="button" onClick={() => setShowAdd(false)} className="h-11 px-5 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
+                <button type="button" onClick={() => setShowAdd(false)} className="h-11 px-5 rounded-xl border-2 border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-extrabold text-white shadow-[var(--shadow-lg)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-xl)] active:translate-y-0 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold text-white shadow-[var(--shadow-lg)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-xl)] active:translate-y-0 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
                   style={{ backgroundImage: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)" }}
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
@@ -2985,7 +2997,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     type="button"
                     onClick={() => setEditForm(f => ({ ...f, type: val }))}
                     className={cn(
-                      "flex-1 rounded-xl px-3 min-h-11 text-sm font-bold transition-colors",
+                      "flex-1 rounded-xl px-3 min-h-11 text-sm font-semibold transition-colors",
                       (editForm.type ?? "product") === val
                         ? "bg-[var(--accent)] text-white shadow-sm"
                         : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",
@@ -3175,7 +3187,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <button
                     type="button"
                     onClick={() => editModalProduct && setModifiersProduct({ id: editModalProduct.id, name: editModalProduct.name })}
-                    className="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors shrink-0"
                   >
                     <Sliders className="h-4 w-4" />
                     Configurar adicionales
@@ -3232,7 +3244,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                           type="button"
                           onClick={() => editImgRef.current?.click()}
                           disabled={imgUploading}
-                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 min-h-10 rounded-xl bg-primary text-white hover:bg-primary-dark transition-colors text-sm font-bold disabled:opacity-50"
+                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 min-h-10 rounded-xl bg-primary text-white hover:bg-primary-dark transition-colors text-sm font-semibold disabled:opacity-50"
                         >
                           <Camera className="h-4 w-4" />
                           {imgUploading ? "Procesando…" : "Subir foto"}
@@ -3240,7 +3252,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         <button
                           type="button"
                           onClick={() => setShowImageBank(true)}
-                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 min-h-10 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white hover:opacity-90 transition-all text-sm font-bold"
+                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 min-h-10 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white hover:opacity-90 transition-all text-sm font-semibold"
                           title="Elegir una imagen del banco global mantenido por el superadmin"
                         >
                           <BookOpen className="h-4 w-4" />
@@ -3324,12 +3336,12 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 </button>
               </div>
               <div className="sticky bottom-0 -mx-6 -mb-6 flex items-center gap-3 border-t-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-4">
-                <button type="button" onClick={closeEditModal} className="h-11 px-5 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
+                <button type="button" onClick={closeEditModal} className="h-11 px-5 rounded-xl border-2 border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
                 <button
                   type="button"
                   onClick={saveEdit}
                   disabled={saving}
-                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-extrabold text-white shadow-[var(--shadow-lg)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-xl)] active:translate-y-0 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
+                  className="flex-1 inline-flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold text-white shadow-[var(--shadow-lg)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-xl)] active:translate-y-0 disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none"
                   style={{ backgroundImage: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)" }}
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" strokeWidth={2.5} />}
@@ -3621,7 +3633,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
             <div className="px-3 sm:px-6 py-4 bg-[var(--surface-alt)] border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3">
               <button onClick={() => setBulkModal(false)} className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
               <button onClick={executeBulk} disabled={bulkSaving || (!bulkValue && bulkField !== "active" && bulkField !== "badge")}
-                className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+                className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60">
                 {bulkSaving ? "Aplicando…" : "Aplicar"}
               </button>
             </div>
@@ -3774,7 +3786,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 <button onClick={() => setShowAutoReorder(null)} className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                   Cancelar
                 </button>
-                <button onClick={() => saveAutoReorder(showAutoReorder)} className="flex-1 px-4 min-h-10 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
+                <button onClick={() => saveAutoReorder(showAutoReorder)} className="flex-1 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark  transition-colors">
                   Guardar
                 </button>
               </div>

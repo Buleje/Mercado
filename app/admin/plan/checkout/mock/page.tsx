@@ -95,7 +95,7 @@ export default function MockCheckoutPage() {
                 type="button"
                 onClick={simulatePayment}
                 disabled={submitting}
-                className="w-full h-14 inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] text-base font-extrabold text-white shadow-md disabled:opacity-50"
+                className="w-full h-14 inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] text-base font-semibold text-white shadow-md disabled:opacity-50"
               >
                 {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
                 Simular pago exitoso

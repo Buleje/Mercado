@@ -157,7 +157,7 @@ export default function CashflowRollingTable() {
           type="button"
           onClick={() => void fetchData()}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50  transition-colors shrink-0 min-h-[44px]"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50  transition-colors shrink-0 min-h-[44px]"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar

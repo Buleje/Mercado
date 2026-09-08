@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { SectionTitle, StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
@@ -219,24 +219,12 @@ function KPISummary({ goals }: { goals: Goal[] }) {
     ? Math.round(goals.reduce((s, g) => s + Math.min(100, g.target > 0 ? (g.current / g.target) * 100 : 0), 0) / total)
     : 0;
 
-  const cards = [
-    { label: "Activas",        value: String(total - completed), icon: Target,          color: "text-primary" },
-    { label: "Logradas",       value: String(completed),         icon: CheckCircle2,    color: "text-[var(--data-success-500)]" },
-    { label: "Vencidas",       value: String(overdue),           icon: AlertTriangle,   color: "text-[var(--data-error-500)]" },
-    { label: "Promedio global", value: `${avgPct}%`,             icon: BarChart3,       color: "text-primary" },
-  ];
-
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      {cards.map((c) => (
-        <div key={c.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{c.label}</p>
-            <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", c.color)}>{c.value}</p>
-          </div>
-          <c.icon className={cn("h-5 w-5 shrink-0", c.color)} />
-        </div>
-      ))}
+      <StatCard label="Activas" value={total - completed} icon={Target} density="compact" />
+      <StatCard label="Logradas" value={completed} icon={CheckCircle2} emphasis="success" density="compact" />
+      <StatCard label="Vencidas" value={overdue} icon={AlertTriangle} emphasis="error" density="compact" />
+      <StatCard label="Promedio global" value={`${avgPct}%`} icon={BarChart3} density="compact" />
     </div>
   );
 }
@@ -652,7 +640,7 @@ export default function GoalsTab() {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" /> Nueva Meta
         </button>
@@ -959,7 +947,7 @@ export default function GoalsTab() {
             <button
               onClick={save}
               disabled={saving || !form.name.trim() || !form.target}
-              className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
             >
               {saving ? "Guardando…" : <><Check className="h-4 w-4" />{editId ? "Guardar" : "Crear meta"}</>}
             </button>

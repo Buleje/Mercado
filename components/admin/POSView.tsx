@@ -633,7 +633,7 @@ function SaleCompleteModal({
             </a>
             <button
               onClick={onNewSale}
-              className="min-h-11 rounded-xl bg-primary text-white font-bold text-base hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+              className="min-h-11 rounded-xl bg-primary text-white font-semibold text-base hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
             >
               Nueva venta
               <span aria-hidden>&rarr;</span>
@@ -2253,7 +2253,7 @@ export default function POSView() {
               <div className="flex gap-2">
                 <button
                   onClick={openPaymentModal}
-                  className="flex-1 min-h-11 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-colors flex flex-wrap items-center justify-center gap-2"
+                  className="flex-1 min-h-11 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary-dark transition-colors flex flex-wrap items-center justify-center gap-2"
                 >
                   <Banknote className="h-4 w-4" />
                   Cobrar {fmt(cartTotal)}
@@ -2262,7 +2262,7 @@ export default function POSView() {
                 {/* Idea 12: Trueque button */}
                 <button
                   onClick={() => setShowTrueque(true)}
-                  className="px-4 min-h-11 rounded-xl border-2 border-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-bold text-sm hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20 transition-colors flex items-center gap-1.5"
+                  className="px-4 min-h-11 rounded-xl border-2 border-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold text-sm hover:bg-[var(--data-warning-50)] dark:hover:bg-amber-950/20 transition-colors flex items-center gap-1.5"
                   title="Trueque Digital"
                 >
                   <RefreshCcw className="h-4 w-4" aria-hidden /> Trueque
@@ -2321,7 +2321,7 @@ export default function POSView() {
                   setShowNoCajaWarning(false);
                   window.dispatchEvent(new CustomEvent(turnoAbierto === false ? "buleje:navigate-turnos" : "buleje:navigate-caja"));
                 }}
-                className="flex-1 min-h-11 rounded-xl bg-[var(--text-primary)] text-[var(--surface-raised)] font-bold text-sm hover:opacity-90 transition-opacity"
+                className="flex-1 min-h-11 rounded-xl bg-[var(--text-primary)] text-[var(--surface-raised)] font-semibold text-sm hover:opacity-90 transition-opacity"
               >
                 {turnoAbierto === false ? "Abrir turno primero" : "Abrir caja primero"}
               </button>
@@ -2331,7 +2331,7 @@ export default function POSView() {
                   setShowNoCajaWarning(false);
                   setShowPayment(true);
                 }}
-                className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] font-bold text-sm hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+                className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] font-semibold text-sm hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
               >
                 {turnoAbierto === false && cashRegisterOpen === false
                   ? "Vender sin turno ni caja"
@@ -2443,7 +2443,7 @@ export default function POSView() {
                           setWaParsedItems([]);
                         }}
                         disabled={resolved.length === 0}
-                        className="w-full min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <ShoppingBasket className="h-4 w-4" /> Agregar todo al carrito
                       </button>
@@ -2565,11 +2565,11 @@ export default function POSView() {
                     setTruequeDesc("");
                     setTruequeValor("");
                   }}
-                  className="flex-1 min-h-11 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  className="flex-1 min-h-11 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
                 >
                   Confirmar trueque
                 </button>
-                <button onClick={() => setShowTrueque(false)} className="px-4 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
+                <button onClick={() => setShowTrueque(false)} className="px-4 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
                   Cancelar
                 </button>
               </div>

@@ -191,7 +191,7 @@ export default function CtpRadarControles({
                 onClick={() => setAgruparManual((v) => (v === null ? !hayAgrupacion : !v))}
                 aria-pressed={hayAgrupacion}
                 title={hayAgrupacion ? "Ver línea por línea" : "Agrupar por especie, producto y destino"}
-                className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition ${
+                className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 px-3 text-sm font-semibold transition ${
                   hayAgrupacion
                     ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 text-[var(--accent)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"

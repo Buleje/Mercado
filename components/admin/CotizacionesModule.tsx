@@ -1011,7 +1011,7 @@ export default function CotizacionesModule() {
               <div className="flex justify-end pt-2">
                 <button
                   onClick={() => { if (clienteNombre.trim()) setStep(2); else setCreateError("Nombre del cliente requerido"); }}
-                  className="px-5 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                  className="px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
                 >
                   Siguiente
                 </button>
@@ -1131,7 +1131,7 @@ export default function CotizacionesModule() {
                 <button onClick={() => setStep(1)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                   Atrás
                 </button>
-                <button onClick={() => setStep(3)} className="px-5 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors">
+                <button onClick={() => setStep(3)} className="px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">
                   Siguiente
                 </button>
               </div>
@@ -1179,7 +1179,7 @@ export default function CotizacionesModule() {
                 <button
                   onClick={handleCreate}
                   disabled={creating}
-                  className="flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                 >
                   {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   Crear Cotización
@@ -1347,7 +1347,7 @@ export default function CotizacionesModule() {
                   {selected.status === "BORRADOR" && (
                     <>
                       <button onClick={() => updateStatus("ENVIADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors">
                         <Send className="h-4 w-4" /> Enviar
                       </button>
                     </>
@@ -1355,18 +1355,18 @@ export default function CotizacionesModule() {
                   {selected.status === "ENVIADA" && (
                     <>
                       <button onClick={() => updateStatus("ACEPTADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors">
                         <Check className="h-4 w-4" /> Aceptada
                       </button>
                       <button onClick={() => updateStatus("RECHAZADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 transition-colors">
                         <XCircle className="h-4 w-4" /> Rechazada
                       </button>
                     </>
                   )}
                   {selected.status === "ACEPTADA" && (
                     <button onClick={convertirAOrden} disabled={actionLoading}
-                      className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors">
+                      className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors">
                       <ShoppingCart className="h-4 w-4" /> Convertir a Orden
                     </button>
                   )}
@@ -1397,7 +1397,7 @@ export default function CotizacionesModule() {
                       const url = phone ? `https://wa.me/${phone}?text=${encodedText}` : `https://wa.me/?text=${encodedText}`;
                       window.open(url, "_blank");
                     }}
-                    className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
+                    className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
                   >
                     <MessageCircle className="h-4 w-4" /> WhatsApp
                   </button>

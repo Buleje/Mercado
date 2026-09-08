@@ -102,7 +102,7 @@ export default function CacaoCierrePanel() {
               {months.map((m) => (<option key={m.key} value={m.key} disabled={closedKeys.has(m.key)}>{m.label}{closedKeys.has(m.key) ? " — cerrado" : ""}</option>))}
             </select>
           </label>
-          <button type="button" onClick={() => void cerrar()} disabled={busy || selCerrado || !selMonth} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
+          <button type="button" onClick={() => void cerrar()} disabled={busy || selCerrado || !selMonth} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}{selCerrado ? "Ya cerrado" : `Cerrar ${selMonth?.label ?? ""}`}
           </button>
         </div>

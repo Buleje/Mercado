@@ -74,7 +74,7 @@ export default function PreguntarAlDocumento({ docId }: { docId: string }) {
           <button
             onClick={() => preguntar(pregunta)}
             disabled={cargando || pregunta.trim().length < 3}
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {cargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {cargando ? "Leyendo…" : "Preguntar"}

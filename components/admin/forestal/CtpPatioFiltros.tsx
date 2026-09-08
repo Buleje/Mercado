@@ -169,7 +169,7 @@ export default function CtpPatioFiltros({
               type="button"
               onClick={() => setAbierto((v) => !v)}
               aria-expanded={abierto}
-              className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border-2 px-3 text-sm font-bold transition-colors ${
+              className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border-2 px-3 text-sm font-semibold transition-colors ${
                 puestos.length > 0 || abierto
                   ? "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]"

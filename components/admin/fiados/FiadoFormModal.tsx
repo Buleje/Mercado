@@ -295,7 +295,7 @@ export default function FiadoFormModal({
           <button
             onClick={handleCreate}
             disabled={creating}
-            className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
           >
             {creating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
             Crear fiado

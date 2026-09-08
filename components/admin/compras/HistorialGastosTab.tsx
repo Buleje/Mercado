@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { StatCard } from "@buleje/design-system";
 import {
   DollarSign, RefreshCw, Download, TrendingDown, Wallet,
   Clock, AlertTriangle, Search, X, Info, Copy,
@@ -25,27 +26,6 @@ import { PERIOD_LABELS, fmt, type HistorialItem, type Period } from "./historial
  * del servidor sin filtrar mientras la tabla se filtraba en el cliente, así
  * que apretar un chip de categoría dejaba a los KPIs contando otra cosa.
  */
-
-function Kpi({
-  label, valor, detalle, icono: Icono, tono,
-}: {
-  label: string;
-  valor: string;
-  detalle: string;
-  icono: typeof Wallet;
-  tono?: string;
-}) {
-  return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <div className="mb-1 flex items-center gap-2">
-        <Icono className="h-4 w-4" style={{ color: tono ?? "var(--text-primary)" }} />
-        <p className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">{label}</p>
-      </div>
-      <p className="text-2xl font-extrabold tabular-nums" style={{ color: tono ?? "var(--text-primary)" }}>{valor}</p>
-      <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{detalle}</p>
-    </div>
-  );
-}
 
 // `boolean` además de `string`: el segmento de «sólo gastos» es un sí/no y
 // merecía el mismo control que el resto, no un checkbox suelto.
@@ -99,32 +79,36 @@ export default function HistorialGastosTab() {
           así que «Historial de Gastos» empezaba con dos pantallas de otra cosa
           y la tabla —a lo que la gente entra— quedaba abajo de todo. */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Kpi
+        <StatCard
           label="Total gastado"
-          valor={h.loading ? "—" : fmt(resumen.total)}
-          detalle={`${resumen.cantidad} ${resumen.cantidad === 1 ? "movimiento" : "movimientos"}${h.hayFiltroActivo ? ` de ${h.items.length}` : ""}`}
-          icono={TrendingDown}
-          tono="var(--data-error-ink)"
+          value={h.loading ? "—" : fmt(resumen.total)}
+          subValue={`${resumen.cantidad} ${resumen.cantidad === 1 ? "movimiento" : "movimientos"}${h.hayFiltroActivo ? ` de ${h.items.length}` : ""}`}
+          icon={TrendingDown}
+          emphasis="error"
+          density="compact"
         />
-        <Kpi
+        <StatCard
           label="Ya pagado"
-          valor={h.loading ? "—" : fmt(resumen.pagado)}
-          detalle="Plata que salió de la caja"
-          icono={Wallet}
-          tono="var(--data-success-ink)"
+          value={h.loading ? "—" : fmt(resumen.pagado)}
+          subValue="Plata que salió de la caja"
+          icon={Wallet}
+          emphasis="success"
+          density="compact"
         />
-        <Kpi
+        <StatCard
           label="Queda por pagar"
-          valor={h.loading ? "—" : fmt(resumen.porPagar)}
-          detalle="Mercadería recibida sin cancelar"
-          icono={Clock}
-          tono={resumen.porPagar > 0 ? "var(--data-warning-ink)" : undefined}
+          value={h.loading ? "—" : fmt(resumen.porPagar)}
+          subValue="Mercadería recibida sin cancelar"
+          icon={Clock}
+          emphasis={resumen.porPagar > 0 ? "warning" : "neutral"}
+          density="compact"
         />
-        <Kpi
+        <StatCard
           label="Categoría top"
-          valor={resumen.categorias[0] ? fmt(resumen.categorias[0].total) : "—"}
-          detalle={resumen.categorias[0]?.cat ?? "Sin movimientos"}
-          icono={DollarSign}
+          value={resumen.categorias[0] ? fmt(resumen.categorias[0].total) : "—"}
+          subValue={resumen.categorias[0]?.cat ?? "Sin movimientos"}
+          icon={DollarSign}
+          density="compact"
         />
       </div>
 
@@ -178,7 +162,7 @@ export default function HistorialGastosTab() {
             type="button"
             onClick={h.exportarCsv}
             disabled={h.filtered.length === 0}
-            className="inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50 "
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50 "
           >
             <Download className="h-4 w-4" />
             Exportar
@@ -344,7 +328,7 @@ export default function HistorialGastosTab() {
             <button
               type="button"
               onClick={h.limpiarFiltros}
-              className="mt-1 inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+              className="mt-1 inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
             >
               Limpiar filtros
             </button>
@@ -352,7 +336,7 @@ export default function HistorialGastosTab() {
             <button
               type="button"
               onClick={() => h.setPeriod("todo")}
-              className="mt-1 inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+              className="mt-1 inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
             >
               Ver todo el historial
             </button>

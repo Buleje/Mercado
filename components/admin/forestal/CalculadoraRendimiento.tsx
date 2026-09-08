@@ -141,7 +141,7 @@ export default function CalculadoraRendimiento() {
               <div className="flex overflow-hidden rounded-xl border-2 border-[var(--rule-base)]">
                 {(["pt", "m3"] as const).map((u) => (
                   <button key={u} type="button" onClick={() => setUnidad(u)} aria-pressed={unidad === u}
-                    className={`px-3 text-sm font-bold transition ${unidad === u ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
+                    className={`px-3 text-sm font-semibold transition ${unidad === u ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
                     {u === "pt" ? "PT" : "m³"}
                   </button>
                 ))}

@@ -247,7 +247,7 @@ export default function CtpPaqueteFicha({
                        vista: se avisa apagando el «copiado», no con un error. */
                     .catch(() => setCopiado(false));
                 }}
-                className="mt-3 inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                className="mt-3 inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
               >
                 <Copy className="h-4 w-4" aria-hidden />
                 {copiado ? "Código copiado" : "Copiar el código"}
@@ -285,7 +285,7 @@ export default function CtpPaqueteFicha({
                   <button
                     type="button"
                     onClick={() => { onIrA("produccion"); onClose(); }}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
                   >
                     <Boxes className="h-4 w-4" aria-hidden /> Ver la corrida en Producción
                   </button>
@@ -293,7 +293,7 @@ export default function CtpPaqueteFicha({
                     <button
                       type="button"
                       onClick={() => { onIrA("disponibles"); onClose(); }}
-                      className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:brightness-105 dark:text-[var(--accent)]"
+                      className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:brightness-105 dark:text-[var(--accent)]"
                     >
                       <PackageOpen className="h-4 w-4" aria-hidden /> Ver qué queda para despachar
                     </button>

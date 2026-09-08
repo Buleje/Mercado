@@ -560,7 +560,7 @@ export default function PromotionsTab() {
           </button>
           <button
             onClick={openCreate}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white transition-all hover:brightness-105"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition-all hover:brightness-105"
           >
             <Plus className="h-4 w-4" /> Nueva promoción
           </button>
@@ -720,7 +720,7 @@ export default function PromotionsTab() {
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button
               onClick={openCreate}
-              className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 text-sm font-extrabold text-white transition-all hover:brightness-105"
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition-all hover:brightness-105"
             >
               <Plus className="h-4 w-4" /> Crear promoción
             </button>
@@ -1099,7 +1099,7 @@ export default function PromotionsTab() {
               <button
                 onClick={sendToAll}
                 disabled={sendPhones.size === 0}
-                className="w-full min-h-11 rounded-xl text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors flex flex-wrap items-center justify-center gap-2"
+                className="w-full min-h-11 rounded-xl text-sm font-semibold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors flex flex-wrap items-center justify-center gap-2"
               >
                 <Send className="h-4 w-4" /> Enviar a todos los seleccionados
               </button>

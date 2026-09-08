@@ -219,14 +219,14 @@ export default function DescuentoPlanillaModal({
           <div className="flex gap-2 pt-1">
             <button
               onClick={onClose}
-              className="h-12 flex-1 rounded-2xl border-2 border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              className="h-12 flex-1 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             >
               {resultado ? "Cerrar" : "Cancelar"}
             </button>
             <button
               onClick={() => void aplicar()}
               disabled={aplicando || conMonto.length === 0}
-              className="h-12 flex-1 rounded-2xl bg-primary text-base font-bold text-white hover:bg-primary-dark disabled:opacity-50"
+              className="h-12 flex-1 rounded-2xl bg-primary text-base font-semibold text-white hover:bg-primary-dark disabled:opacity-50"
             >
               {aplicando ? "Aplicando…" : `Aplicar a ${conMonto.length}`}
             </button>

@@ -88,7 +88,7 @@ export default function CtpOperacionSwitcher({ vista }: { vista: string }) {
             ? "Cambiar de operación de esta planta"
             : "Crear una segunda operación para esta planta"
         }
-        className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)]"
+        className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)]"
       >
         <Layers className="h-4 w-4" />
         <span className="max-lg:sr-only">

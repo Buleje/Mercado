@@ -298,7 +298,7 @@ export default function OrdersTab() {
               className={cn(
                 "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold transition-colors border",
                 active
-                  ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] border-[var(--text-primary)]"
+                  ? "bg-primary text-white border-primary"
                   : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-primary/10",
               )}
             >

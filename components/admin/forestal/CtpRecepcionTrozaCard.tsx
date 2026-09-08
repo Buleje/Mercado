@@ -72,7 +72,7 @@ export default function CtpRecepcionTrozaCard({
           onClick={() => onCambio({ noRecepcionada: false })}
           aria-pressed={!falta}
           className={cn(
-            "inline-flex h-12 items-center justify-center gap-2 rounded-2xl border-2 text-sm font-bold transition-colors",
+            "inline-flex h-12 items-center justify-center gap-2 rounded-2xl border-2 text-sm font-semibold transition-colors",
             !falta
               ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/10 dark:text-[var(--data-success-500)]"
               : "border-[var(--rule-base)] text-[var(--text-secondary)]",
@@ -85,7 +85,7 @@ export default function CtpRecepcionTrozaCard({
           onClick={() => onCambio({ noRecepcionada: true })}
           aria-pressed={falta}
           className={cn(
-            "inline-flex h-12 items-center justify-center gap-2 rounded-2xl border-2 text-sm font-bold transition-colors",
+            "inline-flex h-12 items-center justify-center gap-2 rounded-2xl border-2 text-sm font-semibold transition-colors",
             falta
               ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/10 dark:text-[var(--data-error-500)]"
               : "border-[var(--rule-base)] text-[var(--text-secondary)]",

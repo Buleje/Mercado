@@ -279,7 +279,7 @@ export default function CobranzaView({
             const todos = filtrados.map((d) => d.id);
             setTanda((prev) => (prev.size >= todos.length && prev.size > 0 ? new Set() : new Set(todos)));
           }}
-          className="h-11 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+          className="h-11 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
         >
           Marcar todos
         </button>
@@ -287,20 +287,20 @@ export default function CobranzaView({
           onClick={() => setEnLlamada(true)}
           disabled={filtrados.length === 0}
           title="Un cliente a la vez, en grande"
-          className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
+          className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
         >
           <MessageCircle className="h-4 w-4" /> Modo llamada
         </button>
         <button
           onClick={() => setVerPlantillas(true)}
           title="Qué se le escribe a cada tramo"
-          className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+          className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
         >
           <Settings2 className="h-4 w-4" /> Mensajes
         </button>
         <button
           onClick={exportarPdf}
-          className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+          className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
         >
           <FileText className="h-4 w-4" /> PDF
         </button>
@@ -349,14 +349,14 @@ export default function CobranzaView({
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setTanda(new Set())}
-                className="h-10 rounded-xl px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
+                className="h-10 rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
               >
                 Vaciar
               </button>
               <button
                 onClick={() => void mandarLaRonda()}
                 disabled={enviandoRonda}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
               >
                 <MessageCircle className="h-4 w-4" />
                 {enviandoRonda ? "Abriendo chats…" : `Escribirle a los ${tanda.size}`}

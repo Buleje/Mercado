@@ -1326,7 +1326,7 @@ export default function DocumentosModule() {
         />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors shadow-sm"
         >
           {uploadProgress ? (
             <>
@@ -1922,7 +1922,7 @@ export default function DocumentosModule() {
             <button
               onClick={() => setSemantic((s) => !s)}
               className={cn(
-                "inline-flex items-center gap-1.5 px-3 min-h-11 rounded-xl border-2 text-sm font-bold transition-colors",
+                "inline-flex items-center gap-1.5 px-3 min-h-11 rounded-xl border-2 text-sm font-semibold transition-colors",
                 semantic ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]" : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)]/40"
               )}
               title="Búsqueda inteligente: entiende lo que querés decir, no solo palabras exactas"
@@ -1979,7 +1979,7 @@ export default function DocumentosModule() {
                 <button
                   onClick={(e) => { e.stopPropagation(); setColsMenuOpen((v) => !v); }}
                   className={cn(
-                    "inline-flex h-[42px] items-center gap-1.5 px-3 rounded-xl border-2 text-sm font-bold transition-colors",
+                    "inline-flex h-[42px] items-center gap-1.5 px-3 rounded-xl border-2 text-sm font-semibold transition-colors",
                     colsMenuOpen ? "border-primary text-primary bg-primary/5" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary hover:text-primary"
                   )}
                   title="Elegir columnas visibles"
@@ -3332,7 +3332,7 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
       <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-md mx-auto">
         Arrastrá y soltá archivos en cualquier parte de la pantalla, o usá el botón. Aceptamos PDF, imágenes, planillas, Word, ZIP y más (hasta 50 MB c/u).
       </p>
-      <button onClick={onUpload} className="mt-5 inline-flex items-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors">
+      <button onClick={onUpload} className="mt-5 inline-flex items-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors">
         <Upload className="h-4 w-4" /> Subir archivos
       </button>
     </div>

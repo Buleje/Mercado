@@ -279,7 +279,7 @@ export default function CtpAtribucionEditor({
           type="button"
           onClick={onCancel}
           disabled={saving}
-          className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+          className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
         >
           Cancelar
         </button>
@@ -287,7 +287,7 @@ export default function CtpAtribucionEditor({
           type="button"
           onClick={() => void save()}
           disabled={saving || overDisponible || sobre || invalida || rows === null}
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
         >
           {saving && <Loader2 className="h-4 w-4 animate-spin" />}
           Guardar atribución

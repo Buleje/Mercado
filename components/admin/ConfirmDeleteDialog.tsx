@@ -54,7 +54,7 @@ export function ConfirmDeleteDialog({
           <button
             onClick={onConfirm}
             disabled={loading}
-            className="flex items-center gap-2 px-5 min-h-10 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] active:scale-95 text-white text-sm font-bold transition-all disabled:opacity-50"
+            className="flex items-center gap-2 px-5 min-h-10 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] active:scale-95 text-white text-sm font-semibold transition-all disabled:opacity-50"
           >
             {loading && (
               <svg

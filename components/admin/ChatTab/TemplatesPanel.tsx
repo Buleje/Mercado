@@ -173,7 +173,7 @@ export function TemplatesPanel({ tenantSlug, customerName, storeName, onPick, on
               type="button"
               onClick={addTemplate}
               disabled={!newLabel.trim() || !newText.trim()}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary min-h-10 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary min-h-10 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-60"
             >
               <Check className="h-4 w-4" aria-hidden /> Guardar
             </button>

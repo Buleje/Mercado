@@ -444,7 +444,7 @@ export default function BudgetVsRealTab() {
               "meta-vs-real"
             )
           }
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors min-h-[44px]"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors min-h-[44px]"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -483,7 +483,7 @@ export default function BudgetVsRealTab() {
         <button
           onClick={handleSaveConfig}
           className={cn(
-            "mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all min-h-[44px]",
+            "mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all min-h-[44px]",
             savedFlash
               ? "bg-primary/10 text-white"
               : "bg-primary text-white hover:bg-primary/90"

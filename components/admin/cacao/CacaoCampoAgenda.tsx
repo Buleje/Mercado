@@ -128,7 +128,7 @@ export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas
         <select value={fEstado} onChange={(e) => setFEstado(e.target.value)} className={S}><option value="todos">Todos los estados</option><option value="hecho">Hechas</option><option value="pendiente">Programadas</option><option value="vencido">Vencidas</option></select>
         <select value={fTipo} onChange={(e) => setFTipo(e.target.value)} className={S}><option value="todas">Todas las labores</option>{CACAO_LABORES.map((l) => <option key={l.tipo} value={l.tipo}>{l.label}</option>)}</select>
         <select value={fSeccion} onChange={(e) => setFSeccion(e.target.value)} className={S}><option value="todas">Todas las secciones</option>{parcelas.map((p) => <option key={p.id} value={p.id}>{p.codigo}</option>)}</select>
-        <button type="button" onClick={load} className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" /></button>
+        <button type="button" onClick={load} className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" /></button>
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}

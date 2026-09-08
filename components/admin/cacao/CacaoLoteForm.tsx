@@ -279,7 +279,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
             type="submit"
             form="cacao-lote-form"
             disabled={!isValid || submitting}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             {submitting ? (
               <>
@@ -720,7 +720,7 @@ function Segmented({
           key={o.v}
           type="button"
           onClick={() => onChange(o.v as "humedo" | "seco")}
-          className={`flex-1 rounded-xl text-sm font-bold transition ${value === o.v ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
+          className={`flex-1 rounded-xl text-sm font-semibold transition ${value === o.v ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
         >
           {o.label}
         </button>

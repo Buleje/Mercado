@@ -103,7 +103,7 @@ export default function CtpIngresoCompletitud({
           <button
             type="button"
             onClick={onCompletar}
-            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white transition hover:brightness-110"
+            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white transition hover:brightness-110"
           >
             <Pencil className="h-4 w-4" aria-hidden /> Completar
           </button>

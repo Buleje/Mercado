@@ -1524,10 +1524,10 @@ export default function PrestamosModule() {
             <div className="flex flex-wrap gap-2">
               {amortizacion.length > 0 && (
                 <>
-                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] transition-colors">
+                  <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] transition-colors">
                     <Plus className="h-4 w-4" /> Crear Préstamo con estos datos
                   </button>
-                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold  transition-colors border", showComparador ? "bg-primary/10 text-white border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success-500)]/30 hover:text-[var(--data-success-500)]")}>
+                  <button onClick={() => setShowComparador(c => !c)} className={cn("inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold  transition-colors border", showComparador ? "bg-primary/10 text-white border-[var(--data-success-500)]/30" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--data-success-500)]/30 hover:text-[var(--data-success-500)]")}>
                     <Scale className="h-4 w-4" /> Comparar sistemas
                   </button>
                 </>
@@ -2243,7 +2243,7 @@ ${cuotas.map(c => { const row = `<tr>
                 {refinanciarError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{refinanciarError}</p>}
                 <div className="flex gap-2">
                   <button onClick={() => setShowRefinanciar(false)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-                  <button onClick={handleRefinanciar} disabled={refinancing} className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50">
+                  <button onClick={handleRefinanciar} disabled={refinancing} className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50">
                     {refinancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Refinanciar
                   </button>
                 </div>
@@ -2270,7 +2270,7 @@ ${cuotas.map(c => { const row = `<tr>
                 <p className="text-sm text-[var(--text-primary)]">Préstamo: <strong>{selected.entidadNombre || selected.customerId}</strong> — {formatCurrency(selected.monto)}</p>
                 <div className="flex gap-2">
                   <button onClick={() => setShowCancelConfirm(false)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)]">Volver</button>
-                  <button onClick={handleCancelPrestamo} disabled={canceling} className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50">
+                  <button onClick={handleCancelPrestamo} disabled={canceling} className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50">
                     {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Sí, cancelar
                   </button>
                 </div>
@@ -2320,7 +2320,7 @@ ${cuotas.map(c => { const row = `<tr>
                   <button
                     onClick={handlePago}
                     disabled={paying}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50 transition-colors"
                   >
                     {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                     Pagar
@@ -2387,7 +2387,7 @@ ${cuotas.map(c => { const row = `<tr>
                             <button
                               key={dir}
                               onClick={() => setCreateDireccion(dir)}
-                              className={`flex items-center gap-2 px-3 min-h-11 rounded-xl border-2 text-sm font-bold transition-all ${active ? "border-[var(--accent)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-base)]"}`}
+                              className={`flex items-center gap-2 px-3 min-h-11 rounded-xl border-2 text-sm font-semibold transition-all ${active ? "border-[var(--accent)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-base)]"}`}
                             >
                               <Icon className="h-4 w-4" />
                               {meta.label}
@@ -2522,7 +2522,7 @@ ${cuotas.map(c => { const row = `<tr>
                       </button>
                       <button
                         onClick={() => { setCreateError(null); setCreateStep(2); }}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] transition-colors"
                       >
                         Siguiente
                         <ChevronRight className="h-4 w-4" />
@@ -2688,7 +2688,7 @@ ${cuotas.map(c => { const row = `<tr>
                       <button
                         onClick={handleCreate}
                         disabled={creating}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--data-success-500)] disabled:opacity-50 transition-colors"
                       >
                         {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                         Crear Préstamo

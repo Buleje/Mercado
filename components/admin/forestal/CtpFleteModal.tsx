@@ -370,7 +370,7 @@ export default function CtpFleteModal({
                   type="button"
                   aria-pressed={b.tipoTransporte === t}
                   onClick={() => set({ tipoTransporte: t })}
-                  className={`inline-flex h-11 flex-1 items-center justify-center rounded-xl border-2 px-2 text-sm font-bold transition-colors ${
+                  className={`inline-flex h-11 flex-1 items-center justify-center rounded-xl border-2 px-2 text-sm font-semibold transition-colors ${
                     b.tipoTransporte === t
                       ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
@@ -448,7 +448,7 @@ export default function CtpFleteModal({
                   type="button"
                   aria-pressed={b.pagaQuien === p}
                   onClick={() => set({ pagaQuien: p })}
-                  className={`inline-flex h-11 items-center rounded-xl border-2 px-3.5 text-sm font-bold transition-colors ${
+                  className={`inline-flex h-11 items-center rounded-xl border-2 px-3.5 text-sm font-semibold transition-colors ${
                     b.pagaQuien === p
                       ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"

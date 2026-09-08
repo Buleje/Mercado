@@ -361,7 +361,7 @@ export default function CtpRecepcionTrozas({
           type="button"
           onClick={onCerrar}
           disabled={guardando}
-          className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)]"
+          className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)]"
         >
           Cancelar
         </button>
@@ -369,7 +369,7 @@ export default function CtpRecepcionTrozas({
           type="button"
           onClick={() => void guardar()}
           disabled={guardando || cambios.length === 0}
-          className="flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-white disabled:opacity-40"
+          className="flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-white disabled:opacity-40"
         >
           {guardando && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
           Guardar recepción

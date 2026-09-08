@@ -118,7 +118,7 @@ export default function SegmentsTab({ onCreateCampaign }: { onCreateCampaign: (s
                 onClick={() => onCreateCampaign(s.id)}
                 disabled={count === 0}
                 className={cn(
-                  "mt-auto inline-flex items-center justify-center gap-1.5 px-3 min-h-10 rounded-xl text-sm font-bold transition-colors",
+                  "mt-auto inline-flex items-center justify-center gap-1.5 px-3 min-h-10 rounded-xl text-sm font-semibold transition-colors",
                   count === 0
                     ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed"
                     : "bg-primary text-white hover:bg-primary/90",

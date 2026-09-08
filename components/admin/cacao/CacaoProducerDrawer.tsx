@@ -221,7 +221,7 @@ export default function CacaoProducerDrawer({
               type="button"
               disabled={saving}
               onClick={() => patch({ status: inactive ? "activo" : "inactivo" })}
-              className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3.5 text-sm font-bold ${inactive ? "border-[var(--data-success-500)] text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+              className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3.5 text-sm font-semibold ${inactive ? "border-[var(--data-success-500)] text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
             >
               <Power className="h-4 w-4" /> {inactive ? "Activar" : "Desactivar"}
             </button>
@@ -241,7 +241,7 @@ export default function CacaoProducerDrawer({
                   ].join("\n");
                   shareCacaoText(`Estado de cuenta — ${producer.nombre}`, t);
                 }}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] px-3.5 text-sm font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)] disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] px-3.5 text-sm font-semibold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)] disabled:opacity-50"
               >
                 <MessageCircle className="h-4 w-4" />
                 Compartir
@@ -269,7 +269,7 @@ export default function CacaoProducerDrawer({
                     })),
                   )
                 }
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
               >
                 <Printer className="h-4 w-4" />
                 Liquidación
@@ -669,7 +669,7 @@ export default function CacaoProducerDrawer({
             <button
               type="button"
               onClick={() => setPayLote(null)}
-              className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
             >
               Cancelar
             </button>
@@ -677,7 +677,7 @@ export default function CacaoProducerDrawer({
               type="button"
               disabled={saving}
               onClick={registrarPago}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Guardar pago

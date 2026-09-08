@@ -340,14 +340,14 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
           <button
             onClick={handlePrint}
             disabled={!data}
-            className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             <Printer className="h-4 w-4" /> Imprimir
           </button>
           <button
             onClick={handleWhatsApp}
             disabled={!data}
-            className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl bg-[#25D366] text-white text-sm font-bold hover:bg-[#1ebe5d] transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:bg-[#1ebe5d] transition-colors disabled:opacity-50"
           >
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </button>

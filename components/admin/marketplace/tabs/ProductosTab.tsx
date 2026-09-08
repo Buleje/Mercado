@@ -247,7 +247,7 @@ export function MarketplaceProductosTab() {
         <button
           onClick={handleSync}
           disabled={syncing}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--accent)] text-white text-sm font-extrabold hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--accent)] text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} aria-hidden />
           {syncing ? "Sincronizando…" : "Sincronizar inventario"}
@@ -806,7 +806,7 @@ function BoostModal({
                 setSubmitting(false);
               }}
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-[var(--data-error-500)]/10 text-[var(--data-error-500)] font-extrabold text-sm hover:bg-[var(--data-error-500)]/20 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-[var(--data-error-500)]/10 text-[var(--data-error-500)] font-semibold text-sm hover:bg-[var(--data-error-500)]/20 transition-colors disabled:opacity-50"
             >
               <X className="h-4 w-4" />
               Detener boost
@@ -816,7 +816,7 @@ function BoostModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="h-11 px-4 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]"
+                className="h-11 px-4 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]"
               >
                 Cancelar
               </button>
@@ -824,7 +824,7 @@ function BoostModal({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!canSubmit || submitting}
-                className="inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-[var(--brand-secondary)] text-white font-extrabold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-[var(--brand-secondary)] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 <Sparkles className="h-4 w-4" />
                 {submitting ? "Creando…" : "Destacar"}

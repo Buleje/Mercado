@@ -88,7 +88,7 @@ export default function CtpMaterialPanel({
               type="button"
               aria-expanded={activa}
               onClick={() => setAbierta((a) => (a === s.id ? null : s.id))}
-              className={`inline-flex h-11 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition-colors ${
+              className={`inline-flex h-11 items-center gap-2 rounded-xl border-2 px-3 text-sm font-semibold transition-colors ${
                 activa
                   ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"

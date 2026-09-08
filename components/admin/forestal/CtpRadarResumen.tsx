@@ -182,7 +182,7 @@ export default function CtpRadarResumen({
                 return (
                   <button
                     key={v.key} type="button" title={v.hint} onClick={() => setVista(v.key)} aria-pressed={vista === v.key}
-                    className={`flex h-full items-center gap-1.5 px-3.5 text-sm font-bold transition ${vista === v.key ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`}
+                    className={`flex h-full items-center gap-1.5 px-3.5 text-sm font-semibold transition ${vista === v.key ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`}
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" /> {v.label}
                     {alertas > 0 && (

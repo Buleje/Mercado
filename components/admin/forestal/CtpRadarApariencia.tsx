@@ -148,7 +148,7 @@ export default function CtpRadarApariencia({
         onClick={() => onAbierto(!abierto)}
         aria-expanded={abierto}
         title="Tamaño de los bloques y color de cada columna"
-        className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition ${
+        className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3 text-sm font-semibold transition ${
           abierto || preset?.key !== "normal" || paleta?.key !== "sistema" || aMedida
             ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 text-[var(--accent)]"
             : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"

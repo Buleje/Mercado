@@ -682,7 +682,7 @@ export default function CashRegisterTab() {
                   />
                 </div>
                 <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">Diferencias dentro de este rango se marcan como aceptables.</p>
-                <button onClick={() => setShowToleranceConfig(false)} className="mt-3 w-full min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors">
+                <button onClick={() => setShowToleranceConfig(false)} className="mt-3 w-full min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors">
                   Listo
                 </button>
               </div>
@@ -750,7 +750,7 @@ export default function CashRegisterTab() {
                 <div className="flex justify-end">
                   <button
                     onClick={() => setShowOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 px-8 min-h-11 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors shadow-[var(--shadow-sm)]"
+                    className="inline-flex items-center justify-center gap-2 px-8 min-h-11 rounded-xl text-base font-semibold text-white bg-primary hover:bg-primary-dark transition-colors shadow-[var(--shadow-sm)]"
                   >
                     <Unlock className="h-5 w-5" strokeWidth={2} aria-hidden />
                     Abrir caja
@@ -1568,7 +1568,7 @@ export default function CashRegisterTab() {
               <button
                 onClick={handleOpen}
                 disabled={opening}
-                className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
               >
                 {opening ? <Loader2 className="h-5 w-5 animate-spin" /> : <Unlock className="h-5 w-5" />}
                 Abrir caja
@@ -1769,7 +1769,7 @@ export default function CashRegisterTab() {
               <button
                 onClick={handleClose}
                 disabled={closing || !closeAmount}
-                className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-50 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-50 transition-colors"
               >
                 {closing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-5 w-5" />}
                 Confirmar cierre
@@ -1890,7 +1890,7 @@ export default function CashRegisterTab() {
                 onClick={handleAddMovement}
                 disabled={addingMv || !mvAmount || (mvType === "egreso" && !mvMotivo && !mvDescription.trim())}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-bold text-white disabled:opacity-50 transition-colors",
+                  "flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-semibold text-white disabled:opacity-50 transition-colors",
                   mvType === "ingreso" ? "bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/90" : "bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90"
                 )}
               >
@@ -1977,7 +1977,7 @@ export default function CashRegisterTab() {
                       <button
                         key={d}
                         onClick={() => handleArqueoDenomClick(d)}
-                        className="relative px-3 min-h-11 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                        className="relative px-3 min-h-11 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                       >
                         S/{d}
                         {(arqueoDenoms[String(d)] ?? 0) > 0 && (
@@ -2085,7 +2085,7 @@ export default function CashRegisterTab() {
                   <button
                     onClick={handleArqueoExpress}
                     disabled={addingArqueo || !arqueoAmount}
-                    className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-bold text-white bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/90 disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-semibold text-white bg-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/90 disabled:opacity-50 transition-colors"
                   >
                     {addingArqueo ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
                     Registrar arqueo
@@ -2380,7 +2380,7 @@ export default function CashRegisterTab() {
               <button
                 onClick={handleArqueoGuiado}
                 disabled={addingArqueoGuiado || guiadoTotal <= 0}
-                className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
               >
                 {addingArqueoGuiado ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
                 {/* El botón dice lo que hace: esto cierra la caja del día. */}

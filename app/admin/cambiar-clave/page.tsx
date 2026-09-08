@@ -92,7 +92,7 @@ export default function CambiarClavePage() {
             />
           </label>
           {err && <p className="text-sm font-semibold text-[var(--data-error-600,#dc2626)]">{err}</p>}
-          <button type="submit" disabled={busy} className="inline-flex w-full h-11 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] text-base font-bold text-white hover:opacity-90 disabled:opacity-50">
+          <button type="submit" disabled={busy} className="inline-flex w-full h-11 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] text-base font-semibold text-white hover:opacity-90 disabled:opacity-50">
             {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
             Guardar y entrar
           </button>

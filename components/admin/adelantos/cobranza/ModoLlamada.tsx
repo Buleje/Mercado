@@ -161,13 +161,13 @@ export default function ModoLlamada({
           <div className="flex flex-wrap justify-center gap-2">
             <button
               onClick={() => void marcar("NO_CONTESTA")}
-              className="h-11 rounded-xl bg-[var(--surface-sunken)] px-4 text-base font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+              className="h-11 rounded-xl bg-[var(--surface-sunken)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
             >
               No contesta
             </button>
             <button
               onClick={() => void marcar("PAGO")}
-              className="h-11 rounded-xl bg-[var(--data-success)]/12 px-4 text-base font-bold text-[var(--data-success)] transition-colors hover:bg-[var(--data-success)]/20"
+              className="h-11 rounded-xl bg-[var(--data-success)]/12 px-4 text-base font-semibold text-[var(--data-success)] transition-colors hover:bg-[var(--data-success)]/20"
             >
               Ya pagó
             </button>
@@ -180,13 +180,13 @@ export default function ModoLlamada({
         <button
           onClick={() => setI(Math.max(0, i - 1))}
           disabled={i === 0}
-          className="inline-flex h-12 items-center gap-1.5 rounded-xl px-4 text-base font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)] disabled:opacity-40"
+          className="inline-flex h-12 items-center gap-1.5 rounded-xl px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)] disabled:opacity-40"
         >
           <ChevronLeft className="h-5 w-5" /> Anterior
         </button>
         <button
           onClick={() => (i < deudores.length - 1 ? setI(i + 1) : onClose())}
-          className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-primary px-5 text-base font-bold text-white transition-colors hover:bg-primary-dark"
+          className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-primary px-5 text-base font-semibold text-white transition-colors hover:bg-primary-dark"
         >
           {i < deudores.length - 1 ? "Siguiente" : "Terminar"} <ChevronRight className="h-5 w-5" />
         </button>

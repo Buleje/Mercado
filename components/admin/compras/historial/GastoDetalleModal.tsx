@@ -111,7 +111,7 @@ export default function GastoDetalleModal({
             <button
               type="button"
               onClick={() => onEditar(item)}
-              className="mr-auto inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-primary/40 hover:text-primary"
+              className="mr-auto inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-primary/40 hover:text-primary"
             >
               <Pencil className="h-4 w-4" aria-hidden />
               Corregir
@@ -129,7 +129,7 @@ export default function GastoDetalleModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-11 items-center rounded-xl bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary/90"
+            className="inline-flex h-11 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
           >
             Cerrar
           </button>

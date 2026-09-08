@@ -186,7 +186,7 @@ export default function CacaoNews() {
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">Lo último del cacao en Perú y el mundo, con su sesgo de precio. Fuente: Google Noticias.</p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
+          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
           {updatedAt && <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]"><Clock className="h-3 w-3" />Actualizado {relTime(updatedAt)}</span>}
         </div>
       </div>

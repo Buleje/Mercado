@@ -352,7 +352,7 @@ export default function DocumentoTextoEditor({
             onClick={() => void guardar()}
             disabled={estado === "guardando" || !sucio}
             title="Guardar en el panel (Ctrl+S)"
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
           >
             {estado === "guardando" ? <Loader2 className="h-4 w-4 animate-spin" /> : sucio ? <Save className="h-4 w-4" /> : <Check className="h-4 w-4" />}
             {estado === "guardando" ? "Guardando…" : "Guardar"}

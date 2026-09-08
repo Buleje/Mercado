@@ -208,7 +208,7 @@ export default function CtpGuiaFichaModal({
               role="tab"
               aria-selected={vista === t.id}
               onClick={() => setVista(t.id)}
-              className={`flex-1 rounded-xl px-3 min-h-10 text-sm font-bold transition-colors ${
+              className={`flex-1 rounded-xl px-3 min-h-10 text-sm font-semibold transition-colors ${
                 vista === t.id
                   ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

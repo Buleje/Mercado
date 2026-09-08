@@ -214,7 +214,7 @@ export default function CtpTrozasLista({
         </select>
         <button
           type="button" onClick={exportar} disabled={filtradas.length === 0}
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-50"
         >
           <Download className="h-4 w-4" /> CSV
         </button>
@@ -504,7 +504,7 @@ export default function CtpTrozasLista({
               <button
                 type="button"
                 onClick={() => setTope((v) => v + 200)}
-                className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+                className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
               >
                 Ver 200 más ({filtradas.length - visibles.length} restantes)
               </button>

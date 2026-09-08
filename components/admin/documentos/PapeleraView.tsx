@@ -124,7 +124,7 @@ export function PapeleraView({
             ) && correr("vaciar", () => onPurgeMany())
           }
           disabled={ocupado}
-          className="inline-flex items-center gap-1.5 px-3.5 min-h-10 rounded-xl border-2 border-[var(--data-error-500)]/40 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] text-sm font-bold hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/10 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 min-h-10 rounded-xl border-2 border-[var(--data-error-500)]/40 text-[var(--data-error-700)] dark:text-[var(--data-error-500)] text-sm font-semibold hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/10 disabled:opacity-50 transition-colors"
         >
           {trabajando === "vaciar" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
           Vaciar papelera

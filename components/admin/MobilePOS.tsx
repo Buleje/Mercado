@@ -139,7 +139,7 @@ function ProductButton({ product, onAdd }: { product: POSProduct; onAdd: (p: POS
               </button>
               <button
                 onClick={confirmLongPress}
-                className="flex-1 h-12 rounded-xl bg-primary/10 text-white font-bold active:scale-95"
+                className="flex-1 h-12 rounded-xl bg-primary/10 text-white font-semibold active:scale-95"
               >
                 Agregar {longPressQty}
               </button>
@@ -456,7 +456,7 @@ export default function MobilePOS() {
                 onClick={() => handlePay(method)}
                 disabled={!cart.length}
                 className={cn(
-                  "rounded-xl font-bold text-white text-sm transition-colors active:scale-95 disabled:opacity-30",
+                  "rounded-xl font-semibold text-white text-sm transition-colors active:scale-95 disabled:opacity-30",
                   color,
                 )}
                 style={{ height: 60, touchAction: "manipulation" }}
@@ -470,7 +470,7 @@ export default function MobilePOS() {
           <button
             onClick={() => handlePay("efectivo")}
             disabled={!cart.length || paying}
-            className="w-full rounded-xl bg-primary/10 hover:bg-primary/10 active:scale-95 text-white font-extrabold text-lg transition-all disabled:opacity-30"
+            className="w-full rounded-xl bg-primary/10 hover:bg-primary/10 active:scale-95 text-white font-semibold text-lg transition-all disabled:opacity-30"
             style={{ height: 80, touchAction: "manipulation" }}
           >
             {paying ? "Procesando..." : paySuccess ? "Cobrado!" : `Cobrar S/${total.toFixed(2)}`}

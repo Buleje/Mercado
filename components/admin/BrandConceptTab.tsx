@@ -597,7 +597,7 @@ export default function BrandConceptTab({
               type="button"
               onClick={() => void analyze()}
               disabled={analyzing}
-              className="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               {analyzing ? "Analizando…" : "Re-analizar"}
@@ -1099,7 +1099,7 @@ function ExpandedPreview({ concept: c }: { concept: Concept }) {
         <div className="flex flex-wrap gap-2.5">
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 px-5 h-11 text-sm font-extrabold text-white"
+            className="inline-flex items-center gap-1.5 px-5 h-11 text-sm font-semibold text-white"
             style={{
               background: `linear-gradient(135deg, ${c.primary} 0%, ${c.secondary} 100%)`,
               borderRadius: buttonRadius,
@@ -1111,7 +1111,7 @@ function ExpandedPreview({ concept: c }: { concept: Concept }) {
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 px-5 h-11 text-sm font-extrabold border-2"
+            className="inline-flex items-center gap-1.5 px-5 h-11 text-sm font-semibold border-2"
             style={{
               backgroundColor: bgCard,
               borderRadius: buttonRadius,
@@ -1123,7 +1123,7 @@ function ExpandedPreview({ concept: c }: { concept: Concept }) {
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 px-5 h-11 text-sm font-extrabold"
+            className="inline-flex items-center gap-1.5 px-5 h-11 text-sm font-semibold"
             style={{
               backgroundColor: `${c.accent}20`,
               borderRadius: buttonRadius,
@@ -1244,7 +1244,7 @@ function ExpandedPreview({ concept: c }: { concept: Concept }) {
             </div>
             <button
               type="button"
-              className="w-full mt-3 inline-flex items-center justify-center gap-1.5 h-10 text-sm font-extrabold text-white"
+              className="w-full mt-3 inline-flex items-center justify-center gap-1.5 h-10 text-sm font-semibold text-white"
               style={{
                 background: `linear-gradient(135deg, ${c.primary} 0%, ${c.secondary} 100%)`,
                 borderRadius: buttonRadius,
@@ -1282,7 +1282,7 @@ function ExpandedPreview({ concept: c }: { concept: Concept }) {
           />
           <button
             type="button"
-            className="w-full mt-3 h-10 text-sm font-extrabold text-white"
+            className="w-full mt-3 h-10 text-sm font-semibold text-white"
             style={{
               background: c.primary,
               borderRadius: buttonRadius,

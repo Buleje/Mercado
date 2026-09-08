@@ -146,7 +146,7 @@ export default function FiltrosDoc({ filtros, onCambiar, presentes, tagsPresente
         ref={botonRef}
         onClick={onAlternar}
         className={cn(
-          "inline-flex h-[42px] items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-bold transition-colors",
+          "inline-flex h-[42px] items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-semibold transition-colors",
           activos > 0
             ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
             : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:border-primary/40 ",

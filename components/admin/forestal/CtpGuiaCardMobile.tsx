@@ -119,7 +119,7 @@ export default function CtpGuiaCardMobile({
             type="button"
             onClick={() => onRecepcionarGuia(guia)}
             disabled={Boolean(busy)}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-3 text-sm font-bold text-white disabled:opacity-40"
+            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-3 text-sm font-semibold text-white disabled:opacity-40"
           >
             <PackageCheck className="h-4 w-4" aria-hidden /> Recepcionar
           </button>
@@ -129,7 +129,7 @@ export default function CtpGuiaCardMobile({
             type="button"
             onClick={() => onValidarGuia(guia)}
             disabled={Boolean(busy)}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] disabled:opacity-40"
+            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] disabled:opacity-40"
           >
             <CheckCheck className="h-4 w-4" aria-hidden /> Validar {pendientes > 1 ? pendientes : ""}
           </button>

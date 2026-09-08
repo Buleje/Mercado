@@ -95,11 +95,11 @@ export default function CacaoCampoSanidad({ parcelas, onOpenParcela, onChanged }
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
 
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={() => setShowReg(true)} className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Registrar foco</button>
+        <button type="button" onClick={() => setShowReg(true)} className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Registrar foco</button>
         <div className="mr-auto" />
         <select value={fPlaga} onChange={(e) => setFPlaga(e.target.value)} className={S}><option value="todas">Todas las plagas</option>{CACAO_PLAGAS.map((p) => <option key={p.tipo} value={p.tipo}>{p.label}</option>)}</select>
         <select value={fEstado} onChange={(e) => setFEstado(e.target.value)} className={S}><option value="activos">Activos + en control</option><option value="activo">Solo activos</option><option value="controlado">En control</option><option value="resuelto">Resueltos</option><option value="todos">Todos</option></select>
-        <button type="button" onClick={load} className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" /></button>
+        <button type="button" onClick={load} className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" /></button>
       </div>
 
       {loading && focos.length === 0 ? (
@@ -183,8 +183,8 @@ function RegistrarSanidadModal({ parcelas, onClose, onSaved }: { parcelas: Parce
         {plagaTip?.tip && <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]"><strong className="text-[var(--text-primary)]">Recomendación:</strong> {plagaTip.tip}</p>}
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
-          <button type="submit" disabled={submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Registrar</button>
+          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
+          <button type="submit" disabled={submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Registrar</button>
         </div>
       </form>
     </AdminModal>

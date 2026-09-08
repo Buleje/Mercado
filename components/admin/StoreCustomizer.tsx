@@ -740,7 +740,7 @@ function HeroTab({
                   >
                     <button
                       type="button"
-                      className="inline-flex items-center justify-center gap-2 px-5 min-h-11 rounded-xl text-sm font-bold text-white shadow-[var(--shadow-lg)] pointer-events-none"
+                      className="inline-flex items-center justify-center gap-2 px-5 min-h-11 rounded-xl text-sm font-semibold text-white shadow-[var(--shadow-lg)] pointer-events-none"
                       style={{ backgroundColor: accent, boxShadow: `0 10px 25px ${accent}40` }}
                     >
                       <ShoppingBag className="h-4 w-4" />
@@ -1196,7 +1196,7 @@ function HeroTab({
                   const active = (theme.heroAlign ?? "left") === val;
                   return (
                     <button key={val} type="button" onClick={() => update("heroAlign", val)} aria-pressed={active}
-                      className={cn("h-10 rounded-xl border-2 text-sm font-bold transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
+                      className={cn("h-10 rounded-xl border-2 text-sm font-semibold transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
                       {label}
                     </button>
                   );
@@ -1210,7 +1210,7 @@ function HeroTab({
                   const active = (theme.heroHeight ?? "normal") === val;
                   return (
                     <button key={val} type="button" onClick={() => update("heroHeight", val)} aria-pressed={active}
-                      className={cn("h-10 rounded-xl border-2 text-sm font-bold transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
+                      className={cn("h-10 rounded-xl border-2 text-sm font-semibold transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
                       {label}
                     </button>
                   );
@@ -2433,14 +2433,14 @@ export default function StoreCustomizer() {
                       <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
-                          className="px-5 min-h-11 text-sm font-bold text-white shadow-[var(--shadow-md)] hover:opacity-90 transition-all pointer-events-none"
+                          className="px-5 min-h-11 text-sm font-semibold text-white shadow-[var(--shadow-md)] hover:opacity-90 transition-all pointer-events-none"
                           style={{ backgroundColor: theme.primaryColor, borderRadius: `${theme.borderRadius}px` }}
                         >
                           {theme.heroCTA || "Comprar ahora"}
                         </button>
                         <button
                           type="button"
-                          className="px-5 min-h-11 text-sm font-bold text-white shadow-[var(--shadow-md)] hover:opacity-90 transition-all pointer-events-none"
+                          className="px-5 min-h-11 text-sm font-semibold text-white shadow-[var(--shadow-md)] hover:opacity-90 transition-all pointer-events-none"
                           style={{ backgroundColor: theme.secondaryColor, borderRadius: `${theme.borderRadius}px` }}
                         >
                           Ver oferta
@@ -3263,7 +3263,7 @@ export default function StoreCustomizer() {
                           />
                           <button
                             type="button"
-                            className="h-10 px-5 text-sm font-bold text-white shadow-[var(--shadow-md)] transition-all pointer-events-none"
+                            className="h-10 px-5 text-sm font-semibold text-white shadow-[var(--shadow-md)] transition-all pointer-events-none"
                             style={{ backgroundColor: theme.primaryColor, borderRadius: `${theme.borderRadius}px` }}
                           >
                             Comprar
@@ -3545,7 +3545,7 @@ export default function StoreCustomizer() {
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="w-full flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-[var(--data-error-500)] text-base font-bold text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/10 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-[var(--data-error-500)] text-base font-semibold text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/10 transition-colors"
                   >
                     Restaurar valores por defecto
                   </button>
@@ -3564,7 +3564,7 @@ export default function StoreCustomizer() {
               onClick={handleSave}
               disabled={saving}
               className={cn(
-                "w-full flex items-center justify-center gap-2.5 h-14 rounded-2xl text-base font-bold transition-all relative shadow-[var(--shadow-md)]",
+                "w-full flex items-center justify-center gap-2.5 h-14 rounded-2xl text-base font-semibold transition-all relative shadow-[var(--shadow-md)]",
                 saved
                   ? "bg-[var(--data-success-500)] text-white"
                   : "bg-primary hover:bg-primary-dark text-white hover:shadow-[var(--shadow-lg)] active:scale-[0.98]",

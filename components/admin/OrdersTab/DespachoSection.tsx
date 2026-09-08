@@ -194,7 +194,7 @@ export function DespachoSection({
           <button
             type="button"
             onClick={() => setShowAdHoc(true)}
-            className="mt-4 inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border-2 border-[var(--accent)] text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/5 transition-colors"
+            className="mt-4 inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border-2 border-[var(--accent)] text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/5 transition-colors"
           >
             <Sparkles className="h-4 w-4" /> Asignar nombre ad-hoc
           </button>
@@ -250,7 +250,7 @@ export function DespachoSection({
                     )}
                   </p>
                 </div>
-                <span className="shrink-0 inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-[var(--text-primary)] text-[var(--surface-canvas)] text-xs font-bold uppercase tracking-wider">
+                <span className="shrink-0 inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-primary text-white text-xs font-bold uppercase tracking-wider">
                   {assigning === p.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
@@ -339,7 +339,7 @@ export function DespachoSection({
                 type="button"
                 onClick={handleSaveAdHoc}
                 disabled={savingDriver || !customDriver.trim()}
-                className="h-12 px-4 rounded-xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-bold hover:bg-[var(--accent)] transition-colors disabled:opacity-50"
+                className="h-12 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
                 {savingDriver ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
               </button>

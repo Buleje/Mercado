@@ -3308,7 +3308,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     type="button"
                     onClick={generateAiTheme}
                     disabled={aiLoading || aiPrompt.trim().length < 4}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary/10 px-3 min-h-10 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary/10 px-3 min-h-10 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {aiLoading
                       ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Generando…</>
@@ -4907,7 +4907,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     <p className="mt-2 text-sm text-white/90 line-clamp-2">{draft.heroSubtitle || "Delivery rápido en tu zona"}</p>
                     <button
                       type="button"
-                      className="mt-4 text-sm font-bold text-white px-4 min-h-10"
+                      className="mt-4 text-sm font-semibold text-white px-4 min-h-10"
                       style={{
                         backgroundColor: draft.secondaryColor,
                         borderRadius: draft.buttonStyle === "pill" ? 999 : draft.buttonStyle === "square" ? 4 : draft.borderRadius,

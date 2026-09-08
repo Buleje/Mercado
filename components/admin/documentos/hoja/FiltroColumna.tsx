@@ -127,13 +127,13 @@ export default function FiltroColumna({
           </button>
           <div className="flex gap-2">
             <button type="button" onClick={onCerrar}
-              className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
+              className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
               Cancelar
             </button>
             <button
               type="button"
               onClick={() => { onAplicar(todosElegidos ? null : elegidos); onCerrar(); }}
-              className="h-10 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:bg-[var(--accent-600)]"
+              className="h-10 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--accent-600)]"
             >
               Aplicar
             </button>

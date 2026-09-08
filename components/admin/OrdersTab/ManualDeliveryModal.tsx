@@ -145,7 +145,7 @@ export default function ManualDeliveryModal({
         <button
           type="button"
           onClick={handleConfirm}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-sm font-extrabold bg-[var(--data-success-500)] text-white hover:opacity-90 shadow-[var(--shadow-md)] shadow-[var(--data-success-500)]/30 transition-all active:scale-[0.99]"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold bg-[var(--data-success-500)] text-white hover:opacity-90 shadow-[var(--shadow-md)] shadow-[var(--data-success-500)]/30 transition-all active:scale-[0.99]"
         >
           <Check className="h-4 w-4" strokeWidth={2.5} />
           Confirmar entrega

@@ -270,7 +270,7 @@ export default function ImportarCarpetaModal({
               <button
                 type="button"
                 onClick={() => { setPlan(null); setFase("elegir"); }}
-                className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
               >
                 Elegir otra
               </button>
@@ -278,7 +278,7 @@ export default function ImportarCarpetaModal({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             >
               Cancelar
             </button>
@@ -287,7 +287,7 @@ export default function ImportarCarpetaModal({
                 type="button"
                 onClick={importar}
                 disabled={buscandoDuplicados || total === 0}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {buscandoDuplicados
                   ? <><Loader2 className="h-4 w-4 animate-spin" /> Revisando qué falta…</>
@@ -320,7 +320,7 @@ export default function ImportarCarpetaModal({
               <button
                 type="button"
                 onClick={() => inputRef.current?.click()}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
               >
                 <Upload className="h-4 w-4" /> Elegir carpeta…
               </button>

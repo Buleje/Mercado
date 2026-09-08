@@ -281,7 +281,7 @@ export default function CompetitivePricingTab() {
             type="button"
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
             Actualizar análisis
@@ -444,7 +444,7 @@ export default function CompetitivePricingTab() {
                           type="button"
                           disabled={applying === p.id}
                           onClick={() => handleApplySuggestion(p)}
-                          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold bg-primary hover:bg-primary-dark text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-24 justify-center"
+                          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold bg-primary hover:bg-primary-dark text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-24 justify-center"
                         >
                           {applying === p.id && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
                           Aplicar

@@ -39,7 +39,7 @@ export default function Anexo04Acciones({
         onClick={onDescargar}
         disabled={generando}
         title={presentable ? "Descargar el ANEXO N° 04" : "Se puede descargar igual (para llenar a mano), pero le faltan datos obligatorios"}
-        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-60"
+        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
       >
         <Download className="h-4 w-4" /> {generando ? "Generando…" : presentable ? "Descargar PDF" : "Descargar igual"}
       </button>

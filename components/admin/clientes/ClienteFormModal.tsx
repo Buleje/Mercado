@@ -406,7 +406,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                       type="button"
                       onClick={() => set('tipoPersona', t)}
                       className={cn(
-                        "flex-1 min-h-10 rounded-xl text-sm font-bold border transition-colors",
+                        "flex-1 min-h-10 rounded-xl text-sm font-semibold border transition-colors",
                         form.tipoPersona === t
                           ? "bg-primary text-white border-primary"
                           : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
@@ -508,7 +508,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                         type="button"
                         onClick={() => set('tipoPersona', t)}
                         className={cn(
-                          "flex-1 min-h-10 rounded-xl text-sm font-bold border transition-colors",
+                          "flex-1 min-h-10 rounded-xl text-sm font-semibold border transition-colors",
                           form.tipoPersona === t
                             ? "bg-primary text-white border-primary"
                             : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
@@ -802,7 +802,7 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+              className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {saving ? 'Guardando...' : isEdit ? 'Guardar cliente' : format === 'simple' ? 'Crear cliente' : 'Guardar cliente'}

@@ -166,7 +166,7 @@ export default function CtpCierreAsistido({ onIr, cierres }: {
           onClick={() => void cerrar()}
           disabled={cerrando || cargando || yaCerrado || revision.veredicto === "no_conviene"}
           title={yaCerrado ? "Ese mes ya está cerrado" : revision.veredicto === "no_conviene" ? "Resolvé lo que impide cerrar" : `Congela costos y bloquea ${mes.label}`}
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
+          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
         >
           {cerrando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
           {cerrando ? "Cerrando…" : yaCerrado ? `${mes.label} ya está cerrado` : `Cerrar ${mes.label}`}

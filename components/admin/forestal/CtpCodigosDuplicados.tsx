@@ -180,7 +180,7 @@ export default function CtpCodigosDuplicados() {
           type="button"
           onClick={() => void renumerar(grupos ?? [])}
           disabled={trabajando || !grupos?.length}
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
         >
           {trabajando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Hash className="h-4 w-4" />}
           Resolver todos

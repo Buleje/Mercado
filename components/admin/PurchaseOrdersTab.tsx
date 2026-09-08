@@ -226,7 +226,7 @@ function FleteTardio({
           type="button"
           onClick={guardar}
           disabled={guardando}
-          className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60"
         >
           {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
           Guardar
@@ -234,7 +234,7 @@ function FleteTardio({
         <button
           type="button"
           onClick={() => { setAbierto(false); setMonto(orden.flete ?? 0); }}
-          className="h-11 px-3 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          className="h-11 px-3 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           Cancelar
         </button>
@@ -758,7 +758,7 @@ export default function PurchaseOrdersTab() {
         <button
           type="button"
           onClick={() => setShowCreate(v => !v)}
-          className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors shadow-sm hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors shadow-sm hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           <Plus className="h-5 w-5" strokeWidth={2.5} />
           Nueva orden
@@ -835,7 +835,7 @@ export default function PurchaseOrdersTab() {
               <button
                 type="button"
                 onClick={f.limpiar}
-                className="inline-flex items-center gap-1.5 h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
+                className="inline-flex items-center gap-1.5 h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
               >
                 <X className="h-4 w-4" />
                 Limpiar
@@ -858,7 +858,7 @@ export default function PurchaseOrdersTab() {
           type="button"
           onClick={() => setShowSupplierHistory(v => !v)}
           className={cn(
-            "inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 text-sm font-bold transition-colors",
+            "inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 text-sm font-semibold transition-colors",
             showSupplierHistory
               ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
               : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
@@ -890,7 +890,7 @@ export default function PurchaseOrdersTab() {
             }));
             exportToExcel(rows, `compras-${new Date().toISOString().slice(0, 10)}`, "Compras");
           }}
-          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           title="Exportar compras a Excel"
         >
           <Download className="h-4 w-4" />
@@ -957,7 +957,7 @@ export default function PurchaseOrdersTab() {
                 type="button"
                 onClick={() => setStatusFilter(p.id as typeof statusFilter)}
                 className={cn(
-                  "inline-flex items-center gap-2 h-11 px-4 rounded-2xl text-sm font-bold transition-colors border-2",
+                  "inline-flex items-center gap-2 h-11 px-4 rounded-2xl text-sm font-semibold transition-colors border-2",
                   active
                     ? toneCls
                     : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
@@ -1075,7 +1075,7 @@ export default function PurchaseOrdersTab() {
                   <button
                     type="button"
                     onClick={() => generarDesdeRecurrente(r.id)}
-                    className="w-full inline-flex items-center justify-center gap-1.5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+                    className="w-full inline-flex items-center justify-center gap-1.5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
                   >
                     <Plus className="h-4 w-4" />
                     Crear OC ahora
@@ -1103,7 +1103,7 @@ export default function PurchaseOrdersTab() {
                     key={d}
                     onClick={() => setRecurringInterval(d)}
                     className={cn(
-                      "flex-1 min-h-10 rounded-xl text-sm font-bold transition-colors",
+                      "flex-1 min-h-10 rounded-xl text-sm font-semibold transition-colors",
                       recurringInterval === d ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                     )}
                   >
@@ -1134,7 +1134,7 @@ export default function PurchaseOrdersTab() {
               <button
                 type="button"
                 onClick={() => setShowRecurringModal(null)}
-                className="flex-1 h-12 rounded-xl bg-[var(--surface-sunken)] text-sm font-bold text-[var(--text-secondary)]"
+                className="flex-1 h-12 rounded-xl bg-[var(--surface-sunken)] text-sm font-semibold text-[var(--text-secondary)]"
               >
                 Cancelar
               </button>
@@ -1142,7 +1142,7 @@ export default function PurchaseOrdersTab() {
                 type="button"
                 disabled={guardandoRecurrente}
                 onClick={() => addRecurringOrder(showRecurringModal)}
-                className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:bg-[var(--accent)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[var(--accent-600,var(--accent))] text-white text-sm font-semibold hover:bg-[var(--accent)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {guardandoRecurrente && <Loader2 className="h-4 w-4 animate-spin" />}
                 {guardandoRecurrente ? "Guardando…" : "Guardar"}
@@ -1348,7 +1348,7 @@ export default function PurchaseOrdersTab() {
                             aria-pressed={activa}
                             title={forma.ayuda}
                             className={cn(
-                              "h-12 px-4 rounded-2xl border-2 text-sm font-bold transition-colors",
+                              "h-12 px-4 rounded-2xl border-2 text-sm font-semibold transition-colors",
                               activa
                                 ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
@@ -1634,14 +1634,14 @@ export default function PurchaseOrdersTab() {
                   <button
                     type="button"
                     onClick={() => setShowCreate(false)}
-                    className="flex-1 h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                    className="flex-1 h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={saving || !supplierId || items.length === 0}
-                    className="flex-1 sm:flex-[2] inline-flex items-center justify-center gap-2 h-12 rounded-2xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    className="flex-1 sm:flex-[2] inline-flex items-center justify-center gap-2 h-12 rounded-2xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
                     {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" strokeWidth={2.5} />}
                     {saving ? "Guardando…" : "Crear orden de compra"}
@@ -1675,7 +1675,7 @@ export default function PurchaseOrdersTab() {
             <button
               type="button"
               onClick={f.limpiar}
-              className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors"
+              className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors"
             >
               <X className="h-5 w-5" strokeWidth={2.5} />
               Limpiar filtros
@@ -1684,7 +1684,7 @@ export default function PurchaseOrdersTab() {
             <button
               type="button"
               onClick={() => setShowCreate(true)}
-              className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors shadow-sm"
+              className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors shadow-sm"
             >
               <Plus className="h-5 w-5" strokeWidth={2.5} />
               Crear primera orden
@@ -1779,7 +1779,7 @@ export default function PurchaseOrdersTab() {
                     <button
                       type="button"
                       onClick={() => setRecepcionOC(o)}
-                      className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--data-success-500)] text-white text-sm font-bold hover:bg-emerald-600 transition-colors shadow-sm"
+                      className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--data-success-500)] text-white text-sm font-semibold hover:bg-emerald-600 transition-colors shadow-sm"
                       title="Registrar recepción"
                     >
                       <PackageCheck className="h-4 w-4" />
@@ -1790,7 +1790,7 @@ export default function PurchaseOrdersTab() {
                   <button
                     type="button"
                     onClick={() => duplicateOrder(o)}
-                    className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--rule-base)] text-sm font-bold transition-colors"
+                    className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--rule-base)] text-sm font-semibold transition-colors"
                     title="Duplicar orden"
                   >
                     <Copy className="h-4 w-4" />
@@ -1800,7 +1800,7 @@ export default function PurchaseOrdersTab() {
                     <button
                       type="button"
                       onClick={() => { setShowRecurringModal(o); setRecurringInterval(15); setRecurringNotifyDays(2); }}
-                      className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 text-sm font-bold transition-colors"
+                      className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 text-sm font-semibold transition-colors"
                       title="Hacer pedido recurrente"
                     >
                       <Repeat className="h-4 w-4" />
@@ -1982,7 +1982,7 @@ export default function PurchaseOrdersTab() {
                   type="button"
                   onClick={() => f.setPagina(f.pagina - 1)}
                   disabled={f.pagina <= 1}
-                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Anterior
@@ -1994,7 +1994,7 @@ export default function PurchaseOrdersTab() {
                   type="button"
                   onClick={() => f.setPagina(f.pagina + 1)}
                   disabled={f.pagina >= f.totalPaginas}
-                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Siguiente
                   <ChevronRight className="h-4 w-4" />
@@ -2089,7 +2089,7 @@ export default function PurchaseOrdersTab() {
                           setItemQueries(prev => [...prev, addItemSel!.name]);
                           setShowAddItemModal(false);
                         }}
-                        className="w-full min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+                        className="w-full min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
                       >
                         Agregar a la orden
                       </button>
@@ -2171,7 +2171,7 @@ export default function PurchaseOrdersTab() {
                   </div>
                   <button
                     type="submit" disabled={savingNewProd || !newProdForm.name}
-                    className="w-full min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60"
+                    className="w-full min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60"
                   >
                     {savingNewProd ? "Creando…" : "Crear producto y agregar a orden"}
                   </button>

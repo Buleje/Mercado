@@ -216,7 +216,7 @@ export default function CtpEudrPanel({
             onClick={exportGeoJson}
             disabled={readiness.geolocalizados === 0}
             title={readiness.geolocalizados > 0 ? "Descargar la geolocalización de los orígenes en GeoJSON (dossier UE)" : "Geolocalizá al menos un origen"}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
           >
             <Download className="h-4 w-4" /> GeoJSON
           </button>
@@ -258,7 +258,7 @@ export default function CtpEudrPanel({
               <button
                 type="button"
                 onClick={() => onNavigate("ingresos", "sin-origen")}
-                className="mt-3 inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white transition hover:opacity-90"
+                className="mt-3 inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white transition hover:opacity-90"
               >
                 <MapPin className="h-4 w-4" />
                 Ver los ingresos sin código de origen
@@ -283,16 +283,16 @@ export default function CtpEudrPanel({
                   </div>
                   <input inputMode="decimal" value={d.lat} onChange={(e) => setDraftField(o.originCode, "lat", e.target.value)} placeholder="lat" className="h-11 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
                   <input inputMode="decimal" value={d.lng} onChange={(e) => setDraftField(o.originCode, "lng", e.target.value)} placeholder="lng" className="h-11 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
-                  <button type="button" onClick={() => setPickerFor(o.originCode)} title="Marcá el punto de la parcela en el mapa en vez de tipear las coordenadas" className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10 px-3 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/15">
+                  <button type="button" onClick={() => setPickerFor(o.originCode)} title="Marcá el punto de la parcela en el mapa en vez de tipear las coordenadas" className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10 px-3 text-sm font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/15">
                     <MapPin className="h-4 w-4" /> <span className="hidden sm:inline">Punto</span>
                   </button>
-                  <button type="button" onClick={() => setPolygonFor(o.originCode)} title="Dibujá el polígono de la parcela (EUDR exige polígono para > 4 ha)" className={`inline-flex h-11 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-bold ${g?.polygonJson ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--accent)]/40 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/15"}`}>
+                  <button type="button" onClick={() => setPolygonFor(o.originCode)} title="Dibujá el polígono de la parcela (EUDR exige polígono para > 4 ha)" className={`inline-flex h-11 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-semibold ${g?.polygonJson ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--accent)]/40 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/15"}`}>
                     <PenTool className="h-4 w-4" /> <span className="hidden sm:inline">{g?.polygonJson ? "Polígono ✓" : "Polígono"}</span>
                   </button>
                   <label className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
                     <input type="checkbox" checked={d.df} onChange={(e) => setDraftField(o.originCode, "df", e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" /> sin deforestación
                   </label>
-                  <button type="button" onClick={() => void saveGeo(o.originCode)} disabled={savingCode === o.originCode || !dirty} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
+                  <button type="button" onClick={() => void saveGeo(o.originCode)} disabled={savingCode === o.originCode || !dirty} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
                     {savingCode === o.originCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Guardar
                   </button>
                 </div>
@@ -313,7 +313,7 @@ export default function CtpEudrPanel({
               <option key={d.id} value={d.id}>#{d.lineNo} · {d.productType ?? "—"} · {d.speciesCommon ?? "—"}{d.gtfNumber ? ` · ${d.gtfNumber}` : ""}{d.destino ? ` → ${d.destino}` : ""}</option>
             ))}
           </select>
-          <button type="button" onClick={() => selDesp && void generarDds(selDesp)} disabled={!selDesp || ddsBusy === selDesp} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40">
+          <button type="button" onClick={() => selDesp && void generarDds(selDesp)} disabled={!selDesp || ddsBusy === selDesp} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40">
             {ddsBusy === selDesp ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />} Generar DDS
           </button>
           <button
@@ -321,7 +321,7 @@ export default function CtpEudrPanel({
             onClick={() => selDesp && void bajarExpediente(selDesp)}
             disabled={!selDesp || zipBusy === selDesp}
             title="ZIP con la DDS, las parcelas en GeoJSON, la cadena de custodia y los datos del operador"
-            className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+            className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
           >
             {zipBusy === selDesp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Package className="h-4 w-4" />} Expediente completo (ZIP)
           </button>

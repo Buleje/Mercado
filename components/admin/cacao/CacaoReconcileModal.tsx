@@ -153,7 +153,7 @@ export default function CacaoReconcileModal({ onClose, onDone }: { onClose: () =
                       type="button"
                       disabled={busy === g.nombre}
                       onClick={() => link(g)}
-                      className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"
+                      className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50"
                     >
                       {busy === g.nombre ? <Loader2 className="h-4 w-4 animate-spin" /> : (sel[g.nombre] === NEW || !sel[g.nombre]) ? <UserPlus className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
                       Vincular

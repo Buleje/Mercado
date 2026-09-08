@@ -95,7 +95,7 @@ export default function UnificarDuplicadosModal({
             type="button"
             onClick={onClose}
             disabled={borrando}
-            className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+            className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -103,7 +103,7 @@ export default function UnificarDuplicadosModal({
             type="button"
             onClick={confirmar}
             disabled={borrando}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--data-error-500)] px-4 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--data-error-500)] px-4 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
           >
             {borrando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Trash2 className="h-4 w-4" aria-hidden />}
             {borrando

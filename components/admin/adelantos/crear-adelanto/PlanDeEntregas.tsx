@@ -149,7 +149,7 @@ export default function PlanDeEntregas({
         <button
           type="button"
           onClick={agregar}
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+          className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--surface-raised)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
         >
           <Plus className="h-4 w-4" /> Agregar cuota
         </button>

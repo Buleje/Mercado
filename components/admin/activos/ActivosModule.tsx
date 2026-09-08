@@ -226,7 +226,7 @@ function EmptyFleet({ onAdd }: { onAdd: () => void }) {
       <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Construction className="h-7 w-7" strokeWidth={2} /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Aún no tienes máquinas</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">Agrega tu cargador, oruga o camión y empieza a registrar alquileres.</p>
-      <button type="button" onClick={onAdd} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-11 text-sm font-bold text-white hover:bg-primary/90"><Plus className="h-4 w-4" strokeWidth={2.5} /> Agregar primera máquina</button>
+      <button type="button" onClick={onAdd} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-11 text-sm font-semibold text-white hover:bg-primary/90"><Plus className="h-4 w-4" strokeWidth={2.5} /> Agregar primera máquina</button>
     </div>
   );
 }
@@ -522,7 +522,7 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
           <div className="sm:col-span-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             <div className="flex gap-1 rounded-lg bg-[var(--surface-raised)] p-1">
               {([[true, "Pagado"], [false, "Pendiente de cobro"]] as const).map(([v, l]) => (
-                <button key={String(v)} type="button" onClick={() => setForm(f => ({ ...f, paid: v }))} className={cn("flex-1 rounded-xl px-3 min-h-10 text-sm font-bold transition-colors", form.paid === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>
+                <button key={String(v)} type="button" onClick={() => setForm(f => ({ ...f, paid: v }))} className={cn("flex-1 rounded-xl px-3 min-h-10 text-sm font-semibold transition-colors", form.paid === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>
               ))}
             </div>
             {!form.paid && <div className="mt-2"><Field label="Vence el" labelClassName={LABEL}><input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className={FIELD} /></Field></div>}
@@ -658,7 +658,7 @@ function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged
           </div>
         </div>
       ) : (
-        <button type="button" onClick={() => setAdding(true)} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] min-h-11 text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"><Plus className="h-4 w-4" /> Programar mantenimiento</button>
+        <button type="button" onClick={() => setAdding(true)} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] min-h-11 text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"><Plus className="h-4 w-4" /> Programar mantenimiento</button>
       )}
     </div>
   );
@@ -847,7 +847,7 @@ function ImportModal({ onClose, onDone }: { knownTypes: string[]; onClose: () =>
         <div className="py-6 text-center">
           <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><CheckCircle className="h-7 w-7" /></span>
           <p className="text-base font-extrabold text-[var(--text-primary)]">{result.ok} importadas{result.fail > 0 ? ` · ${result.fail} con error` : ""}</p>
-          <button type="button" onClick={onDone} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-11 text-sm font-bold text-white hover:bg-primary/90">Listo</button>
+          <button type="button" onClick={onDone} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-11 text-sm font-semibold text-white hover:bg-primary/90">Listo</button>
         </div>
       ) : (<>
         <div className="rounded-xl bg-[var(--surface-sunken)] p-3 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">
@@ -871,8 +871,8 @@ function ImportModal({ onClose, onDone }: { knownTypes: string[]; onClose: () =>
           </div>
         )}
         <div className="mt-6 flex items-center gap-3">
-          <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="button" onClick={run} disabled={importing || !rows || rows.length === 0} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-extrabold text-white hover:bg-primary/90 disabled:opacity-50">
+          <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button type="button" onClick={run} disabled={importing || !rows || rows.length === 0} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50">
             {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             {importing ? "Importando…" : rows && rows.length > 0 ? `Importar ${rows.length}` : "Importar"}
           </button>
@@ -901,7 +901,7 @@ function ContractModal({ asset, onClose }: { asset: AssetStats; onClose: () => v
     <ModalShell title="Contrato / cotización" subtitle={`Genera el PDF de alquiler de ${asset.name}`} onClose={onClose} icon={FileText}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2 flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
-          {([["contrato", "Contrato"], ["cotizacion", "Cotización"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setForm(f => ({ ...f, mode: v }))} className={cn("flex-1 rounded-xl px-3 min-h-10 text-sm font-bold transition-colors", form.mode === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
+          {([["contrato", "Contrato"], ["cotizacion", "Cotización"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setForm(f => ({ ...f, mode: v }))} className={cn("flex-1 rounded-xl px-3 min-h-10 text-sm font-semibold transition-colors", form.mode === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
         </div>
         <Field label="Cliente *" labelClassName={LABEL} className="sm:col-span-2"><input value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} placeholder="Maderera del Sur S.A.C." className={FIELD} /></Field>
         <Field label="Inicio" labelClassName={LABEL}><input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={FIELD} /></Field>
@@ -912,8 +912,8 @@ function ContractModal({ asset, onClose }: { asset: AssetStats; onClose: () => v
       </div>
       <div className="mt-3 flex items-center justify-between rounded-xl bg-primary/10 px-4 py-3"><span className="text-sm font-bold text-[var(--text-secondary)]">Total</span><span className="font-mono text-xl font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">{fmt(amount)}</span></div>
       <div className="mt-6 flex items-center gap-3">
-        <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-        <button type="button" onClick={gen} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-extrabold text-white hover:bg-primary/90"><Download className="h-4 w-4" /> Generar PDF</button>
+        <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+        <button type="button" onClick={gen} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90"><Download className="h-4 w-4" /> Generar PDF</button>
       </div>
     </ModalShell>
   );
@@ -939,7 +939,7 @@ function ChecklistModal({ asset, onClose, onSaved }: { asset: AssetStats; onClos
   return (
     <ModalShell title={`Checklist — ${asset.name}`} subtitle="Inspección antes de entregar o al recibir la máquina" onClose={onClose} icon={ClipboardCheck}>
       <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
-        {([["salida", "Salida (entrega)"], ["retorno", "Retorno (recibo)"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setKind(v)} className={cn("flex-1 rounded-xl px-3 min-h-10 text-sm font-bold transition-colors", kind === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
+        {([["salida", "Salida (entrega)"], ["retorno", "Retorno (recibo)"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setKind(v)} className={cn("flex-1 rounded-xl px-3 min-h-10 text-sm font-semibold transition-colors", kind === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3">
         <Field label="Cliente" labelClassName={LABEL}><input value={client} onChange={e => setClient(e.target.value)} className={FIELD} /></Field>
@@ -983,8 +983,8 @@ function ModalShell({ title, subtitle, onClose, children, icon: Icon = Construct
 function ModalFooter({ onClose, onSave, saving, saveLabel }: { onClose: () => void; onSave: () => void; saving: boolean; saveLabel: string }) {
   return (
     <div className="mt-6 flex items-center gap-3">
-      <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">Cancelar</button>
-      <button type="button" onClick={onSave} disabled={saving} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-extrabold text-white transition-all hover:bg-primary/90 disabled:opacity-50">
+      <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">Cancelar</button>
+      <button type="button" onClick={onSave} disabled={saving} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-semibold text-white transition-all hover:bg-primary/90 disabled:opacity-50">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
         {saving ? "Guardando…" : saveLabel}
       </button>

@@ -727,7 +727,7 @@ function Pestana({
       type="button"
       onClick={onClick}
       aria-pressed={activa}
-      className={`inline-flex h-11 items-center gap-2 rounded-t-xl border-2 border-b-0 px-4 text-sm font-bold transition-colors ${
+      className={`inline-flex h-11 items-center gap-2 rounded-t-xl border-2 border-b-0 px-4 text-sm font-semibold transition-colors ${
         activa
           ? "border-[var(--accent)] bg-[var(--accent)] text-white"
           : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]"

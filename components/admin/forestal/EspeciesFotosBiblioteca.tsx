@@ -167,7 +167,7 @@ export default function EspeciesFotosBiblioteca() {
             type="button"
             disabled={!nueva.trim() || subiendo !== null}
             onClick={() => pedirArchivo(nueva.trim(), cientificoDe(nueva.trim()))}
-            className="flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] disabled:opacity-40"
+            className="flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] disabled:opacity-40"
           >
             <Upload className="h-4 w-4" aria-hidden /> Subir
           </button>

@@ -88,14 +88,14 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
         <div className="flex gap-2 pt-1">
           <button
             onClick={onCancel}
-            className="flex-1 h-10 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
+            className="flex-1 h-10 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
           >
             Cancelar
           </button>
           <button
             onClick={onConfirm}
             disabled={!rejectReason.trim()}
-            className="flex-1 h-10 rounded-xl bg-[var(--data-error-500)] text-white text-sm font-bold hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50"
+            className="flex-1 h-10 rounded-xl bg-[var(--data-error-500)] text-white text-sm font-semibold hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50"
           >
             Rechazar pedido
           </button>

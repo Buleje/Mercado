@@ -236,7 +236,7 @@ export default function CacaoInventario() {
             type="button"
             onClick={load}
             disabled={loading}
-            className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+            className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -244,7 +244,7 @@ export default function CacaoInventario() {
             type="button"
             onClick={exportCsv}
             disabled={inv.porVariedad.length === 0}
-            className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
             CSV
@@ -252,7 +252,7 @@ export default function CacaoInventario() {
           <button
             type="button"
             onClick={() => setShowAjuste(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"
+            className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90"
           >
             <SlidersHorizontal className="h-4 w-4" />
             Ajustar stock

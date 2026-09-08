@@ -64,7 +64,7 @@ export function RankingTab() {
                 type="button"
                 onClick={() => setPeriod(p.id)}
                 className={cn(
-                  "px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                  "px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
                   period === p.id
                     ? "bg-primary text-white border-primary"
                     : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",

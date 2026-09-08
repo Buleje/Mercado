@@ -775,7 +775,7 @@ export default function CtpConsumosView({
                 <button
                   type="button"
                   onClick={() => onIr("lotes")}
-                  className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] sm:col-span-2"
+                  className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] sm:col-span-2"
                 >
                   Programar un lote para cargar la sierra
                 </button>

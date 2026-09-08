@@ -316,7 +316,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                 <button
                   type="button"
                   onClick={onLimpiarFiltros}
-                  className="mt-3 inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--accent)] px-4 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 dark:text-[var(--accent)]"
+                  className="mt-3 inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 dark:text-[var(--accent)]"
                 >
                   Quitar los filtros y ver todo
                 </button>

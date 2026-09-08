@@ -220,7 +220,7 @@ export default function LothMapaHerramientas({
           <button
             type="button"
             onClick={irACoordenada}
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
           >
             <Locate className="h-3.5 w-3.5" /> Ir
           </button>

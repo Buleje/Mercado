@@ -231,7 +231,7 @@ export default function MarketingAutomationTab({
       >
         <button
           onClick={() => { setForm(emptyForm); setError(null); setShowForm(true); }}
-          className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" /> Nueva campaña
         </button>
@@ -382,7 +382,7 @@ export default function MarketingAutomationTab({
 
             <div className="flex items-center justify-end gap-2 pt-1">
               <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
-              <button onClick={submit} disabled={saving} className="inline-flex items-center gap-1.5 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 transition-colors">
+              <button onClick={submit} disabled={saving} className="inline-flex items-center gap-1.5 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 {form.mode === "borrador" ? "Guardar borrador" : form.mode === "programar" ? "Programar" : "Crear y enviar"}
               </button>

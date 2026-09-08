@@ -277,7 +277,7 @@ export default function CacaoBitacoraModal({ beneficioId, loteCode, onClose, onC
               <button
                 type="button"
                 onClick={() => setVolteo((v) => !v)}
-                className={`mt-[22px] inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 text-sm font-bold transition ${volteo ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+                className={`mt-[22px] inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 text-sm font-semibold transition ${volteo ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
               >
                 {volteo ? <Check className="h-4 w-4" /> : <RotateCw className="h-4 w-4" />}Volteo
               </button>
@@ -291,7 +291,7 @@ export default function CacaoBitacoraModal({ beneficioId, loteCode, onClose, onC
             <button
               type="submit"
               disabled={saving || !canSave}
-              className="mt-2 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+              className="mt-2 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
             >
               {saving ? (
                 <>

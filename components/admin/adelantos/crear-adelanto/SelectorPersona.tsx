@@ -64,7 +64,7 @@ export default function SelectorPersona({
       <button
         type="button"
         onClick={() => setBuscando(true)}
-        className="flex h-12 w-full items-center gap-2.5 rounded-xl bg-[var(--surface-sunken)] px-4 text-left text-base font-bold text-[var(--text-secondary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+        className="flex h-12 w-full items-center gap-2.5 rounded-xl bg-[var(--surface-sunken)] px-4 text-left text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
       >
         <Search className="h-4.5 w-4.5 shrink-0" aria-hidden />
         <span className="flex-1">{persona ? "Elegir otra persona" : "Buscar o crear una persona"}</span>

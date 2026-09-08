@@ -244,7 +244,7 @@ export default function TasksTab() {
           </div>
           <div className="flex flex-wrap gap-3 pt-1">
             <button onClick={() => setShowForm(false)} className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
-            <button onClick={save} disabled={saving || !form.title.trim()} className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 flex flex-wrap items-center justify-center gap-2 transition-colors">
+            <button onClick={save} disabled={saving || !form.title.trim()} className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-60 flex flex-wrap items-center justify-center gap-2 transition-colors">
               {saving ? "Guardando…" : <><Check className="h-4 w-4" />{editId ? "Guardar" : "Crear tarea"}</>}
             </button>
           </div>

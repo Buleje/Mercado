@@ -210,7 +210,7 @@ export default function CtpIngresosFiltros({
           <button
             type="button"
             onClick={onNuevo}
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white shadow-sm transition hover:shadow-md hover:brightness-110 sm:flex-none"
+            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white shadow-sm transition hover:shadow-md hover:brightness-110 sm:flex-none"
           >
             <Plus className="h-5 w-5" />
             Nuevo ingreso

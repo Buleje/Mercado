@@ -7,7 +7,7 @@ import {
   Search, X,
   type LucideIcon,
 } from "@buleje/design-system/icons";
-import { SectionTitle } from "@buleje/design-system";
+import { SectionTitle, StatCard } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
@@ -114,38 +114,6 @@ function SkeletonCard() {
           <div className="h-3 w-1/3 bg-[var(--rule-base)] rounded" />
           <div className="h-3 w-1/2 bg-[var(--rule-base)] rounded" />
         </div>
-      </div>
-    </div>
-  );
-}
-
-interface KPIProps {
-  label: string;
-  value: string | number;
-  sub?: string;
-  icon: LucideIcon;
-  accent?: "danger" | "warning" | "success" | "neutral";
-}
-
-function KPICard({ label, value, sub, icon: Icon, accent = "neutral" }: KPIProps) {
-  const cfg = {
-    danger:  { text: "text-[var(--data-error-500)]",   iconBg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/15",     border: "border-[var(--data-error-500)]/30" },
-    warning: { text: "text-[var(--data-warning-500)]", iconBg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15", border: "border-[var(--data-warning-500)]/30" },
-    success: { text: "text-[var(--data-success-500)]", iconBg: "bg-emerald-100 dark:bg-[var(--data-success-500)]/15",               border: "border-[var(--data-success-500)]/30" },
-    neutral: { text: "text-[var(--text-primary)]",     iconBg: "bg-[var(--surface-sunken)]",                                        border: "border-[var(--rule-base)]" },
-  }[accent];
-  return (
-    <div className={cn(
-      "bg-[var(--surface-raised)] border-2 rounded-2xl p-4 flex items-center gap-3 min-w-0 transition-shadow hover:shadow-sm",
-      cfg.border,
-    )}>
-      <span className={cn("inline-flex items-center justify-center h-11 w-11 rounded-xl shrink-0", cfg.iconBg)}>
-        <Icon className={cn("h-5 w-5", cfg.text)} strokeWidth={2.2} />
-      </span>
-      <div className="min-w-0">
-        <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</p>
-        <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1 truncate", cfg.text)}>{value}</p>
-        {sub && <p className="text-xs text-[var(--text-secondary)] mt-1 truncate font-medium">{sub}</p>}
       </div>
     </div>
   );
@@ -473,7 +441,7 @@ export default function SugerenciasCompraTab() {
           type="button"
           onClick={() => void load(true)}
           disabled={refreshing}
-          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors disabled:opacity-50"
         >
           <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
           Recalcular
@@ -532,7 +500,7 @@ export default function SugerenciasCompraTab() {
             type="button"
             onClick={() => void load(true)}
             disabled={refreshing}
-            className="mt-5 inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:opacity-50 "
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:opacity-50 "
           >
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
             Volver a calcular
@@ -543,16 +511,16 @@ export default function SugerenciasCompraTab() {
       <>
       {/* ─── KPI summary ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard label="Críticos"     value={stats.counts.CRITICO}    icon={AlertTriangle} accent="danger"  sub="No llegan a tiempo" />
-        <KPICard label="Urgentes"     value={stats.counts.URGENTE}    icon={Clock}         accent="warning" sub="Se acaban durante la entrega" />
-        <KPICard label="A planificar" value={stats.counts.PLANIFICAR} icon={Package}       accent="success" sub="Hay margen" />
-        <KPICard
+        <StatCard label="Críticos" value={stats.counts.CRITICO} icon={AlertTriangle} emphasis="error" subValue="No llegan a tiempo" />
+        <StatCard label="Urgentes" value={stats.counts.URGENTE} icon={Clock} emphasis="warning" subValue="Se acaban durante la entrega" />
+        <StatCard label="A planificar" value={stats.counts.PLANIFICAR} icon={Package} emphasis="success" subValue="Hay margen" />
+        <StatCard
           label="Costo estimado"
           value={resumen && resumen.costoEstimado > 0 ? `S/${Math.round(resumen.costoEstimado).toLocaleString("es-PE")}` : "—"}
           icon={ShoppingCart}
           // Un «—» sin explicación deja al usuario sin saber si es cero o si
           // falta el dato. El total sólo cubre los productos con precio.
-          sub={
+          subValue={
             resumen && resumen.sinPrecio > 0
               ? `${stats.totalSuggested.toLocaleString("es-PE")} unidades · sin precio en ${resumen.sinPrecio}`
               : `${stats.totalSuggested.toLocaleString("es-PE")} unidades`
@@ -619,7 +587,7 @@ export default function SugerenciasCompraTab() {
                 type="button"
                 onClick={() => setFilter(p.id as FilterKey)}
                 className={cn(
-                  "inline-flex items-center gap-2 h-11 px-4 rounded-2xl text-sm font-bold transition-colors border-2",
+                  "inline-flex items-center gap-2 h-11 px-4 rounded-2xl text-sm font-semibold transition-colors border-2",
                   active
                     ? toneCls.active
                     : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
@@ -639,7 +607,7 @@ export default function SugerenciasCompraTab() {
             <button
               type="button"
               onClick={selectAllVisible}
-              className="ml-auto inline-flex items-center gap-1.5 h-11 px-3 rounded-2xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors whitespace-nowrap"
+              className="ml-auto inline-flex items-center gap-1.5 h-11 px-3 rounded-2xl text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors whitespace-nowrap"
             >
               {visible.every((s) => selected.has(s.productId)) ? "Deseleccionar visibles" : "Seleccionar visibles"}
             </button>
@@ -813,7 +781,7 @@ export default function SugerenciasCompraTab() {
                       type="button"
                       onClick={() => void createOCForOne(s)}
                       disabled={creatingItemId === s.productId}
-                      className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      className="inline-flex items-center justify-center gap-1.5 h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     >
                       {creatingItemId === s.productId
                         ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -840,7 +808,7 @@ export default function SugerenciasCompraTab() {
           <button
             type="button"
             onClick={() => { setFilter("todos"); setSearch(""); }}
-            className="mt-4 inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
+            className="mt-4 inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
           >
             Ver todas
           </button>
@@ -866,7 +834,7 @@ export default function SugerenciasCompraTab() {
             <button
               type="button"
               onClick={() => setSelected(new Set())}
-              className="h-11 px-3 rounded-xl text-sm font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors shrink-0"
+              className="h-11 px-3 rounded-xl text-sm font-semibold text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors shrink-0"
             >
               Limpiar
             </button>
@@ -874,7 +842,7 @@ export default function SugerenciasCompraTab() {
               type="button"
               onClick={() => void createOCs()}
               disabled={creating}
-              className="inline-flex items-center gap-2 h-11 px-4 sm:px-5 rounded-2xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark disabled:opacity-60 transition-colors shadow-sm shrink-0"
+              className="inline-flex items-center gap-2 h-11 px-4 sm:px-5 rounded-2xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark disabled:opacity-60 transition-colors shadow-sm shrink-0"
             >
               {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
               {creating ? "Creando..." : "Crear órdenes"}

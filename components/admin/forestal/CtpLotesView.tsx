@@ -316,7 +316,7 @@ export default function CtpLotesView({
           <button
             type="button"
             onClick={() => { setTexto(""); setEspecie(""); setEstado(""); }}
-            className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
+            className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
           >
             Limpiar
           </button>

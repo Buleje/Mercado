@@ -221,12 +221,12 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
         </p>
         <div className="flex flex-wrap items-center gap-2">
           {data.hasPlan && (
-            <button type="button" onClick={() => setCostosAbierto(true)} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+            <button type="button" onClick={() => setCostosAbierto(true)} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
               <Calculator className="h-4 w-4" /> Costos operativos
             </button>
           )}
-          <button type="button" onClick={() => downloadCsv(`analitica-libro-th-${(data.plan?.planNumber ?? "sin-plan").replace(/[^\w-]+/g, "-")}.csv`, buildAnalyticsCsv(data))} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" /> CSV</button>
-          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</button>
+          <button type="button" onClick={() => downloadCsv(`analitica-libro-th-${(data.plan?.planNumber ?? "sin-plan").replace(/[^\w-]+/g, "-")}.csv`, buildAnalyticsCsv(data))} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" /> CSV</button>
+          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</button>
         </div>
       </div>
 
@@ -377,8 +377,8 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
             {data.costeo && <> Hoy el costo operativo suma <b className="font-mono tabular-nums">S/ {fm(data.costeo.costoOperativoM3)}</b> por m³.</>}
           </p>
           <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
-            <button type="button" onClick={() => setCostosAbierto(false)} className="h-11 rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-            <button type="button" onClick={saveCosts} disabled={savingCosts} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:bg-[var(--accent-600)] disabled:opacity-50">
+            <button type="button" onClick={() => setCostosAbierto(false)} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+            <button type="button" onClick={saveCosts} disabled={savingCosts} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--accent-600)] disabled:opacity-50">
               {savingCosts ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Guardar costos
             </button>
           </div>

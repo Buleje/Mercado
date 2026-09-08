@@ -156,7 +156,7 @@ export function PermisosTab() {
             type="button"
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-primary)] text-sm font-bold hover:brightness-95 border border-[var(--rule-base)] transition-colors disabled:opacity-50 shrink-0"
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-primary)] text-sm font-semibold hover:brightness-95 border border-[var(--rule-base)] transition-colors disabled:opacity-50 shrink-0"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
             Refrescar
@@ -260,7 +260,7 @@ export function PermisosTab() {
               type="button"
               onClick={() => setFilterUserType("all")}
               className={cn(
-                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
                 filterUserType === "all"
                   ? "bg-primary text-white border-primary"
                   : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
@@ -283,7 +283,7 @@ export function PermisosTab() {
                   type="button"
                   onClick={() => setFilterUserType(ut)}
                   className={cn(
-                    "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                    "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
                     filterUserType === ut
                       ? "bg-primary text-white border-primary"
                       : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
@@ -389,7 +389,7 @@ export function PermisosTab() {
                         disabled={isSaving}
                         title={meta.description}
                         className={cn(
-                          "inline-flex items-center justify-between gap-2 px-4 h-11 rounded-xl text-sm font-bold transition-colors border-2",
+                          "inline-flex items-center justify-between gap-2 px-4 h-11 rounded-xl text-sm font-semibold transition-colors border-2",
                           has
                             ? "bg-primary/10 border-[var(--data-success-500)]/40 text-[var(--data-success-500)]"
                             : "bg-[var(--surface-sunken)] border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:border-primary/30 hover:text-[var(--text-secondary)]",

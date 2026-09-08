@@ -152,7 +152,7 @@ export default function GastoEditarModal({
             type="button"
             onClick={borrar}
             disabled={ocupado}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--data-error-500)]/40 px-3 text-sm font-bold text-[var(--data-error-500)] transition-colors hover:bg-[var(--data-error-500)]/10 disabled:opacity-50"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--data-error-500)]/40 px-3 text-sm font-semibold text-[var(--data-error-500)] transition-colors hover:bg-[var(--data-error-500)]/10 disabled:opacity-50"
           >
             {borrando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Trash2 className="h-4 w-4" aria-hidden />}
             Borrar
@@ -163,7 +163,7 @@ export default function GastoEditarModal({
               type="button"
               onClick={onClose}
               disabled={ocupado}
-              className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -171,7 +171,7 @@ export default function GastoEditarModal({
               type="button"
               onClick={guardar}
               disabled={ocupado || !montoValido}
-              className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
               {guardando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Save className="h-4 w-4" aria-hidden />}
               Guardar
