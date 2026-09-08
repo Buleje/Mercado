@@ -307,7 +307,7 @@ export default function WaChatView({
                   setShowQuick(false);
                   draftRef.current?.focus();
                 }}
-                className="shrink-0 rounded-full border-2 border-[var(--rule-base)] px-3.5 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:border-primary/60 hover:text-primary "
+                className="shrink-0 rounded-full border border-[var(--rule-base)] px-3.5 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:border-primary/60 hover:text-primary "
               >
                 {q.nombre}
               </button>
@@ -390,7 +390,7 @@ export default function WaChatView({
             onClick={() => fileRef.current?.click()}
             disabled={!canSend || sending}
             className={cn(
-              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] transition hover:border-primary/50 hover:text-primary ",
+              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition hover:border-primary/50 hover:text-primary ",
               (!canSend || sending) && "cursor-not-allowed opacity-40",
             )}
             aria-label="Adjuntar archivo"
@@ -438,7 +438,7 @@ export default function WaChatView({
             placeholder={canSend ? "Escribe un mensaje…" : "Conecta tu número para responder"}
             disabled={!canSend || sending}
             rows={1}
-            className="max-h-32 min-h-12 flex-1 resize-y rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-base text-[var(--text-primary)] outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:opacity-60 "
+            className="max-h-32 min-h-12 flex-1 resize-y rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-base text-[var(--text-primary)] outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:opacity-60 "
           />
           <button
             type="button"

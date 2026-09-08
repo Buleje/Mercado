@@ -215,7 +215,7 @@ export default function LibroChrome({
     <div className="space-y-4">
       <section
         data-module={moduleId}
-        className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
+        className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"
       >
         {/* Identidad + estado + contexto + acciones — una sola fila. */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:px-4">
@@ -354,7 +354,7 @@ function BotonAtajos({ onClick, enPanel = false }: { onClick: () => void; enPane
       onClick={onClick}
       title="Atajos del teclado (?)"
       aria-label="Ver los atajos del teclado"
-      className={`${enPanel ? "inline-flex" : "hidden lg:inline-flex"} h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]`}
+      className={`${enPanel ? "inline-flex" : "hidden lg:inline-flex"} h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]`}
     >
       <Keyboard className="h-4 w-4" />
     </button>
@@ -408,7 +408,7 @@ function HerramientasDelLibro({ children }: { children: ReactNode }) {
            período) abren sus propios desplegables `absolute`, y un overflow
            acá los recortaría al tamaño del panel. */
         style={{ top: pos.top, right: pos.right }}
-        className="fixed z-[61] w-[min(92vw,44rem)] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)]"
+        className="fixed z-[61] w-[min(92vw,44rem)] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)]"
       >
         <div className="mb-2 flex items-center justify-between gap-3">
           <Kicker className="block leading-none">Herramientas del libro</Kicker>

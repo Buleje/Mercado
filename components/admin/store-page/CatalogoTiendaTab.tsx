@@ -426,7 +426,7 @@ export default function CatalogoTiendaTab() {
               value={search}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
               placeholder="Buscar por nombre o categoría..."
-              className="w-full pl-12 pr-12 h-12 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="w-full pl-12 pr-12 h-12 rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             />
             {search && (
               <button
@@ -441,7 +441,7 @@ export default function CatalogoTiendaTab() {
           </div>
 
           {/* Visibility segmented control */}
-          <div className="inline-flex p-1 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] shrink-0">
+          <div className="inline-flex p-1 rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] shrink-0">
             {([
               { value: "all",     label: "Todos",         count: stats.total },
               { value: "visible", label: "Visibles",      count: stats.visible },
@@ -552,7 +552,7 @@ export default function CatalogoTiendaTab() {
                 type="button"
                 disabled={bulkSaving || filtered.length === 0}
                 onClick={() => applyBulk(true, "filtered")}
-                className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] disabled:opacity-50"
               >
                 <Eye className="h-4 w-4" />
                 Mostrar {hasFilters ? "filtrados" : "todos"}
@@ -561,7 +561,7 @@ export default function CatalogoTiendaTab() {
                 type="button"
                 disabled={bulkSaving || filtered.length === 0}
                 onClick={() => applyBulk(false, "filtered")}
-                className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] disabled:opacity-50"
               >
                 <EyeOff className="h-4 w-4" />
                 Ocultar {hasFilters ? "filtrados" : "todos"}
@@ -582,7 +582,7 @@ export default function CatalogoTiendaTab() {
 
       {/* Filter empty */}
       {items.length > 0 && filtered.length === 0 && (
-        <div className="text-center py-12 rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+        <div className="text-center py-12 rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <Search className="h-10 w-10 mx-auto text-muted mb-3" />
           <p className="text-base font-bold text-[var(--text-primary)]">No se encontraron productos</p>
           <p className="text-sm text-muted mt-1">Probá con otros filtros o limpiá la búsqueda.</p>
@@ -633,7 +633,7 @@ export default function CatalogoTiendaTab() {
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleSelect(p.productId)}
-                        className="h-5 w-5 rounded-md border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] accent-primary cursor-pointer shrink-0"
+                        className="h-5 w-5 rounded-md border border-[var(--rule-base)] dark:border-[var(--rule-base)] accent-primary cursor-pointer shrink-0"
                         aria-label={`Seleccionar ${p.name}`}
                       />
 

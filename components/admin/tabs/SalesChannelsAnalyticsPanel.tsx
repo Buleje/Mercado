@@ -84,7 +84,7 @@ export default function SalesChannelsAnalyticsPanel() {
   const maxDay = Math.max(1, ...(data?.visitsByDay ?? []).map((d) => d.visits));
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-4">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-4">
       <header className="flex items-center gap-2">
         <BarChart3 className="h-5 w-5 text-[var(--accent)]" />
         <SectionTitle as="h2" className="text-base font-extrabold text-[var(--text-primary)]">Rendimiento por canal</SectionTitle>
@@ -105,7 +105,7 @@ export default function SalesChannelsAnalyticsPanel() {
 
           {/* Breakdown por canal */}
           {rows.length === 0 ? (
-            <p className="text-sm text-[var(--text-secondary)] rounded-xl border-2 border-dashed border-[var(--rule-base)] px-3 py-4 text-center">
+            <p className="text-sm text-[var(--text-secondary)] rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-4 text-center">
               Todavía no hay visitas etiquetadas por canal. Cuando compartas tu tienda con enlaces
               UTM (ej. <code className="font-mono">?utm_source=tiktok</code>) vas a ver acá cuánto
               tráfico trae cada red.
@@ -162,7 +162,7 @@ export default function SalesChannelsAnalyticsPanel() {
 
 function Kpi({ Icon, label, value }: { Icon: typeof Users; label: string; value: string }) {
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
+    <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
       <p className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)]">
         <Icon className="h-3.5 w-3.5" /> {label}
       </p>

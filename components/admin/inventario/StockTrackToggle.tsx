@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 export function StockTrackToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1">
       <div className="grid grid-cols-2 gap-1">
         {([
           [true, "Controlar stock", "Lleva la cuenta de unidades"],

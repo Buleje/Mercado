@@ -44,7 +44,7 @@ const HEALTH_UI: Record<Health, { text: string; dot: string }> = {
 function HealthChip({ health, label, value }: { health: Health; label: string; value: string }) {
   const ui = HEALTH_UI[health];
   return (
-    <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5">
+    <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5">
       <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", ui.dot)} aria-hidden />
       <div className="min-w-0">
         <p className="text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)]">{label}</p>
@@ -319,7 +319,7 @@ export default function SoporteTab() {
   return (
     <div className="space-y-4">
       {/* Cabecera: salud + copiar diagnóstico */}
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <span

@@ -497,7 +497,7 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
           </div>
 
           {bannersBySection[section].length === 0 ? (
-            <div className="py-8 border-2 border-dashed border-[var(--rule-base)] rounded-xl text-center text-sm text-[var(--text-tertiary)]">
+            <div className="py-8 border border-dashed border-[var(--rule-base)] rounded-xl text-center text-sm text-[var(--text-tertiary)]">
               Sin banners en esta sección
             </div>
           ) : (

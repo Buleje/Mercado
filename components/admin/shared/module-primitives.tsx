@@ -20,7 +20,7 @@ export function TablaSkeleton({ filas = 5, columnas = 6 }: { filas?: number; col
     <div
       role="status"
       aria-label="Cargando registros"
-      className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]"
+      className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
     >
       <div className="flex gap-4 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
         {Array.from({ length: columnas }, (_, i) => (
@@ -52,7 +52,7 @@ export function PanelSkeleton({ kpis = 3 }: { kpis?: number }) {
           <div key={i} className="h-28 animate-pulse rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]" style={{ animationDelay: `${i * 80}ms` }} />
         ))}
       </div>
-      <div className="h-48 animate-pulse rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]" style={{ animationDelay: "240ms" }} />
+      <div className="h-48 animate-pulse rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]" style={{ animationDelay: "240ms" }} />
     </div>
   );
 }

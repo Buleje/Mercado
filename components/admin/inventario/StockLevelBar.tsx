@@ -60,7 +60,7 @@ export function StockLevelBar({
 
   if (variant === "full") {
     return (
-      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
         <div className="flex items-baseline justify-between gap-2">
           <span className="flex items-baseline gap-1">
             <span className={cn("text-2xl font-black tabular-nums leading-none", meta.text)}>{stock}</span>

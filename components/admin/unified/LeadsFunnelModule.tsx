@@ -175,7 +175,7 @@ export default function LeadsFunnelModule() {
           onClick={fetchAll}
           disabled={refreshing}
           className={cn(
-            "px-4 h-12 rounded-2xl border-2 border-[var(--rule-soft)] text-base font-medium",
+            "px-4 h-12 rounded-2xl border border-[var(--rule-soft)] text-base font-medium",
             "bg-[var(--surface-raised)] text-[var(--text-primary)]",
             "hover:bg-[var(--surface-hover)] transition-colors",
             "disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2",
@@ -283,7 +283,7 @@ export default function LeadsFunnelModule() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-12 rounded-2xl border-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] px-4"
+              className="h-12 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] px-4"
             >
               <option value="">Todos los status</option>
               {Object.entries(STATUS_LABELS).map(([key, { label }]) => (

@@ -133,7 +133,7 @@ export default function WaConversationList({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre o número…"
-            className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-base text-[var(--text-primary)] outline-none transition focus:border-primary "
+            className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-base text-[var(--text-primary)] outline-none transition focus:border-primary "
           />
         </div>
         {/* Clasificar: no leídos + etiqueta + archivadas */}
@@ -172,7 +172,7 @@ export default function WaConversationList({
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as SortMode)}
               aria-label="Ordenar conversaciones"
-              className="h-9 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-8 pr-2.5 text-sm font-bold text-[var(--text-secondary)] outline-none transition "
+              className="h-9 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-8 pr-2.5 text-sm font-bold text-[var(--text-secondary)] outline-none transition "
             >
               <option value="recientes">Recientes</option>
               <option value="no-leidos">No leídos 1º</option>

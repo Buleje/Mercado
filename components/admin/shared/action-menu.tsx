@@ -191,7 +191,7 @@ export default function ActionMenu({
       <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} aria-hidden="true" />
       <div
         style={{ top: pos.top, right: pos.right, maxHeight: pos.maxHeight }}
-        className="fixed z-[61] flex w-[19rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
+        className="fixed z-[61] flex w-[19rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
         {/* Los degradés van FUERA del área que scrollea, si no se irían con el
             contenido. `pointer-events-none` para no comerse el clic de la
@@ -284,7 +284,7 @@ export default function ActionMenu({
       ? "bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white shadow-sm hover:brightness-110"
       : variant === "accent"
         ? "border-2 border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] hover:bg-primary/15 dark:text-[var(--accent)]"
-        : "border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]";
+        : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]";
 
   return (
     <div className="relative">

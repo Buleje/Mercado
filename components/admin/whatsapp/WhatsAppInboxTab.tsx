@@ -389,7 +389,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleStartNewChat(); }}
               placeholder="Juan Pérez"
-              className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none transition focus:border-primary dark:border-[var(--rule-base)] dark:bg-[var(--surface-canvas)] "
+              className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none transition focus:border-primary dark:border-[var(--rule-base)] dark:bg-[var(--surface-canvas)] "
             />
           </div>
           <button
@@ -403,7 +403,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
           <button
             type="button"
             onClick={() => setShowNewChat(false)}
-            className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-[var(--rule-base)]"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-[var(--rule-base)]"
             aria-label="Cerrar nueva conversación"
           >
             <X className="h-5 w-5" />
@@ -551,7 +551,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                 <button
                   type="button"
                   onClick={() => exportThreadTxt(selected.customerName, selected.customerPhone, messages)}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-primary/50 hover:text-primary dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)]"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-primary/50 hover:text-primary dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)]"
                   title="Descargar la conversación (.txt)"
                   aria-label="Exportar conversación"
                 >
@@ -564,7 +564,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                     void markUnreadAndClose(selected.customerPhone);
                     setMobileView("list");
                   }}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-primary/50 hover:text-primary dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)]"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-primary/50 hover:text-primary dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)]"
                   title="Dejar como no leída (queda resaltada en la bandeja)"
                   aria-label="Dejar como no leída"
                 >

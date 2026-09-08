@@ -106,7 +106,7 @@ export default function WaTemplatePicker({ phoneNumberId, sending, onSend, onClo
                 <button
                   type="button"
                   onClick={() => pick(t)}
-                  className="w-full rounded-xl border-2 border-[var(--rule-base)] p-3 text-left transition hover:border-primary/60 "
+                  className="w-full rounded-xl border border-[var(--rule-base)] p-3 text-left transition hover:border-primary/60 "
                 >
                   <span className="flex items-center justify-between gap-2">
                     <span className="text-sm font-bold text-[var(--text-primary)] ">{t.name}</span>
@@ -143,7 +143,7 @@ export default function WaTemplatePicker({ phoneNumberId, sending, onSend, onClo
                   setParams((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))
                 }
                 placeholder={`Variable {{${i + 1}}}`}
-                className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none transition focus:border-primary "
+                className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base text-[var(--text-primary)] outline-none transition focus:border-primary "
               />
             ))}
             <button

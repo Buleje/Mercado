@@ -210,7 +210,7 @@ function CategoryCard({
           <Check className="h-3.5 w-3.5" strokeWidth={3} />
         </span>
       ) : (
-        <span className="shrink-0 h-6 w-6 rounded-full border-2 border-[var(--rule-base)]" aria-hidden />
+        <span className="shrink-0 h-6 w-6 rounded-full border border-[var(--rule-base)]" aria-hidden />
       )}
     </button>
   );
@@ -252,7 +252,7 @@ function CustomCategoryEditor({
         onClick={onClose}
         className="absolute inset-0 bg-black/55 backdrop-blur-sm"
       />
-      <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[var(--surface-canvas)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)]">
+      <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)]">
         <header className="flex items-center justify-between px-6 py-4 border-b-2 border-[var(--rule-base)] sticky top-0 bg-[var(--surface-canvas)] z-10">
           <CardTitle as="h3" className="text-lg font-extrabold text-[var(--text-primary)]">
             {initial ? "Editar categoría propia" : "Nueva categoría propia"}
@@ -261,7 +261,7 @@ function CustomCategoryEditor({
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="h-9 w-9 rounded-xl border-2 border-[var(--rule-base)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="h-9 w-9 rounded-xl border border-[var(--rule-base)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -274,7 +274,7 @@ function CustomCategoryEditor({
               onChange={(e) => setLabel(e.target.value)}
               placeholder="Ej: Pizzas, Postres, Repuestos"
               maxLength={60}
-              className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="w-full h-12 px-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </Field>
 
@@ -328,7 +328,7 @@ function CustomCategoryEditor({
                 }}
                 placeholder="Ej: Pizza familiar"
                 maxLength={40}
-                className="flex-1 h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="flex-1 h-12 px-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
               <button
                 type="button"
@@ -345,7 +345,7 @@ function CustomCategoryEditor({
           <button
             type="button"
             onClick={onClose}
-            className="h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="h-12 px-5 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             Cancelar
           </button>
@@ -560,7 +560,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                   setEditing(null);
                   setShowEditor(true);
                 }}
-                className="h-[68px] rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--accent)] hover:bg-primary/10 flex items-center justify-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
+                className="h-[68px] rounded-xl border border-dashed border-[var(--rule-base)] hover:border-[var(--accent)] hover:bg-primary/10 flex items-center justify-center gap-2 text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors"
               >
                 <Plus className="h-4 w-4" strokeWidth={2.5} />
                 <span className="text-sm font-extrabold">Crear propia</span>
@@ -727,7 +727,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
               }}
               placeholder="Ej: Sector San Juan, AAHH Las Palmeras"
               maxLength={100}
-              className="flex-1 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-[var(--accent)]"
+              className="flex-1 h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium outline-none focus:border-[var(--accent)]"
             />
             <button
               type="button"

@@ -143,7 +143,7 @@ export function MarketplaceResenasTab() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="text-center py-20 px-6 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-[var(--data-warning)]/10 text-[var(--data-warning)] mb-4">
             <Star className="h-6 w-6" />
           </div>
@@ -312,12 +312,12 @@ export function MarketplaceResenasTab() {
                         placeholder="Gracias por tu reseña…"
                         rows={3}
                         maxLength={500}
-                        className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
+                        className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all"
                       />
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => { setReplyingTo(null); setReplyText(""); }}
-                          className="px-3 py-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-bold hover:bg-[var(--surface-sunken)] transition-colors"
+                          className="px-3 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-bold hover:bg-[var(--surface-sunken)] transition-colors"
                         >
                           Cancelar
                         </button>

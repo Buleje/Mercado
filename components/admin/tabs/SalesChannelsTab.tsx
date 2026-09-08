@@ -64,7 +64,7 @@ const GA_FEATURES: Feature[] = [
 ];
 
 const FIELD =
-  "w-full h-11 text-sm border-2 border-[var(--rule-base)] rounded-xl px-3 bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  "w-full h-11 text-sm border border-[var(--rule-base)] rounded-xl px-3 bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 
 export default function SalesChannelsTab() {
   const [config, setConfig] = useState<SalesChannelsConfig>(EMPTY_SALES_CHANNELS);
@@ -292,7 +292,7 @@ function ChannelCard({
 }) {
   const [showFeatures, setShowFeatures] = useState(false);
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
       <header className="flex items-center justify-between gap-3 px-4 py-3 border-b-2 border-[var(--rule-soft)]">
         <div className="flex items-center gap-3">
           <span

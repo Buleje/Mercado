@@ -25,7 +25,7 @@ export function MarketplaceTiendaTab() {
     .join("") || "BS";
 
   const statusBadge = !store.isActive
-    ? { label: "Borrador", className: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border-2 border-[var(--rule-base)]" }
+    ? { label: "Borrador", className: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]" }
     : store.vacationMode
     ? { label: "Vacaciones", className: "bg-[var(--data-warning-50)] text-[var(--data-warning)] border-2 border-[var(--data-warning)]/40" }
     : { label: "Publicada", className: "bg-[var(--data-success-50)] text-[var(--data-success)] border-2 border-[var(--data-success)]/40" };
@@ -40,7 +40,7 @@ export function MarketplaceTiendaTab() {
       )}
 
       {/* ── HERO BANNER ───────────────────────────────── */}
-      <header className="relative overflow-hidden rounded-3xl border-2 border-[var(--rule-base)] bg-linear-to-br from-primary/8 via-[var(--surface-canvas)] to-[var(--accent-soft)]/30 px-6 py-7 sm:px-8 sm:py-8">
+      <header className="relative overflow-hidden rounded-3xl border border-[var(--rule-base)] bg-linear-to-br from-primary/8 via-[var(--surface-canvas)] to-[var(--accent-soft)]/30 px-6 py-7 sm:px-8 sm:py-8">
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-[var(--accent)]/10 blur-3xl pointer-events-none" />
         <div className="relative flex flex-col md:flex-row items-start md:items-center gap-6">
@@ -99,7 +99,7 @@ export function MarketplaceTiendaTab() {
               href={`/marketplace/${store.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 inline-flex items-center gap-2 h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-extrabold text-[var(--text-primary)] hover:border-primary hover:text-primary hover:shadow-md transition-all"
+              className="shrink-0 inline-flex items-center gap-2 h-12 px-5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-extrabold text-[var(--text-primary)] hover:border-primary hover:text-primary hover:shadow-md transition-all"
             >
               <Eye className="h-5 w-5" />
               Ver pública
@@ -114,7 +114,7 @@ export function MarketplaceTiendaTab() {
         {/* ── COLUMNA PRINCIPAL ────────────────────────── */}
         <div className="lg:col-span-8 space-y-6">
           {/* Identidad */}
-          <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
+          <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
             <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Store className="h-5 w-5" />
@@ -133,7 +133,7 @@ export function MarketplaceTiendaTab() {
                   labelClassName="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]"
                 >
                   {(id) => (
-                    <div className="flex items-stretch h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+                    <div className="flex items-stretch h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
                       <span className="inline-flex items-center px-4 text-sm font-extrabold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-r-2 border-[var(--rule-base)] whitespace-nowrap">/marketplace/</span>
                       <input
                         id={id}
@@ -161,7 +161,7 @@ export function MarketplaceTiendaTab() {
                     onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))}
                     placeholder="Bodega San Martín"
                     maxLength={60}
-                    className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    className="w-full h-12 px-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
                 </Field>
                 <p className="text-sm text-[var(--text-tertiary)]">
@@ -186,7 +186,7 @@ export function MarketplaceTiendaTab() {
                     value={store.description}
                     onChange={(e) => setStore((p) => ({ ...p, description: e.target.value }))}
                     placeholder="Describe tu tienda: horarios, especialidades, qué te hace única…"
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all leading-relaxed"
+                    className="w-full px-4 py-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none transition-all leading-relaxed"
                   />
                 </Field>
               </div>
@@ -215,7 +215,7 @@ export function MarketplaceTiendaTab() {
           />
 
           {/* Comisión */}
-          <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
+          <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
             <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--data-success)]/10 text-[var(--data-success)] shrink-0">
                 <DollarSign className="h-5 w-5" />
@@ -228,7 +228,7 @@ export function MarketplaceTiendaTab() {
               </div>
             </header>
             <div className="p-6">
-              <div className="flex items-center justify-between gap-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-5">
+              <div className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-5">
                 <span className="text-4xl font-extrabold tabular-nums text-[var(--text-primary)]">
                   {store.commissionRate}%
                 </span>
@@ -240,7 +240,7 @@ export function MarketplaceTiendaTab() {
           </section>
 
           {/* Marca visual: logo + URL backup */}
-          <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
+          <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
             <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)] shrink-0">
                 <Star className="h-5 w-5" />
@@ -269,7 +269,7 @@ export function MarketplaceTiendaTab() {
                     value={store.logoUrl}
                     onChange={(e) => setStore((p) => ({ ...p, logoUrl: e.target.value }))}
                     placeholder="https://…"
-                    className="w-full h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    className="w-full h-12 px-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
                 </Field>
                 {store.logoUrl ? (
@@ -290,7 +290,7 @@ export function MarketplaceTiendaTab() {
         {/* ── ASIDE (sticky) ────────────────────────────── */}
         <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-4 self-start">
           {/* Vista previa */}
-          <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
+          <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
             <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Eye className="h-5 w-5" />
@@ -303,7 +303,7 @@ export function MarketplaceTiendaTab() {
               </div>
             </header>
             <div className="p-5">
-              <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden">
+              <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] overflow-hidden">
                 <div className="relative h-24 bg-linear-to-br from-primary/15 via-[var(--surface-raised)] to-[var(--accent-soft)]/40">
                   {(store.coverageZones?.length ?? 0) > 0 && (
                     <span className="absolute top-3 left-3 inline-flex items-center gap-1 h-7 px-3 rounded-full bg-[var(--surface-canvas)]/95 backdrop-blur text-xs font-extrabold text-[var(--text-primary)] shadow-sm">
@@ -343,7 +343,7 @@ export function MarketplaceTiendaTab() {
           </section>
 
           {/* Estado de la tienda */}
-          <section className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl overflow-hidden">
+          <section className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
             <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b-2 border-[var(--rule-base)]">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--data-warning)]/10 text-[var(--data-warning)] shrink-0">
                 <Zap className="h-5 w-5" />
@@ -393,7 +393,7 @@ export function MarketplaceTiendaTab() {
       </div>
 
       {/* ── STICKY SAVE BAR ─────────────────────────────── */}
-      <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 px-5 py-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur shadow-xl">
+      <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 px-5 py-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 backdrop-blur shadow-xl">
         <p className="text-sm text-[var(--text-tertiary)] hidden sm:block font-medium">
           Los cambios se aplican al instante en tu tienda pública.
         </p>

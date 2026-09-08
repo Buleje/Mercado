@@ -283,7 +283,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="flex flex-col items-center gap-2 p-6 rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors group"
+                  className="flex flex-col items-center gap-2 p-6 rounded-xl border border-dashed border-[var(--rule-base)] hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors group"
                 >
                   <Camera className="h-8 w-8 text-[var(--text-tertiary)] group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-primary">
@@ -293,7 +293,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex flex-col items-center gap-2 p-6 rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors group"
+                  className="flex flex-col items-center gap-2 p-6 rounded-xl border border-dashed border-[var(--rule-base)] hover:border-primary dark:hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors group"
                 >
                   <Upload className="h-8 w-8 text-[var(--text-tertiary)] group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium text-[var(--text-secondary)] group-hover:text-primary">

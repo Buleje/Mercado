@@ -205,7 +205,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
             {!loading && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
                 <button onClick={addGroup}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 min-h-11 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 min-h-11 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
                   <Plus className="h-4 w-4" /> Agregar grupo nuevo
                 </button>
                 <button onClick={() => setShowCatalog(true)}
@@ -277,7 +277,7 @@ function GroupCard({
             value={group.name}
             onChange={(e) => onUpdate({ name: e.target.value })}
             placeholder="Nombre del grupo (ej: Cremas, Tamaño)"
-            className="flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 h-10 text-base font-bold text-[var(--text-primary)] outline-none focus:border-primary"
+            className="flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 h-10 text-base font-bold text-[var(--text-primary)] outline-none focus:border-primary"
           />
           <button onClick={onRemove} title="Eliminar grupo"
             className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors">

@@ -73,7 +73,7 @@ export default function WaNoteBar({
         }}
         onBlur={save}
         placeholder="Ej: quedó en pasar el viernes a recoger…"
-        className="h-9 min-w-0 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-primary "
+        className="h-9 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-primary "
       />
       <button
         type="button"

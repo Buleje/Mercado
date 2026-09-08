@@ -87,7 +87,7 @@ export default function WaProductPicker({ sending, onSendImage, onInsertText, on
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar producto…"
-            className="h-11 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-base text-[var(--text-primary)] outline-none transition focus:border-primary "
+            className="h-11 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-base text-[var(--text-primary)] outline-none transition focus:border-primary "
           />
         </div>
         <div className="max-h-56 space-y-1.5 overflow-y-auto">
@@ -105,7 +105,7 @@ export default function WaProductPicker({ sending, onSendImage, onInsertText, on
               type="button"
               disabled={sending}
               onClick={() => void share(p)}
-              className="flex w-full items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] p-2 text-left transition hover:border-primary/60 disabled:opacity-50 "
+              className="flex w-full items-center gap-3 rounded-xl border border-[var(--rule-base)] p-2 text-left transition hover:border-primary/60 disabled:opacity-50 "
             >
               {p.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element

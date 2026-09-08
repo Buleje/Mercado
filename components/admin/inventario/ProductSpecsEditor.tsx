@@ -49,14 +49,14 @@ export default function ProductSpecsEditor({
                 onChange={(e) => update(i, { label: e.target.value })}
                 placeholder="Etiqueta"
                 maxLength={60}
-                className="h-10 w-2/5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                className="h-10 w-2/5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
               <input
                 value={row.value}
                 onChange={(e) => update(i, { value: e.target.value })}
                 placeholder="Valor"
                 maxLength={400}
-                className="h-10 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                className="h-10 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
               <button
                 type="button"
@@ -75,7 +75,7 @@ export default function ProductSpecsEditor({
         <button
           type="button"
           onClick={add}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] px-3 min-h-10 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-dashed border-[var(--rule-base)] px-3 min-h-10 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
           <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
           Agregar especificación
