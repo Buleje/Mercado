@@ -110,10 +110,16 @@ export default function CtpLoteArmarModal({
   const especies = useMemo(() => disponiblePorEspecie(trozas, permiso || null), [trozas, permiso]);
 
   /* Si la especie elegida no tiene madera del permiso nuevo, se suelta: dejarla
-     puesta arma un lote que nace sin nada que tomar. */
+     puesta arma un lote que nace sin nada que tomar.
+     SÓLO en el modo «con trozas», donde la especie sale de un <select> del
+     patio. En «inventario (sin trozas)» el campo es texto libre —el hint dice
+     «escribí la especie aunque el patio no tenga stock»— y este efecto borraba
+     cada letra tipeada porque «T», «To», «Tor»… no son especies del patio
+     (Brandon 2026-09-07: «no me permite poner el nombre de la especie»). */
   useEffect(() => {
+    if (modo !== "trozas") return;
     if (especie && !especies.some((e) => e.nombre === especie)) setEspecie("");
-  }, [especies, especie]);
+  }, [modo, especies, especie]);
 
   const elegida = especies.find((e) => e.nombre === especie) ?? null;
   const fechasAlReves = Boolean(inicio && fin && fin < inicio);
