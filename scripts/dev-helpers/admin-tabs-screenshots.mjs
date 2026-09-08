@@ -7,6 +7,7 @@
 //   node scripts/dev-helpers/admin-tabs-screenshots.mjs <outDir> <tab1,tab2,…> <light,dark> [anchoxalto]
 //   node scripts/dev-helpers/admin-tabs-screenshots.mjs reports/visual-verify/hoy "plata,compras" light 1366x768
 //   SLUG=<tenant> node … para otro tenant (los libros forestales viven en otro).
+//   6º argumento: nombre de un botón a clickear antes de capturar (ej. Herramientas).
 //
 // Necesita el dev server en :3000 y el usuario QA (qaadmin / tenant main).
 // Se ejecuta DESDE el repo (resuelve `playwright` de node_modules): copiarlo al
@@ -17,6 +18,8 @@ const BASE = "http://localhost:3000", SLUG = process.env.SLUG || "main", USER = 
 const OUT = process.argv[2] || "reports/visual-verify/2026-09-07-banda";
 const TABS = (process.argv[3] || "analytics-pro,plata,inventario,vendor-dashboard,marketplace,delivery-partners,recetas,canales,compras,clientes,ventas-caja,productos,pedidos,adelantos,socio-members").split(",");
 const THEMES = (process.argv[4] || "light,dark").split(",");
+// Opcional: nombre (regex) de un botón a clickear antes de capturar (ej. "Herramientas").
+const CLICK = process.argv[6] || "";
 await mkdir(OUT, { recursive: true });
 const [W, H] = (process.argv[5] || "1366x768").split("x").map(Number);
 const browser = await chromium.launch();
@@ -30,7 +33,9 @@ for (const theme of THEMES) for (const tab of TABS) {
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 90_000 });
   await page.evaluate(({ t, slug }) => { try { localStorage.setItem(`onboarding-completed-${slug}`, "1"); localStorage.setItem("buleje-tour-marketplace-2026-04", "1"); sessionStorage.setItem("buleje-theme-session-v2", t); } catch {} }, { t: theme, slug: SLUG });
   await page.reload({ waitUntil: "domcontentloaded", timeout: 90_000 });
-  await page.waitForTimeout(2500);
+  // Esperar el módulo de verdad (Turbopack compila cada pestaña la primera vez: 5-30 s).
+  await page.waitForSelector("main h1, [data-admin-tabbar], [role=\"tabpanel\"]", { timeout: 40000 }).catch(() => {});
+  await page.waitForTimeout(1500);
   try { await page.waitForLoadState("networkidle", { timeout: 8000 }); } catch {}
   // El asistente de onboarding («Configura tu tienda/bodega») tapa la pantalla
   // en tenants que no lo completaron: se salta por su propio botón (robusto
@@ -41,6 +46,7 @@ for (const theme of THEMES) for (const tab of TABS) {
   }
   await page.evaluate(() => { document.querySelectorAll('[role="dialog"]').forEach((el) => { if (/Configura tu (bodega|tienda)/.test(el.textContent ?? "")) el.remove(); }); document.body.style.overflow = ""; });
   await page.waitForTimeout(400);
+  if (CLICK) { const b = page.getByRole("button", { name: new RegExp(CLICK, "i") }).first(); if (await b.isVisible().catch(() => false)) { await b.click().catch(() => {}); await page.waitForTimeout(700); } }
   const m = await page.evaluate(() => {
     const main = document.querySelector("main") ?? document.body;
     const top = main.getBoundingClientRect().top;
@@ -54,7 +60,7 @@ for (const theme of THEMES) for (const tab of TABS) {
     const bg = getComputedStyle(document.body).backgroundColor;
     return { h1, banda: banda ? banda.textContent.trim().slice(0, 30) : "-", compacto, headerFull, panelY: panel ? Math.round(panel.getBoundingClientRect().top - top) : -1, dark, bg, title: document.title.slice(0, 40), faseY: fase ? Math.round(fase.getBoundingClientRect().top - top) : -1 };
   });
-  const file = `${OUT}/${tab}-${theme}.png`;
+  const file = `${OUT}/${tab}-${theme}${CLICK ? "-" + CLICK.toLowerCase() : ""}.png`;
   await page.screenshot({ path: file, fullPage: false });
   rows.push({ tab, theme, ...m });
   console.log(`${theme.padEnd(5)} ${tab.padEnd(18)} h1=${m.h1} banda="${m.banda}" compacto=${m.compacto} full=${m.headerFull} panelY=${m.panelY} faseY=${m.faseY} dark=${m.dark} bg=${m.bg}`);

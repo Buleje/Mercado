@@ -17,8 +17,9 @@
  * el CTP sabe moverse en el de Títulos Habilitantes.
  */
 
-import { useEffect, useMemo, useRef, type ReactNode } from "react";
-import { Keyboard, type LucideIcon } from "@buleje/design-system/icons";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { Keyboard, SlidersHorizontal, X, type LucideIcon } from "@buleje/design-system/icons";
 import { Kicker, PageTitle } from "@buleje/design-system";
 import ActionMenu, { type MenuAccion } from "./action-menu";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
@@ -272,18 +273,40 @@ export default function LibroChrome({
             })}
           </div>
           )}
+          {/* Estado · Herramientas · Acciones, en la fila del título. Las
+              herramientas (período, buscar guía, avisos, modo patio, atajos…)
+              van plegadas en UN botón que abre un panel (Brandon 2026-09-07:
+              «un botón que al presionar aparece un modal con esos botones»):
+              sueltas ocupaban una fila entera, y la fila de abajo es de las
+              pestañas. El score y el menú de acciones quedan a la vista: son
+              un vistazo y un clic. */}
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            {status}
+            {(context || tools) ? (
+              <HerramientasDelLibro>
+                {context}
+                {tools}
+                {flat.length > 1 && <BotonAtajos onClick={abrirAyuda} enPanel />}
+              </HerramientasDelLibro>
+            ) : (
+              flat.length > 1 && <BotonAtajos onClick={abrirAyuda} />
+            )}
+            {actions && actions.length > 0 && <ActionMenu label={actionsLabel} actions={actions} />}
+          </div>
         </div>
 
-        {/* Segundo riel: las vistas de la fase activa. La fase vive arriba,
-            en la fila del título (banda del panel). En angosto se desliza en
-            vez de envolver: con wrap las vistas se pisaban a 390px. */}
+        {/* Segundo riel: SÓLO las vistas de la fase activa. Esta fila es de la
+            navegación (Brandon 2026-09-07): las herramientas del libro no
+            entran acá — viven arriba, plegadas en «Herramientas». En angosto
+            se desliza en vez de envolver: con wrap las vistas se pisaban a
+            390px. */}
         {flat.length > 1 && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-2 sm:px-3">
+        <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-2 sm:px-3">
 
           <div
             role="tablist"
             aria-label={activeGroup?.label}
-            className="flex min-w-0 max-w-full flex-1 items-center gap-1 overflow-x-auto scrollbar-none sm:flex-wrap"
+            className="flex max-w-full items-center gap-1 overflow-x-auto scrollbar-none sm:flex-wrap"
             style={{ scrollbarWidth: "none" }}
           >
             {activeGroup?.views.map((v) => {
@@ -312,34 +335,6 @@ export default function LibroChrome({
               );
             })}
           </div>
-          {/* Estado, contexto, herramientas y acciones del libro, a la derecha
-              del riel de vistas — como el rightSlot de la barra del panel.
-              Arriba, junto al título, ya no entran: la fase ocupa ese lugar y
-              con las acciones anchas (CTP, LOTH) se iban a una línea propia,
-              una fila más que antes. Acá comparten fila con las vistas y en
-              angosto envuelven. */}
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-            {status}
-            {context}
-            {tools}
-            {/* Los atajos vivían en DOS tiras de texto al pie —una del libro y
-                otra de la tabla— que juntas se comían dos renglones de cada
-                vista para decir algo que se lee una vez. Acá quedan en un solo
-                botón que abre la hoja completa (que ya incluye los de la vista
-                activa vía `atajosDeVista`). */}
-            {flat.length > 1 && (
-              <button
-                type="button"
-                onClick={abrirAyuda}
-                title="Atajos del teclado (?)"
-                aria-label="Ver los atajos del teclado"
-                className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] lg:inline-flex"
-              >
-                <Keyboard className="h-4 w-4" />
-              </button>
-            )}
-            {actions && actions.length > 0 && <ActionMenu label={actionsLabel} actions={actions} />}
-          </div>
         </div>
         )}
       </section>
@@ -347,5 +342,109 @@ export default function LibroChrome({
       {children}
 
     </div>
+  );
+}
+
+/** El botón de la hoja de atajos. Dentro del panel se muestra siempre; suelto,
+ *  sólo en pantallas grandes (en móvil el atajo de teclado no existe). */
+function BotonAtajos({ onClick, enPanel = false }: { onClick: () => void; enPanel?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="Atajos del teclado (?)"
+      aria-label="Ver los atajos del teclado"
+      className={`${enPanel ? "inline-flex" : "hidden lg:inline-flex"} h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]`}
+    >
+      <Keyboard className="h-4 w-4" />
+    </button>
+  );
+}
+
+/**
+ * «Herramientas» — un botón que abre el panel con los controles del libro.
+ *
+ * Se dibuja en un PORTAL con posición medida, igual que `ActionMenu`: la
+ * cabecera es una `<section class="overflow-hidden">` y un panel `absolute`
+ * adentro se recorta. El velo de atrás cierra al tocar afuera; Escape también.
+ * Los controles que van adentro pueden abrir lo suyo (el selector de período,
+ * la campana de avisos): el panel no tiene overflow que los recorte.
+ */
+function HerramientasDelLibro({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const anclaRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+
+  const ubicar = useCallback(() => {
+    const b = anclaRef.current?.getBoundingClientRect();
+    if (!b) return;
+    setPos({ top: b.bottom + 8, right: Math.max(12, window.innerWidth - b.right) });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (open) ubicar();
+  }, [open, ubicar]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", ubicar, true);
+    window.addEventListener("resize", ubicar);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", ubicar, true);
+      window.removeEventListener("resize", ubicar);
+    };
+  }, [open, ubicar]);
+
+  const panel = open && pos && (
+    <>
+      <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} aria-hidden="true" />
+      <div
+        role="dialog"
+        aria-label="Herramientas del libro"
+        /* Sin overflow: los controles de adentro (la campana de avisos, el
+           período) abren sus propios desplegables `absolute`, y un overflow
+           acá los recortaría al tamaño del panel. */
+        style={{ top: pos.top, right: pos.right }}
+        className="fixed z-[61] w-[min(92vw,44rem)] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)]"
+      >
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <Kicker className="block leading-none">Herramientas del libro</Kicker>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Cerrar herramientas"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">{children}</div>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      <button
+        ref={anclaRef}
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        title="Herramientas del libro: período, búsqueda, avisos, modo patio y atajos"
+        className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 px-3 text-sm font-semibold transition-colors ${
+          open
+            ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+            : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+        }`}
+      >
+        <SlidersHorizontal className="h-4 w-4" aria-hidden />
+        <span className="max-sm:sr-only">Herramientas</span>
+      </button>
+      {typeof document !== "undefined" && panel ? createPortal(panel, document.body) : null}
+    </>
   );
 }
