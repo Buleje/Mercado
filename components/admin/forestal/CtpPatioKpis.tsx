@@ -25,8 +25,18 @@ const nf = (n: number) => n.toLocaleString("es-PE");
 
 export default function CtpPatioKpis({
   resumen,
+  filtros,
+  filtrosActivos = 0,
 }: {
   resumen: ResumenPatio;
+  /**
+   * La fila que gobierna estas cifras (ADR-400): los filtros del patio
+   —especie, permiso, proveedor— pegados a los números que cambian. El resumen
+   * ya se calcula sobre lo filtrado; lo que faltaba era poder filtrarlo desde
+   * acá y no sólo desde la cabecera de la tabla.
+   */
+  filtros?: React.ReactNode;
+  filtrosActivos?: number;
   /** Cuántas piezas tiene el patio sin filtrar. Ya no se usa acá —el resumen de
    *  especies que la necesitaba se sacó (Brandon, 2026-09-01): agrupar la
    *  tabla por especie/guía/permiso dice lo mismo, sin duplicar la cuenta. */
@@ -40,6 +50,8 @@ export default function CtpPatioKpis({
        —cuántas trozas y cuántos m³— viaja en la línea de resumen. */
     <CtpKpisPlegables
       claveMemoria="consumos-patio"
+      filtros={filtros}
+      filtrosActivos={filtrosActivos}
       resumen={
         r.piezas === 0
           ? "Sin madera esperando"

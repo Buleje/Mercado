@@ -56,6 +56,7 @@ import CtpResumenPermisoModal from "./CtpResumenPermisoModal";
 import CtpPatioFiltros from "./CtpPatioFiltros";
 import CtpPatioKpis from "./CtpPatioKpis";
 import { CtpKpisPlegables } from "./ctp-shared";
+import CtpKpiFiltros from "./CtpKpiFiltros";
 import CtpApartados, { useApartado, type Apartado } from "./ctp-apartados";
 import { CtpPaginacion, usePaginacion } from "./ctp-tabla";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
@@ -152,6 +153,10 @@ export default function CtpConsumosView({
   const [texto, setTexto] = useState("");
   const [especie, setEspecie] = useState("");
   const [gtf, setGtf] = useState("");
+  /* El título habilitante que ampara la madera consumida (ADR-400). Es la
+     pregunta del fiscalizador —«¿cuánto se aserró de este permiso?»— y el
+     cuadro tenía el dato (`codigoOrigen`) sin forma de filtrarlo. */
+  const [permiso, setPermiso] = useState("");
   /** El grafo se guarda entero: el rendimiento y los huecos salen de él. */
   const [grafo, setGrafo] = useState<GrafoConsumos | null>(null);
   const [agrupar, setAgrupar] = useState<AgrupacionConsumo>("ninguna");
@@ -302,19 +307,37 @@ export default function CtpConsumosView({
     () => [...new Set(filas.map((f) => f.gtf).filter((x) => x && x !== "—"))].sort(),
     [filas],
   );
+  /**
+   * Los permisos del período con lo que pesa cada uno.
+   *
+   * Con el volumen a la vista, elegir entre seis permisos deja de ser adivinar
+   * cuál trae algo — es la misma regla que en Ingresos.
+   */
+  const opcionesPermiso = useMemo(() => {
+    const por = new Map<string, number>();
+    for (const f of filas) {
+      const k = (f.codigoOrigen ?? "").trim();
+      if (!k || k === "—") continue;
+      por.set(k, (por.get(k) ?? 0) + f.cantidad);
+    }
+    return [...por.entries()]
+      .map(([value, m3]) => ({ value, m3 }))
+      .sort((a, b) => b.m3 - a.m3 || a.value.localeCompare(b.value));
+  }, [filas]);
 
   const visibles = useMemo(() => {
     const t = norm(texto);
     return filas.filter((f) => {
       if (especie && norm(f.especieComun) !== norm(especie)) return false;
       if (gtf && norm(f.gtf) !== norm(gtf)) return false;
+      if (permiso && norm(f.codigoOrigen) !== norm(permiso)) return false;
       if (t) {
         const campos = [f.gtf, f.especieComun, f.especieCientifica, f.codigoOrigen, f.fuenteOrigen, f.observaciones];
         if (!campos.some((c) => norm(c).includes(t))) return false;
       }
       return true;
     });
-  }, [filas, texto, especie, gtf]);
+  }, [filas, texto, especie, gtf, permiso]);
 
   /** Los dos apartados de la pestaña, con su contador: el patio y el cuadro. */
   const piezasEnPatio = useMemo(
@@ -599,6 +622,56 @@ export default function CtpConsumosView({
       {apartado === "seccion2" && (
         <CtpKpisPlegables
           claveMemoria="consumos-seccion2"
+          /* Los filtros que gobiernan estas cifras (ADR-400): son los MISMOS que
+             recortan el cuadro de abajo, así que el número y las filas no se
+             pueden contradecir. */
+          filtrosActivos={[especie, gtf, permiso].filter(Boolean).length}
+          filtros={
+            <CtpKpiFiltros
+              campos={[
+                {
+                  key: "especie",
+                  label: "Especie",
+                  todos: "Todas las especies",
+                  valor: especie || undefined,
+                  opciones: opcionesEspecie.map((e) => ({ value: e, label: e })),
+                  onChange: (v) => setEspecie(v ?? ""),
+                },
+                {
+                  key: "permiso",
+                  label: "Permiso (título habilitante)",
+                  todos: "Todos los permisos",
+                  valor: permiso || undefined,
+                  opciones: opcionesPermiso.map((p) => ({
+                    value: p.value,
+                    label: p.value,
+                    hint: `${fmtM3(p.m3)} m³`,
+                  })),
+                  onChange: (v) => setPermiso(v ?? ""),
+                },
+                {
+                  key: "gtf",
+                  label: "Guía de ingreso",
+                  todos: "Todas las guías",
+                  valor: gtf || undefined,
+                  opciones: opcionesGtf.map((g) => ({ value: g, label: g })),
+                  onChange: (v) => setGtf(v ?? ""),
+                },
+              ]}
+              onLimpiar={() => { setEspecie(""); setPermiso(""); setGtf(""); }}
+              nota={
+                [especie, permiso, gtf].some(Boolean)
+                  ? `Los indicadores muestran sólo ${[
+                      especie ? `especie: ${especie}` : "",
+                      permiso ? `permiso: ${permiso}` : "",
+                      gtf ? `guía: ${gtf}` : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}`
+                  : null
+              }
+            />
+          }
           resumen={
             visibles.length === 0
               ? "Sin consumos en el período"
@@ -684,7 +757,65 @@ export default function CtpConsumosView({
       {/* Los del patio van en el MISMO renglón de la pantalla que los de arriba
           (ADR-345): el apartado cambia lo que dicen, no dónde están. */}
       {apartado === "patio" && (
-        <CtpPatioKpis resumen={patio.resumen} totalSinFiltrar={patio.delPatio.length} />
+        <CtpPatioKpis
+          resumen={patio.resumen}
+          totalSinFiltrar={patio.delPatio.length}
+          filtrosActivos={[patio.especie, patio.permiso, patio.proveedor].filter(Boolean).length}
+          filtros={
+            <CtpKpiFiltros
+              campos={[
+                {
+                  key: "especie",
+                  label: "Especie",
+                  todos: "Todas las especies",
+                  valor: patio.especie || undefined,
+                  opciones: facetasPatio.especies.map((f) => ({
+                    value: f.value,
+                    label: f.value,
+                    hint: `${f.count} pza`,
+                  })),
+                  onChange: (v) => patio.set.especie(v ?? ""),
+                },
+                {
+                  key: "permiso",
+                  label: "Permiso (título habilitante)",
+                  todos: "Todos los permisos",
+                  valor: patio.permiso || undefined,
+                  opciones: facetasPatio.permisos.map((f) => ({
+                    value: f.value,
+                    label: f.value,
+                    hint: `${f.count} pza`,
+                  })),
+                  onChange: (v) => patio.set.permiso(v ?? ""),
+                },
+                {
+                  key: "proveedor",
+                  label: "Proveedor",
+                  todos: "Todos los proveedores",
+                  valor: patio.proveedor || undefined,
+                  opciones: facetasPatio.proveedores.map((f) => ({
+                    value: f.value,
+                    label: f.value,
+                    hint: `${f.count} pza`,
+                  })),
+                  onChange: (v) => patio.set.proveedor(v ?? ""),
+                },
+              ]}
+              onLimpiar={() => { patio.set.especie(""); patio.set.permiso(""); patio.set.proveedor(""); }}
+              nota={
+                [patio.especie, patio.permiso, patio.proveedor].some(Boolean)
+                  ? `Los indicadores muestran sólo ${[
+                      patio.especie ? `especie: ${patio.especie}` : "",
+                      patio.permiso ? `permiso: ${patio.permiso}` : "",
+                      patio.proveedor ? `proveedor: ${patio.proveedor}` : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}`
+                  : null
+              }
+            />
+          }
+        />
       )}
 
       {/* El hueco de la cadena, arriba de todo: el libro admite una corrida sin

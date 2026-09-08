@@ -48,6 +48,17 @@ originSourceNumber)` para poder decir de quién es cada permiso.
 ESTADO queda afuera, igual que en Ingresos: los KPIs describen lo registrado del período y el
 desglose por estado es otra pregunta.
 
+Eso cubre **Producción** y **Despacho**, que comparten `CtpEntriesView`. **Consumos** tiene
+vista propia y dos apartados, y cada uno lleva su barra con los filtros que ya existían:
+
+| Apartado | Campos | Estado previo de sus cifras |
+|---|---|---|
+| Sección 2 · Consumos | especie, **permiso (nuevo)**, guía de ingreso | ya se calculaban sobre lo filtrado |
+| Trozas en el patio | especie, permiso, proveedor | ídem (`resumenPatio(filtradas)`) |
+
+El cuadro de consumos tenía el permiso en una columna (`codigoOrigen`) y ninguna forma de
+filtrarlo, que es justo la pregunta del fiscalizador: «¿cuánto se aserró de este título?».
+
 ### 4. El permiso es columna, el proveedor es el proveedor
 
 La celda de proveedor queda con el proveedor. `N° Permiso` es columna propia, con el código y
