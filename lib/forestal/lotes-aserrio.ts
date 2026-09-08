@@ -189,6 +189,14 @@ export interface CuadreSniffs {
    */
   deltaProducidoM3: number | null;
   productosSniffs: number;
+  /**
+   * El lote tiene una corrida viva que todavía no declaró NADA.
+   *
+   * Es distinto de `estado`: un lote traído de la lista «cuadra» en lo único
+   * comparable —el consumido— y sin embargo le falta declarar lo que salió.
+   * Sin este dato la mesa lo dejaría afuera y la deuda quedaría invisible.
+   */
+  produccionPendiente: boolean;
 }
 
 /**
@@ -207,6 +215,7 @@ export function cuadreSniffs(
     (c) => c.viva && (c.unit ?? "m3") === "m3",
   );
   const producidoLoteM3 = r4(corridas.reduce((a, c) => a + (Number(c.quantity) || 0), 0));
+  const produccionPendiente = corridas.some((c) => c.quantity == null);
   const productos = s.productos ?? [];
   const producidoSniffsM3 = r4(productos.reduce((a, p) => a + (Number(p.volumenM3) || 0), 0));
   const consumidoLoteM3 = r4(Number(lote.volumenM3) || 0);
@@ -236,7 +245,8 @@ export function cuadreSniffs(
     producidoLoteM3,
     deltaConsumidoM3,
     deltaProducidoM3,
-    productosSniffs: (s.productos ?? []).length,
+    productosSniffs: productos.length,
+    produccionPendiente,
   };
 }
 

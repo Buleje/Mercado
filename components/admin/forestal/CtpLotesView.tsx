@@ -15,7 +15,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { Boxes, Gauge, Layers, Loader2, PackageOpen, Plus, RefreshCw, Search, TreePine, Upload, X } from "@buleje/design-system/icons";
+import { Boxes, Gauge, Layers, Loader2, PackageOpen, Plus, RefreshCw, ScanText, Search, TreePine, Upload, X } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import { libresDelPatio } from "@/lib/forestal/patio-resumen";
 import {
@@ -33,6 +33,8 @@ import CtpLoteCard from "./CtpLoteCard";
 import CtpLoteArmarModal, { type MaterialDeInventario } from "./CtpLoteArmarModal";
 import CtpLoteDetalleModal from "./CtpLoteDetalleModal";
 import CtpImportarProgramacionesModal from "./CtpImportarProgramacionesModal";
+import CtpCuadreSniffsModal, { lotesQueNoCuadran } from "./CtpCuadreSniffsModal";
+import CtpDeclararDesdeSniffs from "./CtpDeclararDesdeSniffs";
 import CtpRegistrarProduccionModal, { type ProduccionRegistrada } from "./CtpRegistrarProduccionModal";
 import { Btn, CtpKpisPlegables, PanelSkeleton, VistaHeader } from "./ctp-shared";
 import { sniffsRefDesdeDetalle } from "@/lib/forestal/sniffs-produccion-parse";
@@ -69,6 +71,9 @@ export default function CtpLotesView({
   const [armar, setArmar] = useState(false);
   /** Importar la lista de programaciones del SNIFFS (ADR-398). */
   const [importar, setImportar] = useState(false);
+  /** La mesa de lo que no cuadra con el SNIFFS, y el lote que se está resolviendo. */
+  const [verCuadre, setVerCuadre] = useState(false);
+  const [resolviendoId, setResolviendoId] = useState<string | null>(null);
   const [detalleId, setDetalleId] = useState<string | null>(null);
   const [aviso, setAviso] = useState<{ tono: "ok" | "aviso"; texto: string } | null>(null);
 
@@ -147,6 +152,9 @@ export default function CtpLotesView({
     [lotes, ahora],
   );
   const detalle = detalleId ? (lotes.find((l) => l.id === detalleId) ?? null) : null;
+  const resolviendo = resolviendoId ? (lotes.find((l) => l.id === resolviendoId) ?? null) : null;
+  /** Lo que el libro no dice igual que el SNIFFS (ADR-398). */
+  const descuadres = useMemo(() => lotesQueNoCuadran(lotes), [lotes]);
   const filtrando = Boolean(texto || especie || estado);
 
   return (
@@ -168,6 +176,34 @@ export default function CtpLotesView({
           <Plus className="h-4 w-4" /> Armar lote
         </Btn>
       </VistaHeader>
+
+      {/**
+       * Lo que no cuadra con el SNIFFS, arriba de todo (ADR-398).
+       *
+       * Es la pregunta que se hace antes de una fiscalización y la única deuda
+       * de esta pantalla que no se ve abriendo un lote: hay que mirarlos todos.
+       * Sólo aparece cuando hay algo — un renglón que siempre dice «0» enseña a
+       * no leerlo.
+       */}
+      {descuadres.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setVerCuadre(true)}
+          className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/12 px-3 py-2 text-left text-sm font-bold text-[var(--data-warning-700)] transition-colors hover:bg-[var(--data-warning-500)]/20 dark:text-[var(--data-warning-500)]"
+        >
+          <ScanText className="h-4 w-4 shrink-0" aria-hidden />
+          <span className="min-w-0 flex-1">
+            {descuadres.length} lote{descuadres.length === 1 ? "" : "s"} del SNIFFS pide
+            {descuadres.length === 1 ? "" : "n"} atención
+            {(() => {
+              const pend = descuadres.filter((d) => d.cuadre.estado === "pendiente" || d.cuadre.produccionPendiente);
+              const m3 = Math.round(pend.reduce((a, d) => a + d.peso, 0) * 10_000) / 10_000;
+              return pend.length > 0 ? ` · ${pend.length} sin declarar acá (${fmtM3(m3)} m³)` : "";
+            })()}
+          </span>
+          <span className="shrink-0 underline underline-offset-2">ver cuáles</span>
+        </button>
+      )}
 
       {/* Todos detrás del botón «Indicadores» (Brandon, 2026-09-03); el titular
           va en la línea de resumen, que es lo que se mira de reojo. */}
@@ -378,6 +414,7 @@ export default function CtpLotesView({
                 onAgregar={() => onCargar({ id: l.id, code: l.code })}
                 onProducir={() => onProducir({ id: l.id, code: l.code })}
                 onDeshacer={() => setDetalleId(l.id)}
+                onResolverCuadre={() => setResolviendoId(l.id)}
               />
             </li>
           ))}
@@ -388,6 +425,26 @@ export default function CtpLotesView({
         <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Actualizando…
         </p>
+      )}
+
+      {/* La mesa de lo que no cuadra, y el formulario que lo resuelve. */}
+      {verCuadre && (
+        <CtpCuadreSniffsModal
+          lotes={lotes}
+          onResolver={(l) => { setVerCuadre(false); setResolviendoId(l.id); }}
+          onVer={(l) => { setVerCuadre(false); setDetalleId(l.id); }}
+          onClose={() => setVerCuadre(false)}
+        />
+      )}
+
+      {resolviendo && (
+        <CtpDeclararDesdeSniffs
+          lote={resolviendo}
+          trozas={trozas}
+          onListo={(texto) => { setAviso({ tono: "ok", texto }); void recargar(); }}
+          onError={(texto) => setAviso({ tono: "aviso", texto })}
+          onClose={() => setResolviendoId(null)}
+        />
       )}
 
       {/* Importar la lista de programaciones (ADR-398): cada fila nace como un

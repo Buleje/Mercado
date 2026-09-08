@@ -25,8 +25,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Boxes, Loader2, MinusCircle, X } from "@buleje/design-system/icons";
-import { csrfHeaders } from "@/lib/csrf-client";
-import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import { guardarProduccionDeCorrida } from "./hooks/guardar-produccion-corrida";
 import { origenesDeTrozas } from "@/lib/forestal/produccion-paquetes";
 import { pieTablarDe, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
@@ -176,38 +175,8 @@ export default function CtpCorridaSinDeclarar({
     setGuardando(true);
     setError(null);
     try {
-      const r = await fetch("/api/admin/forestal/ctp", {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify({
-          action: "declarar_produccion",
-          id: corrida.id,
-          quantity: datos.volumen,
-          unit: "m3",
-          lineaProduccion: datos.lineaProduccion,
-          observations: datos.observaciones,
-          pieces: datos.paquetes.reduce((a, p) => a + p.cantidad, 0),
-          productType: datos.paquetes[0]?.productType ?? null,
-          presentacion: datos.paquetes[0]?.presentacion ?? null,
-          codigoProducto: datos.paquetes[0]?.codigo ?? null,
-          paquetes: datos.paquetes.map((p) => ({
-            codigo: p.codigo,
-            productType: p.productType,
-            presentacion: p.presentacion,
-            cantidad: p.cantidad,
-            volumenM3: p.volumenM3,
-            espesorCm: p.espesorCm,
-            anchoCm: p.anchoCm,
-            largoM: p.largoM,
-            observations: p.observations || null,
-          })),
-        }),
-      });
-      const json = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(json?.message ?? json?.error ?? `El servidor respondió ${r.status}`);
+      await guardarProduccionDeCorrida(corrida.id, "declarar", datos);
 
-      invalidarCtp("/forestal/");
       setAbierto(false);
       const rend = entrada > 0 ? ` · rendimiento ${Math.round((datos.volumen / entrada) * 1000) / 10} %` : "";
       onListo(

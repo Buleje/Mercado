@@ -57,6 +57,7 @@ export default function CtpLoteCard({
   onAgregar,
   onProducir,
   onDeshacer,
+  onResolverCuadre,
 }: {
   lote: LoteAserrio;
   fotos: Map<string, FotoEspecie>;
@@ -66,6 +67,12 @@ export default function CtpLoteCard({
   onAgregar: () => void;
   onProducir: () => void;
   onDeshacer: () => void;
+  /**
+   * Resolver el cuadre contra el SNIFFS (ADR-398): declarar lo que allá está
+   * declarado y acá falta. Sin esto la insignia sólo informa, y el operador
+   * tiene que ir a buscar dónde se arregla.
+   */
+  onResolverCuadre?: () => void;
 }) {
   const estado = ESTADO_LOTE[lote.status];
   const libres = piezasLibres(lote);
@@ -297,15 +304,19 @@ export default function CtpLoteCard({
           }`}
         >
           <ScanText className="h-4 w-4 shrink-0" aria-hidden />
-          <span>
+          <span className="min-w-0 flex-1">
             SNIFFS{cuadre.lote ? ` N° ${cuadre.lote}` : ""}:{" "}
             {cuadre.deltaProducidoM3 == null
               ? /* Vino de la LISTA, que no trae productos: lo único comparable
                    es el consumido, y decir «cuadra con el libro» a secas
-                   prometería una comparación que no se hizo. */
-                cuadre.estado === "cuadra"
-                ? "el consumo cuadra · pegá el detalle para comparar la producción"
-                : `el consumo difiere en ${fmtM3(Math.abs(cuadre.deltaConsumidoM3 ?? 0))} m³`
+                   prometería una comparación que no se hizo. Si además falta
+                   declarar la producción, ESO es lo que hay que hacer y va
+                   primero — el cotejo del consumo no es una tarea. */
+                cuadre.estado !== "cuadra"
+                ? `el consumo difiere en ${fmtM3(Math.abs(cuadre.deltaConsumidoM3 ?? 0))} m³`
+                : cuadre.produccionPendiente
+                  ? "falta declarar acá lo que salió"
+                  : "el consumo cuadra · pegá el detalle para comparar la producción"
               : cuadre.estado === "cuadra"
                 ? "cuadra con el libro"
                 : cuadre.estado === "pendiente"
@@ -316,6 +327,17 @@ export default function CtpLoteCard({
                         : ""
                     }`}
           </span>
+          {/* La deuda lleva a resolverla: el mismo formulario de producción,
+              con los productos del SNIFFS ya cargados. */}
+          {onResolverCuadre && cuadre.estado !== "cuadra" && (
+            <button
+              type="button"
+              onClick={onResolverCuadre}
+              className="shrink-0 underline underline-offset-2"
+            >
+              {cuadre.estado === "pendiente" ? "declararlo" : "revisarlo"}
+            </button>
+          )}
         </p>
       )}
 

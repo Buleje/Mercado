@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  detalleDesdeIA,
   interpretarDetalleProduccionSniffs,
   interpretarListaProgramacionesSniffs,
   mismaEspecie,
@@ -289,5 +290,73 @@ describe("sniffsRefDesdeDetalle", () => {
       pctAprovechado: 35.44,
     });
     expect(ref).not.toHaveProperty("avisos");
+  });
+});
+
+describe("detalleDesdeIA — lo que devuelve el modelo de visión (ADR-398)", () => {
+  const crudo = {
+    lote: "18-2026",
+    fechaInicio: "2026-08-01",
+    fechaFin: "2026-10-01",
+    especieCientifica: "Cedrelinga cateniformis",
+    especieComun: "TORNILLO",
+    volumenConsumidoM3: 27.522,
+    productos: [
+      { producto: "MADERA ASERRADA (COMERCIAL)", volumenM3: 0.002, pctAprovechado: 0.01 },
+      { producto: "Madera aserrada (paquetería corta)", volumenM3: 9.753, pctAprovechado: 35.44 },
+    ],
+    advertencia: "",
+  };
+
+  it("llega a la MISMA forma que el parser local, con el producto re-mapeado al catálogo", () => {
+    const d = detalleDesdeIA(crudo);
+    expect(d.lote).toBe("18-2026");
+    expect(d.volumenConsumidoM3).toBe(27.522);
+    expect(d.productos.map((p) => p.productType)).toEqual([
+      "MADERA ASERRADA (COMERCIAL)",
+      "MADERA ASERRADA (PAQUETERIA CORTA)",
+    ]);
+    expect(d.productos.every((p) => !p.dudoso)).toBe(true);
+    expect(d.avisos).toEqual([]);
+  });
+
+  it("un producto que el catálogo no tiene NO se inventa: queda null y se avisa", () => {
+    const d = detalleDesdeIA({ ...crudo, productos: [{ producto: "CHAPAS DECORATIVAS", volumenM3: 1, pctAprovechado: 3 }] });
+    expect(d.productos[0].productType).toBeNull();
+    expect(d.avisos[0]).toMatch(/no está en el catálogo del LO-CTP/);
+  });
+
+  it("aplica el mismo cotejo que el parser: más producto que materia prima se marca", () => {
+    const d = detalleDesdeIA({ ...crudo, productos: [{ producto: "MADERA ASERRADA (TABLA)", volumenM3: 99, pctAprovechado: 5 }] }, { consumidoM3: 27.522 });
+    expect(d.productos[0].dudoso).toBe(true);
+    expect(d.avisos.some((a) => a.includes("más que los 27.522 m³ consumidos"))).toBe(true);
+  });
+
+  it("una fecha que no vino en ISO no se fuerza: vuelve null", () => {
+    const d = detalleDesdeIA({ ...crudo, fechaInicio: "01/08/2026", fechaFin: "" });
+    expect(d.fechaInicio).toBeNull();
+    expect(d.fechaFin).toBeNull();
+  });
+
+  it("la advertencia del modelo se conserva como aviso, y sin filas lo dice", () => {
+    const d = detalleDesdeIA({ ...crudo, productos: [], advertencia: "La foto muestra una factura." });
+    expect(d.productos).toEqual([]);
+    expect(d.avisos).toEqual(["La foto muestra una factura."]);
+  });
+
+  it("un consumido en 0 es «no se leyó», no cero m³", () => {
+    expect(detalleDesdeIA({ ...crudo, volumenConsumidoM3: 0 }).volumenConsumidoM3).toBeNull();
+  });
+});
+
+describe("pareceListaProgramaciones — el umbral por puerta", () => {
+  const unaFila = "QA-1\t01/08/2026\t01/10/2026\tCedrelinga cateniformis - TORNILLO\t27.522";
+  it("el Ctrl+V global pide DOS filas con fecha, para no confundirse", () => {
+    expect(pareceListaProgramaciones(unaFila)).toBe(false);
+    expect(pareceListaProgramaciones(`${unaFila}\n${unaFila}`)).toBe(true);
+  });
+  it("dentro del modal de importar, una sola fila alcanza", () => {
+    expect(pareceListaProgramaciones(unaFila, 1)).toBe(true);
+    expect(pareceListaProgramaciones("sin fechas acá", 1)).toBe(false);
   });
 });

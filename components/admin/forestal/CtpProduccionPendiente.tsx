@@ -24,8 +24,7 @@
 import { useCallback, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Boxes, Gauge, Layers, Loader2 } from "@buleje/design-system/icons";
-import { csrfHeaders } from "@/lib/csrf-client";
-import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import { guardarProduccionDeCorrida, paquetesYaDeclarados } from "./hooks/guardar-produccion-corrida";
 import {
   RENDIMIENTO_TOPE_PCT,
   origenesDeTrozas,
@@ -98,11 +97,7 @@ export default function CtpProduccionPendiente({
     setPaquetesPrevios([]);
     setCargandoFicha(true);
     try {
-      const r = await fetch(`/api/admin/forestal/ctp?entryId=${encodeURIComponent(c.id)}`, {
-        credentials: "include",
-      });
-      const j: { entry?: { paquetes?: PaquetePrevio[] } } = r.ok ? await r.json() : {};
-      setPaquetesPrevios(j.entry?.paquetes ?? []);
+      setPaquetesPrevios((await paquetesYaDeclarados(c.id)) as PaquetePrevio[]);
     } catch (e) {
       /* Sin los códigos se puede declarar igual —el servidor sigue validando—,
          pero se dice: el operador tiene que saber que el sugerido no está
@@ -121,32 +116,7 @@ export default function CtpProduccionPendiente({
     setGuardando(true);
     setError(null);
     try {
-      const r = await fetch("/api/admin/forestal/ctp", {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify({
-          action: "ampliar_produccion",
-          id: abierta.id,
-          observations: datos.observaciones,
-          paquetes: datos.paquetes.map((p) => ({
-            codigo: p.codigo,
-            productType: p.productType,
-            presentacion: p.presentacion,
-            cantidad: p.cantidad,
-            volumenM3: p.volumenM3,
-            espesorCm: p.espesorCm,
-            anchoCm: p.anchoCm,
-            largoM: p.largoM,
-            observations: p.observations || null,
-          })),
-        }),
-      });
-      const json = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        throw new Error(json?.message ?? json?.error ?? `El servidor respondió ${r.status}`);
-      }
-      invalidarCtp("/forestal/");
+      await guardarProduccionDeCorrida(abierta.id, "ampliar", datos);
       const total = Math.round((abierta.declaradoM3 + datos.volumen) * 10_000) / 10_000;
       const queda = Math.round((abierta.topeM3 - total) * 10_000) / 10_000;
       setAbierta(null);

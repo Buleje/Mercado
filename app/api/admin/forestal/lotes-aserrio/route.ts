@@ -170,6 +170,19 @@ const patchSchema = z.discriminatedUnion("accion", [
     notes: z.string().trim().max(500).nullish(),
   }),
   /**
+   * Guardar lo que el SNIFFS declara de un lote que YA existe (ADR-398).
+   *
+   * El lote pudo nacer de la lista —que no trae productos— o de antes de que
+   * esto existiera: pegar su detalle después es cómo se completa el cuadre.
+   * Reemplaza la foto anterior: es la misma pantalla leída de nuevo, no un
+   * segundo documento.
+   */
+  z.object({
+    accion: z.literal("sniffs"),
+    loteId: z.string().trim().min(1).max(60),
+    sniffs: sniffsSchema,
+  }),
+  /**
    * DESHACER un lote consumido cuya corrida sigue viva (Brandon, 2026-08-31):
    * "eliminar el registro de producción" desde la propia pestaña de Lotes, sin
    * ir primero a Producción a anular la línea.
@@ -396,6 +409,15 @@ export async function PATCH(req: NextRequest) {
         user,
       });
       return NextResponse.json(r);
+    }
+    if (d.accion === "sniffs") {
+      const lote = await ForestLoteAserrioDB.guardarSniffs(
+        g.auth.tenantId,
+        d.loteId,
+        d.sniffs ?? null,
+        user,
+      );
+      return NextResponse.json({ lote });
     }
     if (d.accion === "deshacer-forzado") {
       const r = await ForestLoteAserrioDB.deshacerConProduccion(g.auth.tenantId, {

@@ -19,6 +19,7 @@ import {
   type DetalleProduccionSniffs,
 } from "@/lib/forestal/sniffs-produccion-parse";
 import { useLecturaPegada } from "./hooks/use-lectura-pegada";
+import { leerDetalleConIA } from "./hooks/leer-sniffs-con-ia";
 import { Tecla, ZonaPegarSniffs, fmtDiaSniffs } from "./CtpPegarSniffs";
 
 export default function CtpPegarSniffsLote({
@@ -33,6 +34,7 @@ export default function CtpPegarSniffsLote({
 }) {
   const lectura = useLecturaPegada<DetalleProduccionSniffs>({
     interpretar: (texto) => interpretarDetalleProduccionSniffs(texto),
+    interpretarConIA: (imagen) => leerDetalleConIA(imagen),
     validar: (d) =>
       !d.lote && !d.especieComun && !d.fechaInicio && d.volumenConsumidoM3 == null && d.productos.length === 0
         ? "No encontré los datos del lote en lo que pegaste. Pegá la pantalla «Detalle de la programación de producción» del SNIFFS."

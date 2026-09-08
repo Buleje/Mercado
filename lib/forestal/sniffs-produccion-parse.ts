@@ -468,7 +468,93 @@ export function interpretarListaProgramacionesSniffs(texto: string): { filas: Pr
   return { filas, avisos };
 }
 
-/** ¿El texto pegado parece la lista de programaciones? Dos filas con fecha alcanzan. */
-export function pareceListaProgramaciones(texto: string): boolean {
-  return (texto ?? "").split("\n").filter((l) => HAY_FECHA.test(l)).length >= 2;
+/**
+ * ¿El texto pegado parece la lista de programaciones?
+ *
+ * `minimoFilas` es la diferencia entre las dos puertas y no un detalle: en el
+ * Ctrl+V global hacen falta DOS filas con fecha para no confundir cualquier
+ * texto con una lista, pero DENTRO del modal de importación el operador ya dijo
+ * qué está pegando — exigirle dos programaciones para poder traer una sola era
+ * un candado sin motivo.
+ */
+export function pareceListaProgramaciones(texto: string, minimoFilas = 2): boolean {
+  return (texto ?? "").split("\n").filter((l) => HAY_FECHA.test(l)).length >= minimoFilas;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Lo que devuelve el modelo de visión (ADR-398), a la misma forma que el parser
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** El JSON de `/api/admin/forestal/sniffs-ocr`, ya validado por su Zod. */
+export interface DetalleSniffsDeIA {
+  lote: string;
+  fechaInicio: string;
+  fechaFin: string;
+  especieCientifica: string;
+  especieComun: string;
+  volumenConsumidoM3: number;
+  productos: { producto: string; volumenM3: number; pctAprovechado: number }[];
+  advertencia: string;
+}
+
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Lo que leyó el modelo, con la MISMA forma que lo que lee el parser local.
+ *
+ * Así la tabla de revisión, los cotejos y el guardado son los mismos vengan de
+ * donde vengan las filas: una segunda forma de representar lo mismo es una
+ * segunda forma de que un volumen salga distinto.
+ *
+ * El producto se vuelve a mapear contra el catálogo del LO-CTP acá y no se
+ * confía en el nombre que devolvió el modelo: el catálogo es de SERFOR, no del
+ * que lo transcribe.
+ */
+export function detalleDesdeIA(
+  crudo: DetalleSniffsDeIA,
+  opts: { consumidoM3?: number | null } = {},
+): DetalleProduccionSniffs {
+  const avisos: string[] = [];
+  if (crudo.advertencia?.trim()) avisos.push(crudo.advertencia.trim());
+
+  const referencia = opts.consumidoM3 ?? (crudo.volumenConsumidoM3 > 0 ? crudo.volumenConsumidoM3 : null);
+  const productos: ProductoSniffs[] = (crudo.productos ?? [])
+    .filter((p) => (p.producto ?? "").trim() || p.volumenM3 > 0)
+    .map((p) => {
+      const productType = normalizarProductoLoctp(p.producto ?? "");
+      const volumenM3 = r4(Number(p.volumenM3) || 0);
+      /* El mismo cotejo que el parser local: más producto que materia prima se
+         MARCA, no se corrige. Que lo haya leído un modelo no lo hace más cierto. */
+      const dudoso = referencia != null && referencia > 0 && volumenM3 > referencia;
+      if (!productType && (p.producto ?? "").trim()) {
+        avisos.push(`«${p.producto}» no está en el catálogo del LO-CTP: elegí el producto a mano.`);
+      }
+      if (dudoso) {
+        avisos.push(`«${p.producto}» dice ${volumenM3} m³, más que los ${referencia} m³ consumidos: revisá el número.`);
+      }
+      return {
+        productoCrudo: (p.producto ?? "").trim() || "—",
+        productType,
+        volumenM3,
+        pctAprovechado: Number.isFinite(p.pctAprovechado) ? p.pctAprovechado : null,
+        especie: crudo.especieComun?.trim() || null,
+        dudoso,
+        volumenLeido: String(p.volumenM3 ?? ""),
+      };
+    });
+
+  if (productos.length === 0 && !crudo.advertencia?.trim()) {
+    avisos.push("El modelo no encontró filas de producto en la foto.");
+  }
+
+  return {
+    lote: crudo.lote?.trim() || null,
+    fechaInicio: ISO.test(crudo.fechaInicio ?? "") ? crudo.fechaInicio : null,
+    fechaFin: ISO.test(crudo.fechaFin ?? "") ? crudo.fechaFin : null,
+    especieComun: crudo.especieComun?.trim() || null,
+    especieCientifica: crudo.especieCientifica?.trim() || null,
+    volumenConsumidoM3: crudo.volumenConsumidoM3 > 0 ? r4(crudo.volumenConsumidoM3) : null,
+    productos,
+    avisos,
+  };
 }

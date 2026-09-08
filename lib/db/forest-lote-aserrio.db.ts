@@ -2100,6 +2100,52 @@ export class ForestLoteAserrioDB {
    *
    * Un lote consumido no se borra: es parte del libro.
    */
+  /**
+   * Guarda lo que el SNIFFS declara de un lote que ya existe (ADR-398).
+   *
+   * REEMPLAZA la foto anterior: es la misma pantalla leída otra vez, no un
+   * segundo documento que haya que fusionar. `null` la borra —para cuando se
+   * pegó la captura equivocada—. No toca ningún dato del libro: esto es
+   * material de cotejo, no un asiento.
+   */
+  static async guardarSniffs(
+    tenantId: string,
+    loteId: string,
+    sniffs: SniffsRefLote | null,
+    user: string,
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const lote = await prisma.forestLoteAserrio.findFirst({
+      where: { id: loteId, tenantId, deletedAt: null },
+      select: { id: true, code: true },
+    });
+    if (!lote) throw new CtpInvariantError("Ese lote no existe.", "LOTE_NO_ENCONTRADO");
+
+    const actualizado = await prisma.forestLoteAserrio.update({
+      where: { id: loteId },
+      data: { sniffs: sniffs ? (sniffs as unknown as Prisma.InputJsonValue) : Prisma.DbNull },
+    });
+    auditCtp({
+      tenantId,
+      action: "ctp_lote_aserrio_sniffs",
+      entity: "ForestLoteAserrio",
+      entityId: loteId,
+      detail: sniffs
+        ? `Guardó lo que el SNIFFS declara del lote ${lote.code}` +
+          `${sniffs.lote ? ` (N° ${sniffs.lote})` : ""}: ` +
+          `${sniffs.productos.length} producto(s)` +
+          `${sniffs.volumenConsumidoM3 != null ? `, ${sniffs.volumenConsumidoM3} m³ consumidos` : ""}`
+        : `Borró la referencia del SNIFFS del lote ${lote.code}`,
+      user,
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {
+      /* cache best-effort */
+    }
+    return actualizado;
+  }
+
   static async softDelete(tenantId: string, loteId: string, user: string) {
     if (!tenantId) throw new Error("tenantId is required");
     const lote = await prisma.forestLoteAserrio.findFirst({

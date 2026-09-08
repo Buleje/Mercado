@@ -29,12 +29,14 @@ import type { PaqueteBorrador } from "@/lib/forestal/produccion-paquetes";
 import {
   interpretarDetalleProduccionSniffs,
   mismaEspecie,
+  normalizarTexto,
   paquetesDesdeSniffs,
   pareceDetalleSniffs,
   type DetalleProduccionSniffs,
   type ProductoSniffs,
 } from "@/lib/forestal/sniffs-produccion-parse";
 import { useLecturaPegada, type FuenteLectura, type LecturaPegada } from "./hooks/use-lectura-pegada";
+import { leerDetalleConIA } from "./hooks/leer-sniffs-con-ia";
 import { Btn } from "./ctp-shared";
 import { TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
 
@@ -125,10 +127,23 @@ export function ZonaPegarSniffs({
         />
       </div>
       {lectura.error && (
-        <p className="mt-2 flex items-start gap-2 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+        <div className="mt-2 flex flex-wrap items-start gap-2 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          <span>{lectura.error}</span>
-        </p>
+          <span className="min-w-0 flex-1">{lectura.error}</span>
+          {/* Segundo intento para una FOTO de un monitor o un papel: el OCR del
+              navegador lee texto impreso, no reflejos. Se dice que sube la
+              imagen — es lo único de todo esto que sale de la máquina. */}
+          {lectura.reintentarConIA && (
+            <button
+              type="button"
+              onClick={() => void lectura.reintentarConIA?.()}
+              title="Sube la imagen para leerla con el modelo de visión. Consume presupuesto de IA."
+              className="shrink-0 underline underline-offset-2"
+            >
+              ¿Es una foto? Leerla con el modelo
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -165,6 +180,7 @@ export default function CtpPegarSniffs({
   onUsarFecha,
   compacto = false,
   detalleInicial = null,
+  loteSniffsEsperado = null,
 }: {
   /** Contra qué se coteja lo leído. */
   material: { especie: string; volumenM3: number };
@@ -179,6 +195,14 @@ export default function CtpPegarSniffs({
   compacto?: boolean;
   /** Lo que ya se pegó en el paso anterior: arranca en la revisión (ADR-398). */
   detalleInicial?: DetalleProduccionSniffs | null;
+  /**
+   * El N° de lote del SNIFFS que este lote ya tenía guardado.
+   *
+   * Sirve para el error más caro de todos: pegar la captura de OTRO lote. La
+   * especie y el consumido pueden coincidir entre dos lotes de la misma
+   * jornada; el número no.
+   */
+  loteSniffsEsperado?: string | null;
 }) {
   const [revisar, setRevisar] = useState<{ detalle: DetalleProduccionSniffs; fuente: FuenteLectura } | null>(() =>
     detalleInicial && detalleInicial.productos.length > 0 ? { detalle: detalleInicial, fuente: "captura" } : null,
@@ -187,6 +211,7 @@ export default function CtpPegarSniffs({
 
   const lectura = useLecturaPegada<DetalleProduccionSniffs>({
     interpretar: (texto) => interpretarDetalleProduccionSniffs(texto, { consumidoM3: material.volumenM3 }),
+    interpretarConIA: (imagen) => leerDetalleConIA(imagen, material.volumenM3),
     validar: (d, fuente) =>
       d.productos.length === 0
         ? fuente === "captura"
@@ -210,6 +235,12 @@ export default function CtpPegarSniffs({
   const cotejos = useMemo(() => {
     const lista: { tono: "aviso" | "error"; texto: string }[] = [];
     if (!detalle) return lista;
+    if (loteSniffsEsperado && detalle.lote && normalizarTexto(detalle.lote) !== normalizarTexto(loteSniffsEsperado)) {
+      lista.push({
+        tono: "error",
+        texto: `Esta captura es del lote ${detalle.lote} y acá esperábamos el ${loteSniffsEsperado}. Si la agregás, el cotejo pasa a ser contra ${detalle.lote}.`,
+      });
+    }
     if (detalle.especieComun && !mismaEspecie(material.especie, detalle.especieComun)) {
       lista.push({
         tono: "aviso",
@@ -234,7 +265,7 @@ export default function CtpPegarSniffs({
     }
     for (const a of detalle.avisos) lista.push({ tono: "aviso", texto: a });
     return lista;
-  }, [detalle, material.especie, material.volumenM3, suma, margenM3]);
+  }, [detalle, material.especie, material.volumenM3, suma, margenM3, loteSniffsEsperado]);
 
   function descartar() {
     setRevisar(null);

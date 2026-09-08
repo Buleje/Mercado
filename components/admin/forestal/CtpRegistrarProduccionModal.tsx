@@ -192,6 +192,7 @@ export default function CtpRegistrarProduccionModal({
   trozas,
   productoInicial,
   sniffsInicial,
+  onSniffsLeido,
   onConfirmar,
   onClose,
 }: {
@@ -245,6 +246,12 @@ export default function CtpRegistrarProduccionModal({
    * zona «Traer del SNIFFS» arranca en la revisión con esos productos.
    */
   sniffsInicial?: DetalleProduccionSniffs | null;
+  /**
+   * Lo que se acaba de leer del SNIFFS, para que quien abrió el modal lo guarde
+   * con el lote y pueda cotejarlo después (ADR-398). Se avisa al AGREGAR, no al
+   * leer: leer y descartar no es haberlo declarado.
+   */
+  onSniffsLeido?: (detalle: DetalleProduccionSniffs) => void;
   onConfirmar: (datos: ProduccionRegistrada) => void;
   onClose: () => void;
 }) {
@@ -1253,14 +1260,17 @@ export default function CtpRegistrarProduccionModal({
             material={{ especie: material.especie, volumenM3: material.volumenM3 }}
             margenM3={margen}
             siguienteCodigo={proponerCodigo}
-            onAgregar={(nuevos) => {
+            onAgregar={(nuevos, detalle) => {
               setPaquetes((prev) => [...prev, ...nuevos]);
               prepararSiguiente(nuevos.map((p) => p.codigo));
+              onSniffsLeido?.(detalle);
             }}
             /* Ampliando, la fecha es la del asiento que ya existe: no se ofrece. */
             onUsarFecha={previo > 0 ? undefined : setDia}
             compacto={paquetes.length > 0}
             detalleInicial={sniffsInicial}
+            /* Pegar la captura de otro lote es el error más caro: se avisa. */
+            loteSniffsEsperado={lote?.sniffs?.lote ?? null}
           />
           <TablaCtp altoMax="max-h-[45vh]">
             <TheadCtp>

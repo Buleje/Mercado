@@ -110,7 +110,8 @@ export default function CtpImportarProgramacionesModal({
           ? "Leí la captura pero no encontré filas con fecha y especie. Probá con una captura donde la tabla se vea entera, o copiá su texto y pegalo acá."
           : (r.avisos[0] ?? "No encontré programaciones en lo que pegaste.")
         : null,
-    parece: pareceListaProgramaciones,
+    /* Una sola programación también se importa: el modal ya dice qué se pega. */
+    parece: (texto) => pareceListaProgramaciones(texto, 1),
     onLeido: (r) => {
       setFilas(filasDe(r.filas, yaExisten));
       setAvisos(r.avisos);

@@ -91,6 +91,8 @@ export type CtpAuditAction =
   // mismo acto, sin trozas reales — ver `ORIGEN_LOTE_INVENTARIO`.
   | "ctp_lote_aserrio_inventario_create"
   | "ctp_lote_aserrio_update"
+  /** Guardó (o borró) lo que el SNIFFS declara del lote, para cotejar (ADR-398). */
+  | "ctp_lote_aserrio_sniffs"
   | "ctp_lote_aserrio_delete"
   | "ctp_lote_aserrio_trozas_add"
   | "ctp_lote_aserrio_trozas_remove"
