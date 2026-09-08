@@ -18,6 +18,7 @@ import {
   AlertTriangle, Lock, Unlock, X, Check, RotateCcw, Plus, Layers,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   numerosPorPieza, DIMENSIONES, ESPECIES_MADERA,
   type PiezaCubicada, type MedidasFijas,
@@ -210,6 +211,17 @@ export default function PanelEntradaVoz({
                 <p className="text-sm font-bold text-[var(--text-primary)]">
                   {paused ? "⏸ En pausa — decí «continúa» para seguir" : listening ? "Escuchando… dictá cada medida y pausá un instante" : "Tocá el micrófono y dictá los números"}
                 </p>
+                {/* Las cinco líneas de instrucciones que vivían siempre a la
+                    vista se pliegan acá: se leen una vez, y después sólo estorban
+                    entre el micrófono y la pieza que se está dictando. */}
+                <InfoTip
+                  side="bottom"
+                  icono="ayuda"
+                  ancho="w-96"
+                  title="Cómo se dicta"
+                  ariaLabel="Cómo se dicta: comandos por voz y atajos"
+                  body={<AyudaDeVoz />}
+                />
                 {/* Toggle de voz que repite */}
                 <button
                   type="button"
@@ -224,7 +236,9 @@ export default function PanelEntradaVoz({
               </div>
               <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
                 {numerosPorPieza(fijas) === 3 ? (
-                  <>Solo los números: <span className="font-semibold text-[var(--text-secondary)]">&ldquo;dos seis ocho&rdquo;</span> = espesor 2&Prime; · ancho 6&Prime; · largo 8 pies. Decí los 3 y una <b>micro-pausa</b> los guarda al toque — seguí con la siguiente sin esperar.</>
+                  /* Una línea, la que hace falta la primera vez. El resto —la
+                     micro-pausa, los comandos, el fijo— vive en el «?». */
+                  <>Solo los números: <span className="font-semibold text-[var(--text-secondary)]">&ldquo;dos seis ocho&rdquo;</span> = 2&Prime; × 6&Prime; × 8 pies.</>
                 ) : (
                   <>Con lo fijo puesto, dictá <b className="text-[var(--text-secondary)]">{numerosPorPieza(fijas) === 1 ? "un número" : `${numerosPorPieza(fijas)} números`}</b> por pieza ({DIMENSIONES.filter((d) => fijas[d] == null).join(" · ")}). Para soltarlo decí <b className="text-[var(--text-secondary)]">&ldquo;quitá el fijo&rdquo;</b>.</>
                 )}
@@ -251,11 +265,8 @@ export default function PanelEntradaVoz({
                     </span>
                   ) : null;
                 })}
-                {Object.keys(fijas).length === 0 && (
-                  <span className="text-[length:var(--ts-2xs)] italic text-[var(--text-tertiary)]">
-                    Tip: decí <b className="not-italic text-[var(--text-secondary)]">&ldquo;pon fijo el largo a cuatro&rdquo;</b> y después dictá solo espesor y ancho.
-                  </span>
-                )}
+                {/* El tip de las medidas fijas se fue al «?» de arriba: era la
+                    tercera línea de instrucciones seguidas en el mismo panel. */}
               </div>
               {/* Especie: menú que se aplica a lo que dictes */}
               <label className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
@@ -316,15 +327,9 @@ export default function PanelEntradaVoz({
                 </p>
               )}
 
-              {/* Comandos de voz disponibles */}
-              <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                <span>Comandos por voz:</span>
-                <span><b className="text-[var(--text-secondary)]">«pausá»</b> / <b className="text-[var(--text-secondary)]">«continuá»</b></span>
-                <span><b className="text-[var(--text-secondary)]">«eliminá el último»</b></span>
-                <span><b className="text-[var(--text-secondary)]">«especie tornillo»</b></span>
-                <span><b className="text-[var(--text-secondary)]">«dueño Juan»</b></span>
-                <span><b className="text-[var(--text-secondary)]">«pon fijo el largo a cuatro»</b> / <b className="text-[var(--text-secondary)]">«quitá el fijo»</b></span>
-              </p>
+              {/* Los comandos por voz viven en el «?» del título: son una
+                  chuleta que se consulta, no un rótulo que haya que tener
+                  delante mientras se dicta. */}
 
               {/* Caption en vivo AGRUPADO — cada bloque verde = una pieza, para
                   ver el cuadrado mientras dictás rápido (no una barra continua). */}
@@ -444,12 +449,27 @@ export default function PanelEntradaVoz({
             {speakOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />} Voz {speakOn ? "on" : "off"}
           </button>
         </div>
-        {/* Sólo tiene sentido con teclado físico — en celular es ruido. */}
-        <p className="mt-2 hidden flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] sm:flex">
-          <span><Tecla>→</Tecla> <Tecla>←</Tecla> cambian de campo</span>
-          <span><Tecla>Enter</Tecla> registra la pieza y vuelve al espesor</span>
-          <span>el candado deja la medida fija</span>
-        </p>
+        {/* Sólo tiene sentido con teclado físico — en celular es ruido. Y
+            plegado: se aprende en el primer minuto y después ocupa una línea
+            entera abajo de la fila de carga, todos los días. */}
+        {/* `div` y no `p`: el popover del «?» trae una lista, y un `<ul>` dentro
+            de un `<p>` es anidado inválido — React lo rompe en hidratación. */}
+        <div className="mt-2 hidden items-center gap-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] sm:flex">
+          Se carga con el teclado
+          <InfoTip
+            side="bottom"
+            icono="ayuda"
+            title="Cargar con el teclado"
+            ariaLabel="Atajos de teclado de la fila de carga"
+            body={
+              <ul className="space-y-1.5 text-xs font-normal leading-snug text-[var(--text-secondary)]">
+                <li><Tecla>→</Tecla> <Tecla>←</Tecla> cambian de campo</li>
+                <li><Tecla>Enter</Tecla> registra la pieza y vuelve al espesor</li>
+                <li>El candado de cada campo deja esa medida fija: no se vuelve a escribir hasta que lo sueltes.</li>
+              </ul>
+            }
+          />
+        </div>
       </div>
     </div>
   );
@@ -519,4 +539,47 @@ function CmdField({ label, value, onChange }: { label: string; value: string; on
       <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="mt-1 h-9 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
     </label>
   );
+}
+
+
+/**
+ * Lo que antes eran cinco líneas de instrucciones permanentes en el panel de
+ * voz. Se leen una vez y después estorban entre el micrófono y la pieza que se
+ * está dictando, así que viven detrás del «?» del título.
+ *
+ * El orden es el del aprendizaje: primero cómo se dicta una pieza, después cómo
+ * se dicta MENOS (las medidas fijas), y al final la chuleta de comandos.
+ */
+function AyudaDeVoz() {
+  return (
+    <div className="space-y-2.5 text-xs font-normal leading-snug text-[var(--text-secondary)]">
+      <p>
+        Solo los números: <b className="text-[var(--text-primary)]">&ldquo;dos seis ocho&rdquo;</b>{" "}
+        = espesor 2&Prime; · ancho 6&Prime; · largo 8 pies. Decí los 3 y una{" "}
+        <b className="text-[var(--text-primary)]">micro-pausa</b> los guarda al toque — seguí con la
+        siguiente sin esperar.
+      </p>
+      <p>
+        Si una medida se repite toda la jornada, fijala: decí{" "}
+        <Cmd>&ldquo;pon fijo el largo a cuatro&rdquo;</Cmd> y después dictá sólo espesor y ancho.
+      </p>
+      <div>
+        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
+          Comandos por voz
+        </p>
+        <ul className="mt-1 space-y-1">
+          <li><Cmd>&laquo;pausá&raquo;</Cmd> / <Cmd>&laquo;continuá&raquo;</Cmd> — el micrófono deja de anotar y retoma.</li>
+          <li><Cmd>&laquo;eliminá el último&raquo;</Cmd> — borra la pieza recién dictada.</li>
+          <li><Cmd>&laquo;especie tornillo&raquo;</Cmd> — de acá en adelante todo entra con esa especie.</li>
+          <li><Cmd>&laquo;dueño Juan&raquo;</Cmd> — lo mismo con el dueño de la madera.</li>
+          <li><Cmd>&laquo;pon fijo el largo a cuatro&raquo;</Cmd> / <Cmd>&laquo;quitá el fijo&raquo;</Cmd></li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+/** Un comando dictado, en la misma tipografía en todos lados. */
+function Cmd({ children }: { children: React.ReactNode }) {
+  return <b className="font-mono text-[var(--text-primary)]">{children}</b>;
 }

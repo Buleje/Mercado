@@ -40,6 +40,7 @@ import DuenosModal from "./DuenosModal";
 import { clasificarTipo, ORDEN_TIPO, tipoDePieza, tipoEsManual, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoSelect } from "./tipo-badge";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
+import { AccionLote, MenuAcciones } from "./cubicador-acciones";
 import { useTecladoGrilla, enfocarCelda } from "./celdas-excel";
 import {
   AsaRelleno,
@@ -72,6 +73,17 @@ const GRILLA_CARGA = "cub-carga";
  *  para que las flechas del teclado no salten al panel de arriba. */
 const GRILLA_CARGA_FIN = "cub-carga-fin";
 const GRILLA_TABLA = "cub-tabla";
+/**
+ * Alto de fila de arranque y alto del visor de la tabla ventaneada, en px.
+ *
+ * El del visor es CONSTANTE a propósito: cuando salía de `filas × altoFila`,
+ * una medición distinta cambiaba el alto de la caja, el navegador re-encuadraba
+ * el scroll y eso disparaba otra medición — el scroll saltaba solo, sin parar.
+ * Con más de 150 filas (el umbral de ventaneo) el mínimo siempre era este
+ * número, así que fijarlo no cambia nada de lo que se ve.
+ */
+const ALTO_FILA_TABLA = 44;
+const ALTO_VISOR_TABLA = 600;
 /** Orden de tabulación de la fila de carga: Cant → Espesor → Ancho → Largo. */
 const COL_CANT = 0, COL_ESPESOR = 1, COL_ANCHO = 2, COL_LARGO = 3;
 /** Las 4 columnas navegables de la fila de carga, en orden — TODAS. Dentro
@@ -1103,15 +1115,48 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const UMBRAL_VIRTUALIZACION = 150;
   const SOBREMONTAJE = 20; // filas de más montadas arriba/abajo del área visible
   const virtualizarTabla = filasVisibles.length > UMBRAL_VIRTUALIZACION;
-  const [altoFila, setAltoFila] = useState(44);
+  const [altoFila, setAltoFila] = useState(ALTO_FILA_TABLA);
   const [scrollTopTabla, setScrollTopTabla] = useState(0);
   const primeraFilaRef = useRef<HTMLTableRowElement | null>(null);
+  /**
+   * 🐛 El scroll saltaba solo, arriba y abajo, sin parar (2026-09-08).
+   *
+   * La medición vivía en un efecto con `altoFila` en las dependencias y el ref
+   * puesto en la PRIMERA FILA DE LA VENTANA — que cambia con cada scroll. Como
+   * no todas las filas miden igual (una con aviso de medida rara, un tipo
+   * forzado, una especie que envuelve), al scrollear se medía otra fila, se
+   * escribía otro `altoFila`, eso movía los colchones Y el alto del contenedor,
+   * el navegador re-encuadraba el scroll, y la nueva posición traía otra fila
+   * a medir: un lazo que no se asienta nunca.
+   *
+   * Ahora se mide UNA vez por activación —siempre la misma referencia, la
+   * primera fila arriba de todo— y no se vuelve a medir mientras se scrollea.
+   * El alto del contenedor es una CONSTANTE, así que no queda ningún camino de
+   * vuelta desde la medición hacia el scroll.
+   */
+  const altoMedido = useRef(false);
+  const medirAltoFila = useCallback(() => {
+    const h = primeraFilaRef.current?.getBoundingClientRect().height;
+    if (!h) return;
+    altoMedido.current = true;
+    /* Se compara con el valor que está EN el DOM, no con el del estado: así el
+       `setState` sale sólo cuando el número cambia de verdad. */
+    setAltoFila((prev) => (Math.abs(h - prev) > 1 ? h : prev));
+  }, []);
+  useEffect(() => {
+    if (!virtualizarTabla) { altoMedido.current = false; return; }
+    if (altoMedido.current) return;
+    medirAltoFila();
+  }, [virtualizarTabla, filasVisibles.length, medirAltoFila]);
+  /* Se vuelve a medir cuando cambia el ancho de la ventana —una columna que se
+     apila cambia el alto de la fila—, nunca al scrollear. Un reflow ya movió
+     todo: un ajuste más no se nota. */
   useEffect(() => {
     if (!virtualizarTabla) return;
-    const h = primeraFilaRef.current?.getBoundingClientRect().height;
-    if (h && Math.abs(h - altoFila) > 1) setAltoFila(h);
-  }, [virtualizarTabla, altoFila]);
-  const altoContenedorTabla = virtualizarTabla ? Math.min(600, filasVisibles.length * altoFila) : null;
+    window.addEventListener("resize", medirAltoFila);
+    return () => window.removeEventListener("resize", medirAltoFila);
+  }, [virtualizarTabla, medirAltoFila]);
+  const altoContenedorTabla = virtualizarTabla ? ALTO_VISOR_TABLA : null;
   const inicioVentana = virtualizarTabla
     ? Math.max(0, Math.floor(scrollTopTabla / altoFila) - SOBREMONTAJE)
     : 0;
@@ -1121,6 +1166,22 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const filasEnVentana = virtualizarTabla ? filasVisibles.slice(inicioVentana, finVentana) : filasVisibles;
   const colchonSuperior = virtualizarTabla ? inicioVentana * altoFila : 0;
   const colchonInferior = virtualizarTabla ? (filasVisibles.length - finVentana) * altoFila : 0;
+
+  /**
+   * El scroll se lee en el frame, no en cada evento. Un `setState` por evento
+   * de rueda encola decenas de renders de una tabla con controles en cada
+   * celda: el scroll se siente pegajoso aunque la ventana esté bien calculada.
+   */
+  const frameScroll = useRef<number | null>(null);
+  const onScrollTabla = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const y = e.currentTarget.scrollTop;
+    if (frameScroll.current != null) return;
+    frameScroll.current = requestAnimationFrame(() => {
+      frameScroll.current = null;
+      setScrollTopTabla(y);
+    });
+  }, []);
+  useEffect(() => () => { if (frameScroll.current != null) cancelAnimationFrame(frameScroll.current); }, []);
 
   /**
    * Teclado de la tabla. `data-fila` es la posición VISIBLE (no el índice del lote):
@@ -1556,69 +1617,121 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
               {cubicacionActual ? "Guardada — al tocar «Guardar» se actualiza esta misma cubicación." : "Sin guardar — vive sólo en este dispositivo hasta que la guardes."}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => setShowHistorial((v) => !v)} title="Ver las cubicaciones guardadas" className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${showHistorial ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
-              <FileText className="h-3.5 w-3.5" /> Guardadas
-            </button>
+          {/* Dos acciones a la vista y tres menús (ver `cubicador-acciones`):
+              catorce botones del mismo peso no tenían jerarquía — «Vaciar» se
+              veía igual que «CSV» y las dos que mueven el trabajo se perdían. */}
+          <div className="flex flex-wrap items-center gap-2">
             {rows.length > 0 && (
               <>
-                <button type="button" onClick={() => { setForm((f) => ({ ...f, nombre: f.nombre || nombreSugerido(especie || undefined, { piezas: totales.piezas, pieTablar: totales.pt, m3: totales.m3 }) })); setShowGuardar((v) => !v); }} title="Guardar esta cubicación con nombre y fecha" className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-primary/10 px-3 py-1.5 text-xs font-bold text-[var(--accent)] transition hover:brightness-95">
-                  <Save className="h-3.5 w-3.5" /> {cubicacionActual ? "Actualizar" : "Guardar"}
-                </button>
-                <button type="button" onClick={nuevaCubicacion} title="Empezar un lote nuevo (lo guardado no se pierde)" className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-                  <Plus className="h-3.5 w-3.5" /> Nueva
-                </button>
+                <AccionLote
+                  label={cubicacionActual ? "Actualizar" : "Guardar"}
+                  Icono={Save}
+                  destacado
+                  hint="Guardar esta cubicación con nombre y fecha"
+                  onClick={() => {
+                    setForm((f) => ({
+                      ...f,
+                      nombre: f.nombre || nombreSugerido(especie || undefined, { piezas: totales.piezas, pieTablar: totales.pt, m3: totales.m3 }),
+                    }));
+                    setShowGuardar((v) => !v);
+                  }}
+                />
+                <AccionLote
+                  label={enviando ? "Registrando…" : "Enviar al Libro"}
+                  Icono={Send}
+                  destacado
+                  disabled={enviando}
+                  hint="Registrar este lote como producción en el Libro CTP"
+                  onClick={() => void enviarAlLibro()}
+                />
+
+                <MenuAcciones
+                  etiqueta="Ver"
+                  Icono={Table}
+                  items={[
+                    { key: "resumen", label: "Resumen por especie y tipo", Icono: Table, activo: showResumen, onClick: () => setShowResumen((v) => !v) },
+                    {
+                      key: "apartados",
+                      label: "Apartados",
+                      Icono: Layers,
+                      activo: showApartados,
+                      badge: resumenAp.length > 0 ? `${resumenAp.length}` : undefined,
+                      hint: "Separar el lote en bloques (apartados) con su propio total",
+                      onClick: () => setShowApartados((v) => !v),
+                    },
+                    {
+                      key: "liquidacion",
+                      label: "Liquidación",
+                      Icono: Receipt,
+                      hint: "Comprobante de liquidación por especie para el comprador",
+                      onClick: () => setShowLiquidacion(true),
+                    },
+                    {
+                      key: "leer",
+                      label: readingId ? "Detener la lectura" : "Leer la tabla en voz alta",
+                      Icono: readingId ? Square : Volume2,
+                      activo: !!readingId,
+                      onClick: leerTabla,
+                    },
+                  ]}
+                />
+
+                {/* El contador de marcadas sube al botón: si el papel va a
+                    traer 12 piezas y no las 700, no puede quedar escondido. */}
+                <MenuAcciones
+                  etiqueta="Descargar"
+                  Icono={FileText}
+                  badge={marcadas.size > 0 ? `· ${marcadas.size}` : undefined}
+                  items={[
+                    {
+                      key: "anexo",
+                      label: "ANEXO N° 04 (SERFOR)",
+                      Icono: FileText,
+                      badge: marcadas.size > 0 ? `${marcadas.size} pza` : undefined,
+                      hint: marcadas.size > 0 ? `Vista previa con las ${marcadas.size} piezas marcadas` : "Vista previa del ANEXO N° 04 antes de descargar",
+                      onClick: () => setShowPdf(true),
+                    },
+                    {
+                      key: "excel",
+                      label: "Excel",
+                      badge: marcadas.size > 0 ? `${marcadas.size} pza` : undefined,
+                      hint: marcadas.size > 0 ? `Excel con las ${marcadas.size} piezas marcadas` : "Excel del lote entero",
+                      onClick: () => descargarConAviso(
+                        exportarExcel(rowsParaPapel, { precioPt: precio, especieGlobal: especie || undefined, precioDe: hayPreciosEspecie ? precioDe : undefined, asignados, nombresApartado }),
+                        "Excel generado",
+                        "No se pudo generar el Excel.",
+                      ),
+                    },
+                    { key: "csv", label: "CSV", onClick: exportarCSV },
+                    { key: "wsp", label: "Mandar el resumen por WhatsApp", Icono: MessageCircle, onClick: compartirWhatsApp },
+                  ]}
+                />
+
+                {marcadas.size > 0 && (
+                  <button type="button" onClick={() => setMarcadas(new Set())} className="rounded-lg px-2 py-1.5 text-xs font-bold text-[var(--text-tertiary)] underline hover:text-[var(--text-primary)]">
+                    Quitar las {marcadas.size} marcas
+                  </button>
+                )}
               </>
             )}
+
+            {/* Cambiar de lote. «Vaciar» vive acá abajo y separada: borra el
+                trabajo del día, no puede estar pegada a «Excel». */}
+            <MenuAcciones
+              etiqueta="Lote"
+              Icono={FileText}
+              alineacion="derecha"
+              items={[
+                { key: "guardadas", label: "Cubicaciones guardadas", Icono: FileText, activo: showHistorial, onClick: () => setShowHistorial((v) => !v) },
+                ...(rows.length > 0
+                  ? [
+                      { key: "nueva", label: "Empezar un lote nuevo", Icono: Plus, hint: "Lo guardado no se pierde", onClick: nuevaCubicacion },
+                      { key: "vaciar", label: "Vaciar este lote", peligro: true, hint: "Borra las piezas cargadas de este dispositivo", onClick: limpiar },
+                    ]
+                  : []),
+              ]}
+            />
           </div>
-          {rows.length > 0 && (
-            <div className="flex w-full flex-wrap gap-2">
-              <button type="button" onClick={() => void enviarAlLibro()} disabled={enviando} title="Registrar este lote como producción en el Libro CTP" className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-primary/10 px-3 py-1.5 text-xs font-bold text-[var(--accent)] transition hover:brightness-95 disabled:opacity-50">
-                <Send className="h-3.5 w-3.5" /> {enviando ? "Registrando…" : "Enviar al Libro"}
-              </button>
-              <button type="button" onClick={() => setShowResumen((v) => !v)} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${showResumen ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
-                <Table className="h-3.5 w-3.5" /> Resumen
-              </button>
-              <button type="button" onClick={() => setShowApartados((v) => !v)} title="Separar el lote en bloques (apartados) con su propio total" className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${showApartados ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
-                <Layers className="h-3.5 w-3.5" /> Apartados{resumenAp.length > 0 ? ` · ${resumenAp.length}` : ""}
-              </button>
-              <button type="button" onClick={leerTabla} className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${readingId ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
-                {readingId ? <><Square className="h-3.5 w-3.5" /> Detener lectura</> : <><Volume2 className="h-3.5 w-3.5" /> Leer tabla</>}
-              </button>
-              <button type="button" onClick={() => setShowLiquidacion(true)} title="Comprobante de liquidación por especie para el comprador" className="inline-flex items-center gap-1 rounded-lg border border-[var(--accent)] bg-primary/10 px-3 py-1.5 text-xs font-bold text-[var(--accent)] transition hover:brightness-95">
-                <Receipt className="h-3.5 w-3.5" /> Liquidación
-              </button>
-              <button type="button" onClick={compartirWhatsApp} title="Mandar el resumen por WhatsApp" className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-                <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-              </button>
-              {/* Con piezas tildadas el papel sale SÓLO con ésas — y el botón lo
-                  dice, porque un PDF que trae otra cosa que lo que se ve
-                  marcado se descubre recién cuando ya está impreso. */}
-              <button
-                type="button"
-                onClick={() => setShowPdf(true)}
-                title={marcadas.size > 0 ? `Vista previa del ANEXO N° 04 con las ${marcadas.size} piezas marcadas` : "Vista previa del ANEXO N° 04 (SERFOR) antes de descargar"}
-                className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${marcadas.size > 0 ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
-              >
-                <FileText className="h-3.5 w-3.5" /> Anexo 04{marcadas.size > 0 ? ` · ${marcadas.size}` : ""}
-              </button>
-              <button
-                type="button"
-                onClick={() => descargarConAviso(exportarExcel(rowsParaPapel, { precioPt: precio, especieGlobal: especie || undefined, precioDe: hayPreciosEspecie ? precioDe : undefined, asignados, nombresApartado }), "Excel generado", "No se pudo generar el Excel.")}
-                title={marcadas.size > 0 ? `Excel con las ${marcadas.size} piezas marcadas` : "Excel del lote entero"}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${marcadas.size > 0 ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
-              >
-                Excel{marcadas.size > 0 ? ` · ${marcadas.size}` : ""}
-              </button>
-              {marcadas.size > 0 && (
-                <button type="button" onClick={() => setMarcadas(new Set())} className="rounded-lg px-2 py-1.5 text-xs font-bold text-[var(--text-tertiary)] underline hover:text-[var(--text-primary)]">
-                  Quitar marcas
-                </button>
-              )}
-              <button type="button" onClick={exportarCSV} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">CSV</button>
-              <button type="button" onClick={limpiar} className="rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)]">Vaciar</button>
-            </div>
-          )}
         </div>
 
         {/* Historial de cubicaciones guardadas */}
@@ -1918,9 +2031,20 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
             </div>
             <div
               data-grilla={GRILLA_TABLA}
+              /* `overflowAnchor: none`: el ventaneo cambia el alto de los dos
+                 `<tr>` colchón en cada scroll, y el anclaje automático de
+                 Chrome corrige la posición para compensarlo — peleando contra
+                 el cálculo de la ventana. Es requisito de cualquier lista
+                 virtualizada a mano. (Que la rueda mueva ESTA caja y no la
+                 página lo arregla `allowNestedScroll` en el proveedor de
+                 scroll suave, para toda la app.) */
               className="overflow-x-auto rounded-xl border border-[var(--rule-base)]"
-              style={virtualizarTabla ? { maxHeight: altoContenedorTabla ?? undefined, overflowY: "auto" } : undefined}
-              onScroll={virtualizarTabla ? (e) => setScrollTopTabla(e.currentTarget.scrollTop) : undefined}
+              style={
+                virtualizarTabla
+                  ? { maxHeight: altoContenedorTabla ?? undefined, overflowY: "auto", overflowAnchor: "none" }
+                  : undefined
+              }
+              onScroll={virtualizarTabla ? onScrollTabla : undefined}
             >
             <datalist id="cub-duenos-datalist">
               {duenosParaDatalist.map((d) => <option key={d} value={d} />)}
