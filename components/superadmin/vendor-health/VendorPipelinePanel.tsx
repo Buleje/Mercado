@@ -53,7 +53,7 @@ export function VendorPipelinePanel() {
   if (!data) return null;
 
   return (
-    <section className="mb-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 sm:p-5">
+    <section className="mb-5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3 mb-3">
         <h3 className="text-base font-extrabold text-[var(--text-primary)]">Pipeline de vendors</h3>
         <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)]/40 disabled:opacity-50">

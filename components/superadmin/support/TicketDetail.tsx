@@ -103,7 +103,7 @@ export default function TicketDetail({
             type="button"
             onClick={onClose}
             aria-label="Cerrar detalle del ticket"
-            className="lg:hidden p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
+            className="lg:hidden p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
           >
             <X className="w-4 h-4" aria-hidden="true" />
           </button>
@@ -165,7 +165,7 @@ export default function TicketDetail({
               value={ticket.priority}
               onChange={(e) => onSetPriority(ticket.id, e.target.value as TicketPriority)}
               aria-label="Prioridad del ticket"
-              className="text-sm border-2 border-[var(--rule-base)] rounded-xl px-2 py-1 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="text-sm border border-[var(--rule-base)] rounded-xl px-2 py-1 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <option value="high">Alta</option>
               <option value="medium">Media</option>
@@ -211,7 +211,7 @@ export default function TicketDetail({
                   key={tpl.id}
                   type="button"
                   onClick={() => handleInsertTemplate(tpl.body)}
-                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="w-full text-left px-3 py-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
                     {tpl.starred && (
@@ -243,7 +243,7 @@ export default function TicketDetail({
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
                   placeholder="Nombre de la plantilla..."
-                  className="w-full px-3 h-9 text-sm border-2 border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  className="w-full px-3 h-9 text-sm border border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -263,7 +263,7 @@ export default function TicketDetail({
                   <button
                     type="button"
                     onClick={() => setShowSaveForm(false)}
-                    className="text-sm px-3 py-1.5 rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)]"
+                    className="text-sm px-3 py-1.5 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)]"
                   >
                     Cancelar
                   </button>
@@ -289,7 +289,7 @@ export default function TicketDetail({
           }}
           placeholder="Escribe una respuesta... (Enter = enviar, Shift+Enter = nueva línea)"
           rows={3}
-          className="w-full px-3 py-2 text-sm border-2 border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] resize-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="w-full px-3 py-2 text-sm border border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] resize-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         />
 
         {/* Botones de acciones de respuesta */}
@@ -301,7 +301,7 @@ export default function TicketDetail({
             aria-expanded={showTemplates}
             aria-controls="templates-panel"
             className={cn(
-              "flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl border-2 transition-colors",
+              "flex items-center gap-1.5 text-sm font-semibold px-3 min-h-10 rounded-xl border-2 transition-colors",
               showTemplates
                 ? "border-primary text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
@@ -324,7 +324,7 @@ export default function TicketDetail({
             }}
             disabled={!replyText.trim()}
             title="Guardar texto actual como plantilla"
-            className="flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-40 transition-colors"
+            className="flex items-center gap-1.5 text-sm font-semibold px-3 min-h-10 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-40 transition-colors"
           >
             <Plus className="w-4 h-4" aria-hidden="true" />
             Guardar plantilla
@@ -335,7 +335,7 @@ export default function TicketDetail({
             type="button"
             onClick={handleReply}
             disabled={!replyText.trim() || sending}
-            className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
+            className="ml-auto flex items-center gap-1.5 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50"
           >
             {sending ? (
               <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />

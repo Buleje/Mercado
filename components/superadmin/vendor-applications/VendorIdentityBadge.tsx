@@ -221,7 +221,7 @@ export function VendorIdentityBadge({ dni, ruc, ownerName, onResult }: Props) {
         onClick={handleVerify}
         disabled={!dni && !ruc}
         className={cn(
-          "inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-colors",
+          "inline-flex items-center gap-2 px-3 min-h-10 rounded-xl border-2 transition-colors",
           "text-sm font-semibold",
           dni || ruc
             ? "border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:border-[var(--accent)] hover:text-[var(--accent)] text-[var(--text-primary)]"
@@ -238,7 +238,7 @@ export function VendorIdentityBadge({ dni, ruc, ownerName, onResult }: Props) {
   if (state.kind === "loading") {
     return (
       <div
-        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] text-sm font-semibold text-[var(--text-secondary)]"
+        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-sm font-semibold text-[var(--text-secondary)]"
         role="status"
         aria-live="polite"
       >
@@ -281,13 +281,13 @@ export function VendorIdentityBadge({ dni, ruc, ownerName, onResult }: Props) {
   if (state.kind === "warning") {
     return (
       <div
-        className="flex flex-col gap-1.5 rounded-xl border-2 border-[#0d9488] bg-[#0d9488]/30 p-3"
+        className="flex flex-col gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/30 p-3"
         role="alert"
         data-testid="identity-warning"
       >
         <div className="flex items-center gap-2">
-          <ShieldAlert className="h-5 w-5 text-[#0d9488] shrink-0" aria-hidden />
-          <span className="text-sm font-bold text-[#0d9488]">
+          <ShieldAlert className="h-5 w-5 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0" aria-hidden />
+          <span className="text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
             {state.payload.type} con advertencia
           </span>
           <button

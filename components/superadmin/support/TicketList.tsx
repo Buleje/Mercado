@@ -7,7 +7,7 @@ import { STATUS_CONFIG, PRIORITY_CONFIG, timeAgo } from "./shared";
 import type { SupportTicket, TicketStatus, TicketPriority, KpiFilter } from "./shared";
 
 const INPUT_CLASS =
-  "h-10 text-sm border-2 border-[var(--rule-base)] rounded-2xl bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+  "h-10 text-sm border border-[var(--rule-base)] rounded-2xl bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 
 interface Props {
   tickets: SupportTicket[];
@@ -156,7 +156,7 @@ export default function TicketList({
                 onClick={() => onSelect(ticket.id)}
                 aria-current={selectedId === ticket.id ? "true" : undefined}
                 className={cn(
-                  "w-full text-left px-3 py-3 border-b border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors",
+                  "w-full text-left px-3 min-h-11 border-b border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors",
                   selectedId === ticket.id &&
                     "bg-primary/5 border-l-2 border-l-primary",
                 )}

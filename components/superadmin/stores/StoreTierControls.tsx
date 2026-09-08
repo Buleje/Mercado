@@ -23,7 +23,7 @@ export const TIER_OPTS: { key: DisplayTier; label: string; desc: string }[] = [
 
 function MockStandard() {
   return (
-    <div className="w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+    <div className="w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
       <div className="aspect-[4/3] w-full rounded-md bg-[var(--surface-sunken)]" />
       <div className="mt-1.5 h-2 w-3/4 rounded-full bg-[var(--text-tertiary)]/30" />
       <div className="mt-1 h-1.5 w-1/2 rounded-full bg-[var(--text-tertiary)]/20" />
@@ -33,8 +33,8 @@ function MockStandard() {
 
 function MockFeatured() {
   return (
-    <div className="relative w-full rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-raised)] p-2 shadow-[0_4px_16px_-6px_var(--accent)]">
-      <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[8px] font-black uppercase text-white">
+    <div className="relative w-full rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-md)]">
+      <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase text-white">
         <Star className="h-2 w-2 fill-current" aria-hidden /> Dest.
       </span>
       <div className="aspect-[4/3] w-full rounded-md bg-primary/10" />
@@ -46,8 +46,8 @@ function MockFeatured() {
 
 function MockPremium() {
   return (
-    <div className="relative w-full rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-raised)] p-2 shadow-[0_6px_20px_-6px_var(--accent)]">
-      <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[8px] font-black uppercase text-white">
+    <div className="relative w-full rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-md)]">
+      <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase text-white">
         <Star className="h-2 w-2 fill-current" aria-hidden /> Premium
       </span>
       <div className="flex gap-2">
@@ -126,7 +126,7 @@ export function TierSelector({
             }}
             disabled={busy}
             title={t.desc}
-            className={`rounded-lg font-bold transition-colors disabled:opacity-40 ${pad} ${
+            className={`rounded-xl font-semibold transition-colors disabled:opacity-40 ${pad} ${
               active
                 ? "bg-[var(--accent)] text-white shadow-sm"
                 : "text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-primary/10"

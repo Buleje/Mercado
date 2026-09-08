@@ -133,7 +133,7 @@ export function PlanSelect({ slug, current, onChanged }: PlanSelectProps) {
       {open && (
         <div
           role="listbox"
-          className="absolute right-0 top-full z-50 mt-1.5 w-[280px] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] shadow-xl p-1.5"
+          className="absolute right-0 top-full z-50 mt-1.5 w-[280px] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] shadow-xl p-1.5"
         >
           {PLAN_ORDER.map((tier) => {
             const def = PLANS[tier];

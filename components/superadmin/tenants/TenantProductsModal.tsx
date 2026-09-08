@@ -141,7 +141,7 @@ export function TenantProductsModal({
                   <h2 className="text-lg font-bold text-[var(--text-primary)]">
                     Productos de {tenantName}
                   </h2>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-[var(--text-tertiary)]">
                     {products.length} producto{products.length !== 1 ? "s" : ""} en total
                   </p>
                 </div>
@@ -150,7 +150,7 @@ export function TenantProductsModal({
                 onClick={onClose}
                 className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
               >
-                <X className="h-5 w-5 text-gray-400" />
+                <X className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>
             </div>
 
@@ -166,7 +166,7 @@ export function TenantProductsModal({
                   <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Inactivos</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-bold text-[#0d9488] tabular-nums">{lowStockCount}</div>
+                  <div className="text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] tabular-nums">{lowStockCount}</div>
                   <div className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">Stock bajo</div>
                 </div>
                 <div className="text-center">
@@ -179,13 +179,13 @@ export function TenantProductsModal({
             {/* Search */}
             <div className="px-6 py-3 border-b border-[var(--rule-base)]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
                 <input
                   type="text"
                   placeholder="Buscar por nombre, código o categoría..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-[var(--surface-sunken)] text-sm text-[var(--text-primary)] placeholder:text-gray-400 border-0 outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/30"
+                  className="w-full pl-9 pr-4 h-10 rounded-xl bg-[var(--surface-sunken)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] border-0 outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/30"
                 />
               </div>
             </div>
@@ -220,7 +220,7 @@ export function TenantProductsModal({
                       className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-sunken)]/50 hover:bg-[var(--surface-sunken)] transition-colors"
                     >
                       {/* Image */}
-                      <div className="relative w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden shrink-0">
+                      <div className="relative w-10 h-10 rounded-lg bg-[var(--rule-base)] flex items-center justify-center overflow-hidden shrink-0">
                         {p.image ? (
                           <Image
                             src={p.image}
@@ -231,7 +231,7 @@ export function TenantProductsModal({
                             loading="lazy"
                           />
                         ) : (
-                          <ImageIcon className="w-4 h-4 text-gray-400" />
+                          <ImageIcon className="w-4 h-4 text-[var(--text-tertiary)]" />
                         )}
                       </div>
 
@@ -300,7 +300,7 @@ export function TenantProductsModal({
                             p.stock <= 0
                               ? "text-[var(--data-error-500)]"
                               : p.stock <= 5
-                              ? "text-[#0d9488]"
+                              ? "text-[var(--accent-ink)] dark:text-[var(--accent)]"
                               : "text-[var(--data-success-500)]"
                           }`}
                         >
@@ -315,14 +315,14 @@ export function TenantProductsModal({
 
             {/* Footer */}
             <div className="px-6 py-3 border-t border-[var(--rule-base)] flex items-center justify-between">
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-[var(--text-tertiary)]">
                 {search && filtered.length !== products.length
                   ? `${filtered.length} de ${products.length} producto${products.length !== 1 ? "s" : ""}`
                   : `${products.length} producto${products.length !== 1 ? "s" : ""}`}
               </span>
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)] transition-colors"
               >
                 Cerrar
               </button>

@@ -309,13 +309,13 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                 <input
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
-                  className="w-full h-9 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-base font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  className="w-full h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-base font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
                 <input
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
                   placeholder="email del dueño"
-                  className="w-full h-8 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+                  className="w-full h-8 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
                 />
                 <div className="flex gap-2">
                   <button
@@ -355,7 +355,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                     <Pencil className="w-4 h-4" />
                   </button>
                 </h2>
-                <p className="text-gray-500 dark:text-[var(--text-tertiary)] text-xs mt-1 font-mono">
+                <p className="text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] text-xs mt-1 font-mono">
                   {t.slug}
                 </p>
                 {t.ownerEmail && (
@@ -386,7 +386,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
             <button
               type="button"
               onClick={onClose}
-              className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] text-gray-400"
+              className="p-1 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -446,7 +446,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                     className="bg-[var(--surface-sunken)]/50 rounded-xl p-3 text-center"
                   >
                     <div className={`text-lg font-bold ${color}`}>{value}</div>
-                    <div className="text-gray-500 dark:text-[var(--text-tertiary)] text-[length:var(--ts-xs)] mt-0.5">
+                    <div className="text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] text-[length:var(--ts-xs)] mt-0.5">
                       {label}
                     </div>
                   </div>
@@ -465,7 +465,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                       key={d}
                       onClick={() => handleExtendTrial(d)}
                       disabled={trialBusy}
-                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 h-8 text-xs font-bold text-[#0d9488] hover:bg-[#0d9488] disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 h-8 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--accent-600)] disabled:opacity-50"
                     >
                       {trialBusy ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -486,7 +486,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                       Marketplace
                     </span>
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-semibold ${storeInfo.isPublished ? "bg-teal-100 dark:bg-teal-900/40 text-[var(--accent)]" : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-[var(--text-secondary)]"}`}
+                      className={`px-2 py-0.5 rounded-full text-[length:var(--ts-xs)] font-semibold ${storeInfo.isPublished ? "bg-teal-100 dark:bg-teal-900/40 text-[var(--accent)]" : "bg-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]"}`}
                     >
                       {storeInfo.isPublished ? "Publicada" : "No publicada"}
                     </span>
@@ -504,7 +504,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                     <button
                       type="button"
                       onClick={handleCopyInfo}
-                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-primary)] text-xs font-semibold"
+                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] text-[var(--text-primary)] text-xs font-semibold"
                     >
                       <Copy className="w-3.5 h-3.5" /> {credCopied ? "¡Copiado!" : "Copiar info"}
                     </button>
@@ -512,7 +512,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                       type="button"
                       onClick={() => void handleResetPassword()}
                       disabled={resetLoading}
-                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-teal-50 dark:bg-teal-500/40 border border-teal-500 text-[#0d9488] text-xs font-semibold disabled:opacity-50"
+                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-teal-50 dark:bg-teal-500/40 border border-teal-500 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-semibold disabled:opacity-50"
                     >
                       {resetLoading ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -524,7 +524,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                   </div>
                   {resetResult && (
                     <div className="text-xs bg-teal-50 dark:bg-teal-500/15 border-2 border-teal-500/40 rounded-lg px-3 py-2.5 space-y-2">
-                      <p className="text-[length:var(--ts-xs)] font-extrabold uppercase tracking-wider text-[#0d9488] flex items-center gap-1.5">
+                      <p className="text-[length:var(--ts-xs)] font-extrabold uppercase tracking-wider text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center gap-1.5">
                         <AlertTriangle className="w-3.5 h-3.5" /> Contraseña temporal (una sola vez)
                       </p>
                       {resetResult.startsWith("Error") ? (
@@ -607,7 +607,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                               ? "text-[var(--data-error-500)] font-bold"
                               : warn
                                 ? "text-teal-500"
-                                : "text-gray-400"
+                                : "text-[var(--text-tertiary)]"
                           }
                         >
                           {used.toLocaleString("es-PE")} / {unlimited(max)}
@@ -641,20 +641,20 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                   { label: "Trial termina", value: fmtD(t.trialEndsAt) },
                 ].map(({ label, value }) => (
                   <div key={label} className="bg-[var(--surface-sunken)]/50 rounded-lg px-3 py-2">
-                    <span className="text-gray-400">{label}</span>
+                    <span className="text-[var(--text-tertiary)]">{label}</span>
                     <p className="text-[var(--text-secondary)] font-mono truncate">{value}</p>
                   </div>
                 ))}
               </div>
               {t.cancelAtPeriodEnd && (
-                <div className="flex items-center gap-2 text-[#0d9488] text-xs bg-teal-50 dark:bg-teal-950/30 rounded-lg px-3 py-2">
+                <div className="flex items-center gap-2 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs bg-teal-50 dark:bg-teal-950/30 rounded-lg px-3 py-2">
                   <AlertTriangle className="w-4 h-4" /> Cancelará al final del periodo.
                 </div>
               )}
               <SunatOficialToggle slug={t.slug} />
               {t.customDomain && (
                 <div className="bg-[var(--surface-sunken)]/50 rounded-lg px-3 py-2 text-xs">
-                  <span className="text-gray-400">Dominio personalizado</span>
+                  <span className="text-[var(--text-tertiary)]">Dominio personalizado</span>
                   <p className="text-[var(--data-success-500)] font-semibold flex items-center gap-1.5 mt-0.5">
                     <Globe className="w-4 h-4" /> {t.customDomain}
                   </p>
@@ -674,7 +674,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                       <Lock className="h-3.5 w-3.5" /> Doble factor (2FA)
                     </p>
                     <p
-                      className={`mt-1 text-sm font-bold ${security.twoFactorEnabled ? "text-[var(--data-success-600,#059669)]" : "text-[#0d9488]"}`}
+                      className={`mt-1 text-sm font-bold ${security.twoFactorEnabled ? "text-[var(--data-success-600,#059669)]" : "text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
                     >
                       {security.twoFactorEnabled ? "Activo ✓" : "No configurado"}
                     </p>
@@ -700,7 +700,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                       )
                     }
                     disabled={!!secBusy}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-teal-500 text-[#0d9488] h-10 text-sm font-bold hover:bg-[#0d9488] disabled:opacity-50"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-teal-500 text-[var(--accent-ink)] dark:text-[var(--accent)] h-10 text-sm font-semibold hover:bg-[var(--accent-600)] disabled:opacity-50"
                   >
                     {secBusy === "force-change" ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -717,7 +717,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                       )
                     }
                     disabled={!!secBusy || !security.twoFactorEnabled}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] h-10 text-sm font-bold hover:bg-[var(--surface-sunken)] disabled:opacity-40"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] h-10 text-sm font-semibold hover:bg-[var(--surface-sunken)] disabled:opacity-40"
                   >
                     {secBusy === "reset-2fa" ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -734,7 +734,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                       )
                     }
                     disabled={!!secBusy}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--data-error-500)] text-[var(--data-error-600,#dc2626)] h-10 text-sm font-bold hover:bg-[var(--data-error-50,#fef2f2)] disabled:opacity-50"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--data-error-500)] text-[var(--data-error-600,#dc2626)] h-10 text-sm font-semibold hover:bg-[var(--data-error-50,#fef2f2)] disabled:opacity-50"
                   >
                     {secBusy === "logout-all" ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -786,7 +786,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                   onChange={(e) => setNoteInput(e.target.value)}
                   rows={2}
                   placeholder="Nota interna sobre este negocio (solo superadmin)…"
-                  className="flex-1 resize-none rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  className="flex-1 resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
                 <button
                   onClick={addNote}

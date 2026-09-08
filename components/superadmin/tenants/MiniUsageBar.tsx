@@ -14,14 +14,14 @@ export function MiniUsageBar({ used, max, label }: MiniUsageBarProps) {
     : pct >= 100
     ? "bg-[var(--data-error-500)]"
     : pct >= 80
-    ? "bg-[#0d9488]"
+    ? "bg-[var(--accent)]"
     : "bg-[var(--accent)]";
 
   return (
     <div className="space-y-0.5">
       <div className="flex justify-between text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
         <span>{label}</span>
-        <span className={pct >= 100 ? "text-[var(--data-error-500)]" : pct >= 80 ? "text-[#0d9488]" : ""}>
+        <span className={pct >= 100 ? "text-[var(--data-error-500)]" : pct >= 80 ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}>
           {unlimited ? "∞" : `${used}/${max}`}
         </span>
       </div>

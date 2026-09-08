@@ -96,7 +96,7 @@ function buildColumns(
       label: "Rating",
       sortable: true,
       render: (row) => (
-        <span className="inline-flex items-center gap-1 text-sm text-[#0d9488] dark:text-[#0d9488] font-semibold">
+        <span className="inline-flex items-center gap-1 text-sm text-[var(--accent-ink)] dark:text-[var(--accent)] dark:text-[var(--accent)] font-semibold">
           <Star className="w-3.5 h-3.5 fill-current" />
           {Number(row.rating).toFixed(1)}
           <span className="text-[var(--text-tertiary)] font-normal text-xs">
@@ -150,7 +150,7 @@ function buildColumns(
             className={[
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold border transition-colors disabled:opacity-50",
               row.isPublished
-                ? "border-rose-200 bg-rose-50 text-[var(--data-error-500)] hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-[var(--data-error-500)]"
+                ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-rose-100 dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--data-error-500)]"
                 : "border-emerald-200 bg-emerald-50 text-[var(--data-success-700)] hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
             ].join(" ")}
             title={row.isPublished ? "Ocultar del marketplace" : "Publicar en marketplace"}
@@ -282,7 +282,7 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre, tienda o slug…"
-            className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+            className="w-full rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] h-10 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
           />
         </div>
         <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
@@ -319,14 +319,14 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-rose-300/60 bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]">
+        <div className="flex items-center gap-3 rounded-xl border border-[var(--data-error-500)] bg-rose-50/40 px-4 py-3 text-sm font-semibold text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]">
           {error}
         </div>
       )}
 
       {loading && <TableSkeleton count={6} />}
       {!loading && filtered.length === 0 && (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-16 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-canvas)] py-16 text-center">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
             <ShoppingBag
               className="h-6 w-6 text-[var(--text-tertiary)]"
@@ -394,7 +394,7 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
                 {/* Mini-stats 3 cols: rating, productos, comisión */}
                 <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-[var(--rule-soft)]">
                   <div>
-                    <div className="inline-flex items-center gap-1 text-sm font-bold text-[#0d9488]">
+                    <div className="inline-flex items-center gap-1 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
                       <Star className="w-3 h-3 fill-current" />
                       {Number(row.rating).toFixed(1)}
                     </div>
@@ -435,9 +435,9 @@ export function StoresTab({ stores, loading, error, onRefresh, refreshing }: Sto
                   }}
                   disabled={busy}
                   className={[
-                    "w-full inline-flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-bold border transition-colors disabled:opacity-50",
+                    "w-full inline-flex items-center justify-center gap-2 h-10 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-50",
                     row.isPublished
-                      ? "border-rose-200 bg-rose-50 text-[var(--data-error-500)] hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/30"
+                      ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-rose-100 dark:border-[var(--data-error-500)] dark:bg-rose-950/30"
                       : "border-emerald-200 bg-emerald-50 text-[var(--data-success-700)] hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300",
                   ].join(" ")}
                   aria-label={
