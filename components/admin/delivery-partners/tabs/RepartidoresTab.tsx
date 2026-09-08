@@ -560,7 +560,7 @@ export function RepartidoresTab() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar por nombre, teléfono o zona…"
-              className="w-full h-11 pl-10 pr-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
+              className="w-full h-11 pl-10 pr-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
             />
             {query && (
               <button
@@ -577,7 +577,7 @@ export function RepartidoresTab() {
           <select
             value={zoneFilter}
             onChange={(e) => setZoneFilter(e.target.value)}
-            className="h-11 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           >
             <option value="todas">Todas las zonas</option>
             {uniqueZones.map((z) => (
@@ -588,7 +588,7 @@ export function RepartidoresTab() {
           <select
             value={vehicleFilter}
             onChange={(e) => setVehicleFilter(e.target.value)}
-            className="h-11 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           >
             <option value="todos">Todo vehículo</option>
             {uniqueVehicles.map((v) => (
@@ -596,7 +596,7 @@ export function RepartidoresTab() {
             ))}
           </select>
 
-          <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5 gap-0.5">
+          <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5 gap-0.5">
             {(["todos", "activos", "inactivos"] as const).map((s) => (
               <button
                 key={s}
@@ -619,7 +619,7 @@ export function RepartidoresTab() {
             type="button"
             onClick={() => downloadCSV(filtered)}
             disabled={filtered.length === 0}
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title="Descargar CSV de los repartidores filtrados"
           >
             <Download className="h-4 w-4" />
@@ -648,7 +648,7 @@ export function RepartidoresTab() {
               type="button"
               disabled={bulkBusy}
               onClick={() => handleBulkSetActive(false)}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-xs font-extrabold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] text-xs font-extrabold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40"
             >
               <X className="h-3.5 w-3.5" />
               Pausar todos
@@ -717,7 +717,7 @@ export function RepartidoresTab() {
                       }}
                       onChange={toggleSelectAll}
                       aria-label="Seleccionar todos"
-                      className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                      className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                     />
                   </th>
                   <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Repartidor</th>

@@ -244,7 +244,7 @@ export default function CacaoInventario() {
             type="button"
             onClick={exportCsv}
             disabled={inv.porVariedad.length === 0}
-            className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
             CSV

@@ -19,6 +19,7 @@ import ImageUpload from "./ImageUpload";
 import type { StoreTheme } from "./StoreCustomizer";
 import { Field } from "@/components/admin/shared/Field";
 
+import { CardTitle } from "@buleje/design-system";
 type Category = {
   id: string;
   label: string;
@@ -153,7 +154,7 @@ export default function CategoryBannersTab({
                       <Tag className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-base font-bold text-[var(--text-primary)] leading-tight truncate">{cat.label}</h3>
+                      <CardTitle className="text-[var(--text-primary)] truncate">{cat.label}</CardTitle>
                       <p className="text-xs text-muted">{cat.count} producto{cat.count !== 1 ? "s" : ""}{hasImage ? " · banner configurado" : " · sin banner"}</p>
                     </div>
                   </div>

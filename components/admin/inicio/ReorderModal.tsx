@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Field } from "@/components/admin/shared/Field";
 
+import { SectionTitle } from "@buleje/design-system";
 export interface ReorderCandidate {
   id: string | number;
   name: string;
@@ -153,12 +154,12 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                     <p className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                       Inventario
                     </p>
-                    <h2
+                    <SectionTitle
                       id="reorder-title"
-                      className="text-lg font-extrabold text-[var(--text-primary)] leading-tight"
+                      className="text-[var(--text-primary)]"
                     >
                       Generar orden de compra
-                    </h2>
+                    </SectionTitle>
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">
                       Ajusta las cantidades sugeridas y genera la OC borrador.
                     </p>

@@ -16,7 +16,7 @@ import {
 import AdminTabShell from "@/app/admin/_components/_shared/AdminTabShell";
 import AdminEmptyState from "@/app/admin/_components/_shared/AdminEmptyState";
 import { ADMIN_TOKENS } from "@/app/admin/_components/_shared/admin-tokens";
-import { DataTable } from "@buleje/design-system";
+import { DataTable, CardTitle } from "@buleje/design-system";
 
 interface DeadLetter {
   id: string;
@@ -200,7 +200,7 @@ export default function CronDeadLettersPage() {
           <section className={ADMIN_TOKENS.card}>
             <header className="flex items-center gap-2 px-4 py-3 border-b border-[var(--rule-soft)]">
               <Activity className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-              <h3 className={ADMIN_TOKENS.headingH3}>Salud de Crons (24h)</h3>
+              <CardTitle className={ADMIN_TOKENS.headingH3}>Salud de Crons (24h)</CardTitle>
             </header>
             <div className="overflow-x-auto">
               <DataTable className="w-full text-left text-sm">
@@ -249,7 +249,7 @@ export default function CronDeadLettersPage() {
           <section>
             <header className="flex items-center gap-2 mb-3">
               <AlertTriangle className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-              <h3 className={ADMIN_TOKENS.headingH3}>Resumen por Job</h3>
+              <CardTitle className={ADMIN_TOKENS.headingH3}>Resumen por Job</CardTitle>
             </header>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {summary.map((s) => (
@@ -290,7 +290,7 @@ export default function CronDeadLettersPage() {
         <section>
           <header className="flex items-center gap-2 mb-3">
             <Clock className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-            <h3 className={ADMIN_TOKENS.headingH3}>Entradas ({entries.length})</h3>
+            <CardTitle className={ADMIN_TOKENS.headingH3}>Entradas ({entries.length})</CardTitle>
           </header>
 
           {loading ? (

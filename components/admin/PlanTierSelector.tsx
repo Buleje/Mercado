@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { usePlanTier } from "@/hooks/use-plan-tier";
 import { PLANS, PLAN_ORDER, type PlanTier } from "@/lib/billing/plan-tiers";
 
+import { CardTitle } from "@buleje/design-system";
 const ACCENT_CLASSES: Record<
   PlanTier,
   { ring: string; badge: string; icon: string; iconBg: string; button: string }
@@ -150,13 +151,13 @@ export default function PlanTierSelector({
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Plan actual
             </p>
-            <h3 className="mt-1 text-xl sm:text-2xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+            <CardTitle className="mt-1 sm:text-2xl text-[var(--text-primary)]">
               {PLANS[currentPlan].label}
               <span className="ml-2 text-sm font-bold text-[var(--text-tertiary)]">
                 {PLANS[currentPlan].price}
                 {PLANS[currentPlan].period}
               </span>
-            </h3>
+            </CardTitle>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
               {PLANS[currentPlan].tagline}. {PLANS[currentPlan].unlockedTabs.size}{" "}
               módulos desbloqueados.

@@ -364,7 +364,7 @@ export function MarketplaceOrdenesTab() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por cliente, #orden, teléfono o dirección…"
-            className="w-full h-10 pl-10 pr-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
+            className="w-full h-10 pl-10 pr-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
           />
           {query && (
             <button
@@ -377,7 +377,7 @@ export function MarketplaceOrdenesTab() {
             </button>
           )}
         </div>
-        <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5 gap-0.5">
+        <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5 gap-0.5">
           {(["hoy", "7d", "30d", "todo"] as OrdersDateFilter[]).map((d) => (
             <button
               key={d}
@@ -397,7 +397,7 @@ export function MarketplaceOrdenesTab() {
         </div>
         <button
           onClick={load}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors"
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
           Actualizar
@@ -405,7 +405,7 @@ export function MarketplaceOrdenesTab() {
         <button
           onClick={exportCsv}
           disabled={filtered.length === 0}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           title="Descargar CSV de las órdenes filtradas (para Excel/SUNAT)"
         >
           <Download className="h-4 w-4" />
@@ -431,7 +431,7 @@ export function MarketplaceOrdenesTab() {
                 <ChevronDown className="h-3.5 w-3.5" />
               </button>
               {openBulkMenu && bulkAvailableStatuses.length > 0 && (
-                <div className="absolute right-0 mt-1 w-56 z-30 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden">
+                <div className="absolute right-0 mt-1 w-56 z-30 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden">
                   {bulkAvailableStatuses.map((s) => (
                     <button
                       key={s}
@@ -448,7 +448,7 @@ export function MarketplaceOrdenesTab() {
             <button
               type="button"
               onClick={() => setSelectedIds(new Set())}
-              className="inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-secondary)] text-xs font-extrabold hover:bg-[var(--surface-sunken)]"
+              className="inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-secondary)] text-xs font-extrabold hover:bg-[var(--surface-sunken)]"
             >
               <X className="h-3.5 w-3.5" />
               Limpiar
@@ -498,7 +498,7 @@ export function MarketplaceOrdenesTab() {
                       }}
                       onChange={toggleSelectAll}
                       aria-label="Seleccionar todas"
-                      className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                      className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                     />
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">Orden</th>

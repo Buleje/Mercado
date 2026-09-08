@@ -94,18 +94,18 @@ export default function CacaoLiquidaciones() {
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-12 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
+        <div className="flex h-12 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar productor por nombre, código o sector…" className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
         </div>
-        <button type="button" onClick={exportCsv} disabled={view.length === 0} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Download className="h-4 w-4" />CSV</button>
-        <button type="button" onClick={load} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" />Actualizar</button>
+        <button type="button" onClick={exportCsv} disabled={view.length === 0} className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Download className="h-4 w-4" />CSV</button>
+        <button type="button" onClick={load} className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" />Actualizar</button>
       </div>
 
       {loading && groups.length === 0 ? (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
+        <div className="rounded-2xl border border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
       ) : view.length === 0 ? (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
           <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--data-success-50)] text-[var(--data-success-700)]"><CheckCircle2 className="h-7 w-7" /></span>
           <p className="text-base font-bold text-[var(--text-primary)]">{search ? "Sin resultados" : "Todo al día"}</p>
           <p className="mx-auto mt-1 max-w-sm text-sm">{search ? "Ningún productor coincide con tu búsqueda." : "No le debés liquidación a ningún productor. Cada lote de acopio está pagado."}</p>
@@ -116,7 +116,7 @@ export default function CacaoLiquidaciones() {
             const dias = diasDesde(g.oldest);
             const isOpen = expanded === g.producerId;
             return (
-              <li key={g.producerId} className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+              <li key={g.producerId} className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
                 <div className="flex flex-wrap items-center gap-3 p-4">
                   <button type="button" onClick={() => setExpanded(isOpen ? null : g.producerId)} className="flex min-w-[160px] flex-1 items-center gap-2 text-left" aria-expanded={isOpen} aria-label={`Ver lotes de ${g.nombre}`}>
                     <ChevronDown className={`h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform ${isOpen ? "rotate-180" : ""}`} />

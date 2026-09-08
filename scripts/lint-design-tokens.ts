@@ -185,6 +185,39 @@ const RULES: Rule[] = [
   },
   // ── DS Single Source of Truth (ADR-075) ────────────────────────────────────
   // Admin-only strict rules. En --design-strict estas suben a error.
+  // ── Armonía del panel (Brandon 2026-09-07/08): lo que se limpió por codemod no vuelve ──
+  // Estas tres son ERROR siempre (no dependen de --design-strict): el barrido dejó el admin
+  // en 0 ocurrencias, así que el gate no rompe nada legítimo — sólo frena regresiones.
+  {
+    id: "ds-no-raw-neutral-admin",
+    // Los neutros crudos que el barrido mapeó a tokens. `dark:`/`hover:` y `/NN` se excluyen a
+    // propósito (los velos y los neutros de texto claro sobre fondos oscuros no tienen token).
+    pattern:
+      /(?<![\w:/-])(?:bg-white|bg-(?:gray|slate)-(?:50|100|200)|text-(?:gray|slate)-(?:400|500|600|700|800|900)|border-(?:gray|slate)-(?:100|200|300)|divide-(?:gray|slate)-(?:100|200))(?![\w/-])/g,
+    message:
+      "Neutro crudo en admin: usá el token (bg-[var(--surface-raised|sunken)], bg-[var(--rule-soft|base)], text-[var(--text-primary|secondary|tertiary)], border-[var(--rule-base|soft)]). El oscuro sale del token, sin dark:.",
+    severity: "error",
+    adminOnly: true,
+    strictUpgrade: false,
+  },
+  {
+    id: "ds-no-border-2-neutral-admin",
+    // Un borde neutro de 2px al lado del token: el panel usa hairline (StatCard, AdminTabBar, campos).
+    pattern: /(?<![\w:-])border-2 border-\[var\(--rule-(?:base|soft)\)\]/g,
+    message: "Borde neutro de 2px en admin: usá `border border-[var(--rule-base)]` (un solo grosor en todo el panel). Los bordes de color (acento/error) sí pueden ir a 2px.",
+    severity: "error",
+    adminOnly: true,
+    strictUpgrade: false,
+  },
+  {
+    id: "ds-no-hex-in-class-admin",
+    // Hex dentro de una clase arbitraria (text-[#2563EB], bg-[#00A0A0]…): siempre hay token.
+    pattern: /(?<![\w:-])(?:bg|text|border|ring|from|to|via|fill|stroke)-\[#[0-9a-fA-F]{3,8}\]/g,
+    message: "Hex en clase en admin: usá var(--accent|--accent-ink|--rule-base|--data-*) o bg-primary/NN. (Quedan ~50 legítimos: WhatsApp #25D366, fondos de héroes oscuros — aviso hasta que tengan token.)",
+    severity: "warning",
+    adminOnly: true,
+    strictUpgrade: true,
+  },
   {
     id: "ds-no-text-gray-admin",
     // text-gray-{400..900} (monocromo — saltar 100-300 que se usan para dividers/placeholders)

@@ -11,6 +11,7 @@ import { Megaphone, Pin, Trash2, Send, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 
+import { PageTitle } from "@buleje/design-system";
 interface OwnerPost {
   id: string;
   body: string;
@@ -94,7 +95,7 @@ export default function StorePublicationsManager() {
           <Megaphone className="h-6 w-6" strokeWidth={2} aria-hidden />
         </span>
         <div>
-          <h1 className="text-xl font-black text-[var(--text-primary)]">Publicaciones</h1>
+          <PageTitle className="text-[var(--text-primary)]">Publicaciones</PageTitle>
           <p className="text-sm text-[var(--text-secondary)]">
             Contales a tus vecinos las novedades. Aparece en tu tienda del marketplace.
           </p>

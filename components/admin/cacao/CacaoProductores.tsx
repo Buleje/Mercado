@@ -126,11 +126,11 @@ export default function CacaoProductores() {
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-12 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
+        <div className="flex h-12 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nombre, código o sector…" className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
         </div>
-        <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none">
+        <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none">
           {SORTS.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}
         </select>
         <button type="button" onClick={() => setIncludeInactive((v) => !v)} className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-semibold ${includeInactive ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"} hover:bg-[var(--surface-canvas)]`}>{includeInactive ? "Todos" : "Activos"}</button>

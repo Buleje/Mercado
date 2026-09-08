@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, StatCard } from "@buleje/design-system";
+import { CardTitle, StatCard, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef, useMemo, type FormEvent } from "react";
 import {
   Package, AlertTriangle, ArrowUp, ArrowDown, RefreshCw,
@@ -2238,7 +2238,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Inventario</p>
-                  <h2 className="text-xl font-extrabold text-[var(--text-primary)] leading-tight">Agregar al catálogo</h2>
+                  <SectionTitle className="text-[var(--text-primary)]">Agregar al catálogo</SectionTitle>
                   <p className="mt-0.5 text-sm text-[var(--text-secondary)] leading-snug">Tocá un producto para editarlo, o creá uno nuevo.</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -2281,9 +2281,9 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-3">
                       <PackagePlus className="h-7 w-7" strokeWidth={1.9} />
                     </span>
-                    <h3 className="text-base font-extrabold text-[var(--text-primary)]">
+                    <CardTitle className="text-[var(--text-primary)]">
                       {products.length === 0 ? "Tu catálogo está vacío" : "Sin resultados"}
-                    </h3>
+                    </CardTitle>
                     <p className="mt-1 max-w-xs text-sm text-[var(--text-secondary)]">
                       {products.length === 0
                         ? "Todavía no cargaste productos. Creá el primero para empezar a vender."
@@ -2343,7 +2343,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           <div className="bg-[var(--surface-raised)] w-full sm:max-w-5xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-xl">
             <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur">
               <div className="min-w-0">
-                <h2 className="text-lg font-bold text-[var(--text-primary)] leading-tight">Nuevo producto</h2>
+                <SectionTitle className="text-[var(--text-primary)]">Nuevo producto</SectionTitle>
                 <p className="text-xs text-[var(--text-tertiary)]">Producto físico o servicio del catálogo</p>
               </div>
               <button onClick={() => setShowAdd(false)} aria-label="Cerrar" className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
@@ -2966,7 +2966,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
             <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-[var(--text-tertiary)]">Editar {(editForm.type ?? "product") === "service" ? "servicio" : "producto"}</p>
-                <h2 className="text-lg font-bold text-[var(--text-primary)] leading-tight truncate">{editModalProduct.name}</h2>
+                <SectionTitle className="text-[var(--text-primary)] truncate">{editModalProduct.name}</SectionTitle>
               </div>
               <button onClick={closeEditModal} aria-label="Cerrar" className="shrink-0 h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5" />

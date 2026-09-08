@@ -47,6 +47,7 @@ import {
   type SectionTemplate,
 } from "@/lib/store-sections-types";
 
+import { CardTitle, SectionTitle } from "@buleje/design-system";
 const TYPE_EMOJI: Record<SectionType, string> = {
   about: "📖",
   hours: "🕐",
@@ -280,9 +281,9 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
           <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             <Layers className="h-7 w-7" strokeWidth={1.75} />
           </span>
-          <h3 className="text-lg font-extrabold text-[var(--text-primary)] mb-1">
+          <CardTitle className="text-[var(--text-primary)] mb-1">
             Tu página pública aún no tiene secciones
-          </h3>
+          </CardTitle>
           <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto mb-5">
             Agregá bloques desde las plantillas: Sobre Nosotros, Horarios, Métodos de Pago, Cómo Pedir, FAQ y más.
           </p>
@@ -469,9 +470,9 @@ function TemplatesModal({
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
               Galería de plantillas
             </p>
-            <h2 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
+            <SectionTitle className="text-[var(--text-primary)]">
               Elegí una sección para agregar
-            </h2>
+            </SectionTitle>
           </div>
           <button
             type="button"

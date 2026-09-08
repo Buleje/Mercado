@@ -19,6 +19,7 @@ import { Truck, Loader2, AlertTriangle, CheckCircle2 } from "@buleje/design-syst
 import { csrfHeaders } from "@/lib/csrf-client";
 import { tenantFetch } from "@/lib/tenant-fetch";
 
+import { SectionTitle } from "@buleje/design-system";
 export default function NetworkToggleCard() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,12 +81,12 @@ export default function NetworkToggleCard() {
           <Truck className="h-6 w-6" strokeWidth={2.25} aria-hidden />
         </span>
         <div className="min-w-0">
-          <h2
+          <SectionTitle
             id="network-toggle-title"
-            className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] leading-tight"
+            className="sm:text-xl text-[var(--text-primary)]"
           >
             Red de repartidores Buleje
-          </h2>
+          </SectionTitle>
           <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
             Si activás esta opción, los repartidores de Buleje verán tu tienda en su mapa y podrán aceptar tus pedidos. Si la desactivás, solo tus repartidores propios atienden.
           </p>

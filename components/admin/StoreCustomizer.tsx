@@ -11,7 +11,7 @@ import {
   Paintbrush, FileText, Sparkles, Square, LayoutGrid,
   Smartphone, Monitor, Zap, Truck, Star, Clock, ExternalLink, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { LoadingState, PageTitle, PrimaryButton, SectionTitle } from "@buleje/design-system";
+import { LoadingState, PageTitle, PrimaryButton, SectionTitle, CardTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
@@ -534,7 +534,7 @@ function StyleSection({
           {icon}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-bold text-[var(--text-primary)] leading-tight">{title}</h3>
+          <CardTitle className="text-[var(--text-primary)]">{title}</CardTitle>
           <p className="text-sm text-muted leading-snug mt-0.5">{description}</p>
         </div>
       </header>
@@ -716,14 +716,14 @@ function HeroTab({
                       {theme.heroBadge}
                     </span>
                   )}
-                  <h1
+                  <PageTitle
                     className={cn(
-                      "font-extrabold text-white leading-[1.08] tracking-tight",
-                      previewDevice === "desktop" ? "text-3xl sm:text-4xl" : "text-2xl"
+                      "text-white",
+                      previewDevice === "desktop" ? "sm:text-4xl" : ""
                     )}
                   >
                     {theme.heroTitle || "Todo lo que necesitas, en tu puerta"}
-                  </h1>
+                  </PageTitle>
                   <p
                     className={cn(
                       "text-white/70 leading-relaxed",

@@ -712,7 +712,7 @@ export default function PromotionsTab() {
             <Gift className="h-7 w-7" strokeWidth={2} />
           </span>
           <div className="space-y-1">
-            <h3 className="text-lg font-extrabold text-[var(--text-primary)]">Todavía no tienes promociones</h3>
+            <CardTitle className="text-[var(--text-primary)]">Todavía no tienes promociones</CardTitle>
             <p className="mx-auto max-w-sm text-sm text-[var(--text-secondary)]">
               Creá tu primera oferta y mandala por WhatsApp a tus clientes — o pedile ideas a la IA según tu negocio.
             </p>

@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { ShieldCheck, Loader2, AlertTriangle, KeyRound } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 
+import { PageTitle } from "@buleje/design-system";
 export default function TwoFactorPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -125,9 +126,9 @@ export default function TwoFactorPage() {
             <ShieldCheck className="h-7 w-7 text-white" strokeWidth={2.25} />
           </span>
           <div>
-            <h1 className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">
+            <PageTitle className="text-[var(--text-primary)]">
               Verificación en dos pasos
-            </h1>
+            </PageTitle>
             <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
               Ingresá el código de 6 dígitos de tu app autenticadora.
             </p>

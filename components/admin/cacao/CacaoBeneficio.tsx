@@ -383,7 +383,7 @@ export default function CacaoBeneficio() {
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-12 min-w-[180px] flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
+        <div className="flex h-12 min-w-[180px] flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             value={search}
@@ -392,7 +392,7 @@ export default function CacaoBeneficio() {
             className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
           />
         </div>
-        <div className="inline-flex rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+        <div className="inline-flex rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
           {FILTERS.map((f) => (
             <button
               key={f.v}
@@ -520,7 +520,7 @@ export default function CacaoBeneficio() {
                             e.stopPropagation();
                             setBitacora({ id: b.id, loteCode: b.loteCode });
                           }}
-                          className="inline-flex h-8 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                          className="inline-flex h-8 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                         >
                           <Thermometer className="h-3.5 w-3.5" />
                           Bitácora

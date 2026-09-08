@@ -139,7 +139,7 @@ export default function RepartoImportarBloquesModal({
               rows={6}
               aria-label="Planilla de bloques pegada"
               placeholder={"Etiqueta\tCargado como\tEspecie\tN° de permiso\tm³\tPiezas\nGTF-0231\trolliza\tTornillo\t19-SEC/REG-…\t20\nCompra 12/08\taserrada\tTornillo\t\t1.5\t30"}
-              className="mt-1 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="mt-1 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </label>
         ) : (

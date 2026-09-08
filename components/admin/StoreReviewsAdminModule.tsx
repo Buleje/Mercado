@@ -25,6 +25,7 @@ import {
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 
+import { SectionTitle } from "@buleje/design-system";
 type Status = "pending" | "approved" | "rejected" | "hidden" | "all";
 
 interface AdminReview {
@@ -220,7 +221,7 @@ export default function StoreReviewsAdminModule() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-black tracking-tight text-[var(--text-primary)]">Reseñas de tu tienda</h2>
+          <SectionTitle className="text-[var(--text-primary)]">Reseñas de tu tienda</SectionTitle>
           <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
             Aprobá las que querés publicar, ocultá las que no, respondé a tus clientes.
           </p>

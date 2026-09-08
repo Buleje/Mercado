@@ -44,6 +44,7 @@ import { CSS } from "@dnd-kit/utilities";
 import AdminTabShell from "../../_components/_shared/AdminTabShell";
 import { ADMIN_TOKENS } from "../../_components/_shared/admin-tokens";
 
+import { CardTitle } from "@buleje/design-system";
 interface ProductSummary {
   id: number;
   name: string;
@@ -502,9 +503,9 @@ function ProductModifierEditor({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-bold text-[var(--text-primary)] truncate">
+          <CardTitle className="text-[var(--text-primary)] truncate">
             {product.name}
-          </h3>
+          </CardTitle>
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
             {product.category} · base {fmt(product.price)}
           </p>

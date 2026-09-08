@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { SectionTitle, CardTitle } from "@buleje/design-system";
 import { useEffect, useState, useCallback, useMemo, useRef, useId } from "react";
 import {
   Store, Package, CreditCard, Users, ShoppingCart,
@@ -171,14 +171,14 @@ function StepRow({
           >
             {String(index + 1).padStart(2, "0")}
           </span>
-          <h3
+          <CardTitle
             className={cn(
-              "text-sm font-bold truncate",
+              "truncate",
               done ? "text-[var(--text-secondary)] line-through" : "text-[var(--text-primary)]"
             )}
           >
             {step.title}
-          </h3>
+          </CardTitle>
         </div>
         <p className="text-xs text-[var(--text-secondary)] leading-snug mt-0.5 truncate">
           {step.description}

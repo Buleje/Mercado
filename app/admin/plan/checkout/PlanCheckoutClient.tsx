@@ -47,6 +47,7 @@ import {
   type PlanTier,
 } from "@/lib/billing/plan-tiers";
 
+import { PageTitle, SectionTitle } from "@buleje/design-system";
 const PLAN_ICONS: Record<PlanTier, typeof Sparkles> = {
   basico: Sparkles,
   pro: Zap,
@@ -239,13 +240,13 @@ export default function PlanCheckoutClient() {
               <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
               {method === "cash" ? "Solicitud recibida" : "¡Plan activado!"}
             </p>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-tight">
+            <PageTitle className="sm:text-4xl text-[var(--text-primary)]">
               {method === "cash" ? (
                 <>Te contactamos por <span className="text-[var(--accent)]">WhatsApp</span></>
               ) : (
                 <>Bienvenido a <span className="text-[var(--accent)]">{planDef.label}</span></>
               )}
-            </h1>
+            </PageTitle>
             <p className="mt-3 text-base text-[var(--text-secondary)]">
               {method === "cash"
                 ? "Un agente te escribirá en menos de 2 horas para coordinar el pago en efectivo y activar tu plan."
@@ -300,10 +301,10 @@ export default function PlanCheckoutClient() {
             <span aria-hidden className="inline-block h-[3px] w-8 rounded-full bg-[var(--accent)]" />
             Confirmar suscripción
           </p>
-          <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+          <PageTitle className="sm:text-4xl lg:text-[2.75rem] text-[var(--text-primary)]">
             Subí a <span className="text-[var(--accent)]">{planDef.label}</span> en
             menos de un minuto
-          </h1>
+          </PageTitle>
           <p className="mt-3 max-w-2xl text-base sm:text-lg text-[var(--text-secondary)]">
             Activá tu plan al confirmar el pago. Cancelás cuando quieras, sin permanencia.
           </p>
@@ -327,9 +328,9 @@ export default function PlanCheckoutClient() {
                       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-none">
                         Paso 1
                       </p>
-                      <h2 className="mt-1 text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+                      <SectionTitle className="mt-1 text-[var(--text-primary)]">
                         Elegí cómo pagar
-                      </h2>
+                      </SectionTitle>
                     </div>
                   </div>
 
@@ -528,7 +529,7 @@ function PayInstructions({
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-none">
             Paso 2
           </p>
-          <h2 className="mt-1 text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
+          <SectionTitle className="mt-1 text-[var(--text-primary)]">
             {method === "stripe"
               ? "Pagá con tarjeta"
               : method === "yape" || method === "plin"
@@ -536,7 +537,7 @@ function PayInstructions({
                 : method === "transfer"
                   ? "Transferencia bancaria"
                   : "Coordinamos por WhatsApp"}
-          </h2>
+          </SectionTitle>
         </div>
       </div>
 

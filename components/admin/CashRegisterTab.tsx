@@ -1248,7 +1248,7 @@ export default function CashRegisterTab() {
       {view === "auditoria" && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-[var(--rule-base)]">
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">Quién tocó la caja</h3>
+            <CardTitle className="text-[var(--text-primary)]">Quién tocó la caja</CardTitle>
             <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
               Aperturas, cierres e ingresos o egresos manuales, con el usuario que los hizo. Es un registro de auditoría: no se edita
               ni se borra.

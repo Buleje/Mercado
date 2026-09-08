@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ShieldCheck, Loader2, Eye, EyeOff } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 
+import { PageTitle } from "@buleje/design-system";
 /**
  * Cambio de contraseña FORZADO (ADR-133). Se llega acá cuando el login devuelve
  * mustChangePassword=true (el superadmin reseteó la clave con una temporal de un
@@ -52,7 +53,7 @@ export default function CambiarClavePage() {
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <ShieldCheck className="h-5 w-5" />
           </span>
-          <h1 className="text-lg font-extrabold text-[var(--text-primary)]">Creá tu contraseña</h1>
+          <PageTitle className="text-[var(--text-primary)]">Creá tu contraseña</PageTitle>
         </div>
         <p className="text-sm text-[var(--text-secondary)] mb-5">
           Tu acceso se reseteó con una clave temporal. Por seguridad, elegí tu propia contraseña para continuar.

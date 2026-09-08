@@ -11,7 +11,7 @@ import {
   Menu as MenuIcon,
   Layout,
 } from "@buleje/design-system/icons";
-import { LoadingState } from "@buleje/design-system";
+import { LoadingState, CardTitle } from "@buleje/design-system";
 import AdminTabShell from "@/app/admin/_components/_shared/AdminTabShell";
 import AdminEmptyState from "@/app/admin/_components/_shared/AdminEmptyState";
 import { ADMIN_TOKENS } from "@/app/admin/_components/_shared/admin-tokens";
@@ -107,7 +107,7 @@ export default function CMSDashboard() {
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors mb-3">
                   <Icon className="w-5 h-5" aria-hidden />
                 </span>
-                <h3 className={ADMIN_TOKENS.headingH3}>{title}</h3>
+                <CardTitle className={ADMIN_TOKENS.headingH3}>{title}</CardTitle>
                 <p className={`${ADMIN_TOKENS.bodyText} mt-1`}>{description}</p>
                 {title === "Páginas" && (
                   <p className={`${ADMIN_TOKENS.hint} mt-2`}>
@@ -120,7 +120,7 @@ export default function CMSDashboard() {
 
           <section className={ADMIN_TOKENS.card}>
             <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-soft)]">
-              <h3 className={ADMIN_TOKENS.headingH3}>Páginas recientes</h3>
+              <CardTitle className={ADMIN_TOKENS.headingH3}>Páginas recientes</CardTitle>
               {pages.length > 5 && (
                 <Link
                   href="/admin/cms/pages"

@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState } from "@buleje/design-system";
+import { LoadingState, CardTitle, Kicker, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { activateProps } from "@/components/admin/shared/a11y";
 import Image from "next/image";
@@ -430,7 +430,7 @@ function SectionEditorModal({
             </div>
             <div>
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-primary">Editar sección</p>
-              <h2 className="text-lg font-extrabold text-[var(--text-primary)] leading-tight">{sectionLabel}</h2>
+              <SectionTitle className="text-[var(--text-primary)]">{sectionLabel}</SectionTitle>
             </div>
           </div>
           <button
@@ -501,7 +501,7 @@ function SectionEditorModal({
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-[var(--text-primary)]">Productos en esta sección</h3>
+                  <CardTitle className="text-[var(--text-primary)]">Productos en esta sección</CardTitle>
                   <span className="inline-flex items-center justify-center h-6 px-2 rounded-md bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold tabular-nums">
                     {assignedProducts.length}
                   </span>
@@ -1346,9 +1346,9 @@ export default function StorefrontEditor() {
                   return (
                     <section key={groupKey} className="space-y-2.5">
                       <header className="flex items-center justify-between gap-2 px-1">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                        <Kicker as="h3" className="text-[var(--text-secondary)]">
                           {SECTION_GROUPS[groupKey].label}
-                        </h3>
+                        </Kicker>
                         <span className="text-xs font-mono tabular-nums text-muted shrink-0">
                           {enabledInGroup}/{sectionsInGroup.length}
                         </span>

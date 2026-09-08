@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState } from "@buleje/design-system";
+import { LoadingState, CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -156,9 +156,9 @@ export default function ProductsTab() {
         <section
           className={`${ADMIN_TOKENS.cardPadded} max-h-96 overflow-y-auto`}
         >
-          <h3 className={ADMIN_TOKENS.headingH3}>
+          <CardTitle className={ADMIN_TOKENS.headingH3}>
             Selecciona un producto del inventario
-          </h3>
+          </CardTitle>
           {catalogFiltered.length === 0 ? (
             <p className={ADMIN_TOKENS.bodyText}>Sin resultados</p>
           ) : (

@@ -98,7 +98,7 @@ export default function CacaoCertificacion() {
 
       {/* Readiness EUDR + distribución de certificaciones */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><ShieldCheck className="h-4 w-4 text-[var(--accent)]" />Geolocalización de parcelas (EUDR)</CardTitle>
           <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]">
             <div className="h-full rounded-full bg-[var(--data-success-500)] transition-all" style={{ width: `${pct(stats.conGeo, stats.total)}%` }} />

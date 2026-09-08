@@ -209,7 +209,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
                       </div>
                     )}
                     {isWeekend && (
-                      <div className="text-[color:var(--data-warning-500)] font-bold uppercase tracking-wider text-[10px]">
+                      <div className="text-[color:var(--data-warning-500)] font-bold uppercase tracking-wider text-[length:var(--ts-2xs)]">
                         Fin de semana
                       </div>
                     )}
@@ -228,7 +228,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
                   <Sparkles className="h-5 w-5 text-[color:var(--accent,var(--text-primary))]" strokeWidth={2.25} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                     Mañana es {data.nextDayPrediction.diaCompleto}
                   </p>
                   <p className="text-sm sm:text-base font-bold text-[var(--text-primary)] leading-snug">
@@ -295,7 +295,7 @@ export default function VentasCharts({ data }: { data: VentasData }) {
                 const isPico = Boolean(entry._isPico);
                 if (!isPico) return null;
                 return (
-                  <div className="flex items-center gap-1.5 text-[color:var(--data-warning-500)] font-extrabold uppercase tracking-wider text-[10px]">
+                  <div className="flex items-center gap-1.5 text-[color:var(--data-warning-500)] font-extrabold uppercase tracking-wider text-[length:var(--ts-2xs)]">
                     <Flame className="h-3.5 w-3.5" strokeWidth={2.5} />
                     Hora caliente del día
                   </div>

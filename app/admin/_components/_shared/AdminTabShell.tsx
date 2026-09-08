@@ -23,6 +23,7 @@ import type { ComponentType, ReactNode } from "react";
 import { ADMIN_TOKENS } from "./admin-tokens";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
+import { PageTitle } from "@buleje/design-system";
 type LucideIcon = ComponentType<{
   className?: string;
   strokeWidth?: number;
@@ -78,7 +79,7 @@ export default function AdminTabShell({
               <p className={`${ADMIN_TOKENS.kicker} mb-1`}>{kicker}</p>
             )}
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className={ADMIN_TOKENS.headingHero}>{title}</h1>
+              <PageTitle className={ADMIN_TOKENS.headingHero}>{title}</PageTitle>
               {info && <InfoTip side="bottom" {...info} />}
               {chip && (
                 <span

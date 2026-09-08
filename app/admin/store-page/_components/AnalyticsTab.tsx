@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState } from "@buleje/design-system";
+import { LoadingState, CardTitle } from "@buleje/design-system";
 import { useEffect, useState } from "react";
 import {
   TrendingUp,
@@ -112,7 +112,7 @@ function AnalyticsContent({ data }: { data: Analytics }) {
             strokeWidth={2}
             aria-hidden
           />
-          <h3 className={ADMIN_TOKENS.headingH3}>Visitas últimos 30 días</h3>
+          <CardTitle className={ADMIN_TOKENS.headingH3}>Visitas últimos 30 días</CardTitle>
         </div>
         <div className="flex items-end gap-1 h-32">
           {data.visitsByDay.map((d) => {
@@ -151,7 +151,7 @@ function AnalyticsContent({ data }: { data: Analytics }) {
       {/* Top referrers + utm */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <section className={`${ADMIN_TOKENS.cardPadded}`}>
-          <h3 className={ADMIN_TOKENS.headingH3}>Top referrers (30d)</h3>
+          <CardTitle className={ADMIN_TOKENS.headingH3}>Top referrers (30d)</CardTitle>
           {data.topReferrers.length === 0 ? (
             <p className={ADMIN_TOKENS.bodyText}>Sin datos</p>
           ) : (
@@ -174,7 +174,7 @@ function AnalyticsContent({ data }: { data: Analytics }) {
         </section>
 
         <section className={`${ADMIN_TOKENS.cardPadded}`}>
-          <h3 className={ADMIN_TOKENS.headingH3}>Top UTM sources (30d)</h3>
+          <CardTitle className={ADMIN_TOKENS.headingH3}>Top UTM sources (30d)</CardTitle>
           {data.topUtmSources.length === 0 ? (
             <p className={ADMIN_TOKENS.bodyText}>Sin datos</p>
           ) : (

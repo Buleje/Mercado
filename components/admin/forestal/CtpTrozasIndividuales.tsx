@@ -121,7 +121,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
 
   if (cargando) {
     return (
-      <p className="flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-6 text-sm text-[var(--text-tertiary)]">
+      <p className="flex items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-6 text-sm text-[var(--text-tertiary)]">
         <Loader2 className="h-4 w-4 animate-spin" /> Leyendo las trozas del período…
       </p>
     );
@@ -151,7 +151,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar por código, especie o GTF…"
             aria-label="Buscar una troza"
-            className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
         </label>
         <div className="flex items-center gap-3">
@@ -159,13 +159,13 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
             <b className="text-[var(--text-primary)]">{filtradas.length}</b>
             {filtradas.length !== datos.total && <> de {datos.total}</>} trozas · {fmtM3(sumaVisible)} m³
           </span>
-          <button type="button" onClick={exportar} className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
+          <button type="button" onClick={exportar} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
             <Download className="h-4 w-4" /> CSV
           </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full min-w-[1000px] text-sm">
           <caption className="sr-only">Trozas del período, una fila por pieza</caption>
           <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">

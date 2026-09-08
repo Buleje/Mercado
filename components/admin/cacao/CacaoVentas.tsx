@@ -268,7 +268,7 @@ export default function CacaoVentas() {
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-12 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
+        <div className="flex h-12 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <input
             value={search}
@@ -281,7 +281,7 @@ export default function CacaoVentas() {
           type="button"
           onClick={exportCsv}
           disabled={view.length === 0}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
         >
           <Download className="h-4 w-4" />
           CSV
@@ -296,7 +296,7 @@ export default function CacaoVentas() {
             )
           }
           disabled={view.length === 0}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
         >
           <Printer className="h-4 w-4" />
           Reporte
@@ -311,7 +311,7 @@ export default function CacaoVentas() {
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr>
@@ -474,7 +474,7 @@ export default function CacaoVentas() {
                     min="0"
                     value={cobroMonto}
                     onChange={(e) => setCobroMonto(e.target.value)}
-                    className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                    className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-mono tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                   />
                 </label>
                 <div className="mt-3 flex items-center justify-between rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm">
@@ -491,7 +491,7 @@ export default function CacaoVentas() {
                   <button
                     type="button"
                     onClick={() => setCobro(null)}
-                    className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                    className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                   >
                     Cancelar
                   </button>
@@ -536,7 +536,7 @@ export default function CacaoVentas() {
               <button
                 type="button"
                 onClick={() => setAnnulId(null)}
-                className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
               >
                 Cancelar
               </button>
