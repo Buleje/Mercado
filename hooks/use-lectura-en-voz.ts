@@ -124,7 +124,22 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
       const uri = optsRef.current.voiceURI();
       if (uri) { const v = synth.getVoices().find((x) => x.voiceURI === uri); if (v) u.voice = v; }
       u.onend = () => { if (pausaRef.current || !activaRef.current) return; idxRef.current++; paso(); };
-      u.onerror = () => {
+      /**
+       * 🚨 `cancel()` NO es un fallo del motor.
+       *
+       * Chrome dispara `onerror` con `canceled`/`interrupted` sobre la
+       * utterance en curso cada vez que se llama `cancel()` — y acá se llama
+       * al PAUSAR, al REINICIAR y antes de cada `speak()`. Tratarlo como fallo
+       * cerraba el panel y mostraba «no se pudo leer» apenas se tocaba Pausar:
+       * el botón de pausa se comportaba como el de cerrar.
+       *
+       * Se ignora por dos vías, porque el código de error no está garantizado
+       * en todos los motores: por nombre, y por estado (si estamos en pausa o
+       * la lectura ya no está activa, ese error es nuestro).
+       */
+      u.onerror = (e: SpeechSynthesisErrorEvent) => {
+        const propio = e?.error === "canceled" || e?.error === "interrupted";
+        if (propio || pausaRef.current || !activaRef.current) return;
         optsRef.current.onError?.("No se pudo leer en voz alta — revisá el motor de voz del navegador.");
         detener();
       };
@@ -169,10 +184,16 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
   const reiniciar = useCallback(() => {
     if (!pasoRef.current) return;
     idxRef.current = 0;
+    /* Se cancela con `activa` en false a propósito: el `onerror` que dispara
+       ese `cancel()` sobre la utterance vieja tiene que caer en el guard, no
+       leerse como un fallo del motor. Se reactiva justo antes de seguir. */
+    activaRef.current = false;
     pausaRef.current = false;
-    activaRef.current = true;
     try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
-    setTimeout(() => pasoRef.current?.(), 0);
+    setTimeout(() => {
+      activaRef.current = true;
+      pasoRef.current?.();
+    }, 0);
   }, []);
 
   /** ¿Hay una lectura en curso? Para el toggle del botón que la arranca. */
