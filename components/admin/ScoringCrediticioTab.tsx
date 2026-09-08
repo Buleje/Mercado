@@ -1,4 +1,5 @@
 "use client";
+import { DataTable } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -400,16 +401,16 @@ export default function ScoringCrediticioTab() {
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden sm:block bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-x-auto ">
-            <table className="w-full text-sm">
+          <div className="hidden sm:block">
+            <DataTable>
               <thead>
-                <tr className="border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
-                  <th className="text-left px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Cliente</th>
-                  <th className="text-center px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Nivel</th>
-                  <th className="px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Score</th>
-                  <th className="text-right px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Fiado actual</th>
-                  <th className="text-right px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Límite recom.</th>
-                  <th className="text-right px-4 py-3 text-xs text-[var(--text-tertiary)] font-medium">Pago a tiempo</th>
+                <tr className="border-b border-[var(--rule-base)]">
+                  <th>Cliente</th>
+                  <th className="text-center">Nivel</th>
+                  <th>Score</th>
+                  <th className="text-right">Fiado actual</th>
+                  <th className="text-right">Límite recom.</th>
+                  <th className="text-right">Pago a tiempo</th>
                 </tr>
               </thead>
               <tbody>
@@ -417,28 +418,23 @@ export default function ScoringCrediticioTab() {
                   const cfg = LEVEL_CONFIG[c.level];
                   const LevelIcon = cfg.icon;
                   return (
-                    <tr
-                      key={c.customerId || `row-${idx}`}
-                      className={cn(
-                        "border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0 hover:bg-[var(--surface-sunken)] transition-colors",
-                      )}
-                    >
-                      <td className="px-4 py-3">
+                    <tr key={c.customerId || `row-${idx}`}>
+                      <td>
                         <p className="font-medium text-[var(--text-primary)] truncate max-w-[160px]">{c.customerName}</p>
                         {c.fiadosOverdue > 0 && (
                           <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{c.fiadosOverdue} fiado{c.fiadosOverdue > 1 ? "s" : ""} vencido{c.fiadosOverdue > 1 ? "s" : ""}</p>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="text-center">
                         <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", cfg.badge)}>
                           <LevelIcon className="h-3 w-3" aria-hidden="true" />
                           {cfg.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 min-w-[140px]">
+                      <td className="min-w-[140px]">
                         <ScoreBar score={c.score} level={c.level} />
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-[var(--text-secondary)]">
+                      <td className="text-right font-mono text-[var(--text-secondary)]">
                         {c.fiadoActual > 0 ? (
                           <span className={c.fiadoActual > c.limiteRecomendado ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold" : ""}>
                             {fmt(c.fiadoActual)}
@@ -447,12 +443,12 @@ export default function ScoringCrediticioTab() {
                           <span className="text-[var(--text-tertiary)]">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-[var(--text-secondary)]">
+                      <td className="text-right font-mono text-[var(--text-secondary)]">
                         {c.limiteRecomendado > 0 ? fmt(c.limiteRecomendado) : (
                           <span className="text-[var(--data-error-500)] font-semibold">Sin crédito</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="text-right">
                         {c.fiadosTotal > 0 ? (
                           <span className={cn(
                             "font-mono text-xs font-semibold",
@@ -470,7 +466,7 @@ export default function ScoringCrediticioTab() {
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
 
           {/* Mobile cards */}

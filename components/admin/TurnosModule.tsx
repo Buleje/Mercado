@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useCallback } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
@@ -745,58 +745,51 @@ export default function TurnosModule() {
                   <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
                   Ranking de Cajeros
                 </CardTitle>
-                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-2xl overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-base">
-                      <thead>
-                        <tr className="border-b border-[var(--rule-soft)] text-left bg-gray-50/50 dark:bg-surface/30">
-                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide w-12 text-center">#</th>
-                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Cajero</th>
-                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right">Turnos</th>
-                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right">Ventas</th>
-                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right hidden sm:table-cell">Ventas/hora</th>
-                          <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right hidden md:table-cell">Dif. caja</th>
+                <DataTable>
+                  <thead>
+                    <tr className="border-b border-[var(--rule-soft)]">
+                      <th className="w-12 text-center">#</th>
+                      <th>Cajero</th>
+                      <th className="text-right">Turnos</th>
+                      <th className="text-right">Ventas</th>
+                      <th className="text-right hidden sm:table-cell">Ventas/hora</th>
+                      <th className="text-right hidden md:table-cell">Dif. caja</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cajeroStats.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map((c, i) => {
+                      const isTop = i === 0 && cajeroStats.length > 1;
+                      return (
+                        <tr key={c.id} className={isTop ? "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning-500)]/10" : undefined}>
+                          <td className="text-center">
+                            {isTop ? (
+                              <Trophy className="h-5 w-5 text-[var(--data-warning-500)] inline-block" strokeWidth={1.75} aria-hidden />
+                            ) : (
+                              <span className="text-base text-[var(--text-tertiary)] font-bold tabular-nums">{i + 1}</span>
+                            )}
+                          </td>
+                          <td className="font-semibold text-[var(--text-primary)]">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                                style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}
+                              >
+                                {c.name.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="truncate max-w-[160px] text-base">{c.name}</span>
+                            </div>
+                          </td>
+                          <td className="text-right text-base text-[var(--text-secondary)] tabular-nums">{c.turnos}</td>
+                          <td className="text-right text-base font-bold text-[var(--data-success-500)] tabular-nums">{formatCurrency(c.ventasTotal)}</td>
+                          <td className="text-right text-base text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">{formatCurrency(c.ventasPorHora)}/h</td>
+                          <td className={cn("text-right text-base font-bold hidden md:table-cell tabular-nums", Math.abs(c.difCaja) < 0.01 ? "text-[var(--data-success-500)]" : c.difCaja > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
+                            {Math.abs(c.difCaja) < 0.01 ? formatCurrency(0) : (c.difCaja > 0 ? "+" : "") + formatCurrency(c.difCaja)}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {cajeroStats.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map((c, i) => {
-                          const isTop = i === 0 && cajeroStats.length > 1;
-                          return (
-                            <tr key={c.id} className={cn(
-                              "border-b border-gray-50 dark:border-white/5 transition-colors hover:bg-gray-50/50",
-                              isTop ? "bg-[var(--data-warning-50)]/50 dark:bg-[var(--data-warning-500)]/10" : ""
-                            )}>
-                              <td className="px-4 py-3.5 text-center">
-                                {isTop ? (
-                                  <Trophy className="h-5 w-5 text-[var(--data-warning-500)] inline-block" strokeWidth={1.75} aria-hidden />
-                                ) : (
-                                  <span className="text-base text-[var(--text-tertiary)] font-bold tabular-nums">{i + 1}</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3.5 font-semibold text-[var(--text-primary)]">
-                                <div className="flex items-center gap-3">
-                                  <div
-                                    className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                                    style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}
-                                  >
-                                    {c.name.charAt(0).toUpperCase()}
-                                  </div>
-                                  <span className="truncate max-w-[160px] text-base">{c.name}</span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3.5 text-right text-base text-[var(--text-secondary)] tabular-nums">{c.turnos}</td>
-                              <td className="px-4 py-3.5 text-right text-base font-bold text-[var(--data-success-500)] tabular-nums">{formatCurrency(c.ventasTotal)}</td>
-                              <td className="px-4 py-3.5 text-right text-base text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">{formatCurrency(c.ventasPorHora)}/h</td>
-                              <td className={cn("px-4 py-3.5 text-right text-base font-bold hidden md:table-cell tabular-nums", Math.abs(c.difCaja) < 0.01 ? "text-[var(--data-success-500)]" : c.difCaja > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
-                                {Math.abs(c.difCaja) < 0.01 ? formatCurrency(0) : (c.difCaja > 0 ? "+" : "") + formatCurrency(c.difCaja)}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                      );
+                    })}
+                  </tbody>
+                </DataTable>
               </div>
             )}
 
@@ -1224,51 +1217,46 @@ export default function TurnosModule() {
                 <BarChart3 className="h-4 w-4 text-[var(--data-warning-500)]" />
                 Productividad por cajero
               </CardTitle>
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
-                {cajerosStats.length <= 1 && cajerosStats.length === 1 ? (
-                  <div className="p-4 text-center text-sm text-[var(--text-tertiary)]">Solo hay 1 cajero registrado</div>
-                ) : cajerosStats.length === 0 ? (
-                  <div className="p-4 text-center text-sm text-[var(--text-tertiary)]">Sin datos de productividad</div>
-                ) : (
-                  <div className="overflow-x-auto -mx-4 sm:mx-0">
-                    <table className="w-full min-w-[550px] sm:min-w-0 text-sm">
-                      <thead>
-                        <tr className="border-b border-[var(--rule-soft)] text-left">
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">Cajero</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Turnos</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Ventas total</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden sm:table-cell">Ventas/hora</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden sm:table-cell">Ticket prom</th>
-                          <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right hidden md:table-cell">Dif. caja</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {cajerosStats.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map(c => (
-                          <tr key={c.name} className={cn(
-                            "border-b border-gray-50 dark:border-white/5 transition-colors",
-                            c.name === bestCajero ? "bg-primary/10 dark:bg-primary/15" : ""
-                          )}>
-                            <td className="px-4 py-3 font-medium text-[var(--text-primary)] flex items-center gap-2">
-                              <div className="h-6 w-6 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold" style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}>
-                                {c.name.charAt(0).toUpperCase()}
-                              </div>
-                              <span className="truncate max-w-[100px]">{c.name}</span>
-                              {c.name === bestCajero && <span className="text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold">TOP</span>}
-                            </td>
-                            <td className="px-4 py-3 text-right text-[var(--text-secondary)]">{c.turnos}</td>
-                            <td className="px-4 py-3 text-right font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(c.ventasTotal)}</td>
-                            <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ventasPorHora)}/h</td>
-                            <td className="px-4 py-3 text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ticketPromedio)}</td>
-                            <td className={cn("px-4 py-3 text-right font-bold hidden md:table-cell", c.difCaja >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
-                              {c.difCaja >= 0 ? "+" : ""}{formatCurrency(c.difCaja)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              {cajerosStats.length <= 1 && cajerosStats.length === 1 ? (
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center text-sm text-[var(--text-tertiary)]">Solo hay 1 cajero registrado</div>
+              ) : cajerosStats.length === 0 ? (
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center text-sm text-[var(--text-tertiary)]">Sin datos de productividad</div>
+              ) : (
+                <div className="-mx-4 sm:mx-0">
+                <DataTable className="min-w-[550px] sm:min-w-0">
+                  <thead>
+                    <tr className="border-b border-[var(--rule-soft)]">
+                      <th>Cajero</th>
+                      <th className="text-right">Turnos</th>
+                      <th className="text-right">Ventas total</th>
+                      <th className="text-right hidden sm:table-cell">Ventas/hora</th>
+                      <th className="text-right hidden sm:table-cell">Ticket prom</th>
+                      <th className="text-right hidden md:table-cell">Dif. caja</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cajerosStats.sort((a, b) => b.ventasPorHora - a.ventasPorHora).map(c => (
+                      <tr key={c.name} className={c.name === bestCajero ? "bg-primary/10 dark:bg-primary/15" : undefined}>
+                        <td className="font-medium text-[var(--text-primary)] flex items-center gap-2">
+                          <div className="h-6 w-6 rounded-full flex items-center justify-center text-[length:var(--ts-2xs)] font-bold" style={{ backgroundColor: cajeroColor(c.name), color: cajeroColorText(c.name) }}>
+                            {c.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="truncate max-w-[100px]">{c.name}</span>
+                          {c.name === bestCajero && <span className="text-[var(--data-success-500)] text-[length:var(--ts-2xs)] font-bold">TOP</span>}
+                        </td>
+                        <td className="text-right text-[var(--text-secondary)]">{c.turnos}</td>
+                        <td className="text-right font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{formatCurrency(c.ventasTotal)}</td>
+                        <td className="text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ventasPorHora)}/h</td>
+                        <td className="text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(c.ticketPromedio)}</td>
+                        <td className={cn("text-right font-bold hidden md:table-cell", c.difCaja >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
+                          {c.difCaja >= 0 ? "+" : ""}{formatCurrency(c.difCaja)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </DataTable>
+                </div>
+              )}
             </div>
             ) : null}
           </>
@@ -1353,35 +1341,35 @@ export default function TurnosModule() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <table className="w-full min-w-[650px] sm:min-w-0 text-base">
+              <div className="-mx-4 sm:mx-0">
+                <DataTable className="min-w-[650px] sm:min-w-0 text-base">
                   <thead>
-                    <tr className="border-b border-[var(--rule-soft)] text-left bg-gray-50/50 dark:bg-surface/30">
-                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Operador</th>
-                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Apertura</th>
-                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide hidden sm:table-cell">Cierre</th>
-                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right">Ef. inicial</th>
-                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right">Ventas</th>
-                      <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right hidden sm:table-cell">Ef. final</th>
+                    <tr className="border-b border-[var(--rule-soft)]">
+                      <th>Operador</th>
+                      <th>Apertura</th>
+                      <th className="hidden sm:table-cell">Cierre</th>
+                      <th className="text-right">Ef. inicial</th>
+                      <th className="text-right">Ventas</th>
+                      <th className="text-right hidden sm:table-cell">Ef. final</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginated.map(t => (
-                      <tr key={t.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-[var(--surface-alt)] transition-colors">
-                        <td className="px-4 py-4 text-base font-semibold text-[var(--text-primary)] truncate max-w-[160px]">{cajeros.find(c => c.id === t.adminUserId)?.name || "Yo mismo"}</td>
-                        <td className="px-4 py-4 text-sm text-[var(--text-secondary)] tabular-nums">{formatDateTime(t.abrioEn)}</td>
-                        <td className="px-4 py-4 text-sm text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
+                      <tr key={t.id}>
+                        <td className="text-base font-semibold text-[var(--text-primary)] truncate max-w-[160px]">{cajeros.find(c => c.id === t.adminUserId)?.name || "Yo mismo"}</td>
+                        <td className="text-sm text-[var(--text-secondary)] tabular-nums">{formatDateTime(t.abrioEn)}</td>
+                        <td className="text-sm text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
                           {t.cerroEn ? formatDateTime(t.cerroEn) : "—"}
                         </td>
-                        <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">{formatCurrency(t.inicioEfectivo)}</td>
-                        <td className="px-4 py-4 text-right text-base font-bold text-[var(--data-success-500)] tabular-nums">{formatCurrency(t.ventasTotal)}</td>
-                        <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
+                        <td className="text-right text-base text-[var(--text-secondary)] tabular-nums">{formatCurrency(t.inicioEfectivo)}</td>
+                        <td className="text-right text-base font-bold text-[var(--data-success-500)] tabular-nums">{formatCurrency(t.ventasTotal)}</td>
+                        <td className="text-right text-base text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
                           {t.cierreEfectivo != null ? formatCurrency(t.cierreEfectivo) : "—"}
                         </td>
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] ">

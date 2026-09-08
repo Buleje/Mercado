@@ -1,7 +1,7 @@
 "use client";
 
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
-import { CardTitle, LoadingState, StatCard } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, StatCard } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
@@ -1391,37 +1391,35 @@ function ProducciónTab() {
         </>
       )}
 
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-x-auto ">
+      <div>
         {lotes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-2">
+          <div className="flex flex-col items-center justify-center py-12 gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl">
             <Layers className="h-8 w-8 text-[var(--text-tertiary)]" />
             <p className="text-sm text-[var(--text-secondary)]">Aun no has registrado lotes de produccion</p>
             <p className="text-xs text-[var(--text-tertiary)]">Selecciona una receta y usa &quot;Producir Lote&quot; para crear uno</p>
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <DataTable>
                 <thead>
-                  <tr className="border-b border-[var(--rule-soft)] text-left">
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Receta</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Cantidad</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Costo Real</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Fecha</th>
+                  <tr>
+                    <th>Receta</th>
+                    <th className="text-right">Cantidad</th>
+                    <th className="text-right">Costo Real</th>
+                    <th>Fecha</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginated.map(l => (
-                    <tr key={l.id} className="border-b border-gray-50">
-                      <td className="px-4 py-3 font-medium text-[var(--text-primary)]">{l.receta?.nombre ?? l.recetaId}</td>
-                      <td className="px-4 py-3 text-right text-[var(--text-primary)]">{l.cantidad}</td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">{formatCurrency(l.costoReal)}</td>
-                      <td className="px-4 py-3 text-[var(--text-secondary)] text-xs">{formatDate(l.producidoEn)}</td>
+                    <tr key={l.id}>
+                      <td className="font-medium text-[var(--text-primary)]">{l.receta?.nombre ?? l.recetaId}</td>
+                      <td className="text-right text-[var(--text-primary)]">{l.cantidad}</td>
+                      <td className="text-right font-bold text-[var(--text-primary)]">{formatCurrency(l.costoReal)}</td>
+                      <td className="text-[var(--text-secondary)] text-xs">{formatDate(l.producidoEn)}</td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </DataTable>
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                 <p className="text-xs text-[var(--text-secondary)]">{lotes.length} lotes — Pag. {page}/{totalPages}</p>

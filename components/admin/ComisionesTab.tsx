@@ -1,5 +1,5 @@
 "use client";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, SectionTitle } from "@buleje/design-system";
 import { Field } from '@/components/admin/shared/Field';
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useMemo, useEffect, useCallback } from "react";
@@ -398,7 +398,7 @@ export default function ComisionesTab() {
       )}
 
       {/* Table */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)]">
         <div className="p-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
           <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Users className="h-4 w-4 text-primary" /> Detalle por empleado
@@ -409,28 +409,28 @@ export default function ComisionesTab() {
         ) : (
           <>
             {/* Desktop table */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-[var(--surface-alt)] border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                  <tr>
+            <div className="hidden sm:block">
+              <DataTable className="min-w-[600px]">
+                <thead>
+                  <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                     {["Empleado", "Rol", "Ventas", "Ingresos", "Ganancia", "Tasa", "Comisión", "Estado"].map(h => (
-                      <th key={h} className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-extrabold text-[var(--text-secondary)] dark:text-muted">{h}</th>
+                      <th key={h}>{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
+                <tbody>
                   {withCommissions.map(s => (
-                    <tr key={s.cashierId} className="hover:bg-[var(--surface-alt)] dark:hover:bg-accent/50 transition-colors">
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.cashierName}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{ROLE_LABEL[s.role] ?? s.role}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.sales}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmtCompact(s.revenue)}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmtCompact(s.profit)}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">
+                    <tr key={s.cashierId}>
+                      <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.cashierName}</td>
+                      <td className="text-[var(--text-secondary)] dark:text-muted">{ROLE_LABEL[s.role] ?? s.role}</td>
+                      <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.sales}</td>
+                      <td className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmtCompact(s.revenue)}</td>
+                      <td className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmtCompact(s.profit)}</td>
+                      <td className="text-[var(--text-secondary)] dark:text-muted">
                         {s.rate}%{s.tierLabel && <span className="ml-1 text-xs text-primary font-normal">({s.tierLabel})</span>}
                       </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(s.commission)}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3">
+                      <td className="font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(s.commission)}</td>
+                      <td>
                         <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-all", s.paid ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]")}>
                           {s.paid ? "Pagado" : "Pendiente"}
                         </button>
@@ -440,17 +440,17 @@ export default function ComisionesTab() {
                 </tbody>
                 <tfoot className="bg-[var(--surface-alt)] border-t border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   <tr>
-                    <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-xs uppercase">TOTAL</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmt(totals.revenue)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmt(totals.profit)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3" />
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(totals.commission)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-bold text-xs">
+                    <td colSpan={3} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-xs uppercase">TOTAL</td>
+                    <td className="font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmt(totals.revenue)}</td>
+                    <td className="font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmt(totals.profit)}</td>
+                    <td />
+                    <td className="font-extrabold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{fmt(totals.commission)}</td>
+                    <td className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-bold text-xs">
                       {fmt(totals.pending)} por pagar
                     </td>
                   </tr>
                 </tfoot>
-              </table>
+              </DataTable>
             </div>
 
             {/* Mobile cards */}

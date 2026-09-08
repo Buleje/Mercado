@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { ShoppingCart, ArrowRight, Download, Link2, Package, RefreshCw, Lightbulb } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -157,7 +157,7 @@ export default function BasketAnalysisTab() {
       )}
 
       {/* Tabla reglas de asociación */}
-      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
+      <div className="bg-[var(--surface-raised)]">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-5 py-3 bg-[var(--surface-alt)] gap-2 flex-wrap">
           <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
             <Link2 className="h-4 w-4 text-primary" /> Reglas de asociación
@@ -194,31 +194,30 @@ export default function BasketAnalysisTab() {
             <p className="text-sm">Sin asociaciones para el periodo seleccionado</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px] text-sm">
+          <DataTable className="min-w-[600px]">
               <thead>
-                <tr className="text-left text-xs text-[var(--text-secondary)] dark:text-muted bg-[var(--surface-alt)] ">
-                  <th className="px-4 py-2 font-bold">Producto A</th>
-                  <th className="px-2 py-2 font-bold" />
-                  <th className="px-4 py-2 font-bold">Producto B</th>
-                  <th className="px-4 py-2 font-bold">Categoría</th>
-                  <th className="px-4 py-2 font-bold text-right">Soporte</th>
-                  <th className="px-4 py-2 font-bold text-right">Confianza</th>
-                  <th className="px-4 py-2 font-bold text-right">Lift</th>
-                  <th className="px-4 py-2 font-bold text-right">Transacciones</th>
+                <tr>
+                  <th>Producto A</th>
+                  <th />
+                  <th>Producto B</th>
+                  <th>Categoría</th>
+                  <th className="text-right">Soporte</th>
+                  <th className="text-right">Confianza</th>
+                  <th className="text-right">Lift</th>
+                  <th className="text-right">Transacciones</th>
                 </tr>
               </thead>
               <tbody>
                 {sorted.map((a, i) => (
-                  <tr key={i} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50">
-                    <td className="px-4 py-2.5 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.productA}</td>
-                    <td className="px-2 py-2.5"><ArrowRight className="h-3 w-3 text-[var(--text-tertiary)]" /></td>
-                    <td className="px-4 py-2.5 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.productB}</td>
-                    <td className="px-4 py-2.5">
+                  <tr key={i}>
+                    <td className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.productA}</td>
+                    <td><ArrowRight className="h-3 w-3 text-[var(--text-tertiary)]" /></td>
+                    <td className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.productB}</td>
+                    <td>
                       <span className="text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted">{a.category}</span>
                     </td>
-                    <td className="px-4 py-2.5 text-right"><span className="text-xs font-bold text-[var(--data-success-500)]">{(a.support * 100).toFixed(0)}%</span></td>
-                    <td className="px-4 py-2.5 text-right">
+                    <td className="text-right"><span className="text-xs font-bold text-[var(--data-success-500)]">{(a.support * 100).toFixed(0)}%</span></td>
+                    <td className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <div className="w-12 h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                           <div className="h-full bg-primary/10 rounded-full" style={{ width: `${a.confidence * 100}%` }} />
@@ -226,15 +225,14 @@ export default function BasketAnalysisTab() {
                         <span className="text-xs font-bold text-[var(--data-success-500)]">{(a.confidence * 100).toFixed(0)}%</span>
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 text-right">
+                    <td className="text-right">
                       <span className={cn("text-xs font-bold", a.lift >= 2 ? "text-[var(--text-secondary)]" : a.lift >= 1.5 ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]")}>{Number(a.lift).toFixed(1)}x</span>
                     </td>
-                    <td className="px-4 py-2.5 text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.count}</td>
+                    <td className="text-right text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{a.count}</td>
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+          </DataTable>
         )}
       </div>
     </div>

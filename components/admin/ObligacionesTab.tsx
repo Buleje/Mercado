@@ -1,7 +1,7 @@
 "use client";
 
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { LoadingState } from "@buleje/design-system";
+import { DataTable, LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
@@ -247,36 +247,34 @@ export default function ObligacionesTab() {
               </p>
               <StatusBadge variant="neutral" label="estimado" size="sm" />
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[460px] text-sm">
-                <thead className="bg-[var(--surface-alt)] border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                  <tr>
-                    <th className="text-left px-3 py-2 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Mes</th>
-                    <th className="text-right px-3 py-2 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">IGV</th>
-                    <th className="text-right px-3 py-2 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Renta</th>
-                    <th className="text-right px-3 py-2 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Total</th>
+            <DataTable className="min-w-[460px]">
+              <thead>
+                <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                  <th>Mes</th>
+                  <th className="text-right">IGV</th>
+                  <th className="text-right">Renta</th>
+                  <th className="text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {anual.rows.map((r, i) => (
+                  <tr key={i} className={i === month ? "bg-primary/10" : undefined}>
+                    <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{MONTHS[i]}</td>
+                    <td className="text-right tabular-nums text-[var(--data-warning-500)]">{fmt(r.igv)}</td>
+                    <td className="text-right tabular-nums text-[var(--text-secondary)] dark:text-muted">{fmt(r.renta)}</td>
+                    <td className="text-right tabular-nums font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(r.total)}</td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
-                  {anual.rows.map((r, i) => (
-                    <tr key={i} className={cn("transition-colors hover:bg-[var(--surface-alt)] dark:hover:bg-surface/50", i === month && "bg-primary/10")}>
-                      <td className="px-3 py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">{MONTHS[i]}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-[var(--data-warning-500)]">{fmt(r.igv)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)] dark:text-muted">{fmt(r.renta)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(r.total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-[var(--rule-base)] font-bold">
-                    <td className="px-3 py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total {year}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[var(--data-warning-500)]">{fmt(anual.totalIgv)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)] dark:text-muted">{fmt(anual.totalRenta)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(anual.total)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-[var(--rule-base)] font-bold">
+                  <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total {year}</td>
+                  <td className="text-right tabular-nums text-[var(--data-warning-500)]">{fmt(anual.totalIgv)}</td>
+                  <td className="text-right tabular-nums text-[var(--text-secondary)] dark:text-muted">{fmt(anual.totalRenta)}</td>
+                  <td className="text-right tabular-nums text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(anual.total)}</td>
+                </tr>
+              </tfoot>
+            </DataTable>
             <p className="mt-3 text-xs text-[var(--text-secondary)] leading-relaxed">
               Suma de los pagos a cuenta del año. La <span className="font-semibold text-[var(--text-primary)]">Renta anual definitiva</span> se determina sobre la renta neta (ingresos − gastos del ejercicio), que requiere tu estado de resultados completo — no se estima acá.
             </p>

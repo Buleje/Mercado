@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -197,52 +197,50 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                   <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Sin movimientos en este período</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[600px] text-xs">
+                <DataTable className="min-w-[600px] text-xs">
                     <thead>
-                      <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                        <th className="text-left py-2 font-bold text-[var(--text-tertiary)]">Fecha</th>
-                        <th className="text-left py-2 font-bold text-[var(--text-tertiary)]">Tipo</th>
-                        <th className="text-left py-2 font-bold text-[var(--text-tertiary)]">Referencia</th>
-                        <th className="text-right py-2 font-bold text-[var(--text-tertiary)]">Entrada</th>
-                        <th className="text-right py-2 font-bold text-[var(--text-tertiary)]">Salida</th>
-                        <th className="text-right py-2 font-bold text-[var(--text-tertiary)]">Saldo</th>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Referencia</th>
+                        <th className="text-right">Entrada</th>
+                        <th className="text-right">Salida</th>
+                        <th className="text-right">Saldo</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.movimientos.map((m) => {
                         const meta = TYPE_LABELS[m.tipo] ?? { label: m.tipo, color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]", dir: "out" };
                         return (
-                          <tr key={m.id} className="border-t border-[var(--rule-base)] hover:bg-[var(--surface-alt)] transition-colors">
-                            <td className="py-2 text-[var(--text-secondary)] dark:text-muted">{fmtDate(m.fecha)}</td>
-                            <td className="py-2">
+                          <tr key={m.id}>
+                            <td className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(m.fecha)}</td>
+                            <td>
                               <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", meta.color)}>
                                 {meta.dir === "in" ? <ArrowUpCircle className="h-2.5 w-2.5" /> : <ArrowDownCircle className="h-2.5 w-2.5" />}
                                 {meta.label}
                               </span>
                             </td>
-                            <td className="py-2 text-[var(--text-secondary)] dark:text-muted truncate max-w-[120px]">{m.referencia || "—"}</td>
-                            <td className={cn("py-2 text-right font-bold", m.entrada > 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
+                            <td className="text-[var(--text-secondary)] dark:text-muted truncate max-w-[120px]">{m.referencia || "—"}</td>
+                            <td className={cn("text-right font-bold", m.entrada > 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
                               {m.entrada > 0 ? `+${m.entrada}` : "—"}
                             </td>
-                            <td className={cn("py-2 text-right font-bold", m.salida > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
+                            <td className={cn("text-right font-bold", m.salida > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
                               {m.salida > 0 ? `-${m.salida}` : "—"}
                             </td>
-                            <td className="py-2 text-right font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.saldo}</td>
+                            <td className="text-right font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.saldo}</td>
                           </tr>
                         );
                       })}
                     </tbody>
                     <tfoot>
                       <tr className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] font-bold">
-                        <td colSpan={3} className="py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">Totales</td>
-                        <td className="py-2 text-right text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">+{data.resumen.totalEntradas}</td>
-                        <td className="py-2 text-right text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">-{data.resumen.totalSalidas}</td>
-                        <td className="py-2 text-right text-primary font-extrabold">{data.resumen.saldoFinal}</td>
+                        <td colSpan={3} className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">Totales</td>
+                        <td className="text-right text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">+{data.resumen.totalEntradas}</td>
+                        <td className="text-right text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">-{data.resumen.totalSalidas}</td>
+                        <td className="text-right text-primary font-extrabold">{data.resumen.saldoFinal}</td>
                       </tr>
                     </tfoot>
-                  </table>
-                </div>
+                  </DataTable>
               )}
             </>
           )}

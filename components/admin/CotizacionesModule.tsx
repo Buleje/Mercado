@@ -16,7 +16,7 @@ const CotizacionesChart = dynamic(() => import("./CotizacionesChart"), {
     <div className="h-56 animate-pulse bg-[var(--surface-sunken)] rounded-xl" />
   ),
 });
-import { CardTitle, ErrorAlert, LoadingState } from "@buleje/design-system";
+import { CardTitle, DataTable, ErrorAlert, LoadingState } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { Field } from "@/components/admin/shared/Field";
@@ -822,17 +822,17 @@ export default function CotizacionesModule() {
           </AnimatePresence>
 
           {/* Table */}
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
+          <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
             {loading ? (
               <LoadingState />
             ) : error ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-2">
+              <div className="flex flex-col items-center justify-center py-12 gap-2 border border-[var(--rule-base)] rounded-xl">
                 <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
                 <p className="text-sm text-[var(--data-error-500)]">{error}</p>
                 <button onClick={fetchCotizaciones} className="text-xs text-primary hover:underline font-semibold mt-1">Reintentar</button>
               </div>
             ) : cotizaciones.length === 0 ? (
-              <div className="text-center py-16 px-4">
+              <div className="text-center py-16 px-4 border border-[var(--rule-base)] rounded-xl">
                 <div className="h-16 w-16 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-4">
                   <FileText className="h-8 w-8 text-[var(--text-tertiary)]" />
                 </div>
@@ -881,15 +881,15 @@ export default function CotizacionesModule() {
                     })}
                   </div>
                 ) : (
-                <div className="overflow-x-auto -mx-4 sm:mx-0">
-                  <table className="w-full min-w-[600px] sm:min-w-0 text-sm">
+                <div className="-mx-4 sm:mx-0">
+                  <DataTable className="min-w-[600px] sm:min-w-0">
                     <thead>
-                      <tr className="border-b border-[var(--rule-soft)] text-left">
-                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">N°</th>
-                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Cliente</th>
-                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Total</th>
-                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">Válido hasta</th>
-                        <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Status</th>
+                      <tr>
+                        <th>N°</th>
+                        <th>Cliente</th>
+                        <th className="text-right">Total</th>
+                        <th className="hidden sm:table-cell">Válido hasta</th>
+                        <th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -899,15 +899,15 @@ export default function CotizacionesModule() {
                           <tr
                             key={c.id}
                             onClick={() => openDetail(c)}
-                            className="border-b border-[var(--rule-soft)] hover:bg-[var(--surface-alt)] cursor-pointer transition-colors group"
+                            className="hover:bg-[var(--surface-alt)] cursor-pointer transition-colors group"
                           >
-                            <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
+                            <td className="font-mono text-xs text-[var(--text-secondary)]">
                               {/* Mejora 17: Preview al hover */}
                               <HoverPreviewRow preview={<CotizacionPreview cotizacion={c} />}>
                                 <span>{c.numero}</span>
                               </HoverPreviewRow>
                             </td>
-                            <td className="px-4 py-3">
+                            <td>
                               <div className="flex items-center gap-2">
                                 <div className="h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
                                   <User className="h-4 w-4 text-secondary" />
@@ -918,9 +918,9 @@ export default function CotizacionesModule() {
                                 </div>
                               </div>
                             </td>
-                            <td className="num px-4 py-3 font-bold text-[var(--text-primary)]">{formatCurrency(c.total)}</td>
-                            <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">{formatDate(c.validoHasta)}</td>
-                            <td className="px-4 py-3">
+                            <td className="num font-bold text-[var(--text-primary)]">{formatCurrency(c.total)}</td>
+                            <td className="text-[var(--text-secondary)] hidden sm:table-cell">{formatDate(c.validoHasta)}</td>
+                            <td>
                               <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
                                 {meta.label}
                               </span>
@@ -929,7 +929,7 @@ export default function CotizacionesModule() {
                         );
                       })}
                     </tbody>
-                  </table>
+                  </DataTable>
                 </div>
                 )}
                 {totalPages > 1 && (

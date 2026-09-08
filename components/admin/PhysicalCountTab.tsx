@@ -524,32 +524,31 @@ export default function PhysicalCountTab() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-            <table className="w-full min-w-[560px] text-sm">
+          <DataTable className="min-w-[560px]">
               <thead>
-                <tr className="bg-[var(--surface-sunken)] text-left">
-                  <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)]">Producto</th>
-                  <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)] text-right">Sistema</th>
-                  <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)] text-right">Real</th>
-                  <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)] text-right">Diferencia</th>
-                  <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)]">Motivo</th>
+                <tr>
+                  <th>Producto</th>
+                  <th className="text-right">Sistema</th>
+                  <th className="text-right">Real</th>
+                  <th className="text-right">Diferencia</th>
+                  <th>Motivo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--rule-soft)]">
                 {withDiff.map((row) => {
                   const d = diff(row);
                   return (
-                    <tr key={row.productId} className="hover:bg-[var(--surface-sunken)]">
-                      <td className="px-3 py-2">
+                    <tr key={row.productId}>
+                      <td>
                         <p className="font-medium text-[var(--text-primary)]">{row.productName}</p>
                         {row.sku && <p className="text-xs text-[var(--text-tertiary)]">{row.sku}</p>}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-[var(--text-secondary)]">{row.systemStock}</td>
-                      <td className="px-3 py-2 text-right font-mono text-[var(--text-primary)]">{row.realStock}</td>
-                      <td className={`px-3 py-2 text-right font-bold font-mono ${diffColor(d)}`}>
+                      <td className="text-right font-mono text-[var(--text-secondary)]">{row.systemStock}</td>
+                      <td className="text-right font-mono text-[var(--text-primary)]">{row.realStock}</td>
+                      <td className={`text-right font-bold font-mono ${diffColor(d)}`}>
                         {d > 0 ? `+${d}` : d}
                       </td>
-                      <td className="px-3 py-2">
+                      <td>
                         <select
                           value={row.reason}
                           onChange={(e) => updateRow(row.productId, "reason", e.target.value)}
@@ -565,8 +564,7 @@ export default function PhysicalCountTab() {
                   );
                 })}
               </tbody>
-            </table>
-          </div>
+            </DataTable>
         )}
       </div>
     );
@@ -654,14 +652,13 @@ export default function PhysicalCountTab() {
                     )}
 
                     {s.differences > 0 && (
-                      <div className="overflow-x-auto">
-                        <table className="w-full min-w-[400px] text-xs">
+                      <DataTable className="min-w-[400px] text-xs">
                           <thead>
-                            <tr className="text-left text-[var(--text-secondary)]">
-                              <th className="pb-1.5 font-semibold">Producto</th>
-                              <th className="pb-1.5 font-semibold text-right">Sistema</th>
-                              <th className="pb-1.5 font-semibold text-right">Real</th>
-                              <th className="pb-1.5 font-semibold text-right">Dif.</th>
+                            <tr>
+                              <th>Producto</th>
+                              <th className="text-right">Sistema</th>
+                              <th className="text-right">Real</th>
+                              <th className="text-right">Dif.</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[var(--rule-soft)]">
@@ -671,18 +668,17 @@ export default function PhysicalCountTab() {
                                 const d = (r.realStock as number) - r.systemStock;
                                 return (
                                   <tr key={r.productId}>
-                                    <td className="py-1 text-[var(--text-primary)]">{r.productName}</td>
-                                    <td className="py-1 text-right font-mono text-[var(--text-secondary)]">{r.systemStock}</td>
-                                    <td className="py-1 text-right font-mono">{r.realStock}</td>
-                                    <td className={`py-1 text-right font-bold font-mono ${diffColor(d)}`}>
+                                    <td className="text-[var(--text-primary)]">{r.productName}</td>
+                                    <td className="text-right font-mono text-[var(--text-secondary)]">{r.systemStock}</td>
+                                    <td className="text-right font-mono">{r.realStock}</td>
+                                    <td className={`text-right font-bold font-mono ${diffColor(d)}`}>
                                       {d > 0 ? `+${d}` : d}
                                     </td>
                                   </tr>
                                 );
                               })}
                           </tbody>
-                        </table>
-                      </div>
+                        </DataTable>
                     )}
                   </div>
                 )}

@@ -1,5 +1,5 @@
 "use client";
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
@@ -682,86 +682,79 @@ export default function BudgetVsRealTab() {
       </div>
 
       {/* Tabla de detalle por categoría */}
-      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead>
-              <tr className="bg-[var(--surface-alt)] border-b border-[var(--rule-base)]">
-                <th className="text-left px-4 py-3 text-[var(--text-secondary)] font-semibold">Categoría</th>
-                <th className="text-left px-4 py-3 text-[var(--text-secondary)] font-semibold">Depto</th>
-                <th className="text-left px-4 py-3 text-[var(--text-secondary)] font-semibold">Mes</th>
-                <th className="text-right px-4 py-3 text-[var(--text-secondary)] font-semibold">Presupuesto</th>
-                <th className="text-right px-4 py-3 text-[var(--text-secondary)] font-semibold">Real</th>
-                <th className="text-right px-4 py-3 text-[var(--text-secondary)] font-semibold">Variación</th>
-                <th className="text-center px-4 py-3 text-[var(--text-secondary)] font-semibold">Barra</th>
-                <th className="text-center px-4 py-3 text-[var(--text-secondary)] font-semibold">Estado</th>
+      <DataTable className="min-w-[600px]">
+        <thead>
+          <tr className="border-b border-[var(--rule-base)]">
+            <th>Categoría</th>
+            <th>Depto</th>
+            <th>Mes</th>
+            <th className="text-right">Presupuesto</th>
+            <th className="text-right">Real</th>
+            <th className="text-right">Variación</th>
+            <th className="text-center">Barra</th>
+            <th className="text-center">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map((b) => {
+            const variance = b.budgeted > 0 ? ((b.actual - b.budgeted) / b.budgeted) * 100 : 0;
+            const pctUsed = b.budgeted > 0 ? Math.min((b.actual / b.budgeted) * 100, 150) : 0;
+            const status = Math.abs(variance) <= 10 ? "ok" : variance > 10 ? "over" : "under";
+            return (
+              <tr key={b.id}>
+                <td className="font-semibold text-[var(--text-primary)]">{b.category}</td>
+                <td className="text-[var(--text-secondary)]">{b.department}</td>
+                <td className="text-xs text-[var(--text-tertiary)]">{b.month}</td>
+                <td className="text-right font-mono text-[var(--text-primary)]">{fmt(b.budgeted)}</td>
+                <td className="text-right font-mono font-bold text-[var(--text-primary)]">{fmt(b.actual)}</td>
+                <td className={cn(
+                  "text-right font-bold",
+                  status === "over" ? "text-[var(--data-error-500)]" : status === "under" ? "text-[var(--data-success-500)]" : "text-[var(--text-secondary)]"
+                )}>
+                  {fmtPct(variance)}
+                </td>
+                <td>
+                  <div className="w-full h-2.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all",
+                        status === "over" ? "bg-[var(--data-error-500)]" : status === "under" ? "bg-primary/10" : "bg-primary/10"
+                      )}
+                      style={{ width: `${Math.min(pctUsed, 100)}%` }}
+                    />
+                  </div>
+                </td>
+                <td className="text-center">
+                  {status === "ok" && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold">
+                      <CheckCircle className="h-3 w-3" /> OK
+                    </span>
+                  )}
+                  {status === "over" && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-500)] text-xs font-bold">
+                      <AlertTriangle className="h-3 w-3" /> Exceso
+                    </span>
+                  )}
+                  {status === "under" && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold">
+                      <TrendingDown className="h-3 w-3" /> Ahorro
+                    </span>
+                  )}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filtered.map((b) => {
-                const variance = b.budgeted > 0 ? ((b.actual - b.budgeted) / b.budgeted) * 100 : 0;
-                const pctUsed = b.budgeted > 0 ? Math.min((b.actual / b.budgeted) * 100, 150) : 0;
-                const status = Math.abs(variance) <= 10 ? "ok" : variance > 10 ? "over" : "under";
-                return (
-                  <tr
-                    key={b.id}
-                    className="border-b border-[var(--rule-soft)] hover:bg-[var(--surface-alt)] transition-colors"
-                  >
-                    <td className="px-4 py-3 font-semibold text-[var(--text-primary)]">{b.category}</td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)]">{b.department}</td>
-                    <td className="px-4 py-3 text-xs text-[var(--text-tertiary)]">{b.month}</td>
-                    <td className="px-4 py-3 text-right font-mono text-[var(--text-primary)]">{fmt(b.budgeted)}</td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-[var(--text-primary)]">{fmt(b.actual)}</td>
-                    <td className={cn(
-                      "px-4 py-3 text-right font-bold",
-                      status === "over" ? "text-[var(--data-error-500)]" : status === "under" ? "text-[var(--data-success-500)]" : "text-[var(--text-secondary)]"
-                    )}>
-                      {fmtPct(variance)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="w-full h-2.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
-                        <div
-                          className={cn(
-                            "h-full rounded-full transition-all",
-                            status === "over" ? "bg-[var(--data-error-500)]" : status === "under" ? "bg-primary/10" : "bg-primary/10"
-                          )}
-                          style={{ width: `${Math.min(pctUsed, 100)}%` }}
-                        />
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {status === "ok" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold">
-                          <CheckCircle className="h-3 w-3" /> OK
-                        </span>
-                      )}
-                      {status === "over" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-500)] text-xs font-bold">
-                          <AlertTriangle className="h-3 w-3" /> Exceso
-                        </span>
-                      )}
-                      {status === "under" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold">
-                          <TrendingDown className="h-3 w-3" /> Ahorro
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-[var(--text-tertiary)]">
-                    {expenses.length === 0
-                      ? "No hay gastos registrados aún. Registra gastos en el módulo de Egresos."
-                      : "No se encontraron líneas con los filtros seleccionados."}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            );
+          })}
+          {filtered.length === 0 && (
+            <tr>
+              <td colSpan={8} className="text-center text-[var(--text-tertiary)]">
+                {expenses.length === 0
+                  ? "No hay gastos registrados aún. Registra gastos en el módulo de Egresos."
+                  : "No se encontraron líneas con los filtros seleccionados."}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </DataTable>
     </div>
   );
 }

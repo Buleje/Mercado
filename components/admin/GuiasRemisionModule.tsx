@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, LoadingState, StatCard } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, StatCard } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
@@ -863,7 +863,7 @@ export default function GuiasRemisionModule() {
       </div>
 
       {/* Table */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
         {loading ? (
           <LoadingState />
         ) : error ? (
@@ -881,15 +881,15 @@ export default function GuiasRemisionModule() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <table className="w-full min-w-150 sm:min-w-0 text-sm">
+            <div className="-mx-4 sm:mx-0">
+              <DataTable className="min-w-150 sm:min-w-0">
                 <thead>
-                  <tr className="border-b border-[var(--rule-soft)] text-left">
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">N° GRR</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">Fecha traslado</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Destinatario</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden md:table-cell">Motivo</th>
-                    <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Status</th>
+                  <tr>
+                    <th>N° GRR</th>
+                    <th className="hidden sm:table-cell">Fecha traslado</th>
+                    <th>Destinatario</th>
+                    <th className="hidden md:table-cell">Motivo</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -899,16 +899,16 @@ export default function GuiasRemisionModule() {
                       <tr
                         key={g.id}
                         onClick={() => setSelected(g)}
-                        className="border-b border-[var(--rule-soft)] hover:bg-[var(--surface-alt)] cursor-pointer transition-colors"
+                        className="cursor-pointer"
                       >
-                        <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
+                        <td className="font-mono text-xs text-[var(--text-secondary)]">
                           {/* Mejora 17: Preview al hover */}
                           <GuiaHoverRow preview={<GuiaPreview guia={g} />}>
                             <span>{g.numero}</span>
                           </GuiaHoverRow>
                         </td>
-                        <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">{formatDate(g.fechaTraslado)}</td>
-                        <td className="px-4 py-3">
+                        <td className="text-[var(--text-secondary)] hidden sm:table-cell">{formatDate(g.fechaTraslado)}</td>
+                        <td>
                           <div className="flex items-center gap-2">
                             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                               <Truck className="h-4 w-4 text-[var(--data-success-500)]" />
@@ -916,8 +916,8 @@ export default function GuiasRemisionModule() {
                             <p className="font-medium text-[var(--text-primary)] truncate">{g.destinatarioNombre}</p>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">{g.motivoTraslado}</td>
-                        <td className="px-4 py-3">
+                        <td className="text-[var(--text-secondary)] hidden md:table-cell">{g.motivoTraslado}</td>
+                        <td>
                           <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
                             {meta.label}
                           </span>
@@ -926,7 +926,7 @@ export default function GuiasRemisionModule() {
                     );
                   })}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">

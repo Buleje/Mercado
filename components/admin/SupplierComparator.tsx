@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Users, Star, DollarSign, Clock, Package,
@@ -380,24 +380,23 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
 
       <div className="flex gap-4 flex-col lg:flex-row">
         {/* Table */}
-        <div className="flex-1 min-w-0 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+        <div className="flex-1 min-w-0">
           {sorted.length === 0 ? (
-            <div className="py-16 text-center">
+            <div className="py-16 text-center bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
               <Users className="h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-3" />
               <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Sin proveedores registrados</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-sm">
+            <DataTable className="min-w-[640px]">
                 <thead>
-                  <tr className="bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--text-tertiary)]">Proveedor</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)] hidden sm:table-cell">Prods.</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold uppercase text-[var(--text-tertiary)] hidden md:table-cell">Precio prom.</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)] hidden sm:table-cell">Tiempo</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--text-tertiary)] hidden lg:table-cell">Pago</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)]">Score</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold uppercase text-[var(--text-tertiary)]">OC</th>
+                  <tr>
+                    <th>Proveedor</th>
+                    <th className="text-center hidden sm:table-cell">Prods.</th>
+                    <th className="text-right hidden md:table-cell">Precio prom.</th>
+                    <th className="text-center hidden sm:table-cell">Tiempo</th>
+                    <th className="hidden lg:table-cell">Pago</th>
+                    <th className="text-center">Score</th>
+                    <th className="text-center">OC</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
@@ -412,7 +411,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
                           : "hover:bg-[var(--surface-sunken)] ",
                       )}
                     >
-                      <td className="px-4 py-3">
+                      <td>
                         <div className="flex items-center gap-2">
                           {idx === 0 && (
                             <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] fill-[var(--data-warning-500)] shrink-0" />
@@ -425,31 +424,31 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center hidden sm:table-cell">
+                      <td className="text-center hidden sm:table-cell">
                         <span className="text-xs text-[var(--text-secondary)]">{s.productCount ?? "—"}</span>
                       </td>
-                      <td className="px-4 py-3 text-right hidden md:table-cell">
+                      <td className="text-right hidden md:table-cell">
                         <span className="text-xs font-mono text-[var(--text-secondary)]">
                           {s.averagePurchasePrice ? fmt(s.averagePurchasePrice) : "—"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center hidden sm:table-cell">
+                      <td className="text-center hidden sm:table-cell">
                         <span className="text-xs text-[var(--text-secondary)]">
                           {s.avgDeliveryDays != null ? `${s.avgDeliveryDays}d` : "—"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 hidden lg:table-cell">
+                      <td className="hidden lg:table-cell">
                         <span className="text-xs text-[var(--text-secondary)]">
                           {s.condicionPago ?? "—"}{s.diasCredito ? ` (${s.diasCredito}d)` : ""}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="text-center">
                         <div className="flex flex-col items-center gap-1">
                           <ScoreBadge score={s.score} hasData={s.hasData} />
                           <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{s.hasData ? `${Number(s.score).toFixed(0)}pts` : "Sin datos"}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="text-center">
                         <button
                           onClick={e => { e.stopPropagation(); handleCreateOC(s); }}
                           className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors min-h-[32px]"
@@ -461,8 +460,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </DataTable>
           )}
         </div>
 

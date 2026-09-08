@@ -61,7 +61,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Layers, Share2 } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import { DataTable, StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn } from "./ctp-shared";
 import { slugKey } from "./CubicacionResumenes";
@@ -673,23 +673,22 @@ export default function CtpResumenPermisoModal({
               />
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-              <table className="w-full text-sm">
+            <DataTable>
                 <thead>
-                  <tr className="border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                    <th scope="col" className="px-3 py-2 text-left">Especie</th>
-                    <th scope="col" className="px-3 py-2 text-right">Piezas</th>
-                    <th scope="col" className="px-3 py-2 text-right">M³</th>
-                    <th scope="col" className="px-3 py-2 text-right">PT aserrable</th>
+                  <tr>
+                    <th scope="col">Especie</th>
+                    <th scope="col" className="text-right">Piezas</th>
+                    <th scope="col" className="text-right">M³</th>
+                    <th scope="col" className="text-right">PT aserrable</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[var(--rule-soft)]">
+                <tbody>
                   {especies.map((e) => (
                     <tr key={e.especie}>
-                      <td className="px-3 py-2 font-bold text-[var(--text-primary)]">{e.especie}</td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums">{fmtPiezas(e.piezas)}</td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums">{fmtM3(e.volumenM3)}</td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                      <td className="font-bold text-[var(--text-primary)]">{e.especie}</td>
+                      <td className="text-right font-mono tabular-nums">{fmtPiezas(e.piezas)}</td>
+                      <td className="text-right font-mono tabular-nums">{fmtM3(e.volumenM3)}</td>
+                      <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                         ≈{fmtPt(e.ptAserrable)}
                       </td>
                     </tr>
@@ -697,14 +696,13 @@ export default function CtpResumenPermisoModal({
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
-                    <td className="px-3 py-2">Total</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums">{nf(grupo.piezas)}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums">{fmtM3(grupo.volumenM3)}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums">≈{nf(ptTotal)}</td>
+                    <td>Total</td>
+                    <td className="text-right font-mono tabular-nums">{nf(grupo.piezas)}</td>
+                    <td className="text-right font-mono tabular-nums">{fmtM3(grupo.volumenM3)}</td>
+                    <td className="text-right font-mono tabular-nums">≈{nf(ptTotal)}</td>
                   </tr>
                 </tfoot>
-              </table>
-            </div>
+            </DataTable>
 
             {/* Referencia, NO se mezcla sola con la distribución: es aserrada
                 YA producida (de una corrida vieja, quizás de otro lote) — sumarla

@@ -1,5 +1,5 @@
 "use client";
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   DollarSign, TrendingUp, TrendingDown, AlertTriangle,
@@ -405,37 +405,35 @@ export default function TreasuryDashboard() {
               <p className="text-sm text-[var(--text-tertiary)]">Sin cuentas por pagar pendientes</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-[var(--rule-base)]">
-                    <th className="text-left pb-2 text-[var(--text-tertiary)] font-medium">Proveedor / Concepto</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Monto</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Vence</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingPayables.map(p => {
-                    const days = daysUntil(p.dueDate);
-                    return (
-                      <tr key={p.id} className="border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
-                        <td className="py-2.5 text-[var(--text-secondary)] truncate max-w-[120px]">
-                          {p.supplier ?? p.description ?? "Sin nombre"}
-                        </td>
-                        <td className="py-2.5 text-right font-mono font-semibold text-[var(--text-primary)]">
-                          {fmt(p.amount)}
-                        </td>
-                        <td className="py-2.5 text-right">
-                          <span className={cn("px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium", urgencyBadge(days))}>
-                            {urgencyLabel(days)}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <DataTable className="text-xs">
+              <thead>
+                <tr className="border-b border-[var(--rule-base)]">
+                  <th>Proveedor / Concepto</th>
+                  <th className="text-right">Monto</th>
+                  <th className="text-right">Vence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingPayables.map(p => {
+                  const days = daysUntil(p.dueDate);
+                  return (
+                    <tr key={p.id}>
+                      <td className="text-[var(--text-secondary)] truncate max-w-[120px]">
+                        {p.supplier ?? p.description ?? "Sin nombre"}
+                      </td>
+                      <td className="text-right font-mono font-semibold text-[var(--text-primary)]">
+                        {fmt(p.amount)}
+                      </td>
+                      <td className="text-right">
+                        <span className={cn("px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium", urgencyBadge(days))}>
+                          {urgencyLabel(days)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </DataTable>
           )}
         </div>
 
@@ -457,62 +455,60 @@ export default function TreasuryDashboard() {
               <p className="text-sm text-[var(--text-tertiary)]">Todos los fiados al día</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-[var(--rule-base)]">
-                    <th className="text-left pb-2 text-[var(--text-tertiary)] font-medium">Cliente</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Pendiente</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Mora</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Acción</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingFiados.map(f => {
-                    const pending = (f.amount ?? 0) - (f.paidAmount ?? 0);
-                    const moraDays = f.dueDate ? Math.max(0, -daysUntil(f.dueDate)) : 0;
-                    const phone = f.phone ?? f.customerPhone ?? f.customer?.phone;
-                    return (
-                      <tr key={f.id} className="border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
-                        <td className="py-2.5 text-[var(--text-secondary)] truncate max-w-[130px]">
-                          {f.customerName}
-                        </td>
-                        <td className="py-2.5 text-right font-mono font-semibold text-[var(--text-primary)]">
-                          {fmt(pending)}
-                        </td>
-                        <td className="py-2.5 text-right">
-                          {moraDays > 0 ? (
-                            <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-                              {moraDays}d mora
-                            </span>
-                          ) : (
-                            <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
-                              Al día
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2.5 text-right">
-                          {phone && (
-                            <a
-                              href={`https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(
-                                `Hola! Soy Buleje. Te recuerdo que tienes una cuenta pendiente de S/${pending.toFixed(2)}. Agradecemos tu pronto pago. Gracias!`
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 hover:bg-primary/10 text-white rounded-lg text-[length:var(--ts-2xs)] font-medium transition-colors"
-                              title="Enviar recordatorio por WhatsApp"
-                            >
-                              <MessageCircle className="h-3 w-3" />
-                              Cobrar
-                            </a>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <DataTable className="text-xs">
+              <thead>
+                <tr className="border-b border-[var(--rule-base)]">
+                  <th>Cliente</th>
+                  <th className="text-right">Pendiente</th>
+                  <th className="text-right">Mora</th>
+                  <th className="text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingFiados.map(f => {
+                  const pending = (f.amount ?? 0) - (f.paidAmount ?? 0);
+                  const moraDays = f.dueDate ? Math.max(0, -daysUntil(f.dueDate)) : 0;
+                  const phone = f.phone ?? f.customerPhone ?? f.customer?.phone;
+                  return (
+                    <tr key={f.id}>
+                      <td className="text-[var(--text-secondary)] truncate max-w-[130px]">
+                        {f.customerName}
+                      </td>
+                      <td className="text-right font-mono font-semibold text-[var(--text-primary)]">
+                        {fmt(pending)}
+                      </td>
+                      <td className="text-right">
+                        {moraDays > 0 ? (
+                          <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
+                            {moraDays}d mora
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+                            Al día
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-right">
+                        {phone && (
+                          <a
+                            href={`https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                              `Hola! Soy Buleje. Te recuerdo que tienes una cuenta pendiente de S/${pending.toFixed(2)}. Agradecemos tu pronto pago. Gracias!`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 hover:bg-primary/10 text-white rounded-lg text-[length:var(--ts-2xs)] font-medium transition-colors"
+                            title="Enviar recordatorio por WhatsApp"
+                          >
+                            <MessageCircle className="h-3 w-3" />
+                            Cobrar
+                          </a>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </DataTable>
           )}
         </div>
       </div>

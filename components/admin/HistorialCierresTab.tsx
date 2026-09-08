@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Download, Eye, ChevronLeft, ChevronRight, CalendarOff } from "@buleje/design-system/icons";
 import { exportToExcel } from "@/lib/export-excel";
@@ -126,62 +126,57 @@ export default function HistorialCierresTab() {
         />
       ) : (
         <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[var(--surface-alt)] border-b border-[var(--rule-base)] dark:border-card-border">
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Ventas</th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">Caja</th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Diferencia</th>
-                  <th className="text-center px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.items.map((s) => {
-                  const dif = Number(s.diferenciaCaja);
-                  return (
-                    <tr
-                      key={s.id}
-                      className="border-b border-[var(--rule-soft)] dark:border-card-border last:border-0 hover:bg-[var(--surface-alt)] transition-colors"
-                    >
-                      <td className="px-4 py-3 font-medium text-[var(--text-primary)] dark:text-foreground whitespace-nowrap">
-                        {formatFecha(s.fecha)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-foreground">
-                        {formatMoney(s.totalVentas)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">
-                        {formatMoney(s.efectivoContado)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className={`font-bold ${
-                          dif > 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
-                          dif < 0 ? "text-[var(--data-error-500)]" :
-                          "text-[var(--text-secondary)] dark:text-foreground"
-                        }`}>
-                          {s.efectivoContado != null ? (
-                            <>{dif >= 0 ? "+" : ""}S/ {dif.toFixed(2)}</>
-                          ) : (
-                            <span className="text-[var(--text-tertiary)] dark:text-muted">N/A</span>
-                          )}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => setDetail(s)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          Ver
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <DataTable>
+            <thead>
+              <tr className="border-b border-[var(--rule-base)] dark:border-card-border">
+                <th>Fecha</th>
+                <th className="text-right">Ventas</th>
+                <th className="text-right hidden sm:table-cell">Caja</th>
+                <th className="text-right">Diferencia</th>
+                <th className="text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((s) => {
+                const dif = Number(s.diferenciaCaja);
+                return (
+                  <tr key={s.id}>
+                    <td className="font-medium text-[var(--text-primary)] dark:text-foreground whitespace-nowrap">
+                      {formatFecha(s.fecha)}
+                    </td>
+                    <td className="text-right font-bold text-[var(--text-primary)] dark:text-foreground">
+                      {formatMoney(s.totalVentas)}
+                    </td>
+                    <td className="text-right text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">
+                      {formatMoney(s.efectivoContado)}
+                    </td>
+                    <td className="text-right">
+                      <span className={`font-bold ${
+                        dif > 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
+                        dif < 0 ? "text-[var(--data-error-500)]" :
+                        "text-[var(--text-secondary)] dark:text-foreground"
+                      }`}>
+                        {s.efectivoContado != null ? (
+                          <>{dif >= 0 ? "+" : ""}S/ {dif.toFixed(2)}</>
+                        ) : (
+                          <span className="text-[var(--text-tertiary)] dark:text-muted">N/A</span>
+                        )}
+                      </span>
+                    </td>
+                    <td className="text-center">
+                      <button
+                        onClick={() => setDetail(s)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        Ver
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </DataTable>
 
           {/* Pagination */}
           {totalPages > 1 && (

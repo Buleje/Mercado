@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -258,51 +258,47 @@ export default function ShrinkageTab() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:border-[var(--rule-base)] ">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-[var(--surface-sunken)] ">
+      <DataTable className="min-w-[600px]">
+            <thead>
               <tr>
-                <th className="px-5 py-3 text-left font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
-                <th className="px-5 py-3 text-left font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
-                <th className="px-5 py-3 text-right font-bold text-[var(--text-secondary)] dark:text-muted">Cantidad</th>
-                <th className="px-5 py-3 text-right font-bold text-[var(--text-secondary)] dark:text-muted">Costo u.</th>
-                <th className="px-5 py-3 text-right font-bold text-[var(--text-secondary)] dark:text-muted">Perdida</th>
-                <th className="px-5 py-3 text-left font-bold text-[var(--text-secondary)] dark:text-muted">Motivo</th>
-                <th className="px-5 py-3 text-center font-bold text-[var(--text-secondary)] dark:text-muted">Detalle</th>
+                <th>Fecha</th>
+                <th>Producto</th>
+                <th className="text-right">Cantidad</th>
+                <th className="text-right">Costo u.</th>
+                <th className="text-right">Perdida</th>
+                <th>Motivo</th>
+                <th className="text-center">Detalle</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
               {loading && (
-                <tr><td colSpan={7} className="px-5 py-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> Cargando pérdidas...</td></tr>
+                <tr><td colSpan={7} className="py-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> Cargando pérdidas...</td></tr>
               )}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-5 py-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted">No hay pérdidas registradas.</td></tr>
+                <tr><td colSpan={7} className="py-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted">No hay pérdidas registradas.</td></tr>
               )}
               {filtered.map((record) => (
-                <tr key={record.id} className="hover:bg-[var(--surface-sunken)] ">
-                  <td className="px-5 py-3 text-[var(--text-secondary)] dark:text-muted">{new Date(record.date).toLocaleDateString("es-PE")}</td>
-                  <td className="px-5 py-3">
+                <tr key={record.id}>
+                  <td className="text-[var(--text-secondary)] dark:text-muted">{new Date(record.date).toLocaleDateString("es-PE")}</td>
+                  <td>
                     <div>
                       <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{record.product}</p>
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{record.category}</p>
                     </div>
                   </td>
-                  <td className="px-5 py-3 text-right font-bold text-[var(--data-error-500)]">-{record.quantity}</td>
-                  <td className="px-5 py-3 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(record.unitCost)}</td>
-                  <td className="px-5 py-3 text-right font-extrabold text-[var(--data-error-500)]">{fmt(record.totalLoss)}</td>
-                  <td className="px-5 py-3">
+                  <td className="text-right font-bold text-[var(--data-error-500)]">-{record.quantity}</td>
+                  <td className="text-right text-[var(--text-secondary)] dark:text-muted">{fmt(record.unitCost)}</td>
+                  <td className="text-right font-extrabold text-[var(--data-error-500)]">{fmt(record.totalLoss)}</td>
+                  <td>
                     <span className={cn("inline-flex rounded-full px-2 py-1 text-xs font-bold", CAUSE_META[record.cause].bg, CAUSE_META[record.cause].color)}>{CAUSE_META[record.cause].label}</span>
                   </td>
-                  <td className="px-5 py-3 text-center">
+                  <td className="text-center">
                     <button onClick={() => setDetail(record)} className="rounded-xl border border-[var(--rule-base)] p-2 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] "><Eye className="h-4 w-4" /></button>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
-      </div>
+          </DataTable>
 
       {detail && (
         <div className="modal-backdrop p-4">

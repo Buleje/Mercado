@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useEffect, useState } from "react";
 import { Upload, Download, FileText, CheckCircle, AlertTriangle, Loader2, Package, Users, ShoppingCart, Truck, DollarSign } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -353,32 +353,30 @@ export default function ImportExportTab() {
             <p className="mt-1 text-xs text-[var(--text-tertiary)]">Cuando importes, cada corrida queda registrada acá.</p>
           </div>
         ) : (
-        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-y-hidden overflow-x-auto">
-          <table className="w-full min-w-150 text-sm">
-            <thead><tr className="bg-[var(--surface-alt)] text-left">
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Archivo</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Módulo</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Registros</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Estado</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
+        <DataTable className="min-w-150">
+            <thead><tr>
+              <th>Archivo</th>
+              <th>Módulo</th>
+              <th>Registros</th>
+              <th>Estado</th>
+              <th>Fecha</th>
             </tr></thead>
             <tbody>
               {history.map(r => (
-                <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center gap-2"><FileText className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" /><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-48">{r.filename}</span></td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">{r.module}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.records}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3">
+                <tr key={r.id}>
+                  <td className="flex flex-wrap items-center gap-2"><FileText className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" /><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-48">{r.filename}</span></td>
+                  <td className="text-[var(--text-secondary)] dark:text-muted">{r.module}</td>
+                  <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.records}</td>
+                  <td>
                     <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", r.status === "success" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" : r.status === "partial" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]" : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]")}>
                       {r.status === "success" ? "Exitoso" : r.status === "partial" ? `${r.errors} errores` : "Error"}
                     </span>
                   </td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(r.date)}</td>
+                  <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(r.date)}</td>
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+          </DataTable>
         )
       )}
     </div>

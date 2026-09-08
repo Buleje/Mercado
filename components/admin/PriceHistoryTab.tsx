@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
   TrendingUp, ArrowUpRight, ArrowDownRight,
@@ -174,21 +174,20 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
 
       {/* Table */}
       {filtered.length > 0 && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+        <div className="space-y-2">
+          <DataTable className="min-w-[600px]">
+              <thead>
                 <tr>
-                  <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
+                  <th>
                     <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Fecha</span>
                   </th>
                   {productId == null && (
-                    <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Producto</th>
+                    <th>Producto</th>
                   )}
-                  <th className="text-right px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Precio anterior</th>
-                  <th className="text-right px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Precio nuevo</th>
-                  <th className="text-right px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">% Cambio</th>
-                  <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hidden sm:table-cell">
+                  <th className="text-right">Precio anterior</th>
+                  <th className="text-right">Precio nuevo</th>
+                  <th className="text-right">% Cambio</th>
+                  <th className="hidden sm:table-cell">
                     <span className="flex items-center gap-1"><User className="h-3 w-3" /> Modificado por</span>
                   </th>
                 </tr>
@@ -199,22 +198,22 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
                   const pct    = h.oldPrice > 0 ? (diff / h.oldPrice) * 100 : null;
                   const isUp   = diff > 0;
                   return (
-                    <tr key={h.id} className="hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/50 transition-colors">
-                      <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-muted whitespace-nowrap">
+                    <tr key={h.id}>
+                      <td className="text-xs text-[var(--text-secondary)] dark:text-muted whitespace-nowrap">
                         {fmtDate(h.changedAt)}
                       </td>
                       {productId == null && (
-                        <td className="px-4 py-3 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                        <td className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                           {productMap[h.productId] ?? `Producto #${h.productId}`}
                         </td>
                       )}
-                      <td className="px-4 py-3 text-right text-[var(--text-tertiary)] line-through">
+                      <td className="text-right text-[var(--text-tertiary)] line-through">
                         {fmt(h.oldPrice)}
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                      <td className="text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                         {fmt(h.newPrice)}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="text-right">
                         <span className={cn(
                           "inline-flex items-center gap-0.5 text-xs font-bold",
                           isUp ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]"
@@ -223,18 +222,15 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
                           {pct != null ? `${isUp ? "+" : ""}${pct.toFixed(1)}%` : "N/A"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">
+                      <td className="text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">
                         {h.changedBy ?? "—"}
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
-            </table>
-          </div>
-          <div className="px-4 py-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] ">
-            <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{filtered.length} cambio{filtered.length !== 1 ? "s" : ""} registrado{filtered.length !== 1 ? "s" : ""}</p>
-          </div>
+            </DataTable>
+          <p className="px-1 text-xs text-[var(--text-tertiary)] dark:text-muted">{filtered.length} cambio{filtered.length !== 1 ? "s" : ""} registrado{filtered.length !== 1 ? "s" : ""}</p>
         </div>
       )}
     </div>

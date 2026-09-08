@@ -393,7 +393,7 @@ export default function DeclaracionInventarioModule() {
             const pctTotal = prevTotal > 0 ? ((diffTotal / prevTotal) * 100) : 0;
 
             return (
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
+              <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
                 <div className="px-4 py-3 bg-primary/10 dark:bg-primary/15 border-b border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
                   <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
                     Comparativa con declaracion anterior ({formatDate(prevDecl.fecha + "T00:00:00")})
@@ -457,7 +457,7 @@ export default function DeclaracionInventarioModule() {
               const catPrecio = productItems.reduce((s: number, p: ProductItem) => s + p.stock * p.price, 0);
               const catUnidades = productItems.reduce((s: number, p: ProductItem) => s + p.stock, 0);
               return (
-                <div key={category} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden ">
+                <div key={category} className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
                   {/* Category header */}
                   <div className="px-4 py-3 bg-[var(--surface-alt)] border-b border-[var(--rule-soft)] flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -472,34 +472,32 @@ export default function DeclaracionInventarioModule() {
                     </div>
                   </div>
                   {/* Products */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                  <DataTable>
                       <thead>
-                        <tr className="border-b border-[var(--rule-soft)] text-left">
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs">SKU</th>
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs">Nombre</th>
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs text-right">Stock</th>
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs text-right hidden sm:table-cell">Costo unit.</th>
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs text-right hidden sm:table-cell">Valor costo</th>
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs text-right hidden md:table-cell">Precio unit.</th>
-                          <th className="px-4 py-2 font-semibold text-[var(--text-tertiary)] text-xs text-right hidden md:table-cell">Valor precio</th>
+                        <tr>
+                          <th>SKU</th>
+                          <th>Nombre</th>
+                          <th className="text-right">Stock</th>
+                          <th className="text-right hidden sm:table-cell">Costo unit.</th>
+                          <th className="text-right hidden sm:table-cell">Valor costo</th>
+                          <th className="text-right hidden md:table-cell">Precio unit.</th>
+                          <th className="text-right hidden md:table-cell">Valor precio</th>
                         </tr>
                       </thead>
                       <tbody>
                         {productItems.map((p: ProductItem) => (
-                          <tr key={p.id} className="border-b border-gray-50 dark:border-white/5">
-                            <td className="px-4 py-2 font-mono text-xs text-[var(--text-secondary)]">{p.sku}</td>
-                            <td className="px-4 py-2 text-[var(--text-primary)] truncate max-w-[200px]">{p.name}</td>
-                            <td className="px-4 py-2 text-right font-medium text-[var(--text-primary)]">{p.stock}</td>
-                            <td className="px-4 py-2 text-right text-[var(--text-tertiary)] hidden sm:table-cell">{formatCurrency(p.costPrice)}</td>
-                            <td className="px-4 py-2 text-right font-medium text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(p.stock * p.costPrice)}</td>
-                            <td className="px-4 py-2 text-right text-[var(--text-tertiary)] hidden md:table-cell">{formatCurrency(p.price)}</td>
-                            <td className="px-4 py-2 text-right font-medium text-[var(--text-secondary)] hidden md:table-cell">{formatCurrency(p.stock * p.price)}</td>
+                          <tr key={p.id}>
+                            <td className="font-mono text-xs text-[var(--text-secondary)]">{p.sku}</td>
+                            <td className="text-[var(--text-primary)] truncate max-w-[200px]">{p.name}</td>
+                            <td className="text-right font-medium text-[var(--text-primary)]">{p.stock}</td>
+                            <td className="text-right text-[var(--text-tertiary)] hidden sm:table-cell">{formatCurrency(p.costPrice)}</td>
+                            <td className="text-right font-medium text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(p.stock * p.costPrice)}</td>
+                            <td className="text-right text-[var(--text-tertiary)] hidden md:table-cell">{formatCurrency(p.price)}</td>
+                            <td className="text-right font-medium text-[var(--text-secondary)] hidden md:table-cell">{formatCurrency(p.stock * p.price)}</td>
                           </tr>
                         ))}
                       </tbody>
-                    </table>
-                  </div>
+                    </DataTable>
                 </div>
               );
             })}
@@ -508,7 +506,7 @@ export default function DeclaracionInventarioModule() {
       )}
 
       {/* Mejora 17: Historial de declaraciones */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl  overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
         <button
           onClick={() => setShowHistorial(!showHistorial)}
           className="w-full px-4 py-3 flex items-center justify-between hover:bg-[var(--surface-alt)] transition-colors"
@@ -529,16 +527,16 @@ export default function DeclaracionInventarioModule() {
                 <p className="text-sm text-[var(--text-tertiary)]">Genera tu primera declaración para empezar el historial</p>
               </div>
             ) : (
-              <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <table className="w-full min-w-[500px] sm:min-w-0 text-sm">
+              <div className="-mx-4 sm:mx-0">
+                <DataTable className="min-w-[500px] sm:min-w-0">
                   <thead>
-                    <tr className="border-b border-[var(--rule-soft)] text-left">
-                      <th className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)]">Fecha</th>
-                      <th className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] text-right">Productos</th>
-                      <th className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] text-right hidden sm:table-cell">Unidades</th>
-                      <th className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] text-right">Valor costo</th>
-                      <th className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] text-right hidden sm:table-cell">Valor venta</th>
-                      <th className="px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] text-center">Acción</th>
+                    <tr>
+                      <th>Fecha</th>
+                      <th className="text-right">Productos</th>
+                      <th className="text-right hidden sm:table-cell">Unidades</th>
+                      <th className="text-right">Valor costo</th>
+                      <th className="text-right hidden sm:table-cell">Valor venta</th>
+                      <th className="text-center">Acción</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -547,11 +545,11 @@ export default function DeclaracionInventarioModule() {
                       const prev = realIdx > 0 ? historial[realIdx - 1] : null;
                       const diff = prev ? h.valorCosto - prev.valorCosto : 0;
                       return (
-                        <tr key={i} className={cn("border-b border-gray-50 dark:border-white/5", comparingIdx === realIdx && "bg-primary/10 dark:bg-primary/15")}>
-                          <td className="px-4 py-2 text-[var(--text-secondary)]">{formatDate(h.fecha + "T00:00:00")}</td>
-                          <td className="px-4 py-2 text-right text-[var(--text-primary)] font-medium">{h.totalProductos}</td>
-                          <td className="px-4 py-2 text-right text-[var(--text-primary)] hidden sm:table-cell">{h.totalUnidades}</td>
-                          <td className="px-4 py-2 text-right font-medium text-[var(--text-primary)]">
+                        <tr key={i} className={cn(comparingIdx === realIdx && "bg-primary/10 dark:bg-primary/15")}>
+                          <td className="text-[var(--text-secondary)]">{formatDate(h.fecha + "T00:00:00")}</td>
+                          <td className="text-right text-[var(--text-primary)] font-medium">{h.totalProductos}</td>
+                          <td className="text-right text-[var(--text-primary)] hidden sm:table-cell">{h.totalUnidades}</td>
+                          <td className="text-right font-medium text-[var(--text-primary)]">
                             {formatCurrency(h.valorCosto)}
                             {prev && (
                               <span className={cn("ml-1 text-[length:var(--ts-2xs)]", diff > 0 ? "text-[var(--data-success-500)]" : diff < 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>
@@ -559,8 +557,8 @@ export default function DeclaracionInventarioModule() {
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(h.valorPrecio)}</td>
-                          <td className="px-4 py-2 text-center">
+                          <td className="text-right text-[var(--text-secondary)] hidden sm:table-cell">{formatCurrency(h.valorPrecio)}</td>
+                          <td className="text-center">
                             <button
                               onClick={() => setComparingIdx(comparingIdx === realIdx ? null : realIdx)}
                               className="p-1 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-primary transition-colors"
@@ -573,7 +571,7 @@ export default function DeclaracionInventarioModule() {
                       );
                     })}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             )}
           </div>

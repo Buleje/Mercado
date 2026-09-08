@@ -1,5 +1,6 @@
 "use client";
 
+import { DataTable } from "@buleje/design-system";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
@@ -254,12 +255,12 @@ export default function AuditTrailModule() {
         ) : (
           <>
             {/* Desktop: tabla */}
-            <div className="hidden overflow-x-auto sm:block">
-              <table className="w-full">
-                <thead className="bg-[var(--surface-sunken)]/60">
+            <div className="hidden sm:block">
+              <DataTable>
+                <thead>
                   <tr>
                     {["Fecha", "Acción", "Entidad", "Detalle", "Usuario"].map((h) => (
-                      <th key={h} className="p-3.5 text-left text-sm font-bold text-[var(--text-secondary)]">{h}</th>
+                      <th key={h}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -267,15 +268,15 @@ export default function AuditTrailModule() {
                   {logs.map((log) => {
                     const { day, time } = fmtDate(log.createdAt);
                     return (
-                      <tr key={log.id} className="border-t border-[var(--rule-soft)] transition-colors hover:bg-[var(--surface-sunken)]/40">
-                        <td className="whitespace-nowrap p-3.5">
+                      <tr key={log.id}>
+                        <td className="whitespace-nowrap">
                           <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
                             <Clock className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
                             <span className="text-sm tabular-nums">{day} · {time}</span>
                           </div>
                         </td>
-                        <td className="p-3.5"><ActionBadge action={log.action} /></td>
-                        <td className="p-3.5">
+                        <td><ActionBadge action={log.action} /></td>
+                        <td>
                           <div className="flex items-center gap-1.5">
                             <FileText className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
                             <span className="text-sm font-semibold text-[var(--text-primary)]">{log.entity}</span>
@@ -284,10 +285,10 @@ export default function AuditTrailModule() {
                             )}
                           </div>
                         </td>
-                        <td className="max-w-sm p-3.5">
+                        <td className="max-w-sm">
                           <p className="truncate text-sm text-[var(--text-secondary)]" title={log.detail || undefined}>{log.detail || "—"}</p>
                         </td>
-                        <td className="p-3.5">
+                        <td>
                           <div className="flex items-center gap-1.5">
                             <User className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
                             <span className="text-sm font-medium text-[var(--text-primary)]">{log.user || "sistema"}</span>
@@ -303,7 +304,7 @@ export default function AuditTrailModule() {
                     );
                   })}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
 
             {/* Mobile: cards */}

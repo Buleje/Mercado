@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
@@ -362,51 +362,50 @@ export default function ReceivingTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+      <div>
         {loading ? (
           <LoadingState />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-sm">
+          <DataTable className="min-w-[720px]">
               <thead>
-                <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] ">
-                  <th className="px-4 py-3">Ref</th>
-                  <th className="px-4 py-3">Proveedor</th>
-                  <th className="px-4 py-3">Programada</th>
-                  <th className="px-4 py-3">Recibida</th>
-                  <th className="px-4 py-3">Inspector</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3 text-center">Fotos</th>
-                  <th className="px-4 py-3 text-center">NC</th>
-                  <th className="px-4 py-3"></th>
+                <tr>
+                  <th>Ref</th>
+                  <th>Proveedor</th>
+                  <th>Programada</th>
+                  <th>Recibida</th>
+                  <th>Inspector</th>
+                  <th>Estado</th>
+                  <th className="text-center">Fotos</th>
+                  <th className="text-center">NC</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(r => {
                   const discrepancies = getDiscrepancies(r.items);
                   return (
-                    <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent/20 transition">
-                      <td className="px-4 py-3">
+                    <tr key={r.id}>
+                      <td>
                         <div className="font-mono text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.ref}</div>
                         <div className="font-mono text-xs text-[var(--text-tertiary)]">{r.orderRef}</div>
                       </td>
-                      <td className="px-4 py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.supplier}</td>
-                      <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted text-xs">{fmtDate(r.scheduledDate)}</td>
-                      <td className="px-4 py-3 text-[var(--text-secondary)] dark:text-muted text-xs">{r.receivedDate ? fmtDate(r.receivedDate) : "—"}</td>
-                      <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{r.inspector || "—"}</td>
-                      <td className="px-4 py-3">
+                      <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.supplier}</td>
+                      <td className="text-[var(--text-secondary)] dark:text-muted text-xs">{fmtDate(r.scheduledDate)}</td>
+                      <td className="text-[var(--text-secondary)] dark:text-muted text-xs">{r.receivedDate ? fmtDate(r.receivedDate) : "—"}</td>
+                      <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{r.inspector || "—"}</td>
+                      <td>
                         <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[r.status].bg, STATUS_MAP[r.status].color)}>
                           {STATUS_MAP[r.status].label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="text-center">
                         {r.photos > 0 ? (
                           <span className="flex items-center justify-center gap-0.5 text-xs text-[var(--text-secondary)]">
                             <Camera className="h-3 w-3" />{r.photos}
                           </span>
                         ) : <span className="text-[var(--text-tertiary)] text-xs">—</span>}
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="text-center">
                         {r.nonConformities > 0 ? (
                           <span className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] text-xs font-bold px-2 py-0.5 rounded-full">
                             {r.nonConformities}
@@ -415,7 +414,7 @@ export default function ReceivingTab() {
                           <CheckCircle2 className="h-3.5 w-3.5 text-[var(--data-success-500)] mx-auto" />
                         ) : null}
                       </td>
-                      <td className="px-4 py-3">
+                      <td>
                         <button onClick={() => setDetail(r)} className="p-1 rounded-xl hover:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] transition">
                           <Eye className="h-3.5 w-3.5" />
                         </button>
@@ -424,11 +423,10 @@ export default function ReceivingTab() {
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={9} className="px-4 py-10 text-center text-sm text-[var(--text-tertiary)]">Sin recepciones que mostrar</td></tr>
+                  <tr><td colSpan={9} className="py-10 text-center text-sm text-[var(--text-tertiary)]">Sin recepciones que mostrar</td></tr>
                 )}
               </tbody>
-            </table>
-          </div>
+            </DataTable>
         )}
       </div>
 
@@ -461,23 +459,22 @@ export default function ReceivingTab() {
             )}
 
             {/* Checklist table */}
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] text-sm">
+            <DataTable className="min-w-[520px]">
                 <thead>
-                  <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] ">
-                    <th className="px-3 py-2">Producto</th>
-                    <th className="px-3 py-2 text-center">Esperado</th>
-                    <th className="px-3 py-2 text-center">Recibido</th>
-                    <th className="px-3 py-2">Condición</th>
-                    <th className="px-3 py-2">Notas</th>
+                  <tr>
+                    <th>Producto</th>
+                    <th className="text-center">Esperado</th>
+                    <th className="text-center">Recibido</th>
+                    <th>Condición</th>
+                    <th>Notas</th>
                   </tr>
                 </thead>
                 <tbody>
                   {detail.items.map((it, i) => (
-                    <tr key={i} className={cn("border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]", it.condition !== "ok" && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
-                      <td className="px-3 py-2.5 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{it.product}</td>
-                      <td className="px-3 py-2.5 text-[var(--text-secondary)] text-center">{it.expectedQty}</td>
-                      <td className={cn("px-3 py-2.5 font-bold text-center",
+                    <tr key={i} className={cn(it.condition !== "ok" && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
+                      <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{it.product}</td>
+                      <td className="text-[var(--text-secondary)] text-center">{it.expectedQty}</td>
+                      <td className={cn("font-bold text-center",
                         it.receivedQty < it.expectedQty ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]"
                       )}>
                         {it.receivedQty}
@@ -485,17 +482,16 @@ export default function ReceivingTab() {
                           <span className="ml-1 text-xs">({it.receivedQty > it.expectedQty ? "+" : ""}{it.receivedQty - it.expectedQty})</span>
                         )}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td>
                         <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", COND_MAP[it.condition].bg, COND_MAP[it.condition].color)}>
                           {COND_MAP[it.condition].label}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 text-xs text-[var(--text-tertiary)]">{it.notes || "—"}</td>
+                      <td className="text-xs text-[var(--text-tertiary)]">{it.notes || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </DataTable>
 
             <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--text-secondary)]">
               {detail.invoiceUrl && (

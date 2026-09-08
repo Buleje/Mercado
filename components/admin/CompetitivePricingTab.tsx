@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -344,7 +344,7 @@ export default function CompetitivePricingTab() {
       <PriceComparisonChart products={products} />
 
       {/* ── 3. Tabla análisis por producto ─────────────────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-[var(--shadow-sm)]">
+      <div className="bg-[var(--surface-raised)]">
         <div className="px-6 sm:px-8 py-5 border-b border-[var(--rule-base)] flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-start gap-3">
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
@@ -363,21 +363,20 @@ export default function CompetitivePricingTab() {
             {products.length} {products.length === 1 ? "producto" : "productos"}
           </span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
+        <DataTable>
+            <thead>
               <tr>
-                <th className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Producto</th>
-                <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] whitespace-nowrap">Mi precio</th>
-                <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Promedio</th>
-                <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Mín</th>
-                <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden md:table-cell">Máx</th>
-                <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">Competidores</th>
-                <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Sugerencia</th>
-                <th className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acción</th>
+                <th>Producto</th>
+                <th className="text-right whitespace-nowrap">Mi precio</th>
+                <th className="text-right hidden sm:table-cell">Promedio</th>
+                <th className="text-right hidden md:table-cell">Mín</th>
+                <th className="text-right hidden md:table-cell">Máx</th>
+                <th className="text-center hidden sm:table-cell">Competidores</th>
+                <th className="text-center">Sugerencia</th>
+                <th className="text-center">Acción</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--rule-soft)]">
+            <tbody>
               {products.map((p) => {
                 const cfg = SUGGESTION_CONFIG[p.suggestion];
                 const SugIcon = cfg.icon;
@@ -385,8 +384,8 @@ export default function CompetitivePricingTab() {
                   p.suggestion !== "OK" && p.suggestion !== "Sin datos" && p.avgPrice !== null;
 
                 return (
-                  <tr key={p.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
-                    <td className="px-4 py-4">
+                  <tr key={p.id}>
+                    <td>
                       <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight max-w-[200px] truncate">
                         {p.name}
                       </p>
@@ -401,10 +400,10 @@ export default function CompetitivePricingTab() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-4 text-right text-base font-extrabold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
+                    <td className="text-right text-base font-extrabold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
                       S/{Number(p.myPrice).toFixed(2)}
                     </td>
-                    <td className="px-4 py-4 text-right text-sm tabular-nums text-[var(--text-secondary)] hidden sm:table-cell whitespace-nowrap">
+                    <td className="text-right text-sm tabular-nums text-[var(--text-secondary)] hidden sm:table-cell whitespace-nowrap">
                       {p.avgPrice !== null ? (
                         <div>
                           <p className="font-bold">S/{Number(p.avgPrice).toFixed(2)}</p>
@@ -423,22 +422,22 @@ export default function CompetitivePricingTab() {
                         <span className="text-[var(--text-tertiary)]">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-4 text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
+                    <td className="text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
                       {p.minPrice !== null ? `S/${Number(p.minPrice).toFixed(2)}` : "—"}
                     </td>
-                    <td className="px-4 py-4 text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
+                    <td className="text-right text-sm tabular-nums text-[var(--text-tertiary)] hidden md:table-cell whitespace-nowrap">
                       {p.maxPrice !== null ? `S/${Number(p.maxPrice).toFixed(2)}` : "—"}
                     </td>
-                    <td className="px-4 py-4 text-center text-sm font-bold text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
+                    <td className="text-center text-sm font-bold text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
                       {p.competitorCount}
                     </td>
-                    <td className="px-4 py-4 text-center">
+                    <td className="text-center">
                       <span className={cn("inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold whitespace-nowrap", cfg.badge)}>
                         <SugIcon className="h-3.5 w-3.5" />
                         {cfg.label}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-center">
+                    <td className="text-center">
                       {canApply ? (
                         <button
                           type="button"
@@ -457,8 +456,7 @@ export default function CompetitivePricingTab() {
                 );
               })}
             </tbody>
-          </table>
-        </div>
+        </DataTable>
       </div>
     </div>
   );

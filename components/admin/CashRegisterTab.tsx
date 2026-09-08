@@ -9,7 +9,7 @@ import {
   Settings, Smartphone, CreditCard, Camera,
 } from "@buleje/design-system/icons";
 import dynamic from "next/dynamic";
-import { CardTitle, EmptyState, LoadingState, WarningAlert } from "@buleje/design-system";
+import { CardTitle, DataTable, EmptyState, LoadingState, WarningAlert } from "@buleje/design-system";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { Field } from "@/components/admin/shared/Field";
 import { activateProps } from "@/components/admin/shared/a11y";
@@ -1435,48 +1435,46 @@ export default function CashRegisterTab() {
                 className="bg-[var(--surface-raised)] rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8"
               />
             ) : (
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-y-hidden overflow-x-auto">
-                <table className="w-full min-w-[600px] text-xs">
-                  <thead>
-                    <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-left">
-                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
-                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted text-right">Esperado</th>
-                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted text-right">Real</th>
-                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted text-right">Diferencia</th>
-                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-[var(--text-secondary)] dark:text-muted text-center">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {rows.map(row => {
-                      const diff = row.totalDiff;
-                      const isOk = Math.abs(diff) <= cashTolerance;
-                      const isMinor = !isOk && Math.abs(diff) <= cashTolerance * 2;
-                      return (
-                        <tr key={row.date} className={cn("transition-colors", !isOk && "bg-[var(--data-error-50)]/30")}>
-                          <td className="px-2 sm:px-4 py-2 sm:py-3">
-                            <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{new Date(row.date + "T12:00:00").toLocaleDateString("es-PE", { weekday: "short", day: "2-digit", month: "short" })}</p>
-                            <p className="text-[var(--text-tertiary)] dark:text-muted">{row.count} caja{row.count > 1 ? "s" : ""}</p>
-                          </td>
-                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)] dark:text-muted font-semibold">{fmt(row.totalExpected)}</td>
-                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(row.totalClosing)}</td>
-                          <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold", isOk ? "text-[var(--data-success-500)]" : isMinor ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
-                            {diff > 0 ? "+" : ""}{fmt(diff)}
-                          </td>
-                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                            {isOk ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold"><Check className="h-4 w-4" />OK</span>
-                            ) : isMinor ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-bold"><AlertTriangle className="h-4 w-4" />Menor</span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-500)] text-xs font-bold"><AlertTriangle className="h-4 w-4" />Alerta</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable className="min-w-[600px] text-xs">
+                <thead>
+                  <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                    <th>Fecha</th>
+                    <th className="text-right">Esperado</th>
+                    <th className="text-right">Real</th>
+                    <th className="text-right">Diferencia</th>
+                    <th className="text-center">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map(row => {
+                    const diff = row.totalDiff;
+                    const isOk = Math.abs(diff) <= cashTolerance;
+                    const isMinor = !isOk && Math.abs(diff) <= cashTolerance * 2;
+                    return (
+                      <tr key={row.date} className={!isOk ? "bg-[var(--data-error-50)]/30" : undefined}>
+                        <td>
+                          <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{new Date(row.date + "T12:00:00").toLocaleDateString("es-PE", { weekday: "short", day: "2-digit", month: "short" })}</p>
+                          <p className="text-[var(--text-tertiary)] dark:text-muted">{row.count} caja{row.count > 1 ? "s" : ""}</p>
+                        </td>
+                        <td className="text-right text-[var(--text-secondary)] dark:text-muted font-semibold">{fmt(row.totalExpected)}</td>
+                        <td className="text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(row.totalClosing)}</td>
+                        <td className={cn("text-right font-extrabold", isOk ? "text-[var(--data-success-500)]" : isMinor ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
+                          {diff > 0 ? "+" : ""}{fmt(diff)}
+                        </td>
+                        <td className="text-center">
+                          {isOk ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold"><Check className="h-4 w-4" />OK</span>
+                          ) : isMinor ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-bold"><AlertTriangle className="h-4 w-4" />Menor</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-500)] text-xs font-bold"><AlertTriangle className="h-4 w-4" />Alerta</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </DataTable>
             )}
           </div>
         );

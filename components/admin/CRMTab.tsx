@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
@@ -715,24 +715,23 @@ export default function CRMTab() {
       )}
 
       {/* Table — UX Mejora 18: Sticky header */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-        <div className="max-h-[65vh] overflow-y-auto overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead className="sticky top-0 bg-[var(--surface-alt)] border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] z-10 shadow-[var(--shadow-sm)]">
-              <tr>
-                {compareMode && <th className="w-10 px-2 py-3"><span className="sr-only">Seleccionar</span></th>}
-                <th className="text-center px-3 py-3 text-xs font-bold text-[var(--text-tertiary)] w-14">Rank</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Cliente</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Teléfono</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden sm:table-cell">Último pedido</th>
-                <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden md:table-cell">Total gastado</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden lg:table-cell">Crédito</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Segmento</th>
-                <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-tertiary)] hidden md:table-cell">Contacto</th>
-                <th className="text-center px-4 py-3 text-xs font-bold text-[var(--text-tertiary)]">Ver</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
+      <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
+        <DataTable stickyHeader className="min-w-[600px]">
+          <thead>
+            <tr>
+              {compareMode && <th className="w-10"><span className="sr-only">Seleccionar</span></th>}
+              <th className="text-center w-14">Rank</th>
+              <th>Cliente</th>
+              <th>Teléfono</th>
+              <th className="hidden sm:table-cell">Último pedido</th>
+              <th className="text-right hidden md:table-cell">Total gastado</th>
+              <th className="hidden lg:table-cell">Crédito</th>
+              <th>Segmento</th>
+              <th className="hidden md:table-cell">Contacto</th>
+              <th className="text-center">Ver</th>
+            </tr>
+          </thead>
+          <tbody>
               {paginated.length === 0 && (
                 <tr>
                   <td colSpan={9} className="py-16 text-center">
@@ -761,7 +760,7 @@ export default function CRMTab() {
                   >
                     {/* Mejora 13: Checkbox para comparar */}
                     {compareMode && (
-                      <td className="px-2 py-3" onClick={e => e.stopPropagation()}>
+                      <td onClick={e => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={comparePhones.has(c.phone)}
@@ -772,7 +771,7 @@ export default function CRMTab() {
                       </td>
                     )}
                     {/* Ranking */}
-                    <td className="px-3 py-3 text-center">
+                    <td className="text-center">
                       {(() => {
                         const rank = rankingMap.get(c.phone) ?? 999;
                         if (rank === 1) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-extrabold">1</span>;
@@ -784,7 +783,7 @@ export default function CRMTab() {
                     </td>
 
                     {/* Nombre */}
-                    <td className="px-4 py-3">
+                    <td>
                       <div className="flex items-center gap-2.5">
                         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0 select-none">
                           {c.name.split(" ").slice(0, 2).map(n => n[0]?.toUpperCase() ?? "").join("")}
@@ -801,24 +800,24 @@ export default function CRMTab() {
                     </td>
 
                     {/* Teléfono */}
-                    <td className="px-4 py-3">
+                    <td>
                       <span className="flex items-center gap-1 text-xs text-[var(--text-secondary)] dark:text-muted">
                         <Phone className="h-3 w-3" />{c.phone}
                       </span>
                     </td>
 
                     {/* Último pedido */}
-                    <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">
+                    <td className="text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">
                       {c._lastOrder ? fmtRelative(c._lastOrder) : "—"}
                     </td>
 
                     {/* Total gastado */}
-                    <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hidden md:table-cell">
+                    <td className="text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hidden md:table-cell">
                       {fmt(c.totalSpent ?? 0)}
                     </td>
 
                     {/* Crédito */}
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <td className="hidden lg:table-cell">
                       {editingCreditLimit === c.phone ? (
                         <form
                           onSubmit={e => { e.preventDefault(); saveCreditLimit(c.phone); }}
@@ -858,12 +857,12 @@ export default function CRMTab() {
                     </td>
 
                     {/* Segmento */}
-                    <td className="px-4 py-3">
+                    <td>
                       <StatusBadge variant={cfg.variant} label={cfg.label} icon={Icon} size="sm" />
                     </td>
 
                     {/* Mejora 9R2: Último contacto */}
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="hidden md:table-cell">
                       {(() => {
                         const lastContact = c._lastOrder;
                         if (!lastContact) return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>;
@@ -882,7 +881,7 @@ export default function CRMTab() {
                     </td>
 
                     {/* Acciones */}
-                    <td className="px-4 py-3 text-center">
+                    <td className="text-center">
                       <button
                         onClick={() => setDetail(c.phone)}
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold transition-colors"
@@ -893,9 +892,8 @@ export default function CRMTab() {
                   </m.tr>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+          </tbody>
+        </DataTable>
 
         {/* Pagination */}
         {totalPages > 1 && (
@@ -995,26 +993,25 @@ export default function CRMTab() {
                   </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                <DataTable>
                     <thead>
-                      <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                        <th className="text-left py-3 px-3 text-xs font-bold text-[var(--text-secondary)] uppercase">Metrica</th>
+                      <tr>
+                        <th>Metrica</th>
                         {compareCustomers.map(c => (
-                          <th key={c.phone} className="text-center py-3 px-3 text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</th>
+                          <th key={c.phone} className="text-center text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
+                    <tbody>
                       {/* Total gastado */}
                       {(() => {
                         const values = compareCustomers.map(c => c.totalSpent ?? 0);
                         const best = Math.max(...values);
                         return (
                           <tr>
-                            <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Total gastado</td>
+                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Total gastado</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 S/{(values[i]).toFixed(0)}
                               </td>
                             ))}
@@ -1027,9 +1024,9 @@ export default function CRMTab() {
                         const best = Math.max(...values);
                         return (
                           <tr>
-                            <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Pedidos</td>
+                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Pedidos</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 {values[i]}
                               </td>
                             ))}
@@ -1045,9 +1042,9 @@ export default function CRMTab() {
                         const best = Math.max(...values);
                         return (
                           <tr>
-                            <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Ticket promedio</td>
+                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Ticket promedio</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 S/{values[i].toFixed(0)}
                               </td>
                             ))}
@@ -1060,9 +1057,9 @@ export default function CRMTab() {
                         const best = Math.max(...values);
                         return (
                           <tr>
-                            <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Última compra</td>
+                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Última compra</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best && best > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 {c._lastOrder ? fmtRelative(c._lastOrder) : "--"}
                               </td>
                             ))}
@@ -1075,9 +1072,9 @@ export default function CRMTab() {
                         const best = Math.min(...values);
                         return (
                           <tr>
-                            <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Fiado pendiente</td>
+                            <td className="text-xs text-[var(--text-secondary)] font-semibold">Fiado pendiente</td>
                             {compareCustomers.map((c, i) => (
-                              <td key={c.phone} className={cn("py-2.5 px-3 text-center text-sm font-bold", values[i] === best ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
+                              <td key={c.phone} className={cn("text-center text-sm font-bold", values[i] === best ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
                                 S/{values[i].toFixed(0)}
                               </td>
                             ))}
@@ -1086,16 +1083,15 @@ export default function CRMTab() {
                       })()}
                       {/* Segmento */}
                       <tr>
-                        <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)] font-semibold">Segmento</td>
+                        <td className="text-xs text-[var(--text-secondary)] font-semibold">Segmento</td>
                         {compareCustomers.map(c => (
-                          <td key={c.phone} className="py-2.5 px-3 text-center">
+                          <td key={c.phone} className="text-center">
                             <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">{getSegmentLabel(c)}</span>
                           </td>
                         ))}
                       </tr>
                     </tbody>
-                  </table>
-                </div>
+                </DataTable>
               </div>
             </m.div>
           </>

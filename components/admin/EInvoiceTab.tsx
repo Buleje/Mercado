@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useMemo, useEffect, useCallback } from "react";
@@ -356,50 +356,49 @@ export default function EInvoiceTab() {
       </div>
 
       {/* Documents table */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
         {docs.length === 0 ? (
-          <div className="py-16 text-center text-[var(--text-tertiary)] dark:text-muted text-sm">
+          <div className="py-16 text-center text-[var(--text-tertiary)] dark:text-muted text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
             <Receipt className="h-10 w-10 mx-auto mb-3 opacity-30" />
             <p className="font-semibold">Sin comprobantes emitidos</p>
             <p className="text-xs mt-1">Usa el botón &quot;Emitir comprobante&quot; para registrar el primer comprobante electrónico.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
+          <DataTable className="min-w-[640px]">
               <thead>
-                <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-alt)] ">
-                  <th className="px-2 sm:px-4 py-2 sm:py-3">Serie-Nro</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3">Tipo</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3">Cliente</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3">Total</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th>
-                  <th className="px-2 sm:px-4 py-2 sm:py-3"></th>
+                <tr>
+                  <th>Serie-Nro</th>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Cliente</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(d => {
                   const StatusIcon = STATUS_META[d.status].icon;
                   return (
-                    <tr key={d.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent/20 transition-colors">
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{d.serie}-{d.number}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)]">{d.date}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3">
+                    <tr key={d.id}>
+                      <td className="font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{d.serie}-{d.number}</td>
+                      <td className="text-[var(--text-secondary)]">{d.date}</td>
+                      <td>
                         <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", TYPE_META[d.type].bg, TYPE_META[d.type].color)}>
                           {TYPE_META[d.type].label}
                         </span>
                       </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                      <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                         {d.clientName}<br />
                         <span className="text-xs text-[var(--text-tertiary)]">{d.clientRUC}</span>
                       </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(d.total)}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3">
+                      <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(d.total)}</td>
+                      <td>
                         <span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_META[d.status].color)}>
                           <StatusIcon className="h-3 w-3" />{STATUS_META[d.status].label}
                         </span>
                       </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 flex items-center gap-2">
+                      <td className="flex items-center gap-2">
                         <button onClick={() => setDetail(d)} className="text-primary hover:underline text-xs font-bold">
                           <Eye className="h-3.5 w-3.5 inline" />
                         </button>
@@ -419,8 +418,7 @@ export default function EInvoiceTab() {
                   );
                 })}
               </tbody>
-            </table>
-          </div>
+            </DataTable>
         )}
       </div>
 

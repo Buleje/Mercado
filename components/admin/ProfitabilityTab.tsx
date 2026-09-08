@@ -1,7 +1,7 @@
 "use client";
 
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import { useState, useMemo, useEffect } from "react";
 import {
   TrendingUp, Download, Search, Eye, X, ArrowUpRight, ArrowDownRight,
@@ -252,89 +252,85 @@ export default function ProfitabilityTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-[var(--surface-sunken)] dark:bg-surface/50 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-              <tr>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">#</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Producto</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Categoría</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Uds.</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Ingresos</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Costo</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">Margen</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">%</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
-              {loading && (
-                <tr><td colSpan={9} className="px-4 py-8 text-center text-[var(--text-tertiary)] text-sm">Calculando tus ganancias…</td></tr>
-              )}
-              {!loading && filtered.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center">
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">
-                      {lines.length === 0
-                        ? `No hay ventas en los ${days === 7 ? "últimos 7" : days === 30 ? "últimos 30" : "últimos 90"} días`
-                        : "Ningún producto coincide con el filtro"}
-                    </p>
-                    <p className="text-sm text-[var(--text-secondary)] mt-1">
-                      {lines.length === 0
-                        ? "Cuando registres ventas vas a ver acá cuánto ganás con cada producto."
-                        : "Probá con otra categoría o limpiá la búsqueda."}
-                    </p>
-                  </td>
-                </tr>
-              )}
-              {filtered.map((l, i) => (
-                <tr key={l.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-tertiary)]">{i + 1}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{l.product}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{l.category}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)] dark:text-muted">{l.unitsSold.toLocaleString("es-PE")}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(l.revenue)}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)]">
-                    <span className="inline-flex items-center justify-end gap-1">
-                      {l.costEstimated && (
-                        <AlertTriangle
-                          className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0"
-                          aria-label="Costo aproximado: la venta no guardó el costo del momento"
-                        />
-                      )}
-                      {fmt(l.cogs)}
-                    </span>
-                  </td>
-                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", l.grossMargin >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{fmt(l.grossMargin)}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
-                    <span className={cn("inline-flex items-center gap-0.5 text-xs font-bold", l.marginPct >= 35 ? "text-[var(--data-success-500)]" : l.marginPct >= 25 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
-                      {l.marginPct >= 35 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                      {pct(l.marginPct)}
-                    </span>
-                  </td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3">
-                    <button onClick={() => setDetail(l)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface/50">
-              <tr className="font-extrabold">
-                <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 text-xs uppercase text-[var(--text-secondary)]">
-                  {isFiltered ? `Totales (${filtered.length} de ${lines.length})` : "Totales"}
-                </td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{visibleTotals.units.toLocaleString("es-PE")}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(visibleTotals.revenue)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--text-secondary)]">{fmt(visibleTotals.cogs)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success-500)]">{fmt(visibleTotals.grossMargin)}</td>
-                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[var(--data-success-500)]">{pct(visibleTotals.marginPct)}</td>
-                <td />
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
+      <DataTable className="min-w-[600px]">
+        <thead>
+          <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+            <th>#</th>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th className="text-right">Uds.</th>
+            <th className="text-right">Ingresos</th>
+            <th className="text-right">Costo</th>
+            <th className="text-right">Margen</th>
+            <th className="text-right">%</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {loading && (
+            <tr><td colSpan={9} className="text-center text-[var(--text-tertiary)] text-sm">Calculando tus ganancias…</td></tr>
+          )}
+          {!loading && filtered.length === 0 && (
+            <tr>
+              <td colSpan={9} className="text-center">
+                <p className="text-sm font-semibold text-[var(--text-primary)]">
+                  {lines.length === 0
+                    ? `No hay ventas en los ${days === 7 ? "últimos 7" : days === 30 ? "últimos 30" : "últimos 90"} días`
+                    : "Ningún producto coincide con el filtro"}
+                </p>
+                <p className="text-sm text-[var(--text-secondary)] mt-1">
+                  {lines.length === 0
+                    ? "Cuando registres ventas vas a ver acá cuánto ganás con cada producto."
+                    : "Probá con otra categoría o limpiá la búsqueda."}
+                </p>
+              </td>
+            </tr>
+          )}
+          {filtered.map((l, i) => (
+            <tr key={l.id}>
+              <td className="text-xs text-[var(--text-tertiary)]">{i + 1}</td>
+              <td className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{l.product}</td>
+              <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{l.category}</td>
+              <td className="text-right text-[var(--text-secondary)] dark:text-muted">{l.unitsSold.toLocaleString("es-PE")}</td>
+              <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(l.revenue)}</td>
+              <td className="text-right text-[var(--text-secondary)]">
+                <span className="inline-flex items-center justify-end gap-1">
+                  {l.costEstimated && (
+                    <AlertTriangle
+                      className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0"
+                      aria-label="Costo aproximado: la venta no guardó el costo del momento"
+                    />
+                  )}
+                  {fmt(l.cogs)}
+                </span>
+              </td>
+              <td className={cn("text-right font-bold", l.grossMargin >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{fmt(l.grossMargin)}</td>
+              <td className="text-right">
+                <span className={cn("inline-flex items-center gap-0.5 text-xs font-bold", l.marginPct >= 35 ? "text-[var(--data-success-500)]" : l.marginPct >= 25 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
+                  {l.marginPct >= 35 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                  {pct(l.marginPct)}
+                </span>
+              </td>
+              <td>
+                <button onClick={() => setDetail(l)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15"><Eye className="h-3.5 w-3.5" /></button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface/50">
+          <tr className="font-extrabold">
+            <td colSpan={3} className="text-xs uppercase text-[var(--text-secondary)]">
+              {isFiltered ? `Totales (${filtered.length} de ${lines.length})` : "Totales"}
+            </td>
+            <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{visibleTotals.units.toLocaleString("es-PE")}</td>
+            <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(visibleTotals.revenue)}</td>
+            <td className="text-right text-[var(--text-secondary)]">{fmt(visibleTotals.cogs)}</td>
+            <td className="text-right text-[var(--data-success-500)]">{fmt(visibleTotals.grossMargin)}</td>
+            <td className="text-right text-[var(--data-success-500)]">{pct(visibleTotals.marginPct)}</td>
+            <td />
+          </tr>
+        </tfoot>
+      </DataTable>
 
       {/* Detail modal */}
       {detail && (

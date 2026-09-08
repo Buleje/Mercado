@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -246,35 +246,33 @@ export default function ComparativeReportsTab() {
       {dataA && dataB && (
         <>
           {/* Table */}
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+          <DataTable>
                 <thead>
-                  <tr className="bg-[var(--surface-alt)] border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                    <th className="px-4 py-3 text-left text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Métrica</th>
-                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-primary">{periods.labelA}</th>
-                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">{periods.labelB}</th>
-                    <th className="px-4 py-3 text-right text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Cambio</th>
-                    <th className="px-4 py-3 text-center text-[length:var(--ts-xs)] font-bold uppercase text-[var(--text-tertiary)]">Tendencia</th>
+                  <tr>
+                    <th>Métrica</th>
+                    <th className="text-right text-primary">{periods.labelA}</th>
+                    <th className="text-right">{periods.labelB}</th>
+                    <th className="text-right">Cambio</th>
+                    <th className="text-center">Tendencia</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
+                <tbody>
                   {METRICAS.map(m => {
                     const valA = dataA[m.key];
                     const valB = dataB[m.key];
                     const change = calcChange(valA, valB);
                     return (
-                      <tr key={m.key} className="hover:bg-[var(--surface-alt)] transition-colors">
-                        <td className="px-4 py-3">
+                      <tr key={m.key}>
+                        <td>
                           <span className="text-xs font-medium text-[var(--text-secondary)]">{m.label}</span>
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="text-right">
                           <span className="text-xs font-bold font-mono text-[var(--text-primary)]">{fmtValue(m.key, valA)}</span>
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="text-right">
                           <span className="text-xs font-mono text-[var(--text-secondary)] dark:text-muted">{fmtValue(m.key, valB)}</span>
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="text-right">
                           <span className={cn(
                             "text-xs font-bold font-mono",
                             change >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
@@ -282,16 +280,14 @@ export default function ComparativeReportsTab() {
                             {change >= 0 ? "+" : ""}{change.toFixed(1)}%
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="text-center">
                           <TrendBadge change={change} higherIsBetter={m.higherIsBetter} />
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
-              </table>
-            </div>
-          </div>
+          </DataTable>
 
           {/* Chart — se oculta si no hay datos */}
           {hasChartData && (

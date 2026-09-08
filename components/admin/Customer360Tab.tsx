@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -1197,15 +1197,14 @@ export default function Customer360Tab({ phone, onClose }: Props) {
         {orders.length === 0 ? (
           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted py-4 text-center">Sin pedidos registrados</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[500px] text-sm">
+          <DataTable className="min-w-[500px]">
               <thead>
-                <tr className="text-left border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Pedido</th>
-                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Fecha</th>
-                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Items</th>
-                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)] text-right">Total</th>
-                  <th className="pb-2 text-xs font-bold text-[var(--text-tertiary)]">Estado</th>
+                <tr>
+                  <th>Pedido</th>
+                  <th>Fecha</th>
+                  <th>Items</th>
+                  <th className="text-right">Total</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -1216,12 +1215,12 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     const st = STATUS_CONFIG[o.status] ?? STATUS_CONFIG.pendiente;
                     const Icon = st.Icon;
                     return (
-                      <tr key={o.id} className="border-t border-[var(--rule-base)] hover:bg-[var(--surface-alt)] transition-colors">
-                        <td className="py-2 font-mono text-xs text-[var(--text-secondary)] dark:text-muted pr-2">#{o.id.slice(-6).toUpperCase()}</td>
-                        <td className="py-2 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(o.createdAt)}</td>
-                        <td className="py-2 text-xs text-[var(--text-secondary)] dark:text-muted">{o.items.length} prod.</td>
-                        <td className="py-2 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{fmt(o.total)}</td>
-                        <td className="py-2">
+                      <tr key={o.id}>
+                        <td className="font-mono text-xs text-[var(--text-secondary)] dark:text-muted">#{o.id.slice(-6).toUpperCase()}</td>
+                        <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(o.createdAt)}</td>
+                        <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{o.items.length} prod.</td>
+                        <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-right">{fmt(o.total)}</td>
+                        <td>
                           <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>
                             <Icon className="h-2.5 w-2.5" />{st.label}
                           </span>
@@ -1230,8 +1229,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                     );
                   })}
               </tbody>
-            </table>
-          </div>
+          </DataTable>
         )}
       </div>
 

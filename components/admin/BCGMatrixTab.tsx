@@ -1,5 +1,5 @@
 "use client";
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useEffect, useMemo, useState } from "react";
 import {
   Star, Download, Eye,
@@ -147,41 +147,39 @@ export default function BCGMatrixTab() {
       </div>
 
       {/* Product Table */}
-      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
+      <div className="bg-[var(--surface-raised)]">
         <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
           <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de Productos ({filtered.length})</CardTitle>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead><tr className="bg-[var(--surface-alt)] text-left">
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Categoría</th>
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-right">Ingreso</th>
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-right">Crecimiento</th>
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-right">Participación</th>
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Cuadrante</th>
-              <th className="px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-center">Acción</th>
+        <DataTable className="min-w-[600px]">
+            <thead><tr>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th className="text-right">Ingreso</th>
+              <th className="text-right">Crecimiento</th>
+              <th className="text-right">Participación</th>
+              <th>Cuadrante</th>
+              <th className="text-center">Acción</th>
             </tr></thead>
-            <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
+            <tbody>
               {filtered.map(p => {
                 const c = Q_CONFIG[p.quadrant];
                 return (
-                  <tr key={p.id} className="hover:bg-[var(--surface-alt)] ">
-                    <td className="px-5 py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</td>
-                    <td className="px-5 py-3 text-[var(--text-secondary)] dark:text-muted">{p.category}</td>
-                    <td className="px-5 py-3 text-right font-bold">{fmt(p.revenue)}</td>
-                    <td className={cn("px-5 py-3 text-right font-bold", p.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{p.growth > 0 && "+"}{p.growth}%</td>
-                    <td className="px-5 py-3 text-right font-bold">{p.marketShare}%</td>
-                    <td className="px-5 py-3"><span className={cn("text-xs font-bold px-2 py-1 rounded-full", c.bg)}>{c.label}</span></td>
-                    <td className="px-5 py-3 text-center">
+                  <tr key={p.id}>
+                    <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</td>
+                    <td className="text-[var(--text-secondary)] dark:text-muted">{p.category}</td>
+                    <td className="text-right font-bold">{fmt(p.revenue)}</td>
+                    <td className={cn("text-right font-bold", p.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{p.growth > 0 && "+"}{p.growth}%</td>
+                    <td className="text-right font-bold">{p.marketShare}%</td>
+                    <td><span className={cn("text-xs font-bold px-2 py-1 rounded-full", c.bg)}>{c.label}</span></td>
+                    <td className="text-center">
                       <button onClick={() => setDetail(p)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] "><Eye className="h-4 w-4" /></button>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
-          </table>
-        </div>
+        </DataTable>
       </div>
 
       {/* Recommendations */}

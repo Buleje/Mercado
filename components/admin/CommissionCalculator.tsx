@@ -1,6 +1,7 @@
 "use client";
  
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { DataTable } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { Download, Loader2, AlertTriangle, Settings, RefreshCw, Users } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -307,7 +308,7 @@ export default function CommissionCalculator() {
 
       {/* Tabla de cajeros */}
       {!loading && !error && summaries.length > 0 && (
-        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-x-auto">
+        <div className="bg-[var(--surface-raised)]">
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
             <p className="text-base font-bold text-[var(--text-primary)]">
               Detalle por cajero
@@ -320,64 +321,61 @@ export default function CommissionCalculator() {
               Exportar CSV
             </button>
           </div>
-          <table className="w-full text-sm">
+          <DataTable>
             <thead>
-              <tr className="border-b border-[var(--rule-soft)] bg-[var(--surface-alt)]/50">
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-left font-semibold text-[var(--text-tertiary)]">
+              <tr className="border-b border-[var(--rule-soft)]">
+                <th>
                   Cajero
                 </th>
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
+                <th className="text-right">
                   Ventas totales
                 </th>
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
+                <th className="text-right">
                   Nro ventas
                 </th>
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
+                <th className="text-right">
                   % Comisión
                 </th>
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
+                <th className="text-right">
                   Comisión
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--rule-soft)]">
+            <tbody>
               {summaries.map((s) => (
-                <tr
-                  key={s.cashierId}
-                  className="hover:bg-[var(--surface-alt)] transition-colors"
-                >
-                  <td className="px-4 py-4 text-base font-semibold text-[var(--text-primary)]">
+                <tr key={s.cashierId}>
+                  <td className="text-base font-semibold text-[var(--text-primary)]">
                     {s.cashierName}
                   </td>
-                  <td className="px-4 py-4 text-right text-base text-[var(--text-primary)] tabular-nums">
+                  <td className="text-right text-base text-[var(--text-primary)] tabular-nums">
                     {fmt(s.totalSales)}
                   </td>
-                  <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">
+                  <td className="text-right text-base text-[var(--text-secondary)] tabular-nums">
                     {s.saleCount}
                   </td>
-                  <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">
+                  <td className="text-right text-base text-[var(--text-secondary)] tabular-nums">
                     {s.rate}%
                   </td>
-                  <td className="px-4 py-4 text-right text-base font-bold text-[var(--data-warning-500)] tabular-nums">
+                  <td className="text-right text-base font-bold text-[var(--data-warning-500)] tabular-nums">
                     {fmt(s.commission)}
                   </td>
                 </tr>
               ))}
               <tr className="bg-[var(--surface-alt)] font-bold">
-                <td className="px-4 py-4 text-base text-[var(--text-primary)]">Total</td>
-                <td className="px-4 py-4 text-right text-base text-[var(--text-primary)] tabular-nums">
+                <td className="text-base text-[var(--text-primary)]">Total</td>
+                <td className="text-right text-base text-[var(--text-primary)] tabular-nums">
                   {fmt(summaries.reduce((s, c) => s + c.totalSales, 0))}
                 </td>
-                <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">
+                <td className="text-right text-base text-[var(--text-secondary)] tabular-nums">
                   {summaries.reduce((s, c) => s + c.saleCount, 0)}
                 </td>
-                <td className="px-4 py-4" />
-                <td className="px-4 py-4 text-right text-lg font-extrabold text-[var(--data-warning-500)] tabular-nums">
+                <td />
+                <td className="text-right text-lg font-extrabold text-[var(--data-warning-500)] tabular-nums">
                   {fmt(totalCommissions)}
                 </td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       )}
 

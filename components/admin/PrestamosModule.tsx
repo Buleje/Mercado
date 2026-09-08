@@ -13,7 +13,7 @@ import {
   Filter, ChevronDown, ChevronUp, Trash2, AlertCircle, Bell,
   RotateCcw, History, Scale, FileDown } from "@buleje/design-system/icons";
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
-import { CardTitle, LoadingState, SectionTitle, WarningAlert } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, SectionTitle, WarningAlert } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { Field } from "@/components/admin/shared/Field";
@@ -1231,26 +1231,26 @@ export default function PrestamosModule() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <table className="w-full min-w-[600px] sm:min-w-0 text-sm">
+              <div className="-mx-4 sm:mx-0">
+                <DataTable className="min-w-[600px] sm:min-w-0">
                   <thead>
-                    <tr className="border-b border-[var(--rule-soft)] text-left">
-                      <th className="px-3 py-3 w-8">
+                    <tr className="border-b border-[var(--rule-soft)]">
+                      <th className="w-8">
                         <input type="checkbox" checked={selectedIds.size > 0 && selectedIds.size === paginated.length} onChange={toggleSelectAll} className="rounded accent-blue-600 cursor-pointer" />
                       </th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Cliente</th>
-                      <th className="px-2 py-3 font-semibold text-[var(--text-secondary)] text-center hidden sm:table-cell">Sys</th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("monto")}>
+                      <th>Cliente</th>
+                      <th className="text-center hidden sm:table-cell">Sys</th>
+                      <th className="text-right cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("monto")}>
                         <span className="flex items-center justify-end gap-1">Monto {sortKey === "monto" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
                       </th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right hidden sm:table-cell cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("tasaInteres")}>
+                      <th className="text-right hidden sm:table-cell cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("tasaInteres")}>
                         <span className="flex items-center justify-end gap-1">Tasa {sortKey === "tasaInteres" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
                       </th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right hidden sm:table-cell cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("numeroCuotas")}>
+                      <th className="text-right hidden sm:table-cell cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("numeroCuotas")}>
                         <span className="flex items-center justify-end gap-1">Cuotas {sortKey === "numeroCuotas" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
                       </th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Saldo</th>
-                      <th className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Status</th>
+                      <th className="text-right">Saldo</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1269,11 +1269,11 @@ export default function PrestamosModule() {
                       const sisBadge = p.sistemaAmortizacion === "FRANCES" ? "F" : p.sistemaAmortizacion === "ALEMAN" ? "A" : "AM";
                       const sisBg = p.sistemaAmortizacion === "FRANCES" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : p.sistemaAmortizacion === "ALEMAN" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]";
                       return (
-                        <tr key={p.id} className={cn("border-b border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)] transition-colors", selectedIds.has(p.id) && "bg-primary/10")}>
-                          <td className="px-3 py-3 w-8" onClick={e => e.stopPropagation()}>
+                        <tr key={p.id} className={selectedIds.has(p.id) ? "bg-primary/10" : undefined}>
+                          <td className="w-8" onClick={e => e.stopPropagation()}>
                             <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded accent-blue-600 cursor-pointer" />
                           </td>
-                          <td className="px-4 py-3 cursor-pointer" onClick={() => openDetail(p)}>
+                          <td className="cursor-pointer" onClick={() => openDetail(p)}>
                             <div className="flex items-center gap-2">
                               <div className="relative h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
                                 <User className="h-4 w-4 text-secondary" />
@@ -1293,14 +1293,14 @@ export default function PrestamosModule() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-2 py-3 hidden sm:table-cell text-center cursor-pointer" onClick={() => openDetail(p)}>
+                          <td className="hidden sm:table-cell text-center cursor-pointer" onClick={() => openDetail(p)}>
                             <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold", sisBg)}>{sisBadge}</span>
                           </td>
-                          <td className="num px-4 py-3 font-medium text-[var(--text-primary)] cursor-pointer" onClick={() => openDetail(p)}>{formatCurrency(p.monto)}</td>
-                          <td className="num px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell cursor-pointer" onClick={() => openDetail(p)}>{p.tasaInteres}%</td>
-                          <td className="num px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell cursor-pointer" onClick={() => openDetail(p)}>{p.numeroCuotas}</td>
-                          <td className="num px-4 py-3 font-bold text-[var(--text-primary)] cursor-pointer" onClick={() => openDetail(p)}>{formatCurrency(saldoPend)}</td>
-                          <td className="px-4 py-3 cursor-pointer" onClick={() => openDetail(p)}>
+                          <td className="num font-medium text-[var(--text-primary)] cursor-pointer" onClick={() => openDetail(p)}>{formatCurrency(p.monto)}</td>
+                          <td className="num text-[var(--text-secondary)] hidden sm:table-cell cursor-pointer" onClick={() => openDetail(p)}>{p.tasaInteres}%</td>
+                          <td className="num text-[var(--text-secondary)] hidden sm:table-cell cursor-pointer" onClick={() => openDetail(p)}>{p.numeroCuotas}</td>
+                          <td className="num font-bold text-[var(--text-primary)] cursor-pointer" onClick={() => openDetail(p)}>{formatCurrency(saldoPend)}</td>
+                          <td className="cursor-pointer" onClick={() => openDetail(p)}>
                             <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
                               <StatusIcon className="h-3 w-3" />
                               {meta.label}
@@ -1310,7 +1310,7 @@ export default function PrestamosModule() {
                       );
                     })}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
@@ -1546,29 +1546,29 @@ export default function PrestamosModule() {
                   Total a pagar: <span className="font-bold">{formatCurrency(amortizacion.reduce((s, r) => s + r.cuota, 0))}</span>
                 </p>
               </div>
-              <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-[var(--surface-raised)]">
-                    <tr className="border-b border-[var(--rule-soft)] text-left">
-                      <th className="px-4 py-2 font-semibold text-[var(--text-secondary)] text-center">#</th>
-                      <th className="px-4 py-2 font-semibold text-[var(--text-secondary)] text-right">Cuota</th>
-                      <th className="px-4 py-2 font-semibold text-[var(--text-secondary)] text-right">Interés</th>
-                      <th className="px-4 py-2 font-semibold text-[var(--text-secondary)] text-right">Capital</th>
-                      <th className="px-4 py-2 font-semibold text-[var(--text-secondary)] text-right">Saldo</th>
+              <div className="max-h-[400px] overflow-y-auto">
+                <DataTable stickyHeader>
+                  <thead>
+                    <tr className="border-b border-[var(--rule-soft)]">
+                      <th className="text-center">#</th>
+                      <th className="text-right">Cuota</th>
+                      <th className="text-right">Interés</th>
+                      <th className="text-right">Capital</th>
+                      <th className="text-right">Saldo</th>
                     </tr>
                   </thead>
                   <tbody>
                     {amortizacion.map(r => (
-                      <tr key={r.num} className="border-b border-[var(--rule-soft)]">
-                        <td className="px-4 py-2 text-center text-[var(--text-secondary)]">{r.num}</td>
-                        <td className="px-4 py-2 text-right font-medium text-[var(--text-primary)]">{formatCurrency(r.cuota)}</td>
-                        <td className="px-4 py-2 text-right text-[var(--data-error-500)]">{formatCurrency(r.interes)}</td>
-                        <td className="px-4 py-2 text-right text-[var(--data-success-500)]">{formatCurrency(r.capital)}</td>
-                        <td className="px-4 py-2 text-right text-[var(--text-primary)]">{formatCurrency(r.saldo)}</td>
+                      <tr key={r.num}>
+                        <td className="text-center text-[var(--text-secondary)]">{r.num}</td>
+                        <td className="text-right font-medium text-[var(--text-primary)]">{formatCurrency(r.cuota)}</td>
+                        <td className="text-right text-[var(--data-error-500)]">{formatCurrency(r.interes)}</td>
+                        <td className="text-right text-[var(--data-success-500)]">{formatCurrency(r.capital)}</td>
+                        <td className="text-right text-[var(--text-primary)]">{formatCurrency(r.saldo)}</td>
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </DataTable>
               </div>
             </div>
           )}
@@ -1835,29 +1835,29 @@ export default function PrestamosModule() {
                         const totalInteres = selected.cuotas.reduce((s, c) => s + c.interes, 0);
                         const totalCuota = selected.cuotas.reduce((s, c) => s + c.monto, 0);
                         return (
-                          <div className="overflow-x-auto -mx-1">
-                            <table className="w-full text-[length:var(--ts-xs)]">
+                          <div className="-mx-1">
+                            <DataTable className="text-[length:var(--ts-xs)]">
                               <thead>
                                 <tr className="border-b border-[var(--rule-base)]">
-                                  <th className="text-left py-1.5 px-1 font-bold text-[var(--text-tertiary)]">#</th>
-                                  <th className="text-left py-1.5 px-1 font-bold text-[var(--text-tertiary)]">Fecha</th>
-                                  <th className="text-right py-1.5 px-1 font-bold text-[var(--text-tertiary)]">Capital</th>
-                                  <th className="text-right py-1.5 px-1 font-bold text-[var(--text-tertiary)]">Interés</th>
-                                  <th className="text-right py-1.5 px-1 font-bold text-[var(--text-tertiary)]">Cuota</th>
-                                  <th className="text-right py-1.5 px-1 font-bold text-[var(--text-tertiary)]">Saldo</th>
-                                  <th className="text-center py-1.5 px-1 font-bold text-[var(--text-tertiary)]">Estado</th>
+                                  <th>#</th>
+                                  <th>Fecha</th>
+                                  <th className="text-right">Capital</th>
+                                  <th className="text-right">Interés</th>
+                                  <th className="text-right">Cuota</th>
+                                  <th className="text-right">Saldo</th>
+                                  <th className="text-center">Estado</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {rows.map(c => (
-                                  <tr key={c.id} className={cn("border-b border-[var(--rule-soft)]", c.pagadoEn ? "bg-primary/10" : !c.pagadoEn && new Date(c.fechaVence) < new Date() ? "bg-[var(--data-error-50)]/50" : "")}>
-                                    <td className="py-1.5 px-1 font-mono text-[var(--text-secondary)]">{c.numeroCuota}</td>
-                                    <td className="py-1.5 px-1 text-[var(--text-secondary)]">{new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</td>
-                                    <td className="py-1.5 px-1 text-right font-mono text-[var(--text-primary)]">{formatCurrency(c.capital)}</td>
-                                    <td className="py-1.5 px-1 text-right font-mono text-[var(--data-error-500)]/70">{formatCurrency(c.interes)}</td>
-                                    <td className="py-1.5 px-1 text-right font-mono font-bold text-[var(--text-primary)]">{formatCurrency(c.monto)}</td>
-                                    <td className="py-1.5 px-1 text-right font-mono text-[var(--data-success-500)]">{formatCurrency(c.saldo)}</td>
-                                    <td className="py-1.5 px-1 text-center">
+                                  <tr key={c.id} className={c.pagadoEn ? "bg-primary/10" : !c.pagadoEn && new Date(c.fechaVence) < new Date() ? "bg-[var(--data-error-50)]/50" : undefined}>
+                                    <td className="font-mono text-[var(--text-secondary)]">{c.numeroCuota}</td>
+                                    <td className="text-[var(--text-secondary)]">{new Date(c.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}</td>
+                                    <td className="text-right font-mono text-[var(--text-primary)]">{formatCurrency(c.capital)}</td>
+                                    <td className="text-right font-mono text-[var(--data-error-500)]/70">{formatCurrency(c.interes)}</td>
+                                    <td className="text-right font-mono font-bold text-[var(--text-primary)]">{formatCurrency(c.monto)}</td>
+                                    <td className="text-right font-mono text-[var(--data-success-500)]">{formatCurrency(c.saldo)}</td>
+                                    <td className="text-center">
                                       {c.pagadoEn ? (
                                         <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 px-1.5 py-0.5 rounded">PAGADA</span>
                                       ) : new Date(c.fechaVence) < new Date() ? (
@@ -1871,14 +1871,14 @@ export default function PrestamosModule() {
                               </tbody>
                               <tfoot>
                                 <tr className="border-t-2 border-[var(--rule-base)] font-bold">
-                                  <td colSpan={2} className="py-2 px-1 text-[var(--text-secondary)]">TOTAL</td>
-                                  <td className="py-2 px-1 text-right font-mono text-[var(--text-primary)]">{formatCurrency(totalCapital)}</td>
-                                  <td className="py-2 px-1 text-right font-mono text-[var(--data-error-500)]">{formatCurrency(totalInteres)}</td>
-                                  <td className="py-2 px-1 text-right font-mono text-[var(--text-primary)]">{formatCurrency(totalCuota)}</td>
+                                  <td colSpan={2} className="text-[var(--text-secondary)]">TOTAL</td>
+                                  <td className="text-right font-mono text-[var(--text-primary)]">{formatCurrency(totalCapital)}</td>
+                                  <td className="text-right font-mono text-[var(--data-error-500)]">{formatCurrency(totalInteres)}</td>
+                                  <td className="text-right font-mono text-[var(--text-primary)]">{formatCurrency(totalCuota)}</td>
                                   <td colSpan={2}></td>
                                 </tr>
                               </tfoot>
-                            </table>
+                            </DataTable>
                           </div>
                         );
                       })()}

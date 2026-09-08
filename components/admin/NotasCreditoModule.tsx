@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -1098,7 +1098,7 @@ export default function NotasCreditoModule() {
 
       {/* ── Table / Cards View ─────────────────────────────────────────── */}
       {viewMode !== "kanban" && (
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
+      <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
         {loading ? (
           <LoadingState />
         ) : error ? (
@@ -1126,71 +1126,70 @@ export default function NotasCreditoModule() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-175 text-sm">
+            <DataTable className="min-w-175">
                 <thead>
-                  <tr className="border-b border-[var(--rule-soft)] text-left">
-                    <th className="px-3 py-3 w-10">
+                  <tr>
+                    <th className="w-10">
                       <button onClick={toggleAll} className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
                         allChecked ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
                         {allChecked && <span className="text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
                       </button>
                     </th>
-                    <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] cursor-pointer select-none" onClick={() => toggleSort("numero")}>
+                    <th className="cursor-pointer select-none" onClick={() => toggleSort("numero")}>
                       <span className="flex items-center gap-1">Documento <SortIcon field="numero" /></span>
                     </th>
-                    <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">Referencia</th>
-                    <th className="px-3 py-3 font-semibold text-[var(--text-secondary)]">Motivo</th>
-                    <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] text-right cursor-pointer select-none" onClick={() => toggleSort("total")}>
+                    <th className="hidden sm:table-cell">Referencia</th>
+                    <th>Motivo</th>
+                    <th className="text-right cursor-pointer select-none" onClick={() => toggleSort("total")}>
                       <span className="flex items-center gap-1 justify-end">Total <SortIcon field="total" /></span>
                     </th>
-                    <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] cursor-pointer select-none" onClick={() => toggleSort("status")}>
+                    <th className="cursor-pointer select-none" onClick={() => toggleSort("status")}>
                       <span className="flex items-center gap-1">Estado <SortIcon field="status" /></span>
                     </th>
-                    <th className="px-3 py-3 font-semibold text-[var(--text-secondary)] hidden md:table-cell cursor-pointer select-none" onClick={() => toggleSort("createdAt")}>
+                    <th className="hidden md:table-cell cursor-pointer select-none" onClick={() => toggleSort("createdAt")}>
                       <span className="flex items-center gap-1">Fecha <SortIcon field="createdAt" /></span>
                     </th>
-                    <th className="px-3 py-3 w-10" />
+                    <th className="w-10" />
                   </tr>
                 </thead>
                 <tbody>
                   {paginated.map(nc => {
                     const meta = STATUS_META[nc.status];
                     return (
-                      <tr key={nc.id} className="border-b border-[var(--rule-soft)] hover:bg-[var(--surface-alt)] transition-colors group">
-                        <td className="px-3 py-3">
+                      <tr key={nc.id} className="group">
+                        <td>
                           <button onClick={() => toggleCheck(nc.id)} className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
                             checkedIds.has(nc.id) ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
                             {checkedIds.has(nc.id) && <span className="text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
                           </button>
                         </td>
-                        <td className="px-3 py-3 cursor-pointer" onClick={() => setSelected(nc)}>
+                        <td className="cursor-pointer" onClick={() => setSelected(nc)}>
                           <span className="flex items-center gap-2">
                             <span className="text-base">{getDocIcon(nc.numero)}</span>
                             <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.numero}</span>
                           </span>
                           {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{nc.clienteNombre}</p>}
                         </td>
-                        <td className="px-3 py-3 hidden sm:table-cell">
+                        <td className="hidden sm:table-cell">
                           {nc.orderNumero ? (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                               {"\u{1F517}"} {nc.orderNumero}
                             </span>
                           ) : <span className="text-[var(--text-tertiary)]">{"\u2014"}</span>}
                         </td>
-                        <td className="px-3 py-3 text-[var(--text-primary)] truncate max-w-45">
+                        <td className="text-[var(--text-primary)] truncate max-w-45">
                           <span className="text-xs text-[var(--text-tertiary)] mr-1">[{nc.motivoCodigo}]</span>
                           {nc.motivoDesc}
                         </td>
-                        <td className="px-3 py-3 text-right font-bold text-[var(--text-primary)]">{formatCurrency(nc.total)}</td>
-                        <td className="px-3 py-3">
+                        <td className="text-right font-bold text-[var(--text-primary)]">{formatCurrency(nc.total)}</td>
+                        <td>
                           <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
                             <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />
                             {meta.label}
                           </span>
                         </td>
-                        <td className="px-3 py-3 text-[var(--text-secondary)] hidden md:table-cell text-xs">{formatDate(nc.createdAt)}</td>
-                        <td className="px-3 py-3">
+                        <td className="text-[var(--text-secondary)] hidden md:table-cell text-xs">{formatDate(nc.createdAt)}</td>
+                        <td>
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {nc.status === "BORRADOR" && (
                               <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="p-1 rounded-xl hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" title="Emitir">
@@ -1211,8 +1210,7 @@ export default function NotasCreditoModule() {
                     );
                   })}
                 </tbody>
-              </table>
-            </div>
+              </DataTable>
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
                 <p className="text-xs text-[var(--text-secondary)]">{filteredNotas.length} doc{filteredNotas.length !== 1 ? "s" : ""} {"\u2014"} P{"\u00e1"}g. {page}/{totalPages}</p>

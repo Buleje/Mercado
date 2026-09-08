@@ -1,7 +1,7 @@
 "use client";
 
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
@@ -899,51 +899,47 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     })}
                   </div>
                 ) : (
-                  <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-[var(--rule-soft)] text-left">
-                            <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">N.o</th>
-                            <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">Cliente</th>
-                            <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] hidden sm:table-cell">Tipo</th>
-                            <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Monto</th>
-                            <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] hidden md:table-cell">Fecha</th>
-                            <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] hidden lg:table-cell">Estado</th>
-                            <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {paginated.map(c => {
-                            const estado = estadoVisible(c);
-                            return (
-                              <tr key={c.id} onClick={() => setSelected(c)} className="border-b border-[var(--rule-soft)] hover:bg-[var(--surface-alt)] cursor-pointer transition-colors">
-                                <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">{c.numero}</td>
-                                <td className="px-4 py-3">
-                                  <p className="font-medium text-[var(--text-primary)] truncate">{c.clienteNombre}</p>
-                                  <p className="text-xs text-[var(--text-tertiary)]">{c.clienteDoc}</p>
-                                </td>
-                                <td className="px-4 py-3 hidden sm:table-cell">
-                                  <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">{TIPO_LABELS[c.tipo] || c.tipo}</span>
-                                </td>
-                                <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">{formatMoney(c.monto, c.moneda)}</td>
-                                <td className="px-4 py-3 text-[var(--text-secondary)] hidden md:table-cell">{formatDatePeru(c.fechaInicio || c.createdAt)}</td>
-                                <td className="px-4 py-3 hidden lg:table-cell">
-                                  <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", ESTADO_STYLES[estado])}>{ESTADO_VISIBLE_LABELS[estado]}</span>
-                                </td>
-                                <td className="px-4 py-3">
-                                  <div className="flex gap-1">
-                                    <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="PDF"><Printer className="h-4 w-4" /></button>
-                                    <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="Word"><Download className="h-4 w-4" /></button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                  <DataTable>
+                      <thead>
+                        <tr>
+                          <th>N.o</th>
+                          <th>Cliente</th>
+                          <th className="hidden sm:table-cell">Tipo</th>
+                          <th className="text-right">Monto</th>
+                          <th className="hidden md:table-cell">Fecha</th>
+                          <th className="hidden lg:table-cell">Estado</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginated.map(c => {
+                          const estado = estadoVisible(c);
+                          return (
+                            <tr key={c.id} onClick={() => setSelected(c)} className="cursor-pointer">
+                              <td className="font-mono text-xs text-[var(--text-secondary)]">{c.numero}</td>
+                              <td>
+                                <p className="font-medium text-[var(--text-primary)] truncate">{c.clienteNombre}</p>
+                                <p className="text-xs text-[var(--text-tertiary)]">{c.clienteDoc}</p>
+                              </td>
+                              <td className="hidden sm:table-cell">
+                                <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">{TIPO_LABELS[c.tipo] || c.tipo}</span>
+                              </td>
+                              <td className="text-right font-bold text-[var(--text-primary)]">{formatMoney(c.monto, c.moneda)}</td>
+                              <td className="text-[var(--text-secondary)] hidden md:table-cell">{formatDatePeru(c.fechaInicio || c.createdAt)}</td>
+                              <td className="hidden lg:table-cell">
+                                <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", ESTADO_STYLES[estado])}>{ESTADO_VISIBLE_LABELS[estado]}</span>
+                              </td>
+                              <td>
+                                <div className="flex gap-1">
+                                  <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="PDF"><Printer className="h-4 w-4" /></button>
+                                  <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="Word"><Download className="h-4 w-4" /></button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </DataTable>
                 )}
 
                 {/* Pagination */}

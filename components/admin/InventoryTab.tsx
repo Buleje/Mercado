@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, StatCard, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, StatCard, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef, useMemo, type FormEvent } from "react";
 import {
   Package, AlertTriangle, ArrowUp, ArrowDown, RefreshCw,
@@ -1920,28 +1920,27 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
 
           {/* Desktop table — UX Mejora 18: Sticky header. Oculta cuando viewMode==="cards". */}
           <div className={cn(
-            "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden",
             viewMode === "cards" ? "hidden" : "hidden sm:block"
           )}>
-            <div className="max-h-[65vh] overflow-y-auto overflow-x-auto">
-              <table className="w-full min-w-[600px] text-sm">
-                <thead className="sticky top-0 bg-[var(--surface-raised)] z-10 shadow-[var(--shadow-sm)]">
-                  <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] text-left">
-                    <th className="px-3 py-3 w-10">
+            <div className="max-h-[65vh] overflow-y-auto">
+              <DataTable stickyHeader className="min-w-[600px]">
+                <thead>
+                  <tr>
+                    <th className="w-10">
                       <input type="checkbox" checked={filteredProducts.length > 0 && selectedIds.size === filteredProducts.length} onChange={toggleSelectAll} className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                     </th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted w-12">Img</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Categoría</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Precio</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted", !showExtendedCols && "hidden")}>Historial</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted", !showExtendedCols && "hidden")}>Badge</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Stock</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted", !showExtendedCols && "hidden")} title="Basado en las ultimas compras">Costo Prom.</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted", !showExtendedCols && "hidden")}>Rotacion</th>
-                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted", !showExtendedCols && "hidden")}>Cambio 30d</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Estado</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Acciones</th>
+                    <th className="w-12">Img</th>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th className={cn(!showExtendedCols && "hidden")}>Historial</th>
+                    <th className={cn(!showExtendedCols && "hidden")}>Badge</th>
+                    <th>Stock</th>
+                    <th className={cn(!showExtendedCols && "hidden")} title="Basado en las ultimas compras">Costo Prom.</th>
+                    <th className={cn(!showExtendedCols && "hidden")}>Rotacion</th>
+                    <th className={cn(!showExtendedCols && "hidden")}>Cambio 30d</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -1960,10 +1959,10 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                           setCtxMenu({ product: p, x, y });
                         }}
                       >
-                        <td className="px-3 py-3">
+                        <td>
                           <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3">
+                        <td>
                           {p.image ? (
                             /* El `overflow-hidden` va en un envoltorio INTERNO,
                                no en el span de afuera: cuando la URL de la foto
@@ -1987,7 +1986,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                             </div>
                           )}
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3">
+                        <td>
                           <div className="flex flex-wrap items-center gap-2">
                             {/* Mejora 5R2: Semaforo de stock */}
                             {(() => {
@@ -2013,17 +2012,17 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                             )}
                           </div>
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-[var(--text-secondary)] dark:text-muted">
+                        <td className="text-[var(--text-secondary)] dark:text-muted">
                           {catLabelOf(p.category)}
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-primary">S/{Number(p.price).toFixed(2)}</td>
-                        <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
+                        <td className="font-bold text-primary">S/{Number(p.price).toFixed(2)}</td>
+                        <td className={cn(!showExtendedCols && "hidden")}>
                           <PriceSparkline productId={p.id} />
                         </td>
-                        <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
+                        <td className={cn(!showExtendedCols && "hidden")}>
                           {p.badge ? <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-semibold">{p.badge}</span> : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>}
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3">
+                        <td>
                           {/* Brandon 2026-06-06: barra visual de nivel de stock
                               (estado por color + marcador del mínimo) en vez del
                               número plano. Ver StockLevelBar. */}
@@ -2035,14 +2034,14 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                           />
                         </td>
                         {/* Mejora 6R2: Costo promedio ponderado */}
-                        <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
+                        <td className={cn(!showExtendedCols && "hidden")}>
                           {p.costPrice != null && p.costPrice > 0
                             ? <span className="font-mono text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)]" title="Basado en las ultimas compras">S/{Number(p.costPrice).toFixed(2)}</span>
                             : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>
                           }
                         </td>
                         {/* Mejora 6: Rotation indicator */}
-                        <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
+                        <td className={cn(!showExtendedCols && "hidden")}>
                           {(() => {
                             const spw = computeSalesPerWeek(p.id, movements);
                             const info = getRotationInfo(spw, p.stock ?? 0);
@@ -2056,7 +2055,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                           })()}
                         </td>
                         {/* Mejora 7: Stock change last 30 days */}
-                        <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
+                        <td className={cn(!showExtendedCols && "hidden")}>
                           {(() => {
                             const delta = computeStockChange(p.id, movements);
                             if (delta > 0) return <span className="text-xs font-bold text-[var(--data-success-500)]"><ArrowUp className="h-3 w-3 inline" /> +{delta}</span>;
@@ -2064,7 +2063,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                             return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">&#8594; 0</span>;
                           })()}
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3">
+                        <td>
                           <button
                             onClick={() => toggleActive(p)}
                             className={cn(
@@ -2076,7 +2075,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                             {p.active ? "Activo" : "Inactivo"}
                           </button>
                         </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3">
+                        <td>
                           <div className="flex items-center gap-1">
                             <button onClick={() => openEditModal(p)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar">
                               <Pencil className="h-4 w-4" />
@@ -2156,7 +2155,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     );
                   })}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
             {filteredProducts.length === 0 && (
               <EmptyState

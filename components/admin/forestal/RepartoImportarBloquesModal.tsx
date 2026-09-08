@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useRef, useState } from "react";
+import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, Check, Clipboard, FileSpreadsheet, Loader2, Upload } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
@@ -186,35 +187,33 @@ export default function RepartoImportarBloquesModal({
                   {totalAserrada > 0 && <span>{fmtM3(totalAserrada)} <span className="font-sans font-normal text-[var(--text-tertiary)]">m³ (A) ya aserrados</span></span>}
                   {totalPiezas > 0 && <span>{fmtPiezas(totalPiezas)} <span className="font-sans font-normal text-[var(--text-tertiary)]">piezas declaradas</span></span>}
                 </div>
-                <div className="max-h-56 overflow-auto rounded-lg border border-[var(--rule-base)]">
-                  <table className="w-full text-sm">
+                <DataTable stickyHeader>
                     <caption className="sr-only">Bloques que se van a agregar</caption>
-                    <thead className="sticky top-0 bg-[var(--surface-sunken)] text-left text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+                    <thead>
                       <tr>
-                        <th scope="col" className="px-2 py-2">Etiqueta</th>
-                        <th scope="col" className="px-2 py-2">Cargado como</th>
-                        <th scope="col" className="px-2 py-2">Especie</th>
-                        <th scope="col" className="px-2 py-2 text-right">m³</th>
-                        <th scope="col" className="px-2 py-2 text-right">Piezas</th>
-                        <th scope="col" className="px-2 py-2 text-right">% aprov.</th>
+                        <th scope="col">Etiqueta</th>
+                        <th scope="col">Cargado como</th>
+                        <th scope="col">Especie</th>
+                        <th scope="col" className="text-right">m³</th>
+                        <th scope="col" className="text-right">Piezas</th>
+                        <th scope="col" className="text-right">% aprov.</th>
                       </tr>
                     </thead>
                     <tbody>
                       {bloques.map((b, i) => (
-                        <tr key={`${b.etiqueta}-${i}`} className="border-t border-[var(--rule-soft)]">
-                          <td className="px-2 py-1.5 text-[var(--text-primary)]">{b.etiqueta || <span className="text-[var(--text-tertiary)]">sin etiqueta</span>}</td>
-                          <td className={`px-2 py-1.5 font-bold ${b.tipo === "aserrada" ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)]"}`}>
+                        <tr key={`${b.etiqueta}-${i}`}>
+                          <td className="text-[var(--text-primary)]">{b.etiqueta || <span className="text-[var(--text-tertiary)]">sin etiqueta</span>}</td>
+                          <td className={`font-bold ${b.tipo === "aserrada" ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)]"}`}>
                             {b.tipo === "aserrada" ? "Aserrada directa" : "Rolliza"}
                           </td>
-                          <td className="px-2 py-1.5 text-[var(--text-secondary)]">{b.especie || <span className="text-[var(--text-tertiary)]">sin especie</span>}</td>
-                          <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(b.m3)}</td>
-                          <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.piezasManual ?? "—"}</td>
-                          <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.aprovechablePct ?? "—"}</td>
+                          <td className="text-[var(--text-secondary)]">{b.especie || <span className="text-[var(--text-tertiary)]">sin especie</span>}</td>
+                          <td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(b.m3)}</td>
+                          <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.piezasManual ?? "—"}</td>
+                          <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.aprovechablePct ?? "—"}</td>
                         </tr>
                       ))}
                     </tbody>
-                  </table>
-                </div>
+                </DataTable>
               </>
             )}
 

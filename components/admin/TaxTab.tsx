@@ -1,7 +1,7 @@
 "use client";
 
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { LoadingState } from "@buleje/design-system";
+import { DataTable, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useMemo } from "react";
 import {
   Receipt, RefreshCw, AlertTriangle,
@@ -223,40 +223,40 @@ export default function TaxTab() {
           </div>
 
           {/* Table */}
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-y-hidden overflow-x-auto">
-            <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+          <div className="bg-[var(--surface-raised)]">
+            <DataTable className="min-w-[600px]">
+              <thead>
                 <tr>
-                  <th className="text-left px-5 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Fecha</th>
-                  <th className="text-left px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Tipo</th>
-                  <th className="text-left px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Doc</th>
-                  <th className="text-left px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Entidad</th>
-                  <th className="text-right px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Base</th>
-                  <th className="text-right px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">IGV</th>
-                  <th className="text-right px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase">Total</th>
-                  <th className="text-center px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Estado</th>
-                  <th className="text-center px-3 py-3 font-bold text-[var(--text-secondary)] dark:text-muted text-xs uppercase hidden sm:table-cell">Acc.</th>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th className="hidden sm:table-cell">Doc</th>
+                  <th>Entidad</th>
+                  <th className="text-right hidden sm:table-cell">Base</th>
+                  <th className="text-right">IGV</th>
+                  <th className="text-right">Total</th>
+                  <th className="text-center hidden sm:table-cell">Estado</th>
+                  <th className="text-center hidden sm:table-cell">Acc.</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
+              <tbody>
                 {visibleLines.map(line => (
-                  <tr key={line.id} className="hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/50 transition-colors">
-                    <td className="px-5 py-3 text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(line.date)}</td>
-                    <td className="px-3 py-3">
+                  <tr key={line.id}>
+                    <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(line.date)}</td>
+                    <td>
                       <StatusBadge variant={line.type === "venta" ? "success" : "neutral"} label={line.type === "venta" ? "V" : "C"} size="sm" />
                     </td>
-                    <td className="px-3 py-3 text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell font-mono">{line.serie}-{line.number}</td>
-                    <td className="px-3 py-3">
+                    <td className="text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell font-mono">{line.serie}-{line.number}</td>
+                    <td>
                       <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[140px]">{line.entity}</p>
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{line.entityDoc}</p>
                     </td>
-                    <td className="px-3 py-3 text-right text-sm text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{fmt(line.base)}</td>
-                    <td className="px-3 py-3 text-right font-semibold text-[var(--data-warning-500)]">{fmt(line.igv)}</td>
-                    <td className="px-3 py-3 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(line.total)}</td>
-                    <td className="px-3 py-3 text-center hidden sm:table-cell">
+                    <td className="text-right text-sm text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{fmt(line.base)}</td>
+                    <td className="text-right font-semibold text-[var(--data-warning-500)]">{fmt(line.igv)}</td>
+                    <td className="text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(line.total)}</td>
+                    <td className="text-center hidden sm:table-cell">
                       <StatusBadge variant={line.status === "declarado" ? "success" : "pending"} label={line.status === "declarado" ? "Declarado" : "Pendiente"} size="sm" />
                     </td>
-                    <td className="px-3 py-3 text-center hidden sm:table-cell">
+                    <td className="text-center hidden sm:table-cell">
                       {line.status === "pendiente" && (
                         <button onClick={() => handleDeclare(line.id)} className="text-xs px-2.5 py-1 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 font-semibold transition-colors">Declarar</button>
                       )}
@@ -265,7 +265,7 @@ export default function TaxTab() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
             {visibleLines.length === 0 && <p className="text-center py-10 text-[var(--text-tertiary)] dark:text-muted text-sm">Sin registros para el período.</p>}
           </div>
 

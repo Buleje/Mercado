@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   X, CreditCard, Banknote, Star, ShoppingBag,
@@ -240,38 +240,36 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
                   <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
                     <Banknote className="h-4 w-4 text-[var(--data-error-500)]" /> Fiados pendientes
                   </h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                          <th className="text-left py-2 font-bold text-[var(--text-tertiary)] uppercase">Descripción</th>
-                          <th className="text-right py-2 font-bold text-[var(--text-tertiary)] uppercase">Total</th>
-                          <th className="text-right py-2 font-bold text-[var(--text-tertiary)] uppercase">Saldo</th>
-                          <th className="text-left py-2 font-bold text-[var(--text-tertiary)] uppercase">Fecha</th>
-                          <th className="text-left py-2 font-bold text-[var(--text-tertiary)] uppercase">Vence</th>
+                  <DataTable className="text-xs">
+                    <thead>
+                      <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+                        <th>Descripción</th>
+                        <th className="text-right">Total</th>
+                        <th className="text-right">Saldo</th>
+                        <th>Fecha</th>
+                        <th>Vence</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.fiados.map((f) => (
+                        <tr key={f.id}>
+                          <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">{f.descripcion || "Sin descripción"}</td>
+                          <td className="text-right text-[var(--text-secondary)] dark:text-muted">{fmt(f.total)}</td>
+                          <td className="text-right font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(f.saldo)}</td>
+                          <td className="text-[var(--text-secondary)] dark:text-muted">{fmtDate(f.fechaCreacion)}</td>
+                          <td className="text-[var(--text-secondary)] dark:text-muted">{f.fechaVence ? fmtDate(f.fechaVence) : "—"}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {data.fiados.map((f) => (
-                          <tr key={f.id} className="border-t border-[var(--rule-base)]">
-                            <td className="py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">{f.descripcion || "Sin descripción"}</td>
-                            <td className="py-2 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(f.total)}</td>
-                            <td className="py-2 text-right font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(f.saldo)}</td>
-                            <td className="py-2 text-[var(--text-secondary)] dark:text-muted">{fmtDate(f.fechaCreacion)}</td>
-                            <td className="py-2 text-[var(--text-secondary)] dark:text-muted">{f.fechaVence ? fmtDate(f.fechaVence) : "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] font-bold">
-                          <td className="py-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total</td>
-                          <td className="py-2 text-right text-[var(--text-secondary)] dark:text-muted">{fmt(data.fiados.reduce((s, f) => s + f.total, 0))}</td>
-                          <td className="py-2 text-right text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(data.resumen.totalFiados)}</td>
-                          <td colSpan={2} />
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] font-bold">
+                        <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">Total</td>
+                        <td className="text-right text-[var(--text-secondary)] dark:text-muted">{fmt(data.fiados.reduce((s, f) => s + f.total, 0))}</td>
+                        <td className="text-right text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{fmt(data.resumen.totalFiados)}</td>
+                        <td colSpan={2} />
+                      </tr>
+                    </tfoot>
+                  </DataTable>
                 </div>
               )}
 
