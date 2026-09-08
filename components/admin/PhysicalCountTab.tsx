@@ -311,7 +311,7 @@ export default function PhysicalCountTab() {
           <button
             onClick={handleStart}
             disabled={loading}
-            className="flex items-center gap-3 p-5 rounded-lg border-2 border-primary bg-primary/5 hover:bg-primary/10 transition-colors text-left disabled:opacity-60"
+            className="flex items-center gap-3 p-5 rounded-xl border-2 border-primary bg-primary/5 hover:bg-primary/10 transition-colors text-left disabled:opacity-60"
           >
             {loading ? (
               <RefreshCw className="h-8 w-8 text-primary animate-spin shrink-0" />
@@ -328,7 +328,7 @@ export default function PhysicalCountTab() {
 
           <button
             onClick={() => setView("history")}
-            className="flex items-center gap-3 p-5 rounded-lg border border-[var(--rule-base)] hover:bg-gray-50 transition-colors text-left"
+            className="flex items-center gap-3 p-5 rounded-xl border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors text-left"
           >
             <History className="h-8 w-8 text-[var(--text-tertiary)] shrink-0" />
             <div>
@@ -372,7 +372,7 @@ export default function PhysicalCountTab() {
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setView("reconcile")}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-secondary text-secondary text-sm font-medium hover:bg-secondary/10 transition-colors min-h-[44px]"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-secondary text-secondary text-sm font-medium hover:bg-secondary/10 transition-colors min-h-[44px]"
             >
               <AlertTriangle className="h-4 w-4" />
               Ver diferencias
@@ -380,7 +380,7 @@ export default function PhysicalCountTab() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 min-h-[44px]"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60 min-h-[44px]"
             >
               <Save className="h-4 w-4" />
               {saving ? "Guardando..." : "Guardar conteo"}
@@ -396,7 +396,7 @@ export default function PhysicalCountTab() {
         )}
 
         {/* Barra progreso */}
-        <div className="w-full bg-gray-100 rounded-full h-2">
+        <div className="w-full bg-[var(--rule-soft)] rounded-full h-2">
           <div
             className="bg-primary h-2 rounded-full transition-all"
             style={{ width: `${total ? (countedCount / total) * 100 : 0}%` }}
@@ -411,7 +411,7 @@ export default function PhysicalCountTab() {
             placeholder="Buscar producto o código..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm text-[var(--text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[44px]"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[44px]"
           />
         </div>
 
@@ -425,7 +425,7 @@ export default function PhysicalCountTab() {
                 <th className="text-right whitespace-nowrap">Diferencia</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-[var(--rule-soft)]">
               {filteredRows.length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-3 py-8 text-center text-[var(--text-tertiary)] text-sm">
@@ -439,7 +439,7 @@ export default function PhysicalCountTab() {
                 return (
                   <tr
                     key={row.productId}
-                    className={`transition-colors ${hasDiff ? "bg-[var(--data-error-50)]/40" : "hover:bg-gray-50"}`}
+                    className={`transition-colors ${hasDiff ? "bg-[var(--data-error-50)]/40" : "hover:bg-[var(--surface-sunken)]"}`}
                   >
                     <td className="px-3 py-2">
                       <p className="font-medium text-[var(--text-primary)] leading-tight">{row.productName}</p>
@@ -455,7 +455,7 @@ export default function PhysicalCountTab() {
                         value={row.realStock}
                         onChange={(e) => updateRow(row.productId, "realStock", e.target.value)}
                         placeholder="—"
-                        className="w-20 text-right px-2 py-1 rounded border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
+                        className="w-20 text-right px-2 py-1 rounded border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
                       />
                     </td>
                     <td className={`px-3 py-2 text-right font-bold font-mono ${diffColor(d)}`}>
@@ -488,14 +488,14 @@ export default function PhysicalCountTab() {
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setView("counting")}
-              className="px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-medium hover:bg-gray-50 transition-colors min-h-[44px]"
+              className="px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm font-medium hover:bg-[var(--surface-sunken)] transition-colors min-h-[44px]"
             >
               Volver al conteo
             </button>
             <button
               onClick={handleApply}
               disabled={applying || !withDiff.length || session.status === "aplicado"}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-white text-sm font-medium hover:bg-secondary/90 transition-colors disabled:opacity-60 min-h-[44px]"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-secondary text-white text-sm font-medium hover:bg-secondary/90 transition-colors disabled:opacity-60 min-h-[44px]"
             >
               <CheckCircle className="h-4 w-4" />
               {applying ? "Aplicando..." : session.status === "aplicado" ? "Ya aplicado" : "Aplicar ajustes"}
@@ -527,7 +527,7 @@ export default function PhysicalCountTab() {
           <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
             <table className="w-full min-w-[560px] text-sm">
               <thead>
-                <tr className="bg-gray-50 text-left">
+                <tr className="bg-[var(--surface-sunken)] text-left">
                   <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)]">Producto</th>
                   <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)] text-right">Sistema</th>
                   <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)] text-right">Real</th>
@@ -535,11 +535,11 @@ export default function PhysicalCountTab() {
                   <th className="px-3 py-2.5 font-semibold text-[var(--text-secondary)]">Motivo</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
                 {withDiff.map((row) => {
                   const d = diff(row);
                   return (
-                    <tr key={row.productId} className="hover:bg-gray-50">
+                    <tr key={row.productId} className="hover:bg-[var(--surface-sunken)]">
                       <td className="px-3 py-2">
                         <p className="font-medium text-[var(--text-primary)]">{row.productName}</p>
                         {row.sku && <p className="text-xs text-[var(--text-tertiary)]">{row.sku}</p>}
@@ -554,7 +554,7 @@ export default function PhysicalCountTab() {
                           value={row.reason}
                           onChange={(e) => updateRow(row.productId, "reason", e.target.value)}
                           disabled={session.status === "aplicado"}
-                          className="w-full px-2 py-1.5 rounded border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
+                          className="w-full px-2 py-1.5 rounded border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 min-h-[36px]"
                         >
                           {REASONS.map((r) => (
                             <option key={r.value} value={r.value}>{r.label}</option>
@@ -584,7 +584,7 @@ export default function PhysicalCountTab() {
           </SectionTitle>
           <button
             onClick={() => setView("start")}
-            className="px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-medium hover:bg-gray-50 transition-colors min-h-[44px]"
+            className="px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm font-medium hover:bg-[var(--surface-sunken)] transition-colors min-h-[44px]"
           >
             Volver
           </button>
@@ -610,7 +610,7 @@ export default function PhysicalCountTab() {
               >
                 <button
                   onClick={() => setExpandedSession(expandedSession === s.id ? null : s.id)}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--surface-sunken)] transition-colors text-left"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span
@@ -664,7 +664,7 @@ export default function PhysicalCountTab() {
                               <th className="pb-1.5 font-semibold text-right">Dif.</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-gray-100">
+                          <tbody className="divide-y divide-[var(--rule-soft)]">
                             {s.rows
                               .filter((r) => r.realStock !== "" && (r.realStock as number) !== r.systemStock)
                               .map((r) => {

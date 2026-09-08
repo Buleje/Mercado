@@ -176,19 +176,19 @@ export default function N8nPanel() {
             value={form.nombre}
             onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
             placeholder="Nombre — ej: Avisar al contador"
-            className="h-12 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--text-primary)]/40"
+            className="h-12 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--text-primary)]/40"
           />
           <input
             value={form.descripcion}
             onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
             placeholder="Para qué sirve — ej: manda un correo al contador con el gasto del día"
-            className="h-12 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--text-primary)]/40"
+            className="h-12 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--text-primary)]/40"
           />
           <input
             value={form.url}
             onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
             placeholder="https://tu-n8n.com/webhook/…"
-            className="h-12 sm:col-span-2 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 font-mono text-[length:var(--ts-xs)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--text-primary)]/40"
+            className="h-12 sm:col-span-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 font-mono text-[length:var(--ts-xs)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--text-primary)]/40"
           />
           {/*
             El primitivo del DS y no un botón a mano: `bg-[var(--text-primary)]
@@ -255,7 +255,7 @@ export default function N8nPanel() {
                       disabled={probando === f.id}
                       title="Mandar un ping de prueba"
                       aria-label={`Probar ${f.nombre}`}
-                      className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-[var(--rule-soft)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors disabled:opacity-50"
+                      className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-[var(--rule-soft)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors disabled:opacity-50"
                     >
                       {probando === f.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                     </button>
@@ -264,7 +264,7 @@ export default function N8nPanel() {
                       onClick={() => void enviar({ accion: "activar", id: f.id, activo: !f.activo }).then(cargar).catch((e) => setError(String(e)))}
                       title={f.activo ? "Apagar" : "Encender"}
                       aria-label={`${f.activo ? "Apagar" : "Encender"} ${f.nombre}`}
-                      className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-[var(--rule-soft)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors"
+                      className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-[var(--rule-soft)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors"
                     >
                       <Power className="h-4 w-4" />
                     </button>
@@ -277,7 +277,7 @@ export default function N8nPanel() {
                       }}
                       title="Borrar"
                       aria-label={`Borrar ${f.nombre}`}
-                      className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-[var(--data-error-500)]/40 transition-colors"
+                      className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-[var(--data-error-500)]/40 transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

@@ -48,13 +48,13 @@ export default function AdminError({
         <div className="mt-6 flex gap-3 justify-center">
           <button
             onClick={reset}
-            className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
+            className="rounded-xl bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
           >
             Reintentar
           </button>
           <a
             href="/admin"
-            className="rounded-lg border border-[var(--rule-base)] px-6 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-gray-50 transition-colors"
+            className="rounded-lg border border-[var(--rule-base)] px-6 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             Ir al inicio
           </a>

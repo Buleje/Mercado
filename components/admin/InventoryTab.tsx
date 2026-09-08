@@ -1329,15 +1329,15 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={searchPlaceholders[phIndex]}
-            className="h-10 w-full pl-10 pr-4 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary transition-colors"
+            className="h-10 w-full pl-10 pr-4 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary transition-colors"
           />
         </div>
         {/* Filter chips inline */}
         <button
           onClick={() => setLowOnly(!lowOnly)}
           className={cn(
-            "flex items-center gap-1 px-3 h-10 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
-            lowOnly ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] dark:bg-amber-950/20 dark:text-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+            "flex items-center gap-1 px-3 h-10 rounded-xl text-xs font-bold border transition-colors whitespace-nowrap",
+            lowOnly ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] dark:bg-amber-950/20 dark:text-[var(--data-warning-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] "
           )}
         >
           <AlertTriangle className="h-3.5 w-3.5" /> Bajo stock
@@ -1345,8 +1345,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         <button
           onClick={() => setShowInactive(!showInactive)}
           className={cn(
-            "flex items-center gap-1 px-3 h-10 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
-            showInactive ? "border-gray-400 bg-[var(--surface-sunken)] text-[var(--text-secondary)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+            "flex items-center gap-1 px-3 h-10 rounded-xl text-xs font-bold border transition-colors whitespace-nowrap",
+            showInactive ? "border-gray-400 bg-[var(--surface-sunken)] text-[var(--text-secondary)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] "
           )}
         >
           {showInactive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -1355,8 +1355,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         <button
           onClick={() => setNoImageOnly(!noImageOnly)}
           className={cn(
-            "flex items-center gap-1 px-3 h-10 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
-            noImageOnly ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:bg-primary/15 dark:text-[var(--text-primary)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+            "flex items-center gap-1 px-3 h-10 rounded-xl text-xs font-bold border transition-colors whitespace-nowrap",
+            noImageOnly ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:bg-primary/15 dark:text-[var(--text-primary)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] "
           )}
         >
           <Camera className="h-3.5 w-3.5" /> Sin foto ({noImageCount})
@@ -1364,7 +1364,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         {(lowOnly || showInactive || noImageOnly) && (
           <button
             onClick={() => { setLowOnly(false); setShowInactive(false); setNoImageOnly(false); }}
-            className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 transition-colors whitespace-nowrap"
           >
             <X className="h-3.5 w-3.5" /> Limpiar
           </button>
@@ -1373,8 +1373,8 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={cn(
-            "flex items-center gap-1 px-3 h-10 rounded-lg text-xs font-bold border transition-colors whitespace-nowrap",
-            showFilters ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+            "flex items-center gap-1 px-3 h-10 rounded-xl text-xs font-bold border transition-colors whitespace-nowrap",
+            showFilters ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] "
           )}
         >
           <Filter className="h-3.5 w-3.5" />
@@ -1392,7 +1392,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               "inline-flex items-center gap-1 px-2.5 py-2 text-xs font-bold transition-colors",
               viewMode === "table"
                 ? "bg-primary text-white"
-                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] "
             )}
           >
             <LayoutList className="h-3.5 w-3.5" />
@@ -1407,7 +1407,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               "inline-flex items-center gap-1 px-2.5 py-2 text-xs font-bold transition-colors border-l border-[var(--rule-base)] dark:border-[var(--rule-base)]",
               viewMode === "cards"
                 ? "bg-primary text-white"
-                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] dark:hover:bg-surface"
+                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] "
             )}
           >
             <LayoutGrid className="h-3.5 w-3.5" />
@@ -1417,7 +1417,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         {/* Nuevo + Más acciones */}
         <button
           onClick={() => { setPickerSearch(""); setPickerCat("todos"); setShowPicker(true); }}
-          className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
+          className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" strokeWidth={2} /> Nuevo
         </button>
@@ -1472,7 +1472,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <span>{c.label}</span>
                   <span className={cn(
                     "inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
-                    active ? "bg-white/20 text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)] dark:text-muted"
+                    active ? "bg-white/20 text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-muted"
                   )}>
                     {c.count}
                   </span>
@@ -1493,27 +1493,27 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           tabla fuera de la pantalla, y a Inventario se entra a ver productos. */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-zinc-400">Productos</p>
+          <p className="text-xs font-medium text-[var(--text-secondary)] ">Productos</p>
           <p className="mt-1 font-mono text-2xl font-bold text-[var(--text-primary)]">{totalProducts}</p>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] dark:text-zinc-500">
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] ">
             {activeProducts} activos
             {totalProducts - activeProducts > 0 && ` · ${totalProducts - activeProducts} inactivo${totalProducts - activeProducts === 1 ? "" : "s"}`}
           </p>
         </div>
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-zinc-400">Bajo stock</p>
+          <p className="text-xs font-medium text-[var(--text-secondary)] ">Bajo stock</p>
           <p className={cn("mt-1 font-mono text-2xl font-bold", lowStockCount > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{lowStockCount}</p>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] dark:text-zinc-500">{lowStockCount > 0 ? "Requieren reposición" : "Stock saludable"}</p>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] ">{lowStockCount > 0 ? "Requieren reposición" : "Stock saludable"}</p>
         </div>
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-zinc-400">Próx. a vencer</p>
+          <p className="text-xs font-medium text-[var(--text-secondary)] ">Próx. a vencer</p>
           <p className={cn("mt-1 font-mono text-2xl font-bold", expiringSoonCount > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{expiringSoonCount}</p>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] dark:text-zinc-500">Próximos 30 días</p>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] ">Próximos 30 días</p>
         </div>
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <p className="text-xs font-medium text-[var(--text-secondary)] dark:text-zinc-400">Valor inventario</p>
+          <p className="text-xs font-medium text-[var(--text-secondary)] ">Valor inventario</p>
           <p className="mt-1 font-mono text-2xl font-bold text-primary">{fmt(totalStockValue)}</p>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] dark:text-zinc-500">Valuado a costo</p>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)] ">Valuado a costo</p>
         </div>
       </div>
 
@@ -1592,14 +1592,14 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 <button
                   onClick={generateBulkOC}
                   disabled={generatingOC}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)] text-white text-xs font-bold transition-colors disabled:opacity-60 "
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)] text-white text-xs font-bold transition-colors disabled:opacity-60 "
                 >
                   {generatingOC ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PackagePlus className="h-3.5 w-3.5" />}
                   Generar OC para todos
                 </button>
                 <button
                   onClick={() => setExpandedOC(!expandedOC)}
-                  className="p-2 rounded-lg hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning-500)]/30 transition-colors"
+                  className="p-2 rounded-xl hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning-500)]/30 transition-colors"
                 >
                   <ChevronRight className={cn("h-4 w-4 text-[var(--text-secondary)] dark:text-muted transition-transform", expandedOC && "rotate-90")} />
                 </button>
@@ -1653,7 +1653,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
 
       {/* Expanded options panel (Vista + Import/Export) — collapsible from toolbar "Mas" button */}
       {showFilters && (
-        <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 border border-[var(--rule-soft)] dark:border-[var(--rule-base)] space-y-3">
+        <div className="bg-[var(--surface-alt)] rounded-xl p-3 border border-[var(--rule-soft)] dark:border-[var(--rule-base)] space-y-3">
           {/* Grupo: Vista */}
           <div>
             <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Vista</p>
@@ -1832,7 +1832,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <div className="flex items-start gap-3 pr-20">
                     {p.image ? (
                       <span className="relative inline-block shrink-0">
-                        <Image src={p.image} alt={p.name} width={56} height={56} unoptimized={p.image.startsWith("data:")} className="h-14 w-14 rounded-xl object-cover border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface" />
+                        <Image src={p.image} alt={p.name} width={56} height={56} unoptimized={p.image.startsWith("data:")} className="h-14 w-14 rounded-xl object-cover border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] " />
                         <ImageWarningBadge image={p.image} size="md" />
                       </span>
                     ) : (
@@ -1878,16 +1878,16 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
 
                   {/* Acciones — fila horizontal ordenada (Editar protagonista + secundarias) */}
                   <div className="mt-3 flex items-center gap-1.5 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-3">
-                    <button onClick={() => openEditModal(p)} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface px-3 py-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary" title="Editar producto">
+                    <button onClick={() => openEditModal(p)} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted transition-colors hover:border-primary hover:bg-primary/10 hover:text-primary" title="Editar producto">
                       <Pencil className="h-3.5 w-3.5" /> Editar
                     </button>
-                    <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} title="Ver Kardex (movimientos)" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-primary/10 hover:text-[var(--data-success-500)]">
+                    <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} title="Ver Kardex (movimientos)" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-primary/10 hover:text-[var(--data-success-500)]">
                       <BookOpen className="h-4 w-4" />
                     </button>
-                    <button onClick={() => setModifiersProduct({ id: p.id, name: p.name })} title="Modificadores (cremas, adicionales, talla)" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-primary/10 hover:text-[var(--accent)]">
+                    <button onClick={() => setModifiersProduct({ id: p.id, name: p.name })} title="Modificadores (cremas, adicionales, talla)" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-primary/10 hover:text-[var(--accent)]">
                       <Sliders className="h-4 w-4" />
                     </button>
-                    <button onClick={() => deleteProduct(p.id)} title="Eliminar producto" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)]">
+                    <button onClick={() => deleteProduct(p.id)} title="Eliminar producto" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-secondary)] dark:text-muted transition-colors hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)]">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -1938,7 +1938,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     return (
                       <tr
                         key={p.id}
-                        className={cn("hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors", !p.active && "opacity-50 bg-[var(--surface-canvas)]/30", lowStock && "bg-[var(--data-warning-50)]/40", selectedIds.has(p.id) && "bg-primary/5")}
+                        className={cn("hover:bg-[var(--surface-alt)] transition-colors", !p.active && "opacity-50 bg-[var(--surface-canvas)]/30", lowStock && "bg-[var(--data-warning-50)]/40", selectedIds.has(p.id) && "bg-primary/5")}
                         onContextMenu={(e) => {
                           e.preventDefault();
                           let x = e.clientX;
@@ -1970,7 +1970,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                               <ImageWarningBadge image={p.image} />
                             </span>
                           ) : (
-                            <div className="w-10 h-10 rounded-md bg-[var(--surface-sunken)] dark:bg-surface flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-md bg-[var(--surface-sunken)] flex items-center justify-center">
                               <Package className="h-4 w-4 text-[var(--text-tertiary)] dark:text-muted" />
                             </div>
                           )}
@@ -2066,7 +2066,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3">
                           <div className="flex items-center gap-1">
-                            <button onClick={() => openEditModal(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar">
+                            <button onClick={() => openEditModal(p)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar">
                               <Pencil className="h-4 w-4" />
                             </button>
                             {/* Mejora 7R2: Duplicar producto */}
@@ -2101,20 +2101,20 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                                 });
                                 setShowAdd(true);
                               }}
-                              className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
+                              className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
                               title="Duplicar"
                             >
                               <ClipboardList className="h-4 w-4" />
                             </button>
-                            <button onClick={() => deleteProduct(p.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
+                            <button onClick={() => deleteProduct(p.id)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
                               <Trash2 className="h-4 w-4" />
                             </button>
                             {/* Adicionales / modificadores (cremas, sabores, extras) */}
-                            <button onClick={() => setModifiersProduct({ id: p.id, name: p.name })} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--accent)] hover:bg-primary/10 transition-colors" title="Adicionales y modificadores (cremas, salsas, extras)">
+                            <button onClick={() => setModifiersProduct({ id: p.id, name: p.name })} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--accent)] hover:bg-primary/10 transition-colors" title="Adicionales y modificadores (cremas, salsas, extras)">
                               <Sliders className="h-4 w-4" />
                             </button>
                             {/* Mejora 6 nueva: QR */}
-                            <button onClick={() => setShowQRProduct(p)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors" title="QR">
+                            <button onClick={() => setShowQRProduct(p)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors" title="QR">
                               <ScanBarcode className="h-4 w-4" />
                             </button>
                             {/* Mejora 5 nueva: Auto-reorden toggle */}
@@ -2129,7 +2129,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                                 }
                               }}
                               className={cn(
-                                "p-1.5 rounded-lg transition-colors",
+                                "p-1.5 rounded-xl transition-colors",
                                 autoReorderConfigs[p.id]
                                   ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10"
                                   : "text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10"
@@ -2236,7 +2236,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   >
                     <Plus className="h-4 w-4" strokeWidth={2.4} /> <span className="hidden sm:inline">Crear nuevo</span><span className="sm:hidden">Nuevo</span>
                   </button>
-                  <button onClick={() => setShowPicker(false)} aria-label="Cerrar" className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
+                  <button onClick={() => setShowPicker(false)} aria-label="Cerrar" className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
@@ -2248,14 +2248,14 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     value={pickerSearch}
                     onChange={e => setPickerSearch(e.target.value)}
                     placeholder="Buscar producto..."
-                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
                     autoFocus
                   />
                 </div>
                 <select
                   value={pickerCat}
                   onChange={e => setPickerCat(e.target.value)}
-                  className="px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none"
+                  className="px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none"
                 >
                   <option value="todos">Todos</option>
                   {formCategories.map(c => (
@@ -2368,7 +2368,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     onClick={() => setAddForm(f => ({ ...f, type: val }))}
                     title={hint}
                     className={cn(
-                      "flex-1 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors",
+                      "flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors",
                       addForm.type === val
                         ? "bg-[var(--accent)] text-white shadow-sm"
                         : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",
@@ -2391,13 +2391,13 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     onChange={(e) => setDbQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleDbSearch())}
                     placeholder="Ej: arroz costeño, aceite vegetal…"
-                    className="flex-1 px-3 py-2 rounded-lg border border-[var(--data-success-500)]/30 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--data-success-500)]/30 outline-none text-sm"
+                    className="flex-1 px-3 py-2 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-[var(--data-success-500)]/30 outline-none text-sm"
                   />
                   <button
                     type="button"
                     onClick={handleDbSearch}
                     disabled={dbSearching || !dbQuery.trim()}
-                    className="px-3 py-2 rounded-lg bg-primary/10 text-white hover:bg-primary/10 transition-colors disabled:opacity-50 flex items-center gap-1 text-sm font-bold"
+                    className="px-3 py-2 rounded-xl bg-primary/10 text-white hover:bg-primary/10 transition-colors disabled:opacity-50 flex items-center gap-1 text-sm font-bold"
                   >
                     {dbSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   </button>
@@ -2412,7 +2412,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         className="w-full text-left px-3 py-2.5 hover:bg-primary/10 flex flex-wrap items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
                       >
                         {r.image && (
-                          <Image src={r.image} alt={r.name} width={40} height={40} className="rounded-lg object-cover border border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 bg-[var(--surface-alt)] dark:bg-surface" />
+                          <Image src={r.image} alt={r.name} width={40} height={40} className="rounded-lg object-cover border border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 bg-[var(--surface-alt)] " />
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{r.name}</p>
@@ -2508,7 +2508,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   {(id) => (
                     <div className="flex flex-wrap gap-2">
                       <input id={id} value={addForm.barcode} onChange={(e) => setAddForm(f => ({ ...f, barcode: e.target.value }))} placeholder="7750000000000" className={cn(FIELD_INPUT, "flex-1 font-mono")} />
-                      <button type="button" onClick={() => setShowScanner(true)} className="px-3 py-2 rounded-lg border border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors">
+                      <button type="button" onClick={() => setShowScanner(true)} className="px-3 py-2 rounded-xl border border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors">
                         <ScanBarcode className="h-4 w-4" />
                       </button>
                     </div>
@@ -2741,7 +2741,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   })()}
                   <div className="flex flex-wrap gap-3 items-start">
                     {addForm.image && (
-                      <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0 bg-[var(--surface-alt)] dark:bg-surface">
+                      <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0 bg-[var(--surface-alt)] ">
                         <Image src={addForm.image} alt="preview" fill unoptimized={addForm.image.startsWith("data:")} className="object-cover" sizes="64px" />
                         <ImageWarningBadge image={addForm.image} size="md" />
                       </div>
@@ -2751,7 +2751,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         type="button"
                         onClick={() => addImgRef.current?.click()}
                         disabled={imgUploading}
-                        className="w-full flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-primary/40 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors text-sm font-medium disabled:opacity-50"
+                        className="w-full flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-xl border border-dashed border-primary/40 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-colors text-sm font-medium disabled:opacity-50"
                       >
                         <Camera className="h-4 w-4" />
                         {imgUploading ? "Procesando…" : "Subir foto"}
@@ -2985,7 +2985,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     type="button"
                     onClick={() => setEditForm(f => ({ ...f, type: val }))}
                     className={cn(
-                      "flex-1 rounded-lg px-3 py-2.5 text-sm font-bold transition-colors",
+                      "flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors",
                       (editForm.type ?? "product") === val
                         ? "bg-[var(--accent)] text-white shadow-sm"
                         : "text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]",
@@ -3175,7 +3175,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <button
                     type="button"
                     onClick={() => editModalProduct && setModifiersProduct({ id: editModalProduct.id, name: editModalProduct.name })}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shrink-0"
                   >
                     <Sliders className="h-4 w-4" />
                     Configurar adicionales
@@ -3210,7 +3210,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     className="flex flex-wrap gap-3 items-start p-3 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 transition-all"
                   >
                     {editForm.image ? (
-                      <div className="relative h-20 w-20 rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0 bg-[var(--surface-alt)] dark:bg-surface group">
+                      <div className="relative h-20 w-20 rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0 bg-[var(--surface-alt)] group">
                         <Image src={editForm.image} alt="preview" fill unoptimized={editForm.image.startsWith("data:")} className="object-cover" sizes="80px" />
                         <button
                           type="button"
@@ -3222,7 +3222,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         </button>
                       </div>
                     ) : (
-                      <div className="h-20 w-20 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface flex items-center justify-center shrink-0">
+                      <div className="h-20 w-20 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] flex items-center justify-center shrink-0">
                         <Camera className="h-6 w-6 text-[var(--text-tertiary)] dark:text-muted" />
                       </div>
                     )}
@@ -3232,7 +3232,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                           type="button"
                           onClick={() => editImgRef.current?.click()}
                           disabled={imgUploading}
-                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors text-sm font-bold disabled:opacity-50"
+                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-xl bg-primary text-white hover:bg-primary-dark transition-colors text-sm font-bold disabled:opacity-50"
                         >
                           <Camera className="h-4 w-4" />
                           {imgUploading ? "Procesando…" : "Subir foto"}
@@ -3240,7 +3240,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         <button
                           type="button"
                           onClick={() => setShowImageBank(true)}
-                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg bg-linear-to-r from-primary to-[var(--data-success-500)] text-white hover:opacity-90 transition-all text-sm font-bold"
+                          className="inline-flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white hover:opacity-90 transition-all text-sm font-bold"
                           title="Elegir una imagen del banco global mantenido por el superadmin"
                         >
                           <BookOpen className="h-4 w-4" />
@@ -3307,7 +3307,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   </>)}
                 </Field>
               </div>
-              <div className="flex items-center justify-between p-4 bg-[var(--surface-alt)] dark:bg-surface rounded-xl">
+              <div className="flex items-center justify-between p-4 bg-[var(--surface-alt)] rounded-xl">
                 <div>
                   <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Estado del producto</p>
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{editForm.active ? "Visible en la tienda" : "Oculto en la tienda"}</p>
@@ -3461,7 +3461,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               <div className="flex gap-3">
                 <button
                   onClick={() => setBulkClearImagesConfirm(false)}
-                  className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   Cancelar
                 </button>
@@ -3475,7 +3475,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     executeBulkClearImages();
                   }}
                   disabled={bulkClearingImages}
-                  className="flex-1 py-2.5 rounded-lg bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/90 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]/90 text-white text-sm font-semibold transition-colors disabled:opacity-50"
                 >
                   {bulkClearingImages ? "Quitando…" : `Sí, quitar ${selectedIds.size}`}
                 </button>
@@ -3505,14 +3505,14 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               <div className="flex gap-3">
                 <button
                   onClick={() => setBulkDeleteConfirm(false)}
-                  className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={executeBulkDelete}
                   disabled={bulkDeleting}
-                  className="flex-1 py-2.5 rounded-lg bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] text-white text-sm font-semibold transition-colors disabled:opacity-50"
                 >
                   {bulkDeleting ? "Eliminando…" : `Sí, eliminar ${selectedIds.size}`}
                 </button>
@@ -3528,12 +3528,12 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           <div className="bg-[var(--surface-raised)] rounded-xl max-w-sm w-full overflow-hidden">
             <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Edición masiva — {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}</CardTitle>
-              <button onClick={() => setBulkModal(false)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"><X className="h-5 w-5" /></button>
+              <button onClick={() => setBulkModal(false)} className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5"><X className="h-5 w-5" /></button>
             </div>
             <div className="px-3 sm:px-6 py-5 space-y-4">
               <Field label="Campo a modificar" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <select value={bulkField} onChange={e => { const v = e.target.value as typeof bulkField; setBulkField(v); setBulkValue(v === "active" ? "true" : ""); }}
-                  className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm">
+                  className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm">
                   <optgroup label="General">
                     <option value="active">Estado (activo / inactivo)</option>
                     <option value="category">Categoría</option>
@@ -3555,20 +3555,20 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 {(bulkValId) => (<>
                 {bulkField === "active" ? (
                   <select id={bulkValId} value={bulkValue} onChange={e => setBulkValue(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm">
+                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm">
                     <option value="true">Activo</option>
                     <option value="false">Inactivo</option>
                   </select>
                 ) : bulkField === "category" ? (
                   <select value={bulkValue} onChange={e => setBulkValue(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm">
+                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm">
                     <option value="">Seleccionar…</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 ) : bulkField === "badge" ? (
                   <div className="mt-1 space-y-2">
                     <input type="text" maxLength={50} value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: Oferta, Nuevo, Combo…"
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
                     <div className="flex flex-wrap gap-1.5">
                       {["Nuevo", "Oferta", "Combo", "Recomendado", "Más vendido"].map(b => (
                         <button key={b} type="button" onClick={() => setBulkValue(b)}
@@ -3582,19 +3582,19 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 ) : bulkField === "price" ? (
                   <div className="mt-1">
                     <input type="number" min="0.01" step="0.01" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 12.50"
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">Fija el mismo precio en {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}.</p>
                   </div>
                 ) : bulkField === "priceDelta" ? (
                   <div className="mt-1">
                     <input type="number" step="0.01" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 1.50 sube · -2 baja"
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">Suma o resta soles al precio actual de cada producto.</p>
                   </div>
                 ) : bulkField === "pricePercent" ? (
                   <div className="mt-1">
                     <input type="number" step="1" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 10 = +10% · -5 = -5%"
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">
                       Ajusta el precio {bulkValue ? `un ${bulkValue}%` : "un …%"} en {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}.
                     </p>
@@ -3602,26 +3602,26 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 ) : bulkField === "stockMin" ? (
                   <div className="mt-1">
                     <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 5"
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">Umbral para la alerta de “stock bajo”.</p>
                   </div>
                 ) : bulkField === "stockMax" ? (
                   <div className="mt-1">
                     <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Ej: 100"
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1">Capacidad máxima sugerida (para reposición).</p>
                   </div>
                 ) : (
                   <input type="number" min="0" value={bulkValue} onChange={e => setBulkValue(e.target.value)} placeholder="Cantidad"
-                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface px-3 py-2 text-sm" />
+                    className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm" />
                 )}
                 </>)}
               </Field>
             </div>
-            <div className="px-3 sm:px-6 py-4 bg-[var(--surface-alt)] dark:bg-surface border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3">
-              <button onClick={() => setBulkModal(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
+            <div className="px-3 sm:px-6 py-4 bg-[var(--surface-alt)] border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3">
+              <button onClick={() => setBulkModal(false)} className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
               <button onClick={executeBulk} disabled={bulkSaving || (!bulkValue && bulkField !== "active" && bulkField !== "badge")}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                 {bulkSaving ? "Aplicando…" : "Aplicar"}
               </button>
             </div>
@@ -3694,7 +3694,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
             <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4 text-center">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Codigo QR</CardTitle>
-                <button onClick={() => setShowQRProduct(null)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent">
+                <button onClick={() => setShowQRProduct(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
                   <X className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
               </div>
@@ -3703,7 +3703,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 <img
                   src={qrDataUrl}
                   alt={`QR ${showQRProduct.name}`}
-                  className="mx-auto bg-white p-2 rounded-lg"
+                  className="mx-auto bg-[var(--surface-raised)] p-2 rounded-lg"
                   width={200}
                   height={200}
                 />
@@ -3723,7 +3723,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                       w.document.close();
                     }
                   }}
-                  className="flex-1 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] font-bold text-xs hover:bg-[var(--surface-alt)] transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] font-bold text-xs hover:bg-[var(--surface-alt)] transition-colors flex items-center justify-center gap-1.5"
                 >
                   Imprimir
                 </button>
@@ -3752,29 +3752,29 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
             <div className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Configurar Auto-Reorden</CardTitle>
-                <button onClick={() => setShowAutoReorder(null)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent">
+                <button onClick={() => setShowAutoReorder(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
                   <X className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
               </div>
               <Field label="Reordenar cuando stock sea menor o igual a:" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <input
                   type="number" min="1" value={arThreshold} onChange={e => setArThreshold(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="5"
                 />
               </Field>
               <Field label="Cantidad a pedir:" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
                 <input
                   type="number" min="1" value={arQty} onChange={e => setArQty(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="10"
                 />
               </Field>
               <div className="flex gap-2 pt-1">
-                <button onClick={() => setShowAutoReorder(null)} className="flex-1 px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
+                <button onClick={() => setShowAutoReorder(null)} className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                   Cancelar
                 </button>
-                <button onClick={() => saveAutoReorder(showAutoReorder)} className="flex-1 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
+                <button onClick={() => saveAutoReorder(showAutoReorder)} className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors">
                   Guardar
                 </button>
               </div>

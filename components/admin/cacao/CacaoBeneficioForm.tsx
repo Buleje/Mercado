@@ -94,8 +94,8 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
     <AdminModal open onClose={onClose} variant="wide" hideCloseButton className="!max-w-[940px]"
       footer={
         <div className="flex items-center justify-end gap-2 px-5 py-3.5">
-          <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="submit" form="cacao-beneficio-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar beneficio"}</button>
+          <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button type="submit" form="cacao-beneficio-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">{submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar beneficio"}</button>
         </div>
       }
     >
@@ -105,7 +105,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Droplets className="h-5 w-5" strokeWidth={1.75} /></span>
             <div><CardTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">Beneficio del lote</CardTitle><p className="text-xs text-[var(--text-tertiary)]">Fermentación + secado · estado y merma al vuelo</p></div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-lg p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"><X className="h-4 w-4" /></button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-xl p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"><X className="h-4 w-4" /></button>
         </header>
 
         <div className="flex-1 overflow-y-auto">

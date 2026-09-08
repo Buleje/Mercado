@@ -162,7 +162,7 @@ function DocThumb({ doc, Icon, tint, bg }: { doc: DbDocument; Icon: typeof FileI
         alt={doc.name}
         loading="lazy"
         onError={() => setFailed(true)}
-        className={cn("w-full h-full object-cover", (isPdf || dibujable) && "object-top bg-white")}
+        className={cn("w-full h-full object-cover", (isPdf || dibujable) && "object-top bg-[var(--surface-raised)]")}
       />
     );
   }
@@ -232,7 +232,7 @@ const BUILTIN_CATEGORIES: BuiltinCategory[] = [
   { id: "dashboard", label: "Resumen", icon: LayoutDashboard, color: "text-primary" },
   { id: "assistant", label: "Asistente IA", icon: Sparkles, color: "text-[var(--accent)]" },
   { id: "favorites", label: "Favoritos", icon: Star, color: "text-amber-500" },
-  { id: "recent", label: "Recientes", icon: Clock, color: "text-slate-500" },
+  { id: "recent", label: "Recientes", icon: Clock, color: "text-[var(--text-secondary)]" },
   { id: "expiring", label: "Por vencer", icon: AlarmClock, color: "text-[var(--data-warning)]" },
   { id: "calendar", label: "Calendario", icon: CalendarDays, color: "text-primary" },
   { id: "activity", label: "Actividad", icon: History, color: "text-[var(--accent)]" },
@@ -1271,7 +1271,7 @@ export default function DocumentosModule() {
       {/* Drag overlay */}
       {dragOver && (
         <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-primary/20 backdrop-blur-sm">
-          <div className="bg-white border-4 border-dashed border-primary rounded-3xl p-8 shadow-[var(--shadow-xl)]">
+          <div className="bg-[var(--surface-raised)] border-4 border-dashed border-primary rounded-3xl p-8 shadow-[var(--shadow-xl)]">
             <Upload className="h-12 w-12 mx-auto text-primary mb-3" />
             <p className="text-xl font-extrabold text-[var(--text-primary)]">Soltá los archivos para subir</p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">PDF, imágenes, docs, planillas</p>
@@ -1378,7 +1378,7 @@ export default function DocumentosModule() {
           >
             Ver
           </button>
-          <button onClick={() => setExpiryBannerDismissed(true)} className="shrink-0 rounded-md p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Descartar aviso"><X className="h-4 w-4" /></button>
+          <button onClick={() => setExpiryBannerDismissed(true)} className="shrink-0 rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Descartar aviso"><X className="h-4 w-4" /></button>
         </div>
       )}
 
@@ -1456,7 +1456,7 @@ export default function DocumentosModule() {
               <p className="mt-0.5">La IA lo nombró y clasificó. Si vence, agregá la fecha desde el documento.</p>
             )}
           </div>
-          <button onClick={() => setScanResult(null)} className="ml-auto p-1 rounded-md hover:bg-emerald-100" aria-label="Cerrar"><X className="h-4 w-4" /></button>
+          <button onClick={() => setScanResult(null)} className="ml-auto p-1 rounded-xl hover:bg-emerald-100" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
       )}
 
@@ -1483,7 +1483,7 @@ export default function DocumentosModule() {
             )}
             <p className="mt-1.5 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">El asistente IA ya puede responder con el contenido de este documento.</p>
           </div>
-          <button onClick={() => setAnalyzeResult(null)} className="shrink-0 rounded-md p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
+          <button onClick={() => setAnalyzeResult(null)} className="shrink-0 rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
       )}
 
@@ -1515,7 +1515,7 @@ export default function DocumentosModule() {
           <button
             onClick={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
             className={cn(
-              "text-left bg-white border rounded-2xl p-4 transition-all hover:shadow-md",
+              "text-left bg-[var(--surface-raised)] border rounded-2xl p-4 transition-all hover:shadow-md",
               expiringSoonCount > 0 ? "border-[var(--data-error-500)]/40 hover:border-[var(--data-error-500)]" : "border-[var(--rule-base)] hover:border-primary/40"
             )}
           >
@@ -1538,7 +1538,7 @@ export default function DocumentosModule() {
         style={{ "--docs-sidebar-w": `${sidebarWidth}px` } as React.CSSProperties}
       >
         {/* ─── Sidebar ─── */}
-        <aside className="bg-white border border-[var(--rule-base)] rounded-2xl p-3 h-fit">
+        <aside className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-3 h-fit">
           <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-3 py-2">
             Vista
           </p>
@@ -1560,7 +1560,7 @@ export default function DocumentosModule() {
                       setActiveFolderId(null);
                     }}
                     className={cn(
-                      "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors",
+                      "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors",
                       active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                     )}
                   >
@@ -1577,7 +1577,7 @@ export default function DocumentosModule() {
                   <li>
                     <button
                       onClick={() => setOtrosAbierto((v) => !v)}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
                       aria-expanded={grupoAbierto}
                     >
                       <MoreHorizontal className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
@@ -1621,7 +1621,7 @@ export default function DocumentosModule() {
                   onClick={() => (selectingFolders ? salirSeleccion() : setSelectingFolders(true))}
                   aria-pressed={selectingFolders}
                   className={cn(
-                    "h-6 w-6 inline-flex items-center justify-center rounded-md transition-colors",
+                    "h-6 w-6 inline-flex items-center justify-center rounded-lg transition-colors",
                     selectingFolders
                       ? "bg-primary text-white"
                       : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary",
@@ -1634,7 +1634,7 @@ export default function DocumentosModule() {
               )}
               <button
                 onClick={() => openCreateChild(null)}
-                className="h-6 w-6 inline-flex items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-colors"
+                className="h-6 w-6 inline-flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-colors"
                 aria-label="Nueva carpeta"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -1671,9 +1671,9 @@ export default function DocumentosModule() {
                 onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") { setNewFolderParent(undefined); setNewFolderName(""); } }}
                 autoFocus
                 placeholder="Nombre de la carpeta…"
-                className="flex-1 px-2 py-1.5 rounded-md border-2 border-[var(--rule-base)] text-xs outline-none focus:border-primary"
+                className="flex-1 px-2 py-1.5 rounded-xl border-2 border-[var(--rule-base)] text-xs outline-none focus:border-primary"
               />
-              <button onClick={handleCreateFolder} className="px-2 rounded-md bg-primary text-white text-xs font-bold hover:bg-primary-dark"><Check className="h-3 w-3" /></button>
+              <button onClick={handleCreateFolder} className="px-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark"><Check className="h-3 w-3" /></button>
             </div>
           )}
 
@@ -1756,7 +1756,7 @@ export default function DocumentosModule() {
                       <button
                         onClick={() => { setFilterMode("folder"); setActiveFolderId(f.id); }}
                         className={cn(
-                          "relative group/folderrow flex-1 min-w-0 flex items-center gap-2 py-2 pr-14 rounded-lg text-sm font-bold transition-colors",
+                          "relative group/folderrow flex-1 min-w-0 flex items-center gap-2 py-2 pr-14 rounded-xl text-sm font-bold transition-colors",
                           active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                         )}
                       >
@@ -1800,7 +1800,7 @@ export default function DocumentosModule() {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); openCreateChild(f.id); }}
-                        className="p-1 rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-all"
+                        className="p-1 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-all"
                         aria-label={`Nueva subcarpeta en ${f.name}`}
                         title="Nueva subcarpeta"
                       >
@@ -1809,7 +1809,7 @@ export default function DocumentosModule() {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setEditingFolder(f); }}
-                        className="p-1 rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-all"
+                        className="p-1 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-all"
                         aria-label={`Personalizar carpeta ${f.name}`}
                         title="Color e ícono"
                       >
@@ -1818,7 +1818,7 @@ export default function DocumentosModule() {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setSharingFolder(f); }}
-                        className="p-1 rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-all"
+                        className="p-1 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary transition-all"
                         aria-label={`Compartir carpeta ${f.name}`}
                         title="Compartir carpeta por link"
                       >
@@ -1827,7 +1827,7 @@ export default function DocumentosModule() {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleDeleteFolder(f); }}
-                        className="p-1 rounded-md text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/15 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)] transition-all"
+                        className="p-1 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/15 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)] transition-all"
                         aria-label={`Eliminar carpeta ${f.name}`}
                         title="Eliminar carpeta"
                       >
@@ -1843,9 +1843,9 @@ export default function DocumentosModule() {
                         onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") { setNewFolderParent(undefined); setNewFolderName(""); } }}
                         autoFocus
                         placeholder="Subcarpeta…"
-                        className="flex-1 min-w-0 px-2 py-1.5 rounded-md border-2 border-[var(--rule-base)] text-xs outline-none focus:border-primary"
+                        className="flex-1 min-w-0 px-2 py-1.5 rounded-xl border-2 border-[var(--rule-base)] text-xs outline-none focus:border-primary"
                       />
-                      <button onClick={handleCreateFolder} className="px-2 rounded-md bg-primary text-white text-xs font-bold hover:bg-primary-dark shrink-0"><Check className="h-3 w-3" /></button>
+                      <button onClick={handleCreateFolder} className="px-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark shrink-0"><Check className="h-3 w-3" /></button>
                     </div>
                   )}
                 </li>
@@ -1867,7 +1867,7 @@ export default function DocumentosModule() {
                 <li key={sf.id} className="group/sf flex items-center">
                   <button
                     onClick={() => { setFilterMode("smart"); setActiveSmartId(sf.id); }}
-                    className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold transition-colors", active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
+                    className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-bold transition-colors", active ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
                   >
                     <Sparkles className="h-4 w-4 shrink-0 text-[var(--accent)]" />
                     <span className="min-w-0 flex-1 truncate">
@@ -1887,7 +1887,7 @@ export default function DocumentosModule() {
 
           <button
             onClick={() => setShowTags(true)}
-            className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+            className="mt-3 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
           >
             <Tag className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" /> Etiquetas
           </button>
@@ -1914,7 +1914,7 @@ export default function DocumentosModule() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className={cn(
-                  "w-full pl-9 pr-3 py-2.5 rounded-xl border-2 bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all",
+                  "w-full pl-9 pr-3 py-2.5 rounded-xl border-2 bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all",
                   semantic ? "border-[var(--accent)]" : "border-[var(--rule-base)]"
                 )}
               />
@@ -1923,7 +1923,7 @@ export default function DocumentosModule() {
               onClick={() => setSemantic((s) => !s)}
               className={cn(
                 "inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border-2 text-sm font-bold transition-colors",
-                semantic ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]" : "bg-white border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)]/40"
+                semantic ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]" : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)]/40"
               )}
               title="Búsqueda inteligente: entiende lo que querés decir, no solo palabras exactas"
             >
@@ -1944,7 +1944,7 @@ export default function DocumentosModule() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="h-[42px] rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-primary"
+              className="h-[42px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-primary"
               aria-label="Ordenar documentos"
               title="Ordenar documentos"
             >
@@ -1956,7 +1956,7 @@ export default function DocumentosModule() {
               <option value="size">Tamaño</option>
               <option value="expiry">Vence primero</option>
             </select>
-            <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-white overflow-hidden">
+            <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
               <button
                 onClick={() => setView("grid")}
                 className={cn("px-3 py-2 transition-colors", view === "grid" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
@@ -1980,7 +1980,7 @@ export default function DocumentosModule() {
                   onClick={(e) => { e.stopPropagation(); setColsMenuOpen((v) => !v); }}
                   className={cn(
                     "inline-flex h-[42px] items-center gap-1.5 px-3 rounded-xl border-2 text-sm font-bold transition-colors",
-                    colsMenuOpen ? "border-primary text-primary bg-primary/5" : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-primary hover:text-primary"
+                    colsMenuOpen ? "border-primary text-primary bg-primary/5" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary hover:text-primary"
                   )}
                   title="Elegir columnas visibles"
                   aria-label="Elegir columnas visibles"
@@ -2046,7 +2046,7 @@ export default function DocumentosModule() {
                       onClick={() => { setFilterMode("folder"); setActiveFolderId(f.id); }}
                       disabled={last}
                       className={cn(
-                        "font-bold rounded-md px-1 transition-colors",
+                        "font-bold rounded-xl px-1 transition-colors",
                         last ? "text-primary" : "text-[var(--text-secondary)] hover:text-primary"
                       )}
                     >
@@ -2059,7 +2059,7 @@ export default function DocumentosModule() {
                 <button
                   onClick={downloadFolderZip}
                   disabled={zipping}
-                  className="ml-auto inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-white px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
+                  className="ml-auto inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
                   title="Descargar todos los documentos de esta carpeta en un ZIP"
                 >
                   <FileArchive className="h-3.5 w-3.5" /> {zipping ? "Comprimiendo…" : "Descargar carpeta (ZIP)"}
@@ -2092,7 +2092,7 @@ export default function DocumentosModule() {
                       dropDocOnFolder(e.dataTransfer.getData("application/x-doc-id"), f.id);
                     }}
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 bg-white text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors",
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors",
                       dropTarget ? "border-primary ring-2 ring-primary" : "border-[var(--rule-base)]"
                     )}
                   >
@@ -2114,7 +2114,7 @@ export default function DocumentosModule() {
               <span className="text-sm font-bold tabular-nums">{selectedIds.size} seleccionado(s)</span>
               <button
                 onClick={() => (todosElegidos ? setSelectedIds(new Set()) : selectAll())}
-                className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold"
+                className="text-xs px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold"
                 title={
                   hayFiltroPuesto
                     ? "Elige todo lo que quedó tras filtrar, no todo el drive"
@@ -2127,7 +2127,7 @@ export default function DocumentosModule() {
                     ? `Elegir los ${displayDocs.length} filtrados`
                     : `Elegir los ${displayDocs.length}`}
               </button>
-              <button onClick={() => bulkFavorite(true)} className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1">
+              <button onClick={() => bulkFavorite(true)} className="text-xs px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1">
                 <Star className="h-3 w-3" /> Favorito
               </button>
 
@@ -2136,7 +2136,7 @@ export default function DocumentosModule() {
               <span className="ml-1 h-5 w-px bg-white/30" aria-hidden />
               <button
                 onClick={() => bulkStatus("approved")}
-                className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1.5"
+                className="text-xs px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1.5"
                 title="Marcar como aprobado: está bien, se puede usar"
               >
                 <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-success-500)] ring-1 ring-white/70" aria-hidden />
@@ -2144,7 +2144,7 @@ export default function DocumentosModule() {
               </button>
               <button
                 onClick={() => bulkStatus("observado")}
-                className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1.5"
+                className="text-xs px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1.5"
                 title="Marcar para corregir: tiene algo mal"
               >
                 <span className="h-2.5 w-2.5 rounded-full bg-[var(--data-error-500)] ring-1 ring-white/70" aria-hidden />
@@ -2153,7 +2153,7 @@ export default function DocumentosModule() {
               <select
                 onChange={(e) => { const v = e.target.value; if (v) bulkStatus(v as EstadoDoc); e.currentTarget.selectedIndex = 0; }}
                 defaultValue=""
-                className="text-xs px-2 py-1 rounded-md bg-white/20 hover:bg-white/30 text-white font-bold outline-none cursor-pointer [&>option]:text-[var(--text-primary)]"
+                className="text-xs px-2 py-1 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold outline-none cursor-pointer [&>option]:text-[var(--text-primary)]"
                 title="Marcar con otro estado"
                 aria-label="Marcar con otro estado"
               >
@@ -2175,7 +2175,7 @@ export default function DocumentosModule() {
                   if (r) setBulkMorePos({ top: r.bottom + 4, right: window.innerWidth - r.right });
                   setBulkMoreOpen(true);
                 }}
-                className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1"
+                className="text-xs px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1"
                 aria-label="Más acciones para la selección"
               >
                 <MoreHorizontal className="h-3 w-3" /> Más
@@ -2235,14 +2235,14 @@ export default function DocumentosModule() {
               )}
               <button
                 onClick={() => setBulkTagModalOpen(true)}
-                className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1"
+                className="text-xs px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1"
               >
                 <Tag className="h-3 w-3" /> Etiquetar…
               </button>
-              <button onClick={bulkDelete} className="text-xs px-2.5 py-1 rounded-md bg-[var(--data-error-500)] hover:brightness-110 font-bold inline-flex items-center gap-1">
+              <button onClick={bulkDelete} className="text-xs px-2.5 py-1 rounded-lg bg-[var(--data-error-500)] hover:brightness-110 font-bold inline-flex items-center gap-1">
                 <Trash2 className="h-3 w-3" /> Eliminar
               </button>
-              <button onClick={clearSelection} className="ml-auto text-xs px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 font-bold">Cancelar</button>
+              <button onClick={clearSelection} className="ml-auto text-xs px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 font-bold">Cancelar</button>
             </div>
           )}
 
@@ -2302,7 +2302,7 @@ export default function DocumentosModule() {
                   "shrink-0 rounded-lg border-2 px-2.5 py-1 text-xs font-bold transition-colors",
                   soloSinDescribir
                     ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]"
-                    : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-[var(--accent)]/50 dark:bg-[var(--surface-raised)]",
+                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50 ",
                 )}
               >
                 {soloSinDescribir ? "Ver todos" : "Ver cuáles"}
@@ -2372,7 +2372,7 @@ export default function DocumentosModule() {
               onEliminar={async (ids) => { await bulk("delete", ids); }}
             />
           ) : loading && documents.length === 0 ? (
-            <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-10 text-center text-sm text-[var(--text-tertiary)]">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-10 text-center text-sm text-[var(--text-tertiary)]">
               Cargando…
             </div>
           ) : filterMode === "trash" ? (
@@ -2436,7 +2436,7 @@ export default function DocumentosModule() {
               ))}
             </div>
           ) : (
-            <div className="bg-white border border-[var(--rule-base)] rounded-2xl overflow-hidden">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
               <DataTable className="w-full text-sm">
                 <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                   <tr>
@@ -2514,7 +2514,7 @@ export default function DocumentosModule() {
                               onBlur={commitRename}
                               autoFocus
                               aria-label={`Renombrar ${doc.name}`}
-                              className="w-full max-w-[320px] px-2 py-1 rounded-md border-2 border-primary text-sm font-bold outline-none bg-[var(--surface-raised)] text-[var(--text-primary)]"
+                              className="w-full max-w-[320px] px-2 py-1 rounded-xl border-2 border-primary text-sm font-bold outline-none bg-[var(--surface-raised)] text-[var(--text-primary)]"
                             />
                           ) : (
                             <button onClick={() => setPreview(doc)} onDoubleClick={(e) => { e.preventDefault(); startRename(doc); }} className="flex items-center gap-3 text-left min-w-0 hover:text-primary transition-colors" title="Doble-click para renombrar">
@@ -2938,7 +2938,7 @@ function SidebarResizeHandle({
 
 function StatBlock({ label, value, icon: Icon, tint }: { label: string; value: string; icon: typeof FileIcon; tint: string }) {
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-4">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</p>
@@ -2958,7 +2958,7 @@ function StorageRing({ usedBytes, quotaBytes }: { usedBytes: number; quotaBytes:
   const dash = (pct / 100) * circ;
   const color = pct >= 90 ? "var(--color-danger, #ef4444)" : pct >= 70 ? "var(--color-warning, #ff6b5b)" : "var(--color-primary)";
   return (
-    <div className="bg-white border border-[var(--rule-base)] rounded-2xl p-4 flex items-center gap-3">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4 flex items-center gap-3">
       <div className="relative h-12 w-12 shrink-0">
         <svg viewBox="0 0 44 44" className="h-12 w-12 -rotate-90">
           <circle cx="22" cy="22" r={r} fill="none" stroke="var(--surface-sunken)" strokeWidth="4" />
@@ -2994,7 +2994,7 @@ function FolderChip({ nombre, onClick }: { nombre: string | null; onClick?: () =
       type="button"
       onClick={(e) => { e.stopPropagation(); onClick?.(); }}
       title={`Abrir la carpeta "${nombre}"`}
-      className="inline-flex max-w-[140px] items-center gap-1 rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-secondary)] transition hover:text-primary"
+      className="inline-flex max-w-[140px] items-center gap-1 rounded-lg bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-secondary)] transition hover:text-primary"
     >
       <Folder className="h-3 w-3 shrink-0" /> <span className="truncate">{nombre}</span>
     </button>
@@ -3097,7 +3097,7 @@ function StatusControl({ status, onChange }: { status: string; onChange: (s: str
         onClick={toggle}
         title="Estado del documento"
         className={cn(
-          "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold transition-colors",
+          "inline-flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold transition-colors",
           meta ? cn(meta.bg, meta.text) : "border border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-primary hover:text-primary"
         )}
       >
@@ -3189,7 +3189,7 @@ function DocCard({
       // evita que la barra de scroll salte al entrar y salir cada tarjeta.
       style={{ contentVisibility: "auto", containIntrinsicSize: "auto 320px" }}
       className={cn(
-        "group relative overflow-hidden rounded-2xl border-2 bg-white transition-all cursor-grab active:cursor-grabbing",
+        "group relative overflow-hidden rounded-2xl border-2 bg-[var(--surface-raised)] transition-all cursor-grab active:cursor-grabbing",
         // El estado manda sobre el borde: es lo que permite barrer la carpeta
         // con la vista y ver cuáles hay que corregir sin leer un solo nombre.
         // La selección gana, porque es lo que estás haciendo en ese momento.
@@ -3256,7 +3256,7 @@ function DocCard({
             onKeyDown={(e) => { if (e.key === "Enter") onCommitRename(); if (e.key === "Escape") onCancelRename(); }}
             onBlur={onCommitRename}
             autoFocus
-            className="w-full px-2 py-1 rounded-md border-2 border-primary text-sm font-bold outline-none"
+            className="w-full px-2 py-1 rounded-xl border-2 border-primary text-sm font-bold outline-none"
           />
         ) : (
           <button
@@ -3324,7 +3324,7 @@ function DocCard({
 
 function EmptyState({ onUpload }: { onUpload: () => void }) {
   return (
-    <div className="bg-white border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
+    <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
       <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
         <Upload className="h-7 w-7" />
       </div>
@@ -3405,7 +3405,7 @@ function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onTag,
   );
   return (
     <>
-      <button ref={btnRef} onClick={toggle} className="p-1.5 rounded-md text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)]" title="Acciones" aria-label="Acciones del documento">
+      <button ref={btnRef} onClick={toggle} className="p-1.5 rounded-xl text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)]" title="Acciones" aria-label="Acciones del documento">
         <MoreVertical className="h-4 w-4" />
       </button>
       {open && pos && (

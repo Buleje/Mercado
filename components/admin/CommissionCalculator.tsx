@@ -178,7 +178,7 @@ export default function CommissionCalculator() {
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value as "month" | "week")}
-            className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-sm text-[var(--text-secondary)]"
+            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-sm text-[var(--text-secondary)]"
           >
             <option value="month">Este mes</option>
             <option value="week">Esta semana</option>
@@ -186,10 +186,10 @@ export default function CommissionCalculator() {
           <button
             onClick={() => setShowSettings((s) => !s)}
             className={cn(
-              "p-1.5 rounded-lg border transition-colors",
+              "p-1.5 rounded-xl border transition-colors",
               showSettings
                 ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750"
+                : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] "
             )}
           >
             <Settings className="w-4 h-4" />
@@ -197,7 +197,7 @@ export default function CommissionCalculator() {
           <button
             onClick={load}
             disabled={loading}
-            className="p-1.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750 transition-colors"
+            className="p-1.5 rounded-xl border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] transition-colors"
           >
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
           </button>
@@ -221,7 +221,7 @@ export default function CommissionCalculator() {
                   step={0.5}
                   value={defaultRate}
                   onChange={(e) => setDefaultRate(Number(e.target.value))}
-                  className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 <span className="text-sm text-[var(--text-secondary)]">%</span>
               </div>
@@ -251,7 +251,7 @@ export default function CommissionCalculator() {
                           [s.cashierId]: Number(e.target.value),
                         }))
                       }
-                      className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <span className="text-sm text-[var(--text-secondary)]">%</span>
                   </div>
@@ -344,7 +344,7 @@ export default function CommissionCalculator() {
               {summaries.map((s) => (
                 <tr
                   key={s.cashierId}
-                  className="hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750 transition-colors"
+                  className="hover:bg-[var(--surface-alt)] transition-colors"
                 >
                   <td className="px-4 py-4 text-base font-semibold text-[var(--text-primary)]">
                     {s.cashierName}
@@ -363,7 +363,7 @@ export default function CommissionCalculator() {
                   </td>
                 </tr>
               ))}
-              <tr className="bg-[var(--surface-alt)] dark:bg-gray-750 font-bold">
+              <tr className="bg-[var(--surface-alt)] font-bold">
                 <td className="px-4 py-4 text-base text-[var(--text-primary)]">Total</td>
                 <td className="px-4 py-4 text-right text-base text-[var(--text-primary)] tabular-nums">
                   {fmt(summaries.reduce((s, c) => s + c.totalSales, 0))}

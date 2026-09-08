@@ -123,7 +123,7 @@ export default function WhatsAppTemplates() {
         {!creating && (
           <button
             onClick={() => { setCreating(true); setEditingId(null); setNewName(""); setNewText(""); }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors"
           >
             <Plus className="h-3.5 w-3.5" /> Nueva plantilla
           </button>
@@ -141,17 +141,17 @@ export default function WhatsAppTemplates() {
             value={newName}
             onChange={e => setNewName(e.target.value)}
             placeholder="Nombre (ej: Recordatorio pago)"
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           <textarea
             value={newText}
             onChange={e => setNewText(e.target.value)}
             placeholder="Mensaje. Usa {nombre}, {monto}, etc. para variables"
             rows={3}
-            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
           />
           {newText && (
-            <div className="p-2.5 rounded-lg bg-gray-50 dark:bg-surface text-xs text-[var(--text-secondary)] leading-relaxed">
+            <div className="p-2.5 rounded-lg bg-[var(--surface-sunken)] text-xs text-[var(--text-secondary)] leading-relaxed">
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mb-1">Vista previa:</p>
               <HighlightedText text={newText} />
             </div>
@@ -159,14 +159,14 @@ export default function WhatsAppTemplates() {
           <div className="flex justify-end gap-2">
             <button
               onClick={() => { setCreating(false); setEditingId(null); setNewName(""); setNewText(""); }}
-              className="px-3 py-2 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+              className="px-3 py-2 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleSaveNew}
               disabled={!newName.trim() || !newText.trim()}
-              className="px-4 py-2 rounded-lg text-xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-xl text-xs font-medium bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {editingId ? "Guardar cambios" : "Crear plantilla"}
             </button>
@@ -190,14 +190,14 @@ export default function WhatsAppTemplates() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleEdit(template)}
-                    className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-[var(--surface-sunken)] transition-colors"
+                    className="p-1 rounded-xl text-[var(--text-tertiary)] hover:text-primary hover:bg-[var(--surface-sunken)] transition-colors"
                     title="Editar"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(template.id)}
-                    className="p-1 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
+                    className="p-1 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 transition-colors"
                     title="Eliminar"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -213,7 +213,7 @@ export default function WhatsAppTemplates() {
             {template.variables.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-3">
                 {template.variables.map(v => (
-                  <span key={v} className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-surface text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
+                  <span key={v} className="px-1.5 py-0.5 rounded-md bg-[var(--rule-soft)] text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
                     {v}
                   </span>
                 ))}
@@ -226,7 +226,7 @@ export default function WhatsAppTemplates() {
                 "w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors",
                 copiedId === template.id
                   ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                  : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] hover:bg-[#25D366]/10 hover:text-[#25D366]"
+                  : "bg-[var(--rule-soft)] text-[var(--text-secondary)] hover:bg-[#25D366]/10 hover:text-[#25D366]"
               )}
             >
               {copiedId === template.id ? (

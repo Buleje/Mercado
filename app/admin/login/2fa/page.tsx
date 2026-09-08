@@ -103,7 +103,7 @@ export default function TwoFactorPage() {
     <div className="min-h-screen bg-[var(--surface-canvas)] flex items-center justify-center px-4">
       <div
         className={[
-          "w-full max-w-sm bg-[var(--surface-base)] dark:bg-[var(--color-card)]",
+          "w-full max-w-sm bg-[var(--surface-base)] ",
           "rounded-2xl shadow-lg border border-[var(--rule-soft)]",
           "p-7 space-y-5",
           shaking ? "animate-[shake_0.45s_ease-out]" : "",

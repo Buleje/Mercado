@@ -176,7 +176,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
               {customerName ?? customerPhone}
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />
           </button>
         </div>
@@ -236,7 +236,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
               {/* Fiados table */}
               {data.fiados.length > 0 && (
-                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
                   <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
                     <Banknote className="h-4 w-4 text-[var(--data-error-500)]" /> Fiados pendientes
                   </h4>
@@ -277,7 +277,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
               {/* Prestamos table */}
               {data.prestamos.length > 0 && (
-                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
                   <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-[var(--data-warning-500)]" /> Préstamos activos
                   </h4>
@@ -309,7 +309,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
 
               {/* Últimas compras */}
               {data.ultimasCompras.length > 0 && (
-                <div className="bg-white dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
+                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
                   <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
                     <ShoppingBag className="h-4 w-4 text-primary" /> Últimas compras
                   </h4>
@@ -340,14 +340,14 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
           <button
             onClick={handlePrint}
             disabled={!data}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             <Printer className="h-4 w-4" /> Imprimir
           </button>
           <button
             onClick={handleWhatsApp}
             disabled={!data}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#25D366] text-white text-sm font-bold hover:bg-[#1ebe5d] transition-colors disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-bold hover:bg-[#1ebe5d] transition-colors disabled:opacity-50"
           >
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </button>

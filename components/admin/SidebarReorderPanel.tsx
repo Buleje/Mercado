@@ -65,7 +65,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
         <div className="flex gap-2">
           <button
             onClick={handleReset}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors border border-[var(--rule-base)] dark:border-[var(--rule-base)]"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] transition-colors border border-[var(--rule-base)] dark:border-[var(--rule-base)]"
           >
             <RotateCcw className="h-3.5 w-3.5" /> Restablecer
           </button>
@@ -84,7 +84,7 @@ export default function SidebarReorderPanel({ categories, onSave }: SidebarReord
         </div>
       </div>
 
-      <div className="space-y-1 bg-gray-50 dark:bg-surface rounded-xl p-2">
+      <div className="space-y-1 bg-[var(--surface-sunken)] rounded-xl p-2">
         {items.map((item, idx) => (
           <div
             key={item.id}

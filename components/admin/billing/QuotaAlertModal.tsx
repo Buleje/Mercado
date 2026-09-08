@@ -86,7 +86,7 @@ function MetricRow({ event, snapshot }: MetricRowProps) {
       </div>
 
       <div
-        className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
+        className="h-2 w-full rounded-full bg-[var(--rule-base)] overflow-hidden"
         role="progressbar"
         aria-valuenow={pct}
         aria-valuemin={0}
@@ -206,7 +206,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
             <button
               ref={closeRef}
               onClick={onClose}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-gray-200 hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-gray-200 hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
               aria-label="Cerrar modal de detalles de cuota"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5" aria-hidden="true">
@@ -217,7 +217,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
 
           {/* Body scrollable */}
           <div className="flex-1 overflow-y-auto px-6 py-2">
-            <ul className="divide-y divide-gray-100 dark:divide-gray-800" aria-label="Lista de métricas de uso">
+            <ul className="divide-y divide-[var(--rule-soft)] " aria-label="Lista de métricas de uso">
               {METERED_EVENTS.map((event) => (
                 <MetricRow key={event} event={event} snapshot={snapshot} />
               ))}
@@ -236,7 +236,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="min-h-[44px] px-4 py-2 rounded-lg border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
+                className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f]"
               >
                 Cerrar
               </button>

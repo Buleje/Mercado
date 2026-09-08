@@ -93,13 +93,13 @@ export function NavDefaultTabsConfig() {
         {NAV_MODULES.map((mod) => (
           <div
             key={mod.id}
-            className="flex items-center justify-between py-2.5 border-b border-[var(--rule-soft)] dark:border-white/5 last:border-b-0"
+            className="flex items-center justify-between py-2.5 border-b border-[var(--rule-soft)] last:border-b-0"
           >
             <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">{mod.name}</span>
             <select
               value={defaults[mod.id] ?? mod.tabs[0].id}
               onChange={(e) => handleChange(mod.id, e.target.value)}
-              className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] rounded-lg px-2.5 py-1.5 text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB] outline-none transition-all"
+              className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] rounded-xl px-2.5 py-1.5 text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:ring-2 focus:ring-[var(--accent-ink)]/30 focus:border-[var(--accent-ink)] outline-none transition-all"
             >
               {mod.tabs.map((t) => (
                 <option key={t.id} value={t.id}>{t.label}</option>
@@ -108,7 +108,7 @@ export function NavDefaultTabsConfig() {
           </div>
         ))}
       </div>
-      <div className="flex items-center justify-between mt-4 pt-3 border-t border-[var(--rule-soft)] dark:border-white/5">
+      <div className="flex items-center justify-between mt-4 pt-3 border-t border-[var(--rule-soft)] ">
         <button
           onClick={handleReset}
           className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"

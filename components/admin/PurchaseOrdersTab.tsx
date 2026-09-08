@@ -67,12 +67,12 @@ function OCProgressBar({ status }: { status: string }) {
             <div key={step} className="flex items-center" style={{ flex: idx < 3 ? 1 : 0 }}>
               <div className={cn(
                 "w-3.5 h-3.5 rounded-full shrink-0 transition-colors",
-                isCancelled ? "bg-[var(--data-error-500)]" : completed ? "bg-primary" : "bg-[var(--rule-base)] dark:bg-gray-600"
+                isCancelled ? "bg-[var(--data-error-500)]" : completed ? "bg-primary" : "bg-[var(--rule-base)] "
               )} />
               {idx < 3 && (
                 <div className={cn(
                   "h-1 flex-1 transition-colors",
-                  isCancelled ? "bg-[var(--data-error-500)]" : (!isCancelled && step < currentStep) ? "bg-primary" : "bg-[var(--rule-base)] dark:bg-gray-600"
+                  isCancelled ? "bg-[var(--data-error-500)]" : (!isCancelled && step < currentStep) ? "bg-primary" : "bg-[var(--rule-base)] "
                 )} />
               )}
             </div>
@@ -127,7 +127,7 @@ function KPICardOC({
   }[accent];
   return (
     <div className={cn(
-      "bg-white dark:bg-[var(--color-card)] border-2 rounded-2xl p-4 flex items-center gap-3 min-w-0 transition-shadow hover:shadow-sm",
+      "bg-[var(--surface-raised)] border-2 rounded-2xl p-4 flex items-center gap-3 min-w-0 transition-shadow hover:shadow-sm",
       cfg.border,
     )}>
       <span className={cn("inline-flex items-center justify-center h-11 w-11 rounded-xl shrink-0", cfg.iconBg)}>
@@ -219,7 +219,7 @@ function FleteTardio({
             value={monto}
             onChange={(e) => setMonto(Math.max(0, Number(e.target.value)))}
             aria-label="Costo de traer la mercadería"
-            className="w-32 h-11 pl-9 pr-3 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary"
+            className="w-32 h-11 pl-9 pr-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <button
@@ -767,7 +767,7 @@ export default function PurchaseOrdersTab() {
 
       {/* ─── Buscador: por proveedor, factura o producto ─────────────── */}
       {!loading && orders.length > 0 && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-3 sm:p-4 space-y-3">
+        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[240px]">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
@@ -776,7 +776,7 @@ export default function PurchaseOrdersTab() {
                 onChange={(e) => f.setBusqueda(e.target.value)}
                 placeholder="Buscar por proveedor, N° de factura o producto…"
                 aria-label="Buscar órdenes de compra"
-                className="w-full h-12 pl-10 pr-10 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+                className="w-full h-12 pl-10 pr-10 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
               />
               {f.busqueda && (
                 <button
@@ -795,7 +795,7 @@ export default function PurchaseOrdersTab() {
                 value={f.desde}
                 onChange={(e) => f.setDesde(e.target.value)}
                 aria-label="Desde"
-                className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+                className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </Field>
             <Field label="Hasta" labelClassName="sr-only">
@@ -804,7 +804,7 @@ export default function PurchaseOrdersTab() {
                 value={f.hasta}
                 onChange={(e) => f.setHasta(e.target.value)}
                 aria-label="Hasta"
-                className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+                className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </Field>
             <div className="relative min-w-[190px]">
@@ -813,7 +813,7 @@ export default function PurchaseOrdersTab() {
                 value={selectedSupplierId ?? ""}
                 onChange={(e) => setSelectedSupplierId(e.target.value || null)}
                 aria-label="Filtrar por proveedor"
-                className="w-full h-12 pl-10 pr-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary appearance-none cursor-pointer"
+                className="w-full h-12 pl-10 pr-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary appearance-none cursor-pointer"
               >
                 <option value="">Todos los proveedores</option>
                 {suppliers.map(s => (
@@ -825,7 +825,7 @@ export default function PurchaseOrdersTab() {
               value={f.orden}
               onChange={(e) => f.setOrden(e.target.value as OrdenDeLista)}
               aria-label="Ordenar por"
-              className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer"
+              className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer"
             >
               {ORDENES_DE_LISTA.map(o => (
                 <option key={o.id} value={o.id}>{o.label}</option>
@@ -835,7 +835,7 @@ export default function PurchaseOrdersTab() {
               <button
                 type="button"
                 onClick={f.limpiar}
-                className="inline-flex items-center gap-1.5 h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
+                className="inline-flex items-center gap-1.5 h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
               >
                 <X className="h-4 w-4" />
                 Limpiar
@@ -861,7 +861,7 @@ export default function PurchaseOrdersTab() {
             "inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 text-sm font-bold transition-colors",
             showSupplierHistory
               ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-              : "border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
+              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
           )}
         >
           <History className="h-4 w-4" />
@@ -890,7 +890,7 @@ export default function PurchaseOrdersTab() {
             }));
             exportToExcel(rows, `compras-${new Date().toISOString().slice(0, 10)}`, "Compras");
           }}
-          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           title="Exportar compras a Excel"
         >
           <Download className="h-4 w-4" />
@@ -960,7 +960,7 @@ export default function PurchaseOrdersTab() {
                   "inline-flex items-center gap-2 h-11 px-4 rounded-2xl text-sm font-bold transition-colors border-2",
                   active
                     ? toneCls
-                    : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
+                    : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
                 )}
               >
                 {p.label}
@@ -1033,7 +1033,7 @@ export default function PurchaseOrdersTab() {
                 <div
                   key={r.id}
                   className={cn(
-                    "rounded-2xl border-2 p-4 bg-white dark:bg-[var(--color-card)] transition-all",
+                    "rounded-2xl border-2 p-4 bg-[var(--surface-raised)] transition-all",
                     dueToday ? "border-[var(--data-error-500)]/50 ring-2 ring-[var(--data-error-500)]/20" : dueSoon ? "border-[var(--data-warning-500)]/40" : "border-[var(--rule-base)]",
                   )}
                 >
@@ -1104,7 +1104,7 @@ export default function PurchaseOrdersTab() {
                     onClick={() => setRecurringInterval(d)}
                     className={cn(
                       "flex-1 py-2 rounded-xl text-sm font-bold transition-colors",
-                      recurringInterval === d ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)]"
+                      recurringInterval === d ? "bg-[var(--accent-600,var(--accent))] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
                     )}
                   >
                     {d} dias
@@ -1122,7 +1122,7 @@ export default function PurchaseOrdersTab() {
               <select
                 value={recurringNotifyDays}
                 onChange={e => setRecurringNotifyDays(Number(e.target.value))}
-                className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
               >
                 <option value={1}>1 dia antes</option>
                 <option value={2}>2 dias antes</option>
@@ -1134,7 +1134,7 @@ export default function PurchaseOrdersTab() {
               <button
                 type="button"
                 onClick={() => setShowRecurringModal(null)}
-                className="flex-1 h-12 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface text-sm font-bold text-[var(--text-secondary)]"
+                className="flex-1 h-12 rounded-xl bg-[var(--surface-sunken)] text-sm font-bold text-[var(--text-secondary)]"
               >
                 Cancelar
               </button>
@@ -1204,7 +1204,7 @@ export default function PurchaseOrdersTab() {
 
                   {/* Top Products */}
                   {stats.topProducts.length > 0 && (
-                    <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-3 mb-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+                    <div className="bg-[var(--surface-alt)] rounded-xl p-3 mb-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                       <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase mb-2 flex items-center gap-1">
                         <TrendingUp className="h-3.5 w-3.5" />
                         Top 3 productos más comprados
@@ -1256,7 +1256,7 @@ export default function PurchaseOrdersTab() {
                     la cronología estaba reimplementada a mano acá, sin las
                     devoluciones que el Timeline sí cruza. */}
                 {isExpanded && (
-                  <div className="border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface p-4 space-y-4">
+                  <div className="border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] p-4 space-y-4">
                     <SupplierScorecard supplierId={supplier.id} />
                     <SupplierTimeline supplierId={supplier.id} supplierName={supplier.name} />
                   </div>
@@ -1276,7 +1276,7 @@ export default function PurchaseOrdersTab() {
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
           onClick={(e) => e.target === e.currentTarget && setShowCreate(false)}
         >
-          <div className="bg-white dark:bg-[var(--color-card)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[92dvh] border-0 sm:border-2 sm:border-[var(--rule-base)] overflow-hidden">
+          <div className="bg-[var(--surface-raised)] w-full sm:max-w-3xl sm:rounded-2xl rounded-t-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[92dvh] border-0 sm:border-2 sm:border-[var(--rule-base)] overflow-hidden">
             {/* Header */}
             <header className="px-5 sm:px-6 py-4 border-b-2 border-[var(--rule-base)] flex items-center gap-3 bg-linear-to-r from-primary/5 to-transparent">
               <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/15 border border-primary/30 shrink-0">
@@ -1311,7 +1311,7 @@ export default function PurchaseOrdersTab() {
                         required
                         value={supplierId}
                         onChange={(e) => setSupplierId(e.target.value)}
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary cursor-pointer"
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary cursor-pointer"
                       >
                         <option value="">— Seleccionar proveedor —</option>
                         {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (RUC ${s.ruc})` : ""}</option>)}
@@ -1322,7 +1322,7 @@ export default function PurchaseOrdersTab() {
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         placeholder="Ej. Traer factura, descargar por el portón de atrás..."
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
                       />
                     </Field>
                   </div>
@@ -1351,7 +1351,7 @@ export default function PurchaseOrdersTab() {
                               "h-12 px-4 rounded-2xl border-2 text-sm font-bold transition-colors",
                               activa
                                 ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                                : "border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
+                                : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
                             )}
                           >
                             {forma.label}
@@ -1372,7 +1372,7 @@ export default function PurchaseOrdersTab() {
                         type="date"
                         value={deliveryDate}
                         onChange={(e) => setDeliveryDate(e.target.value)}
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
                       />
                     </Field>
                     <Field label={<><Percent className="inline h-3 w-3 mr-1" />Descuento del proveedor</>} labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
@@ -1383,7 +1383,7 @@ export default function PurchaseOrdersTab() {
                             type="number" min="0" max="100" step="0.5"
                             value={discount}
                             onChange={(e) => setDiscount(Math.min(100, Math.max(0, Number(e.target.value))))}
-                            className="w-full h-12 pl-3.5 pr-9 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                            className="w-full h-12 pl-3.5 pr-9 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
                           />
                           <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--text-tertiary)]">%</span>
                         </div>
@@ -1404,7 +1404,7 @@ export default function PurchaseOrdersTab() {
                       <select
                         value={invoiceType}
                         onChange={(e) => setInvoiceType(e.target.value as TipoComprobante)}
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary cursor-pointer"
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary cursor-pointer"
                       >
                         {TIPOS_COMPROBANTE.map(t => (
                           <option key={t.id} value={t.id}>{t.label}</option>
@@ -1417,7 +1417,7 @@ export default function PurchaseOrdersTab() {
                         onChange={(e) => setInvoiceNumber(e.target.value)}
                         disabled={invoiceType === "ninguno"}
                         placeholder={invoiceType === "ninguno" ? "Sin comprobante" : "F001-00012345"}
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary disabled:opacity-50"
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary disabled:opacity-50"
                       />
                     </Field>
                     <Field label={<><Truck className="inline h-3 w-3 mr-1" />Flete (S/)</>} labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
@@ -1425,7 +1425,7 @@ export default function PurchaseOrdersTab() {
                         type="number" min="0" step="0.5"
                         value={flete}
                         onChange={(e) => setFlete(Math.max(0, Number(e.target.value)))}
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
                       />
                     </Field>
                     <Field label="Otros costos (S/)" labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
@@ -1433,7 +1433,7 @@ export default function PurchaseOrdersTab() {
                         type="number" min="0" step="0.5"
                         value={otrosCostos}
                         onChange={(e) => setOtrosCostos(Math.max(0, Number(e.target.value)))}
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
                       />
                     </Field>
                   </div>
@@ -1477,7 +1477,7 @@ export default function PurchaseOrdersTab() {
                       <button
                         type="button"
                         onClick={() => setShowScanner(true)}
-                        className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
+                        className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
                       >
                         <ScanBarcode className="h-4 w-4" />
                         Escanear
@@ -1510,7 +1510,7 @@ export default function PurchaseOrdersTab() {
                           : [];
                         const lineTotal = item.quantity * item.unitCost;
                         return (
-                          <div key={idx} className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] p-3 transition-all hover:border-[var(--text-tertiary)]">
+                          <div key={idx} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 transition-all hover:border-[var(--text-tertiary)]">
                             <div className="flex items-start gap-2 mb-2">
                               <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold shrink-0">
                                 {idx + 1}
@@ -1526,10 +1526,10 @@ export default function PurchaseOrdersTab() {
                                   onFocus={() => setOpenSearchIdx(idx)}
                                   onBlur={() => setTimeout(() => setOpenSearchIdx(null), 120)}
                                   placeholder="Buscar producto…"
-                                  className="w-full h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary"
+                                  className="w-full h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary"
                                 />
                                 {openSearchIdx === idx && filtered.length > 0 && (
-                                  <div className="absolute top-full left-0 right-0 z-20 bg-white dark:bg-[var(--color-card)] border-2 border-[var(--rule-base)] rounded-2xl mt-1 max-h-56 overflow-y-auto shadow-lg">
+                                  <div className="absolute top-full left-0 right-0 z-20 bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl mt-1 max-h-56 overflow-y-auto shadow-lg">
                                     {filtered.map(p => (
                                       <button
                                         key={p.id}
@@ -1566,7 +1566,7 @@ export default function PurchaseOrdersTab() {
                                         type="number" min="1" step="1"
                                         value={item.quantity}
                                         onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })}
-                                        className="w-20 h-10 px-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
+                                        className="w-20 h-10 px-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
                                       />
                                       <span className="text-xs font-bold text-[var(--text-tertiary)] ml-1">{item.unit}</span>
                                     </>
@@ -1583,7 +1583,7 @@ export default function PurchaseOrdersTab() {
                                         type="number" min="0" step="0.01"
                                         value={item.unitCost}
                                         onChange={(e) => updateItem(idx, { unitCost: Number(e.target.value) })}
-                                        className="w-24 h-10 pl-7 pr-2 rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
+                                        className="w-24 h-10 pl-7 pr-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
                                       />
                                     </div>
                                   )}
@@ -1634,7 +1634,7 @@ export default function PurchaseOrdersTab() {
                   <button
                     type="button"
                     onClick={() => setShowCreate(false)}
-                    className="flex-1 h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                    className="flex-1 h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                   >
                     Cancelar
                   </button>
@@ -1675,7 +1675,7 @@ export default function PurchaseOrdersTab() {
             <button
               type="button"
               onClick={f.limpiar}
-              className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors"
+              className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-extrabold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors"
             >
               <X className="h-5 w-5" strokeWidth={2.5} />
               Limpiar filtros
@@ -1700,7 +1700,7 @@ export default function PurchaseOrdersTab() {
             <div
               key={o.id}
               className={cn(
-                "bg-white dark:bg-[var(--color-card)] border-2 rounded-2xl overflow-hidden transition-all",
+                "bg-[var(--surface-raised)] border-2 rounded-2xl overflow-hidden transition-all",
                 isExpanded ? "border-primary/40 ring-2 ring-primary/15 shadow-sm" : "border-[var(--rule-base)] hover:border-[var(--text-tertiary)]",
               )}
             >
@@ -1767,7 +1767,7 @@ export default function PurchaseOrdersTab() {
                         aria-label="Cambiar estado"
                         disabled={cerrada}
                         title={cerrada ? `Una orden ${STATUS_LABELS[o.status].toLowerCase()} ya no cambia de estado` : "Cambiar estado"}
-                        className="h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {destinos.map(s => (
                           <option key={s} value={s}>{STATUS_LABELS[s]}</option>
@@ -1830,7 +1830,7 @@ export default function PurchaseOrdersTab() {
 
               {/* Expanded details */}
               {expanded === o.id && (
-                <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-[var(--surface-alt)] dark:bg-surface">
+                <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-[var(--surface-alt)] ">
                   <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Detalle de productos</p>
                   <div className="space-y-1.5">
                     {o.items.map((item, i) => {
@@ -1941,7 +1941,7 @@ export default function PurchaseOrdersTab() {
                           ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                           : diff > 0
                           ? "bg-[var(--data-warning-50)] dark:bg-orange-950/20 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"
-                          : "bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)]"
+                          : "bg-[var(--surface-alt)] text-[var(--text-secondary)]"
                       )}>
                         {diff < 0 ? `Ahorraste S/${Math.abs(diff).toFixed(2)} vs última compra` :
                          diff > 0 ? `Pagaste S/${diff.toFixed(2)} mas vs última compra` :
@@ -1972,7 +1972,7 @@ export default function PurchaseOrdersTab() {
           {f.totalPaginas > 1 && (
             <nav
               aria-label="Páginas de órdenes"
-              className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-4 py-3"
+              className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3"
             >
               <p className="text-sm font-bold text-[var(--text-secondary)]">
                 Mostrando {(f.pagina - 1) * POR_PAGINA + 1}–{Math.min(f.pagina * POR_PAGINA, f.filtradas.length)} de {f.filtradas.length}
@@ -1982,7 +1982,7 @@ export default function PurchaseOrdersTab() {
                   type="button"
                   onClick={() => f.setPagina(f.pagina - 1)}
                   disabled={f.pagina <= 1}
-                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Anterior
@@ -1994,7 +1994,7 @@ export default function PurchaseOrdersTab() {
                   type="button"
                   onClick={() => f.setPagina(f.pagina + 1)}
                   disabled={f.pagina >= f.totalPaginas}
-                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Siguiente
                   <ChevronRight className="h-4 w-4" />
@@ -2016,7 +2016,7 @@ export default function PurchaseOrdersTab() {
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                 <Plus className="h-5 w-5 text-primary" /> Agregar producto
               </CardTitle>
-              <button onClick={() => setShowAddItemModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors">
+              <button onClick={() => setShowAddItemModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" />
               </button>
             </div>
@@ -2040,7 +2040,7 @@ export default function PurchaseOrdersTab() {
                     value={addItemSearch}
                     onChange={(e) => { setAddItemSearch(e.target.value); setAddItemSel(null); }}
                     placeholder="Buscar por nombre o código de barras…"
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                    className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                   />
                   <div className="space-y-1 max-h-52 overflow-y-auto">
                     {(addItemSearch.length > 0
@@ -2052,7 +2052,7 @@ export default function PurchaseOrdersTab() {
                         type="button"
                         onClick={() => { setAddItemSel(p); setAddItemCost(p.costPrice ?? p.price); setAddItemQty(1); }}
                         className={cn(
-                          "w-full text-left px-3 py-2 rounded-lg border text-sm transition-colors",
+                          "w-full text-left px-3 py-2 rounded-xl border text-sm transition-colors",
                           addItemSel?.id === p.id
                             ? "border-primary bg-primary/5"
                             : "border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:border-gray-300"
@@ -2065,21 +2065,21 @@ export default function PurchaseOrdersTab() {
                     {products.length === 0 && <p className="text-sm text-[var(--text-tertiary)] dark:text-muted text-center py-6">No hay productos</p>}
                   </div>
                   {addItemSel && (
-                    <div className="bg-[var(--surface-alt)] dark:bg-surface rounded-xl p-4 space-y-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+                    <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                       <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{addItemSel.name}</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Field label="Cantidad" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                           <input
                             type="number" min="1" step="1" value={addItemQty}
                             onChange={(e) => setAddItemQty(Number(e.target.value))}
-                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                           />
                         </Field>
                         <Field label="Costo unitario (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                           <input
                             type="number" min="0" step="0.01" value={addItemCost}
                             onChange={(e) => setAddItemCost(Number(e.target.value))}
-                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                           />
                         </Field>
                       </div>
@@ -2089,7 +2089,7 @@ export default function PurchaseOrdersTab() {
                           setItemQueries(prev => [...prev, addItemSel!.name]);
                           setShowAddItemModal(false);
                         }}
-                        className="w-full py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+                        className="w-full py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
                       >
                         Agregar a la orden
                       </button>
@@ -2122,12 +2122,12 @@ export default function PurchaseOrdersTab() {
                         required value={newProdForm.name}
                         onChange={(e) => setNewProdForm(p => ({ ...p, name: e.target.value }))}
                         placeholder="Nombre del producto"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </Field>
                     <Field label="Categoría" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <select value={newProdForm.category} onChange={(e) => setNewProdForm(p => ({ ...p, category: e.target.value }))}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none">
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none">
                         <option value="abarrotes">Abarrotes</option>
                         <option value="bebidas">Bebidas</option>
                         <option value="lacteos">Lácteos</option>
@@ -2141,37 +2141,37 @@ export default function PurchaseOrdersTab() {
                     <Field label="Unidad" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input value={newProdForm.unit} onChange={(e) => setNewProdForm(p => ({ ...p, unit: e.target.value }))}
                         placeholder="und, kg, L…"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </Field>
                     <Field label="Precio venta (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input type="number" min="0" step="0.01" value={newProdForm.price}
                         onChange={(e) => setNewProdForm(p => ({ ...p, price: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </Field>
                     <Field label="Costo compra (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input type="number" min="0" step="0.01" value={newProdForm.costPrice}
                         onChange={(e) => setNewProdForm(p => ({ ...p, costPrice: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </Field>
                     <Field label="Cantidad inicial" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input type="number" min="0" step="1" value={newProdForm.stock}
                         onChange={(e) => setNewProdForm(p => ({ ...p, stock: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </Field>
                     <Field label="Código de barras" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted block mb-1">
                       <input value={newProdForm.barcode} onChange={(e) => setNewProdForm(p => ({ ...p, barcode: e.target.value }))}
                         placeholder="Opcional"
-                        className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                        className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                       />
                     </Field>
                   </div>
                   <button
                     type="submit" disabled={savingNewProd || !newProdForm.name}
-                    className="w-full py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60"
+                    className="w-full py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60"
                   >
                     {savingNewProd ? "Creando…" : "Crear producto y agregar a orden"}
                   </button>
@@ -2231,7 +2231,7 @@ export default function PurchaseOrdersTab() {
           <div className="bg-[var(--surface-raised)] w-full sm:max-w-md sm:rounded-xl rounded-t-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escanear código de barras</CardTitle>
-              <button onClick={() => setShowScanner(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
+              <button onClick={() => setShowScanner(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
             </div>
             <div className="p-4">
               <BarcodeScanner onDetected={handleScan} onClose={() => setShowScanner(false)} />

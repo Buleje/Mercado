@@ -127,7 +127,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
               "historial-precios"
             )
           }
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -142,7 +142,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Producto o usuario…"
-              className="w-full pl-9 pr-9 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full pl-9 pr-9 py-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -153,7 +153,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
           <select
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-white dark:bg-surface text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+            className="px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]"
           >
             <option value="">Todos los productos</option>
             {[...new Set(history.map(h => h.productId))].map(pid => (
@@ -177,7 +177,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
-              <thead className="bg-gray-50 dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
                     <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Fecha</span>
@@ -199,7 +199,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
                   const pct    = h.oldPrice > 0 ? (diff / h.oldPrice) * 100 : null;
                   const isUp   = diff > 0;
                   return (
-                    <tr key={h.id} className="hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
+                    <tr key={h.id} className="hover:bg-[var(--surface-sunken)] dark:hover:bg-surface/50 transition-colors">
                       <td className="px-4 py-3 text-xs text-[var(--text-secondary)] dark:text-muted whitespace-nowrap">
                         {fmtDate(h.changedAt)}
                       </td>
@@ -232,7 +232,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface">
+          <div className="px-4 py-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] ">
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{filtered.length} cambio{filtered.length !== 1 ? "s" : ""} registrado{filtered.length !== 1 ? "s" : ""}</p>
           </div>
         </div>

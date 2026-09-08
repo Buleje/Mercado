@@ -103,7 +103,7 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{
         <span>Nuevos</span>
         <span className="font-mono font-medium text-[var(--data-error-500)]">{formatCurrency(d.nuevos)}</span>
       </p>
-      <div className="border-t border-[var(--rule-base)] dark:border-gray-600 mt-1.5 pt-1.5">
+      <div className="border-t border-[var(--rule-base)] mt-1.5 pt-1.5">
         <p className="text-xs flex justify-between gap-4">
           <span className="font-semibold text-[var(--text-secondary)]">Neto</span>
           <span className={cn("font-mono font-bold", neto >= 0 ? "text-primary" : "text-[var(--data-error-500)]")}>{formatCurrency(neto)}</span>
@@ -221,7 +221,7 @@ export default function FiadoAnalyticsPanel() {
   if (loading) {
     return (
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-4">
-        <div className="h-5 w-40 bg-[var(--rule-soft)] dark:bg-gray-700 rounded animate-pulse" />
+        <div className="h-5 w-40 bg-[var(--rule-soft)] rounded animate-pulse" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-20 bg-[var(--surface-sunken)] rounded-lg animate-pulse" />

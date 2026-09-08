@@ -620,13 +620,13 @@ export default function ReportsTab() {
               <p className="text-sm text-[var(--text-secondary)] dark:text-muted flex-1">{r.desc}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {!isPdfOnly && (
-                  <button onClick={() => generateCSV(r.type)} disabled={!!generating} className="flex-1 flex flex-wrap items-center justify-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
+                  <button onClick={() => generateCSV(r.type)} disabled={!!generating} className="flex-1 flex flex-wrap items-center justify-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
                     {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                     {isGenerating ? "Generando..." : "CSV"}
                   </button>
                 )}
                 {!isFullMetrics && (
-                  <button onClick={() => generatePDF(r.type)} disabled={!!generating} className={isPdfOnly ? "flex-1 flex items-center justify-center gap-2 bg-primary/10 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/10 transition disabled:opacity-50" : "flex-1 flex items-center justify-center gap-2 bg-primary/10 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-bold hover:bg-primary/10 transition disabled:opacity-50"}>
+                  <button onClick={() => generatePDF(r.type)} disabled={!!generating} className={isPdfOnly ? "flex-1 flex items-center justify-center gap-2 bg-primary/10 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/10 transition disabled:opacity-50" : "flex-1 flex items-center justify-center gap-2 bg-primary/10 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/10 transition disabled:opacity-50"}>
                     {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
                     {isGenerating ? "Generando..." : isPdfOnly ? "Generar Informe PDF" : "PDF"}
                   </button>

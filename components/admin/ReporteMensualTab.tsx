@@ -175,7 +175,7 @@ export default function ReporteMensualTab() {
           <select
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
-            className="px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
+            className="px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
           >
             {MONTH_NAMES.map((name, i) => (
               <option key={i + 1} value={i + 1}>
@@ -192,7 +192,7 @@ export default function ReporteMensualTab() {
             max={2030}
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="w-24 px-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-gray-600 bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-24 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </Field>
 
@@ -200,7 +200,7 @@ export default function ReporteMensualTab() {
           onClick={handleGenerate}
           disabled={loading}
           className={cn(
-            "flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-colors",
+            "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white transition-colors",
             loading
               ? "bg-gray-400 cursor-not-allowed"
               : "bg-primary hover:bg-[#1e4d38]",

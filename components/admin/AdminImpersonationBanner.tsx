@@ -62,7 +62,7 @@ export function AdminImpersonationBanner({
         <button
           type="button"
           onClick={onExit}
-          className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[var(--rule-base)] bg-transparent text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+          className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--rule-base)] bg-transparent text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <LogOut className="w-3 h-3" aria-hidden="true" />
           Salir

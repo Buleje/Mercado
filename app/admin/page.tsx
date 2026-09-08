@@ -354,7 +354,7 @@ function AdminPage() {
         subir un escalón la escala tipográfica en monitores ≥1728px. Va acá y
         no en el <main> porque el selector es `:root:has([data-area="admin"])`
         — así los modales que van por portal a <body> escalan igual. */}
-    <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-[var(--surface-canvas)]" data-admin-shell="true" data-area="admin" data-dark-fallback>
+    <div className="admin-mobile-cards min-h-screen bg-[var(--surface-sunken)] dark:bg-[var(--surface-canvas)]" data-admin-shell="true" data-area="admin" data-dark-fallback>
       {/* B3: aviso "Último acceso" al entrar (lee sessionStorage del login) */}
       <LastLoginToast />
       {/* ADR-084: cuenta regresiva del trial — visible solo si plan=free + trial activo */}

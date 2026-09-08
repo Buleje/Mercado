@@ -36,7 +36,7 @@ export default function TokenEntranteCard({ token, ejemploCurl, copiado, onCopia
         <button
           type="button"
           onClick={onRotar}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-soft)] px-3 py-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)] transition-colors min-h-[44px]"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] px-3 py-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)] transition-colors min-h-[44px]"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Rotar token
@@ -59,7 +59,7 @@ export default function TokenEntranteCard({ token, ejemploCurl, copiado, onCopia
               type="button"
               onClick={() => onCopiar(token, "token")}
               aria-label="Copiar token"
-              className="shrink-0 h-11 w-11 inline-flex items-center justify-center rounded-lg border border-[var(--rule-soft)] hover:border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              className="shrink-0 h-11 w-11 inline-flex items-center justify-center rounded-xl border border-[var(--rule-soft)] hover:border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             >
               {copiado === "token" ? <Check className="h-4 w-4 text-[var(--data-success-500)]" /> : <Copy className="h-4 w-4" />}
             </button>

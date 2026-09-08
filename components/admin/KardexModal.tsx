@@ -121,7 +121,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
               Kardex — {productName ?? data?.producto.name ?? `#${productId}`}
             </CardTitle>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />
           </button>
         </div>
@@ -137,7 +137,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                   type="date"
                   value={from}
                   onChange={(e) => setFrom(e.target.value)}
-                  className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </>
             )}
@@ -147,7 +147,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1.5 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </Field>
           <button
@@ -213,7 +213,7 @@ export default function KardexModal({ productId, productName, onClose }: Props) 
                       {data.movimientos.map((m) => {
                         const meta = TYPE_LABELS[m.tipo] ?? { label: m.tipo, color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]", dir: "out" };
                         return (
-                          <tr key={m.id} className="border-t border-[var(--rule-base)] hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors">
+                          <tr key={m.id} className="border-t border-[var(--rule-base)] hover:bg-[var(--surface-alt)] transition-colors">
                             <td className="py-2 text-[var(--text-secondary)] dark:text-muted">{fmtDate(m.fecha)}</td>
                             <td className="py-2">
                               <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", meta.color)}>

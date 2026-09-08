@@ -306,7 +306,7 @@ export default function CacaoProducerDrawer({
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="rounded-lg p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+            className="rounded-xl p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
           >
             <XIcon className="h-5 w-5" />
           </button>

@@ -219,7 +219,7 @@ export default function LothTraceCard({
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
             aria-label={open ? `Colapsar el árbol ${fila.tree}` : `Expandir el árbol ${fila.tree}`}
-            className="mt-1 shrink-0 rounded-lg p-1 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-canvas)]"
+            className="mt-1 shrink-0 rounded-xl p-1 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-canvas)]"
           >
             <ChevronDown className={`h-5 w-5 transition-transform ${open ? "rotate-180" : ""}`} />
           </button>

@@ -253,7 +253,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
   const pct = Math.round((completedCount / total) * 100);
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-gray-900 overflow-hidden">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:border-[var(--rule-base)] overflow-hidden">
       <div className="border-b border-[var(--rule-soft)] px-5 py-4 dark:border-[var(--rule-base)]">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2.5">
@@ -360,7 +360,7 @@ function TaskCard({ task, done, onMarkDone }: TaskCardProps) {
   return (
     <div
       className={cn(
-        "flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-white px-5 py-4",
+        "flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-4",
         "dark:border-[var(--rule-base)] dark:bg-gray-900",
         "border-l-4 transition-all hover:shadow-sm",
       )}
@@ -505,7 +505,7 @@ export default function AccionesSection({ data }: AccionesSectionProps) {
         {(noTasks || allDone) ? (
           <div
             className={cn(
-              "rounded-lg border border-[var(--rule-base)] bg-white px-4 py-6 text-center",
+              "rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-6 text-center",
               "dark:border-[var(--rule-base)] dark:bg-gray-900",
             )}
           >

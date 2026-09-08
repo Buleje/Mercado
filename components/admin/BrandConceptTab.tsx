@@ -597,7 +597,7 @@ export default function BrandConceptTab({
               type="button"
               onClick={() => void analyze()}
               disabled={analyzing}
-              className="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-primary/40 hover:bg-gray-50 dark:hover:bg-surface disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               {analyzing ? "Analizando…" : "Re-analizar"}
@@ -617,7 +617,7 @@ export default function BrandConceptTab({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface p-4 flex items-center justify-center min-h-[180px]">
+            <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-center justify-center min-h-[180px]">
               <div className="relative h-32 w-32">
                 <Image src={logo} alt="Logo" fill sizes="128px" className="object-contain" unoptimized={logo.startsWith("data:")} />
               </div>
@@ -793,7 +793,7 @@ function ConceptCard({
         type="button"
         onClick={onApply}
         aria-pressed={isActive}
-        className={cn("relative w-full text-left", c.darkMode ? "bg-gray-950" : "bg-white dark:bg-[var(--color-card)]")}
+        className={cn("relative w-full text-left", c.darkMode ? "bg-gray-950" : "bg-[var(--surface-raised)] ")}
       >
         {/* Navbar */}
         <div
@@ -898,8 +898,8 @@ function ConceptCard({
               key={i}
               className={cn(
                 "p-1.5 flex flex-col gap-1",
-                c.cardStyle === "minimal" && (c.darkMode ? "bg-gray-900" : "bg-gray-50"),
-                c.cardStyle === "shadow" && (c.darkMode ? "bg-gray-900 shadow-[var(--shadow-lg)]" : "bg-white dark:bg-[var(--color-card)] shadow-[var(--shadow-md)]"),
+                c.cardStyle === "minimal" && (c.darkMode ? "bg-gray-900" : "bg-[var(--surface-sunken)]"),
+                c.cardStyle === "shadow" && (c.darkMode ? "bg-gray-900 shadow-[var(--shadow-lg)]" : "bg-[var(--surface-raised)] shadow-[var(--shadow-md)]"),
                 c.cardStyle === "border" && "bg-transparent border-2",
                 c.cardStyle === "glass" && (c.darkMode ? "bg-white/5 backdrop-blur" : "bg-white/70 backdrop-blur border border-white/40"),
               )}
@@ -922,7 +922,7 @@ function ConceptCard({
               <div className={cn("h-1.5 w-full rounded-full", c.darkMode ? "bg-white/30" : "bg-gray-300")} />
               <div className="flex items-center gap-1">
                 <div className="h-2 w-7 rounded" style={{ backgroundColor: c.primary }} />
-                <div className={cn("h-1 w-4 rounded", c.darkMode ? "bg-white/20" : "bg-gray-200")} />
+                <div className={cn("h-1 w-4 rounded", c.darkMode ? "bg-white/20" : "bg-[var(--rule-base)]")} />
               </div>
             </div>
           ))}
@@ -963,7 +963,7 @@ function ConceptCard({
         </div>
 
         {isActive && (
-          <div className="absolute top-2 right-2 h-7 w-7 rounded-full bg-white dark:bg-[var(--color-card)] flex items-center justify-center shadow-[var(--shadow-lg)] ring-2 ring-primary">
+          <div className="absolute top-2 right-2 h-7 w-7 rounded-full bg-[var(--surface-raised)] flex items-center justify-center shadow-[var(--shadow-lg)] ring-2 ring-primary">
             <Check className="h-4 w-4 text-primary" />
           </div>
         )}
@@ -1028,7 +1028,7 @@ function ConceptCard({
               "flex-1 h-10 rounded-xl text-xs font-extrabold transition-colors",
               isActive
                 ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-primary"
-                : "bg-gray-100 dark:bg-surface text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-transparent",
+                : "bg-[var(--rule-soft)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-transparent",
             )}
           >
             {isActive ? "✓ Aplicado" : "Aplicar"}

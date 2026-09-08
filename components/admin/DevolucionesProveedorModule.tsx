@@ -504,7 +504,7 @@ export default function DevolucionesProveedorModule() {
           </button>
           <button
             onClick={() => { setMostrarFormulario(true); resetFormulario(); }}
-            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors min-h-[44px]"
+            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-medium transition-colors min-h-[44px]"
           >
             <Plus className="h-4 w-4" />
             Nueva devolución
@@ -553,7 +553,7 @@ export default function DevolucionesProveedorModule() {
         const totalMes = devoluciones.filter(d => d.createdAt.startsWith(mesActual)).length;
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</p>
                 <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{devoluciones.length}</p>
@@ -561,7 +561,7 @@ export default function DevolucionesProveedorModule() {
               </div>
               <RotateCcw className="h-5 w-5 text-[var(--text-tertiary)] shrink-0" />
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Pendientes</p>
                 <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", conteos.PENDIENTE > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{conteos.PENDIENTE}</p>
@@ -574,7 +574,7 @@ export default function DevolucionesProveedorModule() {
               </div>
               <Clock className={cn("h-5 w-5 shrink-0", conteos.PENDIENTE > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]")} />
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Resueltas</p>
                 <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--data-success-500)]">{conteos.RESUELTA}</p>
@@ -582,7 +582,7 @@ export default function DevolucionesProveedorModule() {
               </div>
               <CheckCircle2 className="h-5 w-5 text-[var(--data-success-500)] shrink-0" />
             </div>
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Items mes</p>
                 <p className="text-2xl font-extrabold tabular-nums leading-none mt-1.5 text-[var(--text-primary)]">{totalItems}</p>
@@ -609,7 +609,7 @@ export default function DevolucionesProveedorModule() {
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
               filtroEstado === p.id
                 ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
             )}
           >
             {p.label}
@@ -625,12 +625,12 @@ export default function DevolucionesProveedorModule() {
 
       {/* Formulario nueva devolución */}
       {mostrarFormulario && (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
           <div className="flex items-center justify-between">
             <CardTitle className="font-semibold text-[var(--text-primary)] text-sm">Nueva devolución</CardTitle>
             <button
               onClick={() => setMostrarFormulario(false)}
-              className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <X className="h-4 w-4 text-[var(--text-secondary)]" />
             </button>
@@ -647,7 +647,7 @@ export default function DevolucionesProveedorModule() {
                     id={id}
                     value={proveedorId}
                     onChange={e => setProveedorId(e.target.value)}
-                    className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                    className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
                   >
                     <option value="">Seleccionar proveedor...</option>
                     {proveedores.map(p => (
@@ -661,7 +661,7 @@ export default function DevolucionesProveedorModule() {
               <select
                 value={motivo}
                 onChange={e => setMotivo(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
               >
                 {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
@@ -695,12 +695,12 @@ export default function DevolucionesProveedorModule() {
                   min={1}
                   value={item.cantidad}
                   onChange={e => actualizarItem(index, "cantidad", Number(e.target.value))}
-                  className="w-16 px-2 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] text-center focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  className="w-16 px-2 py-2 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] text-center focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 />
                 <select
                   value={item.unidad}
                   onChange={e => actualizarItem(index, "unidad", e.target.value)}
-                  className="w-20 px-2 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  className="w-20 px-2 py-2 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 >
                   <option value="und">und</option>
                   <option value="kg">kg</option>
@@ -759,7 +759,7 @@ export default function DevolucionesProveedorModule() {
               onChange={e => setNotas(e.target.value)}
               rows={2}
               placeholder="Información adicional sobre la devolución..."
-              className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-lg text-sm bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] resize-none focus:outline-none focus:ring-2 focus:ring-secondary/40"
+              className="w-full px-3 py-2 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] resize-none focus:outline-none focus:ring-2 focus:ring-secondary/40"
             />
           </Field>
 
@@ -767,14 +767,14 @@ export default function DevolucionesProveedorModule() {
           <div className="flex justify-end gap-2 pt-1">
             <button
               onClick={() => setMostrarFormulario(false)}
-              className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] rounded-lg transition-colors min-h-[44px]"
+              className="px-4 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] rounded-xl transition-colors min-h-[44px]"
             >
               Cancelar
             </button>
             <button
               onClick={handleGuardar}
               disabled={guardando || !proveedorId || items.every(i => !i.nombre.trim())}
-              className="px-4 py-2 bg-secondary hover:bg-secondary/90 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors min-h-[44px] flex items-center gap-2"
+              className="px-4 py-2 bg-secondary hover:bg-secondary/90 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors min-h-[44px] flex items-center gap-2"
             >
               {guardando && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {guardando ? "Guardando..." : "Registrar devolución"}
@@ -789,7 +789,7 @@ export default function DevolucionesProveedorModule() {
       ) : (
         <div className="space-y-2">
           {devolucionesFiltradas.length === 0 ? (
-            <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-8 text-center">
+            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-8 text-center">
               <RotateCcw className="h-8 w-8 mx-auto mb-2 text-[var(--text-tertiary)]" />
               <p className="text-sm text-[var(--text-tertiary)]">
                 {filtroEstado ? `No hay devoluciones con estado ${filtroEstado}` : "No hay devoluciones registradas"}
@@ -807,7 +807,7 @@ export default function DevolucionesProveedorModule() {
             devolucionesFiltradas.map(dev => (
               <div
                 key={dev.id}
-                className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden"
+                className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden"
               >
                 {/* Cabecera de la tarjeta */}
                 <div className="flex items-center gap-3 p-3">
@@ -978,7 +978,7 @@ export default function DevolucionesProveedorModule() {
                 { label: "Enviadas", value: devoluciones.filter(d => d.estado === "ENVIADA").length, color: "text-[var(--data-success-500)]" },
                 { label: "Resueltas", value: devoluciones.filter(d => d.estado === "RESUELTA").length, color: "text-[var(--data-success-500)]" },
               ].map(({ label, value, color }) => (
-                <div key={label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-soft)] rounded-xl p-3 text-center">
+                <div key={label} className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-xl p-3 text-center">
                   <p className={`text-2xl font-bold ${color}`}>{value}</p>
                   <p className="text-xs text-[var(--text-secondary)] mt-0.5">{label}</p>
                 </div>

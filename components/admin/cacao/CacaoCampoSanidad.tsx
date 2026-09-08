@@ -119,7 +119,7 @@ export default function CacaoCampoSanidad({ parcelas, onOpenParcela, onChanged }
                 <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ background: sev.bg, color: sev.fg }}><p.icon className="h-5 w-5" /></span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <button type="button" onClick={() => onOpenParcela(f.parcelaId)} className="rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">{f.parcelaCodigo}</button>
+                    <button type="button" onClick={() => onOpenParcela(f.parcelaId)} className="rounded-lg bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">{f.parcelaCodigo}</button>
                     <span className="text-sm font-bold text-[var(--text-primary)]">{p.label}</span>
                     <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold" style={{ background: sev.bg, color: sev.fg }}><sev.icon className="h-3 w-3" />{sev.label}</span>
                     <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold" style={{ background: est.bg, color: est.fg }}>{est.label}</span>

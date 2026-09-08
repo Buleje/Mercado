@@ -161,7 +161,7 @@ export default function DescuentoPlanillaModal({
                         value={l.descuento}
                         onChange={(e) => setAjustes((a) => ({ ...a, [l.adelantoId]: Number(e.target.value) }))}
                         aria-label={`Descuento para ${l.persona}`}
-                        className="h-9 w-28 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary"
+                        className="h-9 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary"
                       />
                     </td>
                     <td className="px-3 py-2">

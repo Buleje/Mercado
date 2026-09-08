@@ -261,13 +261,13 @@ export default function ComisionesTab() {
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Seguimiento de ventas por cajero y cálculo de comisiones</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setShowConfig(!showConfig)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 border rounded-lg text-sm font-bold flex items-center gap-2 transition-all", showConfig ? "border-primary text-primary bg-primary/10" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent")}>
+          <button onClick={() => setShowConfig(!showConfig)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 border rounded-xl text-sm font-bold flex items-center gap-2 transition-all", showConfig ? "border-primary text-primary bg-primary/10" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] ")}>
             <Settings className="h-4 w-4" /> Tasas
           </button>
-          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] dark:hover:bg-accent flex flex-wrap items-center gap-2">
+          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] flex flex-wrap items-center gap-2">
             <Download className="h-4 w-4" /> Exportar
           </button>
-          <button onClick={loadData} disabled={loading} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2 disabled:opacity-60">
+          <button onClick={loadData} disabled={loading} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2 disabled:opacity-60">
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} /> Actualizar
           </button>
         </div>
@@ -287,9 +287,9 @@ export default function ComisionesTab() {
           </div>
           {period === "personalizado" && (
             <div className="flex gap-2 items-center flex-wrap">
-              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-1.5 text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
               <span className="text-xs text-[var(--text-secondary)]">—</span>
-              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} className="border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-1.5 text-xs bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
               <button onClick={loadData} className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90">Aplicar</button>
             </div>
           )}
@@ -346,25 +346,25 @@ export default function ComisionesTab() {
             <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mb-3">Nueva regla</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Cajero ID" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
-                <select value={newTier.cashierId} onChange={e => setNewTier(v => ({ ...v, cashierId: e.target.value }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                <select value={newTier.cashierId} onChange={e => setNewTier(v => ({ ...v, cashierId: e.target.value }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                   <option value="">Seleccionar cajero…</option>
                   {stats.map(s => <option key={s.cashierId} value={s.cashierId}>{s.cashierName} ({s.cashierId})</option>)}
                 </select>
               </Field>
               <Field label="Etiqueta (opcional)" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
-                <input value={newTier.label} onChange={e => setNewTier(v => ({ ...v, label: e.target.value }))} placeholder="ej: Objetivo Q1" className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+                <input value={newTier.label} onChange={e => setNewTier(v => ({ ...v, label: e.target.value }))} placeholder="ej: Objetivo Q1" className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
               </Field>
               <Field label="Ingresos mín. (S/)" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
-                <input type="number" min={0} value={newTier.minSales} onChange={e => setNewTier(v => ({ ...v, minSales: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+                <input type="number" min={0} value={newTier.minSales} onChange={e => setNewTier(v => ({ ...v, minSales: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
               </Field>
               <Field label="Ingresos máx. (S/, vacío = sin límite)" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">
-                <input type="number" min={0} value={newTier.maxSales} onChange={e => setNewTier(v => ({ ...v, maxSales: e.target.value }))} placeholder="Sin límite" className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+                <input type="number" min={0} value={newTier.maxSales} onChange={e => setNewTier(v => ({ ...v, maxSales: e.target.value }))} placeholder="Sin límite" className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
               </Field>
               <div className="sm:col-span-2 flex flex-wrap items-end gap-3">
                 <Field label="Tasa (%)" labelClassName="block text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1" className="flex-1">
-                  <input type="number" min={0} max={20} step={0.5} value={newTier.rate} onChange={e => setNewTier(v => ({ ...v, rate: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-3 py-2 text-sm bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+                  <input type="number" min={0} max={20} step={0.5} value={newTier.rate} onChange={e => setNewTier(v => ({ ...v, rate: Number(e.target.value) }))} className="w-full border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
                 </Field>
-                <button onClick={handleAddTier} disabled={savingRule || !newTier.cashierId || newTier.rate <= 0} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <button onClick={handleAddTier} disabled={savingRule || !newTier.cashierId || newTier.rate <= 0} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   {savingRule ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Guardar
                 </button>
               </div>
@@ -384,7 +384,7 @@ export default function ComisionesTab() {
                       <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ROLE_LABEL[cashier?.role ?? ""] ?? cashier?.role}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <input type="number" min={0} max={20} step={0.5} value={r.rate} onChange={e => updateRate(r.cashierId, Number(e.target.value))} className="w-16 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1.5 text-sm text-center bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
+                      <input type="number" min={0} max={20} step={0.5} value={r.rate} onChange={e => updateRate(r.cashierId, Number(e.target.value))} className="w-16 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1.5 text-sm text-center bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]" />
                       <span className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">%</span>
                     </div>
                   </div>
@@ -411,14 +411,14 @@ export default function ComisionesTab() {
             {/* Desktop table */}
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                <thead className="bg-[var(--surface-alt)] border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                   <tr>
                     {["Empleado", "Rol", "Ventas", "Ingresos", "Ganancia", "Tasa", "Comisión", "Estado"].map(h => (
                       <th key={h} className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-extrabold text-[var(--text-secondary)] dark:text-muted">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-card-border">
+                <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
                   {withCommissions.map(s => (
                     <tr key={s.cashierId} className="hover:bg-[var(--surface-alt)] dark:hover:bg-accent/50 transition-colors">
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.cashierName}</td>
@@ -438,7 +438,7 @@ export default function ComisionesTab() {
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-[var(--surface-alt)] dark:bg-surface border-t border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+                <tfoot className="bg-[var(--surface-alt)] border-t border-[var(--rule-base)] dark:border-[var(--rule-base)]">
                   <tr>
                     <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-xs uppercase">TOTAL</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">{fmt(totals.revenue)}</td>
@@ -454,7 +454,7 @@ export default function ComisionesTab() {
             </div>
 
             {/* Mobile cards */}
-            <div className="sm:hidden divide-y divide-gray-100 dark:divide-card-border">
+            <div className="sm:hidden divide-y divide-[var(--rule-soft)] dark:divide-card-border">
               {withCommissions.map(s => (
                 <div key={s.cashierId} className="p-4 space-y-2">
                   <div className="flex items-center justify-between">

@@ -157,7 +157,7 @@ export function TemplatesPanel({ tenantSlug, customerName, storeName, onPick, on
             placeholder="Nombre corto (ej: Promo del día)"
             aria-label="Nombre de la plantilla"
             maxLength={40}
-            className="h-9 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 text-sm outline-none focus:border-primary"
+            className="h-9 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 text-sm outline-none focus:border-primary"
           />
           <textarea
             value={newText}
@@ -166,21 +166,21 @@ export function TemplatesPanel({ tenantSlug, customerName, storeName, onPick, on
             aria-label="Texto de la plantilla"
             rows={2}
             maxLength={600}
-            className="w-full resize-none rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 py-1.5 text-sm outline-none focus:border-primary"
+            className="w-full resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 py-1.5 text-sm outline-none focus:border-primary"
           />
           <div className="flex gap-1.5">
             <button
               type="button"
               onClick={addTemplate}
               disabled={!newLabel.trim() || !newText.trim()}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
             >
               <Check className="h-4 w-4" aria-hidden /> Guardar
             </button>
             <button
               type="button"
               onClick={() => { setAdding(false); setNewLabel(""); setNewText(""); }}
-              className="rounded-lg border border-[var(--rule-base)] px-3 py-2 text-sm font-semibold text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-sunken)]"
+              className="rounded-xl border border-[var(--rule-base)] px-3 py-2 text-sm font-semibold text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-sunken)]"
             >
               Cancelar
             </button>
@@ -191,7 +191,7 @@ export function TemplatesPanel({ tenantSlug, customerName, storeName, onPick, on
           type="button"
           onClick={() => setAdding(true)}
           className={cn(
- "mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] py-2",
+ "mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[var(--rule-base)] py-2",
  "text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:border-primary hover:text-primary",
  "dark:border-[var(--rule-base)] ",
           )}

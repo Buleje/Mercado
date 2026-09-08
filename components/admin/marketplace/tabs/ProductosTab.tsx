@@ -944,7 +944,7 @@ function OfertaCell({
           onBlur={onCommit}
           disabled={busy}
           aria-label="Precio de oferta"
-          className="w-20 h-7 px-2 rounded-md border-2 border-[var(--accent)] bg-[var(--surface-raised)] text-sm font-extrabold text-right tabular-nums outline-none"
+          className="w-20 h-7 px-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] text-sm font-extrabold text-right tabular-nums outline-none"
         />
         {pct != null && (
           <span className={cn(
@@ -1048,7 +1048,7 @@ function PriceCell({
           }}
           onBlur={onCommit}
           disabled={busy}
-          className="w-20 h-7 px-2 rounded-md border-2 border-[var(--accent)] bg-[var(--surface-raised)] text-sm font-extrabold text-right tabular-nums outline-none"
+          className="w-20 h-7 px-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] text-sm font-extrabold text-right tabular-nums outline-none"
         />
       </div>
     );

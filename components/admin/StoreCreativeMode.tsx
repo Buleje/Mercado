@@ -426,7 +426,7 @@ function VersionThumbnail({ theme }: { theme: StoreTheme }) {
       <div className="flex flex-col gap-1 px-2 py-1.5" style={{ background: heroBg }}>
         <span className="h-1.5 w-2/3 rounded-full bg-white/85" />
         <span className="h-1 w-1/2 rounded-full bg-white/55" />
-        <span className="mt-0.5 h-2 w-9 bg-white" style={{ borderRadius: btnRadius }} />
+        <span className="mt-0.5 h-2 w-9 bg-[var(--surface-raised)]" style={{ borderRadius: btnRadius }} />
       </div>
       <div className="flex gap-1 p-1.5">
         {[0, 1, 2].map((i) => (
@@ -524,7 +524,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
             <input type="color" value={safe} onChange={(e) => onChange(e.target.value)} className="h-9 w-10 rounded-lg border border-white/10 bg-white/[0.04] p-0.5 cursor-pointer" aria-label={`Color picker ${label}`} />
             <input id={id} value={value} onChange={(e) => onChange(e.target.value)} maxLength={7} className={INPUT_CLASS} />
             {/* Lote L: picker visual HSL */}
-            <button type="button" onClick={() => setHslOpen((o) => !o)} className={cn("inline-flex h-9 shrink-0 items-center justify-center rounded-lg border px-2 transition-colors", hslOpen ? "border-[var(--accent-soft)] text-[var(--accent-soft)]" : "border-white/10 text-gray-400 hover:text-white")} title="Ajuste fino HSL" aria-label="Abrir picker HSL">
+            <button type="button" onClick={() => setHslOpen((o) => !o)} className={cn("inline-flex h-9 shrink-0 items-center justify-center rounded-lg border px-2 transition-colors", hslOpen ? "border-[var(--accent-soft)] text-[var(--accent-soft)]" : "border-white/10 text-[var(--text-tertiary)] hover:text-white")} title="Ajuste fino HSL" aria-label="Abrir picker HSL">
               <SlidersHorizontal className="h-3.5 w-3.5" />
             </button>
             {hslOpen && <HslPopover value={safe} onChange={onChange} onClose={() => setHslOpen(false)} />}
@@ -554,7 +554,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       onClick={() => onChange(!checked)}
       className={cn("relative h-6 w-11 rounded-full transition-colors", checked ? "bg-primary/10" : "bg-gray-700")}
     >
-      <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-white dark:bg-[var(--color-card)] transition-transform", checked ? "left-5" : "left-0.5")} />
+      <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-[var(--surface-raised)] transition-transform", checked ? "left-5" : "left-0.5")} />
     </button>
   );
 }
@@ -597,7 +597,7 @@ function SectionCard({
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold leading-tight text-white">{title}</p>
-          {hint && <p className="mt-0.5 text-[length:var(--ts-2xs)] leading-tight text-gray-400">{hint}</p>}
+          {hint && <p className="mt-0.5 text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">{hint}</p>}
         </div>
         {badge}
       </div>
@@ -653,7 +653,7 @@ function SectionColorPicker({
           <button
             type="button"
             onClick={() => onChange(undefined)}
-            className="text-[length:var(--ts-2xs)] font-semibold text-gray-500 transition-colors hover:text-white"
+            className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] transition-colors hover:text-white"
           >
             {clearLabel}
           </button>
@@ -667,7 +667,7 @@ function SectionColorPicker({
             onClick={() => onChange(c)}
             aria-label={`Color ${c}`}
             className={cn(
-              "h-6 w-6 rounded-md border transition-transform hover:scale-110",
+              "h-6 w-6 rounded-lg border transition-transform hover:scale-110",
               value?.toLowerCase() === c.toLowerCase()
                 ? "border-white ring-2 ring-[var(--accent-soft)]"
                 : "border-white/15",
@@ -696,7 +696,7 @@ function SectionColorPicker({
       {/* Lote G: slider de opacidad (transparencia) → rgba(). Solo para colores simples. */}
       {enableAlpha && (value === undefined || isSimpleColor(value)) && (
         <div className="flex items-center gap-2 pt-0.5">
-          <span className="text-[length:var(--ts-2xs)] text-gray-400">Opacidad</span>
+          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Opacidad</span>
           <input
             type="range"
             min={0}
@@ -750,7 +750,7 @@ function AdvancedBackground({ onSetBg }: { onSetBg: (bg: string) => void }) {
           <div className="h-7 flex-1 rounded-md border border-white/10" style={{ background: `linear-gradient(${angle}deg, ${gA}, ${gB})` }} />
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[length:var(--ts-2xs)] text-gray-400">Ángulo</span>
+          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Ángulo</span>
           <input type="range" min={0} max={360} value={angle} onChange={(e) => setAngle(Number(e.target.value))} className="w-full accent-[var(--accent-soft)]" />
           <span className="w-9 text-right text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent-soft)]">{angle}°</span>
         </div>
@@ -767,7 +767,7 @@ function AdvancedBackground({ onSetBg }: { onSetBg: (bg: string) => void }) {
         </div>
         {imgUrl && (
           <div className="flex items-center gap-2">
-            <span className="text-[length:var(--ts-2xs)] text-gray-400">Oscurecer</span>
+            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Oscurecer</span>
             <input type="range" min={0} max={80} value={overlay} onChange={(e) => { const ov = Number(e.target.value); setOverlay(ov); onSetBg(composeImage(imgUrl, ov)); }} className="w-full accent-[var(--accent-soft)]" />
             <span className="w-9 text-right text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--accent-soft)]">{overlay}%</span>
           </div>
@@ -779,7 +779,7 @@ function AdvancedBackground({ onSetBg }: { onSetBg: (bg: string) => void }) {
         <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Patrón</p>
         <div className="grid grid-cols-3 gap-1.5">
           {BG_PATTERNS.map((p) => (
-            <button key={p.id} type="button" onClick={() => onSetBg(p.css)} className="rounded-lg border border-white/10 p-1 transition-colors hover:border-[var(--accent-soft)]">
+            <button key={p.id} type="button" onClick={() => onSetBg(p.css)} className="rounded-xl border border-white/10 p-1 transition-colors hover:border-[var(--accent-soft)]">
               <span className="block h-8 w-full rounded" style={{ background: p.css }} />
               <span className="mt-1 block text-center text-[length:var(--ts-2xs)] font-semibold text-gray-300">{p.label}</span>
             </button>
@@ -831,7 +831,7 @@ function TextStyleControls({
             type="button"
             onClick={() => onChange(field, { color: c })}
             aria-label={`Color de texto ${c}`}
-            className={cn("h-5 w-5 rounded-md border transition-transform hover:scale-110", value.color?.toLowerCase() === c.toLowerCase() ? "border-white ring-2 ring-[var(--accent-soft)]" : "border-white/15")}
+            className={cn("h-5 w-5 rounded-lg border transition-transform hover:scale-110", value.color?.toLowerCase() === c.toLowerCase() ? "border-white ring-2 ring-[var(--accent-soft)]" : "border-white/15")}
             style={{ backgroundColor: c }}
           />
         ))}
@@ -840,7 +840,7 @@ function TextStyleControls({
           <input type="color" value={value.color && /^#[0-9a-fA-F]{6}$/.test(value.color) ? value.color : "#000000"} onChange={(e) => onChange(field, { color: e.target.value })} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Color de texto personalizado" />
         </label>
         {value.color && (
-          <button type="button" onClick={() => onChange(field, { color: undefined })} className="ml-auto text-[length:var(--ts-2xs)] font-semibold text-gray-500 hover:text-white">Auto</button>
+          <button type="button" onClick={() => onChange(field, { color: undefined })} className="ml-auto text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)] hover:text-white">Auto</button>
         )}
       </div>
     </div>
@@ -898,7 +898,7 @@ function SectionStyleEditor({
           type="button"
           onClick={onBack}
           aria-label="Volver al menú"
-          className="shrink-0 rounded-md p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+          className="shrink-0 rounded-xl p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
@@ -915,7 +915,7 @@ function SectionStyleEditor({
       <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
         <div className="min-w-0">
           <p className="text-xs font-bold text-white">Mostrar en la tienda</p>
-          <p className="text-[length:var(--ts-2xs)] text-gray-400">{hidden ? "Oculta para tus clientes" : "Visible para tus clientes"}</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{hidden ? "Oculta para tus clientes" : "Visible para tus clientes"}</p>
         </div>
         <Toggle checked={!hidden} onChange={(on) => onToggleHidden(!on)} />
       </div>
@@ -957,8 +957,8 @@ function SectionStyleEditor({
                     type="button"
                     onClick={() => onText("align", val)}
                     className={cn(
-                      "flex flex-col items-center gap-1 rounded-lg border py-2 transition-colors",
-                      active ? "border-[var(--accent-soft)] bg-primary/10 text-white" : "border-white/10 bg-white/[0.03] text-gray-400 hover:border-white/25",
+                      "flex flex-col items-center gap-1 rounded-xl border py-2 transition-colors",
+                      active ? "border-[var(--accent-soft)] bg-primary/10 text-white" : "border-white/10 bg-white/[0.03] text-[var(--text-tertiary)] hover:border-white/25",
                     )}
                   >
                     <Ico className="h-4 w-4" />
@@ -968,7 +968,7 @@ function SectionStyleEditor({
               })}
             </div>
           </div>
-          <p className="text-[length:var(--ts-2xs)] text-gray-500">Vacío = se usa el texto por defecto.</p>
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Vacío = se usa el texto por defecto.</p>
         </SectionCard>
       )}
 
@@ -984,7 +984,7 @@ function SectionStyleEditor({
             label=""
           />
         </div>
-        <p className="text-[length:var(--ts-2xs)] text-gray-500">Opcional · click o arrastrá · máx 5 MB</p>
+        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Opcional · click o arrastrá · máx 5 MB</p>
       </SectionCard>
 
       {/* Diseños de 1 clic — formas y looks listos */}
@@ -1001,7 +1001,7 @@ function SectionStyleEditor({
                 type="button"
                 onClick={() => onPreset(p.style)}
                 className={cn(
-                  "group rounded-lg border p-2 text-left transition-colors",
+                  "group rounded-xl border p-2 text-left transition-colors",
                   active ? "border-[var(--accent-soft)] bg-primary/10" : "border-white/10 bg-white/[0.03] hover:border-white/25",
                 )}
               >
@@ -1037,9 +1037,9 @@ function SectionStyleEditor({
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold leading-tight text-white">Fondo avanzado</p>
-            <p className="mt-0.5 text-[length:var(--ts-2xs)] leading-tight text-gray-400">Degradado · imagen con overlay · patrón</p>
+            <p className="mt-0.5 text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">Degradado · imagen con overlay · patrón</p>
           </div>
-          <ChevronDown className="h-4 w-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180" aria-hidden />
+          <ChevronDown className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform group-open:rotate-180" aria-hidden />
         </summary>
         <div className="border-t border-white/5 p-3">
           <AdvancedBackground onSetBg={(bg) => onChange({ bg })} />
@@ -1146,7 +1146,7 @@ function SectionStyleEditor({
           value={value.anim ?? "none"}
           onChange={(v) => onChange({ anim: v === "none" ? undefined : (v as "fade" | "up" | "zoom") })}
           options={[
-            { value: "none", label: "Ninguna", preview: <X className="h-4 w-4 text-gray-400" /> },
+            { value: "none", label: "Ninguna", preview: <X className="h-4 w-4 text-[var(--text-tertiary)]" /> },
             { value: "fade", label: "Aparecer", preview: <Sparkles className="h-4 w-4 text-gray-300" /> },
             { value: "up", label: "Subir", preview: <ChevronUp className="h-4 w-4 text-gray-300" /> },
             { value: "zoom", label: "Zoom", preview: <Plus className="h-4 w-4 text-gray-300" /> },
@@ -1196,7 +1196,7 @@ function SectionStyleEditor({
         <button
           type="button"
           onClick={() => onChange("reset")}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--data-error-500)]/40 hover:text-[var(--data-error-500)]"
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--data-error-500)]/40 hover:text-[var(--data-error-500)]"
         >
           <RotateCcw className="h-3.5 w-3.5" /> Quitar estilos de esta sección
         </button>
@@ -1258,7 +1258,7 @@ function CustomSectionEditor({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-primary/10 px-2.5 py-2">
-        <button type="button" onClick={onBack} aria-label="Volver al menú" className="shrink-0 rounded-md p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white">
+        <button type="button" onClick={onBack} aria-label="Volver al menú" className="shrink-0 rounded-xl p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white">
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="min-w-0 flex-1">
@@ -1275,7 +1275,7 @@ function CustomSectionEditor({
             type="button"
             onClick={generateWithAi}
             disabled={aiBusy}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--accent-soft)]/40 bg-primary/10 px-3 py-2 text-xs font-bold text-[var(--accent-soft)] transition-colors hover:bg-primary/10 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--accent-soft)]/40 bg-primary/10 px-3 py-2 text-xs font-bold text-[var(--accent-soft)] transition-colors hover:bg-primary/10 disabled:opacity-50"
           >
             <Sparkles className={cn("h-3.5 w-3.5", aiBusy && "animate-pulse")} />
             {aiBusy ? "Generando…" : "Generar contenido con IA"}
@@ -1311,12 +1311,12 @@ function CustomSectionEditor({
             {/* #4 Formato markdown-lite: listas, links, negrita */}
             <div className="flex flex-wrap items-center gap-1.5">
               {([["• Lista", "\n- "], ["1. Numerada", "\n1. "], ["Link", "[texto](https://)"], ["Negrita", "**texto**"]] as const).map(([lbl, ins]) => (
-                <button key={lbl} type="button" onClick={() => onPatch({ body: `${(d.body as string) || ""}${ins}` })} className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[length:var(--ts-2xs)] font-semibold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+                <button key={lbl} type="button" onClick={() => onPatch({ body: `${(d.body as string) || ""}${ins}` })} className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[length:var(--ts-2xs)] font-semibold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
                   {lbl}
                 </button>
               ))}
             </div>
-            <p className="text-[length:var(--ts-2xs)] text-gray-500">Tip: <code>- </code> para viñetas, <code>[texto](link)</code> para enlaces, <code>**negrita**</code>.</p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Tip: <code>- </code> para viñetas, <code>[texto](link)</code> para enlaces, <code>**negrita**</code>.</p>
           </div>
         )}
       </SectionCard>
@@ -1363,7 +1363,7 @@ function CustomSectionEditor({
             <div key={i} className="space-y-1.5 rounded-lg border border-white/10 p-2">
               <div className="flex items-center justify-between">
                 <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Logo {i + 1}</p>
-                <button type="button" onClick={() => onPatch({ logos: arr.filter((_, j) => j !== i) })} aria-label="Quitar logo" className="text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                <button type="button" onClick={() => onPatch({ logos: arr.filter((_, j) => j !== i) })} aria-label="Quitar logo" className="text-[var(--text-secondary)] transition-colors hover:text-[var(--data-error-500)]">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -1372,7 +1372,7 @@ function CustomSectionEditor({
               </div>
             </div>
           ))}
-          <button type="button" onClick={() => onPatch({ logos: [...((d as { logos: Array<{ url: string; alt?: string }> }).logos), { url: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+          <button type="button" onClick={() => onPatch({ logos: [...((d as { logos: Array<{ url: string; alt?: string }> }).logos), { url: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
             <Plus className="h-3.5 w-3.5" /> Agregar logo
           </button>
         </SectionCard>
@@ -1385,7 +1385,7 @@ function CustomSectionEditor({
             <div key={i} className="space-y-1.5 rounded-lg border border-white/10 p-2">
               <div className="flex items-center justify-between">
                 <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Persona {i + 1}</p>
-                <button type="button" onClick={() => onPatch({ members: arr.filter((_, j) => j !== i) })} aria-label="Quitar persona" className="text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                <button type="button" onClick={() => onPatch({ members: arr.filter((_, j) => j !== i) })} aria-label="Quitar persona" className="text-[var(--text-secondary)] transition-colors hover:text-[var(--data-error-500)]">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -1396,7 +1396,7 @@ function CustomSectionEditor({
               <input className={INPUT_CLASS} placeholder="Rol (ej. Dueño/a)" value={m.role ?? ""} onChange={(e) => onPatch({ members: arr.map((x, j) => (j === i ? { ...x, role: e.target.value } : x)) })} maxLength={40} />
             </div>
           ))}
-          <button type="button" onClick={() => onPatch({ members: [...((d as { members: Array<{ name: string; role?: string; photo?: string }> }).members), { name: "", role: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+          <button type="button" onClick={() => onPatch({ members: [...((d as { members: Array<{ name: string; role?: string; photo?: string }> }).members), { name: "", role: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
             <Plus className="h-3.5 w-3.5" /> Agregar persona
           </button>
         </SectionCard>
@@ -1415,12 +1415,12 @@ function CustomSectionEditor({
                 <option value="web">Sitio web</option>
               </select>
               <input className={INPUT_CLASS} placeholder="https://..." value={lk.url} onChange={(e) => onPatch({ links: arr.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) })} />
-              <button type="button" onClick={() => onPatch({ links: arr.filter((_, j) => j !== i) })} aria-label="Quitar red" className="shrink-0 text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+              <button type="button" onClick={() => onPatch({ links: arr.filter((_, j) => j !== i) })} aria-label="Quitar red" className="shrink-0 text-[var(--text-secondary)] transition-colors hover:text-[var(--data-error-500)]">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
           ))}
-          <button type="button" onClick={() => onPatch({ links: [...((d as { links: Array<{ platform: string; url: string }> }).links), { platform: "instagram", url: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+          <button type="button" onClick={() => onPatch({ links: [...((d as { links: Array<{ platform: string; url: string }> }).links), { platform: "instagram", url: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
             <Plus className="h-3.5 w-3.5" /> Agregar red
           </button>
         </SectionCard>
@@ -1433,7 +1433,7 @@ function CustomSectionEditor({
             <div key={i} className="space-y-1.5 rounded-lg border border-white/10 p-2">
               <div className="flex items-center justify-between">
                 <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Categoría {i + 1}</p>
-                <button type="button" onClick={() => onPatch({ items: arr.filter((_, j) => j !== i) })} aria-label="Quitar categoría" className="text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                <button type="button" onClick={() => onPatch({ items: arr.filter((_, j) => j !== i) })} aria-label="Quitar categoría" className="text-[var(--text-secondary)] transition-colors hover:text-[var(--data-error-500)]">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -1444,7 +1444,7 @@ function CustomSectionEditor({
               <input className={INPUT_CLASS} placeholder="Link (ej. /t/mi-tienda/tienda?cat=bebidas)" value={it.url ?? ""} onChange={(e) => onPatch({ items: arr.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)) })} />
             </div>
           ))}
-          <button type="button" onClick={() => onPatch({ items: [...((d as { items: Array<{ name: string; image?: string; url?: string }> }).items), { name: "", image: "", url: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+          <button type="button" onClick={() => onPatch({ items: [...((d as { items: Array<{ name: string; image?: string; url?: string }> }).items), { name: "", image: "", url: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
             <Plus className="h-3.5 w-3.5" /> Agregar categoría
           </button>
         </SectionCard>
@@ -1459,7 +1459,7 @@ function CustomSectionEditor({
             value={String((d as { columns?: number }).columns ?? 0)}
             onChange={(v) => onPatch({ columns: Number(v) || undefined })}
             options={[
-              { value: "0", label: "Auto", preview: <span className="text-[length:var(--ts-2xs)] text-gray-400">A</span> },
+              { value: "0", label: "Auto", preview: <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">A</span> },
               { value: "2", label: "2", preview: <span className="text-xs font-bold text-gray-300">2</span> },
               { value: "3", label: "3", preview: <span className="text-xs font-bold text-gray-300">3</span> },
               { value: "4", label: "4", preview: <span className="text-xs font-bold text-gray-300">4</span> },
@@ -1528,7 +1528,7 @@ function CustomSectionEditor({
             <div key={i} className="space-y-1.5 rounded-lg border border-white/10 p-2">
               <div className="flex items-center justify-between">
                 <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Foto {i + 1}</p>
-                <button type="button" onClick={() => onPatch({ images: images.filter((_, j) => j !== i) })} aria-label="Quitar foto" className="text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                <button type="button" onClick={() => onPatch({ images: images.filter((_, j) => j !== i) })} aria-label="Quitar foto" className="text-[var(--text-secondary)] transition-colors hover:text-[var(--data-error-500)]">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -1537,7 +1537,7 @@ function CustomSectionEditor({
               </div>
             </div>
           ))}
-          <button type="button" onClick={() => onPatch({ images: [...images, { url: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+          <button type="button" onClick={() => onPatch({ images: [...images, { url: "" }] })} className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
             <Plus className="h-3.5 w-3.5" /> Agregar foto
           </button>
         </SectionCard>
@@ -1565,7 +1565,7 @@ function CardDesignEditor({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 rounded-xl border border-[var(--accent-soft)]/40 bg-primary/10 px-2.5 py-2">
-        <button type="button" onClick={onBack} aria-label="Volver al menú" className="shrink-0 rounded-md p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white">
+        <button type="button" onClick={onBack} aria-label="Volver al menú" className="shrink-0 rounded-xl p-1 text-gray-300 transition-colors hover:bg-white/10 hover:text-white">
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="min-w-0 flex-1">
@@ -1627,7 +1627,7 @@ function CardDesignEditor({
         <button
           type="button"
           onClick={() => onChange("reset")}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--data-error-500)]/40 hover:text-[var(--data-error-500)]"
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--data-error-500)]/40 hover:text-[var(--data-error-500)]"
         >
           <RotateCcw className="h-3.5 w-3.5" /> Quitar diseño de tarjetas
         </button>
@@ -1655,20 +1655,20 @@ function PreviewBrowserFrame({
 }) {
   return (
     <div
-      className="bg-white dark:bg-[var(--color-card)] rounded-xl overflow-hidden shadow-[var(--shadow-xl)] border border-gray-700/50 w-full"
+      className="bg-[var(--surface-raised)] rounded-xl overflow-hidden shadow-[var(--shadow-xl)] border border-gray-700/50 w-full"
       style={{ height: "calc(100vh - 130px)" }}
     >
       {/* Browser chrome */}
-      <div className="bg-gray-100 dark:bg-gray-100 border-b border-gray-200 px-3 py-2 flex items-center gap-2">
+      <div className="bg-[var(--rule-soft)] border-b border-[var(--rule-base)] px-3 py-2 flex items-center gap-2">
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
           <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
           <span className="h-3 w-3 rounded-full bg-[#28c840]" />
         </div>
-        <div className="flex-1 mx-2 px-3 py-1.5 rounded-lg bg-white dark:bg-[var(--color-card)] border border-gray-200 text-xs font-mono text-gray-600 truncate">
+        <div className="flex-1 mx-2 px-3 py-1.5 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-xs font-mono text-[var(--text-secondary)] truncate">
           {typeof window !== "undefined" ? window.location.origin : ""}{url}
         </div>
-        <div className="flex items-center gap-1 shrink-0 text-gray-400">
+        <div className="flex items-center gap-1 shrink-0 text-[var(--text-tertiary)]">
           <RefreshCw className="h-3.5 w-3.5" />
         </div>
       </div>
@@ -1702,7 +1702,7 @@ function PreviewCard({ title, price, primaryColor, borderRadius, styleVariant }:
           : "border border-[var(--rule-base)]";
 
   return (
-    <div className={cn("p-3 bg-white dark:bg-[var(--color-card)]", cardClass)} style={{ borderRadius }}>
+    <div className={cn("p-3 bg-[var(--surface-raised)] ", cardClass)} style={{ borderRadius }}>
       <div className="aspect-square rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center">
         <div className="h-12 w-12 rounded-xl bg-white/80 flex items-center justify-center ring-1 ring-white">
           <Store className="h-6 w-6 text-[var(--text-tertiary)]" />
@@ -1861,7 +1861,7 @@ function StylePicker<T extends string>({
               type="button"
               onClick={() => onChange(o.value)}
               className={cn(
-                "rounded-lg border p-2 transition-colors",
+                "rounded-xl border p-2 transition-colors",
                 active
                   ? "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10"
                   : "border-white/10 bg-white/[0.03] hover:border-white/25",
@@ -2871,7 +2871,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         <div className="fixed bottom-5 right-5 z-[115] w-full max-w-xs rounded-2xl border border-[var(--accent-soft)]/40 bg-[#16181d] p-4 shadow-[var(--shadow-xl)]">
           <div className="mb-1 flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-soft)]"><Sparkles className="h-3.5 w-3.5" /> Tour · {tourStep + 1}/{TOUR_STEPS.length}</span>
-            <button type="button" onClick={closeTour} aria-label="Saltar tour" className="rounded-md p-1 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>
+            <button type="button" onClick={closeTour} aria-label="Saltar tour" className="rounded-xl p-1 text-[var(--text-tertiary)] transition-colors hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>
           </div>
           <p className="text-sm font-bold text-white">{TOUR_STEPS[tourStep].title}</p>
           <p className="mt-1 text-[length:var(--ts-2xs)] leading-snug text-gray-300">{TOUR_STEPS[tourStep].desc}</p>
@@ -2882,7 +2882,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             ))}
           </div>
           <div className="mt-3 flex items-center justify-between gap-2">
-            <button type="button" onClick={closeTour} className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 transition-colors hover:text-white">Saltar</button>
+            <button type="button" onClick={closeTour} className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] transition-colors hover:text-white">Saltar</button>
             <div className="flex items-center gap-1.5">
               {tourStep > 0 && (
                 <button type="button" onClick={() => goTourStep(tourStep - 1)} className="rounded-lg border border-white/10 px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold text-gray-200 transition-colors hover:bg-white/5">Anterior</button>
@@ -2901,7 +2901,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <div role="dialog" aria-modal="true" aria-label="Atajos de teclado" className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#16181d] p-4 shadow-[var(--shadow-xl)]">
             <div className="mb-3 flex items-center justify-between">
               <p className="inline-flex items-center gap-2 text-sm font-bold text-white"><Keyboard className="h-4 w-4" /> Atajos de teclado</p>
-              <button type="button" onClick={() => setShowShortcuts(false)} aria-label="Cerrar" className="rounded-md p-1 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setShowShortcuts(false)} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] transition-colors hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>
             </div>
             <ul className="space-y-1.5">
               {([
@@ -2961,7 +2961,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     "inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold transition-all",
                     active
                       ? "bg-white/10 text-white"
-                      : "text-gray-400 hover:text-white hover:bg-white/[0.04]",
+                      : "text-[var(--text-tertiary)] hover:text-white hover:bg-white/[0.04]",
                   )}
                 >
                   <vp.icon className="h-3.5 w-3.5" />
@@ -2971,7 +2971,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             })}
             {/* #11 Ancho personalizado en px */}
             <label className={cn("inline-flex items-center gap-1 rounded-lg pl-2 pr-1 h-8 transition-all", customWidth !== null ? "bg-white/10" : "")} title="Ancho personalizado (px)">
-              <Maximize2 className="h-3.5 w-3.5 text-gray-400" aria-hidden />
+              <Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" aria-hidden />
               <input
                 type="number"
                 min={280}
@@ -2993,7 +2993,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             <button
               onClick={handleUndo}
               disabled={history.length === 0}
-              className="p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+              className="p-1.5 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
               title={`Deshacer (${history.length} pasos)`}
             >
               <Undo2 className="h-4 w-4" />
@@ -3001,7 +3001,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             <button
               onClick={handleRedo}
               disabled={future.length === 0}
-              className="p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+              className="p-1.5 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
               title={`Rehacer (${future.length} pasos)`}
             >
               <Redo2 className="h-4 w-4" />
@@ -3013,7 +3013,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             <button
               onClick={() => setLivePreview((v) => !v)}
               className={cn(
-                "inline-flex items-center gap-1.5 px-2.5 h-7 rounded-md text-xs font-bold transition-all",
+                "inline-flex items-center gap-1.5 px-2.5 h-7 rounded-lg text-xs font-bold transition-all",
                 livePreview
                   ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]"
                   : "text-gray-300 hover:text-white hover:bg-gray-700",
@@ -3027,7 +3027,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               <>
                 <button
                   onClick={() => setIframeKey((k) => k + 1)}
-                  className="p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+                  className="p-1.5 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
                   title="Recargar vista previa"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
@@ -3035,7 +3035,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <button
                   onClick={() => setSplitPreview((v) => !v)}
                   className={cn(
-                    "p-1.5 rounded-md transition-colors",
+                    "p-1.5 rounded-xl transition-colors",
                     splitPreview ? "bg-gray-700 text-white" : "text-gray-300 hover:text-white hover:bg-gray-700",
                   )}
                   title={splitPreview ? "Vista simple" : "Comparar antes/después"}
@@ -3046,7 +3046,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <button
                   onClick={() => setNavMode((v) => !v)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-2.5 h-8 rounded-md text-xs font-bold transition-colors",
+                    "inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-xs font-bold transition-colors",
                     navMode ? "bg-primary/10 text-[var(--accent-soft)]" : "text-gray-300 hover:text-white hover:bg-gray-700",
                   )}
                   title={navMode ? "Volver a editar (click selecciona)" : "Probar la tienda: scroll y clicks reales"}
@@ -3067,7 +3067,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           )}
           {/* #3.1 Indicador de borrador local (sin publicar aún) */}
           {!savedLabel && draftSavedLabel && (
-            <span className="hidden items-center gap-1 px-2 text-[length:var(--ts-2xs)] font-medium text-gray-400 lg:inline-flex" title="Guardamos un borrador en este navegador por si se cierra">
+            <span className="hidden items-center gap-1 px-2 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)] lg:inline-flex" title="Guardamos un borrador en este navegador por si se cierra">
               <span className="h-1.5 w-1.5 rounded-full bg-gray-500" />
               {draftSavedLabel}
             </span>
@@ -3077,7 +3077,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <button
             type="button"
             onClick={() => goTourStep(0)}
-            className="hidden p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors lg:inline-flex"
+            className="hidden p-1.5 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700 transition-colors lg:inline-flex"
             title="Tour guiado"
             aria-label="Iniciar tour guiado"
           >
@@ -3087,7 +3087,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <button
             type="button"
             onClick={() => setShowShortcuts(true)}
-            className="p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
+            className="p-1.5 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
             title="Atajos de teclado (?)"
             aria-label="Ver atajos de teclado"
           >
@@ -3097,7 +3097,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <button
             type="button"
             onClick={() => setFocusMode(true)}
-            className="hidden p-1.5 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors lg:inline-flex"
+            className="hidden p-1.5 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700 transition-colors lg:inline-flex"
             title="Modo Focus: solo la preview (Esc para salir)"
             aria-label="Activar modo Focus"
           >
@@ -3144,7 +3144,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <button
             type="button"
             onClick={() => { try { localStorage.removeItem(draftKey); } catch (err) { console.debug("[cm-draft] discard", err); } setPendingRestore(null); }}
-            className="shrink-0 rounded-lg px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold text-gray-400 transition-colors hover:text-white"
+            className="shrink-0 rounded-lg px-3 py-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] transition-colors hover:text-white"
           >
             Descartar
           </button>
@@ -3162,7 +3162,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         {!focusMode && (
         <aside className="w-56 bg-[#0e0f13] border-r border-white/5 overflow-y-auto shrink-0">
           <nav className="p-3 space-y-1">
-            <p className="px-2 pb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500">Configuración</p>
+            <p className="px-2 pb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Configuración</p>
             {panelItems.map((item) => {
               const active = panel === item.id;
               return (
@@ -3170,17 +3170,17 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   key={item.id}
                   onClick={() => { setPanel(item.id); setPbSelected(null); }}
                   className={cn(
-                    "relative w-full flex items-center gap-3 pl-3.5 pr-2.5 h-10 rounded-lg text-sm transition-colors text-left",
+                    "relative w-full flex items-center gap-3 pl-3.5 pr-2.5 h-10 rounded-xl text-sm transition-colors text-left",
                     // Activo minimalista: barra fina + texto blanco, sin caja.
                     active
                       ? "font-semibold text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-[3px] before:rounded-full before:bg-[var(--data-success-500)]"
-                      : "font-medium text-gray-400 hover:text-white hover:bg-white/[0.03]",
+                      : "font-medium text-[var(--text-tertiary)] hover:text-white hover:bg-white/[0.03]",
                   )}
                 >
                   <item.icon
                     className={cn(
                       "h-4 w-4 shrink-0 transition-colors",
-                      active ? "text-[var(--data-success-500)]" : "text-gray-500",
+                      active ? "text-[var(--data-success-500)]" : "text-[var(--text-secondary)]",
                     )}
                   />
                   <span className="flex-1 truncate">{item.label}</span>
@@ -3208,7 +3208,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         {!focusMode && (
         <aside className="w-80 bg-[#0c0d10] border-r border-white/5 overflow-y-auto shrink-0">
           <div className="sticky top-0 z-10 border-b border-white/5 bg-[#0c0d10]/90 px-4 py-3 backdrop-blur">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-500">Personalizar</p>
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Personalizar</p>
             <p className="text-sm font-semibold text-white">{panelItems.find((p) => p.id === panel)?.label ?? "Sección"}</p>
           </div>
           <div className="p-4 space-y-3">
@@ -3292,7 +3292,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     <WandSparkles className="h-4 w-4 text-[var(--accent-soft)]" />
                     <p className="text-sm font-bold text-white">Diseñá con IA</p>
                   </div>
-                  <p className="text-[length:var(--ts-2xs)] text-gray-400 leading-snug">Contá qué vendés y la IA arma colores, tipografía y textos por vos.</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] leading-snug">Contá qué vendés y la IA arma colores, tipografía y textos por vos.</p>
                   <textarea
                     className={cn(INPUT_CLASS, "resize-none")}
                     rows={2}
@@ -3308,7 +3308,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     type="button"
                     onClick={generateAiTheme}
                     disabled={aiLoading || aiPrompt.trim().length < 4}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary/10 px-3 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {aiLoading
                       ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Generando…</>
@@ -3318,7 +3318,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
                 <div>
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent-soft)] mb-1">Plantillas de página completas</p>
-                  <p className="text-xs text-gray-400 leading-snug">Un look INTEGRAL en 1 clic — colores + tipografía + orden y estilo de cada sección.</p>
+                  <p className="text-xs text-[var(--text-tertiary)] leading-snug">Un look INTEGRAL en 1 clic — colores + tipografía + orden y estilo de cada sección.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {PAGE_TEMPLATES.map((tpl) => (
@@ -3339,7 +3339,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       </div>
                       <div className="px-2 py-1.5">
                         <p className="truncate text-[length:var(--ts-2xs)] font-bold text-white">{tpl.name}</p>
-                        <p className="truncate text-[length:var(--ts-2xs)] text-gray-400">{tpl.vibe}</p>
+                        <p className="truncate text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{tpl.vibe}</p>
                       </div>
                     </button>
                   ))}
@@ -3347,7 +3347,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
                 <div className="pt-1">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-500)] mb-1">Plantillas listas</p>
-                  <p className="text-xs text-gray-400 leading-snug">Aplicá un look completo en 1 click — colores + tipografía + estilo.</p>
+                  <p className="text-xs text-[var(--text-tertiary)] leading-snug">Aplicá un look completo en 1 click — colores + tipografía + estilo.</p>
                 </div>
                 {QUICK_TEMPLATES.map((tpl) => (
                   <button
@@ -3374,7 +3374,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-white truncate">{tpl.name}</p>
-                          <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate">{tpl.vibe}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{tpl.vibe}</p>
                         </div>
                         <div className="flex gap-1 shrink-0">
                           <span className="h-3.5 w-3.5 rounded-full border border-gray-600" style={{ backgroundColor: tpl.primaryColor }} />
@@ -3396,7 +3396,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* Plantillas POR RUBRO (Brandon 2026-06-26): traen también el copy del hero */}
                 <div className="pt-2">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-info-500)] mb-1">Según tu rubro</p>
-                  <p className="text-xs text-gray-400 leading-snug">Look + textos pensados para tu negocio.</p>
+                  <p className="text-xs text-[var(--text-tertiary)] leading-snug">Look + textos pensados para tu negocio.</p>
                 </div>
                 {RUBRO_TEMPLATES.map((tpl) => (
                   <button
@@ -3418,7 +3418,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-white truncate">{tpl.name}</p>
-                          <p className="text-[length:var(--ts-2xs)] text-gray-400 truncate">{tpl.vibe}</p>
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{tpl.vibe}</p>
                         </div>
                         <div className="flex gap-1 shrink-0">
                           <span className="h-3.5 w-3.5 rounded-full border border-gray-600" style={{ backgroundColor: tpl.primaryColor }} />
@@ -3426,7 +3426,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                           <span className="h-3.5 w-3.5 rounded-full border border-gray-600" style={{ backgroundColor: tpl.accentColor }} />
                         </div>
                       </div>
-                      <p className="mt-1.5 text-[length:var(--ts-2xs)] text-gray-500 italic truncate">“{tpl.heroTitle}”</p>
+                      <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)] italic truncate">“{tpl.heroTitle}”</p>
                       <div className="mt-1.5 flex items-center">
                         <span className="ml-auto text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-500)] opacity-0 group-hover:opacity-100 transition-opacity">Aplicar →</span>
                       </div>
@@ -3458,7 +3458,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       label=""
                     />
                   </div>
-                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Click o arrastrá · cuadrado · máx 5 MB</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Click o arrastrá · cuadrado · máx 5 MB</p>
                 </div>
 
                 <Field label="Nombre de la tienda" labelClassName={LABEL_CLASS}>
@@ -3602,7 +3602,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     onChange={(e) => patch("heroOverlay", Number(e.target.value))}
                     className="w-full accent-[var(--data-success-500)]"
                   />
-                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Más oscuro = el texto se lee mejor sobre fotos claras.</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Más oscuro = el texto se lee mejor sobre fotos claras.</p>
                 </div>
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-2">
                   <span className="text-xs text-gray-200">Mostrar insignias (productos · pago · delivery)</span>
@@ -3637,7 +3637,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       label=""
                     />
                   </div>
-                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Fondo del hero · click o arrastrá · máx 5 MB</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Fondo del hero · click o arrastrá · máx 5 MB</p>
                 </div>
 
                 {/* #2 Gradiente del hero (si no hay foto) — 2 colores + ángulo */}
@@ -3655,12 +3655,12 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     <div className="h-8 flex-1 rounded-md border border-white/10" style={{ background: `linear-gradient(${draft.heroGradientAngle ?? 135}deg, ${draft.heroGradientFrom || "#00A0A0"}, ${draft.heroGradientTo || "#FF6B5B"})` }} />
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[length:var(--ts-2xs)] text-gray-400">Ángulo</span>
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Ángulo</span>
                     <input type="range" min={0} max={360} value={draft.heroGradientAngle ?? 135} onChange={(e) => patch("heroGradientAngle", Number(e.target.value))} className="w-full accent-[var(--data-success-500)]" />
                     <span className="w-9 text-right text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--data-success-500)]">{draft.heroGradientAngle ?? 135}°</span>
                   </div>
                   {(draft.heroGradientFrom || draft.heroGradientTo) && (
-                    <button type="button" onClick={() => { patch("heroGradientFrom", ""); patch("heroGradientTo", ""); }} className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 transition-colors hover:text-[var(--data-error-500)]">
+                    <button type="button" onClick={() => { patch("heroGradientFrom", ""); patch("heroGradientTo", ""); }} className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] transition-colors hover:text-[var(--data-error-500)]">
                       Quitar gradiente (volver a color de marca)
                     </button>
                   )}
@@ -3683,7 +3683,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
                       <p className={LABEL_CLASS}>A/B Test del título</p>
-                      <p className="text-[length:var(--ts-2xs)] text-gray-500">Mostrá 2 versiones 50/50 y mirá cuál convierte mejor.</p>
+                      <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Mostrá 2 versiones 50/50 y mirá cuál convierte mejor.</p>
                     </div>
                     <Toggle checked={draft.abTestEnabled ?? false} onChange={(v) => patch("abTestEnabled", v)} />
                   </div>
@@ -3692,7 +3692,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       <p className="text-[length:var(--ts-2xs)] font-bold text-gray-300">Variante B</p>
                       <input className={INPUT_CLASS} value={draft.heroVariantB?.heroTitle ?? ""} onChange={(e) => patch("heroVariantB", { ...draft.heroVariantB, heroTitle: e.target.value })} placeholder="Título alternativo (B)" maxLength={80} />
                       <input className={INPUT_CLASS} value={draft.heroVariantB?.heroSubtitle ?? ""} onChange={(e) => patch("heroVariantB", { ...draft.heroVariantB, heroSubtitle: e.target.value })} placeholder="Subtítulo alternativo (B)" maxLength={140} />
-                      <button type="button" onClick={loadAbStats} disabled={abLoading} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white disabled:opacity-50">
+                      <button type="button" onClick={loadAbStats} disabled={abLoading} className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white disabled:opacity-50">
                         {abLoading ? "Cargando…" : "Ver resultados"}
                       </button>
                       {abStats && (
@@ -3704,7 +3704,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                             return (
                               <div key={v} className={cn("rounded-md border p-2", win ? "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10" : "border-white/10 bg-white/[0.03]")}>
                                 <p className="text-xs font-bold text-white">Variante {v}{win ? " 🏆" : ""}</p>
-                                <p className="text-[length:var(--ts-2xs)] text-gray-400">{s.views} vistas · {s.clicks} clicks</p>
+                                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{s.views} vistas · {s.clicks} clicks</p>
                                 <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">CTR {ctr}%</p>
                               </div>
                             );
@@ -3728,7 +3728,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         key={pal.name}
                         type="button"
                         onClick={() => applyPalette(pal)}
-                        className="group rounded-lg border border-white/10 bg-white/[0.03] p-1.5 hover:border-white/25 transition-colors"
+                        className="group rounded-xl border border-white/10 bg-white/[0.03] p-1.5 hover:border-white/25 transition-colors"
                       >
                         <span className="flex h-7 w-full overflow-hidden rounded">
                           <span className="flex-1" style={{ backgroundColor: pal.primary }} />
@@ -3749,7 +3749,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-white">Fondo de la página</p>
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Color de fondo de toda la tienda</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Color de fondo de toda la tienda</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
                     <label className="relative inline-flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-white/15" title="Fondo de página">
@@ -3757,7 +3757,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(draft.pageBgColor) ? draft.pageBgColor : "#ffffff"} onChange={(e) => patch("pageBgColor", e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Color de fondo de la página" />
                     </label>
                     {draft.pageBgColor && (
-                      <button type="button" onClick={() => patch("pageBgColor", "")} aria-label="Quitar fondo" className="text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                      <button type="button" onClick={() => patch("pageBgColor", "")} aria-label="Quitar fondo" className="text-[var(--text-secondary)] transition-colors hover:text-[var(--data-error-500)]">
                         <X className="h-3.5 w-3.5" />
                       </button>
                     )}
@@ -3776,7 +3776,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                           <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(draft[field]) ? draft[field] : fallback} onChange={(e) => patch(field, e.target.value)} className="absolute inset-0 cursor-pointer opacity-0" aria-label={`Color ${lbl} del navbar`} />
                         </label>
                         {draft[field] && (
-                          <button type="button" onClick={() => patch(field, "")} aria-label={`Quitar ${lbl}`} className="text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                          <button type="button" onClick={() => patch(field, "")} aria-label={`Quitar ${lbl}`} className="text-[var(--text-secondary)] transition-colors hover:text-[var(--data-error-500)]">
                             <X className="h-3.5 w-3.5" />
                           </button>
                         )}
@@ -3792,7 +3792,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       <div key={i} className="flex items-center gap-1.5">
                         <input className={cn(INPUT_CLASS, "w-24 shrink-0")} value={lk.label} onChange={(e) => patch("navExtraLinks", arr.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} placeholder="Nombre" maxLength={20} />
                         <input className={INPUT_CLASS} value={lk.url} onChange={(e) => patch("navExtraLinks", arr.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))} placeholder="https://instagram.com/…" />
-                        <button type="button" onClick={() => patch("navExtraLinks", arr.filter((_, j) => j !== i))} aria-label="Quitar link" className="shrink-0 text-gray-500 transition-colors hover:text-[var(--data-error-500)]"><X className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => patch("navExtraLinks", arr.filter((_, j) => j !== i))} aria-label="Quitar link" className="shrink-0 text-[var(--text-secondary)] transition-colors hover:text-[var(--data-error-500)]"><X className="h-3.5 w-3.5" /></button>
                       </div>
                     ))}
                     {(draft.navExtraLinks ?? []).length < 3 && (
@@ -3815,18 +3815,18 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         const next = Array.from(new Set([...cur, ...add])).slice(0, 6);
                         patch("brandSwatches", next);
                       }}
-                      className="inline-flex items-center gap-1 rounded-md bg-white/[0.06] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-gray-200 transition-colors hover:bg-white/10 hover:text-white"
+                      className="inline-flex items-center gap-1 rounded-lg bg-white/[0.06] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-gray-200 transition-colors hover:bg-white/10 hover:text-white"
                     >
                       <Plus className="h-3 w-3" /> Guardar actuales
                     </button>
                   </div>
                   {(draft.brandSwatches ?? []).length === 0 ? (
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Guardá tus colores para reusarlos. Click en un color → lo aplica al primario.</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Guardá tus colores para reusarlos. Click en un color → lo aplica al primario.</p>
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
                       {(draft.brandSwatches ?? []).map((c, i) => (
                         <div key={`${c}-${i}`} className="group relative">
-                          <button type="button" onClick={() => patch("primaryColor", c)} title={`Aplicar ${c} al primario`} className="h-7 w-7 rounded-md border border-white/20 transition-transform hover:scale-110" style={{ background: c }} aria-label={`Aplicar color ${c}`} />
+                          <button type="button" onClick={() => patch("primaryColor", c)} title={`Aplicar ${c} al primario`} className="h-7 w-7 rounded-lg border border-white/20 transition-transform hover:scale-110" style={{ background: c }} aria-label={`Aplicar color ${c}`} />
                           <button type="button" onClick={() => patch("brandSwatches", (draft.brandSwatches ?? []).filter((_, j) => j !== i))} aria-label="Quitar color" className="absolute -right-1 -top-1 hidden h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--data-error-500)] text-white group-hover:flex">
                             <X className="h-2.5 w-2.5" />
                           </button>
@@ -3838,9 +3838,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
                 {/* Vista previa de cómo combinan los colores en la tienda */}
                 <div className="rounded-lg border border-white/10 overflow-hidden">
-                  <div className="bg-white p-3">
+                  <div className="bg-[var(--surface-raised)] p-3">
                     <p className="text-sm font-black" style={{ color: draft.primaryColor }}>Tu tienda online</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Así combinan tus colores.</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">Así combinan tus colores.</p>
                     <div className="mt-2.5 flex flex-wrap gap-1.5">
                       <span className="inline-block text-xs font-bold text-white px-3 py-1.5 rounded-lg" style={{ backgroundColor: draft.primaryColor }}>Comprar</span>
                       <span className="inline-block text-xs font-bold text-white px-3 py-1.5 rounded-lg" style={{ backgroundColor: draft.secondaryColor }}>Oferta</span>
@@ -3858,7 +3858,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "secciones" && (
               <div className="space-y-4">
-                <p className="text-xs leading-snug text-gray-400">
+                <p className="text-xs leading-snug text-[var(--text-tertiary)]">
                   Ordená y activá lo que ve tu cliente. Todo lo de acá se refleja en tu tienda real.
                 </p>
 
@@ -3882,7 +3882,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         label=""
                       />
                     </div>
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Imagen full-width arriba de todo · click o arrastrá · máx 5 MB</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Imagen full-width arriba de todo · click o arrastrá · máx 5 MB</p>
                   </div>
 
                   {/* Secciones reordenables del cuerpo */}
@@ -3929,17 +3929,17 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                                 setBodyDragOverKey(null);
                               }}
                               aria-label={`Arrastrar ${item.label} para reordenar`}
-                              className="shrink-0 cursor-grab rounded p-0.5 text-gray-500 transition-colors hover:text-white active:cursor-grabbing"
+                              className="shrink-0 cursor-grab rounded p-0.5 text-[var(--text-secondary)] transition-colors hover:text-white active:cursor-grabbing"
                             >
                               <GripVertical className="h-4 w-4" aria-hidden />
                             </button>
-                            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-[length:var(--ts-2xs)] font-bold tabular-nums text-gray-400">
+                            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/[0.06] text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
                               {idx + 1}
                             </span>
                             <Icon className="h-4 w-4 shrink-0 text-[var(--accent-soft)]" aria-hidden />
                             <div className={cn("min-w-0 flex-1", (draft.bodyHidden ?? []).includes(key) && "opacity-50")}>
                               <p className="truncate text-xs font-semibold text-gray-100 leading-tight">{item.label}</p>
-                              <p className="truncate text-[length:var(--ts-2xs)] text-gray-500 leading-tight">{item.desc}</p>
+                              <p className="truncate text-[length:var(--ts-2xs)] text-[var(--text-secondary)] leading-tight">{item.desc}</p>
                             </div>
                             {/* Lote D: toggle de visibilidad por sección del cuerpo */}
                             <Toggle checked={!(draft.bodyHidden ?? []).includes(key)} onChange={(v) => patchBodyHidden(key, !v)} />
@@ -3947,7 +3947,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         );
                       });
                     })()}
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500 leading-snug">
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)] leading-snug">
                       Cada sección aparece sola cuando tiene contenido (ej. promos activas o testimonios).
                     </p>
                   </div>
@@ -3977,7 +3977,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                             onClick={() => moveTiendaSection(key, "up")}
                             disabled={idx === 0}
                             aria-label="Subir sección"
-                            className="text-gray-500 transition-colors hover:text-white disabled:opacity-20"
+                            className="text-[var(--text-secondary)] transition-colors hover:text-white disabled:opacity-20"
                           >
                             <ChevronUp className="h-3.5 w-3.5" />
                           </button>
@@ -3986,7 +3986,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                             onClick={() => moveTiendaSection(key, "down")}
                             disabled={idx === tiendaSectionOrder.length - 1}
                             aria-label="Bajar sección"
-                            className="text-gray-500 transition-colors hover:text-white disabled:opacity-20"
+                            className="text-[var(--text-secondary)] transition-colors hover:text-white disabled:opacity-20"
                           >
                             <ChevronDown className="h-3.5 w-3.5" />
                           </button>
@@ -3994,7 +3994,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         <Icon className="h-4 w-4 shrink-0 text-[var(--accent-soft)]" aria-hidden />
                         <div className="min-w-0 flex-1">
                           <span className="block truncate text-xs font-semibold text-gray-100 leading-tight">{TIENDA_SECTION_LABELS[key]}</span>
-                          <span className={cn("text-[length:var(--ts-2xs)] leading-tight", count > 0 ? "text-[var(--data-success-500)]" : "text-gray-500")}>
+                          <span className={cn("text-[length:var(--ts-2xs)] leading-tight", count > 0 ? "text-[var(--data-success-500)]" : "text-[var(--text-secondary)]")}>
                             {count > 0 ? `${count} ${count === 1 ? "producto" : "productos"}` : "Sin productos"}
                           </span>
                         </div>
@@ -4044,15 +4044,15 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* ── #6 Secciones de tu página (custom): crear/ordenar/ocultar/borrar ── */}
                 <SectionCard icon={Layout} title="Secciones de tu página" hint="Galería, sobre nosotros, horarios… crear, ordenar, ocultar o borrar">
                   {customSections.length === 0 && (
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Todavía no agregaste secciones. Usá “Agregar sección” abajo.</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Todavía no agregaste secciones. Usá “Agregar sección” abajo.</p>
                   )}
                   {customSections.map((s, idx) => (
                     <div key={s.id} className={cn("flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-2", !s.visible && "opacity-55")}>
                       <div className="flex shrink-0 flex-col">
-                        <button type="button" onClick={() => moveCustomSection(s.id, "up")} disabled={idx === 0} aria-label="Subir" className="text-gray-500 transition-colors hover:text-white disabled:opacity-20">
+                        <button type="button" onClick={() => moveCustomSection(s.id, "up")} disabled={idx === 0} aria-label="Subir" className="text-[var(--text-secondary)] transition-colors hover:text-white disabled:opacity-20">
                           <ChevronUp className="h-3.5 w-3.5" />
                         </button>
-                        <button type="button" onClick={() => moveCustomSection(s.id, "down")} disabled={idx === customSections.length - 1} aria-label="Bajar" className="text-gray-500 transition-colors hover:text-white disabled:opacity-20">
+                        <button type="button" onClick={() => moveCustomSection(s.id, "down")} disabled={idx === customSections.length - 1} aria-label="Bajar" className="text-[var(--text-secondary)] transition-colors hover:text-white disabled:opacity-20">
                           <ChevronDown className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -4061,14 +4061,14 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         {customSectionEmpty(s) ? (
                           <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)]"><Sparkles className="h-3 w-3" /> Falta contenido · editar →</span>
                         ) : (
-                          <span className="text-[length:var(--ts-2xs)] text-gray-500">{s.visible ? "Visible" : "Oculta"} · editar →</span>
+                          <span className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{s.visible ? "Visible" : "Oculta"} · editar →</span>
                         )}
                       </button>
                       <Toggle checked={s.visible} onChange={(v) => setCustomSectionVisible(s.id, v)} />
-                      <button type="button" onClick={() => duplicateCustomSection(s.id)} aria-label="Duplicar sección" className="shrink-0 rounded p-1 text-gray-500 transition-colors hover:text-white">
+                      <button type="button" onClick={() => duplicateCustomSection(s.id)} aria-label="Duplicar sección" className="shrink-0 rounded p-1 text-[var(--text-secondary)] transition-colors hover:text-white">
                         <Copy className="h-3.5 w-3.5" />
                       </button>
-                      <button type="button" onClick={() => removeCustomSection(s.id)} aria-label="Borrar sección" className="shrink-0 rounded p-1 text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                      <button type="button" onClick={() => removeCustomSection(s.id)} aria-label="Borrar sección" className="shrink-0 rounded p-1 text-[var(--text-secondary)] transition-colors hover:text-[var(--data-error-500)]">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -4076,7 +4076,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   {/* #12 Métricas de engagement por sección */}
                   {customSections.length > 0 && (
                     <div className="space-y-1.5 border-t border-white/10 pt-2">
-                      <button type="button" onClick={loadSectionStats} disabled={sectionStatsLoading} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white disabled:opacity-50">
+                      <button type="button" onClick={loadSectionStats} disabled={sectionStatsLoading} className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white disabled:opacity-50">
                         <Eye className="h-3.5 w-3.5" /> {sectionStatsLoading ? "Cargando…" : "Ver métricas de tus secciones"}
                       </button>
                       {sectionStats && (
@@ -4087,7 +4087,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                               <span className="shrink-0 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-soft)]">{sectionStats[s.type] ?? 0} vistas</span>
                             </div>
                           ))}
-                          <p className="text-[length:var(--ts-2xs)] text-gray-500">Cuántas veces se vio cada sección en tu tienda.</p>
+                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Cuántas veces se vio cada sección en tu tienda.</p>
                         </div>
                       )}
                     </div>
@@ -4102,7 +4102,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                           key={t.type}
                           type="button"
                           onClick={() => addCustomSection(t)}
-                          className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-2 text-left text-[length:var(--ts-2xs)] font-semibold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white"
+                          className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2 text-left text-[length:var(--ts-2xs)] font-semibold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white"
                         >
                           <span aria-hidden>{t.emoji}</span>
                           <span className="truncate">{t.label}</span>
@@ -4120,9 +4120,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold leading-tight text-white">Bandas de imagen</p>
-                      <p className="mt-0.5 text-[length:var(--ts-2xs)] leading-tight text-gray-400">Imágenes full-width opcionales entre secciones</p>
+                      <p className="mt-0.5 text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">Imágenes full-width opcionales entre secciones</p>
                     </div>
-                    <ChevronDown className="h-4 w-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180" aria-hidden />
+                    <ChevronDown className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform group-open:rotate-180" aria-hidden />
                   </summary>
                   <div className="space-y-3 border-t border-white/5 p-3">
                     {SECTION_ITEMS.filter((s) => s.key !== "hero" && s.key !== "announcement").map((s) => (
@@ -4160,14 +4160,14 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                           type="button"
                           onClick={() => patch("fontFamily", f.value as StoreTheme["fontFamily"])}
                           className={cn(
-                            "rounded-lg border p-2.5 text-left transition-colors",
+                            "rounded-xl border p-2.5 text-left transition-colors",
                             active
                               ? "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10"
                               : "border-white/10 bg-white/[0.03] hover:border-white/25",
                           )}
                         >
                           <span className="block text-xl leading-none text-white" style={{ fontFamily: stack }}>Aa</span>
-                          <span className="mt-1 block text-[length:var(--ts-2xs)] text-gray-400">{f.label}</span>
+                          <span className="mt-1 block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{f.label}</span>
                         </button>
                       );
                     })}
@@ -4187,14 +4187,14 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                           type="button"
                           onClick={() => patch("bodyFontFamily", f.value)}
                           className={cn(
-                            "rounded-lg border p-2.5 text-left transition-colors",
+                            "rounded-xl border p-2.5 text-left transition-colors",
                             active
                               ? "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10"
                               : "border-white/10 bg-white/[0.03] hover:border-white/25",
                           )}
                         >
                           <span className="block text-xl leading-none text-white" style={{ fontFamily: stack }}>Aa</span>
-                          <span className="mt-1 block text-[length:var(--ts-2xs)] text-gray-400">{f.label}</span>
+                          <span className="mt-1 block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{f.label}</span>
                         </button>
                       );
                     })}
@@ -4204,7 +4204,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* Vista previa: título + cuerpo en SUS fuentes + redondez del botón */}
                 <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                   <p className="text-lg font-black text-white leading-tight" style={{ fontFamily: EDITOR_FONT_MAP[draft.fontFamily]?.stack }}>Bodega Buleje</p>
-                  <p className="text-xs text-gray-400 mt-1" style={{ fontFamily: EDITOR_FONT_MAP[draft.bodyFontFamily || draft.fontFamily]?.stack }}>Frutas frescas, abarrotes y delivery rápido a tu puerta.</p>
+                  <p className="text-xs text-[var(--text-tertiary)] mt-1" style={{ fontFamily: EDITOR_FONT_MAP[draft.bodyFontFamily || draft.fontFamily]?.stack }}>Frutas frescas, abarrotes y delivery rápido a tu puerta.</p>
                   <span className="mt-2.5 inline-block bg-[var(--data-success-500)] text-white text-xs font-bold px-3 py-1.5" style={{ borderRadius: draft.borderRadius }}>Comprar ahora</span>
                 </div>
 
@@ -4225,7 +4225,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* Lote F: fuente personalizada por URL (.woff2/.ttf hosteado) */}
                 <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
                   <p className={LABEL_CLASS}>Fuente personalizada</p>
-                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Pegá la URL de tu fuente (.woff2 o .ttf hosteado) para usar tu tipografía de marca.</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Pegá la URL de tu fuente (.woff2 o .ttf hosteado) para usar tu tipografía de marca.</p>
                   <input className={INPUT_CLASS} value={draft.customFontUrl ?? ""} onChange={(e) => patch("customFontUrl", e.target.value)} placeholder="https://…/MiFuente.woff2" />
                   {draft.customFontUrl && (
                     <StylePicker
@@ -4234,7 +4234,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       value={draft.customFontTarget ?? "none"}
                       onChange={(v) => patch("customFontTarget", v as "none" | "headings" | "body" | "all")}
                       options={[
-                        { value: "none", label: "Off", preview: <span className="text-[length:var(--ts-2xs)] text-gray-400">—</span> },
+                        { value: "none", label: "Off", preview: <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">—</span> },
                         { value: "headings", label: "Títulos", preview: <span className="text-sm font-black text-white">A</span> },
                         { value: "body", label: "Cuerpo", preview: <span className="text-xs text-gray-300">a</span> },
                         { value: "all", label: "Todo", preview: <span className="text-xs font-bold text-white">Aa</span> },
@@ -4267,7 +4267,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   value={String(draft.headingWeight ?? 0)}
                   onChange={(v) => patch("headingWeight", Number(v))}
                   options={[
-                    { value: "0", label: "Auto", preview: <span className="text-[length:var(--ts-2xs)] text-gray-400">—</span> },
+                    { value: "0", label: "Auto", preview: <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">—</span> },
                     { value: "500", label: "Medium", preview: <span className="text-sm text-white" style={{ fontWeight: 500 }}>A</span> },
                     { value: "600", label: "Semi", preview: <span className="text-sm text-white" style={{ fontWeight: 600 }}>A</span> },
                     { value: "700", label: "Bold", preview: <span className="text-sm text-white" style={{ fontWeight: 700 }}>A</span> },
@@ -4301,9 +4301,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               <>
                 <StylePicker label="Estilo de cards" value={draft.cardStyle} onChange={(v) => patch("cardStyle", v)}
                   options={[
-                    { value: "minimal", label: "Minimal", preview: <span className="h-6 w-9 rounded bg-white border border-gray-300" /> },
-                    { value: "shadow", label: "Shadow", preview: <span className="h-6 w-9 rounded bg-white shadow-md" /> },
-                    { value: "border", label: "Border", preview: <span className="h-6 w-9 rounded bg-white border-2 border-gray-500" /> },
+                    { value: "minimal", label: "Minimal", preview: <span className="h-6 w-9 rounded bg-[var(--surface-raised)] border border-[var(--rule-base)]" /> },
+                    { value: "shadow", label: "Shadow", preview: <span className="h-6 w-9 rounded bg-[var(--surface-raised)] shadow-md" /> },
+                    { value: "border", label: "Border", preview: <span className="h-6 w-9 rounded bg-[var(--surface-raised)] border-2 border-gray-500" /> },
                     { value: "glass", label: "Glass", preview: <span className="h-6 w-9 rounded bg-white/40 backdrop-blur-sm border border-white/70" /> },
                   ]} />
                 <StylePicker label="Botones" value={draft.buttonStyle} onChange={(v) => patch("buttonStyle", v)} cols={3}
@@ -4321,20 +4321,20 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   ]} />
                 <StylePicker label="Sombras" value={draft.shadowLevel} onChange={(v) => patch("shadowLevel", v)} cols={3}
                   options={[
-                    { value: "none", label: "Sin", preview: <span className="h-6 w-9 rounded bg-white" /> },
-                    { value: "soft", label: "Suave", preview: <span className="h-6 w-9 rounded bg-white shadow-md" /> },
-                    { value: "deep", label: "Profunda", preview: <span className="h-6 w-9 rounded bg-white shadow-[var(--shadow-xl)]" /> },
+                    { value: "none", label: "Sin", preview: <span className="h-6 w-9 rounded bg-[var(--surface-raised)]" /> },
+                    { value: "soft", label: "Suave", preview: <span className="h-6 w-9 rounded bg-[var(--surface-raised)] shadow-md" /> },
+                    { value: "deep", label: "Profunda", preview: <span className="h-6 w-9 rounded bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]" /> },
                   ]} />
                 <StylePicker label="Animaciones" value={draft.animations} onChange={(v) => patch("animations", v)} cols={3}
                   options={[
-                    { value: "none", label: "Ninguna", preview: <X className="h-4 w-4 text-gray-400" /> },
+                    { value: "none", label: "Ninguna", preview: <X className="h-4 w-4 text-[var(--text-tertiary)]" /> },
                     { value: "subtle", label: "Sutil", preview: <Sparkles className="h-4 w-4 text-gray-300" /> },
                     { value: "dynamic", label: "Dinámica", preview: <Sparkles className="h-5 w-5 text-[var(--data-success-500)]" /> },
                   ]} />
                 <StylePicker label="Fondo" value={draft.backgroundPattern} onChange={(v) => patch("backgroundPattern", v)}
                   options={[
-                    { value: "none", label: "Plano", preview: <span className="h-6 w-9 rounded bg-gray-100" /> },
-                    { value: "dots", label: "Dots", preview: <span className="h-6 w-9 rounded bg-gray-100" style={{ backgroundImage: "radial-gradient(circle, #9ca3af 1px, transparent 1px)", backgroundSize: "5px 5px" }} /> },
+                    { value: "none", label: "Plano", preview: <span className="h-6 w-9 rounded bg-[var(--rule-soft)]" /> },
+                    { value: "dots", label: "Dots", preview: <span className="h-6 w-9 rounded bg-[var(--rule-soft)]" style={{ backgroundImage: "radial-gradient(circle, #9ca3af 1px, transparent 1px)", backgroundSize: "5px 5px" }} /> },
                     { value: "waves", label: "Waves", preview: <span className="h-6 w-9 rounded bg-linear-to-r from-gray-200 via-gray-100 to-gray-200" /> },
                     { value: "gradient", label: "Gradient", preview: <span className="h-6 w-9 rounded bg-linear-to-br from-gray-200 to-gray-500" /> },
                   ]} />
@@ -4346,17 +4346,17 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* #7.3 Transición al navegar entre páginas */}
                 <StylePicker label="Transición al navegar" value={draft.pageTransition ?? "none"} onChange={(v) => patch("pageTransition", v)} cols={4}
                   options={[
-                    { value: "none", label: "Ninguna", preview: <X className="h-4 w-4 text-gray-400" /> },
+                    { value: "none", label: "Ninguna", preview: <X className="h-4 w-4 text-[var(--text-tertiary)]" /> },
                     { value: "fade", label: "Fade", preview: <Sparkles className="h-4 w-4 text-gray-300" /> },
                     { value: "slide", label: "Slide", preview: <ArrowLeft className="h-4 w-4 text-gray-300" /> },
-                    { value: "blur", label: "Blur", preview: <Sparkles className="h-4 w-4 text-gray-400 blur-[1px]" /> },
+                    { value: "blur", label: "Blur", preview: <Sparkles className="h-4 w-4 text-[var(--text-tertiary)] blur-[1px]" /> },
                   ]} />
                 {/* #7.2 Cursor personalizado */}
                 <StylePicker label="Cursor del visitante" value={draft.customCursor ?? "none"} onChange={(v) => patch("customCursor", v)} cols={3}
                   options={[
-                    { value: "none", label: "Normal", preview: <MousePointer className="h-4 w-4 text-gray-400" /> },
+                    { value: "none", label: "Normal", preview: <MousePointer className="h-4 w-4 text-[var(--text-tertiary)]" /> },
                     { value: "dot", label: "Punto", preview: <span className="h-2 w-2 rounded-full bg-gray-300" /> },
-                    { value: "ring", label: "Anillo", preview: <span className="h-4 w-4 rounded-full border-2 border-gray-300" /> },
+                    { value: "ring", label: "Anillo", preview: <span className="h-4 w-4 rounded-full border-2 border-[var(--rule-base)]" /> },
                   ]} />
               </>
             )}
@@ -4410,7 +4410,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
                   <div className="min-w-0">
                     <span className="text-xs font-semibold text-[var(--text-tertiary)]">Barra de envío gratis</span>
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">&quot;Te faltan S/ X para envío gratis&quot; · sube con el carrito</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">&quot;Te faltan S/ X para envío gratis&quot; · sube con el carrito</p>
                   </div>
                   <Toggle checked={draft.freeShipEnabled ?? false} onChange={(v) => patch("freeShipEnabled", v)} />
                 </div>
@@ -4428,7 +4428,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
                   <div className="min-w-0">
                     <span className="text-xs font-semibold text-[var(--text-tertiary)]">Prueba social en vivo</span>
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Avisos &quot;Alguien pidió X hace 5 min&quot; desde tus pedidos reales</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Avisos &quot;Alguien pidió X hace 5 min&quot; desde tus pedidos reales</p>
                   </div>
                   <Toggle checked={draft.socialProofEnabled ?? false} onChange={(v) => patch("socialProofEnabled", v)} />
                 </div>
@@ -4436,7 +4436,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
                   <div className="min-w-0">
                     <span className="text-xs font-semibold text-[var(--text-tertiary)]">Estado Abierto / Cerrado</span>
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Badge &quot;Abierto · cierra 10pm&quot; con tus horarios de Contacto</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Badge &quot;Abierto · cierra 10pm&quot; con tus horarios de Contacto</p>
                   </div>
                   <Toggle checked={draft.openStatusEnabled ?? false} onChange={(v) => patch("openStatusEnabled", v)} />
                 </div>
@@ -4445,7 +4445,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {draft.openStatusEnabled && (
                   <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
                     <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-300">Excepciones de horario</p>
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Feriados o días especiales que pisan tu horario normal.</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Feriados o días especiales que pisan tu horario normal.</p>
                     {(draft.scheduleExceptions ?? []).map((ex, i, arr) => (
                       <div key={i} className="flex items-center gap-1.5 rounded-lg border border-white/10 p-2">
                         <input type="date" value={ex.date} onChange={(e) => patch("scheduleExceptions", arr.map((x, j) => (j === i ? { ...x, date: e.target.value } : x)))} className={cn(INPUT_CLASS, "w-36 shrink-0")} aria-label="Fecha" />
@@ -4453,12 +4453,12 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         <label className="flex shrink-0 items-center gap-1 text-[length:var(--ts-2xs)] text-gray-300" title="Cerrado ese día">
                           <input type="checkbox" checked={ex.closed} onChange={(e) => patch("scheduleExceptions", arr.map((x, j) => (j === i ? { ...x, closed: e.target.checked } : x)))} className="accent-[var(--data-error-500)]" /> Cerrado
                         </label>
-                        <button type="button" onClick={() => patch("scheduleExceptions", arr.filter((_, j) => j !== i))} aria-label="Quitar excepción" className="shrink-0 text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                        <button type="button" onClick={() => patch("scheduleExceptions", arr.filter((_, j) => j !== i))} aria-label="Quitar excepción" className="shrink-0 text-[var(--text-secondary)] transition-colors hover:text-[var(--data-error-500)]">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     ))}
-                    <button type="button" onClick={() => patch("scheduleExceptions", [...(draft.scheduleExceptions ?? []), { date: "", label: "", closed: true }])} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+                    <button type="button" onClick={() => patch("scheduleExceptions", [...(draft.scheduleExceptions ?? []), { date: "", label: "", closed: true }])} className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
                       <Plus className="h-3.5 w-3.5" /> Agregar excepción
                     </button>
                   </div>
@@ -4467,16 +4467,16 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* #8 Anuncios rotativos (barra superior) */}
                 <div className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-gray-300">Anuncios rotativos</p>
-                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Barra arriba de la tienda; varios mensajes rotan cada 4s.</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Barra arriba de la tienda; varios mensajes rotan cada 4s.</p>
                   {(draft.announcements ?? []).map((msg, i, arr) => (
                     <div key={i} className="flex items-center gap-1.5">
                       <input value={msg} onChange={(e) => patch("announcements", arr.map((x, j) => (j === i ? e.target.value : x)))} placeholder="Ej. Envío gratis hoy en toda la tienda" className={INPUT_CLASS} maxLength={90} />
-                      <button type="button" onClick={() => patch("announcements", arr.filter((_, j) => j !== i))} aria-label="Quitar anuncio" className="shrink-0 text-gray-500 transition-colors hover:text-[var(--data-error-500)]">
+                      <button type="button" onClick={() => patch("announcements", arr.filter((_, j) => j !== i))} aria-label="Quitar anuncio" className="shrink-0 text-[var(--text-secondary)] transition-colors hover:text-[var(--data-error-500)]">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ))}
-                  <button type="button" onClick={() => patch("announcements", [...(draft.announcements ?? []), ""])} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+                  <button type="button" onClick={() => patch("announcements", [...(draft.announcements ?? []), ""])} className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
                     <Plus className="h-3.5 w-3.5" /> Agregar anuncio
                   </button>
                   {(draft.announcements ?? []).length > 1 && (
@@ -4499,7 +4499,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
                   <div className="min-w-0">
                     <span className="text-xs font-semibold text-[var(--text-tertiary)]">Popup al intentar salir</span>
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Aparece al ir a cerrar la pestaña · ofrece un cupón</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Aparece al ir a cerrar la pestaña · ofrece un cupón</p>
                   </div>
                   <Toggle checked={draft.exitIntentEnabled ?? false} onChange={(v) => patch("exitIntentEnabled", v)} />
                 </div>
@@ -4521,7 +4521,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
                   <div className="min-w-0">
                     <span className="text-xs font-semibold text-[var(--text-tertiary)]">Notificaciones push</span>
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Invitá a tus visitantes a recibir ofertas por el navegador</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Invitá a tus visitantes a recibir ofertas por el navegador</p>
                   </div>
                   <Toggle checked={draft.pushOptInEnabled ?? false} onChange={(v) => patch("pushOptInEnabled", v)} />
                 </div>
@@ -4557,7 +4557,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     <option value="halloween">Halloween</option>
                   </select>
                 </Field>
-                <p className="-mt-1 text-[length:var(--ts-2xs)] text-gray-500">Agrega un detalle de temporada (cinta + efecto) sin tocar tus colores.</p>
+                <p className="-mt-1 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Agrega un detalle de temporada (cinta + efecto) sin tocar tus colores.</p>
 
                 <div className="my-1.5 border-t border-white/10" />
 
@@ -4565,7 +4565,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
                   <div className="min-w-0">
                     <span className="text-xs font-semibold text-[var(--text-tertiary)]">Contador de oferta</span>
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Banda con cuenta regresiva arriba de la tienda · urgencia</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Banda con cuenta regresiva arriba de la tienda · urgencia</p>
                   </div>
                   <Toggle checked={draft.countdownEnabled ?? false} onChange={(v) => patch("countdownEnabled", v)} />
                 </div>
@@ -4584,12 +4584,12 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="space-y-2 pt-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-[var(--text-tertiary)]">Testimonios</span>
-                    <button type="button" onClick={addTestimonial} className="inline-flex items-center gap-1 rounded-md bg-[var(--data-success-500)]/15 px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/25 transition-colors">
+                    <button type="button" onClick={addTestimonial} className="inline-flex items-center gap-1 rounded-lg bg-[var(--data-success-500)]/15 px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/25 transition-colors">
                       <Plus className="h-3 w-3" strokeWidth={2.5} aria-hidden /> Agregar
                     </button>
                   </div>
                   {(draft.testimonials ?? []).length === 0 && (
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Sin reseñas. Agregá las opiniones de tus clientes.</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Sin reseñas. Agregá las opiniones de tus clientes.</p>
                   )}
                   {(draft.testimonials ?? []).map((t, idx) => (
                     <div key={idx} className="space-y-1.5 rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
@@ -4610,7 +4610,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 p-2.5">
                   <div className="min-w-0">
                     <span className="text-xs font-semibold text-[var(--text-tertiary)]">Popup de bienvenida</span>
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Aparece al entrar a tu tienda · con cupón opcional</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Aparece al entrar a tu tienda · con cupón opcional</p>
                   </div>
                   <Toggle checked={draft.welcomePopupEnabled} onChange={(v) => patch("welcomePopupEnabled", v)} />
                 </div>
@@ -4630,9 +4630,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     {/* Vista previa del popup tal cual lo verá el cliente */}
                     <div>
                       <p className={LABEL_CLASS}>Vista previa</p>
-                      <div className="rounded-xl border border-white/10 bg-white p-4 shadow-xl">
+                      <div className="rounded-xl border border-white/10 bg-[var(--surface-raised)] p-4 shadow-xl">
                         <p className="text-base font-black" style={{ color: draft.primaryColor }}>{draft.welcomePopupTitle || "¡Bienvenido!"}</p>
-                        <p className="mt-1 text-xs text-gray-600">{draft.welcomePopupMessage || "10% de descuento en tu primera compra"}</p>
+                        <p className="mt-1 text-xs text-[var(--text-secondary)]">{draft.welcomePopupMessage || "10% de descuento en tu primera compra"}</p>
                         {draft.welcomePopupCoupon && (
                           <span className="mt-2 inline-block rounded-md border-2 border-dashed px-3 py-1 font-mono text-sm font-bold" style={{ borderColor: draft.primaryColor, color: draft.primaryColor }}>{draft.welcomePopupCoupon}</span>
                         )}
@@ -4660,7 +4660,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-2">
                   <div className="min-w-0">
                     <span className="text-xs text-gray-200">Datos para Google (negocio local)</span>
-                    <p className="text-[length:var(--ts-2xs)] text-gray-500">Schema LocalBusiness: ayuda a salir mejor en búsquedas</p>
+                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Schema LocalBusiness: ayuda a salir mejor en búsquedas</p>
                   </div>
                   <Toggle checked={draft.schemaLocalBusiness ?? false} onChange={(v) => patch("schemaLocalBusiness", v)} />
                 </div>
@@ -4669,7 +4669,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <p className={LABEL_CLASS}>SEO de la página de catálogo</p>
                   <input className={INPUT_CLASS} value={draft.catalogMetaTitle ?? ""} onChange={(e) => patch("catalogMetaTitle", e.target.value)} placeholder="Título en Google (ej. Pollos a la brasa en…)" maxLength={70} />
                   <input className={INPUT_CLASS} value={draft.catalogMetaDescription ?? ""} onChange={(e) => patch("catalogMetaDescription", e.target.value)} placeholder="Descripción para Google (máx ~155)" maxLength={160} />
-                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Vacío = usa el título y descripción por defecto.</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Vacío = usa el título y descripción por defecto.</p>
                 </div>
                 <div className="space-y-1.5">
                   <p className={LABEL_CLASS}>Favicon</p>
@@ -4683,7 +4683,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                       label=""
                     />
                   </div>
-                  <p className="text-[length:var(--ts-2xs)] text-gray-500">Ícono de la pestaña · cuadrado · PNG/SVG</p>
+                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Ícono de la pestaña · cuadrado · PNG/SVG</p>
                 </div>
                 <Field label="Custom CSS" labelClassName={LABEL_CLASS}>
                   <textarea className={cn(INPUT_CLASS, "resize-none font-mono text-xs")} rows={6} value={draft.customCSS} onChange={(e) => patch("customCSS", e.target.value)} />
@@ -4692,9 +4692,9 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                 {/* #10 Exportar / Importar tema (clonar look entre sucursales) */}
                 <div className="space-y-2 rounded-xl border border-white/10 bg-white/[0.02] p-3">
                   <p className="text-sm font-bold text-white">Exportar / Importar tema</p>
-                  <p className="text-[length:var(--ts-2xs)] leading-snug text-gray-400">Guardá toda la personalización como archivo y aplicala en otra de tus tiendas.</p>
+                  <p className="text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">Guardá toda la personalización como archivo y aplicala en otra de tus tiendas.</p>
                   <div className="flex gap-2">
-                    <button type="button" onClick={exportTheme} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
+                    <button type="button" onClick={exportTheme} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
                       <Download className="h-3.5 w-3.5" /> Exportar
                     </button>
                     <label className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-bold text-gray-200 transition-colors hover:border-[var(--accent-soft)] hover:text-white">
@@ -4714,7 +4714,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   <p className={LABEL_CLASS}>Guardar versión con nombre</p>
                   <div className="flex items-center gap-1.5">
                     <input className={INPUT_CLASS} value={versionName} onChange={(e) => setVersionName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") saveNamedVersion(); }} placeholder="Ej. Versión Navidad" maxLength={40} />
-                    <button type="button" onClick={saveNamedVersion} disabled={!versionName.trim()} className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-[var(--data-success-500)] px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-40">
+                    <button type="button" onClick={saveNamedVersion} disabled={!versionName.trim()} className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-[var(--data-success-500)] px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-40">
                       <Save className="h-3.5 w-3.5" /> Guardar
                     </button>
                   </div>
@@ -4732,13 +4732,13 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         return (
                           <div key={ci} className="rounded-md border border-white/10 bg-white/[0.03] p-2">
                             <p className="truncate text-[length:var(--ts-2xs)] font-bold text-white">{sn.name || "Sin nombre"}</p>
-                            <p className="mb-1.5 text-[length:var(--ts-2xs)] text-gray-500">{sn.savedAt}</p>
+                            <p className="mb-1.5 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{sn.savedAt}</p>
                             <div className="flex gap-1">
                               <span className="h-4 w-4 rounded-full border border-gray-600" style={{ backgroundColor: sn.theme.primaryColor }} />
                               <span className="h-4 w-4 rounded-full border border-gray-600" style={{ backgroundColor: sn.theme.secondaryColor }} />
                               <span className="h-4 w-4 rounded-full border border-gray-600" style={{ backgroundColor: sn.theme.accentColor }} />
                             </div>
-                            <p className="mt-1.5 text-[length:var(--ts-2xs)] text-gray-400">{sn.theme.fontFamily}{sn.theme.darkModeDefault ? " · Dark" : ""}</p>
+                            <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{sn.theme.fontFamily}{sn.theme.darkModeDefault ? " · Dark" : ""}</p>
                             <button type="button" onClick={() => pushChange(sn.theme)} className="mt-1.5 w-full rounded bg-[var(--data-success-500)]/15 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] transition-colors hover:bg-[var(--data-success-500)]/25">Usar esta</button>
                           </div>
                         );
@@ -4760,7 +4760,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                         <button
                           type="button"
                           onClick={() => toggleCompare(idx)}
-                          className={cn("shrink-0 text-[length:var(--ts-2xs)] font-bold transition-colors", compareIdx.includes(idx) ? "text-[var(--accent-soft)]" : "text-gray-500 hover:text-white")}
+                          className={cn("shrink-0 text-[length:var(--ts-2xs)] font-bold transition-colors", compareIdx.includes(idx) ? "text-[var(--accent-soft)]" : "text-[var(--text-secondary)] hover:text-white")}
                         >
                           Comparar
                         </button>
@@ -4802,7 +4802,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             <div className={cn("flex gap-6 w-full justify-center items-start", !splitPreview && "h-full")}>
               {splitPreview && (
                 <div className="flex flex-col items-center gap-2 shrink-0" style={{ width: "48%", maxWidth: "640px" }}>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-800 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-800 text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
                     <Clock className="h-3 w-3" />
                     Guardado
                   </span>
@@ -4858,7 +4858,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
             </div>
           ) : (
           <div
-            className="bg-white dark:bg-[var(--color-card)] rounded-xl overflow-hidden shadow-[var(--shadow-xl)] border border-gray-700/50 transition-all duration-[var(--dur-base)] w-full"
+            className="bg-[var(--surface-raised)] rounded-xl overflow-hidden shadow-[var(--shadow-xl)] border border-gray-700/50 transition-all duration-[var(--dur-base)] w-full"
             style={{
               ...(viewport === "mobile"
                 ? { width: "390px" }
@@ -4869,7 +4869,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
               fontFamily,
             }}
           >
-            <div className={cn("min-h-full", draft.darkModeDefault ? "bg-gray-950 text-white" : "bg-gray-50 text-[var(--text-primary)]")}>
+            <div className={cn("min-h-full", draft.darkModeDefault ? "bg-gray-950 text-white" : "bg-[var(--surface-sunken)] text-[var(--text-primary)]")}>
               <div className="px-4 py-3 border-b" style={{ borderColor: draft.darkModeDefault ? "#1f2937" : "#e5e7eb", background: draft.navbarStyle === "transparent" ? "transparent" : draft.primaryColor }}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
@@ -4969,15 +4969,15 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                     <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">{draft.buttonStyle}</span>
                     <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--surface-sunken)] text-[var(--text-primary)]">{draft.animations}</span>
                     <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)]">{draft.backgroundPattern}</span>
-                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-slate-100 text-slate-700">{draft.fontFamily}</span>
+                    <span className="text-[length:var(--ts-2xs)] px-2 py-1 rounded-full bg-[var(--rule-soft)] text-[var(--text-primary)]">{draft.fontFamily}</span>
                   </div>
                 </div>
 
                 {draft.welcomePopupEnabled && (
-                  <div className="rounded-xl border p-3 bg-white dark:bg-[var(--color-card)]" style={{ borderColor: draft.secondaryColor }}>
+                  <div className="rounded-xl border p-3 bg-[var(--surface-raised)] " style={{ borderColor: draft.secondaryColor }}>
                     <p className="text-xs font-extrabold" style={{ color: draft.primaryColor }}>{draft.welcomePopupTitle || "Bienvenido"}</p>
                     <p className="text-xs text-[var(--text-secondary)] mt-1">{draft.welcomePopupMessage || "Usa este cupon en tu primera compra"}</p>
-                    <div className="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[length:var(--ts-2xs)] font-bold bg-gray-100 text-[var(--text-primary)]">
+                    <div className="mt-2 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[length:var(--ts-2xs)] font-bold bg-[var(--rule-soft)] text-[var(--text-primary)]">
                       <Check className="h-3 w-3" />
                       {draft.welcomePopupCoupon || "BIENVENIDO10"}
                     </div>

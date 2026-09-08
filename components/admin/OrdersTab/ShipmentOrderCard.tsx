@@ -106,13 +106,13 @@ function ProgressBar({ status }: { status: OrderStatus }) {
             {i > 0 && (
               <div className={cn(
                 "absolute top-3 right-1/2 w-full h-0.5 transition-colors duration-[var(--dur-slow)]",
-                done ? "bg-primary" : "bg-gray-200 dark:bg-gray-700"
+                done ? "bg-primary" : "bg-[var(--rule-base)] "
               )} />
             )}
             <m.div
               className={cn(
                 "relative z-10 h-6 w-6 rounded-full flex items-center justify-center",
-                done ? "bg-primary text-white" : "bg-gray-200 dark:bg-gray-700 text-[var(--text-tertiary)]",
+                done ? "bg-primary text-white" : "bg-[var(--rule-base)] text-[var(--text-tertiary)]",
               )}
               animate={current ? { scale: [1, 1.15, 1] } : {}}
               transition={{ repeat: Infinity, duration: 2 }}
@@ -203,7 +203,7 @@ function ShipmentOrderCardImpl({ order, onUpdateStatus, updating }: ShipmentOrde
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-1">
               {itemCount} producto{itemCount !== 1 ? "s" : ""} · {fmtMoney(order.total)}
               {order.paymentMethod && (
-                <span className="ml-2 text-[length:var(--ts-2xs)] bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded font-semibold uppercase">
+                <span className="ml-2 text-[length:var(--ts-2xs)] bg-[var(--rule-soft)] px-1.5 py-0.5 rounded font-semibold uppercase">
                   {order.paymentMethod}
                 </span>
               )}

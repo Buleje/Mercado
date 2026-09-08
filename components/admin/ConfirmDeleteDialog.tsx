@@ -47,14 +47,14 @@ export function ConfirmDeleteDialog({
           <button
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent transition-colors disabled:opacity-40"
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] transition-colors disabled:opacity-40"
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] active:scale-95 text-white text-sm font-bold transition-all disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] active:scale-95 text-white text-sm font-bold transition-all disabled:opacity-50"
           >
             {loading && (
               <svg

@@ -339,7 +339,7 @@ export default function PlantacionEspecieForm({
             disabled={soloLectura}
             onChange={(e) => set("citesProcedencia", e.target.value || null)}
             rows={2}
-            className="mt-1 h-auto w-full resize-y rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-warning-500)]"
+            className="mt-1 h-auto w-full resize-y rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-warning-500)]"
           />
         </div>
       )}

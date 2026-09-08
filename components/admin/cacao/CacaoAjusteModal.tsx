@@ -92,14 +92,14 @@ export default function CacaoAjusteModal({ variedades, onClose, onSaved }: Props
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={!isValid || submitting}
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
           >
             {submitting ? (
               <>
@@ -132,7 +132,7 @@ export default function CacaoAjusteModal({ variedades, onClose, onSaved }: Props
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="rounded-lg p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+            className="rounded-xl p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -152,7 +152,7 @@ export default function CacaoAjusteModal({ variedades, onClose, onSaved }: Props
                   key={t}
                   type="button"
                   onClick={() => setTipo(t)}
-                  className={`rounded-lg border-2 px-2 py-2 text-xs font-bold transition ${tipo === t ? (cacaoAjusteSigno(t) < 0 ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]") : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+                  className={`rounded-xl border-2 px-2 py-2 text-xs font-bold transition ${tipo === t ? (cacaoAjusteSigno(t) < 0 ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]") : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
                 >
                   {CACAO_AJUSTE_LABEL[t]}
                 </button>

@@ -100,7 +100,7 @@ export default function AIStatusBanner() {
       <button
         onClick={dismiss}
         aria-label="Descartar 6 horas"
-        className="shrink-0 rounded-md p-1 text-[var(--data-warning-500)]/70 transition hover:bg-[var(--data-warning-500)]/20 hover:text-[var(--data-warning-700)] dark:text-amber-300/70 dark:hover:text-amber-300"
+        className="shrink-0 rounded-xl p-1 text-[var(--data-warning-500)]/70 transition hover:bg-[var(--data-warning-500)]/20 hover:text-[var(--data-warning-700)] dark:text-amber-300/70 dark:hover:text-amber-300"
       >
         <X className="h-4 w-4" />
       </button>

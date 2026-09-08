@@ -865,13 +865,13 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
               className={`${cls} pl-9`}
             />
           </div>
-          <select value={estadoFilter} onChange={(e) => setEstadoFilter(e.target.value)} className="h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
+          <select value={estadoFilter} onChange={(e) => setEstadoFilter(e.target.value)} className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
             <option value="todos">Todos los estados</option>
             <option value="en_pie">En pie</option>
             <option value="talado">Talado</option>
             <option value="descartado">Descartado</option>
           </select>
-          <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className="h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
+          <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
             <option value="todas">Toda categoría POA</option>
             <option value="aprovechable">Aprovechables</option>
             <option value="semillero">Semilleros</option>

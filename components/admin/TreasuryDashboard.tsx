@@ -113,7 +113,7 @@ function FlowTooltip({ active, payload, label }: {
 
 function Skeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700", className)} />
+    <div className={cn("animate-pulse rounded-lg bg-[var(--rule-base)] ", className)} />
   );
 }
 
@@ -262,7 +262,7 @@ export default function TreasuryDashboard() {
           aria-label="Actualizar datos"
           className={cn(
             "h-9 w-9 rounded-xl flex items-center justify-center transition-all",
-            "bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700",
+            "bg-[var(--surface-sunken)] hover:bg-[var(--rule-base)] ",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
             loading && "animate-spin opacity-60",
           )}

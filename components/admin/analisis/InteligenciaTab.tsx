@@ -48,7 +48,7 @@ function IntelligenceKPIStrip() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {cards.map(c => (
-        <div key={c.label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-3  text-center">
+        <div key={c.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 text-center">
           <p className="text-xs text-[var(--text-secondary)] font-semibold">{c.label}</p>
           <p className={cn("text-lg font-extrabold mt-0.5", c.color)}>{c.value}</p>
         </div>
@@ -70,15 +70,15 @@ export default function InteligenciaTab() {
         <div className="space-y-6">
           <ComparativeReportsTab />
           <IntelligenceKPIStrip />
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 ">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 ">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Análisis de Negocio</CardTitle>
             <BusinessIntelligenceTab />
           </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 ">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 ">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">KPIs Personalizados</CardTitle>
             <CustomKPITab />
           </div>
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-5 ">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 ">
             <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3">Precios del Mercado</CardTitle>
             <CompetitorPriceTracker />
           </div>

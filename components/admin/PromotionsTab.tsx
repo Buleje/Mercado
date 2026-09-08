@@ -623,7 +623,7 @@ export default function PromotionsTab() {
           <div className="space-y-2">
             {campaigns.map(c => {
               const statusConfig = {
-                scheduled: { label: "Programada", color: "bg-gray-100 text-[var(--text-primary)]", icon: Clock },
+                scheduled: { label: "Programada", color: "bg-[var(--rule-soft)] text-[var(--text-primary)]", icon: Clock },
                 active: { label: "Activa", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", icon: Play },
                 completed: { label: "Finalizada", color: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", icon: Check },
                 paused: { label: "Pausada", color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", icon: Pause },
@@ -658,14 +658,14 @@ export default function PromotionsTab() {
                           <button
                             onClick={() => sendCampaignNow(c)}
                             disabled={sendingCampaignId === c.id}
-                            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 disabled:opacity-50 transition-colors"
+                            className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 disabled:opacity-50 transition-colors"
                             title="Enviar ahora"
                           >
                             {sendingCampaignId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                           </button>
                           <button
                             onClick={() => toggleCampaignStatus(c.id)}
-                            className={cn("p-1.5 rounded-lg transition-colors",
+                            className={cn("p-1.5 rounded-xl transition-colors",
                               c.status === "paused" ? "text-[var(--data-success-500)] hover:bg-primary/10" : "text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)]"
                             )}
                             title={c.status === "paused" ? "Reanudar" : "Pausar"}
@@ -676,14 +676,14 @@ export default function PromotionsTab() {
                       )}
                       <button
                         onClick={() => openEditCampaign(c)}
-                        className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
+                        className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
                         title="Editar"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => deleteCampaign(c.id)}
-                        className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
+                        className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                         title="Eliminar"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -789,28 +789,28 @@ export default function PromotionsTab() {
                       <div className="flex shrink-0 items-center gap-1" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => openSendModal(p)}
-                          className="rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent)]"
+                          className="rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent)]"
                           title="Enviar por WhatsApp"
                         >
                           <Send className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => openEdit(p)}
-                          className="rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                          className="rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
                           title="Editar"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => toggleActive(p)}
-                          className={cn("rounded-lg p-2 transition-colors", p.active ? "text-[var(--data-success-500)] hover:bg-primary/10" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
+                          className={cn("rounded-xl p-2 transition-colors", p.active ? "text-[var(--data-success-500)] hover:bg-primary/10" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
                           title={p.active ? "Desactivar" : "Activar"}
                         >
                           {p.active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                         </button>
                         <button
                           onClick={() => setConfirmDeleteId(p.id)}
-                          className="rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)]"
+                          className="rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)]"
                           title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -832,7 +832,7 @@ export default function PromotionsTab() {
           <div className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{editingId ? "Editar promoción" : "Nueva promoción"}</CardTitle>
-              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -865,7 +865,7 @@ export default function PromotionsTab() {
                     <input id={id} type="url" value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
                       className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="https://..." />
                     {form.imageUrl && (
-                      <div className="relative mt-2 w-32 h-32 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden">
+                      <div className="relative mt-2 w-32 h-32 rounded-xl bg-[var(--rule-soft)] dark:bg-accent overflow-hidden">
                         <Image src={form.imageUrl} alt="preview" fill className="object-cover" sizes="128px" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                       </div>
                     )}
@@ -906,9 +906,9 @@ export default function PromotionsTab() {
                     <input type="text" placeholder="Buscar cliente…" value={customerSearch} onChange={e => setCustomerSearch(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
                   </div>
-                  <div className="max-h-40 overflow-y-auto rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] divide-y divide-gray-100">
+                  <div className="max-h-40 overflow-y-auto rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] divide-y divide-[var(--rule-soft)]">
                     {filteredFormCustomers.map(c => (
-                      <label key={c.phone} className="flex flex-wrap items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-surface cursor-pointer text-sm">
+                      <label key={c.phone} className="flex flex-wrap items-center gap-2 px-3 py-2 hover:bg-[var(--surface-sunken)] cursor-pointer text-sm">
                         <input type="checkbox" checked={selectedPhones.has(c.phone)}
                           onChange={() => {
                             setSelectedPhones(prev => {
@@ -935,9 +935,9 @@ export default function PromotionsTab() {
               </Field>
             </div>
             <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3 shrink-0">
-              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
+              <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--rule-soft)] dark:bg-accent hover:bg-[var(--rule-base)] transition-colors">Cancelar</button>
               <button onClick={savePromo} disabled={saving || !form.name.trim()}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50">
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50">
                 {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Crear promoción"}
               </button>
             </div>
@@ -951,19 +951,19 @@ export default function PromotionsTab() {
           <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{detailPromo.name}</CardTitle>
-              <button onClick={() => setDetailPromo(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button onClick={() => setDetailPromo(null)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
               {detailPromo.imageUrl && (
-                <div className="relative rounded-xl overflow-hidden bg-gray-100 dark:bg-accent h-48">
+                <div className="relative rounded-xl overflow-hidden bg-[var(--rule-soft)] dark:bg-accent h-48">
                   <Image src={detailPromo.imageUrl} alt={detailPromo.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                 </div>
               )}
               <div className="flex flex-wrap gap-2">
                 <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
-                  detailPromo.active ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-gray-100 dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
+                  detailPromo.active ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--rule-soft)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
                 )}>{detailPromo.active ? "Activa" : "Inactiva"}</span>
                 {detailPromo.discountPercent > 0 && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)]">
@@ -999,7 +999,7 @@ export default function PromotionsTab() {
                     {detailPromo.targetPhones.split(",").filter(Boolean).map(ph => {
                       const cust = customers.find(c => c.phone === ph);
                       return (
-                        <span key={ph} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-gray-100 dark:bg-accent text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">
+                        <span key={ph} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-[var(--rule-soft)] dark:bg-accent text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">
                           <Phone className="h-3 w-3" /> {cust ? cust.name : ph}
                         </span>
                       );
@@ -1016,13 +1016,13 @@ export default function PromotionsTab() {
             <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap gap-3 shrink-0">
               <button
                 onClick={() => { setDetailPromo(null); openSendModal(detailPromo); }}
-                className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white bg-primary/10 hover:bg-primary/10 transition-colors"
+                className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary/10 hover:bg-primary/10 transition-colors"
               >
                 <Send className="h-4 w-4" /> Enviar por WhatsApp
               </button>
               <button
                 onClick={() => { setDetailPromo(null); openEdit(detailPromo); }}
-                className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--rule-soft)] dark:bg-accent hover:bg-[var(--rule-base)] transition-colors"
               >
                 Editar
               </button>
@@ -1040,7 +1040,7 @@ export default function PromotionsTab() {
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Enviar por WhatsApp</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{sendPromo.name}</p>
               </div>
-              <button onClick={() => setSendPromo(null)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button onClick={() => setSendPromo(null)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1056,18 +1056,18 @@ export default function PromotionsTab() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] dark:text-muted pointer-events-none" />
                 <input type="text" placeholder="Buscar cliente…" value={sendSearch} onChange={e => setSendSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
+                  className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
               </div>
               <button onClick={() => setSendPhones(new Set(customers.map(c => c.phone)))}
                 className="text-xs font-semibold text-primary hover:underline whitespace-nowrap">Todos</button>
               <button onClick={() => setSendPhones(new Set())}
                 className="text-xs font-semibold text-[var(--text-tertiary)] dark:text-muted hover:underline whitespace-nowrap">Ninguno</button>
             </div>
-            <div className="overflow-y-auto flex-1 divide-y divide-gray-100">
+            <div className="overflow-y-auto flex-1 divide-y divide-[var(--rule-soft)]">
               {filteredSendCustomers.map(c => {
                 const selected = sendPhones.has(c.phone);
                 return (
-                  <div key={c.phone} className="flex flex-wrap items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-surface">
+                  <div key={c.phone} className="flex flex-wrap items-center gap-3 px-5 py-3 hover:bg-[var(--surface-sunken)] ">
                     <input type="checkbox" checked={selected}
                       onChange={() => {
                         setSendPhones(prev => {
@@ -1099,7 +1099,7 @@ export default function PromotionsTab() {
               <button
                 onClick={sendToAll}
                 disabled={sendPhones.size === 0}
-                className="w-full py-3 rounded-lg text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors flex flex-wrap items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors flex flex-wrap items-center justify-center gap-2"
               >
                 <Send className="h-4 w-4" /> Enviar a todos los seleccionados
               </button>
@@ -1119,7 +1119,7 @@ export default function PromotionsTab() {
                 </div>
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Sugerencias IA</CardTitle>
               </div>
-              <button onClick={() => setShowAiModal(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button onClick={() => setShowAiModal(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1150,8 +1150,8 @@ export default function PromotionsTab() {
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
-              <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
-              <button onClick={confirmDelete} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors">Sí, eliminar</button>
+              <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--rule-soft)] dark:bg-accent hover:bg-[var(--rule-base)] transition-colors">Cancelar</button>
+              <button onClick={confirmDelete} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors">Sí, eliminar</button>
             </div>
           </div>
         </div>
@@ -1166,7 +1166,7 @@ export default function PromotionsTab() {
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Plantillas de Campaña</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Selecciona una plantilla y personalízala</p>
               </div>
-              <button onClick={() => setShowTemplates(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-gray-100 transition-colors">
+              <button onClick={() => setShowTemplates(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1175,7 +1175,7 @@ export default function PromotionsTab() {
                 <button
                   key={tpl.name}
                   onClick={() => applyTemplate(tpl)}
-                  className="w-full flex flex-wrap items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-gray-50 dark:bg-surface hover:bg-[var(--data-warning-50)] dark:hover:bg-[var(--data-warning-500)]/10 hover:border-[var(--data-warning-500)] dark:hover:border-[var(--data-warning-500)] transition-all text-left"
+                  className="w-full flex flex-wrap items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:bg-[var(--data-warning-50)] dark:hover:bg-[var(--data-warning-500)]/10 hover:border-[var(--data-warning-500)] dark:hover:border-[var(--data-warning-500)] transition-all text-left"
                 >
                   <span className="text-xl sm:text-2xl shrink-0">{tpl.icon}</span>
                   <div className="flex-1 min-w-0">
@@ -1196,7 +1196,7 @@ export default function PromotionsTab() {
           <div className="bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{editingCampaignId ? "Editar Campaña" : "Nueva Campaña Programada"}</CardTitle>
-              <button onClick={() => setShowCampaignForm(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+              <button onClick={() => setShowCampaignForm(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1214,7 +1214,7 @@ export default function PromotionsTab() {
               {/* Target Segment */}
               <Field label="Segmento objetivo *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <select value={campaignForm.targetSegment} onChange={e => setCampaignForm(f => ({ ...f, targetSegment: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-white dark:bg-surface">
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-[var(--surface-raised)] ">
                   <option value="all">Todos</option>
                   <option value="champions">Champions</option>
                   <option value="loyal">Loyal</option>
@@ -1252,7 +1252,7 @@ export default function PromotionsTab() {
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary font-mono" placeholder="VERANO20" />
               </Field>
               {/* Auto-send toggle */}
-              <div className="flex flex-wrap items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl">
+              <div className="flex flex-wrap items-center gap-3 p-3 bg-[var(--surface-sunken)] rounded-xl">
                 <input type="checkbox" id="autoSend" checked={campaignForm.autoSend} onChange={e => setCampaignForm(f => ({ ...f, autoSend: e.target.checked }))}
                   className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                 <label htmlFor="autoSend" className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] cursor-pointer flex-1">

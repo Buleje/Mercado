@@ -141,7 +141,7 @@ export default function BreakEvenDashboard() {
           type="button"
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
           {lastRefresh.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}

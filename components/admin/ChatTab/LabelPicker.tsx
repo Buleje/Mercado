@@ -123,7 +123,7 @@ export function LabelPicker({ value, onChange }: LabelPickerProps) {
               placeholder="Nueva etiqueta…"
               aria-label="Crear etiqueta"
               maxLength={40}
-              className="h-8 min-w-0 flex-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 text-xs outline-none focus:border-primary"
+              className="h-8 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 text-xs outline-none focus:border-primary"
             />
             <button
               type="button"

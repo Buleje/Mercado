@@ -142,7 +142,7 @@ export default function CacaoReconcileModal({ onClose, onDone }: { onClose: () =
                     <select
                       value={sel[g.nombre] ?? NEW}
                       onChange={(e) => setSel((s) => ({ ...s, [g.nombre]: e.target.value }))}
-                      className="h-11 max-w-[200px] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                      className="h-11 max-w-[200px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                     >
                       <option value={NEW}>+ Crear «{g.nombre}»</option>
                       {producers.map((p) => (
@@ -153,7 +153,7 @@ export default function CacaoReconcileModal({ onClose, onDone }: { onClose: () =
                       type="button"
                       disabled={busy === g.nombre}
                       onClick={() => link(g)}
-                      className="inline-flex h-11 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"
+                      className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"
                     >
                       {busy === g.nombre ? <Loader2 className="h-4 w-4 animate-spin" /> : (sel[g.nombre] === NEW || !sel[g.nombre]) ? <UserPlus className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
                       Vincular

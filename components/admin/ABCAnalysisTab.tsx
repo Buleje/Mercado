@@ -53,7 +53,7 @@ export default function ABCAnalysisTab() {
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-white dark:bg-surface text-sm w-56" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar producto..." className="pl-9 pr-4 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm w-56" />
         </div>
       </div>
 
@@ -104,7 +104,7 @@ export default function ABCAnalysisTab() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((p) => (
-                  <tr key={p.productId} className={cn("hover:bg-[var(--surface-alt)] dark:hover:bg-surface transition-colors", CLASS_STYLES[p.class].row)}>
+                  <tr key={p.productId} className={cn("hover:bg-[var(--surface-alt)] transition-colors", CLASS_STYLES[p.class].row)}>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-[var(--text-tertiary)] dark:text-muted text-xs">{data.indexOf(p) + 1}</td>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{p.name}</td>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-[var(--text-secondary)] dark:text-muted text-xs hidden sm:table-cell">{p.category}</td>

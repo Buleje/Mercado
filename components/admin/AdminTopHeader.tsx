@@ -122,7 +122,7 @@ export const AdminTopHeader = memo(function AdminTopHeader({
       ? "bg-[linear-gradient(180deg,#0b1f2b_0%,#0a1922_100%)] border-[color-mix(in_oklab,var(--accent)_30%,transparent)] text-white/80"
       : isEjecutivoTheme
         ? "bg-[linear-gradient(180deg,#09090b_0%,#18181b_100%)] border-[color-mix(in_oklab,var(--accent)_25%,transparent)] text-zinc-300"
-        : "bg-white dark:bg-[var(--color-card)] border-[var(--rule-base)] text-[var(--text-primary)]"
+        : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-primary)]"
     : "bg-[var(--surface-raised)] border-[var(--rule-base)] dark:border-[var(--rule-base)]";
 
   return (

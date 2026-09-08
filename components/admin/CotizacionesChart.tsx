@@ -48,7 +48,7 @@ export default function CotizacionesChart({
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* AreaChart: cotizaciones emitidas por mes — se oculta si no hay datos */}
       {hasMonthly && (
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
         <p className="text-sm font-bold text-[var(--text-primary)] mb-4">
           Cotizaciones por mes
         </p>
@@ -90,7 +90,7 @@ export default function CotizacionesChart({
 
       {/* Top 5 clientes — se oculta si no hay datos */}
       {hasClientes && (
-      <div className="bg-white dark:bg-[var(--color-card)] rounded-xl border border-[var(--rule-base)] p-6">
+      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
         <p className="text-sm font-bold text-[var(--text-primary)] mb-4">
           Top 5 clientes por monto
         </p>

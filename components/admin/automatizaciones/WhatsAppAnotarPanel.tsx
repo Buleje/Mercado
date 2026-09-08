@@ -167,7 +167,7 @@ export default function WhatsAppAnotarPanel() {
                   type="button"
                   onClick={() => copiar(frase, "codigo")}
                   aria-label="Copiar el mensaje"
-                  className="h-11 w-11 inline-flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                  className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   {copiado === "codigo" ? (
                     <Check className="h-4 w-4 text-[var(--data-success-500)]" />
@@ -225,7 +225,7 @@ export default function WhatsAppAnotarPanel() {
                       }
                     }}
                     aria-label={`Quitar ${telefonoLegible(d.telefono)}`}
-                    className="shrink-0 h-11 w-11 inline-flex items-center justify-center rounded-lg border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-[var(--data-error-500)]/40 transition-colors"
+                    className="shrink-0 h-11 w-11 inline-flex items-center justify-center rounded-xl border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-[var(--data-error-500)]/40 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

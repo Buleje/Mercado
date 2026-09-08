@@ -149,7 +149,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
           </div>
           <button
             onClick={() => { stopCamera(); onClose(); }}
-            className="p-1.5 rounded-lg text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"
+            className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -196,7 +196,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
             {hasTorch && (
               <button
                 onClick={handleToggleTorch}
-                className="p-2 rounded-lg text-[var(--text-secondary)] dark:text-muted hover:text-primary hover:bg-primary/10 transition-colors"
+                className="p-2 rounded-xl text-[var(--text-secondary)] dark:text-muted hover:text-primary hover:bg-primary/10 transition-colors"
                 title={torchOn ? "Apagar linterna" : "Encender linterna"}
               >
                 {torchOn
@@ -206,7 +206,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
             )}
             <button
               onClick={handleSwitchCamera}
-              className="p-2 rounded-lg text-[var(--text-secondary)] dark:text-muted hover:text-primary hover:bg-primary/10 transition-colors"
+              className="p-2 rounded-xl text-[var(--text-secondary)] dark:text-muted hover:text-primary hover:bg-primary/10 transition-colors"
               title="Cambiar cámara"
             >
               <SwitchCamera className="h-4 w-4" />

@@ -633,7 +633,7 @@ function HeroTab({
         <div className="space-y-3">
           {/* Device toggle + abrir tienda */}
           <div className="flex items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[var(--surface-sunken)] border-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               {[
                 { value: "desktop" as const, label: "Desktop", icon: Monitor },
                 { value: "mobile" as const, label: "Mobile", icon: Smartphone },
@@ -663,7 +663,7 @@ function HeroTab({
               href={storefrontUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] dark:hover:bg-surface"
+              className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] "
             >
               <ExternalLink className="h-4 w-4" />
               Ver en tienda
@@ -1096,7 +1096,7 @@ function HeroTab({
                   >
                     <div className={cn(
                       "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center",
-                      active ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-primary)]"
+                      active ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-primary)]"
                     )}>
                       {s.icon}
                     </div>
@@ -1248,7 +1248,7 @@ function HeroTab({
               onClick={() => update("heroShowBadges", !(theme.heroShowBadges ?? true))}
               aria-pressed={theme.heroShowBadges ?? true}
               aria-label="Mostrar badges del hero"
-              className={cn("relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors", (theme.heroShowBadges ?? true) ? "bg-primary" : "bg-[var(--surface-sunken)] dark:bg-surface")}
+              className={cn("relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors", (theme.heroShowBadges ?? true) ? "bg-primary" : "bg-[var(--surface-sunken)] ")}
             >
               <span className={cn("inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transform transition-transform", (theme.heroShowBadges ?? true) ? "translate-x-6" : "translate-x-1")} />
             </button>
@@ -1374,7 +1374,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
     <div
       className={cn(
         "w-full h-full rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] flex flex-col text-sm shadow-inner",
-        theme.darkModeDefault ? "bg-neutral-900 text-white" : "bg-white text-neutral-900"
+        theme.darkModeDefault ? "bg-neutral-900 text-white" : "bg-[var(--surface-raised)] text-neutral-900"
       )}
       style={{ fontFamily: fontMap[theme.fontFamily] ?? fontMap.sistema }}
     >
@@ -1801,7 +1801,7 @@ export default function StoreCustomizer() {
             href={`/t/${activeTenantSlug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <Store className="h-4 w-4" />
             Ver tienda
@@ -1809,7 +1809,7 @@ export default function StoreCustomizer() {
           <button
             type="button"
             onClick={() => setShowPreview(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/20 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/20 transition-colors"
           >
             <Eye className="h-4 w-4" />
             Vista previa
@@ -2314,7 +2314,7 @@ export default function StoreCustomizer() {
                   </div>
 
                   {/* Pista de contraste WCAG */}
-                  <div className="mt-4 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 flex items-start gap-2.5">
+                  <div className="mt-4 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 flex items-start gap-2.5">
                     <div className="shrink-0 mt-0.5">
                       <Sliders className="h-4 w-4 text-muted" />
                     </div>
@@ -2937,7 +2937,7 @@ export default function StoreCustomizer() {
                               <div
                                 className={cn(
                                   "aspect-[5/3] rounded-xl mb-2 overflow-hidden",
-                                  s.value === "none" && "bg-[var(--surface-sunken)] dark:bg-surface",
+                                  s.value === "none" && "bg-[var(--surface-sunken)] ",
                                 )}
                                 style={
                                   s.value === "dots"
@@ -3031,7 +3031,7 @@ export default function StoreCustomizer() {
                     "rounded-2xl border-2 p-5 transition-colors",
                     theme.welcomePopupEnabled
                       ? "bg-primary/5 dark:bg-primary/10 border-primary/30"
-                      : "bg-[var(--surface-sunken)] dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)]"
+                      : "bg-[var(--surface-sunken)] border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                   )}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -3112,7 +3112,7 @@ export default function StoreCustomizer() {
                   title="QR de tu tienda"
                   description="Imprímelo y pégalo en tu local físico. Los clientes lo escanean y entran a tu tienda online."
                 >
-                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] dark:bg-surface p-5 flex flex-col sm:flex-row items-center sm:items-stretch gap-5">
+                  <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] p-5 flex flex-col sm:flex-row items-center sm:items-stretch gap-5">
                     <div className="bg-[var(--surface-raised)] p-3 rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
                       <Image
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/t/${activeTenantSlug}` : "https://tu-tienda.buleje.pe")}`}
@@ -3204,7 +3204,7 @@ export default function StoreCustomizer() {
                           )}
                         >
                           <div
-                            className="h-12 mb-2 rounded-xl bg-[var(--surface-sunken)] dark:bg-surface flex items-center justify-center text-2xl font-extrabold text-[var(--text-primary)]"
+                            className="h-12 mb-2 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center text-2xl font-extrabold text-[var(--text-primary)]"
                             style={{ fontFamily: f.stack }}
                           >
                             Aa
@@ -3242,7 +3242,7 @@ export default function StoreCustomizer() {
                         />
                       </Field>
                       {/* Preview multi-elemento: input, badge, card, botón */}
-                      <div className="rounded-2xl bg-[var(--surface-sunken)] dark:bg-surface p-4 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                      <div className="rounded-2xl bg-[var(--surface-sunken)] p-4 border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-muted mb-3">Vista previa en vivo</p>
                         <div className="flex items-center gap-3 flex-wrap">
                           <div
@@ -3295,7 +3295,7 @@ export default function StoreCustomizer() {
                                   : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40"
                               )}
                             >
-                              <div className={cn("rounded-xl bg-[var(--surface-sunken)] dark:bg-surface mb-2 flex flex-col justify-center px-2", s.pad, s.gap)}>
+                              <div className={cn("rounded-xl bg-[var(--surface-sunken)] mb-2 flex flex-col justify-center px-2", s.pad, s.gap)}>
                                 <div className="h-1.5 rounded-full bg-primary/30 w-1/2 mx-auto" />
                                 <div className="h-0.5 rounded-full bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] w-3/4" />
                                 <div className="h-0.5 rounded-full bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] w-2/3" />
@@ -3333,7 +3333,7 @@ export default function StoreCustomizer() {
                           <span className="text-xs text-[var(--text-primary)] truncate">{theme.storeName || "Tu tienda"}</span>
                         </div>
                       </div>
-                      <div className="rounded-b-xl bg-[var(--surface-sunken)] dark:bg-surface px-3 py-2 border border-t-0 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+                      <div className="rounded-b-xl bg-[var(--surface-sunken)] px-3 py-2 border border-t-0 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                         <span className="text-xs font-mono text-muted">localhost:3000/t/{activeTenantSlug}</span>
                       </div>
                     </div>
@@ -3513,9 +3513,9 @@ export default function StoreCustomizer() {
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <p className="text-xs text-muted">
                           Selectores útiles:
-                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] dark:bg-surface">.product-card</span>
-                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] dark:bg-surface">.store-card</span>
-                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] dark:bg-surface">.store-header</span>
+                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] ">.product-card</span>
+                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] ">.store-card</span>
+                          <span className="font-mono mx-1 px-1.5 py-0.5 rounded bg-[var(--surface-sunken)] ">.store-header</span>
                         </p>
                         {theme.customCSS && (
                           <button
@@ -3602,8 +3602,8 @@ export default function StoreCustomizer() {
                   { label: "Desktop", w: 0 },
                 ]).map((v) => (
                   <button key={v.label} type="button" onClick={() => setPreviewWidth(v.w)}
-                    className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all",
-                      previewWidth === v.w ? "bg-white text-neutral-900 shadow" : "text-neutral-400 hover:text-white")}>
+                    className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                      previewWidth === v.w ? "bg-[var(--surface-raised)] text-neutral-900 shadow" : "text-neutral-400 hover:text-white")}>
                     {v.label}
                   </button>
                 ))}

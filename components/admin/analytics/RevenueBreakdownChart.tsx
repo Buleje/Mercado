@@ -196,9 +196,9 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
             key={key}
             onClick={() => setView(key)}
             className={cn(
-              "flex-1 text-xs py-1 rounded-md font-medium transition-colors",
+              "flex-1 text-xs py-1 rounded-lg font-medium transition-colors",
               view === key
-                ? "bg-white dark:bg-gray-600 text-primary dark:text-primary "
+                ? "bg-[var(--surface-raised)] text-primary dark:text-primary "
                 : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] dark:hover:text-gray-200"
             )}
           >

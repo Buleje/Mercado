@@ -101,7 +101,7 @@ function ModuleTooltip() {
         <Info className="h-4 w-4" />
       </button>
       {open && (
-        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-white p-4 text-xs leading-relaxed dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
+        <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-xs leading-relaxed dark:border-[var(--rule-base)] ">
           <p className="mb-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Pérdidas</p>
           <p className="mb-3 text-[var(--text-secondary)] dark:text-muted">Aquí registras lo que se perdió (por vencimiento, rotura, robo o errores al contar), y el sistema baja las existencias automáticamente.</p>
           <p className="text-[var(--text-secondary)] dark:text-muted">Ejemplo: si se vencen 3 yogures, registras la pérdida, queda el motivo guardado y el inventario baja en 3 unidades.</p>
@@ -203,31 +203,31 @@ export default function ShrinkageTab() {
           </SectionTitle>
           <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-muted">Registra lo que se perdió y cuánto costó</p>
         </div>
-        <button onClick={() => exportToCSV(records.map((record) => ({ Fecha: record.date, Producto: record.product, Categoria: record.category, Cantidad: record.quantity, CostoUnitario: record.unitCost, Perdida: record.totalLoss, Motivo: record.cause, Estado: record.status })), "mermas")} className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors hover:bg-gray-50 dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)] dark:hover:bg-accent">
+        <button onClick={() => exportToCSV(records.map((record) => ({ Fecha: record.date, Producto: record.product, Categoria: record.category, Cantidad: record.quantity, CostoUnitario: record.unitCost, Perdida: record.totalLoss, Motivo: record.cause, Estado: record.status })), "mermas")} className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] ">
           <Download className="h-4 w-4" /> Descargar
         </button>
       </div>
 
       <div className="grid gap-2 sm:gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-5 dark:border-[var(--rule-base)] ">
           <div className="mb-4 flex flex-wrap items-center gap-2 text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]"><Plus className="h-4 w-4 text-primary" /> Registrar pérdida</div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <select value={form.productId} onChange={(event) => setForm((prev) => ({ ...prev, productId: event.target.value }))} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-[var(--rule-base)] dark:bg-surface">
+            <select value={form.productId} onChange={(event) => setForm((prev) => ({ ...prev, productId: event.target.value }))} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm dark:border-[var(--rule-base)] ">
               <option value="">Selecciona producto</option>
               {products.map((product) => (
                 <option key={product.id} value={product.id}>{product.name}</option>
               ))}
             </select>
-            <input type="number" min={1} value={form.quantity} onChange={(event) => setForm((prev) => ({ ...prev, quantity: event.target.value }))} placeholder="Cantidad" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-[var(--rule-base)] dark:bg-surface" />
-            <select value={form.cause} onChange={(event) => setForm((prev) => ({ ...prev, cause: event.target.value as ShrinkageCause }))} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-[var(--rule-base)] dark:bg-surface">
+            <input type="number" min={1} value={form.quantity} onChange={(event) => setForm((prev) => ({ ...prev, quantity: event.target.value }))} placeholder="Cantidad" className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm dark:border-[var(--rule-base)] " />
+            <select value={form.cause} onChange={(event) => setForm((prev) => ({ ...prev, cause: event.target.value as ShrinkageCause }))} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm dark:border-[var(--rule-base)] ">
               {Object.entries(CAUSE_META).map(([key, meta]) => (
                 <option key={key} value={key}>{meta.label}</option>
               ))}
             </select>
-            <input value={form.reportedBy} onChange={(event) => setForm((prev) => ({ ...prev, reportedBy: event.target.value }))} placeholder="Reportado por" className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm dark:border-[var(--rule-base)] dark:bg-surface" />
-            <textarea value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} placeholder="Notas" rows={3} className="rounded-lg border border-[var(--rule-base)] bg-white px-3 py-2.5 text-sm sm:col-span-2 dark:border-[var(--rule-base)] dark:bg-surface" />
+            <input value={form.reportedBy} onChange={(event) => setForm((prev) => ({ ...prev, reportedBy: event.target.value }))} placeholder="Reportado por" className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm dark:border-[var(--rule-base)] " />
+            <textarea value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} placeholder="Notas" rows={3} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-sm sm:col-span-2 dark:border-[var(--rule-base)] " />
           </div>
-          <button onClick={handleAdd} disabled={saving || !form.productId || !form.quantity} className="mt-4 rounded-lg bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50">
+          <button onClick={handleAdd} disabled={saving || !form.productId || !form.quantity} className="mt-4 rounded-xl bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50">
             {saving ? "Guardando..." : "Registrar pérdida"}
           </button>
         </div>
@@ -235,7 +235,7 @@ export default function ShrinkageTab() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           <MetricCard title="Perdida total" value={fmt(stats.totalLoss)} icon={DollarSign} tone="text-[var(--data-error-600)]" bg="bg-red-50 dark:bg-red-950/20" />
           <MetricCard title="Registros" value={String(stats.count)} icon={TrendingDown} tone="text-[var(--data-warning-600)]" bg="bg-amber-50 dark:bg-amber-950/20" />
-          <div className="col-span-2 rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-5 dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
+          <div className="col-span-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-5 dark:border-[var(--rule-base)] ">
             <p className="text-xs font-semibold uppercase text-[var(--text-secondary)] dark:text-muted">Motivo principal</p>
             <p className="mt-2 text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{stats.topCause ? CAUSE_META[stats.topCause[0] as ShrinkageCause]?.label : "Sin datos"}</p>
             <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-muted">{stats.topCause ? `${fmt(stats.topCause[1])} acumulados` : "Aún no hay pérdidas registradas."}</p>
@@ -246,22 +246,22 @@ export default function ShrinkageTab() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o categoria..." className="w-full rounded-lg border border-[var(--rule-base)] bg-white py-2.5 pl-10 pr-4 text-sm dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar producto o categoria..." className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-2.5 pl-10 pr-4 text-sm dark:border-[var(--rule-base)] " />
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setFilterCause("todos")} className={cn("rounded-lg px-3 py-2 text-xs font-bold", filterCause === "todos" ? "bg-primary text-white" : "border border-[var(--rule-base)] bg-white text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)] dark:text-muted")}>Todos</button>
+          <button onClick={() => setFilterCause("todos")} className={cn("rounded-xl px-3 py-2 text-xs font-bold", filterCause === "todos" ? "bg-primary text-white" : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:text-muted")}>Todos</button>
           {(Object.keys(CAUSE_META) as ShrinkageCause[]).map((cause) => (
-            <button key={cause} onClick={() => setFilterCause(cause)} className={cn("rounded-lg px-3 py-2 text-xs font-bold", filterCause === cause ? "bg-primary text-white" : "border border-[var(--rule-base)] bg-white text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)] dark:text-muted")}>
+            <button key={cause} onClick={() => setFilterCause(cause)} className={cn("rounded-xl px-3 py-2 text-xs font-bold", filterCause === cause ? "bg-primary text-white" : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:border-[var(--rule-base)] dark:text-muted")}>
               {CAUSE_META[cause].label}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-white dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
+      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:border-[var(--rule-base)] ">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface">
+            <thead className="bg-[var(--surface-sunken)] ">
               <tr>
                 <th className="px-5 py-3 text-left font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
                 <th className="px-5 py-3 text-left font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
@@ -272,7 +272,7 @@ export default function ShrinkageTab() {
                 <th className="px-5 py-3 text-center font-bold text-[var(--text-secondary)] dark:text-muted">Detalle</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-card-border">
+            <tbody className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
               {loading && (
                 <tr><td colSpan={7} className="px-5 py-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> Cargando pérdidas...</td></tr>
               )}
@@ -280,7 +280,7 @@ export default function ShrinkageTab() {
                 <tr><td colSpan={7} className="px-5 py-8 text-center text-sm text-[var(--text-tertiary)] dark:text-muted">No hay pérdidas registradas.</td></tr>
               )}
               {filtered.map((record) => (
-                <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-surface">
+                <tr key={record.id} className="hover:bg-[var(--surface-sunken)] ">
                   <td className="px-5 py-3 text-[var(--text-secondary)] dark:text-muted">{new Date(record.date).toLocaleDateString("es-PE")}</td>
                   <td className="px-5 py-3">
                     <div>
@@ -295,7 +295,7 @@ export default function ShrinkageTab() {
                     <span className={cn("inline-flex rounded-full px-2 py-1 text-xs font-bold", CAUSE_META[record.cause].bg, CAUSE_META[record.cause].color)}>{CAUSE_META[record.cause].label}</span>
                   </td>
                   <td className="px-5 py-3 text-center">
-                    <button onClick={() => setDetail(record)} className="rounded-lg border border-[var(--rule-base)] p-2 text-[var(--text-secondary)] hover:bg-gray-50 dark:border-[var(--rule-base)] dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
+                    <button onClick={() => setDetail(record)} className="rounded-xl border border-[var(--rule-base)] p-2 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] "><Eye className="h-4 w-4" /></button>
                   </td>
                 </tr>
               ))}
@@ -306,13 +306,13 @@ export default function ShrinkageTab() {
 
       {detail && (
         <div className="modal-backdrop p-4">
-          <div className="w-full max-w-lg rounded-xl border border-[var(--rule-base)] bg-white p-3 sm:p-6 dark:border-[var(--rule-base)] dark:bg-[var(--surface-raised)]">
+          <div className="w-full max-w-lg rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-6 dark:border-[var(--rule-base)] ">
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de la pérdida</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{detail.product}</p>
               </div>
-              <button onClick={() => setDetail(null)} className="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4" /></button>
+              <button onClick={() => setDetail(null)} className="rounded-xl p-2 text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] "><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3 text-sm">
               <p><strong>Fecha:</strong> {new Date(detail.date).toLocaleString("es-PE")}</p>
@@ -320,7 +320,7 @@ export default function ShrinkageTab() {
               <p><strong>Cantidad:</strong> {detail.quantity}</p>
               <p><strong>Perdida:</strong> {fmt(detail.totalLoss)}</p>
               <p><strong>Reportado por:</strong> {detail.reportedBy}</p>
-              <div className="rounded-xl bg-gray-50 p-3 text-[var(--text-secondary)] dark:bg-surface dark:text-muted">
+              <div className="rounded-xl bg-[var(--surface-sunken)] p-3 text-[var(--text-secondary)] dark:text-muted">
                 {detail.notes || "Sin notas adicionales."}
               </div>
             </div>

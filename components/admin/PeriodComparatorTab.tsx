@@ -133,7 +133,7 @@ export default function PeriodComparatorTab() {
       <div className="flex items-center gap-2 flex-wrap">
         <Calendar className="h-4 w-4 text-[var(--text-tertiary)]" />
         {PRESETS.map(p => (
-          <button key={p.id} onClick={() => setPreset(p.id)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", preset === p.id ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-gray-200 dark:hover:bg-accent")}>{p.label}</button>
+          <button key={p.id} onClick={() => setPreset(p.id)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", preset === p.id ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-base)] ")}>{p.label}</button>
         ))}
       </div>
 
@@ -182,7 +182,7 @@ export default function PeriodComparatorTab() {
                     <span className="text-[var(--data-success-500)] font-semibold">{current.aLabel}</span>
                     <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmtNum(m.periodA, m.format)}</span>
                   </div>
-                  <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-[var(--rule-soft)] rounded-full overflow-hidden">
                     <div className="h-full bg-primary/10 rounded-full transition-all" style={{ width: `${(m.periodA / maxVal) * 100}%` }} />
                   </div>
                 </div>
@@ -191,7 +191,7 @@ export default function PeriodComparatorTab() {
                     <span className="text-[var(--text-secondary)] font-semibold">{current.bLabel}</span>
                     <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmtNum(m.periodB, m.format)}</span>
                   </div>
-                  <div className="w-full h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-[var(--rule-soft)] rounded-full overflow-hidden">
                     <div className="h-full bg-[var(--text-primary)] rounded-full transition-all" style={{ width: `${(m.periodB / maxVal) * 100}%` }} />
                   </div>
                 </div>

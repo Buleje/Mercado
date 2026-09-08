@@ -223,7 +223,7 @@ export default function ImportExportTab() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {(["export", "import", "history"] as const).map(v => (
-            <button key={v} onClick={() => setView(v)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === v ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>
+            <button key={v} onClick={() => setView(v)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === v ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted")}>
               {v === "export" ? "Descargar" : v === "import" ? "Subir" : "Historial"}
             </button>
           ))}
@@ -249,7 +249,7 @@ export default function ImportExportTab() {
                   <button
                     onClick={() => handleExport(mod.id, "csv")}
                     disabled={!!exporting}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-60"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-60"
                   >
                     {isExportingCSV ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                     CSV
@@ -257,7 +257,7 @@ export default function ImportExportTab() {
                   <button
                     onClick={() => handleExport(mod.id, "excel")}
                     disabled={!!exporting}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-primary/10 text-white hover:bg-primary/10 transition-colors disabled:opacity-60"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-primary/10 text-white hover:bg-primary/10 transition-colors disabled:opacity-60"
                   >
                     {isExportingXLS ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                     Excel
@@ -276,7 +276,7 @@ export default function ImportExportTab() {
             <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">1. Elige a dónde van los datos</CardTitle>
             <div className="flex flex-wrap gap-2">
               {EXPORT_MODULES.map(m => (
-                <button key={m.id} onClick={() => setSelectedModule(m.id)} className={cn("px-3 py-2 rounded-lg text-xs font-bold transition-colors border", selectedModule === m.id ? "bg-primary text-white border-primary" : "bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary")}>
+                <button key={m.id} onClick={() => setSelectedModule(m.id)} className={cn("px-3 py-2 rounded-xl text-xs font-bold transition-colors border", selectedModule === m.id ? "bg-primary text-white border-primary" : "bg-[var(--surface-alt)] text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary")}>
                   {m.label}
                 </button>
               ))}
@@ -355,7 +355,7 @@ export default function ImportExportTab() {
         ) : (
         <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-y-hidden overflow-x-auto">
           <table className="w-full min-w-150 text-sm">
-            <thead><tr className="bg-[var(--surface-alt)] dark:bg-surface text-left">
+            <thead><tr className="bg-[var(--surface-alt)] text-left">
               <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Archivo</th>
               <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Módulo</th>
               <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-[var(--text-secondary)] dark:text-muted">Registros</th>

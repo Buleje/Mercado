@@ -108,7 +108,7 @@ export default function HistorialCierresTab() {
         <button
           onClick={handleExport}
           disabled={!data?.items.length}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           <Download className="h-4 w-4" />
           Descargar Excel
@@ -117,7 +117,7 @@ export default function HistorialCierresTab() {
 
       {/* Table */}
       {loading ? (
-        <TableSkeleton rows={5} cols={4} className="bg-white dark:bg-card border border-[var(--rule-base)] dark:border-card-border rounded-xl" />
+        <TableSkeleton rows={5} cols={4} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-card-border rounded-xl" />
       ) : !data?.items.length ? (
         <EmptyState
           icon={CalendarOff}
@@ -125,11 +125,11 @@ export default function HistorialCierresTab() {
           description="No hay cierres de caja registrados aún. Usa el botón «Cerrar día» en la barra superior para crear el primer cierre."
         />
       ) : (
-        <div className="bg-white dark:bg-card rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
+        <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-card-border">
+                <tr className="bg-[var(--surface-alt)] border-b border-[var(--rule-base)] dark:border-card-border">
                   <th className="text-left px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
                   <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted">Ventas</th>
                   <th className="text-right px-4 py-3 font-semibold text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">Caja</th>
@@ -143,7 +143,7 @@ export default function HistorialCierresTab() {
                   return (
                     <tr
                       key={s.id}
-                      className="border-b border-[var(--rule-soft)] dark:border-card-border last:border-0 hover:bg-[var(--surface-alt)] dark:hover:bg-accent transition-colors"
+                      className="border-b border-[var(--rule-soft)] dark:border-card-border last:border-0 hover:bg-[var(--surface-alt)] transition-colors"
                     >
                       <td className="px-4 py-3 font-medium text-[var(--text-primary)] dark:text-foreground whitespace-nowrap">
                         {formatFecha(s.fecha)}
@@ -189,7 +189,7 @@ export default function HistorialCierresTab() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors disabled:opacity-40"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" /> Anterior
               </button>
@@ -199,7 +199,7 @@ export default function HistorialCierresTab() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent transition-colors disabled:opacity-40"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40"
               >
                 Siguiente <ChevronRight className="h-4 w-4" />
               </button>

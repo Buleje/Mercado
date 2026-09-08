@@ -57,7 +57,7 @@ export default function NotasCreditoChart({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
       {/* Trend line — se oculta si no hay datos */}
       {hasTrend && (
-      <div className="lg:col-span-2 bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4">
+      <div className="lg:col-span-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
         <p className="text-xs font-bold text-[var(--text-primary)] mb-2">
           NC por semana (últimos 3 meses)
         </p>
@@ -83,7 +83,7 @@ export default function NotasCreditoChart({
       {(hasDonut || hasWeekday) && (
       <div className="flex flex-col gap-3">
         {hasDonut && (
-          <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex-1">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex-1">
             <p className="text-xs font-bold text-[var(--text-primary)] mb-1">Motivos del mes</p>
             <ResponsiveContainer minWidth={0} width="100%" height={80}>
               <PieChart>
@@ -124,7 +124,7 @@ export default function NotasCreditoChart({
 
         {/* Días con más devoluciones — se oculta si no hay datos */}
         {hasWeekday && (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex-1">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex-1">
           <p className="text-xs font-bold text-[var(--text-primary)] mb-1">
             Días con más devoluciones
           </p>

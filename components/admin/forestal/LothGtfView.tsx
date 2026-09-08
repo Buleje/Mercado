@@ -644,7 +644,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
           <Field label="Ø mayor"><input type="number" step="0.001" value={it.diamMayorM} onChange={(e) => setItem("diamMayorM", e.target.value)} className={I} /></Field>
           <Field label="Ø menor"><input type="number" step="0.001" value={it.diamMenorM} onChange={(e) => setItem("diamMenorM", e.target.value)} className={I} /></Field>
           <Field label={`Long. ${autoVol > 0 ? `→ ${fmtM3(autoVol)}` : ""}`}><input type="number" step="0.01" value={it.lengthM} onChange={(e) => setItem("lengthM", e.target.value)} className={I} /></Field>
-          <button type="button" onClick={addItem} className="h-10 rounded-lg bg-[var(--data-success-700)] text-sm font-bold text-white hover:opacity-90">+ Agregar</button>
+          <button type="button" onClick={addItem} className="h-10 rounded-xl bg-[var(--data-success-700)] text-sm font-bold text-white hover:opacity-90">+ Agregar</button>
         </div>
         {items.length > 0 && (
           <div className="mt-3 overflow-x-auto">

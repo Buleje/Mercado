@@ -170,7 +170,7 @@ export default function ProductsTab() {
                   await upsert({ productId: p.id, visible: true });
                   setShowPicker(false);
                 }}
-                className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-[var(--surface-sunken)] text-left transition-colors"
+                className="flex items-center gap-3 w-full p-2 rounded-xl hover:bg-[var(--surface-sunken)] text-left transition-colors"
               >
                 <div className="relative w-10 h-10 rounded bg-[var(--surface-sunken)] overflow-hidden flex-shrink-0">
                   {p.image && (
@@ -256,7 +256,7 @@ function OverrideRow({
 
   return (
     <div className={`${ADMIN_TOKENS.card} p-4 flex items-center gap-4 flex-wrap`}>
-      <div className="relative w-14 h-14 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+      <div className="relative w-14 h-14 rounded-lg bg-[var(--rule-soft)] overflow-hidden flex-shrink-0">
         {override.productImage && (
           <Image
             src={override.productImage}
@@ -300,7 +300,7 @@ function OverrideRow({
             setDirty(false);
           }}
           placeholder="—"
-          className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono"
+          className="w-20 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono"
         />
       </label>
 
@@ -323,7 +323,7 @@ function OverrideRow({
             setDirty(false);
           }}
           placeholder="—"
-          className="w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs"
+          className="w-24 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs"
         />
       </label>
 
@@ -335,7 +335,7 @@ function OverrideRow({
           })
         }
         title="Destacado"
-        className={`p-2 rounded-lg transition-colors ${
+        className={`p-2 rounded-xl transition-colors ${
           override.featured
             ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30"
             : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
@@ -355,7 +355,7 @@ function OverrideRow({
           })
         }
         title={override.visible ? "Visible" : "Oculto"}
-        className={`p-2 rounded-lg transition-colors ${
+        className={`p-2 rounded-xl transition-colors ${
           override.visible
             ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15"
             : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
@@ -371,7 +371,7 @@ function OverrideRow({
       <button
         onClick={() => onRemove(override.productId)}
         title="Eliminar"
-        className="p-2 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/20"
+        className="p-2 rounded-xl bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/20"
       >
         <Trash2 className="w-4 h-4" />
       </button>

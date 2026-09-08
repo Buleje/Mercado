@@ -261,19 +261,19 @@ export default function TeamTab() {
                 <button
                   onClick={() => handleToggleActive(u)}
                   title={u.active ? "Desactivar" : "Activar"}
-                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-foreground"
+                  className="p-1.5 rounded-xl hover:bg-(--color-surface) text-muted hover:text-foreground"
                 >
                   {u.active ? <CheckCircle2 className="w-4 h-4 text-[var(--data-success-500)]" /> : <XCircle className="w-4 h-4" />}
                 </button>
                 <button
                   onClick={() => openEdit(u)}
-                  className="p-1.5 rounded-lg hover:bg-(--color-surface) text-muted hover:text-foreground"
+                  className="p-1.5 rounded-xl hover:bg-(--color-surface) text-muted hover:text-foreground"
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(u)}
-                  className="p-1.5 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 text-muted hover:text-[var(--data-error-500)]"
+                  className="p-1.5 rounded-xl hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20 text-muted hover:text-[var(--data-error-500)]"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -367,14 +367,14 @@ export default function TeamTab() {
             <div className="flex flex-wrap gap-2 pt-1">
               <button
                 onClick={() => setShowForm(false)}
-                className="flex-1 py-2 rounded-lg border border-(--color-card-border) text-sm font-medium hover:bg-(--color-surface)"
+                className="flex-1 py-2 rounded-xl border border-(--color-card-border) text-sm font-medium hover:bg-(--color-surface)"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1"
+                className="flex-1 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {editingId ? "Guardar cambios" : "Crear usuario"}

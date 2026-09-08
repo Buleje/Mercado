@@ -229,7 +229,7 @@ function KPISummary({ goals }: { goals: Goal[] }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {cards.map((c) => (
-        <div key={c.label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between">
+        <div key={c.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{c.label}</p>
             <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", c.color)}>{c.value}</p>
@@ -652,7 +652,7 @@ export default function GoalsTab() {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" /> Nueva Meta
         </button>
@@ -680,7 +680,7 @@ export default function GoalsTab() {
                 "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
                 filter === p.id
                   ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                  : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
               )}
             >
               {p.label}
@@ -701,7 +701,7 @@ export default function GoalsTab() {
       ) : goals.length === 0 ? (
         <EmptyStateWithTemplates onPick={applyTemplate} autoStats={autoStats} />
       ) : visible.length === 0 ? (
-        <div className="bg-white dark:bg-[var(--color-card)] border-2 border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
+        <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
           <Target className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-3" />
           <p className="text-[var(--text-secondary)] font-semibold">No hay metas en este filtro</p>
           <button onClick={() => setFilter("todas")} className="mt-3 text-sm text-primary font-semibold hover:underline">Ver todas</button>
@@ -720,7 +720,7 @@ export default function GoalsTab() {
               <div
                 key={g.id}
                 className={cn(
-                  "bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] border-l-4 rounded-xl p-5 space-y-4 hover:shadow-[var(--shadow-sm)] transition-shadow",
+                  "bg-[var(--surface-raised)] border border-[var(--rule-base)] border-l-4 rounded-xl p-5 space-y-4 hover:shadow-[var(--shadow-sm)] transition-shadow",
                   getStatusBorder(status)
                 )}
               >
@@ -740,10 +740,10 @@ export default function GoalsTab() {
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
                     <StatusIcon status={status} />
-                    <button onClick={() => openEdit(g)} aria-label="Editar" className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
+                    <button onClick={() => openEdit(g)} aria-label="Editar" className="p-1 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                       <Pencil className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                     </button>
-                    <button onClick={() => remove(g.id)} aria-label="Eliminar" className="p-1 rounded-lg hover:bg-[var(--data-error-50)] transition-colors">
+                    <button onClick={() => remove(g.id)} aria-label="Eliminar" className="p-1 rounded-xl hover:bg-[var(--data-error-50)] transition-colors">
                       <Trash2 className="h-3.5 w-3.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]" />
                     </button>
                   </div>
@@ -805,7 +805,7 @@ export default function GoalsTab() {
                       const v = parseFloat(e.target.value);
                       if (!isNaN(v) && v !== g.current) void updateProgress(g.id, v);
                     }}
-                    className="flex-1 min-w-0 px-3 py-1.5 text-xs rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="flex-1 min-w-0 px-3 py-1.5 text-xs rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                     placeholder="Actualizar manualmente"
                   />
                   <span className="text-xs text-[var(--text-tertiary)] font-mono shrink-0">{g.unit}</span>
@@ -847,7 +847,7 @@ export default function GoalsTab() {
           </div>
           <button
             onClick={() => { setShowTemplates(false); setForm(EMPTY_FORM); setEditId(null); setShowForm(true); }}
-            className="w-full py-2.5 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors"
+            className="w-full py-2.5 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors"
           >
             Crear meta personalizada
           </button>
@@ -863,7 +863,7 @@ export default function GoalsTab() {
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="ej. Ventas del mes"
-                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                 />
               </Field>
               <div className="grid grid-cols-2 gap-3">
@@ -953,13 +953,13 @@ export default function GoalsTab() {
               )}
 
           <div className="flex gap-3 pt-1">
-            <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-alt)] transition-colors">
+            <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-alt)] transition-colors">
               Cancelar
             </button>
             <button
               onClick={save}
               disabled={saving || !form.name.trim() || !form.target}
-              className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
             >
               {saving ? "Guardando…" : <><Check className="h-4 w-4" />{editId ? "Guardar" : "Crear meta"}</>}
             </button>
@@ -974,7 +974,7 @@ export default function GoalsTab() {
 
 function EmptyStateWithTemplates({ onPick, autoStats }: { onPick: (t: Template) => void; autoStats: AutoStats }) {
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border-2 border-dashed border-[var(--rule-base)] rounded-xl p-8 space-y-6">
+    <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] rounded-xl p-8 space-y-6">
       <div className="text-center">
         <Target className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
         <p className="text-[var(--text-primary)] font-bold mb-1">Empezá con una plantilla</p>

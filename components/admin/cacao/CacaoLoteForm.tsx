@@ -263,7 +263,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             Cancelar
           </button>
@@ -271,7 +271,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
             type="button"
             onClick={(e) => submit(e, true)}
             disabled={!isValid || submitting}
-            className="inline-flex h-10 items-center rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+            className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
           >
             Guardar y otro
           </button>
@@ -279,7 +279,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
             type="submit"
             form="cacao-lote-form"
             disabled={!isValid || submitting}
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
           >
             {submitting ? (
               <>
@@ -312,7 +312,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="rounded-lg p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+            className="rounded-xl p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -720,7 +720,7 @@ function Segmented({
           key={o.v}
           type="button"
           onClick={() => onChange(o.v as "humedo" | "seco")}
-          className={`flex-1 rounded-md text-sm font-bold transition ${value === o.v ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
+          className={`flex-1 rounded-xl text-sm font-bold transition ${value === o.v ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
         >
           {o.label}
         </button>

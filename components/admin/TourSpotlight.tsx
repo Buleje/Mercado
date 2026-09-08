@@ -232,7 +232,7 @@ function TooltipPositioner({
       {/* Arrow */}
       {position.arrowSide === "left" && (
         <div
-          className="absolute w-3 h-3 bg-white dark:bg-[#1e293b] rotate-45"
+          className="absolute w-3 h-3 bg-[var(--surface-raised)] dark:bg-[#1e293b] rotate-45"
           style={{
             left: -6,
             top: "50%",
@@ -242,7 +242,7 @@ function TooltipPositioner({
       )}
       {position.arrowSide === "top" && (
         <div
-          className="absolute w-3 h-3 bg-white dark:bg-[#1e293b] rotate-45"
+          className="absolute w-3 h-3 bg-[var(--surface-raised)] dark:bg-[#1e293b] rotate-45"
           style={{
             top: -6,
             left: 32,
@@ -251,7 +251,7 @@ function TooltipPositioner({
       )}
       {position.arrowSide === "bottom" && (
         <div
-          className="absolute w-3 h-3 bg-white dark:bg-[#1e293b] rotate-45"
+          className="absolute w-3 h-3 bg-[var(--surface-raised)] dark:bg-[#1e293b] rotate-45"
           style={{
             bottom: -6,
             left: 32,

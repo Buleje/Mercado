@@ -180,11 +180,11 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
         <div className="absolute bottom-1 right-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Volumen →</div>
         {/* Quadrant dividers */}
         <div className="absolute inset-0 flex">
-          <div className="flex-1 border-r border-dashed border-[var(--rule-base)] dark:border-gray-600" />
+          <div className="flex-1 border-r border-dashed border-[var(--rule-base)] " />
           <div className="flex-1" />
         </div>
         <div className="absolute inset-0 flex flex-col">
-          <div className="flex-1 border-b border-dashed border-[var(--rule-base)] dark:border-gray-600" />
+          <div className="flex-1 border-b border-dashed border-[var(--rule-base)] " />
           <div className="flex-1" />
         </div>
         {/* Points */}

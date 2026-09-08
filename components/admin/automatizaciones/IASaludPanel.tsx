@@ -110,7 +110,7 @@ export default function IASaludPanel() {
           type="button"
           disabled={refrescando}
           onClick={() => void cargar(true)}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-soft)] px-3 py-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors min-h-[44px] disabled:opacity-50"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] px-3 py-2 text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors min-h-[44px] disabled:opacity-50"
         >
           {refrescando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Volver a preguntar

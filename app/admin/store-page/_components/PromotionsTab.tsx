@@ -260,7 +260,7 @@ export default function PromotionsTab() {
                       Activa
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-gray-200 text-[var(--text-secondary)]">
+                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--rule-base)] text-[var(--text-secondary)]">
                       Pausada
                     </span>
                   )}
@@ -283,11 +283,11 @@ export default function PromotionsTab() {
               <button
                 onClick={() => toggleActive(p)}
                 title={p.active ? "Pausar" : "Activar"}
-                className={`p-2 rounded-lg ${
-                  p.active
-                    ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                    : "bg-gray-100 text-[var(--text-secondary)]"
-                }`}
+                className={`p-2 rounded-xl ${
+ p.active
+ ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+ : "bg-[var(--rule-soft)] text-[var(--text-secondary)]"
+ }`}
               >
                 {p.active ? (
                   <Power className="w-4 h-4" />
@@ -297,7 +297,7 @@ export default function PromotionsTab() {
               </button>
               <button
                 onClick={() => remove(p.id)}
-                className="p-2 rounded-lg bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)]"
+                className="p-2 rounded-xl bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:bg-[var(--data-error-100)]"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

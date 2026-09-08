@@ -335,7 +335,7 @@ export default function CronDeadLettersPage() {
                           <button
                             onClick={() => clearById(entry.id)}
                             disabled={deletingId === entry.id}
-                            className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] disabled:opacity-50 transition-colors"
+                            className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] disabled:opacity-50 transition-colors"
                             title="Eliminar entrada"
                             aria-label="Eliminar entrada"
                           >

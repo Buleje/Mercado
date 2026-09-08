@@ -312,7 +312,7 @@ export default function AdminAlertsBanner() {
           onClick={() => handleDismiss(first.id)}
           aria-label={`Descartar: ${first.label}`}
           className={cn(
-            "shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors",
+            "shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-lg transition-colors",
             headerTone === "urgent"
               ? "text-[var(--data-error-700,#b91c1c)] hover:bg-[var(--data-error-100,#fee2e2)]"
               : "text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)]",
@@ -445,7 +445,7 @@ function AlertCard({
         type="button"
         onClick={onDismiss}
         aria-label={`Descartar: ${alert.label}`}
-        className="self-start inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors mr-1 mt-1.5"
+        className="self-start inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors mr-1 mt-1.5"
       >
         <X className="h-3.5 w-3.5" strokeWidth={2.5} />
       </button>

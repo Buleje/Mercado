@@ -148,7 +148,7 @@ export default function CategoryBannersTab({
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn(
                       "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-bold",
-                      hasImage ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-[var(--text-primary)]"
+                      hasImage ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-primary)]"
                     )}>
                       <Tag className="h-5 w-5" />
                     </div>
@@ -166,7 +166,7 @@ export default function CategoryBannersTab({
                         "inline-flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-bold transition-all",
                         isEnabled
                           ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] hover:bg-[var(--data-success-500)]/20"
-                          : "bg-gray-100 dark:bg-surface text-muted hover:bg-gray-200"
+                          : "bg-[var(--rule-soft)] text-muted hover:bg-[var(--rule-base)]"
                       )}
                     >
                       {isEnabled ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
@@ -294,7 +294,7 @@ export default function CategoryBannersTab({
                         <p className="text-sm text-white/85 mt-1 line-clamp-2">{banner.subtitle || "Hasta 20% OFF en productos seleccionados"}</p>
                         <button
                           type="button"
-                          className="mt-3 self-start inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-white dark:bg-[var(--color-card)] text-primary text-xs font-bold shadow-[var(--shadow-lg)] pointer-events-none"
+                          className="mt-3 self-start inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-[var(--surface-raised)] text-primary text-xs font-bold shadow-[var(--shadow-lg)] pointer-events-none"
                         >
                           {banner.ctaText || `Ver ${cat.label}`}
                           <ArrowRight className="h-3.5 w-3.5" />

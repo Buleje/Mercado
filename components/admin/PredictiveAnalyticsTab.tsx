@@ -149,7 +149,7 @@ export default function PredictiveAnalyticsTab() {
         <p className="text-sm text-[var(--text-tertiary)]">{error}</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold"
         >
           <RefreshCw className="h-3.5 w-3.5" /> Reintentar
         </button>
@@ -172,7 +172,7 @@ export default function PredictiveAnalyticsTab() {
         </div>
         <button
           onClick={load}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-xs font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] text-xs font-semibold hover:bg-[var(--rule-base)] transition-colors"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Actualizar

@@ -194,7 +194,7 @@ export function DespachoSection({
           <button
             type="button"
             onClick={() => setShowAdHoc(true)}
-            className="mt-4 inline-flex items-center gap-1.5 h-10 px-4 rounded-lg border-2 border-[var(--accent)] text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/5 transition-colors"
+            className="mt-4 inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border-2 border-[var(--accent)] text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent)]/5 transition-colors"
           >
             <Sparkles className="h-4 w-4" /> Asignar nombre ad-hoc
           </button>

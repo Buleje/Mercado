@@ -205,7 +205,7 @@ export default function VariationsTab() {
                 placeholder="Buscar producto…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
               />
             </div>
           </div>
@@ -615,7 +615,7 @@ function ProductModifierEditor({
                         options: p.options,
                       })
                     }
-                    className="rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 text-left hover:border-[var(--accent)]/40 hover:bg-primary/10 transition-colors"
+                    className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 text-left hover:border-[var(--accent)]/40 hover:bg-primary/10 transition-colors"
                   >
                     <p className="text-sm font-bold text-[var(--text-primary)] inline-flex items-center gap-1">
                       <Plus className="h-3.5 w-3.5 text-[var(--accent)]" aria-hidden />
@@ -639,7 +639,7 @@ function ProductModifierEditor({
                       options: [],
                     });
                   }}
-                  className="rounded-lg border border-dashed border-[var(--accent)]/40 bg-primary/10 p-3 text-left hover:bg-primary/10 transition-colors"
+                  className="rounded-xl border border-dashed border-[var(--accent)]/40 bg-primary/10 p-3 text-left hover:bg-primary/10 transition-colors"
                 >
                   <p className="text-sm font-bold text-[var(--accent)] inline-flex items-center gap-1">
                     <Plus className="h-3.5 w-3.5" aria-hidden />
@@ -984,7 +984,7 @@ function OptionRow({
           type="button"
           onClick={onDelete}
           aria-label={`Eliminar ${option.name}`}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-rose-50 dark:hover:bg-rose-950/30"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-rose-50 dark:hover:bg-rose-950/30"
         >
           {busy ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
@@ -1062,7 +1062,7 @@ function SortableGroupItem({
         {...attributes}
         {...listeners}
         aria-label="Arrastrar para reordenar"
-        className="shrink-0 self-stretch flex items-center px-1 rounded-lg cursor-grab active:cursor-grabbing text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+        className="shrink-0 self-stretch flex items-center px-1 rounded-xl cursor-grab active:cursor-grabbing text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
       >
         <GripVertical className="h-4 w-4" aria-hidden />
       </button>

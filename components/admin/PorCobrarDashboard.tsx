@@ -69,7 +69,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
       <AdminModuleHeader title="Por cobrar" description="Todo lo que te deben, en un solo lugar" icon={Wallet}>
         <button
           onClick={load}
-          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
+          className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
           title="Actualizar"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
@@ -105,7 +105,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
               <p className="text-xs text-[var(--text-tertiary)]">{b.count} {c.key === "prestamos" ? "préstamo(s)" : "cuenta(s)"}</p>
               <button
                 onClick={() => (onIr ? onIr(c.tab) : goTab(c.tab))}
-                className="mt-3 inline-flex items-center justify-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:border-primary/50 hover:text-primary transition-colors"
+                className="mt-3 inline-flex items-center justify-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:border-primary/50 hover:text-primary transition-colors"
               >
                 Ver {c.label.toLowerCase()} <ArrowRight className="h-3.5 w-3.5" />
               </button>

@@ -29,11 +29,11 @@ function fmtDate(iso: string) {
 function HealthSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
-      <div className="h-20 bg-gray-100 dark:bg-surface rounded-xl" />
+      <div className="h-20 bg-[var(--rule-soft)] rounded-xl" />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-100 dark:bg-surface rounded-xl" />)}
+        {[1, 2, 3].map(i => <div key={i} className="h-32 bg-[var(--rule-soft)] rounded-xl" />)}
       </div>
-      <div className="h-28 bg-gray-100 dark:bg-surface rounded-xl" />
+      <div className="h-28 bg-[var(--rule-soft)] rounded-xl" />
     </div>
   );
 }
@@ -194,7 +194,7 @@ export default function SystemHealthTab() {
                     <span className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.label}</span>
                     <span className="text-xs font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.value} {m.unit}</span>
                   </div>
-                  <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                  <div className="h-2 bg-[var(--rule-soft)] rounded-full overflow-hidden">
                     <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${pct}%` }} />
                   </div>
                 </div>

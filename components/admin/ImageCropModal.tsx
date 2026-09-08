@@ -108,7 +108,7 @@ export default function ImageCropModal({
       <div role="dialog" aria-modal="true" aria-label="Ajustar imagen" className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#16181d] p-4 shadow-[var(--shadow-xl)]">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-sm font-bold text-white">Ajustar imagen</p>
-          <button type="button" onClick={onCancel} aria-label="Cerrar" className="rounded-md p-1 text-gray-400 transition-colors hover:bg-white/10 hover:text-white">
+          <button type="button" onClick={onCancel} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] transition-colors hover:bg-white/10 hover:text-white">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -157,10 +157,10 @@ export default function ImageCropModal({
         {err && <p className="mt-2 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-error-500)]">{err}</p>}
 
         <div className="mt-4 flex items-center gap-2">
-          <button type="button" onClick={reset} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:bg-white/5">
+          <button type="button" onClick={reset} className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-gray-300 transition-colors hover:bg-white/5">
             <RotateCcw className="h-3.5 w-3.5" /> Reiniciar
           </button>
-          <button type="button" onClick={apply} disabled={!loaded || busy} className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50">
+          <button type="button" onClick={apply} disabled={!loaded || busy} className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50">
             <Check className="h-3.5 w-3.5" /> {busy ? "Aplicando…" : "Aplicar recorte"}
           </button>
         </div>

@@ -319,7 +319,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                     "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
                     digit
                       ? "border-primary bg-primary/5 dark:bg-primary/10"
-                      : "border-[var(--rule-base)] dark:border-gray-600",
+                      : "border-[var(--rule-base)] ",
                     "focus:border-primary focus:ring-2 focus:ring-primary/20",
                     "disabled:opacity-60"
                   )}
@@ -335,7 +335,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                     key={i}
                     className={cn(
                       "w-2 h-2 rounded-full",
-                      i < attemptsLeft ? "bg-[var(--data-warning-500)]" : "bg-gray-200 dark:bg-gray-700"
+                      i < attemptsLeft ? "bg-[var(--data-warning-500)]" : "bg-[var(--rule-base)] "
                     )}
                   />
                 ))}
@@ -359,7 +359,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                     key === ""
                       ? "invisible"
                       : key === "⌫"
-                      ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95"
+                      ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)] active:scale-95"
                       : "bg-[var(--surface-sunken)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] dark:hover:bg-primary/20 active:scale-95",
                     "disabled:opacity-40 disabled:cursor-not-allowed"
                   )}
@@ -374,7 +374,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
               onClick={submitPin}
               disabled={digits.some((d) => !d) || loading}
               className={cn(
-                "mt-4 w-full h-12 rounded-lg font-semibold text-white transition-all duration-[var(--dur-fast)]",
+                "mt-4 w-full h-12 rounded-xl font-semibold text-white transition-all duration-[var(--dur-fast)]",
                 "bg-primary hover:bg-[#235c42] active:scale-[0.98]",
                 "disabled:opacity-40 disabled:cursor-not-allowed"
               )}

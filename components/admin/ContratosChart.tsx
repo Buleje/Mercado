@@ -26,7 +26,7 @@ export default function ContratosChart({ typeData, monthData }: ContratosChartPr
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Por tipo */}
       {typeData.length > 0 && (
-        <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Contratos por Tipo</CardTitle>
           <ResponsiveContainer minWidth={0} width="100%" height={250}>
             <RechartsPie>
@@ -42,7 +42,7 @@ export default function ContratosChart({ typeData, monthData }: ContratosChartPr
 
       {/* Por mes */}
       {monthData.length > 0 && (
-        <div className="bg-[var(--surface-raised)] dark:bg-white/5 border border-[var(--rule-base)] dark:border-white/10 rounded-xl p-4">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
           <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Contratos por Mes</CardTitle>
           <ResponsiveContainer minWidth={0} width="100%" height={250}>
             <BarChart data={monthData}>

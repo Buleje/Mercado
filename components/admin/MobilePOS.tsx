@@ -192,20 +192,20 @@ function CartItemRow({ item, onInc, onDec, onRemove }: {
       <div className="flex items-center gap-1.5 shrink-0">
         <button
           onClick={onDec}
-          className="w-11 h-11 rounded-lg bg-gray-700 flex items-center justify-center active:scale-90"
+          className="w-11 h-11 rounded-xl bg-gray-700 flex items-center justify-center active:scale-90"
         >
           <Minus className="h-3 w-3 text-white" />
         </button>
         <span className="w-6 text-center text-sm font-extrabold text-white">{item.quantity}</span>
         <button
           onClick={onInc}
-          className="w-11 h-11 rounded-lg bg-gray-700 flex items-center justify-center active:scale-90"
+          className="w-11 h-11 rounded-xl bg-gray-700 flex items-center justify-center active:scale-90"
         >
           <Plus className="h-3 w-3 text-white" />
         </button>
         <button
           onClick={onRemove}
-          className="w-11 h-11 rounded-lg bg-[var(--data-error-500)]/50 flex items-center justify-center active:scale-90 ml-1"
+          className="w-11 h-11 rounded-xl bg-[var(--data-error-500)]/50 flex items-center justify-center active:scale-90 ml-1"
         >
           <Trash2 className="h-3 w-3 text-[var(--data-error-500)]" />
         </button>
@@ -365,7 +365,7 @@ export default function MobilePOS() {
               placeholder="Buscar producto..."
               value={query}
               onChange={e => setQuery(e.target.value)}
-              className="w-full bg-gray-900 text-white placeholder-gray-500 border border-gray-700 rounded-lg pl-9 pr-9 py-3 text-base focus:outline-none focus:border-[var(--data-success-500)]/30"
+              className="w-full bg-gray-900 text-white placeholder-gray-500 border border-gray-700 rounded-xl pl-9 pr-9 py-3 text-base focus:outline-none focus:border-[var(--data-success-500)]/30"
               style={{ fontSize: 16 }}
             />
             {query && (
