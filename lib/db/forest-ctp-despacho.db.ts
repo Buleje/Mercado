@@ -689,7 +689,7 @@ export class ForestCtpDespachoDB {
    */
   static async trazabilidadDelPeriodo(
     tenantId: string,
-    period?: { fromDate?: Date; toDate?: Date },
+    period?: { fromDate?: Date; toDate?: Date; especie?: string },
   ): Promise<{
     total: number;
     incompletos: number;
@@ -721,6 +721,12 @@ export class ForestCtpDespachoDB {
         section: "despacho",
         status: "registrado",
         deletedAt: null,
+        /* El recorte por especie (ADR-400). Va en el `where` y no en memoria
+           porque en el libro la especie del despacho es una columna directa —a
+           diferencia de una troza, que puede heredarla de su ingreso. */
+        ...(period?.especie?.trim()
+          ? { speciesCommon: { equals: period.especie.trim(), mode: "insensitive" as const } }
+          : {}),
         ...(period?.fromDate || period?.toDate
           ? {
               entryDate: {

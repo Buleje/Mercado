@@ -25,6 +25,8 @@ const querySchema = z.object({
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
   comparar: z.string().trim().max(4).optional(),
+  /** Recorta TODO el tablero a una especie (ADR-400). Vacío = todas. */
+  especie: z.string().trim().max(120).optional(),
 });
 
 export const GET = withApiHandler("forestal-ctp-movimiento-get", async (req: NextRequest) => {
@@ -48,7 +50,8 @@ export const GET = withApiHandler("forestal-ctp-movimiento-get", async (req: Nex
   const { from, to, comparar } = parsed.data;
 
   try {
-    const actual = await ForestCtpDB.movimientoDelLibro(auth.tenantId, { fromDate: from, toDate: to });
+    const especie = parsed.data.especie || undefined;
+    const actual = await ForestCtpDB.movimientoDelLibro(auth.tenantId, { fromDate: from, toDate: to, especie });
 
     /* El período anterior sólo se puede calcular con los DOS extremos: sin
        ellos no hay largo que correr hacia atrás y devolver algo sería inventar
@@ -61,6 +64,9 @@ export const GET = withApiHandler("forestal-ctp-movimiento-get", async (req: Nex
       previo = (await ForestCtpDB.movimientoDelLibro(auth.tenantId, {
         fromDate: iniPrevio,
         toDate: finPrevio,
+        /* La comparación va con el MISMO recorte: contra el período anterior de
+           TODAS las especies, un mes filtrado por una parecería un derrumbe. */
+        especie,
       })).totales;
     }
 

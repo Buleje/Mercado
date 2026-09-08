@@ -33,6 +33,7 @@ import {
   BulejeWaterfallChart,
 } from "@/components/ui-system/charts";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import CtpKpiFiltros from "./CtpKpiFiltros";
 import { applyCtpPeriodParams, ctpPeriodShortLabel, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import {
   acumular,
@@ -128,6 +129,11 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
   const [previo, setPrevio] = useState<TotalesMovimiento | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * El recorte por especie (ADR-400): viaja al servidor, así que las cifras,
+   * las barras y la comparación con el período anterior hablan de esa especie.
+   */
+  const [especie, setEspecie] = useState("");
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -136,6 +142,7 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
       const u = new URL("/api/admin/forestal/ctp/movimiento", window.location.origin);
       applyCtpPeriodParams(u.searchParams, period);
       u.searchParams.set("comparar", "1");
+      if (especie) u.searchParams.set("especie", especie);
       const r = await ctpGet<{ movimiento: MovimientoDelLibro; previo: TotalesMovimiento | null }>(u.toString());
       setMov(r.movimiento);
       setPrevio(r.previo);
@@ -145,7 +152,7 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
     } finally {
       setCargando(false);
     }
-  }, [period]);
+  }, [period, especie]);
 
   useEffect(() => {
     void cargar();
@@ -228,6 +235,25 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
           {error}
         </p>
       )}
+
+      {/* El recorte por especie (ADR-400). Lo calcula el SERVIDOR: las cifras,
+          las barras, el patio y la comparación con el período anterior salen ya
+          hablando de esa especie — un recorte en la pantalla dejaría la
+          apertura del patio global y «días de materia prima» mentiría. */}
+      <CtpKpiFiltros
+        campos={[
+          {
+            key: "especie",
+            label: "Especie",
+            todos: "Todas las especies",
+            valor: especie || undefined,
+            opciones: (mov?.especiesDelPeriodo ?? []).map((e) => ({ value: e, label: e })),
+            onChange: (v) => setEspecie(v ?? ""),
+          },
+        ]}
+        onLimpiar={() => setEspecie("")}
+        nota={especie ? `El tablero muestra sólo la especie ${especie}` : null}
+      />
 
       {cargando && !mov ? (
         <p className="text-sm text-[var(--text-tertiary)]">Sumando el movimiento del libro…</p>

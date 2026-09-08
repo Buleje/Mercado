@@ -44,9 +44,17 @@ const dia = (f: string) =>
 export default function CtpComplianceHistoria({
   periodo,
   periodLabel,
+  especieFiltrada,
 }: {
   periodo: CtpPeriodKey;
   periodLabel: string;
+  /**
+   * La especie que el panel de arriba tiene puesta (ADR-400), sólo para
+   * decirlo. La serie NUNCA se recorta: guarda el puntaje DEL PERÍODO, y sin
+   * este aviso el gauge marcando 85 sobre una línea que viene en 70 se lee
+   * como que la historia está mal.
+   */
+  especieFiltrada?: string;
 }) {
   const { serie, loading, error } = useCtpComplianceSerie(periodo, 90);
 
@@ -112,6 +120,13 @@ export default function CtpComplianceHistoria({
           </span>
         </p>
       </div>
+
+      {especieFiltrada && (
+        <p className="mt-1 text-sm font-bold text-[var(--text-secondary)]">
+          Esta línea es del período completo, no sólo de {especieFiltrada}: se guarda un punto por
+          día con el puntaje de todo el libro.
+        </p>
+      )}
 
       {puntos.length === 1 ? (
         <p className="mt-2 text-sm text-[var(--text-secondary)]">

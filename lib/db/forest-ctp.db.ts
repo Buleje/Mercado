@@ -89,6 +89,20 @@ function productLabel(
   return `${productType ?? "—"} · ${species ?? "—"}`;
 }
 
+/**
+ * La especie que lleva dentro una etiqueta de producto («Tablones · Tornillo»).
+ *
+ * Hace falta porque el snapshot de un cierre guarda el producto SÓLO como
+ * etiqueta, sin la especie en un campo aparte, y la apertura de la conciliación
+ * tiene que poder recortarse por especie igual que el movimiento (ADR-400). Se
+ * corta por el ÚLTIMO separador: el tipo de producto puede traer el suyo, la
+ * especie va siempre al final porque así la escribe `productLabel`.
+ */
+function especieDeProductLabel(label: string): string {
+  const i = label.lastIndexOf(" · ");
+  return i >= 0 ? label.slice(i + 3).trim() : "";
+}
+
 export interface SpeciesBalance {
   especie: string;
   scientific: string | null;
@@ -1870,10 +1884,28 @@ export class ForestCtpDB {
     };
   }
 
-  static async saldos(tenantId: string, opts: { fromDate?: Date; toDate?: Date } = {}) {
+  static async saldos(
+    tenantId: string,
+    opts: { fromDate?: Date; toDate?: Date; especie?: string } = {},
+  ) {
     if (!tenantId) throw new Error("tenantId is required");
 
     const range = dateRange(opts);
+    /**
+     * El recorte por especie (ADR-400): el agregado entero —totales, productos,
+     * sobreconsumo, piezas— habla de UNA especie.
+     *
+     * Se aplica en memoria y no en el `where` de cada query a propósito: la
+     * especie de una troza puede venir de la pieza o heredarse de su ingreso, y
+     * un `where` sobre una sola columna perdería justo las que la heredan. Acá
+     * el predicado es el MISMO `speciesKey` con el que se agrupa, así que lo
+     * que se filtra y lo que se agrupa no pueden discrepar. Las cuatro listas ya
+     * se traen enteras (este agregado no pagina), así que no cuesta una query
+     * más.
+     */
+    const claveEspecie = opts.especie?.trim() ? speciesKey(opts.especie) : null;
+    const esDeLaEspecie = (raw: string | null | undefined) =>
+      claveEspecie == null || speciesKey(raw ?? "") === claveEspecie;
     const woodWhere: Prisma.WoodEntryWhereInput = {
       tenantId,
       deletedAt: null,
@@ -1889,7 +1921,7 @@ export class ForestCtpDB {
       ctpWhere.entryDate = range;
     }
 
-    const [ingresos, ctp, trozasFuera, trozasPatio] = await Promise.all([
+    const [ingresosTodos, ctpTodas, trozasFueraTodas, trozasPatioTodas] = await Promise.all([
       prisma.woodEntry.findMany({
         where: woodWhere,
         select: {
@@ -1966,6 +1998,37 @@ export class ForestCtpDB {
         },
       }),
     ]);
+
+    /**
+     * Las especies del período, SIN el recorte: son las opciones del filtro, y
+     * sacarlas de lo ya filtrado dejaría una sola — no se podría volver atrás
+     * desde el propio desplegable.
+     */
+    const especiesDelPeriodo = [
+      ...new Map(
+        [
+          ...ingresosTodos.map((i) => i.speciesCommonName),
+          ...ctpTodas.map((c) => c.speciesCommon),
+          ...trozasPatioTodas.map((t) => t.especieComun ?? t.entry.speciesCommonName),
+          /* También las que YA salieron en rollo: alimentan `porEspecie` con su
+             `despachadoDirectoM3`, así que sin ellas el panel podría mostrar una
+             especie que el desplegable no ofrece. */
+          ...trozasFueraTodas.map((t) => t.especieComun ?? t.entry.speciesCommonName),
+        ]
+          .map((raw) => (raw ?? "").trim())
+          .filter(Boolean)
+          .map((nombre) => [speciesKey(nombre), nombre] as const),
+      ).values(),
+    ].sort((a, b) => a.localeCompare(b, "es-PE"));
+
+    const ingresos = ingresosTodos.filter((i) => esDeLaEspecie(i.speciesCommonName));
+    const ctp = ctpTodas.filter((c) => esDeLaEspecie(c.speciesCommon));
+    const trozasFuera = trozasFueraTodas.filter((t) =>
+      esDeLaEspecie(t.especieComun ?? t.entry.speciesCommonName),
+    );
+    const trozasPatio = trozasPatioTodas.filter((t) =>
+      esDeLaEspecie(t.especieComun ?? t.entry.speciesCommonName),
+    );
 
     const bySpecies = new Map<string, SpeciesBalance>();
     const bucket = (raw: string | null, scientific?: string | null, cites?: boolean) => {
@@ -2124,6 +2187,8 @@ export class ForestCtpDB {
         consumoSinDeclararCount,
       },
       porEspecie,
+      /** Todas las especies del período, para el desplegable del filtro. */
+      especiesDelPeriodo,
       // `label` y no la clave: la clave va normalizada en minúsculas para
       // agrupar, pero lo que se muestra es "Tablones · Tornillo".
       productos: Object.values(prod)
@@ -2169,6 +2234,14 @@ export class ForestCtpDB {
   private static async aperturaDePeriodo(
     tenantId: string,
     fromDate?: Date,
+    /**
+     * El recorte por especie (ADR-400). La apertura tiene que llevar el MISMO
+     * recorte que el movimiento: con el movimiento filtrado y la apertura
+     * global, la conciliación mostraba una especie ajena con su stock heredado
+     * y cero movimiento —«Shihuahuaco 5.20 + 0 − 0 = 5.20» bajo el filtro
+     * «Tornillo»— y el total del cuadro que firma el libro salía inflado.
+     */
+    especie?: string,
   ): Promise<{
     fuenteApertura: ConciliacionPeriodo["fuenteApertura"];
     aperturaLabel: string | null;
@@ -2180,19 +2253,33 @@ export class ForestCtpDB {
     if (!fromDate)
       return { fuenteApertura: "sin_apertura", aperturaLabel: null, materiaPrima, productos };
 
+    const claveEspecie = especie?.trim() ? speciesKey(especie) : null;
+    const esDeLaEspecie = (raw: string | null | undefined) =>
+      claveEspecie == null || speciesKey(raw ?? "") === claveEspecie;
+
     const cierres = await ForestCtpCierreDB.list(tenantId);
     const prev = cierres
       .filter((c) => !c.reabierto && new Date(c.to).getTime() < fromDate.getTime())
       .sort((a, b) => new Date(b.to).getTime() - new Date(a.to).getTime())[0];
     if (prev) {
       for (const m of prev.saldoCierre.materiaPrima)
-        materiaPrima.push({ especie: m.especie, cites: m.cites, existencia: m.existenciaM3 });
+        if (esDeLaEspecie(m.especie))
+          materiaPrima.push({ especie: m.especie, cites: m.cites, existencia: m.existenciaM3 });
       for (const p of prev.saldoCierre.productos)
-        productos.push({ producto: p.producto, existencia: p.existencia });
+        /* El snapshot guarda el producto sólo como etiqueta («Tablones ·
+           Tornillo»), sin la especie aparte: se lee de la cola, que es como la
+           escribe `productLabel`. Una etiqueta sin separador no se puede
+           atribuir a ninguna especie, así que con el filtro puesto queda fuera
+           —contarla sería sumar madera de origen desconocido al cuadro. */
+        if (esDeLaEspecie(especieDeProductLabel(p.producto)))
+          productos.push({ producto: p.producto, existencia: p.existencia });
       return { fuenteApertura: "cierre", aperturaLabel: prev.label, materiaPrima, productos };
     }
 
-    const acum = await ForestCtpDB.saldos(tenantId, { toDate: new Date(fromDate.getTime() - 1) });
+    const acum = await ForestCtpDB.saldos(tenantId, {
+      toDate: new Date(fromDate.getTime() - 1),
+      especie,
+    });
     for (const e of acum.porEspecie)
       materiaPrima.push({ especie: e.especie, cites: e.cites, existencia: e.saldoM3 });
     for (const p of acum.productos) productos.push({ producto: p.producto, existencia: p.stock });
@@ -2208,7 +2295,7 @@ export class ForestCtpDB {
    */
   static async conciliacionPeriodo(
     tenantId: string,
-    opts: { fromDate?: Date; toDate?: Date } = {},
+    opts: { fromDate?: Date; toDate?: Date; especie?: string } = {},
   ): Promise<ConciliacionPeriodo> {
     if (!tenantId) throw new Error("tenantId is required");
 
@@ -2220,7 +2307,7 @@ export class ForestCtpDB {
       aperturaLabel,
       materiaPrima: aperturaMP,
       productos: aperturaProd,
-    } = await ForestCtpDB.aperturaDePeriodo(tenantId, opts.fromDate);
+    } = await ForestCtpDB.aperturaDePeriodo(tenantId, opts.fromDate, opts.especie);
 
     // ── Combinar apertura + movimientos → final (materia prima) ───────────
     const mp = new Map<
@@ -2334,11 +2421,20 @@ export class ForestCtpDB {
    */
   static async curvaSaldo(
     tenantId: string,
-    opts: { fromDate?: Date; toDate?: Date } = {},
+    opts: { fromDate?: Date; toDate?: Date; especie?: string } = {},
   ): Promise<CurvaSaldo> {
     if (!tenantId) throw new Error("tenantId is required");
 
     const range = dateRange(opts);
+    /**
+     * El recorte por especie (ADR-400). La curva va PEGADA al saldo del panel
+     * como su trayectoria: si el número dice una especie y la línea dibuja
+     * todas, la caída que se ve no es la del número que se está mirando.
+     * Alcanza también a la apertura, que es donde arranca la línea.
+     */
+    const claveEspecie = opts.especie?.trim() ? speciesKey(opts.especie) : null;
+    const esDeLaEspecie = (raw: string | null | undefined) =>
+      claveEspecie == null || speciesKey(raw ?? "") === claveEspecie;
     // Mismos predicados que `saldos()`: la madera `pendiente` NO es saldo (está
     // en el patio pero no validada), así que tampoco mueve la curva.
     const woodWhere: Prisma.WoodEntryWhereInput = {
@@ -2357,15 +2453,23 @@ export class ForestCtpDB {
       prodWhere.entryDate = range;
     }
 
-    const [ap, ingresos, corridas] = await Promise.all([
-      ForestCtpDB.aperturaDePeriodo(tenantId, opts.fromDate),
-      prisma.woodEntry.findMany({ where: woodWhere, select: { entryDate: true, volumeM3: true } }),
+    const [ap, ingresosTodos, corridasTodas] = await Promise.all([
+      ForestCtpDB.aperturaDePeriodo(tenantId, opts.fromDate, opts.especie),
+      prisma.woodEntry.findMany({
+        where: woodWhere,
+        select: { entryDate: true, volumeM3: true, speciesCommonName: true },
+      }),
       prisma.forestCtpEntry.findMany({
         where: prodWhere,
-        select: { entryDate: true, volumeInputM3: true },
+        select: { entryDate: true, volumeInputM3: true, speciesCommon: true },
       }),
     ]);
 
+    const ingresos = ingresosTodos.filter((i) => esDeLaEspecie(i.speciesCommonName));
+    const corridas = corridasTodas.filter((c) => esDeLaEspecie(c.speciesCommon));
+
+    /* La apertura ya viene recortada por la misma especie: filtrarla otra vez
+       acá sería una segunda regla que puede desincronizarse de aquélla. */
     const apertura = r4(ap.materiaPrima.reduce((a, m) => a + m.existencia, 0));
     const vacia: CurvaSaldo = {
       apertura,
@@ -2993,10 +3097,19 @@ export class ForestCtpDB {
    */
   static async movimientoDelLibro(
     tenantId: string,
-    opts: { fromDate?: Date; toDate?: Date; hoy?: Date } = {},
+    opts: { fromDate?: Date; toDate?: Date; hoy?: Date; especie?: string } = {},
   ): Promise<MovimientoDelLibro> {
     if (!tenantId) throw new Error("tenantId is required");
     const range = dateRange(opts);
+    /**
+     * El recorte por especie (ADR-400), en memoria y con el MISMO `speciesKey`
+     * que agrupa el resto del libro. Alcanza a las tres series Y a la apertura:
+     * si la apertura quedara global, «días de materia prima» proyectaría el
+     * consumo de una especie sobre el stock de todas.
+     */
+    const claveEspecie = opts.especie?.trim() ? speciesKey(opts.especie) : null;
+    const esDeLaEspecie = (raw: string | null | undefined) =>
+      claveEspecie == null || speciesKey(raw ?? "") === claveEspecie;
 
     const woodWhere: Prisma.WoodEntryWhereInput = {
       tenantId,
@@ -3012,10 +3125,12 @@ export class ForestCtpDB {
       ...(range ? { entryDate: range } : {}),
     });
 
-    const [apertura, ingresos, corridas, despachos] = await Promise.all([
+    const [apertura, ingresosTodos, corridasTodas, despachosTodos] = await Promise.all([
       /* Lo que YA había en el patio: sin esto, «días de materia prima» se
-         proyectaría sobre la variación del período y no sobre el stock. */
-      ForestCtpDB.aperturaDePeriodo(tenantId, opts.fromDate),
+         proyectaría sobre la variación del período y no sobre el stock. Lleva
+         el mismo recorte por especie, o el stock de todas quedaría respaldando
+         el consumo de una. */
+      ForestCtpDB.aperturaDePeriodo(tenantId, opts.fromDate, opts.especie),
       prisma.woodEntry.findMany({
         where: woodWhere,
         select: { entryDate: true, volumeM3: true, speciesCommonName: true, pieces: true },
@@ -3035,6 +3150,24 @@ export class ForestCtpDB {
         select: { entryDate: true, quantity: true, speciesCommon: true },
       }),
     ]);
+
+    /** Las especies del período SIN recorte: son las opciones del filtro. */
+    const especiesDelPeriodo = [
+      ...new Map(
+        [
+          ...ingresosTodos.map((i) => i.speciesCommonName),
+          ...corridasTodas.map((c) => c.speciesCommon),
+          ...despachosTodos.map((d) => d.speciesCommon),
+        ]
+          .map((raw) => (raw ?? "").trim())
+          .filter(Boolean)
+          .map((nombre) => [speciesKey(nombre), nombre] as const),
+      ).values(),
+    ].sort((a, b) => a.localeCompare(b, "es-PE"));
+
+    const ingresos = ingresosTodos.filter((i) => esDeLaEspecie(i.speciesCommonName));
+    const corridas = corridasTodas.filter((c) => esDeLaEspecie(c.speciesCommon));
+    const despachos = despachosTodos.filter((d) => esDeLaEspecie(d.speciesCommon));
 
     /* El eje arranca en el inicio del período aunque los primeros días estén
        vacíos, y NO dibuja el futuro: un patio no tiene movimiento mañana. Sin
@@ -3082,6 +3215,7 @@ export class ForestCtpDB {
             1,
         ),
       ),
+      especiesDelPeriodo,
     });
   }
 

@@ -59,6 +59,9 @@ vista propia y dos apartados, y cada uno lleva su barra con los filtros que ya e
 | GTF ingresadas | los mismos cuatro de Ingresos | 🚨 describían el período ENTERO |
 | Trazabilidad · Trozas | especie, permiso, guía | 🚨 el panorama contaba TODA la pila |
 | Trazabilidad · Guías emitidas | especie, producto, destino | 🚨 el resumen contaba TODO el período |
+| Saldos · «Cómo está hoy» | especie | agregado global (recorte NUEVO, en el servidor) |
+| Tablero del libro | especie | ídem, incluida la comparación con el período anterior |
+| Cumplimiento | especie | ídem: el puntaje y sus verificaciones |
 
 El cuadro de consumos tenía el permiso en una columna (`codigoOrigen`) y ninguna forma de
 filtrarlo, que es justo la pregunta del fiscalizador: «¿cuánto se aserró de este título?».
@@ -97,17 +100,61 @@ por `claveEspecie()` y `filtrarSeccion` compara por esa clave. Se muestra el nom
 está escrito en el libro**: inventar una forma canónica pondría en pantalla un texto que no
 está en ningún asiento.
 
-### 7. Dónde NO se puso, y por qué
+### 7. Los agregados del servidor: el recorte viaja al SQL, no a la pantalla
 
-No toda pantalla con números admite esta fila. Ponerla igual habría fabricado cifras que
-mezclan alcances, que es peor que no tenerla:
+Saldos, Tablero y Cumplimiento no son listas que el cliente pueda recortar: son agregados que
+arma el servidor. Recortarlos en la pantalla habría dado cifras a medias —el total de una
+especie al lado de una apertura de patio global— así que el parámetro es del ENDPOINT:
+
+| Pantalla | Endpoint y parámetro | Qué se recorta |
+|---|---|---|
+| Saldos · «Cómo está hoy» | `?saldos=1&especie=` → `ForestCtpDB.saldos()` | ingresos, corridas, trozas del patio y las que ya salieron |
+| Saldos · «Cómo se movió» y «Lo que firma el libro» | `?curva=1&especie=`, `?conciliacion=1&especie=` | la trayectoria del saldo y el cuadro apertura → cierre |
+| Tablero | `/ctp/movimiento?especie=` → `movimientoDelLibro()` | las tres series, la apertura del patio Y el período anterior con el que se compara |
+| Cumplimiento | los CUATRO pedidos que arman el puntaje: `wood-entries?species=`, `?saldos=`, `?traza=`, `?conciliacion=` | plazos, CITES, saldos, cadena de custodia y existencia final |
+
+En Saldos las tres lecturas del período —saldos, conciliación y curva— llevan el MISMO
+recorte, y por eso la fila vive fuera de las pestañas: una sin filtrar al lado de un número
+filtrado es la contradicción que este ADR vino a sacar. La única pestaña sin la fila es «Qué
+puede salir», que se sirve de otras fuentes y ya trae su propio recorte.
+
+**La apertura también se recorta, o el cuadro no cierra.** Con el movimiento filtrado y la
+apertura global, la conciliación mostraba una especie ajena con su stock heredado y cero
+movimiento —«Shihuahuaco 5.20 + 0 − 0 = 5.20» bajo el filtro «Tornillo»— y el total salía
+43.36 m³ contra los 38.16 del saldo de la misma pantalla. `aperturaDePeriodo()` recibe ahora
+la especie: filtra el snapshot del cierre y le pasa el recorte al cálculo acumulado. El
+producto del snapshot guarda sólo su etiqueta («Tablones · Tornillo»), así que su especie se
+lee de la cola; una etiqueta sin separador no se puede atribuir y queda fuera.
+
+Tres decisiones que ese recorte obligó a tomar:
+
+1. **Las opciones salen SIN recorte** (`especiesDelPeriodo`, calculado antes de filtrar). Si el
+   desplegable se armara con lo que quedó, elegir una especie dejaría una sola opción y no
+   habría manera de cambiar de especie sin limpiar el filtro primero.
+2. **La historia del cumplimiento NO se guarda filtrada** (ADR-384). La serie es el puntaje
+   DEL PERÍODO; meterle el de una especie dejaría un escalón en el gráfico que sólo dice que
+   alguien usó un filtro. Con el recorte puesto, la línea lo aclara en su propio renglón: el
+   gauge en 85 sobre una serie que viene en 70 se leería como un error del gráfico.
+3. **El reporte imprimible lo declara en el encabezado** (`Jul–Set 2026 · sólo especie
+   Tornillo`). Un PDF que se presenta ante una autoridad no puede llevar un puntaje recortado
+   bajo el rótulo del período completo.
+
+La comparación con el período anterior del Tablero también se filtra: comparar una especie
+contra el total del mes pasado inventa una caída.
+
+Y lo que el filtro dejó a la vista: **los plurales que nunca llegaban a uno**. «1 especies»,
+«1 guías», «Total · 1 especies» — con el recorte puesto esas líneas dicen «1» todo el tiempo,
+y un plural roto sobre un cuadro que cuadra hace dudar del cuadro. Regla: al agregar un filtro
+que puede dejar UN elemento, revisar los contadores que hasta ahora nunca bajaban de dos.
+
+### 8. Dónde sigue sin ir, y por qué
 
 | Pantalla | Por qué no |
 |---|---|
-| Saldos · «Cómo está hoy» | `MateriaPrimaTotales` trae `despachadoDirectoM3` e `ingresosCount` que NO se pueden partir por especie: una tarjeta diría «esta especie» y la de al lado «toda la planta». El desglose por especie ya vive abajo (`DisponiblePorTipo`) |
 | Saldos · «Qué puede salir» | ya lo tiene: `BalanceDeCapacidad` recibe `filtros`/`opciones`/`onFiltros` |
 | Resúmenes SERFOR | son los cuadros OFICIALES; un cuadro filtrado no es el cuadro que se presenta |
-| Tablero, Cumplimiento, Cierre | agregados del período que arma el servidor (`/ctp/movimiento`, score, checklist): filtrarlos es un parámetro nuevo del endpoint, no un recorte en el cliente |
+| Cierre del período | se cierra el período entero: un cierre «de una especie» no existe |
+| Cuadre SNIFFS, descuadres y sobre-tope | tienen su propia lectura, y por eso la nota del filtro dice hasta dónde llega el recorte |
 | Historia del lote | es UN lote |
 | Radar, Planta, EUDR | el radar ya filtra con sus focos, la planta es un mapa de zonas y el EUDR una lista de orígenes con su propio selector |
 

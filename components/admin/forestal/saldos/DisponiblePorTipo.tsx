@@ -131,9 +131,19 @@ export default function DisponiblePorTipo({
               {res.conStock > 0 && (
                 <>
                   {" · "}
-                  {res.conStock} {v === "trozas" ? "especies" : "productos"}
+                  {/* Singular de verdad: con el recorte por especie puesto
+                      (ADR-400) esta línea dice «1» todo el tiempo, y «1
+                      especies» convierte una cifra correcta en un descuido. */}
+                  {res.conStock}{" "}
+                  {v === "trozas"
+                    ? res.conStock === 1
+                      ? "especie"
+                      : "especies"
+                    : res.conStock === 1
+                      ? "producto"
+                      : "productos"}
                   {res.piezas > 0 && ` · ${nf(res.piezas)} pza`}
-                  {res.guias > 0 && ` · ${res.guias} guías`}
+                  {res.guias > 0 && ` · ${res.guias} ${res.guias === 1 ? "guía" : "guías"}`}
                 </>
               )}
             </span>

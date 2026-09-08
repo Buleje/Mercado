@@ -17,6 +17,7 @@ import { Btn, PanelSkeleton, VistaHeader } from "./ctp-shared";
 import DisponiblePorTipo from "./saldos/DisponiblePorTipo";
 import ExcepcionesSaldo from "./saldos/ExcepcionesSaldo";
 import KpisDeExistencias from "./saldos/KpisDeExistencias";
+import CtpKpiFiltros from "./CtpKpiFiltros";
 import CurvaDeSaldo from "./saldos/CurvaDeSaldo";
 import TablaConciliacion from "./saldos/TablaConciliacion";
 import TablaProductos from "./saldos/TablaProductos";
@@ -92,7 +93,15 @@ export function CtpSaldosView({
    */
   onIr?: (vista: NonNullable<Excepcion["ir"]> | "rentabilidad") => void;
 }) {
-  const { data, concil, curva, loading, error, recargar } = useCtpSaldos(period);
+  /**
+   * El recorte por especie de las existencias (ADR-400).
+   *
+   * Viaja al SERVIDOR: el agregado vuelve hablando de esa especie —totales,
+   * productos, piezas y sobreconsumo—, en vez de que la pantalla recorte un
+   * total que mezcla lo global con lo de una especie.
+   */
+  const [especieSaldos, setEspecieSaldos] = useState("");
+  const { data, concil, curva, loading, error, recargar } = useCtpSaldos(period, especieSaldos || undefined);
   const [reportError, setReportError] = useState<string | null>(null);
   const [kardexEspecie, setKardexEspecie] = useState<string | null>(null);
 
@@ -660,6 +669,36 @@ export function CtpSaldosView({
             aria-labelledby={`saldos-tab-${seccion}`}
             className="space-y-6"
           >
+            {/* El filtro que gobierna las TRES lecturas del período —saldos,
+                conciliación y curva— y por eso vive fuera de las pestañas: lo
+                calcula el servidor con la especie puesta (ADR-400), así que las
+                tarjetas, los productos, las piezas, la línea del saldo y el
+                cuadro que firma el libro hablan todos de ella.
+
+                No aparece en «Qué puede salir»: esa pestaña se sirve de otras
+                fuentes y ya trae su propio recorte (`BalanceDeCapacidad`). Un
+                filtro que sigue en pantalla sin gobernar lo que hay debajo es
+                exactamente la contradicción que este ADR vino a sacar. */}
+            {seccion !== "capacidad" && (
+              <CtpKpiFiltros
+                campos={[
+                  {
+                    key: "especie",
+                    label: "Especie",
+                    todos: "Todas las especies",
+                    valor: especieSaldos || undefined,
+                    opciones: (data.especiesDelPeriodo ?? data.porEspecie.map((e) => e.especie)).map((e) => ({
+                      value: e,
+                      label: e,
+                    })),
+                    onChange: (v) => setEspecieSaldos(v ?? ""),
+                  },
+                ]}
+                onLimpiar={() => setEspecieSaldos("")}
+                nota={especieSaldos ? `Las existencias muestran sólo la especie ${especieSaldos}` : null}
+              />
+            )}
+
             {seccion === "estado" && (
               <>
                 <KpisDeExistencias
@@ -683,7 +722,14 @@ export function CtpSaldosView({
 
                 {/* Gemelo del patio: qué parte de esa madera lleva demasiado
                   tiempo parada (self-fetch). */}
-                <CtpPatioAging onValorizar={onIr ? () => onIr("rentabilidad") : undefined} />
+                <CtpPatioAging
+                  /* El mismo recorte: esta lista trae la especie en cada guía,
+                     así que filtrarla acá da el mismo conjunto que daría el
+                     servidor. Sin esto quedaba una tabla de seis especies bajo
+                     una tarjeta que decía «1 especie». */
+                  especie={especieSaldos || undefined}
+                  onValorizar={onIr ? () => onIr("rentabilidad") : undefined}
+                />
               </>
             )}
 

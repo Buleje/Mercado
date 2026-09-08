@@ -159,7 +159,9 @@ export default function TablaConciliacion({
         <tfoot className="border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] font-bold">
           <tr>
             <td className="px-4 py-2.5 text-[var(--text-primary)]">
-              Total · {filas.length} especies
+              {/* Con el recorte por especie del panel (ADR-400) esta fila dice
+                  «1» a menudo: «1 especies» hace dudar de un cuadro que cierra. */}
+              Total · {filas.length} {filas.length === 1 ? "especie" : "especies"}
             </td>
             <td className="px-4 py-2.5 text-right font-mono tabular-nums text-[var(--text-primary)]">
               {n2(total.apertura)}

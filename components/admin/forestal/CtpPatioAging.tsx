@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertCircle, Clock, RefreshCw } from "@buleje/design-system/icons";
 import { bucketsAntiguedad } from "@/lib/forestal/ctp-saldos-analisis";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 
 interface Guia {
   id: string; code: string | null; entryDate: string; species: string | null;
@@ -63,7 +64,10 @@ const diasDesde = (iso: string) => {
   return Math.max(0, Math.floor((Date.now() - d) / 86_400_000));
 };
 
-export default function CtpPatioAging({ onValorizar }: { onValorizar?: () => void } = {}) {
+export default function CtpPatioAging({
+  onValorizar,
+  especie,
+}: { onValorizar?: () => void; especie?: string } = {}) {
   const [guias, setGuias] = useState<Guia[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +87,13 @@ export default function CtpPatioAging({ onValorizar }: { onValorizar?: () => voi
     filas, totM3, totValor, valorParcial, enRiesgo, tramos,
     m3ConCosto, m3SinCosto, guiasSinCosto, cobertura, riesgoSinCosto, m3RiesgoSinCosto,
   } = useMemo(() => {
+    /* El recorte por especie del panel de arriba (ADR-400). Se hace acá y no en
+       el servidor porque la especie viene EN CADA GUÍA: el conjunto es el mismo
+       que devolvería un `where`. Por `claveEspecie`, que es como agrupa el resto
+       del libro — «Tornillo» y «TORNILLO» son una sola especie. */
+    const clave = especie?.trim() ? claveEspecie(especie) : null;
     const filas = guias
+      .filter((g) => clave == null || claveEspecie(g.species ?? "") === clave)
       .map((g) => ({ ...g, dias: diasDesde(g.entryDate), valor: g.costoUnitario != null ? g.disponible * g.costoUnitario : null }))
       .sort((a, b) => b.dias - a.dias);
     const totM3 = filas.reduce((a, f) => a + f.disponible, 0);
@@ -112,7 +122,7 @@ export default function CtpPatioAging({ onValorizar }: { onValorizar?: () => voi
       m3ConCosto, m3SinCosto, guiasSinCosto, cobertura,
       riesgoSinCosto: riesgoSinCosto.length, m3RiesgoSinCosto,
     };
-  }, [guias]);
+  }, [guias, especie]);
 
   const badge = (dias: number) => {
     if (dias > DIAS_RIESGO) return { label: `${dias} días`, cls: "bg-[var(--data-error-100)] text-[var(--data-error-700)]" };
@@ -123,6 +133,9 @@ export default function CtpPatioAging({ onValorizar }: { onValorizar?: () => voi
   if (loading && guias.length === 0) return null;
   if (error) return null; // sección secundaria — no rompe Saldos si falla
   if (guias.length === 0) return null;
+  /* Con el filtro puesto puede no quedar ninguna: la tabla entera se va, en vez
+     de dibujar una cabecera con cero filas bajo un título que promete madera. */
+  if (filas.length === 0) return null;
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">

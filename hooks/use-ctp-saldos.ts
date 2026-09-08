@@ -50,6 +50,12 @@ export interface SaldosData {
   };
   porEspecie: SpeciesBalance[];
   productos: { producto: string; producido: number; despachado: number; stock: number }[];
+  /**
+   * Todas las especies del período, SIN el recorte (ADR-400): son las opciones
+   * del filtro. Si salieran de `porEspecie` con el filtro puesto quedaría una
+   * sola y no se podría volver atrás desde el propio desplegable.
+   */
+  especiesDelPeriodo?: string[];
 }
 
 export interface ConcilMP {
@@ -92,7 +98,7 @@ async function pedir<T>(params: Record<string, string>, period: CtpPeriod, campo
   return datos?.[campo] ?? null;
 }
 
-export function useCtpSaldos(period: CtpPeriod): CtpSaldosState {
+export function useCtpSaldos(period: CtpPeriod, especie?: string): CtpSaldosState {
   const [data, setData] = useState<SaldosData | null>(null);
   const [concil, setConcil] = useState<Concil | null>(null);
   const [curva, setCurva] = useState<CurvaSaldoData | null>(null);
@@ -107,12 +113,26 @@ export function useCtpSaldos(period: CtpPeriod): CtpSaldosState {
         // Saldos es el único obligatorio: su error sí se muestra.
         (async () => {
           const p = applyCtpPeriodParams(new URLSearchParams({ saldos: "1" }), period);
+          /* El recorte por especie viaja al SERVIDOR (ADR-400): el agregado
+             vuelve ya hablando de esa especie, en vez de que la pantalla filtre
+             un total que mezcla alcances. */
+          if (especie) p.set("especie", especie);
           return (await ctpGet<{ saldos: SaldosData }>(`${URL}?${p}`)).saldos;
         })(),
         // La conciliación necesita un inicio de período: sin él no hay apertura
         // que conciliar y el endpoint devolvería una tabla de ceros.
-        period.from ? pedir<Concil>({ conciliacion: "1" }, period, "conciliacion") : Promise.resolve(null),
-        pedir<CurvaSaldoData>({ curva: "1" }, period, "curva"),
+        /* Las tres llevan el MISMO recorte: la conciliación es la existencia
+           final de ese saldo y la curva es su trayectoria. Una sin filtrar al
+           lado de un número filtrado es la contradicción que este ADR vino a
+           sacar del libro. */
+        period.from
+          ? pedir<Concil>(
+              { conciliacion: "1", ...(especie ? { especie } : {}) },
+              period,
+              "conciliacion",
+            )
+          : Promise.resolve(null),
+        pedir<CurvaSaldoData>({ curva: "1", ...(especie ? { especie } : {}) }, period, "curva"),
       ]);
       setData(saldos);
       setConcil(conciliacion);
@@ -122,7 +142,7 @@ export function useCtpSaldos(period: CtpPeriod): CtpSaldosState {
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, [period, especie]);
 
   useEffect(() => {
     void recargar();

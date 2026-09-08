@@ -256,7 +256,12 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
   const period = periodFromUrl(url);
   try {
     if (url.searchParams.get("saldos") === "1") {
-      return NextResponse.json({ saldos: await ForestCtpDB.saldos(auth.tenantId, period) });
+      /* `?especie=` recorta el agregado ENTERO (ADR-400): totales, productos y
+         piezas hablan de esa especie. Vacío = todas, como siempre. */
+      const especie = url.searchParams.get("especie")?.trim() || undefined;
+      return NextResponse.json({
+        saldos: await ForestCtpDB.saldos(auth.tenantId, { ...period, especie }),
+      });
     }
     /* Productos disponibles (ADR-349): lo aserrado que sigue en la planta, con
        sus paquetes. El saldo sale de la única fuente (ADR-316). */
@@ -281,18 +286,26 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
     }
     // Conciliación: apertura + movimientos = existencia final (ADR-139 rollforward).
     if (url.searchParams.get("conciliacion") === "1") {
+      /* Mismo `?especie=` que los saldos: la conciliación los usa por dentro. */
+      const especie = url.searchParams.get("especie")?.trim() || undefined;
       return NextResponse.json({
-        conciliacion: await ForestCtpDB.conciliacionPeriodo(auth.tenantId, period),
+        conciliacion: await ForestCtpDB.conciliacionPeriodo(auth.tenantId, { ...period, especie }),
       });
     }
     // Curva del saldo de materia prima en el tiempo (¿el patio sube o baja?).
     if (url.searchParams.get("curva") === "1") {
-      return NextResponse.json({ curva: await ForestCtpDB.curvaSaldo(auth.tenantId, period) });
+      /* Mismo `?especie=` que los saldos: la curva es la TRAYECTORIA de ese
+         saldo y no puede dibujar un conjunto distinto al del número. */
+      const especie = url.searchParams.get("especie")?.trim() || undefined;
+      return NextResponse.json({
+        curva: await ForestCtpDB.curvaSaldo(auth.tenantId, { ...period, especie }),
+      });
     }
     // ADR-135 D3: despachos del período que no podrían emitir certificado.
     if (url.searchParams.get("traza") === "1") {
+      const especie = url.searchParams.get("especie")?.trim() || undefined;
       return NextResponse.json({
-        traza: await ForestCtpDespachoDB.trazabilidadDelPeriodo(auth.tenantId, period),
+        traza: await ForestCtpDespachoDB.trazabilidadDelPeriodo(auth.tenantId, { ...period, especie }),
       });
     }
     /* Las medidas que este aserradero más declara: alimentan las plantillas del

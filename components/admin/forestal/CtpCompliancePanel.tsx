@@ -37,6 +37,7 @@ import {
 import { CardTitle, WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
 import { BulejeGaugeChart } from "@/components/ui-system/charts";
 import CtpComplianceHistoria from "./CtpComplianceHistoria";
+import CtpKpiFiltros from "./CtpKpiFiltros";
 import CtpCuadreSniffs from "./CtpCuadreSniffs";
 import CtpDescuadresPanel from "./CtpDescuadresPanel";
 import CtpSobreTopePanel from "./CtpSobreTopePanel";
@@ -89,7 +90,12 @@ const GAUGE_COLOR: Record<CtpComplianceTone, string> = {
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliancePanelProps) {
-  const { data, loading, error, reload } = useCtpCompliance(period);
+  /**
+   * El recorte por especie (ADR-400): viaja a los cuatro pedidos que arman el
+   * puntaje, así que el número describe esa especie y no una mezcla.
+   */
+  const [especie, setEspecie] = useState("");
+  const { data, loading, error, reload } = useCtpCompliance(period, especie || undefined);
   const [reportError, setReportError] = useState<string | null>(null);
 
   if (loading && !data) return <LoadingState message="Calculando cumplimiento del período..." />;
@@ -299,7 +305,10 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
       });
     try {
       printCumplimiento({
-        periodLabel: period.label,
+        /* Con una especie puesta el reporte NO es el del período: lo dice en su
+           encabezado. Un PDF que se presenta ante una autoridad no puede llevar
+           un puntaje recortado bajo el rótulo del período completo (ADR-400). */
+        periodLabel: especie ? `${period.label} · sólo especie ${especie}` : period.label,
         score: reportData.score,
         toneLabel: TONE_LABEL[tone],
         totalIngresos: reportData.totalIngresos,
@@ -333,6 +342,30 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
       </VistaHeader>
 
       {reportError && <WarningAlert title="No se pudo abrir el reporte" description={reportError} />}
+
+      {/* El recorte por especie (ADR-400). Lo aplican los CUATRO pedidos que
+          arman el puntaje —ingresos, saldos, trazabilidad y conciliación— así
+          que el gauge, el desglose y las verificaciones hablan de esa especie.
+          La nota dice hasta dónde llega: los cuadres de más abajo tienen su
+          propia lectura y siguen mirando el período entero. */}
+      <CtpKpiFiltros
+        campos={[
+          {
+            key: "especie",
+            label: "Especie",
+            todos: "Todas las especies",
+            valor: especie || undefined,
+            opciones: data.especiesDelPeriodo.map((e) => ({ value: e, label: e })),
+            onChange: (v) => setEspecie(v ?? ""),
+          },
+        ]}
+        onLimpiar={() => setEspecie("")}
+        nota={
+          especie
+            ? `El puntaje y las verificaciones muestran sólo la especie ${especie} · los cuadres de abajo siguen viendo todo el período`
+            : null
+        }
+      />
 
       <ReadinessBanner readiness={readiness} bloqueos={bloqueos} advertencias={advertencias} periodLabel={period.label} onNavigate={onNavigate} />
 
@@ -370,7 +403,11 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
 
       {/* El gauge dice cómo estoy; esto, cómo vengo (ADR-384). Va pegado
           debajo porque la pregunta que sigue a «74/100» es siempre «¿y antes?». */}
-      <CtpComplianceHistoria periodo={period.key} periodLabel={period.label} />
+      <CtpComplianceHistoria
+        periodo={period.key}
+        periodLabel={period.label}
+        especieFiltrada={especie || undefined}
+      />
 
       {/* Qué parte del libro está respaldada ante SERFOR, y cómo viene el
           movimiento contra el período de al lado (ADR-386). */}

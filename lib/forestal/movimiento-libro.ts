@@ -160,6 +160,12 @@ export interface MovimientoDelLibro {
   porEspecie: EspecieMovimiento[];
   /** Se cortó el eje por el tope: se DICE, no se recorta en silencio. */
   truncado: boolean;
+  /**
+   * Las especies del período SIN el recorte (ADR-400): las opciones del filtro.
+   * De `porEspecie` con el filtro puesto quedaría una sola y no se podría
+   * volver atrás desde el propio desplegable.
+   */
+  especiesDelPeriodo?: string[];
 }
 
 const nombreEspecie = (v: string | null | undefined) => (v ?? "").trim() || "Sin especie";
@@ -181,6 +187,8 @@ export function agruparMovimiento(input: {
   paso?: PasoEje;
   /** Lo que ya había en el patio al abrir el período. */
   aperturaM3?: number;
+  /** Las especies del período SIN recorte: las opciones del filtro (ADR-400). */
+  especiesDelPeriodo?: string[];
 }): MovimientoDelLibro {
   const span = Math.floor((input.hasta.getTime() - input.desde.getTime()) / DIA_MS) + 1;
   const paso = input.paso ?? pasoParaSpan(Math.max(span, 1));
@@ -263,6 +271,7 @@ export function agruparMovimiento(input: {
     paso,
     puntos,
     truncado,
+    especiesDelPeriodo: input.especiesDelPeriodo,
     totales: {
       ingresoM3: ingresoTotal,
       consumoM3: consumoTotal,

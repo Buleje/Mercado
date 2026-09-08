@@ -22,6 +22,8 @@ interface SaldosSummary {
   materiaPrima: { especiesEnNegativo: number };
   productos: { producto: string; stock: number }[];
   porEspecie: { especie: string; cites: boolean }[];
+  /** Todas las del período SIN recorte: las opciones del filtro (ADR-400). */
+  especiesDelPeriodo?: string[];
 }
 
 /**
@@ -55,6 +57,12 @@ export interface CtpComplianceData {
   documentosVencidosLabels: string[];
   /** Los que vencen dentro de 30 días, con los días que quedan (informativo). */
   documentosPorVencerLabels: string[];
+  /**
+   * Las especies del período SIN el recorte puesto (ADR-400): son las opciones
+   * del filtro. Salen de la MISMA lectura de saldos, para que el desplegable no
+   * ofrezca una especie que el puntaje no puede calcular.
+   */
+  especiesDelPeriodo: string[];
 }
 
 interface UseCtpComplianceResult {
@@ -64,7 +72,7 @@ interface UseCtpComplianceResult {
   reload: () => Promise<void>;
 }
 
-export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
+export function useCtpCompliance(period: CtpPeriod, especie?: string): UseCtpComplianceResult {
   const [data, setData] = useState<CtpComplianceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +91,21 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
       const trazaParams = applyCtpPeriodParams(new URLSearchParams({ traza: "1" }), period);
       const prodParams = applyCtpPeriodParams(new URLSearchParams({ section: "produccion" }), period);
       const concilParams = applyCtpPeriodParams(new URLSearchParams({ conciliacion: "1" }), period);
+      /**
+       * El recorte por especie (ADR-400) viaja a los CUATRO pedidos que arman
+       * el puntaje: ingresos (plazos y CITES), saldos, trazabilidad de los
+       * despachos y conciliación. Cada uno lo aplica en el servidor, así que el
+       * puntaje describe esa especie y no una mezcla.
+       *
+       * `prodParams` queda sin recorte a propósito: esa lectura es informativa
+       * —no entra al puntaje— y su endpoint filtra por sección, no por especie.
+       */
+      if (especie) {
+        woodParams.set("species", especie);
+        saldosParams.set("especie", especie);
+        trazaParams.set("especie", especie);
+        concilParams.set("especie", especie);
+      }
 
       /* Deduplicado (ADR-347): los cinco los pide también la vista activa en el
          mismo montaje. Ficha y producción son INFORMATIVAS: si fallan, el panel
@@ -192,8 +215,11 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
       const score = ctpComplianceScore(counts);
       /* La historia del cumplimiento (ADR-384): se guarda lo que el panel ACABA
          de calcular, no una recomposición server-side que divergiría del número
-         que el operador ve. Fire-and-forget y una vez por día. */
-      registrarSnapshot(period.key, counts, score, wood.stats.totalCount);
+         que el operador ve. Fire-and-forget y una vez por día.
+         ⛔ Con una especie puesta NO se guarda: la serie es el puntaje DEL
+         PERÍODO, y meterle el de una especie dejaría un escalón en el gráfico
+         que sólo dice que alguien usó un filtro. */
+      if (!especie) registrarSnapshot(period.key, counts, score, wood.stats.totalCount);
 
       setData({
         counts,
@@ -206,13 +232,14 @@ export function useCtpCompliance(period: CtpPeriod): UseCtpComplianceResult {
         rendimientoAltoLineas,
         documentosVencidosLabels,
         documentosPorVencerLabels,
+        especiesDelPeriodo: saldos.especiesDelPeriodo ?? [],
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, [period, especie]);
 
   useEffect(() => {
     void load();
