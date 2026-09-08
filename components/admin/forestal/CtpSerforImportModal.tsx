@@ -417,7 +417,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
                   setErr(null);
                 }}
                 aria-pressed={modo === v}
-                className={`flex-1 rounded-xl border-2 px-4 py-3 text-left transition-colors ${
+                className={`flex-1 rounded-xl border-2 px-4 min-h-11 text-left transition-colors ${
                   modo === v
                     ? "border-primary bg-primary/10"
                     : "border-[var(--rule-base)] hover:border-primary/50"

@@ -200,7 +200,7 @@ export default function QuickStockCounter() {
             placeholder="Código de barras o SKU..."
             autoFocus
             className={cn(
-              "flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm",
+              "flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 h-10 text-sm",
               "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition",
               "focus:border-primary focus:ring-2 focus:ring-primary/20",
               "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
@@ -209,7 +209,7 @@ export default function QuickStockCounter() {
           <button
             onClick={() => lookupBarcode(code)}
             disabled={lookupState === "loading" || !code.trim()}
-            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40] disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 min-h-10 text-sm font-medium text-white transition hover:bg-[#245a40] disabled:opacity-50"
           >
             {lookupState === "loading" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -411,7 +411,7 @@ export default function QuickStockCounter() {
               onClick={saveCount}
               disabled={saveState === "saving" || saveState === "saved"}
               className={cn(
-                "flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white transition",
+                "flex w-full items-center justify-center gap-2 rounded-xl px-4 min-h-10 text-sm font-medium text-white transition",
                 saveState === "saved"
                   ? "bg-primary/10"
                   : saveState === "error"

@@ -296,7 +296,7 @@ export default function DocumentosModule() {
       >
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"
         >
           {uploading ? (
             <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -399,14 +399,14 @@ export default function DocumentosModule() {
                 placeholder="Buscar por nombre, tag o tipo…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                className="w-full pl-9 pr-3 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
               />
             </div>
             <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
               <button
                 onClick={() => setView("grid")}
                 className={cn(
-                  "px-3 py-2 transition-colors",
+                  "px-3 min-h-10 transition-colors",
                   view === "grid" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
                 )}
                 aria-label="Vista grilla"
@@ -416,7 +416,7 @@ export default function DocumentosModule() {
               <button
                 onClick={() => setView("list")}
                 className={cn(
-                  "px-3 py-2 transition-colors border-l-2 border-[var(--rule-base)]",
+                  "px-3 min-h-10 transition-colors border-l-2 border-[var(--rule-base)]",
                   view === "list" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
                 )}
                 aria-label="Vista lista"
@@ -780,7 +780,7 @@ function PreviewModal({
                     }
                   }}
                   placeholder="Nueva etiqueta…"
-                  className="flex-1 min-w-0 px-3 py-2 bg-transparent text-xs text-[var(--text-primary)] outline-none"
+                  className="flex-1 min-w-0 px-3 h-10 bg-transparent text-xs text-[var(--text-primary)] outline-none"
                 />
                 <button
                   onClick={() => { onAddTag(tagInput); setTagInput(""); }}
@@ -833,7 +833,7 @@ function EmptyState({ category, onUpload }: { category: DocCategory; onUpload: (
       </p>
       <button
         onClick={onUpload}
-        className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+        className="mt-5 inline-flex items-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
       >
         <Upload className="h-4 w-4" /> Subir archivos
       </button>

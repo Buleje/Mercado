@@ -98,7 +98,7 @@ export function PageEditorModal({ doc, onClose, onDone }: { doc: DbDocument; onC
           <span className="text-xs font-semibold text-[var(--text-tertiary)]">{pages.length} página(s)</span>
           <div className="flex gap-2">
             <button onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-            <button onClick={save} disabled={busy || loading || pages.length === 0} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50">
+            <button onClick={save} disabled={busy || loading || pages.length === 0} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-10 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               {busy ? "Guardando…" : "Guardar cambios"}
             </button>

@@ -159,7 +159,7 @@ export default function HITLApprovalsBanner() {
                 <button
                   key={a.id}
                   onClick={() => setSelected(a)}
-                  className="w-full text-left bg-[var(--surface-raised)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 rounded-xl px-3 py-2 hover:border-[var(--data-warning-500)] transition-colors flex items-center gap-2"
+                  className="w-full text-left bg-[var(--surface-raised)] border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 rounded-xl px-3 min-h-10 hover:border-[var(--data-warning-500)] transition-colors flex items-center gap-2"
                 >
                   <Clock className="w-3.5 h-3.5 text-[var(--text-tertiary)] shrink-0" />
                   <span className="text-xs font-mono text-[var(--text-secondary)] truncate flex-1">
@@ -227,7 +227,7 @@ export default function HITLApprovalsBanner() {
               <button
                 onClick={() => resolve(selected.id, "reject")}
                 disabled={resolving}
-                className="flex-1 px-4 py-2 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 px-4 min-h-10 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 <XCircle className="w-4 h-4" />
                 Rechazar
@@ -235,7 +235,7 @@ export default function HITLApprovalsBanner() {
               <button
                 onClick={() => resolve(selected.id, "approve")}
                 disabled={resolving}
-                className="flex-1 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/10 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 px-4 min-h-10 rounded-xl bg-primary/10 hover:bg-primary/10 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
                 {resolving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

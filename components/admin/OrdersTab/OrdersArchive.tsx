@@ -48,7 +48,7 @@ export function OrdersArchive({
               placeholder="Buscar cliente o teléfono…"
               value={archiveSearch}
               onChange={e => setArchiveSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary"
+              className="w-full pl-9 pr-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border outline-none focus:border-primary"
             />
           </div>
           <input
@@ -56,14 +56,14 @@ export function OrdersArchive({
             value={archiveDateFrom}
             onChange={e => setArchiveDateFrom(e.target.value)}
             title="Desde"
-            className="text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border px-3 py-2 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
+            className="text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border px-3 h-10 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
           />
           <input
             type="date"
             value={archiveDateTo}
             onChange={e => setArchiveDateTo(e.target.value)}
             title="Hasta"
-            className="text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border px-3 py-2 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
+            className="text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border px-3 h-10 outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted"
           />
         </div>
 

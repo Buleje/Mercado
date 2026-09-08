@@ -904,7 +904,7 @@ export default function TurnosModule() {
               </div>
               <button
                 onClick={() => { setShowCierre(true); setCloseError(null); }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 transition-colors shrink-0"
+                className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 transition-colors shrink-0"
               >
                 <Square className="h-4 w-4" />
                 <span className="hidden sm:inline">Cerrar turno</span>
@@ -1016,7 +1016,7 @@ export default function TurnosModule() {
                       type="button"
                       onClick={() => setEfectivoInicial(String(amount))}
                       className={cn(
-                        "px-4 py-2 rounded-xl text-sm font-semibold border transition-colors",
+                        "px-4 min-h-10 rounded-xl text-sm font-semibold border transition-colors",
                         active
                           ? "bg-primary text-white border-primary"
                           : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
@@ -1032,7 +1032,7 @@ export default function TurnosModule() {
               <button
                 onClick={handleAbrir}
                 disabled={opening}
-                className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors shadow-sm"
+                className="inline-flex items-center justify-center gap-2 px-8 min-h-11 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors shadow-sm"
               >
                 {opening ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Play className="h-5 w-5" strokeWidth={2} aria-hidden />}
                 Abrir turno
@@ -1077,7 +1077,7 @@ export default function TurnosModule() {
                       value={metaInput}
                       onChange={e => setMetaInput(e.target.value)}
                       autoFocus
-                      className="flex-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-lg font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="flex-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-lg font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div className="flex gap-2">
@@ -1088,7 +1088,7 @@ export default function TurnosModule() {
                         try { localStorage.setItem("turno-meta-ventas", String(val)); } catch {}
                         setShowMetaConfig(false);
                       }}
-                      className="flex-1 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                      className="flex-1 min-h-10 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
                     >
                       Guardar
                     </button>
@@ -1693,7 +1693,7 @@ export default function TurnosModule() {
                           value={cierreEfectivo}
                           onChange={e => { setCierreEfectivo(e.target.value); if (closeError) setCloseError(null); }}
                           placeholder="0.00"
-                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
+                          className="w-full pl-12 pr-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
                         />
                       </div>
                       <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cuenta todo el dinero que queda en caja.</p>
@@ -1753,14 +1753,14 @@ export default function TurnosModule() {
               <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 flex gap-3">
                 <button
                   onClick={resetCierreState}
-                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
+                  className="flex-1 min-h-11 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={() => handleCerrar()}
                   disabled={closing}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-base font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-50 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-50 transition-colors"
                 >
                   {closing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Square className="h-5 w-5" />}
                   Confirmar cierre
@@ -2184,7 +2184,7 @@ export default function TurnosModule() {
                   </button>
                   <button
                     onClick={() => setShowResumen(false)}
-                    className="flex-1 px-4 py-3 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                    className="flex-1 px-4 min-h-11 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
                   >
                     Cerrar
                   </button>

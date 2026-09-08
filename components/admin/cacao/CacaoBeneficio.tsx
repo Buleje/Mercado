@@ -368,7 +368,7 @@ export default function CacaoBeneficio() {
         <button
           type="button"
           onClick={() => setFilter("atencion")}
-          className="flex w-full items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-left text-sm text-[var(--data-warning-700)] transition hover:bg-[var(--data-warning-100)]"
+          className="flex w-full items-center gap-3 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 min-h-11 text-left text-sm text-[var(--data-warning-700)] transition hover:bg-[var(--data-warning-100)]"
         >
           <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--data-warning-700)]" />
           <span className="flex-1">
@@ -683,7 +683,7 @@ export default function CacaoBeneficio() {
                           key={m.v}
                           type="button"
                           onClick={() => setAdvMetodo(advMetodo === m.v ? "" : m.v)}
-                          className={`flex-1 rounded-xl px-3 py-2 text-sm font-bold transition ${advMetodo === m.v ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                          className={`flex-1 rounded-xl px-3 min-h-10 text-sm font-bold transition ${advMetodo === m.v ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
                         >
                           {m.label}
                         </button>

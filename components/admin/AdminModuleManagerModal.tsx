@@ -275,7 +275,7 @@ export function AdminModuleManagerModal({
             )}
             <button
               onClick={onClose}
-              className="px-5 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+              className="px-5 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
             >
               Listo
             </button>

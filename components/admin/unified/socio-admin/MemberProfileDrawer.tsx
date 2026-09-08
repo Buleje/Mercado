@@ -217,7 +217,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
               <select
                 value={months}
                 onChange={(e) => setMonths(parseInt(e.target.value))}
-                className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm"
+                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm"
               >
                 <option value={1}>1 mes adicional</option>
                 <option value={3}>3 meses adicionales</option>
@@ -281,14 +281,14 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
             <div className="space-y-2 pt-2">
               <button
                 onClick={() => setExtending(true)}
-                className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-[var(--data-success-500)] bg-[var(--data-success-50)] hover:bg-[var(--data-success-100)] transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-semibold text-[var(--data-success-500)] bg-[var(--data-success-50)] hover:bg-[var(--data-success-100)] transition-colors"
               >
                 <Gift className="h-4 w-4" />
                 Extender membresía gratis
               </button>
               <button
                 onClick={() => setCancelling(true)}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
+                className="w-full min-h-11 rounded-xl text-sm font-semibold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] transition-colors"
               >
                 Cancelar membresía
               </button>

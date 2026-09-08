@@ -97,16 +97,16 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
               {camState === "denied" && <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">No pudimos acceder a la cámara. Podés subir fotos igual.</p>}
               {camState === "unsupported" && <p className="text-sm text-[var(--text-secondary)]">Este dispositivo no expone cámara al navegador. Subí fotos.</p>}
               <div className="flex flex-wrap justify-center gap-2">
-                <button onClick={startCamera} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-bold text-white hover:bg-primary/90"><Camera className="h-4 w-4" /> Abrir cámara</button>
-                <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary"><ImageIcon className="h-4 w-4" /> Subir fotos</button>
+                <button onClick={startCamera} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 min-h-10 text-sm font-bold text-white hover:bg-primary/90"><Camera className="h-4 w-4" /> Abrir cámara</button>
+                <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 min-h-10 text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary"><ImageIcon className="h-4 w-4" /> Subir fotos</button>
               </div>
             </div>
           )}
 
           {camState === "on" && (
             <div className="mt-3 flex justify-center gap-2">
-              <button onClick={capture} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"><Camera className="h-4 w-4" /> Capturar página</button>
-              <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)] hover:border-primary"><ImageIcon className="h-4 w-4" /> Subir</button>
+              <button onClick={capture} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 min-h-10 text-sm font-bold text-white hover:bg-primary/90"><Camera className="h-4 w-4" /> Capturar página</button>
+              <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 min-h-10 text-sm font-bold text-[var(--text-secondary)] hover:border-primary"><ImageIcon className="h-4 w-4" /> Subir</button>
             </div>
           )}
 
@@ -139,7 +139,7 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
 
         <div className="flex justify-end gap-2 border-t border-[var(--rule-base)] p-4">
           <button onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button onClick={create} disabled={busy || pages.length === 0} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50">
+          <button onClick={create} disabled={busy || pages.length === 0} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-10 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
             {busy ? "Creando…" : `Crear PDF (${pages.length})`}
           </button>

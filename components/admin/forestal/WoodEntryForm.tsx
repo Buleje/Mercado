@@ -1281,7 +1281,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     {loadingGuias ? <div className="flex items-center gap-2 px-3 py-4 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando guías…</div>
                       : guiasFiltradas.length === 0 ? <div className="px-3 py-4 text-center text-sm text-[var(--text-tertiary)]">No hay guías emitidas. Se emiten en el Libro de Títulos Habilitantes → GTF.</div>
                         : guiasFiltradas.map((g, i) => (
-                          <button key={i} type="button" onClick={() => aplicarGuia(g)} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-[var(--data-success-50)]">
+                          <button key={i} type="button" onClick={() => aplicarGuia(g)} className="flex w-full items-center justify-between gap-3 px-3 min-h-10 text-left transition-colors hover:bg-[var(--data-success-50)]">
                             <span className="flex min-w-0 flex-col">
                               <span className="truncate font-mono text-sm font-bold text-[var(--text-primary)]">{g.gtfNumber}</span>
                               <span className="truncate text-xs text-[var(--text-secondary)]">{g.titularName ?? "—"}{g.origen ? ` · ${g.origen}` : ""}</span>
@@ -1303,7 +1303,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   <span className="px-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-success-700)]">Elegí el ítem de la guía</span>
                   <div className="max-h-40 divide-y divide-[var(--rule-soft)] overflow-y-auto rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
                     {gtfItems.map((it, i) => (
-                      <button key={i} type="button" onClick={() => fillFromItem(it)} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-[var(--data-success-50)]">
+                      <button key={i} type="button" onClick={() => fillFromItem(it)} className="flex w-full items-center justify-between gap-3 px-3 min-h-10 text-left transition-colors hover:bg-[var(--data-success-50)]">
                         <span className="truncate text-sm font-medium text-[var(--text-primary)]">{it.species ?? it.productType ?? "Ítem"}</span>
                         <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{it.volumeM3 != null ? `${it.volumeM3} m³` : it.quantity != null ? `${it.quantity} ${it.unit ?? ""}` : ""}{it.pieces != null ? ` · ${it.pieces} pz` : ""}</span>
                       </button>
@@ -1861,7 +1861,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     type="button"
                     onClick={() => setVerGuiaOficial((v) => !v)}
                     aria-expanded={verGuiaOficial || Boolean(gtfDatos.propietario.nombre.trim())}
-                    className="flex w-full items-center gap-2 rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2.5 text-left transition-colors hover:border-[var(--accent)]"
+                    className="flex w-full items-center gap-2 rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 min-h-11 text-left transition-colors hover:border-[var(--accent)]"
                   >
                     {verGuiaOficial ? (
                       <ChevronDown className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />

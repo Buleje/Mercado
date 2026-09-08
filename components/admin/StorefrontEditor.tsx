@@ -1285,7 +1285,7 @@ export default function StorefrontEditor() {
           type="button"
           onClick={() => setActiveTab("tienda")}
           className={cn(
-            "flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-xl text-sm font-semibold transition-all",
+            "flex items-center gap-2 flex-1 justify-center px-4 min-h-10 rounded-xl text-sm font-semibold transition-all",
             activeTab === "tienda"
               ? "bg-[var(--surface-raised)] text-[var(--text-primary)] "
               : "text-muted hover:text-[var(--text-primary)]"
@@ -1298,7 +1298,7 @@ export default function StorefrontEditor() {
           type="button"
           onClick={() => setActiveTab("navegacion")}
           className={cn(
-            "flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-xl text-sm font-semibold transition-all",
+            "flex items-center gap-2 flex-1 justify-center px-4 min-h-10 rounded-xl text-sm font-semibold transition-all",
             activeTab === "navegacion"
               ? "bg-[var(--surface-raised)] text-[var(--text-primary)] "
               : "text-muted hover:text-[var(--text-primary)]"

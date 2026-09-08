@@ -585,7 +585,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                           // Separador `--rule-soft`: con `--rule-base` cada fila
                           // quedaba subrayada y la lista se leía como una tabla
                           // rayada en vez de una lista de resultados.
-                          "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0",
+                          "w-full flex items-center gap-3 px-4 min-h-11 text-left transition-colors border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] last:border-0",
                           isSelected
                             ? "bg-primary/10 ring-1 ring-inset ring-[color-mix(in_oklab,var(--accent)_25%,transparent)]"
                             : "hover:bg-[var(--surface-sunken)] "

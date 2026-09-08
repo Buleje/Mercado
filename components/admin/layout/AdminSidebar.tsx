@@ -1083,7 +1083,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                                   onMouseEnter={() => preloadTab(subTabId)}
                                   onFocus={() => preloadTab(subTabId)}
                                   className={cn(
-                                    "group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[length:var(--ts-sm)] transition-all",
+                                    "group relative w-full flex items-center gap-2.5 px-3 min-h-10 rounded-xl text-[length:var(--ts-sm)] transition-all",
                                     isSubActive
                                       ? cn(themeClasses.activeItem, isDarkTheme ? "text-white font-semibold" : "text-[var(--text-primary)] font-semibold")
                                       : cn(themeClasses.text, themeClasses.hover, "font-medium")

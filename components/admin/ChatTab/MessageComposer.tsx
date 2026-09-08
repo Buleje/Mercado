@@ -349,21 +349,21 @@ export function MessageComposer({
           <button
             type="button"
             onClick={() => openMode("order")}
-            className="flex w-full items-center gap-2 border-t border-[var(--rule-base)] px-3 py-2.5 text-left text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]"
+            className="flex w-full items-center gap-2 border-t border-[var(--rule-base)] px-3 min-h-11 text-left text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]"
           >
             <ReceiptText className="h-4 w-4 text-primary" aria-hidden /> Armar pedido
           </button>
           <button
             type="button"
             onClick={() => openMode("payment")}
-            className="flex w-full items-center gap-2 border-t border-[var(--rule-base)] px-3 py-2.5 text-left text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]"
+            className="flex w-full items-center gap-2 border-t border-[var(--rule-base)] px-3 min-h-11 text-left text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]"
           >
             <Wallet className="h-4 w-4 text-primary" aria-hidden /> Cobrar (Yape/Plin)
           </button>
           <button
             type="button"
             onClick={() => openMode("substitution")}
-            className="flex w-full items-center gap-2 border-t border-[var(--rule-base)] px-3 py-2.5 text-left text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]"
+            className="flex w-full items-center gap-2 border-t border-[var(--rule-base)] px-3 min-h-11 text-left text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]"
           >
             <RefreshCw className="h-4 w-4 text-primary" aria-hidden /> Sustitución de faltante
           </button>
@@ -371,7 +371,7 @@ export function MessageComposer({
             <button
               type="button"
               onClick={handleRequestReview}
-              className="flex w-full items-center gap-2 border-t border-[var(--rule-base)] px-3 py-2.5 text-left text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]"
+              className="flex w-full items-center gap-2 border-t border-[var(--rule-base)] px-3 min-h-11 text-left text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]"
             >
               <Star className="h-4 w-4 text-primary" aria-hidden /> Pedir reseña
             </button>
@@ -428,7 +428,7 @@ export function MessageComposer({
                 type="button"
                 onClick={handleSendPayment}
                 disabled={sendingPay || !(Number(payAmount) > 0)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary min-h-11 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
               >
                 {sendingPay ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Wallet className="h-4 w-4" aria-hidden />}
                 Enviar cobro{Number(payAmount) > 0 ? ` · ${fmtSoles(Number(payAmount))}` : ""}
@@ -530,7 +530,7 @@ export function MessageComposer({
                     type="button"
                     onClick={handleSendOrder}
                     disabled={sendingOrder}
-                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
+                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary min-h-11 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
                   >
                     {sendingOrder ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ReceiptText className="h-4 w-4" aria-hidden />}
                     Enviar pedido · {draft.reduce((a, i) => a + i.quantity, 0)} items · {fmtSoles(orderTotal(draft))}
@@ -586,7 +586,7 @@ export function MessageComposer({
                   key={i}
                   type="button"
                   onClick={() => applySuggestion(s)}
-                  className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-left text-sm font-medium text-[var(--text-secondary)] transition-colors hover:border-primary hover:bg-primary/5 dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]"
+                  className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 min-h-10 text-left text-sm font-medium text-[var(--text-secondary)] transition-colors hover:border-primary hover:bg-primary/5 dark:text-[var(--text-secondary)] dark:hover:bg-[var(--surface-sunken)]"
                 >
                   {s}
                 </button>

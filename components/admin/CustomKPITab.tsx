@@ -127,7 +127,7 @@ export default function CustomKPITab() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10">
             <Download className="h-3.5 w-3.5" /> CSV
           </button>
-          <button onClick={openCreate} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90">
+          <button onClick={openCreate} className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Nuevo KPI
           </button>
         </div>
@@ -145,7 +145,7 @@ export default function CustomKPITab() {
           <Target className="h-12 w-12 mb-3 text-[var(--text-tertiary)]" />
           <p className="font-bold text-[var(--text-secondary)] dark:text-muted">Sin KPIs definidos</p>
           <p className="text-sm mt-1">Crea tu primer KPI personalizado</p>
-          <button onClick={openCreate} className="mt-4 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90">
+          <button onClick={openCreate} className="mt-4 flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Crear KPI
           </button>
         </div>
@@ -208,25 +208,25 @@ export default function CustomKPITab() {
             <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">{editKpi ? "Editar KPI" : "Nuevo KPI"}</CardTitle>
             <div className="space-y-3">
               <Field label="Nombre *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" placeholder="Ej: Ticket Promedio" />
+                <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" placeholder="Ej: Ticket Promedio" />
               </Field>
               <Field label="Descripción" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                <input value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" placeholder="¿Qué mide este KPI?" />
+                <input value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" placeholder="¿Qué mide este KPI?" />
               </Field>
               <Field label="Fórmula" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                <input value={form.formula} onChange={e => setForm(f => ({ ...f, formula: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono" placeholder="ventas / transacciones" />
+                <input value={form.formula} onChange={e => setForm(f => ({ ...f, formula: e.target.value }))} className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono" placeholder="ventas / transacciones" />
               </Field>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <Field label="Meta" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                  <input value={form.target} onChange={e => setForm(f => ({ ...f, target: e.target.value }))} type="number" className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
+                  <input value={form.target} onChange={e => setForm(f => ({ ...f, target: e.target.value }))} type="number" className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
                 </Field>
                 <Field label="Unidad" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                  <select value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm">
+                  <select value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))} className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm">
                     {["S/", "%", "pts", "pedidos", "veces", "min", "días"].map(u => <option key={u}>{u}</option>)}
                   </select>
                 </Field>
                 <Field label="Categoría" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                  <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm">
+                  <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm">
                     {["Ventas", "Clientes", "Inventario", "Finanzas", "Operaciones"].map(c => <option key={c}>{c}</option>)}
                   </select>
                 </Field>
@@ -243,7 +243,7 @@ export default function CustomKPITab() {
             </div>
             <div className="flex justify-end gap-2 mt-5">
               <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] ">Cancelar</button>
-              <button onClick={save} disabled={saving || !form.name.trim()} className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
+              <button onClick={save} disabled={saving || !form.name.trim()} className="px-4 min-h-10 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
                 {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Guardar
               </button>
             </div>

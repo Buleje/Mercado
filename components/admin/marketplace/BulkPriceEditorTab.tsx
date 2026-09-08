@@ -258,7 +258,7 @@ export default function BulkPriceEditorTab() {
             placeholder="Buscar producto..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            className="w-full pl-9 pr-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -270,7 +270,7 @@ export default function BulkPriceEditorTab() {
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="py-2.5 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+          className="h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
         >
           {categories.map((c) => (
             <option key={c} value={c}>{c === "todas" ? "Todas las categorías" : c}</option>
@@ -282,34 +282,34 @@ export default function BulkPriceEditorTab() {
           placeholder="Precio mín"
           value={minPrice}
           onChange={(e) => setMinPrice(e.target.value)}
-          className="w-28 py-2.5 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+          className="w-28 h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
         />
         <input
           type="number"
           placeholder="Precio máx"
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
-          className="w-28 py-2.5 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+          className="w-28 h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
         />
 
         <div className="flex gap-2 ml-auto">
           <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImport} className="hidden" />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="flex items-center gap-1.5 px-3 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             <Upload className="h-4 w-4" /> Importar CSV
           </button>
           <button
             onClick={exportCsv}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="flex items-center gap-1.5 px-3 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             <Download className="h-4 w-4" /> Exportar CSV
           </button>
           <button
             onClick={() => changeCount > 0 && setShowConfirm(true)}
             disabled={changeCount === 0}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-40"
+            className="flex items-center gap-1.5 px-4 min-h-11 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-40"
           >
             Aplicar cambios {changeCount > 0 && `(${changeCount})`}
           </button>
@@ -479,14 +479,14 @@ export default function BulkPriceEditorTab() {
             <button
               onClick={() => setShowConfirm(false)}
               disabled={applying}
-              className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               onClick={applyChanges}
               disabled={applying}
-              className="flex-1 py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 min-h-11 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {applying && <Loader2 className="h-4 w-4 animate-spin" />}
               Confirmar

@@ -195,7 +195,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                   {generado && (
                     <button
                       onClick={() => setEnviando(true)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 dark:bg-[var(--data-success-500)]"
+                      className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 min-h-11 text-sm font-bold text-white transition-opacity hover:opacity-90 dark:bg-[var(--data-success-500)]"
                     >
                       <MessageCircle className="h-4 w-4" /> Mandarlo por WhatsApp
                     </button>
@@ -225,7 +225,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                         onChange={(e) => setBuscaCliente(e.target.value)}
                         placeholder="Buscar cliente…"
                         aria-label="Buscar cliente"
-                        className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-2 pl-8 pr-3 text-sm outline-none focus:border-primary"
+                        className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] h-10 pl-8 pr-3 text-sm outline-none focus:border-primary"
                       />
                     </div>
                     {buscaCliente.trim() !== "" && (
@@ -273,7 +273,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                           value={values[f.name] ?? ""}
                           onChange={(e) => setField(f.name, e.target.value)}
                           placeholder={f.placeholder ?? ""}
-                          className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                          className="mt-1 w-full px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
                         />
                       )}
                     </label>
@@ -283,7 +283,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                 <button
                   onClick={handleGenerate}
                   disabled={generating}
-                  className="mt-5 w-full py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                  className="mt-5 w-full min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark disabled:opacity-50 inline-flex items-center justify-center gap-2"
                 >
                   {generating ? (
                     <>

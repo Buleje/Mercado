@@ -625,7 +625,7 @@ export default function CategoriesEditorTab() {
                       value={cat.seo?.metaTitle || ""}
                       onChange={(e) => updateSeoField(i, "metaTitle", e.target.value)}
                       placeholder={`${cat.label} - Buleje`}
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm"
                       maxLength={70}
                     />
                   </Field>
@@ -680,7 +680,7 @@ export default function CategoriesEditorTab() {
                         updateSeoField(i, "keywords", keywords);
                       }}
                       placeholder="delivery, san martín, compra online..."
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm"
                     />
                   </Field>
 
@@ -694,7 +694,7 @@ export default function CategoriesEditorTab() {
                         value={cat.seo?.slug || cat.id}
                         onChange={(e) => updateSeoField(i, "slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
                         placeholder={cat.id}
-                        className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm font-mono"
+                        className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm font-mono"
                       />
                     </Field>
 
@@ -707,7 +707,7 @@ export default function CategoriesEditorTab() {
                         value={cat.seo?.ogImage || ""}
                         onChange={(e) => updateSeoField(i, "ogImage", e.target.value)}
                         placeholder="https://..."
-                        className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
+                        className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm"
                       />
                     </Field>
                   </div>
@@ -721,7 +721,7 @@ export default function CategoriesEditorTab() {
                       value={cat.seo?.canonical || ""}
                       onChange={(e) => updateSeoField(i, "canonical", e.target.value)}
                       placeholder="https://buleje.pe/categoria/..."
-                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm"
+                      className="w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm"
                     />
                   </Field>
 

@@ -84,7 +84,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   key={src || "all"}
                   onClick={() => dispatch({ type: "SET_SOURCE", value: src })}
                   className={cn(
-                    "flex-1 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors",
+                    "flex-1 px-3 min-h-10 rounded-xl border text-sm font-semibold transition-colors",
                     filters.source === src
                       ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] "
@@ -108,7 +108,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                     value: filters.paymentMethod === method ? "" : method,
                   })}
                   className={cn(
-                    "flex-1 px-3 py-2 rounded-xl border text-sm font-semibold transition-colors",
+                    "flex-1 px-3 min-h-10 rounded-xl border text-sm font-semibold transition-colors",
                     filters.paymentMethod === method
                       ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] "
@@ -128,7 +128,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                 type="date"
                 value={filters.dateFrom}
                 onChange={(e) => dispatch({ type: "SET_DATE_FROM", value: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
               />
             </div>
             <div className="space-y-2">
@@ -137,7 +137,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                 type="date"
                 value={filters.dateTo}
                 onChange={(e) => dispatch({ type: "SET_DATE_TO", value: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
               />
             </div>
           </div>
@@ -153,7 +153,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   value={filters.amountMin}
                   onChange={(e) => dispatch({ type: "SET_AMOUNT_MIN", value: e.target.value })}
                   placeholder="0.00"
-                  className="w-full pl-8 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                  className="w-full pl-8 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -166,7 +166,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                   value={filters.amountMax}
                   onChange={(e) => dispatch({ type: "SET_AMOUNT_MAX", value: e.target.value })}
                   placeholder="999.99"
-                  className="w-full pl-8 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                  className="w-full pl-8 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -182,7 +182,7 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
                 value={filters.customerSearch}
                 onChange={(e) => dispatch({ type: "SET_CUSTOMER_SEARCH", value: e.target.value })}
                 placeholder="Nombre o teléfono..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
               />
             </div>
           </div>
@@ -230,13 +230,13 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
         <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 flex gap-3">
           <button
             onClick={handleClearAndClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="flex-1 min-h-11 rounded-xl text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             Limpiar filtros
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors"
+            className="flex-1 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors"
           >
             Aplicar filtros
           </button>

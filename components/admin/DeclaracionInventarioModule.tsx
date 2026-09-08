@@ -307,7 +307,7 @@ export default function DeclaracionInventarioModule() {
                   type="date"
                   value={fecha}
                   onChange={e => setFecha(e.target.value)}
-                  className="pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
             )}
@@ -316,7 +316,7 @@ export default function DeclaracionInventarioModule() {
         <button
           onClick={handleGenerar}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-colors"
+          className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-colors"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
           Generar Declaración
@@ -588,7 +588,7 @@ export default function DeclaracionInventarioModule() {
           </div>
           <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin declaraciones</CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Genera un snapshot de tu inventario actual</p>
-          <button onClick={handleGenerar} className="bg-primary text-white px-6 py-2.5 rounded-xl font-medium hover:bg-primary-dark">Generar declaración</button>
+          <button onClick={handleGenerar} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Generar declaración</button>
         </div>
       )}
     </div>

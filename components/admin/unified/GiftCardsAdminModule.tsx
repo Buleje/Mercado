@@ -371,7 +371,7 @@ export default function GiftCardsAdminModule() {
       >
         <button
           onClick={() => setShowCreate(true)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" />
           Emitir manual
@@ -451,7 +451,7 @@ export default function GiftCardsAdminModule() {
               <button
                 type="button"
                 onClick={() => setIssuedCode(null)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+                className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-colors"
               >
                 Listo
               </button>
@@ -469,13 +469,13 @@ export default function GiftCardsAdminModule() {
             placeholder="Buscar por destinatario, código o ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as GiftCardDetails["status"] | "all")}
-          className="px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
+          className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
         >
           <option value="all">Todos los estados</option>
           <option value="pendiente">Pendientes</option>

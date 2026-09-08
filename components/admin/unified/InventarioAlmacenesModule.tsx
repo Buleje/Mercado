@@ -156,7 +156,7 @@ export default function InventarioAlmacenesModule() {
               {/* Mejora 7: Price labels button */}
               <button
                 onClick={() => { setShowPriceLabels(true); void loadLabelProducts(); }}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors"
+                className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors"
               >
                 Imprimir etiquetas
               </button>
@@ -312,7 +312,7 @@ export default function InventarioAlmacenesModule() {
               )}
             </div>
             <div className="px-5 py-4 border-t border-[var(--rule-soft)]">
-              <button onClick={handlePrintLabels} disabled={selectedLabelIds.size === 0} className="w-full py-2.5 rounded-xl text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--color-primary)]" style={{ backgroundColor: "var(--color-primary)" }}>
+              <button onClick={handlePrintLabels} disabled={selectedLabelIds.size === 0} className="w-full min-h-11 rounded-xl text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--color-primary)]" style={{ backgroundColor: "var(--color-primary)" }}>
                 Generar etiquetas ({selectedLabelIds.size})
               </button>
             </div>

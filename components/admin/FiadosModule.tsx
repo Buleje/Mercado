@@ -966,7 +966,7 @@ export default function FiadosModule() {
         />
         <button
           onClick={() => setShowNew(true)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-3 min-h-10 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
           Nuevo fiado
@@ -991,7 +991,7 @@ export default function FiadosModule() {
           />
           <button
             onClick={() => setShowNew(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+            className="inline-flex items-center gap-2 px-3 min-h-10 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
           >
             <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
             Nuevo fiado
@@ -1330,7 +1330,7 @@ export default function FiadosModule() {
                       <>
                         <button
                           onClick={() => { setShowPago(true); setPagoError(null); }}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
+                          className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
                         >
                           <DollarSign className="h-4 w-4" />
                           Registrar Pago
@@ -1342,7 +1342,7 @@ export default function FiadosModule() {
                             const d = new Date(); d.setDate(d.getDate() + 7);
                             setCompromisoFecha(d.toISOString().slice(0, 10));
                           }}
-                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-bold text-primary border-2 border-primary hover:bg-primary hover:text-white transition-colors"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 min-h-11 rounded-xl text-sm font-bold text-primary border-2 border-primary hover:bg-primary hover:text-white transition-colors"
                         >
                           <PenTool className="h-4 w-4" />
                           Compromiso de Pago
@@ -1375,7 +1375,7 @@ export default function FiadosModule() {
                               alert("Error al generar el link");
                             }
                           }}
-                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-bold text-primary border-2 border-primary hover:bg-primary hover:text-white transition-colors"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 min-h-11 rounded-xl text-sm font-bold text-primary border-2 border-primary hover:bg-primary hover:text-white transition-colors"
                         >
                           <Share2 className="h-4 w-4" />
                           Compartir estado de cuenta

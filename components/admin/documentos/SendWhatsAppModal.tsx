@@ -503,7 +503,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
                   onChange={(e) => setPhone(e.target.value)}
                   inputMode="tel"
                   placeholder="929 340 532"
-                  className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-[var(--text-primary)] outline-none"
+                  className="min-w-0 flex-1 bg-transparent h-11 text-sm text-[var(--text-primary)] outline-none"
                 />
                 {normalized && <span className="shrink-0 text-xs tabular-nums text-[var(--text-tertiary)]">→ {normalized}</span>}
               </div>
@@ -525,7 +525,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
                   value={contactQuery}
                   onChange={(e) => setContactQuery(e.target.value)}
                   placeholder="Buscar contacto…"
-                  className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-2 pl-8 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+                  className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] h-10 pl-8 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
                 />
               </div>
               <ul className="max-h-40 space-y-0.5 overflow-y-auto">
@@ -591,7 +591,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
             <button
               onClick={accion}
               disabled={deshabilitado}
-              className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 min-h-11 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]"
             >
               {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : via === "enlace" ? <Send className="h-4 w-4" /> : <Paperclip className="h-4 w-4" />}
               {enviando ? "Mandando…" : textoBoton}
@@ -619,7 +619,7 @@ function OpcionVia({
       onClick={onClick}
       disabled={deshabilitada}
       className={cn(
-        "flex flex-col items-start gap-0.5 rounded-xl border-2 px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45",
+        "flex flex-col items-start gap-0.5 rounded-xl border-2 px-3 min-h-11 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45",
         activa
           ? "border-[var(--data-success-700)] bg-[var(--data-success-50)] dark:border-[var(--data-success-500)] dark:bg-[var(--data-success-500)]/12"
           : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--text-tertiary)]",

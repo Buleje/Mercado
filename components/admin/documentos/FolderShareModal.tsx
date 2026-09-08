@@ -140,7 +140,7 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
 
         <div className="flex items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-4">
           <button onClick={onClose} className="rounded-xl px-4 py-2.5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cerrar</button>
-          <button onClick={whatsapp} disabled={creating || !link} className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]">
+          <button onClick={whatsapp} disabled={creating || !link} className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 min-h-11 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]">
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </button>
         </div>

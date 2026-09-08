@@ -61,7 +61,7 @@ export function StampModal({ doc, onClose, onDone }: { doc: DbDocument; onClose:
               key={p.key}
               onClick={() => { setPreset(p.key); setCustom(""); }}
               className={cn(
-                "flex items-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-bold transition-colors",
+                "flex items-center gap-2 rounded-xl border-2 px-3 min-h-10 text-sm font-bold transition-colors",
                 preset === p.key && !custom ? "border-primary bg-primary/5" : "border-[var(--rule-base)] hover:border-primary/40",
               )}
             >
@@ -86,7 +86,7 @@ export function StampModal({ doc, onClose, onDone }: { doc: DbDocument; onClose:
 
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button onClick={apply} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60">
+          <button onClick={apply} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-10 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Stamp className="h-4 w-4" />}
             {busy ? "Aplicando…" : "Aplicar sello"}
           </button>

@@ -62,7 +62,7 @@ export function MarketplaceCuponesTab() {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"
         >
           <Ticket className="h-4 w-4" />
           Nuevo cupón
@@ -91,7 +91,7 @@ export function MarketplaceCuponesTab() {
           </p>
           <button
             onClick={() => setShowForm(true)}
-            className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+            className="mt-5 inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
           >
             <Ticket className="h-4 w-4" />
             Crear primer cupón
@@ -314,7 +314,7 @@ function NewCouponModal({
                     placeholder="BIENVENIDO10"
                     value={form.code}
                     onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase().replace(/\s+/g, "") })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono font-bold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase tracking-wider"
+                    className="w-full px-4 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono font-bold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase tracking-wider"
                     maxLength={20}
                   />
                 </Field>
@@ -328,7 +328,7 @@ function NewCouponModal({
                     placeholder="Descuento de bienvenida"
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    className="w-full px-4 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
                 </Field>
               </div>
@@ -354,7 +354,7 @@ function NewCouponModal({
                     key={opt.value}
                     onClick={() => setForm({ ...form, discountType: opt.value as "percent" | "fixed" })}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all",
+                      "flex items-center gap-3 px-4 min-h-11 rounded-xl border-2 text-left transition-all",
                       active
                         ? "border-primary bg-primary/5"
                         : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--text-tertiary)]"
@@ -393,7 +393,7 @@ function NewCouponModal({
                         min={0}
                         max={isPercent ? 100 : undefined}
                         step={isPercent ? 1 : 0.5}
-                        className="flex-1 min-w-0 px-4 py-3 bg-transparent text-base font-extrabold text-[var(--text-primary)] outline-none tabular-nums"
+                        className="flex-1 min-w-0 px-4 h-11 bg-transparent text-base font-extrabold text-[var(--text-primary)] outline-none tabular-nums"
                       />
                       <span className="inline-flex items-center px-4 text-sm font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-l-2 border-[var(--rule-base)]">
                         {isPercent ? "%" : "S/"}
@@ -412,7 +412,7 @@ function NewCouponModal({
                     onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
                     min={0}
                     step={0.5}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
+                    className="w-full px-4 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
                   />
                 </Field>
               </div>
@@ -435,7 +435,7 @@ function NewCouponModal({
                     value={form.maxUses}
                     onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
                     min={1}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
+                    className="w-full px-4 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
                   />
                 </Field>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vacío = sin tope de canjes</p>
@@ -447,7 +447,7 @@ function NewCouponModal({
                     type="datetime-local"
                     value={form.expiresAt ? form.expiresAt.slice(0, 16) : ""}
                     onChange={(e) => setForm({ ...form, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    className="w-full px-4 h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
                 </Field>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vacío = sin vencimiento</p>
@@ -464,14 +464,14 @@ function NewCouponModal({
           <div className="flex items-center gap-3 ml-auto">
             <button
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] border-2 border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
+              className="px-4 min-h-11 rounded-xl text-sm font-bold text-[var(--text-secondary)] border-2 border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={onCreate}
               disabled={saving || !form.code || !form.discountValue}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
+              className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
             >
               {saving ? (
                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

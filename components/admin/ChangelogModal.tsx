@@ -130,7 +130,7 @@ export default function ChangelogModal({ open, onClose }: ChangelogModalProps) {
             <button
               onClick={onClose}
               className={cn(
-                "w-full py-2.5 rounded-xl text-sm font-bold transition-colors",
+                "w-full min-h-11 rounded-xl text-sm font-bold transition-colors",
                 "bg-primary text-white hover:bg-primary/90"
               )}
             >
