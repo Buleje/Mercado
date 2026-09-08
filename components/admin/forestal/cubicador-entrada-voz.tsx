@@ -19,6 +19,7 @@ import {
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { ChevronUp } from "@buleje/design-system/icons";
 import {
   numerosPorPieza, DIMENSIONES, ESPECIES_MADERA,
   type PiezaCubicada, type MedidasFijas,
@@ -42,6 +43,8 @@ export type Manual = { cantidad: string; espesor: string; ancho: string; largo: 
 interface PanelEntradaVozProps {
   grillaId: string;
   onPresent?: () => void;
+  /** Pliega el panel entero. Sin esto, el botón «Ocultar» no se dibuja. */
+  onPlegar?: () => void;
   onImportar: () => void;
   showAjustes: boolean;
   onToggleAjustes: () => void;
@@ -84,7 +87,7 @@ interface PanelEntradaVozProps {
 }
 
 export default function PanelEntradaVoz({
-  grillaId, onPresent, onImportar, showAjustes, onToggleAjustes,
+  grillaId, onPresent, onPlegar, onImportar, showAjustes, onToggleAjustes,
   config, onUpdateConfig, voices, onProbarVoz,
   supported, listening, onToggleListen, paused,
   fijas, onAplicarFijas, especie, onEspecieChange,
@@ -115,6 +118,20 @@ export default function PanelEntradaVoz({
             <Settings className="h-3.5 w-3.5" /> Ajustes
           </button>
           {onPresent && <CacaoChartPresent title="Cubicador de madera" onClick={onPresent} />}
+          {/* Plegar el panel entero: cargando desde la tabla —o revisando un
+              lote ya medido— el micrófono y la fila de carga ocupan media
+              pantalla sin usarse. */}
+          {onPlegar && (
+            <button
+              type="button"
+              onClick={onPlegar}
+              title="Ocultar el panel de carga"
+              aria-label="Ocultar el panel de carga"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]"
+            >
+              <ChevronUp className="h-3.5 w-3.5" /> Ocultar
+            </button>
+          )}
         </div>
       </div>
 

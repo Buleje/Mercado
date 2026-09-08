@@ -9,7 +9,7 @@
  * en localStorage (sin DB). Reconocimiento: Web Speech API (Chrome, es-PE).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Columns3 } from "@buleje/design-system/icons";
+import { Mic, MicOff, Table, Trash2, Plus, Volume2, Check, Square, Send, Copy, AlertTriangle, MessageCircle, Save, FileText, Loader2, X, FileSpreadsheet, Receipt, Search, Sigma, Layers, Columns3, ChevronDown, Maximize2, Minimize2 } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
@@ -52,6 +52,7 @@ import {
 } from "./seleccion-celdas";
 import PanelEntradaVoz from "./cubicador-entrada-voz";
 import CubicadorKpis from "./cubicador-kpis";
+import ControlLecturaFlotante from "./cubicador-lectura-flotante";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -70,9 +71,6 @@ const UNIDADES: { v: Unidad; label: string }[] = [
 // Rangos para los dropdowns de carga manual (rápida, sin tipear).
 /** Grillas con navegación de teclado (ver `celdas-excel.tsx`). */
 const GRILLA_CARGA = "cub-carga";
-/** Segunda copia del panel de entrada, al final de la tabla — grilla propia
- *  para que las flechas del teclado no salten al panel de arriba. */
-const GRILLA_CARGA_FIN = "cub-carga-fin";
 const GRILLA_TABLA = "cub-tabla";
 /**
  * Alto de fila de arranque y alto del visor de la tabla ventaneada, en px.
@@ -85,6 +83,8 @@ const GRILLA_TABLA = "cub-tabla";
  */
 const ALTO_FILA_TABLA = 44;
 const ALTO_VISOR_TABLA = 600;
+/** Lo que ocupan cabecera, filtros y pie cuando la tabla toma la pantalla. */
+const ALTO_CHROME_EXPANDIDA = 250;
 /** Orden de tabulación de la fila de carga: Cant → Espesor → Ancho → Largo. */
 const COL_CANT = 0, COL_ESPESOR = 1, COL_ANCHO = 2, COL_LARGO = 3;
 /** Las 4 columnas navegables de la fila de carga, en orden — TODAS. Dentro
@@ -369,6 +369,53 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     try { return { ...COLS_DEFAULT, ...(JSON.parse(raw) as Partial<Record<ColOpcional, boolean>>) }; } catch { return COLS_DEFAULT; }
   });
   useEffect(() => { try { localStorage.setItem(`${storageKey()}-cols`, JSON.stringify(colsVisibles)); } catch { /* quota */ } }, [colsVisibles]);
+  /**
+   * Qué paneles están plegados. Es una preferencia de trabajo, no un estado de
+   * la sesión: quien revisa un lote ya medido no quiere el micrófono ocupando
+   * media pantalla cada vez que entra. Se guarda por tenant, como las columnas.
+   */
+  const [plegados, setPlegados] = useState<{ kpis: boolean; voz: boolean }>(() => {
+    const raw = leerGuardado("-plegados");
+    if (!raw) return { kpis: false, voz: false };
+    try {
+      return { kpis: false, voz: false, ...(JSON.parse(raw) as Partial<{ kpis: boolean; voz: boolean }>) };
+    } catch {
+      return { kpis: false, voz: false };
+    }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(`${storageKey()}-plegados`, JSON.stringify(plegados)); } catch { /* quota */ }
+  }, [plegados]);
+  /** La tabla ocupando la pantalla entera, para leer un lote largo. */
+  const [tablaExpandida, setTablaExpandida] = useState(false);
+  /**
+   * Alto del visor ventaneado. Sigue siendo un número FIJO mientras se
+   * scrollea —de eso dependía que el scroll no se moviera solo—; lo único que
+   * lo cambia es expandir/contraer o redimensionar la ventana.
+   */
+  const [altoVisor, setAltoVisor] = useState(ALTO_VISOR_TABLA);
+  useEffect(() => {
+    const calcular = () =>
+      setAltoVisor(tablaExpandida ? Math.max(320, window.innerHeight - ALTO_CHROME_EXPANDIDA) : ALTO_VISOR_TABLA);
+    calcular();
+    if (!tablaExpandida) return;
+    window.addEventListener("resize", calcular);
+    return () => window.removeEventListener("resize", calcular);
+  }, [tablaExpandida]);
+  useEffect(() => {
+    if (!tablaExpandida) return;
+    /* Escape sale, como de cualquier capa que tapa la pantalla. Y el fondo no
+       scrollea detrás: si no, al cerrar aparecés en otra parte de la página. */
+    const alTeclear = (e: KeyboardEvent) => { if (e.key === "Escape") setTablaExpandida(false); };
+    const overflowPrevio = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", alTeclear);
+    return () => {
+      window.removeEventListener("keydown", alTeclear);
+      document.body.style.overflow = overflowPrevio;
+    };
+  }, [tablaExpandida]);
+
   const [colsMenuOpen, setColsMenuOpen] = useState(false);
   useEffect(() => {
     if (!colsMenuOpen) return;
@@ -700,8 +747,22 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     return () => { wantListeningRef.current = false; try { rec.stop(); } catch { /* ignore */ } };
   }, [addPieza, updateRow, borrarUltimo, hablar, aplicarFijas, aplicarDueno]);
 
+  /**
+   * Estado de la lectura en voz alta, para el control flotante.
+   *
+   * `idxRef` vive fuera del closure de `leerSecuencia` justo para poder pausar:
+   * antes el índice era una variable local y la única forma de frenar era
+   * cortar la lectura entera y volver a empezar desde la primera fila.
+   */
+  const idxRef = useRef(0);
+  const pausaRef = useRef(false);
+  const pasoRef = useRef<(() => void) | null>(null);
+  const [lectura, setLectura] = useState<{ pausada: boolean; idx: number; total: number } | null>(null);
+
   const stopLeer = useCallback(() => {
     readingRef.current = false; setReadingId(null);
+    pausaRef.current = false; pasoRef.current = null; idxRef.current = 0;
+    setLectura(null);
     try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
   }, []);
 
@@ -782,7 +843,12 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
    * desaparece sola, y "Leer tabla" sigue enterándose de piezas agregadas
    * a mano en el medio, como ya hacía antes de este refactor.
    */
-  const leerSecuencia = useCallback((obtenerLista: () => PiezaCubicada[], texto: (r: PiezaCubicada) => string) => {
+  const leerSecuencia = useCallback((
+    obtenerLista: () => PiezaCubicada[],
+    texto: (r: PiezaCubicada) => string,
+    /** Desde qué posición de esa lista arranca. Por defecto, la primera. */
+    desde = 0,
+  ) => {
     if (readingRef.current) { stopLeer(); return; }
     if (!obtenerLista().length) return;
     // cortar cualquier escucha activa
@@ -791,12 +857,17 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     const synth = window.speechSynthesis;
     if (!synth) { setErrMsg("Este navegador no puede leer en voz alta."); return; }
     readingRef.current = true;
-    let idx = 0;
+    pausaRef.current = false;
+    idxRef.current = Math.max(0, Math.min(desde, obtenerLista().length - 1));
     const step = () => {
       const list = obtenerLista();
-      if (!readingRef.current || idx >= list.length) { stopLeer(); return; }
-      const r = list[idx];
+      if (!readingRef.current || idxRef.current >= list.length) { stopLeer(); return; }
+      /* En pausa NO se avanza ni se habla: se deja el índice donde está para
+         que «reanudar» siga por la fila que venía, no por la primera. */
+      if (pausaRef.current) { setLectura({ pausada: true, idx: idxRef.current, total: list.length }); return; }
+      const r = list[idxRef.current];
       setReadingId(r.id);
+      setLectura({ pausada: false, idx: idxRef.current, total: list.length });
       try { document.getElementById(`cub-row-${r.id}`)?.scrollIntoView({ block: "center", behavior: "auto" }); } catch { /* ignore */ }
       const u = new SpeechSynthesisUtterance(texto(r));
       // Dictado = rápido a propósito (no "seguir el ritmo de escribir a
@@ -804,7 +875,10 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       // tope 3 para no volverse ininteligible.
       u.lang = "es-PE"; u.rate = Math.min(3, configRef.current.voiceRate + 0.3);
       if (configRef.current.voiceURI) { const v = synth.getVoices().find((x) => x.voiceURI === configRef.current.voiceURI); if (v) u.voice = v; }
-      u.onend = () => { idx++; step(); };
+      /* `cancel()` también dispara `onend` en Chrome: sin este guard, pausar
+         avanzaría una fila y al reanudar se saltearía justo la que se estaba
+         escuchando. */
+      u.onend = () => { if (pausaRef.current || !readingRef.current) return; idxRef.current++; step(); };
       // Sin esto, un fallo de síntesis (voz no disponible, motor caído) deja
       // `readingRef` trabado en "leyendo" para siempre — nunca llega el
       // `onend` que lo destraba, y CADA botón de "leer/dictar" del cubicador
@@ -817,13 +891,62 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
       // de `speak()` para que el `cancel()` no se coma la voz siguiente.
       setTimeout(() => synth.speak(u), 0);
     };
+    pasoRef.current = step;
     step();
   }, [stopLeer]);
+
+  /** Frena donde está, sin perder el lugar. */
+  const pausarLectura = useCallback(() => {
+    if (!readingRef.current) return;
+    pausaRef.current = true;
+    try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
+    setLectura((v) => (v ? { ...v, pausada: true } : v));
+  }, []);
+
+  /** Sigue por la fila donde quedó. */
+  const reanudarLectura = useCallback(() => {
+    if (!readingRef.current || !pasoRef.current) return;
+    pausaRef.current = false;
+    pasoRef.current();
+  }, []);
+
+  /** Vuelve a la primera fila y sigue leyendo desde ahí. */
+  const reiniciarLectura = useCallback(() => {
+    if (!readingRef.current || !pasoRef.current) return;
+    idxRef.current = 0;
+    pausaRef.current = false;
+    try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
+    /* Un tick de por medio: el `cancel()` de arriba se come el `speak()`
+       inmediato (el mismo bug de Chrome que ya documenta `decir()`). */
+    setTimeout(() => pasoRef.current?.(), 0);
+  }, []);
 
   // Leer toda la tabla en voz alta, resaltando y siguiendo cada fila.
   const leerTabla = useCallback(() => {
     leerSecuencia(() => rowsRef.current, (r) => `${r.espesor}, ${r.ancho}, ${r.largo}${r.especie ? `, ${r.especie}` : ""}`);
   }, [leerSecuencia]);
+
+  /**
+   * Arranca la lectura DESDE una fila. Es lo que se pide en la práctica: se
+   * cortó en la 120 de 300 y no hay por qué escuchar las 119 de antes.
+   *
+   * Va por `id` y no por posición: entre que se elige la fila y arranca la
+   * lectura, la lista puede haber cambiado (una pieza nueva dictada, una
+   * borrada) y la posición 120 sería otra fila.
+   */
+  const leerDesdeFila = useCallback((id: string) => {
+    if (readingRef.current) stopLeer();
+    const lista = rowsRef.current;
+    const pos = lista.findIndex((r) => r.id === id);
+    if (pos < 0) return;
+    /* `stopLeer` deja `readingRef` en false de forma síncrona, así que no hace
+       falta esperar: la lectura nueva arranca en el mismo tick. */
+    leerSecuencia(
+      () => rowsRef.current,
+      (r) => `${r.espesor}, ${r.ancho}, ${r.largo}${r.especie ? `, ${r.especie}` : ""}`,
+      pos,
+    );
+  }, [leerSecuencia, stopLeer]);
 
   /**
    * Dicta SOLO espesor · ancho · largo de un grupo de filas (un apartado, o
@@ -1157,7 +1280,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     window.addEventListener("resize", medirAltoFila);
     return () => window.removeEventListener("resize", medirAltoFila);
   }, [virtualizarTabla, medirAltoFila]);
-  const altoContenedorTabla = virtualizarTabla ? ALTO_VISOR_TABLA : null;
+  const altoContenedorTabla = virtualizarTabla ? altoVisor : null;
   const inicioVentana = virtualizarTabla
     ? Math.max(0, Math.floor(scrollTopTabla / altoFila) - SOBREMONTAJE)
     : 0;
@@ -1572,6 +1695,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           el módulo (m³, pie tablar, piezas) estaban sólo abajo de la tabla o
           detrás del panel de Resumen, y se carga mirando acá arriba. */}
       <CubicadorKpis
+        oculto={plegados.kpis}
+        onOcultar={() => setPlegados((v) => ({ ...v, kpis: true }))}
+        onMostrar={() => setPlegados((v) => ({ ...v, kpis: false }))}
         rows={rows}
         totales={totales}
         totalesVisibles={totalesVisibles}
@@ -1591,8 +1717,24 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         }}
       />
 
-      {/* Panel de voz */}
+      {/* Panel de voz. Plegado deja una tira con su nombre y el botón para
+          traerlo de vuelta: si desapareciera del todo, la función se perdería. */}
+      {plegados.voz ? (
+        <button
+          type="button"
+          onClick={() => setPlegados((v) => ({ ...v, voz: false }))}
+          className="flex w-full items-center justify-between gap-2 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 text-left transition-colors hover:border-[var(--accent)]"
+        >
+          <span className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-secondary)]">
+            <Mic className="h-4 w-4 text-[var(--accent)]" aria-hidden /> Cubicador de madera por voz
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+            <ChevronDown className="h-3.5 w-3.5" aria-hidden /> Mostrar
+          </span>
+        </button>
+      ) : (
       <PanelEntradaVoz
+        onPlegar={() => setPlegados((v) => ({ ...v, voz: true }))}
         grillaId={GRILLA_CARGA}
         onPresent={onPresent}
         onImportar={() => setShowImportar(true)}
@@ -1629,13 +1771,39 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         onCerrarApartado={cerrarApartado}
         onEscucharApartado={leerMedidas}
       />
+      )}
 
-      {/* Tabla acumulada */}
-      <div id="cub-tabla-ancla" className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      {/* Tabla acumulada. Expandida se despega del flujo y toma la pantalla:
+          un lote de 700 filas dentro de una caja de 600 px obliga a scrollear
+          dos veces (la página y la tabla) para leer una columna entera. */}
+      <div
+        id="cub-tabla-ancla"
+        className={
+          tablaExpandida
+            ? "fixed inset-0 z-[9995] overflow-auto bg-[var(--surface-raised)] p-4 sm:p-5"
+            : "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5"
+        }
+      >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
               <Table className="h-4 w-4 text-[var(--accent)]" /> {cubicacionActual ? cubicacionActual.nombre : "Lote cubicado"} ({rows.length})
+              {/* Va pegado al título y no dentro de un menú: se usa para LEER, y
+                  buscar el botón en un desplegable rompe justo eso. */}
+              <button
+                type="button"
+                onClick={() => setTablaExpandida((v) => !v)}
+                title={tablaExpandida ? "Salir de pantalla completa (Esc)" : "Ver la tabla en pantalla completa"}
+                aria-label={tablaExpandida ? "Salir de pantalla completa" : "Ver la tabla en pantalla completa"}
+                aria-pressed={tablaExpandida}
+                className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+              >
+                {tablaExpandida ? (
+                  <><Minimize2 className="h-3.5 w-3.5" aria-hidden /> Salir</>
+                ) : (
+                  <><Maximize2 className="h-3.5 w-3.5" aria-hidden /> Pantalla completa</>
+                )}
+              </button>
             </CardTitle>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               {cubicacionActual ? "Guardada — al tocar «Guardar» se actualiza esta misma cubicación." : "Sin guardar — vive sólo en este dispositivo hasta que la guardes."}
@@ -2266,6 +2434,18 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                         <button type="button" onClick={() => startEdit(r.id)} aria-label={editando ? "Cancelar edición por voz" : "Editar esta fila por voz"} title={editando ? "Cancelar" : "Dictar nuevas medidas para esta fila"} className={`inline-flex h-7 w-7 items-center justify-center rounded-lg border transition ${editando ? "animate-pulse border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}>
                           {editando ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
                         </button>
+                        {/* Leer DESDE acá: en una tabla de 300, la lectura se
+                            corta a mitad y no hay por qué escuchar de nuevo
+                            todo lo anterior para retomar donde iba. */}
+                        <button
+                          type="button"
+                          onClick={() => leerDesdeFila(r.id)}
+                          aria-label="Leer en voz alta desde esta fila"
+                          title="Leer en voz alta desde esta fila en adelante"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                        >
+                          <Volume2 className="h-3.5 w-3.5" />
+                        </button>
                         <button type="button" onClick={() => borrar(r.id)} aria-label="Borrar" className="text-[var(--text-tertiary)] hover:text-[var(--data-error-700)]"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </td>
@@ -2314,45 +2494,20 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
 
       </div>
 
-      {/* Mismo panel de entrada, repetido al final — para no volver a subir
-          después de mirar la tabla. Comparte todo el estado con el de arriba;
-          sólo la grilla de navegación por teclado es propia. */}
-      <PanelEntradaVoz
-        grillaId={GRILLA_CARGA_FIN}
-        onPresent={onPresent}
-        onImportar={() => setShowImportar(true)}
-        showAjustes={showAjustes}
-        onToggleAjustes={() => setShowAjustes((v) => !v)}
-        config={config}
-        onUpdateConfig={updateConfig}
-        voices={voices}
-        onProbarVoz={() => decir("dos, seis, ocho", config.voiceRate, config.voiceURI)}
-        supported={supported}
-        listening={listening}
-        onToggleListen={toggleListen}
-        paused={paused}
-        fijas={fijas}
-        onAplicarFijas={aplicarFijas}
-        especie={especie}
-        onEspecieChange={setEspecie}
-        dueno={dueno}
-        onDuenoChange={aplicarDueno}
-        duenosConocidos={duenosParaDatalist}
-        onAbrirDuenos={() => setShowDuenosModal(true)}
-        liveGroups={liveGroups}
-        errMsg={errMsg}
-        lastAdded={lastAdded}
-        addedFlash={addedFlash}
-        onDeshacer={deshacer}
-        fmtPt={fmtPt}
-        fmtM3={fmtM3}
-        manual={manual}
-        onManualChange={setManualSync}
-        onConfirmarCarga={confirmarCarga}
-        apartadoEnCurso={totalCandidatasAp}
-        proximoApartado={siguienteApartado(asignados)}
-        onCerrarApartado={cerrarApartado}
-        onEscucharApartado={leerMedidas}
+      {/* Acá vivía una SEGUNDA copia del panel de entrada, para no tener que
+          volver a subir después de mirar la tabla. Se fue (Brandon, 2026-09-08):
+          duplicaba la pantalla entera —micrófono, especie, dueño, fila de carga—
+          y con el panel de arriba ahora plegable, la respuesta a «está lejos» es
+          plegar lo que no se usa, no repetirlo. */}
+
+      {/* Mientras lee, el control va con los ojos: pausar, seguir por la misma
+          fila, volver a la primera o cortar. */}
+      <ControlLecturaFlotante
+        estado={lectura}
+        onPausar={pausarLectura}
+        onReanudar={reanudarLectura}
+        onReiniciar={reiniciarLectura}
+        onDetener={stopLeer}
       />
 
       {showImportar && (

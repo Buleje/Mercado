@@ -24,7 +24,7 @@
  */
 
 import { useMemo } from "react";
-import { Boxes, Ruler, Layers, Coins, Sigma, AlertTriangle } from "@buleje/design-system/icons";
+import { Boxes, Ruler, Layers, Coins, Sigma, AlertTriangle, ChevronUp, ChevronDown } from "@buleje/design-system/icons";
 import { ORDEN_TIPO, tipoDePieza, tonoTipo, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { medidaSospechosa, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 
@@ -43,6 +43,9 @@ const BARRA_TONO: Record<ReturnType<typeof tonoTipo>, string> = {
 };
 
 export default function CubicadorKpis({
+  oculto,
+  onOcultar,
+  onMostrar,
   rows,
   totales,
   totalesVisibles,
@@ -56,6 +59,10 @@ export default function CubicadorKpis({
   fmtM3,
   onFiltrarTipo,
 }: {
+  /** Plegado: queda una tira con los tres números y el botón para traerlo. */
+  oculto?: boolean;
+  onOcultar?: () => void;
+  onMostrar?: () => void;
   rows: PiezaCubicada[];
   totales: TotalesLote;
   /** Lo que queda con el filtro de la tabla puesto — se muestra aparte. */
@@ -109,6 +116,33 @@ export default function CubicadorKpis({
   const soles = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const ptPorPieza = totales.piezas > 0 ? totales.pt / totales.piezas : 0;
 
+  /* Plegado se lleva los tres números con él: esconder el resumen no puede
+     costar saber cuánto llevás medido, que es justo para lo que está. */
+  if (oculto) {
+    return (
+      <button
+        type="button"
+        onClick={onMostrar}
+        aria-label="Mostrar el resumen del lote"
+        className="flex w-full flex-wrap items-center justify-between gap-2 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 text-left transition-colors hover:border-[var(--accent)]"
+      >
+        <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
+          {fmtM3(totales.m3)} <span className="font-sans text-xs text-[var(--text-tertiary)]">m³</span>
+          <span aria-hidden className="text-[var(--rule-base)]">·</span>
+          {fmtPt(totales.pt)} <span className="font-sans text-xs text-[var(--text-tertiary)]">PT</span>
+          <span aria-hidden className="text-[var(--rule-base)]">·</span>
+          {nf(totales.piezas)}{" "}
+          <span className="font-sans text-xs text-[var(--text-tertiary)]">
+            {totales.piezas === 1 ? "pieza" : "piezas"}
+          </span>
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+          <ChevronDown className="h-3.5 w-3.5" aria-hidden /> Ver el resumen
+        </span>
+      </button>
+    );
+  }
+
   return (
     <section
       aria-label="Resumen del lote cubicado"
@@ -118,10 +152,23 @@ export default function CubicadorKpis({
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           Lo que llevás medido
         </p>
-        {/* Que el total es el del lote ENTERO se dice acá, no se deduce. */}
-        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-          Todo el lote · {nf(rows.length)} {rows.length === 1 ? "renglón" : "renglones"}
-        </p>
+        <div className="flex items-center gap-3">
+          {/* Que el total es el del lote ENTERO se dice acá, no se deduce. */}
+          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            Todo el lote · {nf(rows.length)} {rows.length === 1 ? "renglón" : "renglones"}
+          </p>
+          {onOcultar && (
+            <button
+              type="button"
+              onClick={onOcultar}
+              title="Ocultar el resumen"
+              aria-label="Ocultar el resumen del lote"
+              className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
+            >
+              <ChevronUp className="h-3.5 w-3.5" aria-hidden /> Ocultar
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
