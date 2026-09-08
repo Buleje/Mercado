@@ -185,6 +185,8 @@ export {
   ClipboardList,
   ClipboardCheck,
   Clipboard,
+  ClipboardPaste,
+  ScanText,
   Inbox,
   Box,
   Boxes,

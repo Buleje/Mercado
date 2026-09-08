@@ -255,6 +255,11 @@ export function buildCSP(pathname: string, nonce?: string): string {
     "font-src":                  "'self' data: https://fonts.gstatic.com",
     "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com https://us.i.posthog.com https://us-assets.i.posthog.com",
     "media-src":                 "'self'",
+    // worker-src: sin declararlo cae en `script-src`, y con `'strict-dynamic'`
+    // el navegador IGNORA `'self'` ahí — un `new Worker("/tesseract/worker.min.js")`
+    // (OCR en el navegador, ADR-396) quedaba bloqueado en prod aunque el
+    // archivo sea propio. Sólo mismo origen: los workers viven en /public.
+    "worker-src":                "'self'",
     // frame-src: sin declararlo hereda `default-src 'self'`, que NO incluye
     // blob: — y la vista previa del drive arma un blob con el archivo para
     // poder leer el status antes de mostrarlo. Resultado: el navegador

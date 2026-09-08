@@ -1,0 +1,326 @@
+/**
+ * Leer el «Detalle de la programación de producción» del SNIFFS (ADR-397).
+ *
+ * El operador ya declaró la corrida en el sistema de SERFOR y tiene la
+ * pantalla a la vista: N° de lote, fechas, especie, volumen consumido y el
+ * «Resumen de Producción por PMF y Producto» (producto · m³ · % aprovechado).
+ * Volver a tipear eso en el libro es donde aparecen los volúmenes que después
+ * no cuadran con lo declarado. Acá se lee lo que el operador pega —el texto
+ * copiado de la tabla, o el texto que el OCR sacó de una captura— y se
+ * convierte en filas listas para revisar.
+ *
+ * Funciones puras, sin DOM ni red: lo que lee el OCR y lo que copia el
+ * portapapeles pasan por el MISMO camino, y se prueban con texto.
+ *
+ * Regla: **nunca se inventa un dato**. Lo que no se lee vuelve `null`; lo que
+ * se lee raro se marca `dudoso` y se dice en `avisos`. El operador revisa
+ * antes de que nada entre al libro.
+ */
+
+import { TIPOS_PRODUCTO_LOCTP, presentacionSugerida } from "./loctp-catalogos";
+import type { PaqueteBorrador } from "./produccion-paquetes";
+
+const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
+
+export interface ProductoSniffs {
+  /** Cómo venía escrito en la pantalla del SNIFFS. */
+  productoCrudo: string;
+  /** El valor del catálogo LO-CTP que le corresponde; `null` si no se reconoce. */
+  productType: string | null;
+  volumenM3: number;
+  /** El «Porcentaje aprovechado (%)» del SNIFFS, si la fila lo trae. */
+  pctAprovechado: number | null;
+  /** La especie de ESA fila, si la fila la trae (el resumen la repite por fila). */
+  especie: string | null;
+  /**
+   * El número se leyó sin punto decimal y se reinterpretó (el SNIFFS imprime
+   * siempre tres decimales; un OCR flojo se los come). Hay que mirarlo.
+   */
+  dudoso: boolean;
+  /** Lo que decía el texto, tal cual, para poder cotejar el dudoso. */
+  volumenLeido: string;
+}
+
+export interface DetalleProduccionSniffs {
+  /** «N° de Lote», ej. `18-2026`. */
+  lote: string | null;
+  /** `AAAA-MM-DD`. */
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  /** Nombre común en mayúsculas, como lo escribe el SNIFFS: `TORNILLO`. */
+  especieComun: string | null;
+  /** `Cedrelinga cateniformis`. */
+  especieCientifica: string | null;
+  volumenConsumidoM3: number | null;
+  productos: ProductoSniffs[];
+  /** Lo que no se pudo leer o no cuadra — para decirlo, no para frenar. */
+  avisos: string[];
+}
+
+/** Sin acentos, en mayúsculas, sólo letras/números separados por un espacio. */
+export function normalizarTexto(s: string): string {
+  return quitarAcentos(s)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim();
+}
+
+function quitarAcentos(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+/**
+ * Cómo escribe el SNIFFS lo que el catálogo del LO-CTP escribe distinto. Se
+ * aplica sobre el texto normalizado, antes de buscar el producto.
+ */
+const ALIAS_NORMALIZADOS: [RegExp, string][] = [
+  [/\bCEPILLADA\b/g, "CEBILLADA"],
+  [/\bPAQUETERIAS?\b/g, "PAQUETERIA"],
+];
+
+/** El catálogo, normalizado y del más largo al más corto: «MADERA ASERRADA
+ *  (PAQUETERIA CORTA)» tiene que ganarle a «MADERA ASERRADA». */
+const CATALOGO = TIPOS_PRODUCTO_LOCTP.map((t) => ({
+  valor: t.valor,
+  norm: normalizarTexto(t.valor),
+  regex: new RegExp(
+    normalizarTexto(t.valor)
+      .split(" ")
+      .map((tok) => tok.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("[^A-Za-z0-9]+"),
+    "i",
+  ),
+})).sort((a, b) => b.norm.length - a.norm.length);
+
+/**
+ * El producto del catálogo que nombra un texto, o `null`.
+ *
+ * `normalizarProductoLoctp("Madera aserrada (paquetería corta)")` →
+ * `"MADERA ASERRADA (PAQUETERIA CORTA)"`. Un texto que nombra dos productos
+ * devuelve el más largo que contenga: «MADERA ASERRADA (TABLA)» contiene
+ * «MADERA ASERRADA» y gana el primero.
+ */
+export function normalizarProductoLoctp(crudo: string): string | null {
+  let norm = normalizarTexto(crudo);
+  for (const [re, por] of ALIAS_NORMALIZADOS) norm = norm.replace(re, por);
+  const hit = CATALOGO.find((c) => norm.includes(c.norm));
+  return hit?.valor ?? null;
+}
+
+const NUMERO = /-?\d+(?:[.,]\d+)?/g;
+const FECHA = /(\d{1,2})\/(\d{1,2})\/(\d{4})/g;
+/**
+ * «Cedrelinga cateniformis - TORNILLO». El nombre común son palabras en
+ * mayúsculas separadas por UN espacio: ni tab (la celda siguiente del
+ * portapapeles) ni salto de línea (el rótulo siguiente del OCR).
+ */
+const ESPECIE = /([A-Z][a-z]+(?: [a-z]+){1,2}) *- *([A-ZÑ]{2,}(?: [A-ZÑ]{2,})*)/;
+
+function aNumero(s: string): number {
+  return Number(s.replace(",", "."));
+}
+
+/**
+ * Un volumen leído, con la corrección del punto perdido.
+ *
+ * El SNIFFS imprime los m³ con tres decimales (`9.753`). Un OCR sin
+ * ampliación lee `9753`. Un producto de 9753 m³ no existe en un lote, así que
+ * si el número no trae separador y tiene cuatro o más dígitos se toma como
+ * milésimas — y se MARCA: la reinterpretación es la hipótesis, no el dato.
+ */
+function volumenLeido(crudo: string): { valor: number; dudoso: boolean } {
+  const sinSeparador = !/[.,]/.test(crudo);
+  const n = aNumero(crudo);
+  if (sinSeparador && crudo.replace(/^-/, "").length >= 4) {
+    return { valor: r4(n / 1000), dudoso: true };
+  }
+  return { valor: n, dudoso: false };
+}
+
+function filaProducto(linea: string): ProductoSniffs | null {
+  const plano = quitarAcentos(linea);
+  let norm = normalizarTexto(plano);
+  for (const [re, por] of ALIAS_NORMALIZADOS) norm = norm.replace(re, por);
+  const cat = CATALOGO.find((c) => norm.includes(c.norm));
+  /* Una fila sin producto del catálogo no es una fila de producción: puede ser
+     el encabezado, el título del cuadro o basura del OCR. */
+  if (!cat) return null;
+  const m = cat.regex.exec(plano.replace(/CEPILLADA/gi, "CEBILLADA"));
+  if (!m) return null;
+  const antes = plano.slice(0, m.index);
+  const despues = plano.slice(m.index + m[0].length);
+  const numeros = despues.match(NUMERO) ?? [];
+  const primero = numeros[0];
+  const segundo = numeros[1];
+  if (!primero) return null;
+  const vol = volumenLeido(primero);
+  const esp = ESPECIE.exec(antes);
+  return {
+    productoCrudo: m[0].trim(),
+    productType: cat.valor,
+    volumenM3: vol.valor,
+    pctAprovechado: segundo != null ? aNumero(segundo) : null,
+    especie: esp ? esp[2].trim() : null,
+    dudoso: vol.dudoso,
+    volumenLeido: primero,
+  };
+}
+
+function aIso(d: string, m: string, a: string): string | null {
+  const dia = Number(d);
+  const mes = Number(m);
+  if (dia < 1 || dia > 31 || mes < 1 || mes > 12) return null;
+  return `${a}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+}
+
+/**
+ * Interpreta el texto de la pantalla «Detalle de la programación de producción».
+ *
+ * Acepta las dos formas en que llega: el texto copiado (celdas separadas por
+ * tabulaciones) y el texto que sacó un OCR de una captura (todo separado por
+ * espacios, con los rótulos del encabezado en una línea y sus valores en la
+ * siguiente). No hace falta que venga la pantalla entera: con la tabla alcanza
+ * para los productos, y el encabezado sólo agrega lo que sirve para cotejar.
+ */
+export function interpretarDetalleProduccionSniffs(
+  texto: string,
+  opts: {
+    /** Lo que ESTE lote consumió, para detectar un volumen leído sin punto. */
+    consumidoM3?: number | null;
+  } = {},
+): DetalleProduccionSniffs {
+  const plano = quitarAcentos(texto ?? "").replace(/\r/g, "");
+  const avisos: string[] = [];
+
+  // ── Encabezado ──
+  let lote: string | null = null;
+  const labelLote = /N\W{0,3}\s*de\s*Lote/i.exec(plano);
+  if (labelLote) {
+    const tramo = plano.slice(labelLote.index + labelLote[0].length, labelLote.index + labelLote[0].length + 160);
+    const token = tramo
+      .split(/[\s:]+/)
+      .filter(Boolean)
+      .find((t) => /\d/.test(t) && !/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(t));
+    lote = token ?? null;
+  }
+
+  const cabecera = plano.split(/Resumen\s+de\s+Producci/i)[0] ?? plano;
+  const fechas = [...cabecera.matchAll(FECHA)].map((m) => aIso(m[1], m[2], m[3])).filter(Boolean) as string[];
+  const fechaInicio = fechas[0] ?? null;
+  const fechaFin = fechas[1] ?? null;
+
+  let volumenConsumidoM3: number | null = null;
+  const vc = /Volumen\s*consumido\s*:?\s*(-?\d+(?:[.,]\d+)?)/i.exec(plano);
+  if (vc) {
+    const v = volumenLeido(vc[1]);
+    volumenConsumidoM3 = v.valor;
+    if (v.dudoso) avisos.push(`Leí «${vc[1]}» como volumen consumido, sin punto decimal: lo tomé como ${v.valor} m³. Revisalo.`);
+  }
+
+  // ── Filas de producto ──
+  const productos: ProductoSniffs[] = [];
+  for (const linea of plano.split("\n")) {
+    const fila = filaProducto(linea);
+    if (fila) productos.push(fila);
+  }
+
+  /**
+   * La especie: del encabezado si se leyó; si no, la de la primera fila. En
+   * una fila el OCR separa con espacios y el nombre común se pegaría al
+   * producto («TORNILLO MADERA ASERRADA»); `filaProducto` ya la corta donde
+   * empieza el producto, así que ese dato es más confiable que una regex
+   * sobre el texto entero.
+   */
+  const esp = ESPECIE.exec(cabecera);
+  /* Sin encabezado, el nombre científico sale de la primera fila que lo traiga:
+     esa parte de la regex no se contamina con lo que sigue. */
+  const espFila = !esp && productos.length > 0 ? ESPECIE.exec(plano) : null;
+  const especieCientifica = esp?.[1].trim() ?? espFila?.[1].trim() ?? null;
+  const especieComun = esp?.[2].trim() ?? productos[0]?.especie ?? null;
+
+  const referencia = opts.consumidoM3 ?? volumenConsumidoM3;
+  for (const p of productos) {
+    if (p.dudoso) {
+      avisos.push(`«${p.productoCrudo}»: leí «${p.volumenLeido}» sin punto decimal y lo tomé como ${p.volumenM3} m³. Revisalo.`);
+    } else if (referencia != null && referencia > 0 && p.volumenM3 > referencia) {
+      /* Más producto que materia prima no existe: o el OCR leyó mal o la
+         captura es de otro lote. Se marca, no se corrige. */
+      p.dudoso = true;
+      avisos.push(`«${p.productoCrudo}» dice ${p.volumenM3} m³, más que los ${referencia} m³ consumidos: revisá el número.`);
+    }
+  }
+
+  if (productos.length === 0) {
+    avisos.push(
+      "No encontré filas de producto. Pegá la tabla «Resumen de Producción por PMF y Producto» completa, con la columna de producto y la de volumen.",
+    );
+  }
+
+  return { lote, fechaInicio, fechaFin, especieComun, especieCientifica, volumenConsumidoM3, productos, avisos };
+}
+
+/**
+ * ¿El texto pegado parece esta pantalla del SNIFFS?
+ *
+ * Para decidir si un Ctrl+V con texto se interpreta o se deja pasar: pegar
+ * «Tornillo» en una observación no tiene que disparar una importación.
+ */
+export function pareceDetalleSniffs(texto: string): boolean {
+  const norm = normalizarTexto(texto ?? "");
+  if (norm.length < 20) return false;
+  return (
+    /RESUMEN DE PRODUCCION/.test(norm) ||
+    /PORCENTAJE APROVECHADO/.test(norm) ||
+    /PROGRAMACION DE PRODUCCION/.test(norm) ||
+    CATALOGO.some((c) => c.norm.length > 16 && norm.includes(c.norm))
+  );
+}
+
+/** Misma especie aunque una venga en mayúsculas o con acento. */
+export function mismaEspecie(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return true;
+  const na = normalizarTexto(a);
+  const nb = normalizarTexto(b);
+  return na === nb || na.includes(nb) || nb.includes(na);
+}
+
+/**
+ * Las filas revisadas → paquetes del borrador, uno por producto.
+ *
+ * El resumen del SNIFFS es por PRODUCTO, no por atado: no trae cantidad de
+ * piezas ni medidas. Cada fila entra como un paquete con su volumen y
+ * `cantidad: 0` — lo honesto es no inventar piezas. La presentación sale del
+ * producto, como cuando se elige a mano.
+ */
+export function paquetesDesdeSniffs(
+  filas: readonly { productType: string; volumenM3: number }[],
+  opts: {
+    /** El próximo código libre de la serie, esquivando los ya repartidos acá. */
+    siguienteCodigo: (ocupados: readonly string[]) => string;
+    lote?: string | null;
+    /** Semilla de los ids locales; por defecto `Date.now()`. */
+    ahora?: number;
+  },
+): PaqueteBorrador[] {
+  const ahora = opts.ahora ?? Date.now();
+  const ocupados: string[] = [];
+  const observations = `Traído del SNIFFS${opts.lote ? ` · lote ${opts.lote}` : ""}`;
+  return filas
+    .filter((f) => f.productType && f.volumenM3 > 0)
+    .map((f, i) => {
+      const codigo = opts.siguienteCodigo(ocupados);
+      ocupados.push(codigo);
+      return {
+        id: `sniffs-${ahora}-${i}`,
+        codigo,
+        productType: f.productType,
+        presentacion: presentacionSugerida(f.productType) ?? "PAQUETES",
+        cantidad: 0,
+        volumenM3: r4(f.volumenM3),
+        espesorCm: null,
+        anchoCm: null,
+        largoM: null,
+        observations,
+      };
+    });
+}

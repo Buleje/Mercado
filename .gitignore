@@ -266,3 +266,6 @@ tools/buleje-sync/buleje-sync.config.json
 
 # Capturas del hook post-edit-ui-screenshot (regenerables, ~1 GB/mes)
 reports/visual-verify/
+
+# OCR en el navegador (ADR-396): assets de tesseract.js copiados por scripts/copy-tesseract-assets.mjs
+public/tesseract/

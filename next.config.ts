@@ -374,6 +374,9 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https:",
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://*.vercel-insights.com https://*.posthog.com",
+              // Igual que en lib/middleware-utils.ts: el OCR del navegador
+              // levanta un worker propio desde /public/tesseract.
+              "worker-src 'self'",
               "frame-ancestors 'self'",
               "base-uri 'self'",
               "form-action 'self'",

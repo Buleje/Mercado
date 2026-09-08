@@ -29,6 +29,7 @@ import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import CtpMaterialPanel, { type PaquetePrevio } from "./CtpMaterialPanel";
+import CtpPegarSniffs from "./CtpPegarSniffs";
 import { juzgarRendimientoLote, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import {
   motivosParaGuardar,
@@ -1235,6 +1236,24 @@ export default function CtpRegistrarProduccionModal({
           titulo={previo > 0 ? `Paquetes que se agregan (${paquetes.length})` : `Producción (${paquetes.length})`}
           meta={previo > 0 ? `La corrida ya tiene ${codigosUsados?.length ?? 0} paquete(s) cargados` : undefined}
         >
+          {/**
+           * Traer del SNIFFS (ADR-397): la pantalla que el operador ya declaró
+           * en SERFOR, pegada como captura o como texto, entra como filas para
+           * revisar y después como paquetes — con el próximo código libre de
+           * la serie, igual que si se cargaran a mano.
+           */}
+          <CtpPegarSniffs
+            material={{ especie: material.especie, volumenM3: material.volumenM3 }}
+            margenM3={margen}
+            siguienteCodigo={proponerCodigo}
+            onAgregar={(nuevos) => {
+              setPaquetes((prev) => [...prev, ...nuevos]);
+              prepararSiguiente(nuevos.map((p) => p.codigo));
+            }}
+            /* Ampliando, la fecha es la del asiento que ya existe: no se ofrece. */
+            onUsarFecha={previo > 0 ? undefined : setDia}
+            compacto={paquetes.length > 0}
+          />
           <TablaCtp altoMax="max-h-[45vh]">
             <TheadCtp>
               <tr>
