@@ -111,7 +111,7 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCam
             Con `bg-primary/N` el tinte se compone sobre la superficie real y
             funciona en los dos temas. Lo delató el screenshot: medir el color
             devolvía transparente porque el degradé vive en `background-image`. */}
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-primary/10 p-4 dark:bg-primary/15">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-primary/10 p-4 dark:bg-primary/15">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <CardTitle as="h2" className="truncate text-xl font-bold text-[var(--text-primary)]">{entry.speciesCommonName}</CardTitle>
@@ -276,7 +276,7 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCam
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block h-20 w-20 overflow-hidden rounded-xl border-2 border-[var(--rule-base)] hover:border-[var(--brand-ink)]"
+                      className="block h-20 w-20 overflow-hidden rounded-xl border border-[var(--rule-base)] hover:border-[var(--brand-ink)]"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={url} alt="Foto del ingreso" className="h-full w-full object-cover" />

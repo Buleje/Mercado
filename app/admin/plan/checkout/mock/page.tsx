@@ -74,7 +74,7 @@ export default function MockCheckoutPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
           {!done && (
             <>
               <div className="text-center mb-6">

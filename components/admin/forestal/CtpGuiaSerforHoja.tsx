@@ -115,7 +115,7 @@ export default function CtpGuiaSerforHoja({
   const trozas = gtf.trozas ?? [];
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       {/* ── Cabecera: quién la emitió y qué guía es ─────────────────────── */}
       <header className="flex flex-wrap items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
         <div className="min-w-0">

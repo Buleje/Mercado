@@ -28,7 +28,7 @@ export default function ImportacionFlotante() {
       <button
         type="button"
         onClick={() => setDesplegado(true)}
-        className="fixed bottom-44 right-4 z-50 flex items-center gap-2 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-2 pl-3 pr-4 shadow-xl transition-colors hover:bg-[var(--surface-canvas)] sm:bottom-28"
+        className="fixed bottom-44 right-4 z-50 flex items-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] py-2 pl-3 pr-4 shadow-xl transition-colors hover:bg-[var(--surface-canvas)] sm:bottom-28"
       >
         {subiendo
           ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[var(--accent-ink)] dark:text-[var(--accent)]" />
@@ -46,7 +46,7 @@ export default function ImportacionFlotante() {
   }
 
   return (
-    <div className="fixed bottom-44 right-4 z-50 w-[26rem] max-w-[calc(100vw-2rem)] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-xl sm:bottom-28">
+    <div className="fixed bottom-44 right-4 z-50 w-[26rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-xl sm:bottom-28">
       <div className="mb-3 flex items-center justify-between gap-2">
         <p className="min-w-0 truncate text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
           Importando {estado.destinoNombre ? `en ${estado.destinoNombre}` : "en el drive"}
@@ -92,7 +92,7 @@ export default function ImportacionFlotante() {
 
       {!subiendo && !estado.abortado && (
         estado.detenido ? (
-          <p className="mt-3 flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)]">
+          <p className="mt-3 flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm font-bold text-[var(--text-secondary)]">
             <AlertCircle className="h-4 w-4 shrink-0" /> Lo detuviste: subieron {estado.subidosOk} de {estado.total}.
             Reimportá la carpeta cuando quieras seguir.
           </p>

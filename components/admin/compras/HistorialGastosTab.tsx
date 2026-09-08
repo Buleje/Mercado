@@ -116,7 +116,7 @@ export default function HistorialGastosTab() {
           adelanto vuelve como trabajo o producto, y un retiro de caja suele ser
           la otra cara de un gasto que ya está contado más arriba. */}
       {(resumen.anticipos > 0 || resumen.retirosCaja > 0) && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
           <Info className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" />
           <p className="text-sm text-[var(--text-secondary)]">
             Salió de la caja pero <span className="font-bold text-[var(--text-primary)]">no cuenta como gasto</span>:
@@ -153,7 +153,7 @@ export default function HistorialGastosTab() {
             onClick={h.recargar}
             title="Recargar"
             aria-label="Recargar el historial"
-            className="h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 transition-colors hover:bg-[var(--surface-sunken)] "
+            className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 transition-colors hover:bg-[var(--surface-sunken)] "
           >
             <RefreshCw className={cn("h-4 w-4 text-[var(--text-secondary)]", h.loading && "animate-spin")} />
           </button>
@@ -162,7 +162,7 @@ export default function HistorialGastosTab() {
             type="button"
             onClick={h.exportarCsv}
             disabled={h.filtered.length === 0}
-            className="inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50 "
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50 "
           >
             <Download className="h-4 w-4" />
             Exportar
@@ -177,7 +177,7 @@ export default function HistorialGastosTab() {
             <select
               value={h.sourceFilter}
               onChange={(e) => h.setSourceFilter(e.target.value as typeof h.sourceFilter)}
-              className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary/60 "
+              className="h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary/60 "
             >
               <option value="all">Todos los orígenes</option>
               <option value="expense">Gastos operativos</option>
@@ -217,7 +217,7 @@ export default function HistorialGastosTab() {
               onChange={(e) => h.setSearch(e.target.value)}
               placeholder="Buscar descripción, categoría o proveedor"
               aria-label="Buscar en el historial de gastos"
-              className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary/60 "
+              className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary/60 "
             />
           </div>
 
@@ -225,7 +225,7 @@ export default function HistorialGastosTab() {
             <button
               type="button"
               onClick={h.limpiarFiltros}
-              className="inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
             >
               <X className="h-4 w-4" />
               Limpiar filtros
@@ -268,7 +268,7 @@ export default function HistorialGastosTab() {
       {/* Ocultar filas sin decirlo sería mentir por omisión: el aviso dice
           cuántas son, por qué y cómo verlas. */}
       {(h.duplicadosOcultos > 0 || !h.ocultarDuplicados) && !h.loading && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-2.5">
           <Copy className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" aria-hidden />
           <p className="text-sm text-[var(--text-secondary)]">
             {h.ocultarDuplicados ? (
@@ -285,7 +285,7 @@ export default function HistorialGastosTab() {
           <button
             type="button"
             onClick={() => h.setOcultarDuplicados(!h.ocultarDuplicados)}
-            className="ml-auto inline-flex h-9 items-center rounded-lg border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-raised)]"
+            className="ml-auto inline-flex h-9 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-raised)]"
           >
             {h.ocultarDuplicados ? "Mostrarlos igual" : "Volver a ocultarlos"}
           </button>
@@ -328,7 +328,7 @@ export default function HistorialGastosTab() {
             <button
               type="button"
               onClick={h.limpiarFiltros}
-              className="mt-1 inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+              className="mt-1 inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
             >
               Limpiar filtros
             </button>
@@ -336,7 +336,7 @@ export default function HistorialGastosTab() {
             <button
               type="button"
               onClick={() => h.setPeriod("todo")}
-              className="mt-1 inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+              className="mt-1 inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
             >
               Ver todo el historial
             </button>

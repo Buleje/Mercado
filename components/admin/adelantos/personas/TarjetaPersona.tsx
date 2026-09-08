@@ -186,7 +186,7 @@ export default function TarjetaPersona({
               href={wa}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
               title={debe ? "Recordar el saldo por WhatsApp" : "Escribir por WhatsApp"}
               aria-label={`WhatsApp a ${b.nombre}`}
             >

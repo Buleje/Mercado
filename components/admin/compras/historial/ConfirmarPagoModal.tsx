@@ -81,7 +81,7 @@ export default function ConfirmarPagoModal({
             type="button"
             onClick={onClose}
             disabled={guardando}
-            className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+            className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -98,7 +98,7 @@ export default function ConfirmarPagoModal({
       }
     >
       <div className="space-y-4 p-5">
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
           <label className="block">
             <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
               Cuánto salió
@@ -112,7 +112,7 @@ export default function ConfirmarPagoModal({
                 value={monto}
                 onChange={(e) => setMonto(e.target.value)}
                 aria-invalid={!montoValido}
-                className="h-14 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-3xl font-extrabold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 "
+                className="h-14 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-3xl font-extrabold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 "
               />
             </div>
           </label>
@@ -155,14 +155,14 @@ export default function ConfirmarPagoModal({
             value={fecha}
             max={hoyLocal()}
             onChange={(e) => setFecha(e.target.value)}
-            className="mt-1 h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 "
+            className="mt-1 h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 "
           />
           <span className="mt-1 block text-sm text-[var(--text-secondary)]">
             Si lo pagaste otro día, cambialo: el período se cuenta por esta fecha.
           </span>
         </label>
 
-        <div className="flex items-start gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5">
+        <div className="flex items-start gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-secondary)]" aria-hidden />
           <p className="text-sm text-[var(--text-primary)]">
             Esto anota el pago de este período. El gasto fijo del catálogo no cambia: si el precio

@@ -2943,7 +2943,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               </div>
 
               <div className="sticky bottom-0 -mx-6 -mb-6 flex items-center gap-3 border-t-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-4">
-                <button type="button" onClick={() => setShowAdd(false)} className="h-11 px-5 rounded-xl border-2 border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
+                <button type="button" onClick={() => setShowAdd(false)} className="h-11 px-5 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
                 <button
                   type="submit"
                   disabled={saving}
@@ -3219,7 +3219,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         setImgUploading(false);
                       }
                     }}
-                    className="flex flex-wrap gap-3 items-start p-3 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 transition-all"
+                    className="flex flex-wrap gap-3 items-start p-3 rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 transition-all"
                   >
                     {editForm.image ? (
                       <div className="relative h-20 w-20 rounded-xl overflow-hidden border border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0 bg-[var(--surface-alt)] group">
@@ -3234,7 +3234,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                         </button>
                       </div>
                     ) : (
-                      <div className="h-20 w-20 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] flex items-center justify-center shrink-0">
+                      <div className="h-20 w-20 rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] flex items-center justify-center shrink-0">
                         <Camera className="h-6 w-6 text-[var(--text-tertiary)] dark:text-muted" />
                       </div>
                     )}
@@ -3336,7 +3336,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 </button>
               </div>
               <div className="sticky bottom-0 -mx-6 -mb-6 flex items-center gap-3 border-t-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-4">
-                <button type="button" onClick={closeEditModal} className="h-11 px-5 rounded-xl border-2 border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
+                <button type="button" onClick={closeEditModal} className="h-11 px-5 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
                 <button
                   type="button"
                   onClick={saveEdit}

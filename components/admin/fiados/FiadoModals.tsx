@@ -483,7 +483,7 @@ export default function FiadoModals({
                       ref={firmaCanvasRef}
                       width={300}
                       height={150}
-                      className="w-full border-2 border-dashed border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] cursor-crosshair touch-none"
+                      className="w-full border border-dashed border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] cursor-crosshair touch-none"
                       onMouseDown={e => {
                         setIsDrawing(true);
                         const canvas = firmaCanvasRef.current;

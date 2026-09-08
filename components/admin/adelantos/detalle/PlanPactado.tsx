@@ -38,7 +38,7 @@ export default function PlanPactado({
   const hoy = Date.now();
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)]">
+    <div className="rounded-2xl border border-[var(--rule-base)]">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2.5">
         <span className="text-sm font-extrabold uppercase tracking-wide text-[var(--text-secondary)]">
           Plan pactado · {cumplidas} de {pactadas.length} cumplidas

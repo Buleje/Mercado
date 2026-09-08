@@ -159,7 +159,7 @@ export default function CtpAtribucionEditor({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 text-sm text-[var(--text-tertiary)]">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4 text-sm text-[var(--text-tertiary)]">
         <Loader2 className="h-4 w-4 animate-spin" /> Cargando fuentes disponibles…
       </div>
     );
@@ -168,7 +168,7 @@ export default function CtpAtribucionEditor({
   return (
     <div className="space-y-3 rounded-2xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-50)]/40 p-4">
       {/* Buscador para AGREGAR fuentes */}
-      <div className="flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
+      <div className="flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
         <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
         <input
           value={query}
@@ -279,7 +279,7 @@ export default function CtpAtribucionEditor({
           type="button"
           onClick={onCancel}
           disabled={saving}
-          className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+          className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
         >
           Cancelar
         </button>

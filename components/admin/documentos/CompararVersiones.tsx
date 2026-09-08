@@ -154,7 +154,7 @@ export default function CompararVersiones({
         {cabecera}
         <div className="space-y-3">
           {diff.hojas.filter((h) => h.estado !== "igual").map((h) => (
-            <div key={h.nombre} className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+            <div key={h.nombre} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
               <p className="mb-1.5 flex flex-wrap items-center gap-2 text-xs font-bold text-[var(--text-primary)]">
                 {h.nombre}
                 {h.estado === "agregada" && <Etiqueta tono="mas">hoja nueva</Etiqueta>}
@@ -198,7 +198,7 @@ export default function CompararVersiones({
       {cambiadas.length === 0 ? (
         <p className="py-4 text-center text-sm text-[var(--text-secondary)]">Las dos versiones dicen lo mismo.</p>
       ) : (
-        <ul className="max-h-72 space-y-0.5 overflow-y-auto rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
+        <ul className="max-h-72 space-y-0.5 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2">
           {cambiadas.map((l, i) => (
             <li
               key={`${l.tipo}-${i}`}

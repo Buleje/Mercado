@@ -550,7 +550,7 @@ function EditorCargado({
           <a
             href="/admin?tab=documentos#documentos"
             title="Volver a Documentación"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden />
             <span className="sr-only">Volver a Documentación</span>
@@ -568,7 +568,7 @@ function EditorCargado({
             type="button"
             onClick={() => { if (hojaVisible) imprimirHoja(hojaVisible, nombre); }}
             title="Imprimir o guardar PDF de la hoja actual"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
           >
             <Printer className="h-4 w-4" aria-hidden />
             <span className="sr-only">Imprimir o guardar PDF</span>
@@ -577,7 +577,7 @@ function EditorCargado({
             type="button"
             onClick={() => void descargar()}
             title="Descargar una copia con los cambios de ahora"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
           >
             <Download className="h-4 w-4" aria-hidden />
             <span className="sr-only">Descargar copia</span>

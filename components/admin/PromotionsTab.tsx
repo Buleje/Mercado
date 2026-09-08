@@ -548,13 +548,13 @@ export default function PromotionsTab() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => { setAiContext(""); setShowAiModal(true); requestAiSuggestions(); }}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
           >
             <Sparkles className="h-4 w-4" /> Sugerencias IA
           </button>
           <button
             onClick={() => setShowTemplates(true)}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
           >
             <Calendar className="h-4 w-4" /> Plantillas
           </button>
@@ -576,7 +576,7 @@ export default function PromotionsTab() {
             { label: "Ingreso estimado", value: `S/${totalRevenue.toFixed(0)}`, icon: BadgePercent, tint: "var(--data-info-500)" },
             { label: "Más usada", value: topPromo?.name || "—", sub: topPromo ? `~${topPromo.estimatedUses} usos` : "", icon: Flame, tint: "var(--data-warning-500)" },
           ].map((s) => (
-            <div key={s.label} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+            <div key={s.label} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
               <div className="flex items-center gap-2">
                 <span
                   className="flex h-7 w-7 items-center justify-center rounded-lg"
@@ -707,7 +707,7 @@ export default function PromotionsTab() {
           <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Cargando…
         </div>
       ) : promos.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-14 text-center">
+        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-14 text-center">
           <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Gift className="h-7 w-7" strokeWidth={2} />
           </span>
@@ -726,7 +726,7 @@ export default function PromotionsTab() {
             </button>
             <button
               onClick={() => { setAiContext(""); setShowAiModal(true); requestAiSuggestions(); }}
-              className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
             >
               <Sparkles className="h-4 w-4" /> Pedir ideas a la IA
             </button>
@@ -740,7 +740,7 @@ export default function PromotionsTab() {
               : p.targetType === "individual" ? "Individual"
               : p.targetType === "specific" ? "Segmentado" : "Todos";
             return (
-            <div key={p.id} className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] transition-shadow hover:shadow-[var(--shadow-sm)]">
+            <div key={p.id} className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-shadow hover:shadow-[var(--shadow-sm)]">
               <div className="flex">
                 {/* Accent strip por estado */}
                 <div className={cn("w-1.5 shrink-0", p.active ? "bg-[var(--accent)]" : "bg-[var(--rule-base)]")} />

@@ -77,7 +77,7 @@ export default function PresentacionPreview({ url, nombre }: { url: string; nomb
         {diapos.map((d) => (
           <li
             key={d.numero}
-            className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
+            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
           >
             <div className="flex items-start gap-3">
               {/* El número grande hace de "miniatura": ubica sin renderizar. */}

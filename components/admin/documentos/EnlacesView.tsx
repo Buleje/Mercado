@@ -135,7 +135,7 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
   }
   if (links.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
+      <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
         <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"><Link2 className="h-7 w-7" /></div>
         <p className="text-lg font-extrabold text-[var(--text-primary)]">No compartiste nada todavía</p>
         <p className="mt-1.5 text-sm text-[var(--text-secondary)]">Cuando mandes un documento o una carpeta por enlace, acá vas a ver quién puede abrirlo, cuántas veces lo abrieron y vas a poder cortarlo cuando quieras.</p>

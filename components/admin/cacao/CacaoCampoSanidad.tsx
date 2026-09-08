@@ -74,7 +74,7 @@ export default function CacaoCampoSanidad({ parcelas, onOpenParcela, onChanged }
   ), [focos, fPlaga, fEstado]);
 
   const tip = stats?.plagaTop ? PLAGA[stats.plagaTop] : null;
-  const S = "h-11 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  const S = "h-11 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 
   return (
     <div className="space-y-5">
@@ -99,13 +99,13 @@ export default function CacaoCampoSanidad({ parcelas, onOpenParcela, onChanged }
         <div className="mr-auto" />
         <select value={fPlaga} onChange={(e) => setFPlaga(e.target.value)} className={S}><option value="todas">Todas las plagas</option>{CACAO_PLAGAS.map((p) => <option key={p.tipo} value={p.tipo}>{p.label}</option>)}</select>
         <select value={fEstado} onChange={(e) => setFEstado(e.target.value)} className={S}><option value="activos">Activos + en control</option><option value="activo">Solo activos</option><option value="controlado">En control</option><option value="resuelto">Resueltos</option><option value="todos">Todos</option></select>
-        <button type="button" onClick={load} className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" /></button>
+        <button type="button" onClick={load} className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" /></button>
       </div>
 
       {loading && focos.length === 0 ? (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
+        <div className="rounded-2xl border border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
       ) : view.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
           <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[var(--data-success-50)] text-[var(--data-success-600)]"><Stethoscope className="h-7 w-7" /></span>
           <p className="text-base font-bold text-[var(--text-primary)]">{focos.length === 0 ? "Sin focos registrados" : "Sin resultados"}</p>
           <p className="mx-auto mt-1 max-w-sm text-sm">{focos.length === 0 ? "Cuando detectes monilia, escoba de bruja u otra plaga en una sección, registrala acá para hacerle seguimiento." : "Ajustá los filtros para ver otros focos."}</p>
@@ -166,7 +166,7 @@ function RegistrarSanidadModal({ parcelas, onClose, onSaved }: { parcelas: Parce
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); setSubmitting(false); }
   }
 
-  const I = "h-11 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  const I = "h-11 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
     <AdminModal open onClose={onClose} variant="wide" icon={Stethoscope} title="Registrar foco fitosanitario" description="Anotá una plaga o enfermedad detectada en una sección para seguirla.">
       <form onSubmit={submit} className="space-y-3 p-5">
@@ -183,7 +183,7 @@ function RegistrarSanidadModal({ parcelas, onClose, onSaved }: { parcelas: Parce
         {plagaTip?.tip && <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]"><strong className="text-[var(--text-primary)]">Recomendación:</strong> {plagaTip.tip}</p>}
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
+          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
           <button type="submit" disabled={submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Registrar</button>
         </div>
       </form>

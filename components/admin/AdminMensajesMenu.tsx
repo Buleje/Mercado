@@ -85,7 +85,7 @@ export default function AdminMensajesMenu({ onDarkHeader = false }: AdminMensaje
         <DropdownMenu.Content
           align="end"
           sideOffset={8}
-          className="z-50 min-w-[16rem] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-xl)]"
+          className="z-50 min-w-[16rem] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-xl)]"
         >
           <DropdownMenu.Label className="px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
             Mensajes

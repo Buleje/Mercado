@@ -87,7 +87,7 @@ export default function CtpCuadreSniffs({
 
   if (error) {
     return (
-      <section className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-4">
+      <section className="rounded-2xl border border-dashed border-[var(--rule-base)] p-4">
         <Cabecera />
         <p className="mt-2 text-sm text-[var(--text-secondary)]">No se pudo leer el cuadre del libro.</p>
       </section>
@@ -96,7 +96,7 @@ export default function CtpCuadreSniffs({
 
   if (!ahora) {
     return (
-      <section className="rounded-2xl border-2 border-[var(--rule-base)] p-4">
+      <section className="rounded-2xl border border-[var(--rule-base)] p-4">
         <Cabecera />
         <div className="mt-3 h-24 animate-pulse rounded-xl bg-[var(--surface-sunken)]" />
       </section>
@@ -109,7 +109,7 @@ export default function CtpCuadreSniffs({
   const pct = total > 0 ? Math.round((con / total) * 100) : 0;
 
   return (
-    <section className="space-y-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <section className="space-y-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <Cabecera />
 
       {/* ── 1 · Lo que el libro puede probar ─────────────────────────────── */}

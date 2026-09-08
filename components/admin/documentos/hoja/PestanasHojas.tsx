@@ -112,7 +112,7 @@ export default function PestanasHojas({
         <div
           role="menu"
           style={{ position: "fixed", left: menu.x, top: Math.max(8, menu.y - 132), zIndex: 50 }}
-          className="w-44 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
+          className="w-44 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
         >
           <button type="button" role="menuitem" className={ITEM}
             onClick={() => { setRenombrando({ indice: menu.indice, valor: hojas[menu.indice]?.nombre ?? "" }); setMenu(null); }}>

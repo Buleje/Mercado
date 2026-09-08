@@ -466,7 +466,7 @@ export default function BudgetVsRealTab() {
               value={formSalesGoal}
               onChange={(e) => setFormSalesGoal(e.target.value)}
               placeholder="Ej: 15000"
-              className="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
             />
           </Field>
           <Field label="Máximo de gastos del mes (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] block mb-1">
@@ -476,7 +476,7 @@ export default function BudgetVsRealTab() {
               value={formExpensesGoal}
               onChange={(e) => setFormExpensesGoal(e.target.value)}
               placeholder="Ej: 8000"
-              className="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
             />
           </Field>
         </div>
@@ -634,12 +634,12 @@ export default function BudgetVsRealTab() {
           placeholder="Buscar categoría..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors w-48 min-h-[44px]"
+          className="px-4 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors w-48 min-h-[44px]"
         />
         <select
           value={effectiveMonthFilter}
           onChange={(e) => setMonthFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
+          className="px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
         >
           <option value="all">Todos los meses</option>
           {MONTHS.filter((m) => m !== "all").map((m) => (
@@ -649,7 +649,7 @@ export default function BudgetVsRealTab() {
         <select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
+          className="px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary min-h-[44px]"
         >
           <option value="all">Todos los dptos</option>
           {DEPARTMENTS.map((d) => (

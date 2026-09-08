@@ -369,7 +369,7 @@ export default function CtpCorridaSinDeclarar({
             onClick={onCerrar}
             aria-label="Cerrar la corrida"
             title="Cerrar la corrida"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
           >
             <X className="h-4 w-4" aria-hidden />
           </button>

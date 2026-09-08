@@ -111,12 +111,12 @@ export default function PlatformInboxPanel() {
               <button key={c.id} onClick={() => open(c.id)} className={`w-full border-b border-[var(--rule-soft)] px-4 py-3 text-left transition-colors ${selectedId === c.id ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]"}`}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate text-sm font-bold text-[var(--text-primary)]">{c.subject ?? "Buleje"}</span>
-                  <span className="shrink-0 text-[10px] font-semibold text-[var(--text-tertiary)]">{timeAgo(c.lastMessageAt)}</span>
+                  <span className="shrink-0 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">{timeAgo(c.lastMessageAt)}</span>
                 </div>
                 <div className="mt-0.5 flex items-center justify-between gap-2">
                   <span className="truncate text-xs text-[var(--text-secondary)]">{c.lastMessageText ?? "—"}</span>
                   {c.unreadForTenant > 0 && (
-                    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[10px] font-black text-white">{c.unreadForTenant}</span>
+                    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--accent)] px-1.5 text-[length:var(--ts-2xs)] font-black text-white">{c.unreadForTenant}</span>
                   )}
                 </div>
               </button>
@@ -136,10 +136,10 @@ export default function PlatformInboxPanel() {
                     <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 ${mine ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)]"}`}>
                         {m.messageType === "broadcast" && (
-                          <p className={`mb-0.5 flex items-center gap-1 text-[10px] font-black uppercase ${mine ? "text-white/80" : "text-[var(--accent)]"}`}><Megaphone className="h-3 w-3" /> Anuncio</p>
+                          <p className={`mb-0.5 flex items-center gap-1 text-[length:var(--ts-2xs)] font-black uppercase ${mine ? "text-white/80" : "text-[var(--accent)]"}`}><Megaphone className="h-3 w-3" /> Anuncio</p>
                         )}
                         <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p>
-                        <p className={`mt-1 text-[10px] ${mine ? "text-white/70" : "text-[var(--text-tertiary)]"}`}>{timeAgo(m.createdAt)}</p>
+                        <p className={`mt-1 text-[length:var(--ts-2xs)] ${mine ? "text-white/70" : "text-[var(--text-tertiary)]"}`}>{timeAgo(m.createdAt)}</p>
                       </div>
                     </div>
                   );
@@ -153,7 +153,7 @@ export default function PlatformInboxPanel() {
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
                   rows={2}
                   placeholder="Escribile a Buleje…"
-                  className="flex-1 resize-none rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  className="flex-1 resize-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
                 <button onClick={send} disabled={sending || !text.trim()} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-40">
                   {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}

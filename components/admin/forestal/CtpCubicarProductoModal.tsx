@@ -450,7 +450,7 @@ export default function CtpCubicarProductoModal({
                                   e.target.value as Unidad,
                               } as Partial<FilaCubicada>)
                             }
-                            className="h-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-xs text-[var(--text-secondary)]"
+                            className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-xs text-[var(--text-secondary)]"
                           >
                             {(["pulg", "cm", "pies", "m"] as const).map((u) => (
                               <option key={u} value={u}>{u}</option>
@@ -474,7 +474,7 @@ export default function CtpCubicarProductoModal({
                         aria-label={`Especie fila ${i + 1}`}
                         value={f.especie}
                         onChange={(e) => set(f.id, { especie: e.target.value })}
-                        className="h-10 w-32 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 text-sm text-[var(--text-primary)]"
+                        className="h-10 w-32 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 text-sm text-[var(--text-primary)]"
                       >
                         <option value="">Sin especie</option>
                         {ESPECIES_MADERA.map((e) => (

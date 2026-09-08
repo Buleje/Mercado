@@ -267,7 +267,7 @@ export function VisorPdf({ url, nombre, tamano, docId }: {
         {docId && (
           <button
             onClick={() => setComoImagenes(true)}
-            className="mx-auto block rounded-xl border-2 border-[var(--rule-base)] px-4 min-h-10 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary"
+            className="mx-auto block rounded-xl border border-[var(--rule-base)] px-4 min-h-10 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary"
           >
             Verlo como imágenes
           </button>

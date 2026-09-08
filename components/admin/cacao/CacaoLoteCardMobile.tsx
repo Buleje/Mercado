@@ -56,7 +56,7 @@ export default function CacaoLoteCardMobile({
   const anulado = l.status === "anulado";
   return (
     <div
-      className={`rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 ${anulado ? "opacity-60" : ""}`}
+      className={`rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 ${anulado ? "opacity-60" : ""}`}
     >
       {/* Cabecera: qué lote es y en qué estado está. */}
       <button type="button" onClick={onOpen} className="flex w-full items-start justify-between gap-2 text-left">

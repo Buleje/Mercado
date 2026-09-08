@@ -110,7 +110,7 @@ export default function ComentariosDoc({ docId }: { docId: string }) {
           onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) comentar(); }}
           rows={3}
           placeholder="Ej.: falta la firma del arrendador en la página 3"
-          className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+          className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
         />
         <div className="mt-2 flex items-center justify-between gap-2">
           <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Ctrl + Enter para publicar</span>
@@ -145,7 +145,7 @@ export default function ComentariosDoc({ docId }: { docId: string }) {
           <Loader2 className="h-4 w-4 animate-spin" /> Cargando…
         </p>
       ) : visibles.length === 0 ? (
-        <p className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">
+        <p className="rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">
           Nadie dejó observaciones sobre este documento.
         </p>
       ) : (

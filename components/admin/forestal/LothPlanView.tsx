@@ -280,7 +280,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
         <select
           value={planId ?? ""}
           onChange={(e) => setPlanId(e.target.value || null)}
-          className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none"
+          className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none"
         >
           {plans.length === 0 && <option value="">Sin planes</option>}
           {plans.map((p) => (
@@ -300,7 +300,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
           <button
             type="button"
             onClick={() => printInforme(plan, species, censusStat)}
-            className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             <Printer className="h-4 w-4" /> Informe de ejecución
           </button>
@@ -331,7 +331,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
       {!loading && plan && (
         <>
           {/* Carátula del plan */}
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
             <div className="flex items-start gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--data-success-100)] text-[var(--data-success-700)]"><FileText className="h-5 w-5" /></span>
               <div className="min-w-0 flex-1">
@@ -460,7 +460,7 @@ export default function LothPlanView({ reloadSignal }: { reloadSignal?: number }
       )}
 
       {!loading && plans.length === 0 && !showPlanForm && (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
           <FileText className="mx-auto mb-3 h-10 w-10 opacity-30" />
           <p className="text-base font-medium">No hay planes de manejo cargados.</p>
           <p className="mt-1 text-sm">Creá el plan (permiso + resolución + titular) para empezar a censar árboles.</p>
@@ -812,7 +812,7 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
   return (
     <Panel title={`Censo forestal (${total.toLocaleString("es-PE")})`} action={
       <div className="flex gap-2">
-        <button type="button" onClick={() => setImporting(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Upload className="h-3.5 w-3.5" /> Importar censo</button>
+        <button type="button" onClick={() => setImporting(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Upload className="h-3.5 w-3.5" /> Importar censo</button>
         <AddBtn onClick={() => setOpen(true)} />
       </div>
     }>
@@ -911,7 +911,7 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
           <button
             type="button"
             onClick={() => setVisibles((v) => v + 200)}
-            className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+            className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
           >
             Ver 200 más ({(filtered.length - visibles).toLocaleString("es-PE")} restantes)
           </button>
@@ -1189,7 +1189,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 function Panel({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="mb-3 flex items-center justify-between">
         <CardTitle as="h4" className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{title}</CardTitle>
         {action}

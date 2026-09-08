@@ -96,7 +96,7 @@ export function EtiquetaAutocomplete({
         className={inputClassName}
       />
       {open && sugerencias.length > 0 && (
-        <ul id={listId} role="listbox" className="absolute left-0 top-full z-40 mt-1 w-max min-w-[10rem] max-w-[16rem] overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-[var(--shadow-lg)]">
+        <ul id={listId} role="listbox" className="absolute left-0 top-full z-40 mt-1 w-max min-w-[10rem] max-w-[16rem] overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-[var(--shadow-lg)]">
           {sugerencias.map((s, i) => (
             <li key={s}>
               <button

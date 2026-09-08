@@ -161,7 +161,7 @@ export default function CtpGtfSeccion({
   }
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
       {/* Título, número y acciones en UNA banda: eran tres filas para tres datos
           que se leen de un vistazo, arriba de un formulario largo. */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">

@@ -70,7 +70,7 @@ const EXPENSE_CATS = [
 ];
 const CHECKLIST_DEFAULT = ["Niveles de aceite", "Combustible", "Llantas / orugas", "Frenos", "Luces", "Fugas visibles", "Horómetro anotado", "Limpieza general"];
 
-const FIELD = "w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3.5 py-2.5 text-sm font-medium text-[var(--text-primary)] outline-none transition-all focus:border-[var(--accent)] focus:bg-[var(--surface-raised)]";
+const FIELD = "w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3.5 py-2.5 text-sm font-medium text-[var(--text-primary)] outline-none transition-all focus:border-[var(--accent)] focus:bg-[var(--surface-raised)]";
 const LABEL = "block text-[length:var(--ts-2xs,0.6875rem)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5";
 
 type View = "flota" | "cobrar" | "calendario" | "ranking";
@@ -152,10 +152,10 @@ export default function ActivosModule() {
         description="Alquila tus equipos y mira la ganancia real de cada máquina."
         icon={Construction}
       >
-        <button type="button" onClick={() => setShowImport(true)} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3.5 py-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] min-h-[44px]">
+        <button type="button" onClick={() => setShowImport(true)} className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3.5 py-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] min-h-[44px]">
           <Upload className="h-4 w-4" /> Importar
         </button>
-        <button type="button" onClick={exportReport} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3.5 py-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] min-h-[44px]">
+        <button type="button" onClick={exportReport} className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3.5 py-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] min-h-[44px]">
           <Download className="h-4 w-4" /> Exportar
         </button>
         <button type="button" onClick={() => { setEditing(null); setShowForm(true); }} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 min-h-[44px]">
@@ -222,7 +222,7 @@ export default function ActivosModule() {
 
 function EmptyFleet({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-16 text-center">
+    <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-16 text-center">
       <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Construction className="h-7 w-7" strokeWidth={2} /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Aún no tienes máquinas</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">Agrega tu cargador, oruga o camión y empieza a registrar alquileres.</p>
@@ -329,10 +329,10 @@ function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onC
       {/* Acciones */}
       <div className="mt-3 flex items-center gap-1.5">
         <button type="button" onClick={onRent} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-primary/90"><TrendingUp className="h-3.5 w-3.5" /> Alquiler</button>
-        <button type="button" onClick={onExpense} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 py-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--data-warning-500)] hover:text-[var(--data-warning-600)]"><Fuel className="h-3.5 w-3.5" /> Gasto</button>
-        <button type="button" onClick={onChecklist} aria-label="Checklist" title="Checklist pre-alquiler" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"><ClipboardCheck className="h-3.5 w-3.5" /></button>
-        <button type="button" onClick={onContract} aria-label="Contrato" title="Contrato / cotización PDF" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"><FileText className="h-3.5 w-3.5" /></button>
-        <button type="button" onClick={onEdit} aria-label="Editar" title="Editar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"><Pencil className="h-3.5 w-3.5" /></button>
+        <button type="button" onClick={onExpense} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 py-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--data-warning-500)] hover:text-[var(--data-warning-600)]"><Fuel className="h-3.5 w-3.5" /> Gasto</button>
+        <button type="button" onClick={onChecklist} aria-label="Checklist" title="Checklist pre-alquiler" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"><ClipboardCheck className="h-3.5 w-3.5" /></button>
+        <button type="button" onClick={onContract} aria-label="Contrato" title="Contrato / cotización PDF" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"><FileText className="h-3.5 w-3.5" /></button>
+        <button type="button" onClick={onEdit} aria-label="Editar" title="Editar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"><Pencil className="h-3.5 w-3.5" /></button>
       </div>
     </div>
   );
@@ -519,7 +519,7 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
           <input type="number" min="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder={autoAmount > 0 ? String(autoAmount) : "0.00"} className={cn(FIELD, "text-lg font-black")} />
         </Field>
         {isIncome && (
-          <div className="sm:col-span-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+          <div className="sm:col-span-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             <div className="flex gap-1 rounded-lg bg-[var(--surface-raised)] p-1">
               {([[true, "Pagado"], [false, "Pendiente de cobro"]] as const).map(([v, l]) => (
                 <button key={String(v)} type="button" onClick={() => setForm(f => ({ ...f, paid: v }))} className={cn("flex-1 rounded-xl px-3 min-h-10 text-sm font-semibold transition-colors", form.paid === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>
@@ -653,12 +653,12 @@ function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged
           </div>
           <input type="number" min="1" value={form.interval} onChange={e => setForm(f => ({ ...f, interval: e.target.value }))} placeholder={form.mode === "hours" ? "cada cuántas horas (ej. 250)" : "cada cuántos días (ej. 30)"} className={FIELD} />
           <div className="flex gap-2">
-            <button type="button" onClick={() => setAdding(false)} className="flex-1 rounded-xl border-2 border-[var(--rule-base)] py-2 text-xs font-bold text-[var(--text-secondary)]">Cancelar</button>
+            <button type="button" onClick={() => setAdding(false)} className="flex-1 rounded-xl border border-[var(--rule-base)] py-2 text-xs font-bold text-[var(--text-secondary)]">Cancelar</button>
             <button type="button" onClick={add} className="flex-1 rounded-xl bg-primary py-2 text-xs font-bold text-white">Programar</button>
           </div>
         </div>
       ) : (
-        <button type="button" onClick={() => setAdding(true)} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] min-h-11 text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"><Plus className="h-4 w-4" /> Programar mantenimiento</button>
+        <button type="button" onClick={() => setAdding(true)} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[var(--rule-base)] min-h-11 text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"><Plus className="h-4 w-4" /> Programar mantenimiento</button>
       )}
     </div>
   );
@@ -683,7 +683,7 @@ function ReceivablesView({ onChanged }: { onChanged: () => void }) {
 
   if (rows == null) return <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</Center>;
   if (rows.length === 0) return (
-    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
+    <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
       <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><CheckCircle className="h-6 w-6" /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Todo cobrado</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">No tienes alquileres pendientes de pago.</p>
@@ -702,7 +702,7 @@ function ReceivablesView({ onChanged }: { onChanged: () => void }) {
           </div>
           <span className="font-mono text-base font-bold tabular-nums text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">{fmt(r.amount)}</span>
           <div className="flex gap-1.5">
-            <button type="button" onClick={() => remind(r)} title="Recordar por WhatsApp" className="inline-flex h-9 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><Clock className="h-3.5 w-3.5" /> Recordar</button>
+            <button type="button" onClick={() => remind(r)} title="Recordar por WhatsApp" className="inline-flex h-9 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><Clock className="h-3.5 w-3.5" /> Recordar</button>
             <button type="button" onClick={() => markPaid(r)} className="inline-flex h-9 items-center gap-1 rounded-lg bg-primary px-2.5 text-xs font-bold text-white hover:bg-primary/90"><CheckCircle className="h-3.5 w-3.5" /> Cobrado</button>
           </div>
         </div>
@@ -722,7 +722,7 @@ function CalendarView({ assets }: { assets: AssetStats[] }) {
 
   if (items == null) return <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando agenda…</Center>;
   if (items.length === 0) return (
-    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
+    <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
       <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Calendar className="h-6 w-6" /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Sin alquileres aún</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">Registra alquileres con fecha de inicio/fin y aparecerán acá en orden.</p>
@@ -756,7 +756,7 @@ function CalendarView({ assets }: { assets: AssetStats[] }) {
 function RankingView({ assets }: { assets: AssetStats[] }) {
   const [metric, setMetric] = useState<"profit" | "roi" | "util" | "cost">("profit");
   if (assets.length === 0) return (
-    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
+    <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
       <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><BarChart3 className="h-6 w-6" /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Sin máquinas para comparar</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">Agrega máquinas y registra alquileres para ver cuál rinde más.</p>
@@ -854,7 +854,7 @@ function ImportModal({ onClose, onDone }: { knownTypes: string[]; onClose: () =>
           Columnas (en este orden, separadas por coma): <span className="font-bold text-[var(--text-secondary)]">Nombre, Categoría, Placa, Tarifa, Cobro (hora/día/m³/viaje), Capacidad/día</span>. Una máquina por línea.
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3.5 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+          <span className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3.5 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
             <FileText className="h-4 w-4" />
             <label htmlFor="activos-import-file" className="cursor-pointer">Subir archivo</label>
             <input id="activos-import-file" type="file" accept=".csv,.tsv,.txt,text/csv" className="hidden" onChange={e => onFile(e.target.files?.[0])} />
@@ -871,7 +871,7 @@ function ImportModal({ onClose, onDone }: { knownTypes: string[]; onClose: () =>
           </div>
         )}
         <div className="mt-6 flex items-center gap-3">
-          <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button type="button" onClick={onClose} className="h-11 rounded-xl border border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
           <button type="button" onClick={run} disabled={importing || !rows || rows.length === 0} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50">
             {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             {importing ? "Importando…" : rows && rows.length > 0 ? `Importar ${rows.length}` : "Importar"}
@@ -912,7 +912,7 @@ function ContractModal({ asset, onClose }: { asset: AssetStats; onClose: () => v
       </div>
       <div className="mt-3 flex items-center justify-between rounded-xl bg-primary/10 px-4 py-3"><span className="text-sm font-bold text-[var(--text-secondary)]">Total</span><span className="font-mono text-xl font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">{fmt(amount)}</span></div>
       <div className="mt-6 flex items-center gap-3">
-        <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+        <button type="button" onClick={onClose} className="h-11 rounded-xl border border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
         <button type="button" onClick={gen} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90"><Download className="h-4 w-4" /> Generar PDF</button>
       </div>
     </ModalShell>
@@ -983,7 +983,7 @@ function ModalShell({ title, subtitle, onClose, children, icon: Icon = Construct
 function ModalFooter({ onClose, onSave, saving, saveLabel }: { onClose: () => void; onSave: () => void; saving: boolean; saveLabel: string }) {
   return (
     <div className="mt-6 flex items-center gap-3">
-      <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">Cancelar</button>
+      <button type="button" onClick={onClose} className="h-11 rounded-xl border border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">Cancelar</button>
       <button type="button" onClick={onSave} disabled={saving} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-semibold text-white transition-all hover:bg-primary/90 disabled:opacity-50">
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
         {saving ? "Guardando…" : saveLabel}

@@ -88,7 +88,7 @@ export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas
     return [...m.entries()];
   }, [view]);
 
-  const S = "h-11 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  const S = "h-11 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
     <div className="space-y-4">
       {sugeridas.length > 0 && (
@@ -121,22 +121,22 @@ export default function CacaoCampoAgenda({ parcelas, onOpenParcela }: { parcelas
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-11 min-w-[180px] flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
+        <div className="flex h-11 min-w-[180px] flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por sección, labor, responsable…" className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none" />
         </div>
         <select value={fEstado} onChange={(e) => setFEstado(e.target.value)} className={S}><option value="todos">Todos los estados</option><option value="hecho">Hechas</option><option value="pendiente">Programadas</option><option value="vencido">Vencidas</option></select>
         <select value={fTipo} onChange={(e) => setFTipo(e.target.value)} className={S}><option value="todas">Todas las labores</option>{CACAO_LABORES.map((l) => <option key={l.tipo} value={l.tipo}>{l.label}</option>)}</select>
         <select value={fSeccion} onChange={(e) => setFSeccion(e.target.value)} className={S}><option value="todas">Todas las secciones</option>{parcelas.map((p) => <option key={p.id} value={p.id}>{p.codigo}</option>)}</select>
-        <button type="button" onClick={load} className="inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" /></button>
+        <button type="button" onClick={load} className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" /></button>
       </div>
 
       {error && <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /><div><strong>Error:</strong> {error}</div></div>}
 
       {loading && labores.length === 0 ? (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
+        <div className="rounded-2xl border border-[var(--rule-base)] p-10 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando…</p></div>
       ) : view.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
           <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Calendar className="h-7 w-7" /></span>
           <p className="text-base font-bold text-[var(--text-primary)]">{labores.length === 0 ? "Aún no registraste labores" : "Sin resultados"}</p>
           <p className="mx-auto mt-1 max-w-sm text-sm">{labores.length === 0 ? "Registrá labores en tus secciones y acá verás el cronograma completo." : "Ajustá los filtros para ver otras labores."}</p>

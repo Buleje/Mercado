@@ -117,7 +117,7 @@ export default function CtpCubicacionParaConsumo({
     totales.rollizaM3 > 0 && totales.m3 > 0 ? Math.round((totales.m3 / totales.rollizaM3) * 1000) / 10 : null;
 
   return (
-    <section className="space-y-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+    <section className="space-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <button
           type="button"

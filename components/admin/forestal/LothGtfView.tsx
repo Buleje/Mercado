@@ -240,7 +240,7 @@ export default function LothGtfView({
       {/* Buscar y filtrar: la lista no tenía ninguna de las dos cosas. */}
       {!loading && gtfs.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex h-11 min-w-[16rem] flex-1 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
+          <div className="flex h-11 min-w-[16rem] flex-1 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">
             <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
             <input
               type="text"
@@ -250,7 +250,7 @@ export default function LothGtfView({
               className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
             />
           </div>
-          <label className="flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
+          <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
             <span className="text-[var(--text-tertiary)]">Tipo</span>
             <select value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} className="bg-transparent font-bold text-[var(--text-primary)] outline-none">
               <option value="todos">Todos</option>
@@ -258,7 +258,7 @@ export default function LothGtfView({
               <option value="producto">Producto</option>
             </select>
           </label>
-          <label className="flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
+          <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm">
             <span className="text-[var(--text-tertiary)]">Estado</span>
             <select value={estado} onChange={(e) => setEstado(e.target.value as typeof estado)} className="bg-transparent font-bold text-[var(--text-primary)] outline-none">
               <option value="todas">Todas</option>
@@ -315,7 +315,7 @@ export default function LothGtfView({
       {loading && <div className="p-6 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>}
 
       {!loading && (
-        <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <DataTable className="w-full text-sm">
             <thead className="bg-[var(--surface-sunken)] text-left">
               <tr>{["N° GTF", "Fecha", "Tipo", "Titular", "Destino", "Vol. m³", "Estado", "Acciones"].map((h, i) => <th key={i} className={`px-4 py-2.5 font-bold text-[var(--text-primary)] ${i === 5 ? "text-right" : ""}`}>{h}</th>)}</tr>
@@ -352,11 +352,11 @@ export default function LothGtfView({
                         type="button"
                         onClick={() => printGtfOficial(g, caratula)}
                         title="Imprimir en la hoja de casilleros SERFOR (mismo formato que el Libro CTP)"
-                        className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                        className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
                       >
                         <Printer className="h-3.5 w-3.5" /> Hoja SERFOR
                       </button>
-                      <button type="button" onClick={() => printGtf(g)} title="Imprimir el resumen interno" className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-3.5 w-3.5" /> Resumen</button>
+                      <button type="button" onClick={() => printGtf(g)} title="Imprimir el resumen interno" className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-3.5 w-3.5" /> Resumen</button>
                       {g.status !== "anulada" && (
                         <button type="button" onClick={() => setAnnulId(g.id)} title="Anular esta guía" aria-label={`Anular la GTF ${g.gtfNumber}`} className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-2.5 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"><Ban className="h-3.5 w-3.5" /></button>
                       )}
@@ -385,7 +385,7 @@ export default function LothGtfView({
                 type="button"
                 onClick={() => setPagina((p) => Math.max(0, p - 1))}
                 disabled={pagActual === 0}
-                className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+                className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
               >
                 Anterior
               </button>
@@ -393,7 +393,7 @@ export default function LothGtfView({
                 type="button"
                 onClick={() => setPagina((p) => Math.min(totalPaginas - 1, p + 1))}
                 disabled={pagActual >= totalPaginas - 1}
-                className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+                className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
               >
                 Siguiente
               </button>
@@ -452,7 +452,7 @@ function AnularGtfForm({ gtf, onConfirm, onCancel }: { gtf: Gtf; onConfirm: (r: 
           rows={3}
           autoFocus
           placeholder="Ej.: error en la placa del vehículo; se reemplaza por la GTF 001-0000126."
-          className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
+          className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]"
         />
         <span className="mt-1 block text-xs text-[var(--text-tertiary)]">Mínimo 3 caracteres. Queda registrado en el libro.</span>
       </label>
@@ -634,7 +634,7 @@ function GtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => voi
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Lista de trozas / productos</p>
-          <button type="button" onClick={loadDespachadas} className="inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
+          <button type="button" onClick={loadDespachadas} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
             <Plus className="h-3.5 w-3.5" /> Cargar trozas despachadas
           </button>
         </div>

@@ -992,7 +992,7 @@ function LogrosTab() {
       <div className="relative">
         {showConfetti && <Confetti />}
         {visible.length === 0 ? (
-          <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
+          <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
             <Trophy className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-3" />
             <p className="text-[var(--text-secondary)] font-semibold">No hay logros en este filtro</p>
           </div>

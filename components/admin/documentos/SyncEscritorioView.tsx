@@ -195,7 +195,7 @@ export default function SyncEscritorioView({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <SectionTitle as="h2" className="flex items-center gap-2 text-lg font-bold text-[var(--text-primary)]">
@@ -214,7 +214,7 @@ export default function SyncEscritorioView({
             type="button"
             onClick={() => void cargar()}
             disabled={cargando}
-            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-60"
+            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-60"
           >
             <RefreshCw className={cn("h-3.5 w-3.5", cargando && "animate-spin")} /> Actualizar
           </button>
@@ -255,7 +255,7 @@ export default function SyncEscritorioView({
             <Loader2 className="h-4 w-4 animate-spin" /> Viendo si hay alguno…
           </p>
         ) : equipos.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-8 text-center">
+          <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center">
             <Monitor className="mx-auto mb-2 h-8 w-8 text-[var(--text-tertiary)] opacity-40" aria-hidden="true" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Todavía no hay ninguna PC conectada</p>
             <p className="mt-1 text-xs text-[var(--text-tertiary)]">
@@ -267,7 +267,7 @@ export default function SyncEscritorioView({
             {equipos.map((e) => {
               const s = SEMAFORO[e.salud];
               return (
-                <li key={e.equipoId} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+                <li key={e.equipoId} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -323,7 +323,7 @@ export default function SyncEscritorioView({
       </section>
 
       {/* ── Conectar una PC ── */}
-      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
+      <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
         <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Conectar una PC</CardTitle>
         <ol className="mt-3 space-y-4 text-sm text-[var(--text-secondary)]">
           <li>
@@ -376,7 +376,7 @@ export default function SyncEscritorioView({
               <button
                 type="button"
                 onClick={() => void copiar(configJson, "config")}
-                className="shrink-0 rounded-lg border-2 border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                className="shrink-0 rounded-lg border border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
               >
                 {copiado === "config" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               </button>
@@ -403,7 +403,7 @@ export default function SyncEscritorioView({
             {claves.map((k) => (
               <li
                 key={k.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-[var(--text-primary)]">
@@ -416,7 +416,7 @@ export default function SyncEscritorioView({
                 <button
                   type="button"
                   onClick={() => void revocar(k.id)}
-                  className="shrink-0 rounded-lg border-2 border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/15"
+                  className="shrink-0 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/15"
                 >
                   Revocar
                 </button>

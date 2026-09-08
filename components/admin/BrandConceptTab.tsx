@@ -597,7 +597,7 @@ export default function BrandConceptTab({
               type="button"
               onClick={() => void analyze()}
               disabled={analyzing}
-              className="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               {analyzing ? "Analizando…" : "Re-analizar"}
@@ -606,7 +606,7 @@ export default function BrandConceptTab({
         </header>
 
         {!logo ? (
-          <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8 text-center">
+          <div className="rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8 text-center">
             <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
               <ImageIcon className="h-7 w-7 text-primary" />
             </div>
@@ -617,14 +617,14 @@ export default function BrandConceptTab({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-center justify-center min-h-[180px]">
+            <div className="rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-center justify-center min-h-[180px]">
               <div className="relative h-32 w-32">
                 <Image src={logo} alt="Logo" fill sizes="128px" className="object-contain" unoptimized={logo.startsWith("data:")} />
               </div>
             </div>
 
             <div className="md:col-span-2 space-y-3">
-              <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
+              <div className="rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Palette className="h-4 w-4 text-primary" />
                   <p className="text-sm font-bold text-[var(--text-primary)]">Paleta extraída</p>
@@ -652,7 +652,7 @@ export default function BrandConceptTab({
               {primaryColor && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {fontSuggestion && (
-                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
+                    <div className="rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Type className="h-4 w-4 text-primary" />
                         <p className="text-sm font-bold text-[var(--text-primary)]">Tipografía sugerida</p>
@@ -664,7 +664,7 @@ export default function BrandConceptTab({
                     </div>
                   )}
                   {brandDescription && (
-                    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
+                    <div className="rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="h-4 w-4 text-primary" />
                         <p className="text-sm font-bold text-[var(--text-primary)]">Tu logo transmite</p>

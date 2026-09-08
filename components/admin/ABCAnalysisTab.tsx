@@ -82,7 +82,7 @@ export default function ABCAnalysisTab() {
 
       {/* Table */}
       {data.length === 0 ? (
-        <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
+        <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-10 text-center text-[var(--text-tertiary)] dark:text-muted">
           <BarChart2 className="h-10 w-10 mx-auto mb-3" />
           <p className="font-semibold">Sin datos de ventas para analizar</p>
           <p className="text-xs mt-1">Registra ventas o pedidos para ver el análisis ABC</p>

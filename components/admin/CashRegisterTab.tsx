@@ -1197,7 +1197,7 @@ export default function CashRegisterTab() {
               icon={History}
               title="Sin historial de cajas"
               description="Los cierres de caja aparecerán aquí."
-              className="bg-[var(--surface-raised)] rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8"
+              className="bg-[var(--surface-raised)] rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8"
             />
           ) : (
             filteredHistory.map(r => {
@@ -1432,7 +1432,7 @@ export default function CashRegisterTab() {
                 icon={History}
                 title="Sin cajas cerradas"
                 description="No hay cierres en el rango seleccionado."
-                className="bg-[var(--surface-raised)] rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8"
+                className="bg-[var(--surface-raised)] rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8"
               />
             ) : (
               <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-y-hidden overflow-x-auto">
@@ -1699,7 +1699,7 @@ export default function CashRegisterTab() {
                     <button
                       key={d}
                       onClick={() => handleDenomClick(d)}
-                      className="relative px-2 py-2 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                      className="relative px-2 py-2 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                     >
                       S/{d.toFixed(2)}
                       {(denominations[String(d)] ?? 0) > 0 && (
@@ -1731,7 +1731,7 @@ export default function CashRegisterTab() {
                         value={closeAmount}
                         onChange={e => setCloseAmount(e.target.value)}
                         placeholder="0.00"
-                        className="w-full pl-10 pr-4 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                        className="w-full pl-10 pr-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                         autoFocus
                       />
                     </div>
@@ -1752,7 +1752,7 @@ export default function CashRegisterTab() {
                   value={closeNotes}
                   onChange={e => setCloseNotes(e.target.value)}
                   placeholder="Observaciones"
-                  className="w-full mt-1 px-3 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                  className="w-full mt-1 px-3 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                 />
               </Field>
             </div>
@@ -1977,7 +1977,7 @@ export default function CashRegisterTab() {
                       <button
                         key={d}
                         onClick={() => handleArqueoDenomClick(d)}
-                        className="relative px-3 min-h-11 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                        className="relative px-3 min-h-11 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary hover:bg-primary/5 transition-all text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                       >
                         S/{d}
                         {(arqueoDenoms[String(d)] ?? 0) > 0 && (
@@ -2008,7 +2008,7 @@ export default function CashRegisterTab() {
                         value={arqueoAmount}
                         onChange={e => setArqueoAmount(e.target.value)}
                         placeholder="0.00"
-                        className="w-full pl-10 pr-4 h-11 rounded-xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                        className="w-full pl-10 pr-4 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                         autoFocus
                       />
                     </div>
@@ -2298,7 +2298,7 @@ export default function CashRegisterTab() {
               ) : (
                 <button
                   onClick={() => fotoInputRef.current?.click()}
-                  className="w-full py-3 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-tertiary)] dark:text-muted hover:border-primary hover:text-primary transition-colors"
+                  className="w-full py-3 rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-tertiary)] dark:text-muted hover:border-primary hover:text-primary transition-colors"
                 >
                   Toca para tomar foto
                 </button>

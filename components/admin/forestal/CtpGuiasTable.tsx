@@ -184,7 +184,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
       {/* ── Desktop (≥640px) ── */}
       <div className="relative hidden sm:block">
         <div
-          className={`overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] ${
+          className={`overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] ${
             guias.length > 12 ? "max-h-[75vh] overflow-y-auto" : ""
           }`}
         >
@@ -290,14 +290,14 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
               busy={props.busy}
             />
           ))}
-          <p className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm font-bold text-[var(--text-secondary)]">
+          <p className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm font-bold text-[var(--text-secondary)]">
             {guias.length} guías · {fmtM3(totalPagina.vol)} m³ · {totalPagina.pz} piezas
           </p>
         </div>
       )}
 
       {!loading && guias.length === 0 && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
           <TreePine className="mx-auto mb-3 h-10 w-10 opacity-30" />
           <p className="text-base font-medium">
             {filtered ? "Ninguna guía coincide con el filtro." : `Sin ingresos en ${period.label}.`}

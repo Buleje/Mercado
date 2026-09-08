@@ -64,7 +64,7 @@ export default function CambiarClavePage() {
             <input
               type={show ? "text" : "password"} value={current} onChange={(e) => setCurrent(e.target.value)}
               autoComplete="current-password" required
-              className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </label>
           <label className="block">
@@ -73,7 +73,7 @@ export default function CambiarClavePage() {
               <input
                 type={show ? "text" : "password"} value={next} onChange={(e) => setNext(e.target.value)}
                 autoComplete="new-password" required
-                className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 pr-10 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                className="w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 pr-10 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
               <button type="button" onClick={() => setShow((v) => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--accent)]">
                 {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -88,7 +88,7 @@ export default function CambiarClavePage() {
             <input
               type={show ? "text" : "password"} value={confirm} onChange={(e) => setConfirm(e.target.value)}
               autoComplete="new-password" required
-              className="w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </label>
           {err && <p className="text-sm font-semibold text-[var(--data-error-600,#dc2626)]">{err}</p>}

@@ -115,12 +115,12 @@ export default function CategoryBannersTab({
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-10 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-10 text-center">
           <div className="h-10 w-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin mx-auto" />
           <p className="text-sm text-muted mt-3">Cargando categorías…</p>
         </div>
       ) : categories.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] p-8 text-center">
           <Tag className="h-10 w-10 text-muted mx-auto mb-2" />
           <p className="text-base font-bold text-[var(--text-primary)]">Aún no hay categorías</p>
           <p className="text-sm text-muted mt-1">Agregá productos primero — las categorías se generan automáticamente.</p>
@@ -275,7 +275,7 @@ export default function CategoryBannersTab({
                       <Sparkles className="h-3 w-3" />
                       Preview de cómo se verá
                     </p>
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] h-44">
+                    <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] h-44">
                       <Image
                         src={banner.image!}
                         alt={banner.title ?? cat.label}

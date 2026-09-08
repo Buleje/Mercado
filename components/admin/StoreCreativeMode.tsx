@@ -1696,7 +1696,7 @@ function PreviewCard({ title, price, primaryColor, borderRadius, styleVariant }:
     styleVariant === "minimal"
       ? "border border-[var(--rule-base)] shadow-none"
       : styleVariant === "border"
-        ? "border-2 border-[var(--rule-base)] "
+        ? "border border-[var(--rule-base)] "
         : styleVariant === "glass"
           ? "border border-white/40 bg-white/70 backdrop-blur-md"
           : "border border-[var(--rule-base)]";
@@ -4356,7 +4356,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   options={[
                     { value: "none", label: "Normal", preview: <MousePointer className="h-4 w-4 text-[var(--text-tertiary)]" /> },
                     { value: "dot", label: "Punto", preview: <span className="h-2 w-2 rounded-full bg-gray-300" /> },
-                    { value: "ring", label: "Anillo", preview: <span className="h-4 w-4 rounded-full border-2 border-[var(--rule-base)]" /> },
+                    { value: "ring", label: "Anillo", preview: <span className="h-4 w-4 rounded-full border border-[var(--rule-base)]" /> },
                   ]} />
               </>
             )}

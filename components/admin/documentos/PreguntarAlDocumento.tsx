@@ -69,7 +69,7 @@ export default function PreguntarAlDocumento({ docId }: { docId: string }) {
             onChange={(e) => setPregunta(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") preguntar(pregunta); }}
             placeholder="Ej: ¿cuánto hay que pagar y hasta cuándo?"
-            className="h-10 min-w-0 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
           <button
             onClick={() => preguntar(pregunta)}

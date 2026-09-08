@@ -135,7 +135,7 @@ export default function CtpFichaEditor() {
           Identidad legal del Centro de Transformación Primaria ante <strong className="text-[var(--text-secondary)]">SERFOR / ARFFS</strong>. Encabeza el certificado de trazabilidad, la GTF de salida y el export del Libro de Operaciones.
         </p>
         {!editing && (
-          <button type="button" onClick={() => { setDraft(ficha); setEditing(true); setError(null); }} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+          <button type="button" onClick={() => { setDraft(ficha); setEditing(true); setError(null); }} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
             <Pencil className="h-4 w-4" /> Editar ficha
           </button>
         )}
@@ -145,7 +145,7 @@ export default function CtpFichaEditor() {
       {ok && <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] p-3 text-sm font-medium text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]"><CheckCircle2 className="h-5 w-5" /> Ficha guardada.</div>}
 
       {editing ? (
-        <div className="space-y-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+        <div className="space-y-5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <Section title="Identidad del centro" icon={Building2}>
             <Field label="Nombre del CTP" required><input className={I} value={draft.nombreCtp} onChange={(e) => set("nombreCtp", e.target.value)} placeholder="Aserradero San Martín" /></Field>
             <Field label="Código de CTP" required hint="Asignado por la ARFFS"><input className={I} value={draft.codigoCtp} onChange={(e) => set("codigoCtp", e.target.value)} placeholder="CTP-25-000123" /></Field>
@@ -157,7 +157,7 @@ export default function CtpFichaEditor() {
                   onClick={() => void traerDeSunat()}
                   disabled={draft.ruc.length !== 11 || padron.estado === "cargando"}
                   title="Traer razón social y domicilio fiscal del padrón de SUNAT"
-                  className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+                  className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
                 >
                   {padron.estado === "cargando" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Search className="h-4 w-4" aria-hidden />} SUNAT
                 </button>
@@ -199,7 +199,7 @@ export default function CtpFichaEditor() {
           <div>
             <div className="mb-2 flex items-center justify-between">
               <span className="text-sm font-bold text-[var(--text-primary)]">Títulos habilitantes (origen de la materia prima)</span>
-              <button type="button" onClick={addTitulo} className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"><Plus className="h-3.5 w-3.5" /> Agregar</button>
+              <button type="button" onClick={addTitulo} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"><Plus className="h-3.5 w-3.5" /> Agregar</button>
             </div>
             <div className="space-y-2">
               {draft.titulos.length === 0 && <p className="text-sm text-[var(--text-tertiary)]">Sin títulos cargados. Agregá las concesiones/permisos que abastecen el CTP.</p>}
@@ -222,9 +222,9 @@ export default function CtpFichaEditor() {
                     <input className={`${I} min-w-[10rem] flex-1`} value={t.codigo} onChange={(e) => setTitulo(i, { codigo: e.target.value })} placeholder="N° del título habilitante — casillero (6)" />
                     <input type="date" className={`${I} max-w-[10rem]`} value={t.vencimiento} onChange={(e) => setTitulo(i, { vencimiento: e.target.value })} title="Vencimiento" />
                     {i > 0 && (
-                      <button type="button" onClick={() => subirTitulo(i)} title="Subir — el primero es el que declara la GTF" aria-label="Subir este título" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><ArrowUp className="h-4 w-4" /></button>
+                      <button type="button" onClick={() => subirTitulo(i)} title="Subir — el primero es el que declara la GTF" aria-label="Subir este título" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><ArrowUp className="h-4 w-4" /></button>
                     )}
-                    <button type="button" onClick={() => removeTitulo(i)} aria-label="Quitar este título" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--data-error-600)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
+                    <button type="button" onClick={() => removeTitulo(i)} aria-label="Quitar este título" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--data-error-600)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
                   </div>
                   {/* (8) y (9): los pide la GTF y no vivían en ningún lado, así
                       que esos dos casilleros salían vacíos en cada guía. */}
@@ -261,7 +261,7 @@ export default function CtpFichaEditor() {
           <div>
             <div className="mb-2 flex items-center justify-between">
               <span className="text-sm font-bold text-[var(--text-primary)]">Permisos CITES (especies protegidas)</span>
-              <button type="button" onClick={addCites} className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"><Plus className="h-3.5 w-3.5" /> Agregar</button>
+              <button type="button" onClick={addCites} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"><Plus className="h-3.5 w-3.5" /> Agregar</button>
             </div>
             <div className="space-y-2">
               {draft.citesPermisos.length === 0 && <p className="text-xs text-[var(--text-tertiary)]">Sin permisos CITES. Si procesás caoba, cedro, shihuahuaco u otra especie CITES, cargá su permiso para tenerlo a mano ante un fiscalizador.</p>}
@@ -270,7 +270,7 @@ export default function CtpFichaEditor() {
                   <input className={`${I} min-w-[9rem] flex-1`} value={p.especie} onChange={(e) => setCites(i, { especie: e.target.value })} placeholder="Especie (ej. Shihuahuaco)" />
                   <input className={`${I} min-w-[9rem] flex-1`} value={p.numero} onChange={(e) => setCites(i, { numero: e.target.value })} placeholder="N° de permiso CITES" />
                   <input type="date" className={`${I} max-w-[10rem]`} value={p.vencimiento} onChange={(e) => setCites(i, { vencimiento: e.target.value })} title="Vencimiento" />
-                  <button type="button" onClick={() => removeCites(i)} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--data-error-600)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
+                  <button type="button" onClick={() => removeCites(i)} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--data-error-600)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
                 </div>
               ))}
             </div>
@@ -303,7 +303,7 @@ export default function CtpFichaEditor() {
           </Section>
 
           <div className="flex items-center justify-end gap-2 border-t-2 border-[var(--rule-soft)] pt-4">
-            <button type="button" onClick={() => { setEditing(false); setDraft(ficha); setError(null); }} disabled={saving} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><XIcon className="h-4 w-4" /> Cancelar</button>
+            <button type="button" onClick={() => { setEditing(false); setDraft(ficha); setError(null); }} disabled={saving} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><XIcon className="h-4 w-4" /> Cancelar</button>
             <button type="button" onClick={save} disabled={saving} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Guardar ficha</button>
           </div>
         </div>

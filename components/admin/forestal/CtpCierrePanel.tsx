@@ -61,13 +61,13 @@ export default function CtpCierrePanel({ estado }: { estado: CtpCierresState }) 
         {cierres === null ? (
           <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</p>
         ) : cierres.length === 0 ? (
-          <p className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">Todavía no cerraste ningún mes. El libro sigue completamente editable.</p>
+          <p className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">Todavía no cerraste ningún mes. El libro sigue completamente editable.</p>
         ) : (
           <ul className="space-y-3">
             {cierres.map((c) => {
               const open = expanded === c.periodKey;
               return (
-                <li key={c.periodKey} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+                <li key={c.periodKey} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${c.reabierto ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" : "bg-[var(--data-success-100)] text-[var(--data-success-700)]"}`}>
@@ -84,7 +84,7 @@ export default function CtpCierrePanel({ estado }: { estado: CtpCierresState }) 
                         Existencia de cierre <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
                       </button>
                       {!c.reabierto && (
-                        <button type="button" onClick={() => void reabrir(c)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
+                        <button type="button" onClick={() => void reabrir(c)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
                           <RotateCcw className="h-3.5 w-3.5" /> Reabrir
                         </button>
                       )}

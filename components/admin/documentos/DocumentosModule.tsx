@@ -1658,7 +1658,7 @@ export default function DocumentosModule() {
             />
           )}
           {selectingFolders && selectedFolderIds.size === 0 && (
-            <p className="mx-1 mb-2 rounded-lg border-2 border-dashed border-[var(--rule-base)] px-3 py-2 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
+            <p className="mx-1 mb-2 rounded-lg border border-dashed border-[var(--rule-base)] px-3 py-2 text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
               Marcá las carpetas que querés cambiar de una: emoji, etiquetas, color o eliminar.
             </p>
           )}
@@ -1671,7 +1671,7 @@ export default function DocumentosModule() {
                 onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") { setNewFolderParent(undefined); setNewFolderName(""); } }}
                 autoFocus
                 placeholder="Nombre de la carpeta…"
-                className="flex-1 px-2 py-1.5 rounded-xl border-2 border-[var(--rule-base)] text-xs outline-none focus:border-primary"
+                className="flex-1 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-xs outline-none focus:border-primary"
               />
               <button onClick={handleCreateFolder} className="px-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark"><Check className="h-3 w-3" /></button>
             </div>
@@ -1843,7 +1843,7 @@ export default function DocumentosModule() {
                         onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); if (e.key === "Escape") { setNewFolderParent(undefined); setNewFolderName(""); } }}
                         autoFocus
                         placeholder="Subcarpeta…"
-                        className="flex-1 min-w-0 px-2 py-1.5 rounded-xl border-2 border-[var(--rule-base)] text-xs outline-none focus:border-primary"
+                        className="flex-1 min-w-0 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-xs outline-none focus:border-primary"
                       />
                       <button onClick={handleCreateFolder} className="px-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark shrink-0"><Check className="h-3 w-3" /></button>
                     </div>
@@ -1944,7 +1944,7 @@ export default function DocumentosModule() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="h-[42px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-primary"
+              className="h-[42px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-primary"
               aria-label="Ordenar documentos"
               title="Ordenar documentos"
             >
@@ -1956,7 +1956,7 @@ export default function DocumentosModule() {
               <option value="size">Tamaño</option>
               <option value="expiry">Vence primero</option>
             </select>
-            <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+            <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
               <button
                 onClick={() => setView("grid")}
                 className={cn("px-3 min-h-10 transition-colors", view === "grid" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
@@ -1990,7 +1990,7 @@ export default function DocumentosModule() {
                 </button>
                 {colsMenuOpen && (
                   <div
-                    className="absolute right-0 top-full z-50 mt-1 min-w-[180px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-xl"
+                    className="absolute right-0 top-full z-50 mt-1 min-w-[180px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-xl"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <p className="px-2 py-1 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Columnas</p>
@@ -2008,7 +2008,7 @@ export default function DocumentosModule() {
                           type="checkbox"
                           checked={colsVisibles[key]}
                           onChange={(e) => setColsVisibles((c) => ({ ...c, [key]: e.target.checked }))}
-                          className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
+                          className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
                         />
                         {label}
                       </label>
@@ -2059,7 +2059,7 @@ export default function DocumentosModule() {
                 <button
                   onClick={downloadFolderZip}
                   disabled={zipping}
-                  className="ml-auto inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
+                  className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
                   title="Descargar todos los documentos de esta carpeta en un ZIP"
                 >
                   <FileArchive className="h-3.5 w-3.5" /> {zipping ? "Comprimiendo…" : "Descargar carpeta (ZIP)"}
@@ -2182,7 +2182,7 @@ export default function DocumentosModule() {
               </button>
               {bulkMoreOpen && bulkMorePos && (
                 <div
-                  className="fixed z-50 min-w-[200px] overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl"
+                  className="fixed z-50 min-w-[200px] overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl"
                   style={{ top: bulkMorePos.top, right: bulkMorePos.right }}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -2445,7 +2445,7 @@ export default function DocumentosModule() {
                         type="checkbox"
                         checked={selectedIds.size > 0 && selectedIds.size === displayDocs.length}
                         onChange={(e) => (e.target.checked ? selectAll() : clearSelection())}
-                        className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
+                        className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
                       />
                     </th>
                     {(() => {
@@ -2501,7 +2501,7 @@ export default function DocumentosModule() {
                             type="checkbox"
                             checked={selectedIds.has(doc.id)}
                             onChange={() => toggleSelect(doc.id)}
-                            className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
+                            className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
                           />
                         </td>
                         <td className="px-4 py-3">
@@ -2697,7 +2697,7 @@ export default function DocumentosModule() {
 
       {/* Panel de progreso por archivo (subida en curso) */}
       {estadoSubida && estadoSubida.size > 0 && (
-        <div className="fixed bottom-24 right-4 z-50 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-xl">
+        <div className="fixed bottom-24 right-4 z-50 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-xl">
           <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
             Subiendo {[...estadoSubida.values()].filter((v) => v.estado === "listo").length}/{estadoSubida.size}
             {[...estadoSubida.values()].some((v) => v.estado === "error") && (
@@ -3108,7 +3108,7 @@ function StatusControl({ status, onChange }: { status: string; onChange: (s: str
         )}
       </button>
       {open && pos && (
-        <div className="fixed z-50 min-w-[160px] overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl" style={{ top: pos.top, left: pos.left }} onClick={(e) => e.stopPropagation()}>
+        <div className="fixed z-50 min-w-[160px] overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl" style={{ top: pos.top, left: pos.left }} onClick={(e) => e.stopPropagation()}>
           {STATUS_ORDER.map((k) => {
             const m = STATUS_META[k];
             return (
@@ -3324,7 +3324,7 @@ function DocCard({
 
 function EmptyState({ onUpload }: { onUpload: () => void }) {
   return (
-    <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
+    <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
       <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
         <Upload className="h-7 w-7" />
       </div>
@@ -3411,7 +3411,7 @@ function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onTag,
       {open && pos && (
         <div
           ref={menuRef}
-          className="fixed z-50 min-w-[170px] overflow-y-auto overscroll-contain rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl"
+          className="fixed z-50 min-w-[170px] overflow-y-auto overscroll-contain rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl"
           style={{ top: pos.top, bottom: pos.bottom, right: pos.right, maxHeight: pos.maxHeight }}
           onClick={(e) => e.stopPropagation()}
         >

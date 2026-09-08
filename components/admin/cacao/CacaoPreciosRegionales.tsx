@@ -32,7 +32,7 @@ export default function CacaoPreciosRegionales({
 
   if (!model) {
     return (
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <Header fino={fino} setFino={setFino} />
         <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">
           Esperando el precio internacional para estimar los precios locales…
@@ -85,7 +85,7 @@ export default function CacaoPreciosRegionales({
   );
 
   return (
-    <div className="group relative rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <div className="group relative rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       {content(onPresent ? <CacaoChartPresent title="A cuánto se vende · S//kg por plaza" onClick={onPresent} /> : undefined)}
     </div>
   );
@@ -98,7 +98,7 @@ function Header({ fino, setFino, present }: { fino: boolean; setFino: (v: boolea
         <Scale className="h-4 w-4 text-[var(--accent)]" /> A cuánto se vende
       </CardTitle>
       <div className="flex items-center gap-2">
-      <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+      <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
         <button
           type="button"
           onClick={() => setFino(false)}

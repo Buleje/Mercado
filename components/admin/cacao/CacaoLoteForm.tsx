@@ -347,7 +347,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
                     <button
                       type="button"
                       onClick={discardDraft}
-                      className="inline-flex h-9 items-center rounded-lg border-2 border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                      className="inline-flex h-9 items-center rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                     >
                       Descartar
                     </button>

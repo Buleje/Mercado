@@ -95,7 +95,7 @@ export default function UnificarDuplicadosModal({
             type="button"
             onClick={onClose}
             disabled={borrando}
-            className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+            className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -123,7 +123,7 @@ export default function UnificarDuplicadosModal({
           {grupos.map((g) => (
             <li
               key={g.conservar}
-              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5"
+              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5"
             >
               <div className="min-w-0">
                 <p className="truncate text-base font-bold text-[var(--text-primary)]">{g.nombre}</p>

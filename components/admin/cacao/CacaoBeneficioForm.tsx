@@ -169,7 +169,7 @@ export default function CacaoBeneficioForm({ onClose, onSaved }: Props) {
                 {humedadFinal && <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${humOk ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]"}`}><Droplets className="h-3.5 w-3.5" />{Number(humedadFinal).toFixed(1)}%</span>}
               </div>
 
-              <div className="mt-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+              <div className="mt-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
                 <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Húmedo → seco</p>
                 <p className="mt-1 font-mono text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">
                   {pesoHumedoKg ? Number(pesoHumedoKg).toFixed(0) : "—"} <span className="text-base text-[var(--text-tertiary)]">kg</span>

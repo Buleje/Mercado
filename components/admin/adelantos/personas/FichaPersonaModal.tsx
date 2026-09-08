@@ -129,7 +129,7 @@ export default function FichaPersonaModal({
             <button
               onClick={exportarPdf}
               disabled={movimientos.length === 0}
-              className="inline-flex h-11 items-center gap-1.5 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+              className="inline-flex h-11 items-center gap-1.5 rounded-2xl border border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
             >
               <FileText className="h-5 w-5" /> PDF
             </button>
@@ -138,7 +138,7 @@ export default function FichaPersonaModal({
                 href={waCuenta}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-11 items-center gap-1.5 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-base font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
+                className="inline-flex h-11 items-center gap-1.5 rounded-2xl border border-[var(--rule-base)] px-4 text-base font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
               >
                 <MessageCircle className="h-5 w-5" /> Mandar la cuenta
               </a>
@@ -212,14 +212,14 @@ export default function FichaPersonaModal({
       <div className="flex flex-wrap gap-2">
         <button
           onClick={onEditar}
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+          className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
         >
           <Pencil className="h-4 w-4" /> Editar ficha
         </button>
         {persona.telefono && (
           <a
             href={`tel:${persona.telefono.replace(/\D/g, "")}`}
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
           >
             <Phone className="h-4 w-4" /> Llamar
           </a>
@@ -229,7 +229,7 @@ export default function FichaPersonaModal({
             href={wa}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
           >
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </a>
@@ -319,7 +319,7 @@ export default function FichaPersonaModal({
                 <button
                   type="button"
                   onClick={() => onVerAdelanto(a)}
-                  className="flex w-full items-center gap-3 rounded-2xl border-2 border-[var(--rule-soft)] px-4 py-3 text-left transition-colors hover:border-primary/50 hover:bg-[var(--surface-sunken)]/50"
+                  className="flex w-full items-center gap-3 rounded-2xl border border-[var(--rule-soft)] px-4 py-3 text-left transition-colors hover:border-primary/50 hover:bg-[var(--surface-sunken)]/50"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block font-mono text-sm font-bold text-[var(--text-primary)]">

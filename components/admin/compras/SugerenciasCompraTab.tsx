@@ -106,7 +106,7 @@ type FilterKey = "todos" | "CRITICO" | "URGENTE" | "PLANIFICAR" | "sin-proveedor
 
 function SkeletonCard() {
   return (
-    <div className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl p-4 animate-pulse">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4 animate-pulse">
       <div className="flex gap-3">
         <div className="h-6 w-6 rounded bg-[var(--rule-base)] " />
         <div className="flex-1 space-y-2">
@@ -394,7 +394,7 @@ export default function SugerenciasCompraTab() {
   return (
     <div className="space-y-5 pb-32">
       {/* ─── Hero header ─────────────────────────────────────────────── */}
-      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-white to-[var(--accent-soft)]/40 dark:from-[var(--color-card)] dark:to-[var(--accent-muted)]/20 px-5 py-4 flex items-center gap-4 flex-wrap">
+      <section className="rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-white to-[var(--accent-soft)]/40 dark:from-[var(--color-card)] dark:to-[var(--accent-muted)]/20 px-5 py-4 flex items-center gap-4 flex-wrap">
         <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/10 dark:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 shrink-0">
           <Sparkles className="h-6 w-6 text-[var(--data-success-500)]" strokeWidth={2.2} />
         </span>
@@ -428,7 +428,7 @@ export default function SugerenciasCompraTab() {
           <select
             value={ventanaDias}
             onChange={(e) => setVentanaDias(Number(e.target.value))}
-            className="h-11 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary/60 "
+            className="h-11 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary/60 "
           >
             <option value={30}>Últimos 30 días</option>
             <option value={60}>Últimos 60 días</option>
@@ -441,7 +441,7 @@ export default function SugerenciasCompraTab() {
           type="button"
           onClick={() => void load(true)}
           disabled={refreshing}
-          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors disabled:opacity-50"
         >
           <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
           Recalcular
@@ -500,7 +500,7 @@ export default function SugerenciasCompraTab() {
             type="button"
             onClick={() => void load(true)}
             disabled={refreshing}
-            className="mt-5 inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:opacity-50 "
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:opacity-50 "
           >
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
             Volver a calcular
@@ -551,7 +551,7 @@ export default function SugerenciasCompraTab() {
             placeholder="Buscar producto o categoría..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-12 pl-12 pr-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary transition-colors"
+            className="w-full h-12 pl-12 pr-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary transition-colors"
           />
           {search && (
             <button
@@ -799,7 +799,7 @@ export default function SugerenciasCompraTab() {
 
       {/* Empty filter result */}
       {visible.length === 0 && (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 px-6 py-12 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 px-6 py-12 text-center">
           <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[var(--surface-canvas)] mb-3">
             <Search className="h-6 w-6 text-[var(--text-tertiary)]" />
           </span>
@@ -808,7 +808,7 @@ export default function SugerenciasCompraTab() {
           <button
             type="button"
             onClick={() => { setFilter("todos"); setSearch(""); }}
-            className="mt-4 inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
+            className="mt-4 inline-flex items-center gap-2 h-11 px-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
           >
             Ver todas
           </button>
@@ -818,7 +818,7 @@ export default function SugerenciasCompraTab() {
       {/* Sticky bottom bar — solo aparece con seleccionados */}
       {selected.size > 0 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-1.5rem)] w-full sm:w-auto px-2">
-          <div className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-xl)] flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3">
+          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-xl)] flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3">
             <span className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-primary/10 shrink-0">
               <Sparkles className="h-5 w-5 text-primary" strokeWidth={2.2} />
             </span>
@@ -860,7 +860,7 @@ export default function SugerenciasCompraTab() {
           tenant real eran los 52, con cero ventas en 30 días. Reponerlos es
           inmovilizar plata. */}
       {sinRotacion.length > 0 && (
-        <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] overflow-hidden">
+        <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] overflow-hidden">
           <button
             type="button"
             onClick={() => setVerSinRotacion((v) => !v)}

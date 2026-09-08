@@ -175,7 +175,7 @@ function SparklineKPICard({
   const resolvedIconColor = iconColor ?? "var(--text-secondary)";
   const resolvedValueColor = valueColor ?? "var(--text-primary)";
   return (
-    <div className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl p-4 relative overflow-hidden">
+    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4 relative overflow-hidden">
       <div className="flex items-center gap-1.5 mb-1">
         <Icon className="h-4 w-4" style={{ color: resolvedIconColor }} />
         <p className="text-xs uppercase font-bold text-[var(--text-tertiary)] truncate">{title}</p>
@@ -327,7 +327,7 @@ function PrestamosDashboard({ prestamos, resumen }: { prestamos: Prestamo[]; res
     <div className="space-y-6">
       {/* Mejora 0: mensaje de salud de la cartera */}
       <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
-        <div className={cn("rounded-2xl border-2 border-l-4 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-center gap-3", health.border)}>
+        <div className={cn("rounded-2xl border border-l-4 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex items-center gap-3", health.border)}>
           <health.Icon className={cn("h-6 w-6 shrink-0", health.cls)} />
           <p className={cn("text-base font-semibold", health.cls)}>{health.text}</p>
         </div>

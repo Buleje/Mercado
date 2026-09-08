@@ -23,7 +23,7 @@ import { revisarCierre } from "@/lib/forestal/ctp-cierre-checklist";
 import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
 import type { CtpCierresState } from "@/hooks/use-ctp-cierres";
 
-const BTN = "inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:opacity-50";
+const BTN = "inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:opacity-50";
 
 const TONO = {
   no_conviene: "border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]",
@@ -103,7 +103,7 @@ export default function CtpCierreAsistido({ onIr, cierres }: {
   };
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <span className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Lock className="h-4 w-4 text-[var(--accent)]" /> Cerrar el mes paso a paso
@@ -114,7 +114,7 @@ export default function CtpCierreAsistido({ onIr, cierres }: {
             value={mes.key}
             onChange={(e) => { setMesKey(e.target.value); setResultado(null); }}
             aria-label="Mes a cerrar"
-            className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           >
             {meses.map((m) => (
               <option key={m.key} value={m.key} disabled={cierres.closedKeys.has(m.key)}>
@@ -132,7 +132,7 @@ export default function CtpCierreAsistido({ onIr, cierres }: {
 
       {/* 1 · Revisión */}
       {falló ? (
-        <p className="flex items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
+        <p className="flex items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] px-3 py-2 text-xs text-[var(--text-tertiary)]">
           No se pudo revisar el período.
           <button type="button" onClick={recargar} className="font-bold text-[var(--accent)] hover:underline">Reintentar</button>
         </p>

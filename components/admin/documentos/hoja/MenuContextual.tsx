@@ -70,7 +70,7 @@ export default function MenuContextual({
       ref={ref}
       role="menu"
       style={{ left: izq, top: arriba, width: ancho }}
-      className="fixed z-50 overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-[var(--shadow-lg)]"
+      className="fixed z-50 overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-[var(--shadow-lg)]"
     >
       <Item icono={Copy} texto="Copiar" atajo="Ctrl+C" onClick={ejecutar(opciones.copiar)} />
       <Item icono={Scissors} texto="Cortar" atajo="Ctrl+X" onClick={ejecutar(opciones.cortar)} />

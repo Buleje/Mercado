@@ -113,7 +113,7 @@ export default function CtpTrozasBuscador() {
           onChange={(e) => setQ(e.target.value)}
           placeholder="106/C, 13/A, 52…"
           aria-label="Codificación de la troza"
-          className="h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-10 font-mono text-base text-[var(--text-primary)] transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
+          className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-10 font-mono text-base text-[var(--text-primary)] transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]"
         />
         {cargando && <Loader2 className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[var(--text-tertiary)]" />}
       </div>

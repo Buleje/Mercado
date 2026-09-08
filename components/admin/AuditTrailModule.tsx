@@ -44,7 +44,7 @@ const ENTITIES = [
 
 const LIMIT = 30;
 const FILTER_CLS =
-  "h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition-colors";
+  "h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] transition-colors";
 
 function fmtDate(iso: string) {
   const d = new Date(iso);
@@ -147,7 +147,7 @@ export default function AuditTrailModule() {
           const ui = CATEGORY_UI[cat];
           const Icon = ui.icon;
           return (
-            <div key={cat} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+            <div key={cat} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
               <div className="flex items-center gap-2">
                 <span
                   className="flex h-7 w-7 items-center justify-center rounded-lg"
@@ -168,7 +168,7 @@ export default function AuditTrailModule() {
       {/* Filtros */}
       <div className="space-y-3">
         {/* Período segmentado */}
-        <div className="inline-flex rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
+        <div className="inline-flex rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
           {PERIODS.map((p) => (
             <button
               key={p.id}
@@ -216,7 +216,7 @@ export default function AuditTrailModule() {
           </select>
           <button
             onClick={fetchLogs}
-            className="flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
             title="Actualizar"
             aria-label="Actualizar"
           >
@@ -239,7 +239,7 @@ export default function AuditTrailModule() {
       )}
 
       {/* Contenido */}
-      <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         {loading ? (
           <div className="p-10 text-center">
             <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
@@ -349,7 +349,7 @@ export default function AuditTrailModule() {
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
+                className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
                 aria-label="Página anterior"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -358,7 +358,7 @@ export default function AuditTrailModule() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
+                className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
                 aria-label="Página siguiente"
               >
                 <ChevronRight className="h-4 w-4" />

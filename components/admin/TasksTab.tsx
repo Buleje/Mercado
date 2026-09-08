@@ -137,7 +137,7 @@ export default function TasksTab() {
       {loading ? (
         <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted">Cargando…</div>
       ) : filtered.length === 0 ? (
-        <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-12 text-center">
+        <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-12 text-center">
           <ListChecks className="h-12 w-12 text-[var(--text-tertiary)] dark:text-muted mx-auto mb-3" />
           <p className="text-[var(--text-secondary)] dark:text-muted font-semibold">No hay tareas{filterStatus !== "todas" ? ` con estado "${filterStatus}"` : ""}</p>
         </div>

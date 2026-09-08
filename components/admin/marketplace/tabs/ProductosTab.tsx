@@ -218,7 +218,7 @@ export function MarketplaceProductosTab() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por nombre, SKU o categoría…"
-            className="w-full h-10 pl-10 pr-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
+            className="w-full h-10 pl-10 pr-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
           />
           {query && (
             <button
@@ -235,7 +235,7 @@ export function MarketplaceProductosTab() {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors capitalize"
+            className="h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors capitalize"
             aria-label="Filtrar por categoría"
           >
             <option value="todos">Todas las categorías</option>
@@ -310,13 +310,13 @@ export function MarketplaceProductosTab() {
       )}
 
       {products.length === 0 && !error ? (
-        <div className="text-center py-16 text-[var(--text-tertiary)] rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="text-center py-16 text-[var(--text-tertiary)] rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
           <p className="text-sm font-semibold">Sin productos publicados</p>
           <p className="text-xs mt-1">Activa productos desde tu catálogo para mostrarlos en el marketplace.</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-[var(--text-tertiary)] rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="text-center py-12 text-[var(--text-tertiary)] rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <Search className="h-8 w-8 mx-auto mb-2 opacity-40" />
           <p className="text-sm font-semibold">Sin resultados con esos filtros</p>
           <button
@@ -346,7 +346,7 @@ export function MarketplaceProductosTab() {
                       }}
                       onChange={toggleSelectAll}
                       aria-label="Seleccionar todos los productos visibles"
-                      className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                      className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                     />
                   </th>
                   <th className="text-left px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
@@ -412,7 +412,7 @@ export function MarketplaceProductosTab() {
                           checked={isSel}
                           onChange={() => toggleSelect(p.id)}
                           aria-label={`Seleccionar ${p.name}`}
-                          className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                          className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                         />
                       </td>
                       <td className="px-3 py-2.5">
@@ -552,7 +552,7 @@ export function MarketplaceProductosTab() {
                             type="button"
                             onClick={() => setBoostingProduct(p)}
                             title="Destacar este producto en el marketplace"
-                            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] text-xs font-bold hover:border-[var(--brand-secondary)] hover:text-[var(--brand-secondary)] transition-colors"
+                            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] text-xs font-bold hover:border-[var(--brand-secondary)] hover:text-[var(--brand-secondary)] transition-colors"
                           >
                             <Megaphone className="h-3.5 w-3.5" />
                             Destacar
@@ -733,7 +733,7 @@ function BoostModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-3xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
+        className="w-full max-w-lg rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
       >
         <header className="flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)]">
           <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-secondary)]/15 text-[var(--brand-secondary)] shrink-0">
@@ -868,7 +868,7 @@ function NumberField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className={cn(
-            "w-full h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]",
+            "w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]",
             prefix ? "pl-8 pr-3" : "px-3",
             suffix ? "pr-12" : "",
             "text-right tabular-nums",

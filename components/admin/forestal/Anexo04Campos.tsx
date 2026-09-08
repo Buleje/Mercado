@@ -39,9 +39,9 @@ function resumenPorEspecieTipo(anexo: Anexo04) {
   return [...filas.values()];
 }
 
-const INPUT = "h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+const INPUT = "h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 const LABEL = "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const MINI = "inline-flex h-11 shrink-0 items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]";
+const MINI = "inline-flex h-11 shrink-0 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]";
 
 /** Lado máximo del logo guardado: entra nítido en la hoja sin inflar localStorage. */
 const LOGO_MAX_PX = 320;
@@ -211,7 +211,7 @@ export default function Anexo04Campos({
               ? `Ej.: procede íntegro de la GTF ${datos.gtf}, sin discrepancias con lo aserrado. Fecha de aserrío, destino, o cualquier aclaración del lote.`
               : "Ej.: GTF de origen, fecha de aserrío, destino, o cualquier aclaración del lote que el firmante quiera dejar constancia."
           }
-          className="mt-1 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          className="mt-1 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
         />
       </label>
 
@@ -220,7 +220,7 @@ export default function Anexo04Campos({
           una declaración jurada y no se le agrega nada solo. El botón lo
           copia ahí SI el emisor quiere dejarlo escrito en el papel. */}
       {resumen.length > 0 && (
-        <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2.5">
+        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className={LABEL}>Detalle por especie · tipo</span>
             <button
@@ -272,7 +272,7 @@ export default function Anexo04Campos({
           guardadas por tenant para todos los anexos siguientes. Antes el logo
           vivía pegado a la razón social y la firma tres campos más abajo, así
           que nadie sabía que existían las tres. */}
-      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <span className={LABEL}>Logo, firma y sello del emisor</span>
           <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">

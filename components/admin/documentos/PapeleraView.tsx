@@ -87,7 +87,7 @@ export function PapeleraView({
 
   if (enPapelera.length === 0) {
     return (
-      <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
+      <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
         <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)] mb-4">
           <Trash2 className="h-7 w-7" />
         </div>
@@ -104,7 +104,7 @@ export function PapeleraView({
   return (
     <div className="space-y-3">
       {/* Cuánto retiene la papelera + vaciarla de una */}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
           <HardDrive className="h-5 w-5" />
         </span>
@@ -173,13 +173,13 @@ export function PapeleraView({
         </div>
       )}
 
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-2.5 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
           <input
             type="checkbox"
             checked={todos}
             onChange={(e) => setElegidos(e.target.checked ? new Set(enPapelera.map((d) => d.id)) : new Set())}
-            className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
+            className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
             aria-label="Elegir todos los de la papelera"
           />
           <span className="text-xs text-[var(--text-tertiary)] inline-flex items-center gap-1.5">
@@ -204,7 +204,7 @@ export function PapeleraView({
                   type="checkbox"
                   checked={marcado}
                   onChange={() => alternar(d.id)}
-                  className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--color-primary)]"
+                  className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--color-primary)]"
                   aria-label={`Elegir ${d.name}`}
                 />
                 <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", bg)}>

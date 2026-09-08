@@ -186,7 +186,7 @@ export default function CacaoNews() {
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">Lo último del cacao en Perú y el mundo, con su sesgo de precio. Fuente: Google Noticias.</p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
+          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
           {updatedAt && <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]"><Clock className="h-3 w-3" />Actualizado {relTime(updatedAt)}</span>}
         </div>
       </div>
@@ -214,7 +214,7 @@ export default function CacaoNews() {
         <>
           {/* Barra de resumen — sesgo sobre noticias recientes (14 días) */}
           {items.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-sm">
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-sm">
               <span className="font-bold text-[var(--text-primary)]">{items.length} noticia{items.length === 1 ? "" : "s"}</span>
               <span className="text-[var(--text-tertiary)]">· {resumen.nRecientes} de los últimos {RECIENTE_DIAS} días</span>
               <SentChip sent="alcista" count={resumen.alcista} />
@@ -238,13 +238,13 @@ export default function CacaoNews() {
           )}
 
           {/* Buscador + filtros COMBINABLES */}
-          <div className="space-y-2.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+          <div className="space-y-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex h-11 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4">
+              <div className="flex h-11 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4">
                 <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
                 <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar en titulares y fuentes…" className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none" />
               </div>
-              <select value={sourceF} onChange={(e) => setSourceF(e.target.value)} aria-label="Filtrar por fuente" className="h-11 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
+              <select value={sourceF} onChange={(e) => setSourceF(e.target.value)} aria-label="Filtrar por fuente" className="h-11 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none">
                 <option value="">Todas las fuentes</option>
                 {sources.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
@@ -260,17 +260,17 @@ export default function CacaoNews() {
 
           {/* Lista: Recientes agrupadas + Histórico colapsable */}
           {vista.total === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
+            <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-8 text-center">
               <Newspaper className="mx-auto h-7 w-7 text-[var(--text-tertiary)]" />
               <p className="mt-2 text-sm text-[var(--text-tertiary)]">
                 {items.length === 0 ? "Sin noticias disponibles ahora. Probá actualizar en un rato." : "Ninguna noticia coincide con los filtros."}
               </p>
-              {items.length > 0 && filtrosActivos && <button type="button" onClick={limpiar} className="mt-3 inline-flex items-center gap-1 rounded-xl border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-3.5 w-3.5" />Limpiar filtros</button>}
+              {items.length > 0 && filtrosActivos && <button type="button" onClick={limpiar} className="mt-3 inline-flex items-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-3.5 w-3.5" />Limpiar filtros</button>}
             </div>
           ) : (
             <div className="space-y-4">
               {vista.nRecientes === 0 && (
-                <p className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-center text-sm text-[var(--text-tertiary)]">Sin noticias recientes con estos filtros — mirá el histórico más abajo.</p>
+                <p className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-center text-sm text-[var(--text-tertiary)]">Sin noticias recientes con estos filtros — mirá el histórico más abajo.</p>
               )}
               {(["hoy", "semana", "mes"] as const).map((g) =>
                 vista.recientes[g].length === 0 ? null : (
@@ -279,7 +279,7 @@ export default function CacaoNews() {
               )}
 
               {vista.historico.length > 0 && (
-                <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+                <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
                   <button type="button" onClick={() => setShowHist((v) => !v)} className="flex w-full items-center gap-2 px-5 py-2.5 text-left hover:bg-[var(--surface-sunken)]">
                     <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
                     <span className="text-sm font-bold text-[var(--text-primary)]">Histórico</span>
@@ -299,7 +299,7 @@ export default function CacaoNews() {
       )}
 
       {/* Fuentes oficiales — clicables y destacadas */}
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]"><Coins className="h-4 w-4 text-[var(--accent)]" />Fuentes oficiales para verificar precios</p>
         <div className="flex flex-wrap gap-2">
           <RefLink href="https://www.icco.org/statistics/" label="ICCO (precios diarios)" />
@@ -315,7 +315,7 @@ export default function CacaoNews() {
 
 function NewsGroup({ title, count, items, groupKey }: { title: string; count: number; items: Item[]; groupKey: string }) {
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="flex items-center gap-2 border-b-2 border-[var(--rule-soft)] px-5 py-2.5">
         <Newspaper className="h-4 w-4 text-[var(--accent)]" />
         <span className="text-sm font-bold text-[var(--text-primary)]">{title}</span>
@@ -358,7 +358,7 @@ function PillGroup<T extends string>({ label, options, value, onChange }: { labe
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</span>
-      <div className="inline-flex rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+      <div className="inline-flex rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
         {options.map((o) => (
           <button key={o.v} type="button" onClick={() => onChange(o.v)} className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${value === o.v ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>{o.label}</button>
         ))}

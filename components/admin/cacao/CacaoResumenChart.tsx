@@ -119,20 +119,20 @@ export default function CacaoResumenChart() {
   }
 
   return (
-    <div ref={rootRef} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div ref={rootRef} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <p className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Activity className="h-4 w-4 text-[var(--accent)]" />Comprado vs vendido por mes {metric === "kg" ? "(kg)" : "(valor S/)"}</p>
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={() => setShowAcum((v) => !v)} title="Superponer el stock/caja acumulado (comprado − vendido corrido)" className={`inline-flex items-center gap-1.5 rounded-xl border-2 px-3 py-1.5 text-xs font-bold transition ${showAcum ? "border-[var(--data-info-500)] bg-[var(--data-info-50)] text-[var(--data-info-700)]" : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)]"}`}><Boxes className="h-3.5 w-3.5" />Acumulado</button>
-          <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+          <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
             {RANGES.map((r) => <button key={r.k} type="button" onClick={() => setRange(r.k)} className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${range === r.k ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>{r.k}</button>)}
           </div>
-          <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+          <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
             <button type="button" onClick={() => setMetric("kg")} className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${metric === "kg" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>Kilos</button>
             <button type="button" onClick={() => setMetric("valor")} className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${metric === "valor" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>Valor S/</button>
           </div>
           {view && (
-            <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
+            <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
               <button type="button" onClick={exportCSV} title="Descargar la planilla mensual (CSV)" className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"><FileSpreadsheet className="h-3.5 w-3.5" />CSV</button>
               <button type="button" onClick={exportPNG} title="Descargar el gráfico como imagen (PNG)" className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"><ImageIcon className="h-3.5 w-3.5" />PNG</button>
             </div>
@@ -198,7 +198,7 @@ function ChartTooltip({ active, payload, label, metric, showAcum }: any) {
   );
   const netoPos = p.neto >= 0;
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-xs shadow-[var(--shadow-md)]">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-xs shadow-[var(--shadow-md)]">
       <p className="mb-1 font-bold text-[var(--text-primary)]">{label}</p>
       <div className="space-y-0.5">
         {row("var(--accent)", "Comprado", f(p.comprado))}

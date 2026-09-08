@@ -98,7 +98,7 @@ export default function DescuentoPlanillaModal({
   return (
     <ModalShell title="Descuentos de planilla" onClose={onClose} wide>
       {base.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-8 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center">
           <Users className="mx-auto mb-3 h-10 w-10 text-[var(--text-tertiary)] opacity-40" />
           <p className="text-base font-bold text-[var(--text-primary)]">No hay adelantos de planilla abiertos</p>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -133,7 +133,7 @@ export default function DescuentoPlanillaModal({
             </label>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)]">
+          <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)]">
             <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] text-left">
                 <tr>
@@ -161,7 +161,7 @@ export default function DescuentoPlanillaModal({
                         value={l.descuento}
                         onChange={(e) => setAjustes((a) => ({ ...a, [l.adelantoId]: Number(e.target.value) }))}
                         aria-label={`Descuento para ${l.persona}`}
-                        className="h-9 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary"
+                        className="h-9 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary"
                       />
                     </td>
                     <td className="px-3 py-2">
@@ -219,7 +219,7 @@ export default function DescuentoPlanillaModal({
           <div className="flex gap-2 pt-1">
             <button
               onClick={onClose}
-              className="h-12 flex-1 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              className="h-12 flex-1 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             >
               {resultado ? "Cerrar" : "Cancelar"}
             </button>

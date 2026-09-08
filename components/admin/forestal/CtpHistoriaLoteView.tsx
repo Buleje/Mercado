@@ -59,7 +59,7 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
           value={loteId ?? ""}
           onChange={(e) => setLoteId(e.target.value || null)}
           aria-label="Elegí el lote"
-          className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
+          className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
         >
           {cargandoLotes && <option value="">Cargando lotes…</option>}
           {lotes.map((l) => (
@@ -92,7 +92,7 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
 
       {cargando && !h && <PanelSkeleton kpis={4} />}
       {!cargando && !h && !error && lotes.length === 0 && (
-        <p className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
+        <p className="rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-10 text-center text-sm text-[var(--text-secondary)]">
           Todavía no hay lotes de aserrío. Armá uno en «Lotes de aserrío» y su historia empieza acá.
         </p>
       )}
@@ -112,7 +112,7 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
           )}
 
           {/* El recorrido en una línea: quien sólo quiere el número no baja. */}
-          <dl className="grid grid-cols-2 divide-[var(--rule-soft)] overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] sm:grid-cols-4 sm:divide-x">
+          <dl className="grid grid-cols-2 divide-[var(--rule-soft)] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] sm:grid-cols-4 sm:divide-x">
             <Paso n={1} termino="Se apartó" valor={`${nf(h.armado.piezas)} pz`} pie={`${n4(h.armado.m3)} m³ en la pila`} />
             <Paso n={2} termino="Entró a la sierra" valor={`${n4(h.consumo.m3Total)} m³`} pie={`${nf(h.consumo.piezasConsumidas)} piezas consumidas`} />
             <Paso
@@ -144,7 +144,7 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
             </p>
           )}
 
-          <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
             <Etapa
               n={1}
               titulo="Armado"

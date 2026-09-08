@@ -65,7 +65,7 @@ export default function CtpComplianceHistoria({
 
   if (error || (!loading && (serie?.length ?? 0) === 0)) {
     return (
-      <section className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-4">
+      <section className="rounded-2xl border border-dashed border-[var(--rule-base)] p-4">
         <Cabecera periodLabel={periodLabel} />
         <p className="mt-2 text-sm text-[var(--text-secondary)]">
           {error
@@ -78,7 +78,7 @@ export default function CtpComplianceHistoria({
 
   if (loading && !serie) {
     return (
-      <section className="rounded-2xl border-2 border-[var(--rule-base)] p-4">
+      <section className="rounded-2xl border border-[var(--rule-base)] p-4">
         <Cabecera periodLabel={periodLabel} />
         <div className="mt-3 h-[200px] animate-pulse rounded-xl bg-[var(--surface-sunken)]" />
       </section>
@@ -100,7 +100,7 @@ export default function CtpComplianceHistoria({
         : "text-[var(--text-tertiary)]";
 
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <Cabecera periodLabel={periodLabel} />
         <p className={`inline-flex items-baseline gap-1.5 text-sm font-bold ${tono}`}>

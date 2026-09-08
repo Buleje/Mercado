@@ -141,7 +141,7 @@ export default function PlanTierSelector({
   return (
     <div className="space-y-5">
       {/* ── Header ───────────────────────────────────────────────── */}
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-canvas)] to-[var(--surface-sunken)] p-5 sm:p-6">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-[var(--surface-canvas)] to-[var(--surface-sunken)] p-5 sm:p-6">
         <div className="flex items-start gap-4">
           <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] text-white shadow-[var(--shadow-md)]">
             <Crown className="h-5 w-5" strokeWidth={2.25} />
@@ -299,7 +299,7 @@ export default function PlanTierSelector({
       </div>
 
       {/* ── Disclaimer ───────────────────────────────────────────── */}
-      <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
+      <div className="flex items-start gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
         <Lock className="h-5 w-5 shrink-0 mt-0.5 text-[var(--text-tertiary)]" strokeWidth={2.25} />
         <div className="text-sm text-[var(--text-secondary)] leading-relaxed">
           <strong className="text-[var(--text-primary)]">

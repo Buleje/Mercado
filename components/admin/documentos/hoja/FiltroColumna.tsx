@@ -57,7 +57,7 @@ export default function FiltroColumna({
         onMouseDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-label={`Filtrar la columna ${etiqueta}`}
-        className="flex max-h-[80vh] w-full max-w-[24rem] flex-col overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
+        className="flex max-h-[80vh] w-full max-w-[24rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
         <div className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-4 py-3">
           <CardTitle as="h2">Filtrar por la columna {etiqueta}</CardTitle>
@@ -75,7 +75,7 @@ export default function FiltroColumna({
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar un valor…"
               aria-label="Buscar un valor de la columna"
-              className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-8 pr-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-8 pr-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </div>
           <button
@@ -127,7 +127,7 @@ export default function FiltroColumna({
           </button>
           <div className="flex gap-2">
             <button type="button" onClick={onCerrar}
-              className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
+              className="h-10 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
               Cancelar
             </button>
             <button

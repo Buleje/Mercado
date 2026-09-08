@@ -689,7 +689,7 @@ export default function GoalsTab() {
       ) : goals.length === 0 ? (
         <EmptyStateWithTemplates onPick={applyTemplate} autoStats={autoStats} />
       ) : visible.length === 0 ? (
-        <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
+        <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-xl p-10 text-center">
           <Target className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-3" />
           <p className="text-[var(--text-secondary)] font-semibold">No hay metas en este filtro</p>
           <button onClick={() => setFilter("todas")} className="mt-3 text-sm text-primary font-semibold hover:underline">Ver todas</button>
@@ -962,7 +962,7 @@ export default function GoalsTab() {
 
 function EmptyStateWithTemplates({ onPick, autoStats }: { onPick: (t: Template) => void; autoStats: AutoStats }) {
   return (
-    <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] rounded-xl p-8 space-y-6">
+    <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-xl p-8 space-y-6">
       <div className="text-center">
         <Target className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
         <p className="text-[var(--text-primary)] font-bold mb-1">Empezá con una plantilla</p>

@@ -271,7 +271,7 @@ function ListaViajes({
         return (
           <li
             key={f.id}
-            className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5"
+            className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5"
           >
             <span className="w-16 shrink-0 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
               {fecha(f.fecha)}
@@ -353,7 +353,7 @@ function Cuentas({ cuentas, vacio, pieDePagina }: { cuentas: CuentaFletes[]; vac
         {cuentas.map((c) => (
           <li
             key={c.clave}
-            className="flex items-center gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5"
+            className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5"
           >
             <div className="min-w-0 flex-1">
               <span className="block truncate text-sm font-bold text-[var(--text-primary)]">{c.nombre}</span>

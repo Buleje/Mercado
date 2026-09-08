@@ -63,7 +63,7 @@ const hoyISO = () => new Date().toISOString().slice(0, 10);
 const norm = (v: string | null | undefined) => (v ?? "").toLowerCase().trim();
 
 const CAMPO =
-  "h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
+  "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
 /** Una cifra del acta. Cuatro juntas responden «¿qué estoy por firmar?». */
 function Cifra({

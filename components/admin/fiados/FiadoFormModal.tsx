@@ -252,7 +252,7 @@ export default function FiadoFormModal({
                           </button>
                         </div>
                       ) : (
-                        <label className="flex items-center justify-center gap-2 w-full py-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                        <label className="flex items-center justify-center gap-2 w-full py-6 rounded-lg border border-dashed border-[var(--rule-base)] cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
                           <Camera className="h-5 w-5 text-[var(--text-tertiary)]" />
                           <span className="text-xs text-[var(--text-secondary)]">Tomar foto o seleccionar imagen</span>
                           <input

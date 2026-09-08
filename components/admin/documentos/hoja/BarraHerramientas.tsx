@@ -180,7 +180,7 @@ export default function BarraHerramientas({
       <span className="ml-auto pr-1 text-xs font-semibold text-[var(--text-tertiary)]">{etiquetaSeleccion}</span>
 
       {paleta && (
-        <div className="absolute left-2 top-full z-40 mt-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]">
+        <div className="absolute left-2 top-full z-40 mt-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 shadow-[var(--shadow-lg)]">
           <p className="mb-1.5 text-xs font-bold text-[var(--text-secondary)]">
             {paleta === "letra" ? "Color de letra" : "Color de relleno"}
           </p>

@@ -41,7 +41,7 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const INPUT =
-  "mt-1 h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-primary/60 ";
+  "mt-1 h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-primary/60 ";
 
 export default function GastoEditarModal({
   item, categorias, onGuardado, onClose,
@@ -163,7 +163,7 @@ export default function GastoEditarModal({
               type="button"
               onClick={onClose}
               disabled={ocupado}
-              className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -245,7 +245,7 @@ export default function GastoEditarModal({
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
               rows={2}
-              className="mt-1 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-base text-[var(--text-primary)] outline-none focus:border-primary/60 "
+              className="mt-1 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-base text-[var(--text-primary)] outline-none focus:border-primary/60 "
             />
           </Campo>
         </div>

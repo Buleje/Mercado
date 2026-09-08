@@ -62,7 +62,7 @@ export default function HistorialDeCambios({ refId }: { refId: string }) {
   if (!entradas || entradas.length === 0) return null;
 
   return (
-    <section className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
+    <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
       <p className="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
         <History className="h-4 w-4" aria-hidden />
         Cambios

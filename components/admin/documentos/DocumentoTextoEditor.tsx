@@ -40,7 +40,7 @@ const AUTOGUARDADO_MS = 120_000;
 /** Tope de instantáneas de deshacer: suficiente para trabajar, acotado en memoria. */
 const MAX_HISTORIAL = 100;
 
-const BOTON_HEADER = "inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-40 disabled:hover:bg-[var(--surface-raised)]";
+const BOTON_HEADER = "inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-40 disabled:hover:bg-[var(--surface-raised)]";
 
 export default function DocumentoTextoEditor({
   docId, nombre, mimeType,
@@ -315,7 +315,7 @@ export default function DocumentoTextoEditor({
           <a
             href="/admin?tab=documentos#documentos"
             title="Volver a Documentación"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden />
             <span className="sr-only">Volver a Documentación</span>
@@ -373,7 +373,7 @@ export default function DocumentoTextoEditor({
       <div className="min-h-0 flex-1 overflow-auto px-4 py-6">
         {/* Ancho de lectura como el de una hoja; rem explícitos porque en este
             proyecto `max-w-*` está redefinido y mide el doble. */}
-        <div className="mx-auto w-full max-w-[48rem] rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-8">
+        <div className="mx-auto w-full max-w-[48rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-8">
           {bloques.map((b, i) => (
             <FilaBloqueTexto
               key={b.id}

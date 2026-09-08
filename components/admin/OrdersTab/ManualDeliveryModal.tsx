@@ -125,7 +125,7 @@ export default function ManualDeliveryModal({
             onChange={(e) => setNote(e.target.value.slice(0, 200))}
             placeholder="Ej: cliente preguntó por descuento, entregué con propina, etc."
             rows={3}
-            className="w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none resize-y"
+            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none resize-y"
           />
           <p className="text-xs text-[var(--text-tertiary)] text-right font-mono">
             {note.length}/200
@@ -138,7 +138,7 @@ export default function ManualDeliveryModal({
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 sm:flex-none inline-flex items-center justify-center h-10 px-4 rounded-xl text-sm font-semibold border-2 border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+          className="flex-1 sm:flex-none inline-flex items-center justify-center h-10 px-4 rounded-xl text-sm font-semibold border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           Cancelar
         </button>

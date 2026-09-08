@@ -135,7 +135,7 @@ export function AssistantView({
                 </button>
               )}
               {reindexableCount > 0 && (
-                <button onClick={() => runIndex("all")} className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Re-describir TODOS los documentos con IA (los viejos ganan la descripción rica)">
+                <button onClick={() => runIndex("all")} className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Re-describir TODOS los documentos con IA (los viejos ganan la descripción rica)">
                   <RefreshCw className="h-3 w-3" /> Re-indexar todo
                 </button>
               )}
@@ -143,11 +143,11 @@ export function AssistantView({
           )}
           {conversations.length > 0 && (
             <div className="relative">
-              <button onClick={() => setShowConvos((s) => !s)} className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Conversaciones guardadas">
+              <button onClick={() => setShowConvos((s) => !s)} className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Conversaciones guardadas">
                 <History className="h-3 w-3" /> {conversations.length}
               </button>
               {showConvos && (
-                <div className="absolute right-0 top-full z-50 mt-1 max-h-72 w-64 overflow-y-auto rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl">
+                <div className="absolute right-0 top-full z-50 mt-1 max-h-72 w-64 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl">
                   {conversations.map((c) => (
                     <div key={c.id} className={cn("group flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[var(--surface-sunken)]", c.id === activeId && "bg-primary/10")}>
                       <button onClick={() => loadConversation(c)} className="min-w-0 flex-1 text-left">
@@ -162,7 +162,7 @@ export function AssistantView({
             </div>
           )}
           {turns.length > 0 && (
-            <button onClick={newConversation} className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Nueva conversación">
+            <button onClick={newConversation} className="inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Nueva conversación">
               <Plus className="h-3 w-3" /> Nueva
             </button>
           )}
@@ -177,7 +177,7 @@ export function AssistantView({
             <p className="mt-1 max-w-sm text-sm text-[var(--text-secondary)]">Describí lo que buscás en tus palabras y te encuentro el documento + la información que necesitás.</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               {SUGGESTIONS.map((s) => (
-                <button key={s} onClick={() => ask(s)} className="rounded-full border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary">{s}</button>
+                <button key={s} onClick={() => ask(s)} className="rounded-full border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary">{s}</button>
               ))}
             </div>
           </div>
@@ -205,7 +205,7 @@ export function AssistantView({
                       {t.a!.matchedDocs.length > 0 && (
                         <div className="space-y-1.5">
                           {t.a!.matchedDocs.map((d) => (
-                            <div key={d.id} className="overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+                            <div key={d.id} className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
                               <button
                                 onClick={() => onOpenDoc(d.id)}
                                 className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-[var(--surface-sunken)]"
@@ -249,7 +249,7 @@ export function AssistantView({
       </div>
 
       <div className="border-t border-[var(--rule-base)] p-3">
-        <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 focus-within:border-primary">
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 focus-within:border-primary">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}

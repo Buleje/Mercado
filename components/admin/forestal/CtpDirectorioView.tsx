@@ -280,7 +280,7 @@ function ListaPartes({
         return (
           <li
             key={p.id}
-            className={`flex items-center gap-3 rounded-xl border-2 bg-[var(--surface-raised)] px-3 py-2.5 ${
+            className={`flex items-center gap-3 rounded-xl border bg-[var(--surface-raised)] px-3 py-2.5 ${
               p.activo ? "border-[var(--rule-base)]" : "border-dashed border-[var(--rule-soft)] opacity-70"
             }`}
           >
@@ -368,7 +368,7 @@ function ListaVehiculos({
       {vehiculos.map((v) => (
         <li
           key={v.id}
-          className={`flex items-center gap-3 rounded-xl border-2 bg-[var(--surface-raised)] px-3 py-2.5 ${
+          className={`flex items-center gap-3 rounded-xl border bg-[var(--surface-raised)] px-3 py-2.5 ${
             v.activo ? "border-[var(--rule-base)]" : "border-dashed border-[var(--rule-soft)] opacity-70"
           }`}
         >

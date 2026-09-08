@@ -8,7 +8,7 @@
  */
 import { Download, FileSpreadsheet, FileText, Printer } from "@buleje/design-system/icons";
 
-const BTN = "inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]";
+const BTN = "inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]";
 
 export default function Anexo04Acciones({
   presentable, generando, onPdfDetallado, onExcel, onImprimir, onDescargar,

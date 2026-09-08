@@ -106,7 +106,7 @@ export default function DuplicadosView({ onOpenDoc, onEliminar }: {
   }
   if (grupos.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
+      <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
         <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]">
           <ShieldCheck className="h-7 w-7" />
         </div>
@@ -120,7 +120,7 @@ export default function DuplicadosView({ onOpenDoc, onEliminar }: {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
         <p className="text-sm text-[var(--text-secondary)]">
           <span className="font-extrabold text-[var(--text-primary)]">{grupos.length}</span>{" "}
           {grupos.length === 1 ? "archivo repetido" : "archivos repetidos"} · recuperás hasta{" "}
@@ -182,7 +182,7 @@ export default function DuplicadosView({ onOpenDoc, onEliminar }: {
                   <button
                     onClick={() => comprobar(g)}
                     disabled={ocupado}
-                    className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary disabled:opacity-50"
                   >
                     {ocupado ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
                     Comprobar que son iguales

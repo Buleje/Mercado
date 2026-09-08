@@ -82,7 +82,7 @@ export default function EditarDocumentoPage({ params }: { params: Promise<{ id: 
         <div className="rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-6 dark:bg-[var(--data-warning-500)]/12">
           <AlertTriangle className="mb-3 h-7 w-7 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
           <p className="text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{error}</p>
-          <Link href="/admin?tab=documentos#documentos" className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+          <Link href="/admin?tab=documentos#documentos" className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
             <ArrowLeft className="h-4 w-4" /> Volver a Documentación
           </Link>
         </div>

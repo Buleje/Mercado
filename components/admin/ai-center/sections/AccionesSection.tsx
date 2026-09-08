@@ -308,7 +308,7 @@ function DailyChecklist({ checked, onToggle }: DailyChecklistProps) {
                   <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
                 </span>
               ) : (
-                <span className="inline-flex h-5 w-5 shrink-0 rounded-md border-2 border-[var(--rule-base)] hover:border-[var(--text-primary)]/40 transition-colors" />
+                <span className="inline-flex h-5 w-5 shrink-0 rounded-md border border-[var(--rule-base)] hover:border-[var(--text-primary)]/40 transition-colors" />
               )}
               <span
                 className={cn(
@@ -388,7 +388,7 @@ function TaskCard({ task, done, onMarkDone }: TaskCardProps) {
       <button
         onClick={() => onMarkDone(task.id)}
         className={cn(
-          "shrink-0 inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]",
+          "shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]",
           "transition-colors hover:border-[var(--data-success-500)] hover:bg-[var(--data-success-500)] hover:text-white",
         )}
       >

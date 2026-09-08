@@ -64,7 +64,7 @@ export default function CacaoSimuladorPrecio({
   const up = pct > 0, down = pct < 0;
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-1 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <FlaskConical className="h-4 w-4 text-[var(--accent)]" />
@@ -122,7 +122,7 @@ export default function CacaoSimuladorPrecio({
                 value={pct}
                 onChange={(e) => setPct(clampPct(Number(e.target.value) || 0))}
                 aria-label="Porcentaje libre"
-                className="h-9 w-16 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-center font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]"
+                className="h-9 w-16 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-center font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]"
               />
               <span className="text-sm font-bold text-[var(--text-tertiary)]">%</span>
             </div>

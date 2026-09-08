@@ -265,7 +265,7 @@ export default function CtpGtfDatosForm({
         })}
       </div>
 
-      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4">
         {seccion === "propietario" && (
           <div className="space-y-3">
             <label className="flex items-start gap-2 text-sm font-medium text-[var(--text-primary)]">

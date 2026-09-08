@@ -335,7 +335,7 @@ export default function CacaoProducerDrawer({
 
               {/* Estado de cuenta con el productor (deuda / abonado / saldo) */}
               {agg && agg.totalPagado > 0 && (
-                <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-3">
+                <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                       Estado de cuenta
@@ -381,14 +381,14 @@ export default function CacaoProducerDrawer({
               )}
 
               {/* Perfil / edición */}
-              <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4">
+              <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Perfil</CardTitle>
                   {!editing ? (
                     <button
                       type="button"
                       onClick={() => setEditing(true)}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                     >
                       <Pencil className="h-3.5 w-3.5" /> Editar
                     </button>
@@ -454,7 +454,7 @@ export default function CacaoProducerDrawer({
                             Ver en mapa
                           </a>
                         </div>
-                        <div className="overflow-hidden rounded-xl border-2 border-[var(--rule-base)]">
+                        <div className="overflow-hidden rounded-xl border border-[var(--rule-base)]">
                           <LeafletMap
                             lat={Number(producer.latitud)}
                             lon={Number(producer.longitud)}
@@ -559,7 +559,7 @@ export default function CacaoProducerDrawer({
                 <CardTitle as="h3" className="mb-2 text-sm font-bold text-[var(--text-primary)]">
                   Historial de lotes ({lotes.length})
                 </CardTitle>
-                <div className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)]">
+                <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)]">
                   {lotes.length === 0 ? (
                     <p className="p-4 text-center text-[var(--text-tertiary)]">
                       Sin lotes registrados.
@@ -659,7 +659,7 @@ export default function CacaoProducerDrawer({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !saving) registrarPago();
               }}
-              className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
             <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
               Es el total pagado, no solo el abono de hoy. Igual o mayor al debido = liquidado.
@@ -669,7 +669,7 @@ export default function CacaoProducerDrawer({
             <button
               type="button"
               onClick={() => setPayLote(null)}
-              className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
             >
               Cancelar
             </button>
@@ -717,7 +717,7 @@ function AcctCell({
 
 function KStat({ icon: Icon, label, value }: { icon: typeof Users; label: string; value: string }) {
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-3 text-center">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-3 text-center">
       <Icon className="mx-auto mb-1 h-4 w-4 text-[var(--accent)]" />
       <div className="font-mono text-base font-extrabold tabular-nums text-[var(--text-primary)]">
         {value}
@@ -773,7 +773,7 @@ function PhoneRow({ phone, nombre }: { phone: string | null; nombre: string }) {
           onClick={(e) => e.stopPropagation()}
           title="Llamar"
           aria-label={`Llamar a ${nombre}`}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
         >
           <Phone className="h-4 w-4" />
         </a>

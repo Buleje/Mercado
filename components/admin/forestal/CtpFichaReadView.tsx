@@ -225,7 +225,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 function Card({ titulo, icono: Icono, children }: { titulo: string; icono: typeof Building2; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
         <Icono className="h-4 w-4" aria-hidden /> {titulo}
       </CardTitle>
@@ -244,7 +244,7 @@ export default function CtpFichaReadView({ ficha: f, onEditar }: { ficha: CtpFic
       <Carnet f={f} avisos={avisos} />
       <PanelAvisos avisos={avisos} onEditar={onEditar} />
 
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="mb-1 flex flex-wrap items-start justify-between gap-3">
           <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <ShieldCheck className="h-4 w-4" aria-hidden /> Títulos habilitantes
@@ -252,7 +252,7 @@ export default function CtpFichaReadView({ ficha: f, onEditar }: { ficha: CtpFic
           <button
             type="button"
             onClick={() => setVerGtf(true)}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
           >
             <FileText className="h-4 w-4" aria-hidden /> Ver cómo sale la guía
           </button>
@@ -273,7 +273,7 @@ export default function CtpFichaReadView({ ficha: f, onEditar }: { ficha: CtpFic
         <Card titulo="Permisos CITES (especies protegidas)" icono={ShieldCheck}>
           <ul className="space-y-2">
             {f.citesPermisos.map((p, i) => (
-              <li key={`${p.numero}-${i}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5">
+              <li key={`${p.numero}-${i}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5">
                 <span className="text-sm font-bold text-[var(--text-primary)]">{p.especie || "—"}</span>
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-sm text-[var(--text-secondary)]">{p.numero || "sin N° de permiso"}</span>

@@ -1460,7 +1460,7 @@ export default function TurnosModule() {
                     onChange={e => { setNewCajeroName(e.target.value); if (createCajeroError) setCreateCajeroError(null); }}
                     placeholder="Ej. María Quispe"
                     autoFocus
-                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full h-12 px-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </Field>
                 <Field label="Usuario (para iniciar sesión)" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
@@ -1470,7 +1470,7 @@ export default function TurnosModule() {
                     onChange={e => { setNewCajeroUsername(e.target.value.toLowerCase()); if (createCajeroError) setCreateCajeroError(null); }}
                     placeholder="maria.cajera"
                     autoComplete="off"
-                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full h-12 px-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                   <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Solo letras, números, puntos y guión bajo · 3-32 caracteres</p>
                 </Field>
@@ -1481,7 +1481,7 @@ export default function TurnosModule() {
                     onChange={e => { setNewCajeroPassword(e.target.value); if (createCajeroError) setCreateCajeroError(null); }}
                     placeholder="Mínimo 6 caracteres"
                     autoComplete="new-password"
-                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono transition-all"
+                    className="w-full h-12 px-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono transition-all"
                   />
                   <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Compártela con la cajera. Ella podrá cambiarla luego en su perfil.</p>
                 </Field>
@@ -1847,7 +1847,7 @@ export default function TurnosModule() {
                       placeholder="Ej: Falta S/30 por devolución no registrada de pollo broaster a las 18:30"
                       rows={3}
                       autoFocus
-                      className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                     />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1.5">
                       Mínimo 8 caracteres. Queda en el log del turno para auditoría. <span className="opacity-70">(Distinta del campo Notas del cierre.)</span>

@@ -73,7 +73,7 @@ export default function Anexo04Historial({
 
   if (lista.length === 0) {
     return (
-      <p className="rounded-xl border-2 border-dashed border-[var(--rule-base)] px-3 py-4 text-center text-xs text-[var(--text-tertiary)]">
+      <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-4 text-center text-xs text-[var(--text-tertiary)]">
         Todavía no emitiste ningún anexo. Al descargar el PDF queda registrado acá para re-imprimirlo igual.
       </p>
     );
@@ -92,7 +92,7 @@ export default function Anexo04Historial({
           type="button"
           onClick={() => onPdfLote(visibles)}
           title="Un solo PDF con los anexos que estás viendo, para imprimir y archivar"
-          className="inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-2.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
           <Printer className="h-3.5 w-3.5" /> PDF
         </button>
@@ -100,7 +100,7 @@ export default function Anexo04Historial({
           type="button"
           onClick={() => exportarBandejaAnexos(visibles).catch(() => onError?.("No se pudo generar el Excel de la bandeja."))}
           title="Bajar el libro de anexos emitidos (lo que estás viendo) para el archivo del regente"
-          className="inline-flex h-8 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-2.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
           <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
         </button>
@@ -109,7 +109,7 @@ export default function Anexo04Historial({
 
       {(lista.length > 4 || meses.length > 1) && (
         <div className="mb-2 flex gap-1.5">
-          <label className="flex flex-1 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-2.5">
+          <label className="flex flex-1 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-2.5">
             <Search className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
             <input
               value={busqueda}
@@ -124,7 +124,7 @@ export default function Anexo04Historial({
               value={mes}
               onChange={(e) => setMes(e.target.value)}
               aria-label="Filtrar por mes de emisión"
-              className="h-9 shrink-0 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="h-9 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             >
               <option value="">Todos los meses</option>
               {meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}
@@ -134,7 +134,7 @@ export default function Anexo04Historial({
       )}
 
       {visibles.length === 0 && (
-        <p className="rounded-xl border-2 border-dashed border-[var(--rule-base)] px-3 py-3 text-center text-xs text-[var(--text-tertiary)]">
+        <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-3 text-center text-xs text-[var(--text-tertiary)]">
           Ningún anexo coincide con el filtro.
         </p>
       )}

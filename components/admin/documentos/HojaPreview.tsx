@@ -254,7 +254,7 @@ export default function HojaPreview({ url, mimeType, nombre, onEnviar, miniatura
               }}
               placeholder="Buscar en la hoja"
               aria-label="Buscar en la hoja"
-              className="h-9 w-44 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-8 pr-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none"
+              className="h-9 w-44 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-8 pr-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none"
             />
           </div>
           {busqueda.trim() !== "" && (
@@ -306,7 +306,7 @@ export default function HojaPreview({ url, mimeType, nombre, onEnviar, miniatura
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-auto rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <TablaHojaLectura
           hoja={hoja}
           hasta={hasta}
@@ -346,7 +346,7 @@ export default function HojaPreview({ url, mimeType, nombre, onEnviar, miniatura
           <button
             type="button"
             onClick={() => setHasta((h) => h + TANDA_EXTRA)}
-            className="inline-flex h-9 items-center rounded-lg border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            className="inline-flex h-9 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >
             Mostrar {Math.min(TANDA_EXTRA, restantes)} más
           </button>
@@ -357,7 +357,7 @@ export default function HojaPreview({ url, mimeType, nombre, onEnviar, miniatura
 }
 
 const BOTON =
-  "inline-flex h-9 w-9 items-center justify-center rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
+  "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
 
 /** Números legibles: miles separados y como mucho dos decimales. */
 function fmt(n: number): string {

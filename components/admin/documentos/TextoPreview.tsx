@@ -114,7 +114,7 @@ export default function TextoPreview({ url, mimeType, nombre, miniaturaUrl }: {
     <div className="h-full overflow-auto">
       {/* Ancho de lectura (~70 caracteres) y fondo de hoja: se lee como el
           documento que es, no como un volcado de texto. */}
-      <article className="mx-auto max-w-[46rem] space-y-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-7 sm:px-10">
+      <article className="mx-auto max-w-[46rem] space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-7 sm:px-10">
         {bloques.map((b) => {
           const estilo = `${b.negrita ? "font-bold " : ""}${b.cursiva ? "italic " : ""}`;
           if (b.tipo === "titulo") {

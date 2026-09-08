@@ -82,7 +82,7 @@ export default function CacaoCertificacion() {
   return (
     <div className="space-y-5">
       {/* Contexto EUDR para el dueño */}
-      <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-sm text-[var(--text-secondary)]">
+      <div className="flex items-start gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 text-sm text-[var(--text-secondary)]">
         <Globe className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
         <p><strong className="text-[var(--text-primary)]">EUDR (Reglamento UE 1115/2023):</strong> para exportar cacao a la Unión Europea cada parcela necesita <strong className="text-[var(--text-primary)]">geolocalización</strong> y prueba de estar libre de deforestación. Este tablero cruza tu padrón para ver quién ya está listo y prepara el insumo del Due Diligence Statement.</p>
       </div>
@@ -116,7 +116,7 @@ export default function CacaoCertificacion() {
             </div>
           )}
         </div>
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
           <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Award className="h-4 w-4 text-[var(--accent)]" />Certificaciones</CardTitle>
           <ul className="mt-3 space-y-2">
             {CERTS.map((c) => {
@@ -134,16 +134,16 @@ export default function CacaoCertificacion() {
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex h-12 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
+        <div className="flex h-12 min-w-[200px] flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar productor por nombre, código o sector…" className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
         </div>
-        <button type="button" onClick={exportDDS} disabled={view.length === 0} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><FileCheck className="h-4 w-4" />Export DDS</button>
-        <button type="button" onClick={load} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" />Actualizar</button>
+        <button type="button" onClick={exportDDS} disabled={view.length === 0} className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><FileCheck className="h-4 w-4" />Export DDS</button>
+        <button type="button" onClick={load} className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" />Actualizar</button>
       </div>
 
       {/* Tabla */}
-      <div className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <DataTable className="w-full text-sm">
           <thead className="bg-[var(--surface-sunken)] text-left">
             <tr><Th>Productor</Th><Th>Certificación</Th><Th>Geolocalización</Th><Th className="text-right">Kg acopiado</Th><Th className="text-right">Estado export</Th></tr>

@@ -123,7 +123,7 @@ export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
         <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Wallet className="h-4 w-4" />
           {total.saldo === 0
@@ -155,7 +155,7 @@ export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
       </div>
 
       {nuevo && (
-        <div className="grid gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:grid-cols-6">
+        <div className="grid gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:grid-cols-6">
           <select
             className={`${I} sm:col-span-2`}
             value={nuevo.parteId}
@@ -235,7 +235,7 @@ export default function CtpCuentaCorriente({ fletes }: { fletes: Flete[] }) {
           {saldos.map((s) => {
             const suyos = movs.filter((m) => m.parteId === s.parteId);
             return (
-              <li key={s.parteId} className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
+              <li key={s.parteId} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
                 <button
                   type="button"
                   onClick={() => setAbierta((v) => (v === s.parteId ? null : s.parteId))}

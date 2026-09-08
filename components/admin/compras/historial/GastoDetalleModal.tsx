@@ -54,7 +54,7 @@ function Nota({
       className={
         tono === "aviso"
           ? "flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2.5"
-          : "flex items-start gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5"
+          : "flex items-start gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5"
       }
     >
       <Icono
@@ -111,7 +111,7 @@ export default function GastoDetalleModal({
             <button
               type="button"
               onClick={() => onEditar(item)}
-              className="mr-auto inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-primary/40 hover:text-primary"
+              className="mr-auto inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-primary/40 hover:text-primary"
             >
               <Pencil className="h-4 w-4" aria-hidden />
               Corregir
@@ -120,7 +120,7 @@ export default function GastoDetalleModal({
           {fuente.destino && (
             <a
               href={fuente.destino.href}
-              className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-primary/40 hover:text-primary"
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-primary/40 hover:text-primary"
             >
               {fuente.destino.label}
               <ArrowUpRight className="h-4 w-4" aria-hidden />
@@ -139,7 +139,7 @@ export default function GastoDetalleModal({
       <div className="space-y-4 p-5">
         {/* El monto es lo que se viene a ver: va solo, grande y con su estado
             al lado, en vez de empatado con la categoría en una lista plana. */}
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
           <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
             <div className="min-w-0">
               <p className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">

@@ -83,7 +83,7 @@ export default function CacaoCierrePanel() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="flex items-start gap-3">
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Lock className="h-5 w-5" /></span>
           <div className="min-w-0">
@@ -98,7 +98,7 @@ export default function CacaoCierrePanel() {
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1">
             <span className="text-sm font-bold text-[var(--text-secondary)]">Mes a cerrar</span>
-            <select value={sel} onChange={(e) => setSel(e.target.value)} disabled={busy} className="h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-bold text-[var(--text-primary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]">
+            <select value={sel} onChange={(e) => setSel(e.target.value)} disabled={busy} className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-base font-bold text-[var(--text-primary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]">
               {months.map((m) => (<option key={m.key} value={m.key} disabled={closedKeys.has(m.key)}>{m.label}{closedKeys.has(m.key) ? " — cerrado" : ""}</option>))}
             </select>
           </label>
@@ -113,13 +113,13 @@ export default function CacaoCierrePanel() {
         {cierres === null ? (
           <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</p>
         ) : cierres.length === 0 ? (
-          <p className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">Todavía no cerraste ninguna campaña. El acopio sigue completamente editable.</p>
+          <p className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">Todavía no cerraste ninguna campaña. El acopio sigue completamente editable.</p>
         ) : (
           <ul className="space-y-3">
             {cierres.map((c) => {
               const open = expanded === c.periodKey;
               return (
-                <li key={c.periodKey} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+                <li key={c.periodKey} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${c.reabierto ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" : "bg-[var(--data-success-100)] text-[var(--data-success-700)]"}`}>{c.reabierto ? <RotateCcw className="h-4 w-4" /> : <Lock className="h-4 w-4" />}</span>
@@ -131,7 +131,7 @@ export default function CacaoCierrePanel() {
                     </div>
                     <div className="flex items-center gap-2">
                       <button type="button" onClick={() => setExpanded(open ? null : c.periodKey)} aria-expanded={open} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Acta <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} /></button>
-                      {!c.reabierto && <button type="button" onClick={() => void reabrir(c)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RotateCcw className="h-3.5 w-3.5" /> Reabrir</button>}
+                      {!c.reabierto && <button type="button" onClick={() => void reabrir(c)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RotateCcw className="h-3.5 w-3.5" /> Reabrir</button>}
                     </div>
                   </div>
                   {open && (
@@ -162,7 +162,7 @@ export default function CacaoCierrePanel() {
 
 function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
       <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</p>
       <p className="mt-0.5 text-base font-extrabold text-[var(--text-primary)]">{value}</p>
       {sub && <p className="text-xs text-[var(--text-tertiary)]">{sub}</p>}

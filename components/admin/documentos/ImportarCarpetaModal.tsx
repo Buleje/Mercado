@@ -320,7 +320,7 @@ export default function ImportarCarpetaModal({
               <button
                 type="button"
                 onClick={() => inputRef.current?.click()}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
               >
                 <Upload className="h-4 w-4" /> Elegir carpeta…
               </button>
@@ -349,7 +349,7 @@ export default function ImportarCarpetaModal({
               {reuso.size > 0 && " Lo que ya existe se reusa: no se duplica ninguna carpeta."}
             </p>
             {/* Árbol de lo que se va a crear: se ve la forma antes de tocar nada. */}
-            <div className="max-h-64 overflow-auto rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+            <div className="max-h-64 overflow-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
               <ul className="space-y-0.5 text-sm">
                 {sueltosEnRaiz > 0 && (
                   <li className="flex items-center gap-2 text-[var(--text-tertiary)]">
@@ -396,14 +396,14 @@ export default function ImportarCarpetaModal({
             />
 
             {duplicados.size > 0 && (
-              <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-secondary)]">
+              <p className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm text-[var(--text-secondary)]">
                 <Check className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" />
                 {plural(duplicados.size, "archivo ya estaba", "archivos ya estaban")} en el drive — se omiten y sólo se sube lo que falta.
               </p>
             )}
 
             {plan.ignorados.length > 0 && (
-              <details className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+              <details className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
                 <summary className="cursor-pointer text-xs font-bold text-[var(--text-secondary)]">
                   {plural(plan.ignorados.length, "archivo que se deja", "archivos que se dejan")} afuera
                 </summary>

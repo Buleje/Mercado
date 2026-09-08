@@ -99,7 +99,7 @@ export default function CalculadoraRendimiento() {
         : "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
 
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <CardTitle as="h3" className="mb-1 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
         <Gauge className="h-4 w-4 text-[var(--accent)]" /> Coeficiente de rendimiento
       </CardTitle>
@@ -128,7 +128,7 @@ export default function CalculadoraRendimiento() {
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Troza consumida (m³)</span>
             <input
               type="number" inputMode="decimal" value={inputM3} onChange={(e) => setInputM3(e.target.value)} placeholder="0.000"
-              className="mt-1 h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-base font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              className="mt-1 h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-base font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </label>
           <div>
@@ -136,9 +136,9 @@ export default function CalculadoraRendimiento() {
             <div className="mt-1 flex gap-2">
               <input
                 type="number" inputMode="decimal" value={salida} onChange={(e) => setSalida(e.target.value)} placeholder="0.00"
-                className="h-12 min-w-0 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-base font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                className="h-12 min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-base font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
-              <div className="flex overflow-hidden rounded-xl border-2 border-[var(--rule-base)]">
+              <div className="flex overflow-hidden rounded-xl border border-[var(--rule-base)]">
                 {(["pt", "m3"] as const).map((u) => (
                   <button key={u} type="button" onClick={() => setUnidad(u)} aria-pressed={unidad === u}
                     className={`px-3 text-sm font-semibold transition ${unidad === u ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
@@ -177,7 +177,7 @@ export default function CalculadoraRendimiento() {
       </div>
 
       {/* Promedio real del Libro del tenant */}
-      <div className="mt-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3">
+      <div className="mt-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3">
         {libro ? (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-sm text-[var(--text-secondary)]">

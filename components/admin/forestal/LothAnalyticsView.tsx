@@ -221,12 +221,12 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
         </p>
         <div className="flex flex-wrap items-center gap-2">
           {data.hasPlan && (
-            <button type="button" onClick={() => setCostosAbierto(true)} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+            <button type="button" onClick={() => setCostosAbierto(true)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
               <Calculator className="h-4 w-4" /> Costos operativos
             </button>
           )}
-          <button type="button" onClick={() => downloadCsv(`analitica-libro-th-${(data.plan?.planNumber ?? "sin-plan").replace(/[^\w-]+/g, "-")}.csv`, buildAnalyticsCsv(data))} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" /> CSV</button>
-          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</button>
+          <button type="button" onClick={() => downloadCsv(`analitica-libro-th-${(data.plan?.planNumber ?? "sin-plan").replace(/[^\w-]+/g, "-")}.csv`, buildAnalyticsCsv(data))} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Download className="h-4 w-4" /> CSV</button>
+          <button type="button" onClick={load} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar</button>
         </div>
       </div>
 
@@ -301,7 +301,7 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
           {ranking.length > 0 ? (
             <RankingPanel rows={ranking} />
           ) : (
-            <p className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
+            <p className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
               Cargá el precio de venta en las especies del plan y los costos operativos para ver el margen.
             </p>
           )}
@@ -310,7 +310,7 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
 
       {/* Cuadro por especie: rendimiento + saldo en una sola tabla. */}
       {porEspecie.length > 0 && (
-        <section className="overflow-x-auto rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]">
+        <section className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]">
           <div className="flex flex-wrap items-center gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
             <TreePine className="h-4 w-4 text-[var(--accent)]" aria-hidden="true" />
             <CardTitle as="h3" className="text-sm text-[var(--text-primary)]">Cuadro por especie</CardTitle>
@@ -392,7 +392,7 @@ function CostInput({ label, hint, value, onChange }: { label: string; hint: stri
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">{label} <span className="font-normal text-[var(--text-tertiary)]">(S/ por m³)</span></span>
-      <input type="number" step="0.01" min="0" value={value} onChange={(e) => onChange(e.target.value)} placeholder="0.00" className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]" />
+      <input type="number" step="0.01" min="0" value={value} onChange={(e) => onChange(e.target.value)} placeholder="0.00" className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)]" />
       <span className="mt-1 block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{hint}</span>
     </label>
   );

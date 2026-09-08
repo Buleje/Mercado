@@ -276,7 +276,7 @@ export default function CtpCuadrarGuiaModal({
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Ej: la GTF de SERFOR publica la pieza 20/A con cantidad 3 y su propio total dice 1"
-                className="mt-1 h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-base text-[var(--text-primary)]"
+                className="mt-1 h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-base text-[var(--text-primary)]"
               />
               <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
                 Va al registro de auditoría del libro: es lo que contesta «¿por qué cambió este número?».
@@ -397,7 +397,7 @@ export default function CtpCuadrarGuiaModal({
                         return (
                           <label
                             key={o.lado}
-                            className={`flex items-start gap-2 rounded-xl border-2 p-3 ${
+                            className={`flex items-start gap-2 rounded-xl border p-3 ${
                               bloqueado
                                 ? "cursor-not-allowed border-[var(--rule-base)] opacity-60"
                                 : "cursor-pointer border-[var(--rule-base)] hover:border-[var(--color-primary)]"

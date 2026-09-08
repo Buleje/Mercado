@@ -332,7 +332,7 @@ export function DespachoSection({
                 value={customDriver}
                 onChange={(e) => onCustomDriverChange(e.target.value)}
                 placeholder="Ej: María (vecina), Juan (sobrino)…"
-                className="flex-1 h-12 px-3.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] transition-colors"
+                className="flex-1 h-12 px-3.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] transition-colors"
                 onKeyDown={(e) => e.key === "Enter" && handleSaveAdHoc()}
               />
               <button

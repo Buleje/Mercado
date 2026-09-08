@@ -206,7 +206,7 @@ function FleteTardio({
   };
 
   return (
-    <div className="mt-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3.5 space-y-2.5">
+    <div className="mt-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3.5 space-y-2.5">
       <p className="text-xs text-[var(--text-secondary)]">
         Lo que costó traer esta compra (mototaxi, carga, estiba). Se reparte entre las unidades
         que todavía tenés en stock, para que el costo del producto deje de ser optimista.
@@ -219,7 +219,7 @@ function FleteTardio({
             value={monto}
             onChange={(e) => setMonto(Math.max(0, Number(e.target.value)))}
             aria-label="Costo de traer la mercadería"
-            className="w-32 h-11 pl-9 pr-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary"
+            className="w-32 h-11 pl-9 pr-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
         <button
@@ -737,7 +737,7 @@ export default function PurchaseOrdersTab() {
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* ─── Hero header ─────────────────────────────────────────────── */}
-      <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-linear-to-br from-white to-[var(--accent-soft)]/40 dark:from-[var(--color-card)] dark:to-[var(--accent-muted)]/20 px-5 py-4 flex items-center gap-4 flex-wrap">
+      <section className="rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-white to-[var(--accent-soft)]/40 dark:from-[var(--color-card)] dark:to-[var(--accent-muted)]/20 px-5 py-4 flex items-center gap-4 flex-wrap">
         <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/10 border border-primary/30 shrink-0">
           <FileText className="h-6 w-6 text-primary" strokeWidth={2.2} />
         </span>
@@ -767,7 +767,7 @@ export default function PurchaseOrdersTab() {
 
       {/* ─── Buscador: por proveedor, factura o producto ─────────────── */}
       {!loading && orders.length > 0 && (
-        <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 space-y-3">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[240px]">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
@@ -776,7 +776,7 @@ export default function PurchaseOrdersTab() {
                 onChange={(e) => f.setBusqueda(e.target.value)}
                 placeholder="Buscar por proveedor, N° de factura o producto…"
                 aria-label="Buscar órdenes de compra"
-                className="w-full h-12 pl-10 pr-10 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+                className="w-full h-12 pl-10 pr-10 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
               />
               {f.busqueda && (
                 <button
@@ -795,7 +795,7 @@ export default function PurchaseOrdersTab() {
                 value={f.desde}
                 onChange={(e) => f.setDesde(e.target.value)}
                 aria-label="Desde"
-                className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+                className="h-12 px-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </Field>
             <Field label="Hasta" labelClassName="sr-only">
@@ -804,7 +804,7 @@ export default function PurchaseOrdersTab() {
                 value={f.hasta}
                 onChange={(e) => f.setHasta(e.target.value)}
                 aria-label="Hasta"
-                className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
+                className="h-12 px-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </Field>
             <div className="relative min-w-[190px]">
@@ -813,7 +813,7 @@ export default function PurchaseOrdersTab() {
                 value={selectedSupplierId ?? ""}
                 onChange={(e) => setSelectedSupplierId(e.target.value || null)}
                 aria-label="Filtrar por proveedor"
-                className="w-full h-12 pl-10 pr-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary appearance-none cursor-pointer"
+                className="w-full h-12 pl-10 pr-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary appearance-none cursor-pointer"
               >
                 <option value="">Todos los proveedores</option>
                 {suppliers.map(s => (
@@ -825,7 +825,7 @@ export default function PurchaseOrdersTab() {
               value={f.orden}
               onChange={(e) => f.setOrden(e.target.value as OrdenDeLista)}
               aria-label="Ordenar por"
-              className="h-12 px-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer"
+              className="h-12 px-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer"
             >
               {ORDENES_DE_LISTA.map(o => (
                 <option key={o.id} value={o.id}>{o.label}</option>
@@ -835,7 +835,7 @@ export default function PurchaseOrdersTab() {
               <button
                 type="button"
                 onClick={f.limpiar}
-                className="inline-flex items-center gap-1.5 h-12 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
+                className="inline-flex items-center gap-1.5 h-12 px-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors"
               >
                 <X className="h-4 w-4" />
                 Limpiar
@@ -890,7 +890,7 @@ export default function PurchaseOrdersTab() {
             }));
             exportToExcel(rows, `compras-${new Date().toISOString().slice(0, 10)}`, "Compras");
           }}
-          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           title="Exportar compras a Excel"
         >
           <Download className="h-4 w-4" />
@@ -1002,7 +1002,7 @@ export default function PurchaseOrdersTab() {
 
       {/* ─── Mejora 15: cards de pedidos recurrentes ─────────────────── */}
       {upcomingRecurring.length > 0 && (
-        <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 sm:p-5 space-y-3">
+        <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 sm:p-5 space-y-3">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-primary/10 shrink-0">
               <Repeat className="h-4 w-4 text-primary" strokeWidth={2.2} />
@@ -1311,7 +1311,7 @@ export default function PurchaseOrdersTab() {
                         required
                         value={supplierId}
                         onChange={(e) => setSupplierId(e.target.value)}
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary cursor-pointer"
+                        className="w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary cursor-pointer"
                       >
                         <option value="">— Seleccionar proveedor —</option>
                         {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}{s.ruc ? ` (RUC ${s.ruc})` : ""}</option>)}
@@ -1322,7 +1322,7 @@ export default function PurchaseOrdersTab() {
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         placeholder="Ej. Traer factura, descargar por el portón de atrás..."
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                        className="w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
                       />
                     </Field>
                   </div>
@@ -1372,7 +1372,7 @@ export default function PurchaseOrdersTab() {
                         type="date"
                         value={deliveryDate}
                         onChange={(e) => setDeliveryDate(e.target.value)}
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                        className="w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary"
                       />
                     </Field>
                     <Field label={<><Percent className="inline h-3 w-3 mr-1" />Descuento del proveedor</>} labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
@@ -1383,7 +1383,7 @@ export default function PurchaseOrdersTab() {
                             type="number" min="0" max="100" step="0.5"
                             value={discount}
                             onChange={(e) => setDiscount(Math.min(100, Math.max(0, Number(e.target.value))))}
-                            className="w-full h-12 pl-3.5 pr-9 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                            className="w-full h-12 pl-3.5 pr-9 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
                           />
                           <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--text-tertiary)]">%</span>
                         </div>
@@ -1404,7 +1404,7 @@ export default function PurchaseOrdersTab() {
                       <select
                         value={invoiceType}
                         onChange={(e) => setInvoiceType(e.target.value as TipoComprobante)}
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary cursor-pointer"
+                        className="w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary cursor-pointer"
                       >
                         {TIPOS_COMPROBANTE.map(t => (
                           <option key={t.id} value={t.id}>{t.label}</option>
@@ -1417,7 +1417,7 @@ export default function PurchaseOrdersTab() {
                         onChange={(e) => setInvoiceNumber(e.target.value)}
                         disabled={invoiceType === "ninguno"}
                         placeholder={invoiceType === "ninguno" ? "Sin comprobante" : "F001-00012345"}
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary disabled:opacity-50"
+                        className="w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-primary disabled:opacity-50"
                       />
                     </Field>
                     <Field label={<><Truck className="inline h-3 w-3 mr-1" />Flete (S/)</>} labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
@@ -1425,7 +1425,7 @@ export default function PurchaseOrdersTab() {
                         type="number" min="0" step="0.5"
                         value={flete}
                         onChange={(e) => setFlete(Math.max(0, Number(e.target.value)))}
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                        className="w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
                       />
                     </Field>
                     <Field label="Otros costos (S/)" labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
@@ -1433,7 +1433,7 @@ export default function PurchaseOrdersTab() {
                         type="number" min="0" step="0.5"
                         value={otrosCostos}
                         onChange={(e) => setOtrosCostos(Math.max(0, Number(e.target.value)))}
-                        className="w-full h-12 px-3.5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
+                        className="w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:border-primary"
                       />
                     </Field>
                   </div>
@@ -1450,7 +1450,7 @@ export default function PurchaseOrdersTab() {
                       type="checkbox"
                       checked={igvIncluded}
                       onChange={(e) => setIgvIncluded(e.target.checked)}
-                      className="mt-0.5 h-5 w-5 rounded-md border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                      className="mt-0.5 h-5 w-5 rounded-md border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                     />
                     <span className="text-sm font-medium text-[var(--text-primary)]">
                       Los costos que cargué ya incluyen IGV
@@ -1477,7 +1477,7 @@ export default function PurchaseOrdersTab() {
                       <button
                         type="button"
                         onClick={() => setShowScanner(true)}
-                        className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
+                        className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
                       >
                         <ScanBarcode className="h-4 w-4" />
                         Escanear
@@ -1494,7 +1494,7 @@ export default function PurchaseOrdersTab() {
                   </div>
 
                   {items.length === 0 ? (
-                    <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 px-4 py-10 text-center">
+                    <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 px-4 py-10 text-center">
                       <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[var(--surface-canvas)] mb-3">
                         <Package className="h-6 w-6 text-[var(--text-tertiary)]" />
                       </span>
@@ -1510,7 +1510,7 @@ export default function PurchaseOrdersTab() {
                           : [];
                         const lineTotal = item.quantity * item.unitCost;
                         return (
-                          <div key={idx} className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 transition-all hover:border-[var(--text-tertiary)]">
+                          <div key={idx} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 transition-all hover:border-[var(--text-tertiary)]">
                             <div className="flex items-start gap-2 mb-2">
                               <span className="inline-flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold shrink-0">
                                 {idx + 1}
@@ -1526,10 +1526,10 @@ export default function PurchaseOrdersTab() {
                                   onFocus={() => setOpenSearchIdx(idx)}
                                   onBlur={() => setTimeout(() => setOpenSearchIdx(null), 120)}
                                   placeholder="Buscar producto…"
-                                  className="w-full h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary"
+                                  className="w-full h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary"
                                 />
                                 {openSearchIdx === idx && filtered.length > 0 && (
-                                  <div className="absolute top-full left-0 right-0 z-20 bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl mt-1 max-h-56 overflow-y-auto shadow-lg">
+                                  <div className="absolute top-full left-0 right-0 z-20 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl mt-1 max-h-56 overflow-y-auto shadow-lg">
                                     {filtered.map(p => (
                                       <button
                                         key={p.id}
@@ -1566,7 +1566,7 @@ export default function PurchaseOrdersTab() {
                                         type="number" min="1" step="1"
                                         value={item.quantity}
                                         onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })}
-                                        className="w-20 h-10 px-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
+                                        className="w-20 h-10 px-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
                                       />
                                       <span className="text-xs font-bold text-[var(--text-tertiary)] ml-1">{item.unit}</span>
                                     </>
@@ -1583,7 +1583,7 @@ export default function PurchaseOrdersTab() {
                                         type="number" min="0" step="0.01"
                                         value={item.unitCost}
                                         onChange={(e) => updateItem(idx, { unitCost: Number(e.target.value) })}
-                                        className="w-24 h-10 pl-7 pr-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
+                                        className="w-24 h-10 pl-7 pr-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-right tabular-nums outline-none focus:border-primary"
                                       />
                                     </div>
                                   )}
@@ -1634,7 +1634,7 @@ export default function PurchaseOrdersTab() {
                   <button
                     type="button"
                     onClick={() => setShowCreate(false)}
-                    className="flex-1 h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                    className="flex-1 h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                   >
                     Cancelar
                   </button>
@@ -1655,9 +1655,9 @@ export default function PurchaseOrdersTab() {
 
       {/* ─── Orders list ─────────────────────────────────────────────── */}
       {loading ? (
-        <TableSkeleton rows={4} cols={5} className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl" />
+        <TableSkeleton rows={4} cols={5} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl" />
       ) : filteredOrders.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 px-6 py-14 text-center">
+        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 px-6 py-14 text-center">
           <span className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 mb-4">
             <ShoppingBag className="h-8 w-8 text-primary" strokeWidth={2.2} />
           </span>
@@ -1675,7 +1675,7 @@ export default function PurchaseOrdersTab() {
             <button
               type="button"
               onClick={f.limpiar}
-              className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors"
+              className="mt-5 inline-flex items-center gap-2 h-12 px-5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors"
             >
               <X className="h-5 w-5" strokeWidth={2.5} />
               Limpiar filtros
@@ -1767,7 +1767,7 @@ export default function PurchaseOrdersTab() {
                         aria-label="Cambiar estado"
                         disabled={cerrada}
                         title={cerrada ? `Una orden ${STATUS_LABELS[o.status].toLowerCase()} ya no cambia de estado` : "Cambiar estado"}
-                        className="h-10 px-3 rounded-xl border-2 border-[var(--rule-base)] text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="h-10 px-3 rounded-xl border border-[var(--rule-base)] text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {destinos.map(s => (
                           <option key={s} value={s}>{STATUS_LABELS[s]}</option>
@@ -1972,7 +1972,7 @@ export default function PurchaseOrdersTab() {
           {f.totalPaginas > 1 && (
             <nav
               aria-label="Páginas de órdenes"
-              className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3"
+              className="flex items-center justify-between gap-3 flex-wrap rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3"
             >
               <p className="text-sm font-bold text-[var(--text-secondary)]">
                 Mostrando {(f.pagina - 1) * POR_PAGINA + 1}–{Math.min(f.pagina * POR_PAGINA, f.filtradas.length)} de {f.filtradas.length}
@@ -1982,7 +1982,7 @@ export default function PurchaseOrdersTab() {
                   type="button"
                   onClick={() => f.setPagina(f.pagina - 1)}
                   disabled={f.pagina <= 1}
-                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Anterior
@@ -1994,7 +1994,7 @@ export default function PurchaseOrdersTab() {
                   type="button"
                   onClick={() => f.setPagina(f.pagina + 1)}
                   disabled={f.pagina >= f.totalPaginas}
-                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 h-11 px-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Siguiente
                   <ChevronRight className="h-4 w-4" />

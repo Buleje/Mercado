@@ -88,7 +88,7 @@ const fmtFecha = (iso: string | null) => {
 };
 
 const CAMPO =
-  "h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
+  "h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
 /** Las cuatro lecturas del cuadro. El botón muestra la activa: un menú que
  *  guarda estado y no lo dice obliga a abrirlo para saber cómo quedó. */
@@ -551,7 +551,7 @@ export default function CtpConsumosView({
 
   if (cargando) {
     return (
-      <div className="flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-6 text-sm text-[var(--text-secondary)] ">
+      <div className="flex items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-6 text-sm text-[var(--text-secondary)] ">
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
         Recorriendo la cadena de custodia del período…
       </div>
@@ -775,7 +775,7 @@ export default function CtpConsumosView({
                 <button
                   type="button"
                   onClick={() => onIr("lotes")}
-                  className="h-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] sm:col-span-2"
+                  className="h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] sm:col-span-2"
                 >
                   Programar un lote para cargar la sierra
                 </button>

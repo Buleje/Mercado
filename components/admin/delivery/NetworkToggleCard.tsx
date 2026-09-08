@@ -73,7 +73,7 @@ export default function NetworkToggleCard() {
   return (
     <section
       aria-labelledby="network-toggle-title"
-      className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6"
+      className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6"
     >
       <header className="flex items-start gap-3 mb-5">
         <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">

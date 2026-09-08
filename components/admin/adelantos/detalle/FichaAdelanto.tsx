@@ -28,7 +28,7 @@ function hace(iso: string): string {
 
 export default function FichaAdelanto({ adelanto: a }: { adelanto: DbAdelanto }) {
   return (
-    <div className="space-y-3 rounded-2xl border-2 border-[var(--rule-soft)] p-4">
+    <div className="space-y-3 rounded-2xl border border-[var(--rule-soft)] p-4">
       <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
         <Dato icon={CalendarDays} label="Se dio el">
           {/* `capitalize` mayusculiza CADA palabra: «Martes, 04 De Agosto De
