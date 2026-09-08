@@ -493,6 +493,7 @@ export default function CubicadorTrozas() {
         onPausar={lectura.pausar}
         onReanudar={lectura.reanudar}
         onReiniciar={lectura.reiniciar}
+        onIrAFila={lectura.irAFila}
         onCerrar={lectura.detener}
         etiqueta="Leyendo el patio"
       />

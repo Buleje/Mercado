@@ -18,9 +18,12 @@
  * fila deja sin saber si leyó todo o se cortó a mitad de camino — y obliga a
  * volver a buscar el botón de arriba para releer.
  *
- * Dos acciones y una salida:
+ * Las acciones y una salida:
  *  - **Pausar / Seguir** — frena donde está y retoma por esa misma fila.
  *  - **Reiniciar / Leer de nuevo** — vuelve a la primera y sigue leyendo.
+ *  - **Ir a la fila N** — salta a cualquier punto sin cerrar ni volver a la
+ *    tabla a buscar el botón de esa fila. En un lote de 301, «seguí desde la
+ *    120» es el pedido normal después de una interrupción.
  *  - **X** — corta la voz y cierra el panel. Es lo único que lo cierra.
  *
  * Y el progreso con todas las letras («fila 34 de 300»): sin eso, una pausa
@@ -28,7 +31,8 @@
  * resolver.
  */
 
-import { Pause, Play, RotateCcw, Volume2, X } from "@buleje/design-system/icons";
+import { useEffect, useId, useState } from "react";
+import { ArrowRight, Pause, Play, RotateCcw, Volume2, X } from "@buleje/design-system/icons";
 import type { EstadoLectura } from "@/hooks/use-lectura-en-voz";
 
 export default function ControlLecturaFlotante({
@@ -36,6 +40,7 @@ export default function ControlLecturaFlotante({
   onPausar,
   onReanudar,
   onReiniciar,
+  onIrAFila,
   onCerrar,
   etiqueta = "Leyendo la tabla",
 }: {
@@ -44,6 +49,8 @@ export default function ControlLecturaFlotante({
   onPausar: () => void;
   onReanudar: () => void;
   onReiniciar: () => void;
+  /** Salta a esa fila (1-based, como se numeran en pantalla) y sigue. */
+  onIrAFila: (posicion: number) => void;
   /** Corta la voz y cierra el panel. */
   onCerrar: () => void;
   etiqueta?: string;
@@ -108,6 +115,67 @@ export default function ControlLecturaFlotante({
           </>
         )}
       </div>
+
+      <IrAFila total={estado.total} onIr={onIrAFila} />
+    </div>
+  );
+}
+
+/**
+ * «Empezá por la 120.» Un número y Enter.
+ *
+ * Se acepta cualquier fila del rango y se avisa fuera de él en vez de corregir
+ * en silencio: pedir la 400 de 301 y que arranque en la 301 sin decir nada deja
+ * pensando que se escuchó mal el número.
+ */
+function IrAFila({ total, onIr }: { total: number; onIr: (posicion: number) => void }) {
+  const idCampo = useId();
+  const [valor, setValor] = useState("");
+  const n = Number(valor);
+  const valido = valor.trim() !== "" && Number.isFinite(n) && n >= 1 && n <= total;
+  const fueraDeRango = valor.trim() !== "" && Number.isFinite(n) && (n < 1 || n > total);
+  /* Al cambiar de tabla (otro total) lo tipeado deja de tener sentido. */
+  useEffect(() => { setValor(""); }, [total]);
+
+  const ir = () => {
+    if (!valido) return;
+    onIr(n);
+    setValor("");
+  };
+
+  return (
+    <div className="mt-2 flex items-center gap-2 border-t border-[var(--rule-soft)] pt-2">
+      <label
+        htmlFor={idCampo}
+        className="shrink-0 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
+      >
+        Ir a la fila
+      </label>
+      <input
+        id={idCampo}
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={total}
+        value={valor}
+        onChange={(e) => setValor(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); ir(); } }}
+        placeholder={`1–${total}`}
+        aria-label={`Número de fila desde la que leer, entre 1 y ${total}`}
+        aria-invalid={fueraDeRango}
+        className={`h-9 min-w-0 flex-1 rounded-lg border bg-[var(--surface-canvas)] px-2 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)] outline-none transition-colors ${
+          fueraDeRango ? "border-[var(--data-error-500)]" : "border-[var(--rule-base)] focus:border-[var(--accent)]"
+        }`}
+      />
+      <button
+        type="button"
+        onClick={ir}
+        disabled={!valido}
+        title={fueraDeRango ? `Esta tabla tiene ${total} filas` : "Leer desde esa fila en adelante"}
+        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-3 text-xs font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40 dark:text-[var(--accent)]"
+      >
+        <ArrowRight className="h-3.5 w-3.5" aria-hidden /> Ir
+      </button>
     </div>
   );
 }

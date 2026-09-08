@@ -178,12 +178,15 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
   }, []);
 
   /**
-   * Vuelve a la primera fila. Sirve leyendo, en pausa y TERMINADA — ahí es el
-   * «leer de nuevo», que es la razón de que el panel siga abierto al final.
+   * Salta a una fila y sigue desde ahí. `posicion` es 1-based, que es como se
+   * numeran las filas en pantalla: pedir «la 120» y que arranque en la 121
+   * sería una trampa para quien está mirando la tabla.
+   *
+   * Sirve leyendo, en pausa y TERMINADA — ahí es el «leer de nuevo».
    */
-  const reiniciar = useCallback(() => {
+  const irAFila = useCallback((posicion: number) => {
     if (!pasoRef.current) return;
-    idxRef.current = 0;
+    idxRef.current = Math.max(0, Math.round(posicion) - 1);
     /* Se cancela con `activa` en false a propósito: el `onerror` que dispara
        ese `cancel()` sobre la utterance vieja tiene que caer en el guard, no
        leerse como un fallo del motor. Se reactiva justo antes de seguir. */
@@ -196,8 +199,11 @@ export function useLecturaEnVoz<T extends { id: string }>(opts: OpcionesLectura)
     }, 0);
   }, []);
 
+  /** Vuelve a la primera. Es `irAFila(1)` con nombre propio. */
+  const reiniciar = useCallback(() => irAFila(1), [irAFila]);
+
   /** ¿Hay una lectura en curso? Para el toggle del botón que la arranca. */
   const activa = useCallback(() => activaRef.current, []);
 
-  return { leyendoId, estado, leer, leerDesde, pausar, reanudar, reiniciar, detener, activa };
+  return { leyendoId, estado, leer, leerDesde, pausar, reanudar, reiniciar, irAFila, detener, activa };
 }

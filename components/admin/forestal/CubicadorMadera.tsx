@@ -1642,7 +1642,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
           className="flex w-full items-center justify-between gap-2 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2.5 text-left transition-colors hover:border-[var(--accent)]"
         >
           <span className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-secondary)]">
-            <Mic className="h-4 w-4 text-[var(--accent)]" aria-hidden /> Cubicador de madera por voz
+            <Mic className="h-4 w-4 text-[var(--accent)]" aria-hidden /> Cargar piezas
           </span>
           <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <ChevronDown className="h-3.5 w-3.5" aria-hidden /> Mostrar
@@ -2451,6 +2451,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         onPausar={lecturaVoz.pausar}
         onReanudar={lecturaVoz.reanudar}
         onReiniciar={lecturaVoz.reiniciar}
+        onIrAFila={lecturaVoz.irAFila}
         onCerrar={lecturaVoz.detener}
       />
 

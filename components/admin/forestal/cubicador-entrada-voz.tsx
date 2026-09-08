@@ -98,7 +98,7 @@ export default function PanelEntradaVoz({
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-          <Calculator className="h-4 w-4 text-[var(--accent)]" /> Cubicador de madera por voz
+          <Calculator className="h-4 w-4 text-[var(--accent)]" /> Cargar piezas
         </CardTitle>
         <div className="flex items-center gap-2">
           <button type="button" onClick={onImportar} title="Importar un Excel/CSV de piezas al lote" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]">
@@ -179,170 +179,215 @@ export default function PanelEntradaVoz({
 
       {supported ? (
         <>
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-            <button
-              type="button"
-              onClick={onToggleListen}
-              aria-pressed={listening}
-              className={`inline-flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 transition ${listening ? "animate-pulse border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:brightness-95"}`}
-            >
-              {listening ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
-            </button>
-            <div className="min-w-0 flex-1 text-center sm:text-left">
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                <p className="text-sm font-bold text-[var(--text-primary)]">
-                  {paused ? "⏸ En pausa — decí «continúa» para seguir" : listening ? "Escuchando… dictá cada medida y pausá un instante" : "Tocá el micrófono y dictá los números"}
-                </p>
-                {/* Las cinco líneas de instrucciones que vivían siempre a la
-                    vista se pliegan acá: se leen una vez, y después sólo estorban
-                    entre el micrófono y la pieza que se está dictando. */}
-                <InfoTip
-                  side="bottom"
-                  icono="ayuda"
-                  ancho="w-96"
-                  title="Cómo se dicta"
-                  ariaLabel="Cómo se dicta: comandos por voz y atajos"
-                  body={<AyudaDeVoz />}
-                />
-                {/* Toggle de voz que repite */}
-                <button
-                  type="button"
-                  onClick={() => onUpdateConfig({ speak: !config.speak })}
-                  aria-pressed={speakOn}
-                  title={speakOn ? "La voz repite lo dictado — tocá para silenciar" : "Activar voz que repite lo dictado"}
-                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition ${speakOn ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)]"}`}
-                >
-                  {speakOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-                  Voz {speakOn ? "on" : "off"}
-                </button>
-              </div>
-              <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-                {numerosPorPieza(fijas) === 3 ? (
-                  /* Una línea, la que hace falta la primera vez. El resto —la
-                     micro-pausa, los comandos, el fijo— vive en el «?». */
-                  <>Solo los números: <span className="font-semibold text-[var(--text-secondary)]">&ldquo;dos seis ocho&rdquo;</span> = 2&Prime; × 6&Prime; × 8 pies.</>
-                ) : (
-                  <>Con lo fijo puesto, dictá <b className="text-[var(--text-secondary)]">{numerosPorPieza(fijas) === 1 ? "un número" : `${numerosPorPieza(fijas)} números`}</b> por pieza ({DIMENSIONES.filter((d) => fijas[d] == null).join(" · ")}). Para soltarlo decí <b className="text-[var(--text-secondary)]">&ldquo;quitá el fijo&rdquo;</b>.</>
-                )}
-              </p>
+          {/* ── 1. DICTAR ──────────────────────────────────────────────────
+              La caja entera se tiñe mientras escucha. El estado del micrófono
+              es lo único que hay que ver de lejos, con las manos ocupadas y el
+              celular apoyado: un borde de color a media pantalla se lee, un
+              botón chico que cambia de ícono no. */}
+          <section
+            className={`rounded-2xl border-2 p-4 transition-colors ${
+              listening
+                ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10"
+                : "border-[var(--rule-soft)] bg-[var(--surface-canvas)]"
+            }`}
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={onToggleListen}
+                aria-pressed={listening}
+                aria-label={listening ? "Detener el dictado" : "Empezar a dictar"}
+                className={`inline-flex h-16 shrink-0 items-center justify-center gap-2 rounded-2xl border-2 px-5 text-sm font-extrabold transition sm:h-20 sm:w-20 sm:px-0 ${
+                  listening
+                    ? "animate-pulse border-[var(--data-error-500)] bg-[var(--surface-raised)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                    : "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] hover:brightness-95 dark:text-[var(--accent)]"
+                }`}
+              >
+                {listening ? <MicOff className="h-7 w-7" /> : <Mic className="h-7 w-7" />}
+                <span className="sm:hidden">{listening ? "Detener" : "Dictar"}</span>
+              </button>
 
-              {/* Medidas fijas: lo que no hace falta volver a dictar */}
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {DIMENSIONES.map((d) => {
-                  const valor = fijas[d];
-                  const unidad = d === "largo" ? "pies" : "pulg";
-                  return valor ? (
-                    <span key={d} className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-2 py-1 text-xs font-bold text-[var(--accent)]">
-                      <Lock className="h-3 w-3" aria-hidden />
-                      {d} fijo: {valor} {unidad}
-                      <button
-                        type="button"
-                        onClick={() => { const n = { ...fijas }; delete n[d]; onAplicarFijas(n); }}
-                        aria-label={`Soltar el ${d} fijo`}
-                        title={`Soltar el ${d}`}
-                        className="ml-0.5 rounded p-0.5 hover:bg-[var(--surface-raised)]"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ) : null;
-                })}
-                {/* El tip de las medidas fijas se fue al «?» de arriba: era la
-                    tercera línea de instrucciones seguidas en el mismo panel. */}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-base font-extrabold text-[var(--text-primary)]">
+                    {paused
+                      ? "En pausa — decí «continúa» para seguir"
+                      : listening
+                        ? "Escuchando…"
+                        : "Tocá el micrófono y dictá"}
+                  </p>
+                  <InfoTip
+                    side="bottom"
+                    icono="ayuda"
+                    ancho="w-96"
+                    title="Cómo se dicta"
+                    ariaLabel="Cómo se dicta: comandos por voz y atajos"
+                    body={<AyudaDeVoz />}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => onUpdateConfig({ speak: !config.speak })}
+                    aria-pressed={speakOn}
+                    title={speakOn ? "La voz repite lo dictado — tocá para silenciar" : "Activar voz que repite lo dictado"}
+                    className={`ml-auto inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[length:var(--ts-2xs)] font-bold transition ${
+                      speakOn
+                        ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                        : "border-[var(--rule-base)] text-[var(--text-tertiary)]"
+                    }`}
+                  >
+                    {speakOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                    Voz {speakOn ? "on" : "off"}
+                  </button>
+                </div>
+                <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
+                  {numerosPorPieza(fijas) === 3 ? (
+                    <>Solo los números: <span className="font-bold text-[var(--text-secondary)]">&ldquo;dos seis ocho&rdquo;</span> = 2&Prime; × 6&Prime; × 8 pies.</>
+                  ) : (
+                    <>Con lo fijo puesto, dictá <b className="text-[var(--text-secondary)]">{numerosPorPieza(fijas) === 1 ? "un número" : `${numerosPorPieza(fijas)} números`}</b> por pieza ({DIMENSIONES.filter((d) => fijas[d] == null).join(" · ")}). Para soltarlo decí <b className="text-[var(--text-secondary)]">&ldquo;quitá el fijo&rdquo;</b>.</>
+                  )}
+                </p>
               </div>
-              {/* Especie: menú que se aplica a lo que dictes */}
-              <label className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
+            </div>
+
+            {/* El caption vive DENTRO de la caja de dictado: es lo que el
+                micrófono está entendiendo, no un bloque aparte. */}
+            {listening && (
+              <div className="mt-3 min-h-[2.75rem] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2">
+                {liveGroups && (liveGroups.triples.length > 0 || liveGroups.resto.length > 0) ? (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {liveGroups.triples.map((t, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 rounded-md bg-[var(--data-success-100)] px-2 py-0.5 font-mono text-sm font-bold text-[var(--data-success-700)]">
+                        {t.join(" · ")}
+                      </span>
+                    ))}
+                    {liveGroups.resto.length > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--data-warning-500)] px-2 py-0.5 font-mono text-sm text-[var(--data-warning-700)]">
+                        {liveGroups.resto.join(" · ")}<span className="ml-1 opacity-60">· falta{liveGroups.resto.length === 2 ? " 1" : "n 2"}</span>
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]"><Volume2 className="h-3.5 w-3.5" /> escuchando…</div>
+                )}
+                <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                  Cada bloque verde = una pieza (espesor · ancho · largo). Si un cuadrado quedó mal, pausá y editá esa fila con su micrófono.
+                </p>
+              </div>
+            )}
+
+            {errMsg && (
+              <p className="mt-3 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+                {errMsg}
+              </p>
+            )}
+          </section>
+
+          {/* ── 2. CON QUÉ ENTRA ───────────────────────────────────────────
+              Especie, dueño y medidas fijas eran tres controles de formas y
+              alturas distintas apilados en una columna. Son la misma cosa —lo
+              que se le pega a cada pieza que entra— así que van juntos, en
+              línea y del mismo alto. */}
+          <section className="mt-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4">
+            <p className="mb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Lo que se le pega a cada pieza
+            </p>
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="flex min-w-[10rem] flex-1 flex-col gap-1 sm:max-w-[14rem]">
                 <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Especie</span>
-                <select value={especie} onChange={(ev) => onEspecieChange(ev.target.value)} className="bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none">
+                <select
+                  value={especie}
+                  onChange={(ev) => onEspecieChange(ev.target.value)}
+                  className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                >
                   <option value="">Sin especie</option>
                   {ESPECIES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </label>
 
-              {/* Dueño: sin catálogo cerrado — combobox (input + datalist) para
-                  poder CREAR uno nuevo o ESCOGER uno ya usado. Se pone fijo al
-                  elegirlo, igual que la especie, hasta que se cambie a mano. */}
-              <label className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-1.5">
+              <label className="flex min-w-[11rem] flex-1 flex-col gap-1 sm:max-w-[16rem]">
                 <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Dueño</span>
-                <input
-                  type="text"
-                  list="cub-duenos-datalist"
-                  value={dueno}
-                  onChange={(ev) => onDuenoChange(ev.target.value)}
-                  placeholder="Sin dueño"
-                  aria-label="Dueño de lo que se va a cubicar"
-                  className="w-32 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[var(--text-tertiary)]"
-                />
-                {dueno && (
+                <span className="flex h-11 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5">
+                  <input
+                    type="text"
+                    list="cub-duenos-datalist"
+                    value={dueno}
+                    onChange={(ev) => onDuenoChange(ev.target.value)}
+                    placeholder="Sin dueño"
+                    aria-label="Dueño de lo que se va a cubicar"
+                    className="min-w-0 flex-1 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[var(--text-tertiary)]"
+                  />
+                  {dueno && (
+                    <button
+                      type="button"
+                      onClick={() => onDuenoChange("")}
+                      aria-label="Quitar el dueño"
+                      className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => onDuenoChange("")}
-                    aria-label="Quitar el dueño"
-                    className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                    onClick={onAbrirDuenos}
+                    title="Crear, guardar o borrar dueños de la lista"
+                    aria-label="Gestionar dueños guardados"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <Plus className="h-3.5 w-3.5" />
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={onAbrirDuenos}
-                  title="Crear, guardar o borrar dueños de la lista"
-                  aria-label="Gestionar dueños guardados"
-                  className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
+                </span>
               </label>
-              {duenosConocidos.length > 0 && (
-                <p className="mt-1 flex flex-wrap gap-1.5">
-                  {duenosConocidos.slice(0, 6).map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => onDuenoChange(d)}
-                      aria-pressed={dueno === d}
-                      className={`rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold transition ${dueno === d ? "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </p>
-              )}
 
-              {/* Los comandos por voz viven en el «?» del título: son una
-                  chuleta que se consulta, no un rótulo que haya que tener
-                  delante mientras se dicta. */}
-
-              {/* Caption en vivo AGRUPADO — cada bloque verde = una pieza, para
-                  ver el cuadrado mientras dictás rápido (no una barra continua). */}
-              {listening && (
-                <div className="mt-2 min-h-[2.75rem] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
-                  {liveGroups && (liveGroups.triples.length > 0 || liveGroups.resto.length > 0) ? (
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {liveGroups.triples.map((t, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 rounded-md bg-[var(--data-success-100)] px-2 py-0.5 font-mono text-sm font-bold text-[var(--data-success-700)]">
-                          {t.join(" · ")}
+              {/* Las medidas fijas SÓLO ocupan lugar cuando hay alguna: un
+                  rótulo «Fijas» vacío enseña a no mirar esa zona. */}
+              {Object.keys(fijas).length > 0 && (
+                <div className="flex min-w-0 flex-col gap-1">
+                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Fijas</span>
+                  <div className="flex h-11 flex-wrap items-center gap-1.5">
+                    {DIMENSIONES.map((d) => {
+                      const valor = fijas[d];
+                      const unidad = d === "largo" ? "pies" : "pulg";
+                      return valor ? (
+                        <span key={d} className="inline-flex h-9 items-center gap-1 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-2 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                          <Lock className="h-3 w-3" aria-hidden />
+                          {d} {valor} {unidad}
+                          <button
+                            type="button"
+                            onClick={() => { const n = { ...fijas }; delete n[d]; onAplicarFijas(n); }}
+                            aria-label={`Soltar el ${d} fijo`}
+                            title={`Soltar el ${d}`}
+                            className="ml-0.5 rounded p-0.5 hover:bg-[var(--surface-raised)]"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
                         </span>
-                      ))}
-                      {liveGroups.resto.length > 0 && (
-                        <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--data-warning-500)] px-2 py-0.5 font-mono text-sm text-[var(--data-warning-700)]">
-                          {liveGroups.resto.join(" · ")}<span className="ml-1 opacity-60">· falta{liveGroups.resto.length === 2 ? " 1" : "n 2"}</span>
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]"><Volume2 className="h-3.5 w-3.5" /> escuchando…</div>
-                  )}
-                  <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Cada bloque verde = una pieza (espesor · ancho · largo). Si un cuadrado quedó mal, pausá y editá esa fila con su 🎤.</p>
+                      ) : null;
+                    })}
+                  </div>
                 </div>
               )}
-              {errMsg && (
-                <p className="mt-2 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-warning-700)]">
-                  {errMsg}
-                </p>
-              )}
             </div>
-          </div>
+
+            {duenosConocidos.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {duenosConocidos.slice(0, 6).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => onDuenoChange(d)}
+                    aria-pressed={dueno === d}
+                    className={`rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition ${
+                      dueno === d
+                        ? "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                        : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
 
           {/* Última agregada + deshacer (feedback del auto-add) */}
           {lastAdded && (
@@ -360,7 +405,7 @@ export default function PanelEntradaVoz({
           )}
         </>
       ) : (
-        <p className="rounded-xl bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-700)]">
+        <p className="rounded-xl bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
           Este navegador no soporta dictado por voz (usá Chrome). Podés cargar las medidas a mano abajo.
         </p>
       )}
@@ -369,7 +414,10 @@ export default function PanelEntradaVoz({
           Grid fijo de 2 columnas en celular (predecible, no depende del ancho
           del texto de cada etiqueta como pasaba con flex-wrap) y fila normal
           desde tablet — `sm:` es el mismo corte que usa el resto del DS. */}
-      <div data-grilla={grillaId} className="mt-4 border-t border-[var(--rule-soft)] pt-3">
+      <div data-grilla={grillaId} className="mt-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4">
+        <p className="mb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+          O cargala a mano
+        </p>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-end">
           <CeldaCarga
             label="Cant." col={COL_CANT} valor={manual.cantidad}
