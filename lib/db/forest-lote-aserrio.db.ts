@@ -166,11 +166,15 @@ export class ForestLoteAserrioDB {
    * El código a usar: el que se pidió a mano, validado, o el correlativo de
    * siempre si no se pidió ninguno (Brandon, 2026-08-31).
    *
-   * `@@unique[tenantId, code]` no filtra por `deletedAt` —un lote borrado
-   * sigue bloqueando su código para siempre, igual que ya hace
-   * `siguienteCode()` al no excluirlos del cálculo—, así que el chequeo
-   * tampoco lo filtra: reportar "libre" un código que la base va a rechazar
-   * sería peor que el error crudo de Postgres.
+   * Sólo compiten por el código los lotes VIVOS (ADR-396): el índice único de
+   * la base es parcial (`WHERE deletedAt IS NULL`), así que un lote que se
+   * armó y se borró deja su nombre libre para el que se arme después. Antes el
+   * índice era total y el chequeo, para no mentir «libre», tampoco filtraba: el
+   * resultado era que un lote borrado bloqueaba su código para siempre.
+   *
+   * `siguienteCode()` sigue contando los borrados a propósito: el correlativo
+   * automático no debe volver atrás — un libro numerado con huecos se explica,
+   * uno con dos LA-2026-007 distintos no.
    */
   private static async codigoAUsar(
     tenantId: string,
@@ -180,7 +184,12 @@ export class ForestLoteAserrioDB {
     const limpio = pedido?.trim();
     if (!limpio) return ForestLoteAserrioDB.siguienteCode(tenantId);
     const enUso = await prisma.forestLoteAserrio.findFirst({
-      where: { tenantId, code: limpio, ...(excluirLoteId ? { id: { not: excluirLoteId } } : {}) },
+      where: {
+        tenantId,
+        code: limpio,
+        deletedAt: null,
+        ...(excluirLoteId ? { id: { not: excluirLoteId } } : {}),
+      },
       select: { id: true },
     });
     if (enUso) {

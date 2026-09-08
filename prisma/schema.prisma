@@ -6303,7 +6303,13 @@ model ForestLoteAserrio {
 
   trozas WoodEntryTroza[] @relation("TrozasDelLote")
 
-  @@unique([tenantId, code])
+  /// ⚠️ En la BASE el código es único SÓLO entre lotes vivos: índice ÚNICO
+  /// PARCIAL `ForestLoteAserrio_tenantId_code_vivo_key` sobre (`tenantId`,
+  /// `code`) WHERE deletedAt IS NULL (migración adr-396). Prisma no sabe
+  /// expresar índices parciales, así que acá sólo queda el índice común — no
+  /// vuelvas a poner `@@unique` creyendo que es drift: un lote borrado tiene
+  /// que dejar su código libre para el que se arme después (ADR-396).
+  @@index([tenantId, code])
   @@index([tenantId, status])
   @@index([tenantId, speciesCommon])
   @@index([tenantId, ordenProduccion])
