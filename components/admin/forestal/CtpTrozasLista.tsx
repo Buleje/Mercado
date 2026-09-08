@@ -79,14 +79,29 @@ export interface CtpTrozasListaProps {
   /** Abrir la historia de una pieza. */
   onVerFicha: (id: string) => void;
   /** Mandar las elegidas a un lote de aserrío. */
+  /**
+   * Especie, guía y título habilitante: los gobierna el PADRE (ADR-400) para
+   * que el panorama de arriba y esta lista describan el mismo conjunto.
+   */
+  especie: string | null;
+  onEspecie: (v: string | null) => void;
+  guia: string | null;
+  onGuia: (v: string | null) => void;
+  titulo: string | null;
+  onTitulo: (v: string | null) => void;
   onApartar: (piezas: { id: string; codigo: string | null; especie: string | null }[]) => void;
 }
 
 export default function CtpTrozasLista({
-  trozas, cargando, estadoFiltro, onEstadoFiltro, tramoFiltro, onTramoFiltro, onVerFicha, onApartar,
+  trozas, cargando, estadoFiltro, onEstadoFiltro, tramoFiltro, onTramoFiltro,
+  especie, onEspecie, guia, onGuia, titulo, onTitulo,
+  onVerFicha, onApartar,
 }: CtpTrozasListaProps) {
+  /* Los tres del padre, con el nombre corto que ya usaba el cuerpo. */
+  const setEspecie = onEspecie;
+  const setGuia = onGuia;
+  const setTitulo = onTitulo;
   const [texto, setTexto] = useState("");
-  const [especie, setEspecie] = useState<string | null>(null);
   const [orden, setOrden] = useState<OrdenTrozas>("antiguedad");
   const [tope, setTope] = useState(200);
   const [elegidas, setElegidas] = useState<Set<string>>(new Set());
@@ -102,11 +117,9 @@ export default function CtpTrozasLista({
   /* Las opciones de los autofiltros de cabecera (Especie, Estado), con cuántas
      piezas hay detrás de cada una — de TODA la pila, no de lo filtrado. */
   const resumen = useMemo(() => resumirPatio(trozas), [trozas]);
-  /* La guía y el título son la pregunta del fiscalizador («¿qué trozas ampara
-     esta GTF?»). Viven acá y no en el padre porque no los toca ninguna otra
-     pantalla — a diferencia de estado y tramo, que se eligen desde los KPIs. */
-  const [guia, setGuia] = useState<string | null>(null);
-  const [titulo, setTitulo] = useState<string | null>(null);
+  /* Especie, guía y título vienen del PADRE (ADR-400): el panorama de arriba
+     tiene que contar el mismo conjunto que esta lista, y antes contaba la pila
+     entera mientras acá se miraba una especie. */
   const guiasFaceta = useMemo(
     () => opcionesDeOrigen(trozas, "guia").map((o) => ({ value: o.valor, count: o.piezas })),
     [trozas],

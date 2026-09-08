@@ -57,6 +57,8 @@ vista propia y dos apartados, y cada uno lleva su barra con los filtros que ya e
 | Consumos · Trozas en el patio | especie, permiso, proveedor | ídem (`resumenPatio(filtradas)`) |
 | Productos disponibles | especie, permiso, producto | ídem (`visibles`) |
 | GTF ingresadas | los mismos cuatro de Ingresos | 🚨 describían el período ENTERO |
+| Trazabilidad · Trozas | especie, permiso, guía | 🚨 el panorama contaba TODA la pila |
+| Trazabilidad · Guías emitidas | especie, producto, destino | 🚨 el resumen contaba TODO el período |
 
 El cuadro de consumos tenía el permiso en una columna (`codigoOrigen`) y ninguna forma de
 filtrarlo, que es justo la pregunta del fiscalizador: «¿cuánto se aserró de este título?».
@@ -94,6 +96,20 @@ volumen cada una, y elegir cualquiera escondía la otra mitad. Las facetas de se
 por `claveEspecie()` y `filtrarSeccion` compara por esa clave. Se muestra el nombre **tal como
 está escrito en el libro**: inventar una forma canónica pondría en pantalla un texto que no
 está en ningún asiento.
+
+### 7. Dónde NO se puso, y por qué
+
+No toda pantalla con números admite esta fila. Ponerla igual habría fabricado cifras que
+mezclan alcances, que es peor que no tenerla:
+
+| Pantalla | Por qué no |
+|---|---|
+| Saldos · «Cómo está hoy» | `MateriaPrimaTotales` trae `despachadoDirectoM3` e `ingresosCount` que NO se pueden partir por especie: una tarjeta diría «esta especie» y la de al lado «toda la planta». El desglose por especie ya vive abajo (`DisponiblePorTipo`) |
+| Saldos · «Qué puede salir» | ya lo tiene: `BalanceDeCapacidad` recibe `filtros`/`opciones`/`onFiltros` |
+| Resúmenes SERFOR | son los cuadros OFICIALES; un cuadro filtrado no es el cuadro que se presenta |
+| Tablero, Cumplimiento, Cierre | agregados del período que arma el servidor (`/ctp/movimiento`, score, checklist): filtrarlos es un parámetro nuevo del endpoint, no un recorte en el cliente |
+| Historia del lote | es UN lote |
+| Radar, Planta, EUDR | el radar ya filtra con sus focos, la planta es un mapa de zonas y el EUDR una lista de orígenes con su propio selector |
 
 ## Consecuencias
 

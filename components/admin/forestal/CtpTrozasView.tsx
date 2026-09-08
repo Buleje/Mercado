@@ -35,6 +35,19 @@ export default function CtpTrozasView() {
      en el panel de arriba y la lista de abajo tiene que obedecer. */
   const [estadoFiltro, setEstadoFiltro] = useState<EstadoTroza | null>(null);
   const [tramoFiltro, setTramoFiltro] = useState<string | null>(null);
+  /**
+   * Especie, guía y título suben acá con estado y tramo (ADR-400).
+   *
+   * Vivían adentro de la lista, así que el panorama de arriba contaba TODA la
+   * pila mientras la tabla mostraba una especie: dos números que se
+   * contradicen en la misma pantalla. Ahora los dos miran el mismo conjunto.
+   *
+   * Estado y tramo NO recortan el panorama: son su propio desglose, y filtrar
+   * las tarjetas por lo que se elige EN las tarjetas las dejaría en cero.
+   */
+  const [especie, setEspecie] = useState<string | null>(null);
+  const [guia, setGuia] = useState<string | null>(null);
+  const [titulo, setTitulo] = useState<string | null>(null);
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);
   /** La pieza cuya historia se está mirando. */
   const [ficha, setFicha] = useState<string | null>(null);
@@ -71,6 +84,12 @@ export default function CtpTrozasView() {
         onEstadoFiltro={setEstadoFiltro}
         tramoFiltro={tramoFiltro}
         onTramoFiltro={setTramoFiltro}
+        especie={especie}
+        onEspecie={setEspecie}
+        guia={guia}
+        onGuia={setGuia}
+        titulo={titulo}
+        onTitulo={setTitulo}
       />
 
       <CtpTrozasLista
@@ -80,6 +99,12 @@ export default function CtpTrozasView() {
         onEstadoFiltro={setEstadoFiltro}
         tramoFiltro={tramoFiltro}
         onTramoFiltro={setTramoFiltro}
+        especie={especie}
+        onEspecie={setEspecie}
+        guia={guia}
+        onGuia={setGuia}
+        titulo={titulo}
+        onTitulo={setTitulo}
         onVerFicha={setFicha}
         onApartar={setApartando}
       />

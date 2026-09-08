@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import CtpKpiFiltros from "./CtpKpiFiltros";
 import { StatCard } from "@buleje/design-system";
 import { AlertTriangle, Check, FileText, Loader2, Search } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -47,6 +48,15 @@ export default function CtpGuiasEmitidasView({
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [soloIncompletas, setSoloIncompletas] = useState(false);
+  /**
+   * Los filtros que gobiernan las cifras de arriba (ADR-400).
+   *
+   * `soloIncompletas` NO entra acá: es el desglose que las propias tarjetas
+   * ofrecen, y recortarlas con lo que se elige EN ellas las dejaría en cero.
+   */
+  const [especie, setEspecie] = useState("");
+  const [producto, setProducto] = useState("");
+  const [destino, setDestino] = useState("");
 
   useEffect(() => {
     let vivo = true;
@@ -66,12 +76,48 @@ export default function CtpGuiasEmitidasView({
     return () => { vivo = false; };
   }, [period.from, period.to]);
 
-  const resumen = useMemo(() => resumirGuias(guias), [guias]);
+  /**
+   * Las guías que describen las cifras: todas, recortadas por especie, producto
+   * y destino. Antes el resumen contaba SIEMPRE el período entero mientras la
+   * lista de abajo mostraba otra cosa.
+   */
+  const delFiltro = useMemo(
+    () =>
+      guias.filter(
+        (g) =>
+          (!especie || (g.especie ?? "") === especie) &&
+          (!producto || (g.producto ?? "") === producto) &&
+          (!destino || (g.destino ?? "") === destino),
+      ),
+    [guias, especie, producto, destino],
+  );
+  /* Las opciones salen del período ENTERO: de lo ya filtrado, quitar un filtro
+     no se podría hacer desde el propio desplegable. */
+  const opciones = useMemo(() => {
+    const contar = (get: (g: GuiaEmitida) => string | null) => {
+      const m = new Map<string, number>();
+      for (const g of guias) {
+        const v = (get(g) ?? "").trim();
+        if (!v) continue;
+        m.set(v, (m.get(v) ?? 0) + 1);
+      }
+      return [...m.entries()]
+        .map(([value, count]) => ({ value, count }))
+        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+    };
+    return {
+      especies: contar((g) => g.especie),
+      productos: contar((g) => g.producto),
+      destinos: contar((g) => g.destino),
+    };
+  }, [guias]);
+
+  const resumen = useMemo(() => resumirGuias(delFiltro), [delFiltro]);
   const repetidos = useMemo(() => numerosRepetidos(guias), [guias]);
   const visibles = useMemo(() => {
-    const base = soloIncompletas ? guias.filter((g) => g.estado === "incompleta") : guias;
+    const base = soloIncompletas ? delFiltro.filter((g) => g.estado === "incompleta") : delFiltro;
     return filtrarGuias(base, q);
-  }, [guias, q, soloIncompletas]);
+  }, [delFiltro, q, soloIncompletas]);
 
   return (
     <div className="space-y-3">
@@ -85,6 +131,48 @@ export default function CtpGuiasEmitidasView({
         y encima repetía lo que el estado vacío de abajo ya dice mejor
         («Todavía no se emitió ninguna guía»), con el botón para ir a Despacho.
       */}
+      {/* Los filtros, pegados a las cifras que cambian (ADR-400). */}
+      <CtpKpiFiltros
+        campos={[
+          {
+            key: "especie",
+            label: "Especie",
+            todos: "Todas las especies",
+            valor: especie || undefined,
+            opciones: opciones.especies.map((o) => ({ value: o.value, label: o.value, hint: `${o.count} guía${o.count === 1 ? "" : "s"}` })),
+            onChange: (v) => setEspecie(v ?? ""),
+          },
+          {
+            key: "producto",
+            label: "Producto",
+            todos: "Todos los productos",
+            valor: producto || undefined,
+            opciones: opciones.productos.map((o) => ({ value: o.value, label: o.value, hint: `${o.count} guía${o.count === 1 ? "" : "s"}` })),
+            onChange: (v) => setProducto(v ?? ""),
+          },
+          {
+            key: "destino",
+            label: "Destino",
+            todos: "Todos los destinos",
+            valor: destino || undefined,
+            opciones: opciones.destinos.map((o) => ({ value: o.value, label: o.value, hint: `${o.count} guía${o.count === 1 ? "" : "s"}` })),
+            onChange: (v) => setDestino(v ?? ""),
+          },
+        ]}
+        onLimpiar={() => { setEspecie(""); setProducto(""); setDestino(""); }}
+        nota={
+          [especie, producto, destino].some(Boolean)
+            ? `Las cifras y la lista muestran sólo ${[
+                especie ? `especie: ${especie}` : "",
+                producto ? `producto: ${producto}` : "",
+                destino ? `destino: ${destino}` : "",
+              ]
+                .filter(Boolean)
+                .join(" · ")}`
+            : null
+        }
+      />
+
       <div className={`grid grid-cols-2 gap-3 ${resumen.total > 0 ? "lg:grid-cols-5" : ""}`}>
         <StatCard density="compact" label="Guías emitidas" value={String(resumen.total)} subValue={period.label} icon={FileText} emphasis="neutral" />
         {resumen.total > 0 && (

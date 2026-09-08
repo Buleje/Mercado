@@ -23,9 +23,13 @@ import { Boxes, Clock, RefreshCw, ShieldAlert, Trees } from "@buleje/design-syst
 import {
   antiguedadDelPatio,
   ESTADO_META,
+  filtrarPatio,
+  opcionesDeOrigen,
   resumirPatio,
+  SIN_TITULO,
   type EstadoTroza,
 } from "@/lib/forestal/trozas-patio";
+import CtpKpiFiltros from "./CtpKpiFiltros";
 import type { PatioMeta, TrozaPatioAPI } from "./hooks/use-trozas-patio";
 
 const n2 = (v: number) => v.toLocaleString("es-PE", { maximumFractionDigits: 2 });
@@ -53,15 +57,44 @@ export interface CtpTrozasPatioProps {
   /** El tramo de antigüedad elegido (`key` de `TRAMOS_ANTIGUEDAD`). */
   tramoFiltro: string | null;
   onTramoFiltro: (k: string | null) => void;
+  /**
+   * Los filtros que RECORTAN el panorama (ADR-400): especie, guía y título.
+   *
+   * Estado y tramo quedan afuera a propósito: son el desglose que estas mismas
+   * tarjetas ofrecen, y recortarse a sí mismas las dejaría en cero.
+   */
+  especie: string | null;
+  onEspecie: (v: string | null) => void;
+  guia: string | null;
+  onGuia: (v: string | null) => void;
+  titulo: string | null;
+  onTitulo: (v: string | null) => void;
 }
 
 export default function CtpTrozasPatio({
   trozas, meta, cargando, onRecargar, estadoFiltro, onEstadoFiltro, tramoFiltro, onTramoFiltro,
+  especie, onEspecie, guia, onGuia, titulo, onTitulo,
 }: CtpTrozasPatioProps) {
-  const resumen = useMemo(() => resumirPatio(trozas), [trozas]);
   /* `hoy` fijo mientras no cambien los datos: recalcularlo en cada pintada hace
      que la antigüedad se mueva sola a mitad de una sesión larga. */
-  const edad = useMemo(() => antiguedadDelPatio(trozas, new Date()), [trozas]);
+  const hoy = useMemo(() => new Date(), [trozas]); // eslint-disable-line react-hooks/exhaustive-deps
+  /**
+   * La pila que describen las cifras: la entera, recortada por especie/guía/
+   * título. Es el MISMO `filtrarPatio` que usa la lista de abajo — dos formas
+   * de recortar la misma pila terminan contando distinto.
+   */
+  const delFiltro = useMemo(
+    () => filtrarPatio(trozas, { especie, guia, titulo }, hoy),
+    [trozas, especie, guia, titulo, hoy],
+  );
+  /* Las opciones salen de la pila ENTERA: si salieran de lo ya filtrado, quitar
+     un filtro no se podría hacer desde el propio desplegable. */
+  const todo = useMemo(() => resumirPatio(trozas), [trozas]);
+  const opcionesGuia = useMemo(() => opcionesDeOrigen(trozas, "guia"), [trozas]);
+  const opcionesTitulo = useMemo(() => opcionesDeOrigen(trozas, "titulo"), [trozas]);
+
+  const resumen = useMemo(() => resumirPatio(delFiltro), [delFiltro]);
+  const edad = useMemo(() => antiguedadDelPatio(delFiltro, hoy), [delFiltro, hoy]);
 
   const libres = resumen.porEstado.find((e) => e.estado === "libre");
   /* Decide si «en patio» y «listas para sierra» tienen algo distinto que decir. */
@@ -77,10 +110,71 @@ export default function CtpTrozasPatio({
   const leyendo = cargando && trozas.length === 0;
   const cifra = (v: number | string) => (leyendo ? "…" : String(v));
 
+  const activos = [especie, guia, titulo].filter(Boolean).length;
+
   return (
     <div className="space-y-3">
       {/* ── Lo que hay parado ─────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
+        {/* Los filtros que gobiernan estas cifras (ADR-400): las mismas tres
+            preguntas que se le hacen a la pila —qué especie, de qué guía, de
+            qué título— y que ya recortaban la lista de abajo. */}
+        <CtpKpiFiltros
+          campos={[
+            {
+              key: "especie",
+              label: "Especie",
+              todos: "Todas las especies",
+              valor: especie ?? undefined,
+              /* «listadas» y no a secas: `porEspecie` cuenta TODA la pila
+                 cargada —incluidas las que ya salieron del patio— mientras la
+                 tarjeta grande cuenta sólo las paradas. El hint predice las
+                 filas de la lista, que es lo que se ve al elegir; sin la
+                 palabra, «6 pza» al lado de una tarjeta que dice 4 se lee como
+                 un error de la pantalla. */
+              opciones: todo.porEspecie.map((e) => ({
+                value: e.especie,
+                label: e.especie,
+                hint: `${e.piezas} listadas · ${n2(e.m3)} m³`,
+              })),
+              onChange: (v) => onEspecie(v ?? null),
+            },
+            {
+              key: "titulo",
+              label: "Permiso (título habilitante)",
+              todos: "Todos los permisos",
+              valor: titulo ?? undefined,
+              opciones: opcionesTitulo.map((o) => ({
+                value: o.valor,
+                /* «Sin título» es una opción con nombre propio, no la ausencia
+                   de filtro: buscar las piezas sin origen es una tarea. */
+                label: o.valor === SIN_TITULO ? "Sin título declarado" : o.label,
+                hint: `${o.piezas} listadas`,
+              })),
+              onChange: (v) => onTitulo(v ?? null),
+            },
+            {
+              key: "guia",
+              label: "Guía de ingreso",
+              todos: "Todas las guías",
+              valor: guia ?? undefined,
+              opciones: opcionesGuia.map((o) => ({ value: o.valor, label: o.label, hint: `${o.piezas} listadas` })),
+              onChange: (v) => onGuia(v ?? null),
+            },
+          ]}
+          onLimpiar={() => { onEspecie(null); onTitulo(null); onGuia(null); }}
+          nota={
+            activos > 0
+              ? `Las cifras y la lista muestran sólo ${[
+                  especie ? `especie: ${especie}` : "",
+                  titulo ? `permiso: ${titulo === SIN_TITULO ? "sin título declarado" : titulo}` : "",
+                  guia ? `guía: ${guia}` : "",
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}`
+              : null
+          }
+        />
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <Trees className="h-4 w-4 text-[var(--accent)]" /> El patio, pieza por pieza
