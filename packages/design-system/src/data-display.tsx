@@ -330,6 +330,23 @@ export interface DataTableProps extends TableHTMLAttributes<HTMLTableElement> {
   zebra?: boolean;
   /** Sticky header al hacer scroll. */
   stickyHeader?: boolean;
+  /**
+   * Clases del CONTENEDOR (el div que hace el scroll horizontal), no de la
+   * tabla. Para el alto máximo, el redondeo o el borde de la caja.
+   */
+  wrapperClassName?: string;
+  /**
+   * Lo que va en ese mismo div: `style`, `onScroll`, `data-*`.
+   *
+   * Existe porque `DataTable` SIEMPRE trae su propia caja con scroll, y quien
+   * necesitaba una tabla alta con scroll vertical envolvía a `DataTable` en
+   * OTRA caja. Quedaban dos contenedores de scroll anidados: el `<thead>`
+   * sticky se pegaba al de adentro —que no scrollea en vertical— y la cabecera
+   * se iba con el contenido (medido: −24 px por paso de rueda), mientras el
+   * gesto del trackpad, que casi siempre trae algo de horizontal, saltaba entre
+   * una caja y la otra. Con esto la caja es UNA.
+   */
+  wrapperProps?: HTMLAttributes<HTMLDivElement>;
   children: ReactNode;
 }
 
@@ -344,11 +361,21 @@ export function DataTable({
   zebra,
   stickyHeader,
   className,
+  wrapperClassName,
+  wrapperProps,
   children,
   ...rest
 }: DataTableProps) {
+  const { className: wrapperPropsClassName, ...wrapperRest } = wrapperProps ?? {};
   return (
-    <div className="overflow-x-auto rounded-lg border border-[var(--rule-base)]">
+    <div
+      {...wrapperRest}
+      className={cn(
+        "overflow-x-auto rounded-lg border border-[var(--rule-base)]",
+        wrapperClassName,
+        wrapperPropsClassName,
+      )}
+    >
       <table
         className={cn(
           "w-full text-[length:var(--ts-sm)] text-[var(--text-primary)]",

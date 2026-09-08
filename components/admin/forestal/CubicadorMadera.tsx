@@ -2029,27 +2029,36 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 )}
               </div>
             </div>
-            <div
-              data-grilla={GRILLA_TABLA}
-              /* `overflowAnchor: none`: el ventaneo cambia el alto de los dos
-                 `<tr>` colchón en cada scroll, y el anclaje automático de
-                 Chrome corrige la posición para compensarlo — peleando contra
-                 el cálculo de la ventana. Es requisito de cualquier lista
-                 virtualizada a mano. (Que la rueda mueva ESTA caja y no la
-                 página lo arregla `allowNestedScroll` en el proveedor de
-                 scroll suave, para toda la app.) */
-              className="overflow-x-auto rounded-xl border border-[var(--rule-base)]"
-              style={
-                virtualizarTabla
-                  ? { maxHeight: altoContenedorTabla ?? undefined, overflowY: "auto", overflowAnchor: "none" }
-                  : undefined
-              }
-              onScroll={virtualizarTabla ? onScrollTabla : undefined}
-            >
             <datalist id="cub-duenos-datalist">
               {duenosParaDatalist.map((d) => <option key={d} value={d} />)}
             </datalist>
-            <DataTable className="w-full min-w-[960px] text-sm">
+            {/**
+             * UNA sola caja con scroll, la de `DataTable`.
+             *
+             * Antes había dos, una dentro de la otra: `DataTable` trae la suya
+             * (`overflow-x-auto`) y acá se la envolvía en otra con el alto
+             * máximo y el scroll vertical. Con dos contenedores anidados el
+             * `<thead>` sticky se pega al de ADENTRO —que no scrollea en
+             * vertical— y la cabecera se iba con las filas: medido, −24 px por
+             * paso de rueda hasta desaparecer. Y el gesto del trackpad, que casi
+             * siempre trae algo de horizontal, salta entre una caja y la otra.
+             *
+             * `overflowAnchor: none`: el ventaneo cambia el alto de los dos
+             * `<tr>` colchón en cada scroll, y el anclaje automático de Chrome
+             * corrige la posición para compensarlo, peleando contra el cálculo
+             * de la ventana. Es requisito de toda lista virtualizada a mano.
+             */}
+            <DataTable
+              className="w-full min-w-[960px] text-sm"
+              wrapperClassName="rounded-xl"
+              wrapperProps={{
+                "data-grilla": GRILLA_TABLA,
+                style: virtualizarTabla
+                  ? { maxHeight: altoContenedorTabla ?? undefined, overflowY: "auto", overflowAnchor: "none" }
+                  : undefined,
+                onScroll: virtualizarTabla ? onScrollTabla : undefined,
+              } as React.HTMLAttributes<HTMLDivElement>}
+            >
               <thead>
                 <tr className={`bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] ${virtualizarTabla ? "sticky top-0 z-10" : ""}`}>
                   {/* El tilde manda: lo marcado es lo que se lleva el papel. */}
@@ -2276,7 +2285,6 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 </tr>
               </tfoot>
             </DataTable>
-          </div>
           </>
         )}
 
