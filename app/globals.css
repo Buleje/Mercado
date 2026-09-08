@@ -2327,6 +2327,7 @@ button,
   --ls-normal: 0;
   --ls-wide: 0.06em;     /* section kickers */
   --ls-wider: 0.2em;     /* uppercase labels */
+  --ls-widest: 0.3em;    /* códigos OTP, dígitos separados (el superadmin lo baja a 0.08em) */
 
   /* ─── Motion curves v4 ─── */
   --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
@@ -3470,4 +3471,381 @@ body.tenant-storefront > nav[aria-label="Breadcrumb"] {
   --forestal-slice-4: #14a09c;
   --forestal-slice-5: #0d7f7c;
   --forestal-slice-6: #0a5f5d;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PANEL SHELL — escalado por resolución (2026-09-07)
+   ═══════════════════════════════════════════════════════════════════════════
+   Brief Brandon: "que se ajuste mejor a laptop, PC y resoluciones grandes y
+   pequeñas, que se vea más completo y profesional".
+
+   Lo que estaba mal, medido con Playwright sobre /admin?tab=… :
+
+     viewport    main width   sobrante muerto
+     1280x800      1020 px          0
+     1366x768      1106 px          0
+     1920x1080     1600 px         30 px
+     2560x1440     1600 px        660 px  ← 26% de la pantalla en blanco
+
+   El `max-w-[1600px]` topaba el contenido y el sidebar quedaba clavado en
+   260px, así que en un monitor de 1440p el panel se veía como una isla
+   chica: mucho aire a la derecha, letra diminuta, sensación de zoom-out.
+   Y al revés, en laptop de 768px de alto los logins se cortaban 189px.
+
+   La solución NO es un `max-w` más grande hardcodeado en cada módulo (hay
+   ~133 tabs). Son tres tokens que el shell consume, y que crecen por
+   escalones — igual que la escala tipográfica fija del ADR-070: valores
+   redondos y predecibles, nunca un `vw` continuo que deja medios píxeles.
+
+     --panel-max      ancho útil del <main> del panel
+     --panel-gutter   padding lateral del <main>
+     --admin-sidebar-w  ancho del sidebar fixed (ya se consumía en
+                        GlobalSearch.tsx con fallback 260px; acá por fin
+                        existe de verdad)
+
+   Los escalones se eligieron para que el sobrante lateral quede ~60-120px
+   por lado en cada resolución típica, nunca 330px.
+   ─────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --panel-max: 1600px;
+  --panel-gutter: 24px;
+  /* 276 y no 260: al devolverle al panel la escala del ADR-070 el cuerpo pasó
+     de 12.8 a 14px y «Promociones & Ofertas» dejó de entrar en el sidebar
+     (se leía «Promociones & Ofer…»). Son 16px que el contenido no extraña ni
+     en una laptop de 1363. */
+  --admin-sidebar-w: 276px;
+  /* Compacto y "config" son anchos derivados: viven acá para que el margen
+     del contenido y el sidebar no puedan desincronizarse (ese bug ya pasó:
+     el shell reservaba 260px para un sidebar que medía 60px). */
+  --admin-sidebar-w-compact: 60px;
+  --admin-config-panel-w: 400px;
+  /* El superadmin tiene su propio sidebar (w-60 = 240px, w-16 colapsado). */
+  --sa-sidebar-w: 240px;
+  --sa-sidebar-w-compact: 64px;
+  /* Buscador global del topbar. A 480px fijos contra 2248px de contenido
+     parecía un accesorio en vez del atajo principal de navegación. */
+  --panel-search-max: 30rem;
+  /* Padding vertical del <main>. Es un token porque el eje vertical tiene su
+     propio criterio: no depende del ancho de la pantalla sino de su ALTURA
+     (ver «Densidad por ALTURA del panel», al final del archivo). */
+  --panel-pad-y: 32px;
+}
+
+/* Laptop chica (1280-1439): cada píxel del gutter es contenido. 24 → 20. */
+@media (min-width: 768px) and (max-width: 1439px) {
+  :root {
+    --panel-gutter: 20px;
+  }
+}
+
+/* PC 1080p (1600-2099): el tope de 1600 dejaba 30px de sobra — sube a 1800
+   y el aire pasa a ser respiración, no borde. */
+@media (min-width: 1600px) {
+  :root {
+    --panel-max: 1800px;
+    --panel-gutter: 32px;
+    --panel-search-max: 36rem;
+  }
+}
+
+/* 1440p y monitores grandes (2100+): sidebar más ancho (los labels de los
+   133 tabs dejan de truncarse) y contenido hasta 2160px. */
+@media (min-width: 2100px) {
+  :root {
+    --panel-max: 2160px;
+    --panel-gutter: 40px;
+    --admin-sidebar-w: 296px;
+    --sa-sidebar-w: 280px;
+    --panel-search-max: 44rem;
+  }
+}
+
+/* Ultrawide / 4K escalado (2560+). */
+@media (min-width: 2560px) {
+  :root {
+    --panel-max: 2400px;
+    --panel-gutter: 48px;
+    --admin-sidebar-w: 312px;
+    --sa-sidebar-w: 296px;
+  }
+}
+
+/* ── Densidad tipográfica del panel ──────────────────────────────────────
+   Los tokens --ts-* son fijos por decisión del ADR-070 (datos tabulares no
+   quieren tipografía fluida). Eso sigue siendo cierto DENTRO de una
+   resolución: lo que cambia acá es el escalón, no una función de vw. Un
+   14px a 60cm de distancia en un 1440p de 27" se lee como 11px en una
+   laptop de 14" — por eso el panel se sentía "chico" en pantalla grande.
+
+   Scope: `:root:has(...)` en vez del contenedor del shell, porque los
+   modales del admin van por portal a <body> y no heredarían del shell.
+   Storefront y marketplace quedan intactos (no tienen data-area de panel).
+   ─────────────────────────────────────────────────────────────────────── */
+@media (min-width: 1728px) {
+  :root:has([data-area="admin"]),
+  :root:has([data-area="superadmin"]) {
+    --ts-2xs: 0.6875rem;  /* 11 */
+    --ts-xs: 0.8125rem;   /* 13 */
+    --ts-sm: 0.9375rem;   /* 15 */
+    --ts-base: 1.0625rem; /* 17 */
+    --ts-lg: 1.1875rem;   /* 19 */
+    --ts-xl: 1.3125rem;   /* 21 */
+    --ts-2xl: 1.625rem;   /* 26 */
+    --ts-3xl: 2.0625rem;  /* 33 */
+  }
+  /* El superadmin fijó un piso de 12px para --ts-2xs (auditoría 2026-05-19,
+     "10px es subliminal"). Al escalar, ese piso sube con todo lo demás — si
+     acá heredara los 11px de arriba sería una regresión de legibilidad. */
+  :root:has([data-area="superadmin"]) {
+    --ts-2xs: 0.8125rem; /* 13 */
+  }
+}
+
+@media (min-width: 2400px) {
+  :root:has([data-area="admin"]),
+  :root:has([data-area="superadmin"]) {
+    --ts-2xs: 0.75rem;    /* 12 */
+    --ts-xs: 0.875rem;    /* 14 */
+    --ts-sm: 1rem;        /* 16 */
+    --ts-base: 1.125rem;  /* 18 */
+    --ts-lg: 1.25rem;     /* 20 */
+    --ts-xl: 1.4375rem;   /* 23 */
+    --ts-2xl: 1.75rem;    /* 28 */
+    --ts-3xl: 2.25rem;    /* 36 */
+  }
+  :root:has([data-area="superadmin"]) {
+    --ts-2xs: 0.875rem;  /* 14 */
+  }
+}
+
+/* ── Logins (admin · superadmin · repartidor) ────────────────────────────
+   Un solo esqueleto compartido, marcado con data-area="login". Dos fallas
+   medidas: en 1366x768 el documento medía 957px de alto (se cortaba el pie
+   y el desplegable "¿Buscás otro panel?"), y en 2560x1440 el contenido
+   ocupaba ~1400px de 2560 (45%).
+
+   El aire vertical pasa a depender de la ALTURA del viewport, que es la
+   dimensión que realmente escasea en las laptops: 4vh de 768 son 30px, de
+   1440 son 58px. El ancho de las dos columnas sube por escalones.
+   ─────────────────────────────────────────────────────────────────────── */
+[data-area="login"] {
+  --login-form-max: 460px;   /* columna del formulario */
+  --login-art-max: 520px;    /* columna del mockup */
+  /* Presupuesto vertical, medido en 1366x768 sobre /admin/login:
+       padding del aside  61px
+       contenido         829px  (de los cuales 196px eran márgenes fijos:
+                                 mb-10 + mt-10 + mt-10 + mt-12 + mt-4)
+       ───────────────────────
+       total             890px  contra 768px de pantalla → 122px cortados,
+                                y lo cortado era el pie legal y el
+                                desplegable "¿Buscás otro panel?".
+     Los tres tokens de abajo hacen que ese aire dependa de la ALTURA
+     disponible: a 768px de alto valen 24-26px, a 1440px vuelven a los
+     40-48px del diseño original. Nadie pierde aire en un monitor grande. */
+  --login-pad-y: clamp(1.25rem, 3.2vh, 4rem);
+  --login-gap-lg: clamp(1rem, 3.2vh, 2.5rem);   /* era mb-10 / mt-10 */
+  --login-gap-xl: clamp(1rem, 3.4vh, 3rem);     /* era mt-12 */
+  --login-gap-sm: clamp(0.75rem, 2vh, 1rem);    /* era space-y-4 del form */
+
+  /* Ancho REAL del mockup, y la razón por la que existen dos tokens.
+     Medido en 1366x768: con el formulario ya compactado a 704px, la página
+     seguía midiendo 820 — el que empujaba era la ilustración de la derecha,
+     536px de ancho por 781 de ALTO dentro de un viewport de 768. Un mockup
+     no tiene por qué imponer scroll en una pantalla donde el formulario
+     entra cómodo.
+     La proporción alto/ancho de la card es ≈1.46, así que 64vh de ancho es
+     el tope que la deja entrar completa. `min()` elige el que apriete: en un
+     monitor alto manda el escalón (620/720px), en una laptop manda la altura.
+     Achicar el ancho no alcanza en el login del repartidor: su card apila
+     filas de alto fijo, así que baja de 536 a 508px de ancho y se queda en
+     781 de alto igual. Por eso la columna del arte lleva además `lg:max-h-dvh`
+     con el `overflow-hidden` que ya tenía: la ilustración se encuadra en la
+     pantalla en vez de estirar el documento. El formulario nunca se recorta
+     — mide 704px y es la otra columna del grid. */
+  --login-art: min(var(--login-art-max), 64vh);
+}
+
+/* El titular crece con la pantalla: 44px fijos se ven correctos en una
+   laptop y diminutos en un monitor de 27". */
+@media (min-width: 1600px) {
+  [data-area="login"] [data-login-title] {
+    font-size: 3.25rem;
+  }
+}
+@media (min-width: 2100px) {
+  [data-area="login"] [data-login-title] {
+    font-size: 3.75rem;
+  }
+}
+
+/* Pantallas bajas (laptops de 768-800px): el titular de dos líneas a 44px
+   se come 90px. A 36px sigue siendo el titular de la página y devuelve 16px
+   — justo lo que falta para que el pie legal entre sin scroll.
+   Va DESPUÉS de las reglas de ancho a propósito: en un monitor ancho pero
+   bajo (2560x900) gana compactar, que es el problema real. */
+@media (max-height: 820px) {
+  [data-area="login"] [data-login-title] {
+    font-size: 2.25rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  [data-area="login"] {
+    --login-form-max: 520px;
+    --login-art-max: 620px;
+  }
+}
+
+@media (min-width: 2100px) {
+  [data-area="login"] {
+    --login-form-max: 560px;
+    --login-art-max: 720px;
+  }
+}
+
+/* ── Densidad por ALTURA del panel ────────────────────────────────────────
+   Brandon 2026-09-07, sobre su pantalla real (1363x677 — una laptop de 768
+   menos la barra de pestañas y la de marcadores de Chrome):
+
+     «se ve mal y alargado […] que se vea mejor para los tamaños pequeños
+      y medianos»
+
+   Lo medido en /admin?tab=inventario a esa altura: la PRIMERA FILA de datos
+   empezaba en y=603 de 677 px. Una fila visible. Antes del primer producto
+   había 603px de encabezados: 64 de padding del <main>, 82 del header del
+   módulo, 60 de la barra de pestañas y el resto en filtros, chips y cuatro
+   KPIs de 120px de alto para mostrar cuatro números.
+
+   La escala de ANCHO ya se resolvió con --panel-max y compañía (arriba). Esto
+   es el eje que faltaba: cuando lo que escasea es el ALTO, el panel gasta el
+   mismo aire que en un monitor de 1440p. No hay un breakpoint de altura en
+   Tailwind, así que va acá, en un solo lugar, en vez de repartido por los
+   133 tabs.
+
+   860px es el corte: una laptop de 900 de alto ya tiene aire de sobra; una de
+   768 nunca llega a 700 útiles con el chrome del navegador puesto.
+   ─────────────────────────────────────────────────────────────────────── */
+@media (max-height: 860px) {
+  :root:has([data-area="admin"]),
+  :root:has([data-area="superadmin"]) {
+    /* Padding vertical del <main>: 32 → 18. */
+    --panel-pad-y: 18px;
+    /* Título de módulo: el clamp normal da 39px a 1363px de ancho. */
+    --fs-h1: clamp(1.5rem, 1.4vw + 0.75rem, 2rem);
+    /* El número grande de los KPIs. 30px de cifra sobre una etiqueta de 10
+       es lo que hace que cuatro tarjetas ocupen 120px de alto. */
+    --ts-3xl: 1.5rem;
+  }
+
+  /* Los dos bloques de chrome que se repiten en TODOS los módulos. Selectores
+     de atributo, no `!important`: esta hoja se emite después de las utilities
+     de Tailwind, así que a igual especificidad (0,1,0) gana la que va última. */
+  :root:has([data-area="admin"]) [data-admin-module-header],
+  :root:has([data-area="superadmin"]) [data-admin-module-header] {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.375rem;
+  }
+  :root:has([data-area="admin"]) [data-admin-tabbar],
+  :root:has([data-area="superadmin"]) [data-admin-tabbar] {
+    margin-bottom: 0.5rem;
+  }
+  /* StatCard (`density="default"` = p-5) — 70 archivos la usan. */
+  :root:has([data-area="admin"]) [data-stat-card],
+  :root:has([data-area="superadmin"]) [data-stat-card] {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* ── Escala tipográfica del panel: dónde va y por qué acá ────────────────
+   Los bloques de densidad de arriba declaran los --ts-* en `:root`. Para los
+   modales (que van por portal a <body>) eso alcanza. Para el panel NO, y el
+   motivo tardó en aparecer:
+
+   `DesignTokensProvider` envuelve todo el shell en un <div> con los tokens
+   del preset del tenant puestos como ESTILO INLINE. Un estilo inline en un
+   ancestro le gana a cualquier regla en `:root`, así que la escala del panel
+   la manda `lib/design-presets.ts`, que la deriva de `sizeBase × sizeScale^n`
+   (major third, 1.25). Medido en el preset `buleje-default`:
+
+     --ts-sm   0.8rem   = 12.8px   (el ADR-070 dice 14)
+     --ts-3xl  2.4414rem = 39.1px  (el ADR-070 dice 30)
+
+   Un cuerpo de 12.8px bajo un título de 39px es el salto que se ve como
+   «alargado»: el título domina la pantalla y el dato queda chico. Y como el
+   inline no se entera de la resolución, ese 12.8px era igual en una laptop
+   que en un monitor de 27" — la escala por ancho de más arriba nunca llegaba
+   al panel (verificado: la celda de tabla medía 14px tanto en 1920 como en
+   2560).
+
+   La corrección va acá, sobre `[data-area=…]`, que es DESCENDIENTE del div
+   del provider: una custom property redeclarada en un hijo gana para todo su
+   subárbol, sin `!important` y sin tocar el sistema de presets. El preset
+   sigue mandando en TODO lo demás (colores, fuentes, radios, sombras); lo
+   único que se le devuelve al design system es la escala de texto, que el
+   ADR-070 define como fija justamente porque son datos tabulares.
+   ─────────────────────────────────────────────────────────────────────── */
+[data-area="admin"],
+[data-area="superadmin"] {
+  --ts-2xs: 0.625rem;   /* 10 */
+  --ts-xs: 0.75rem;     /* 12 */
+  --ts-sm: 0.875rem;    /* 14 — era 12.8 */
+  --ts-base: 1rem;      /* 16 */
+  --ts-lg: 1.125rem;    /* 18 */
+  --ts-xl: 1.25rem;     /* 20 */
+  --ts-2xl: 1.5rem;     /* 24 */
+  --ts-3xl: 1.875rem;   /* 30 — era 39 */
+}
+
+/* El superadmin mantiene su piso de 12px (auditoría 2026-05-19). */
+[data-area="superadmin"] {
+  --ts-2xs: 0.75rem;
+}
+
+@media (min-width: 1728px) {
+  [data-area="admin"],
+  [data-area="superadmin"] {
+    --ts-2xs: 0.6875rem;
+    --ts-xs: 0.8125rem;
+    --ts-sm: 0.9375rem;
+    --ts-base: 1.0625rem;
+    --ts-lg: 1.1875rem;
+    --ts-xl: 1.3125rem;
+    --ts-2xl: 1.625rem;
+    --ts-3xl: 2.0625rem;
+  }
+  [data-area="superadmin"] { --ts-2xs: 0.8125rem; }
+}
+
+@media (min-width: 2400px) {
+  [data-area="admin"],
+  [data-area="superadmin"] {
+    --ts-2xs: 0.75rem;
+    --ts-xs: 0.875rem;
+    --ts-sm: 1rem;
+    --ts-base: 1.125rem;
+    --ts-lg: 1.25rem;
+    --ts-xl: 1.4375rem;
+    --ts-2xl: 1.75rem;
+    --ts-3xl: 2.25rem;
+  }
+  [data-area="superadmin"] { --ts-2xs: 0.875rem; }
+}
+
+/* En una laptop el título de módulo cede altura a la tabla. */
+@media (max-height: 860px) {
+  [data-area="admin"],
+  [data-area="superadmin"] {
+    --ts-3xl: 1.5rem;   /* 24 */
+    --ts-2xl: 1.3125rem;
+  }
+}
+
+/* La descripción del módulo, cuando comparte banda con las pestañas, cede en
+   pantallas bajas: una línea explicativa vale menos que una fila de datos.
+   El título y las pestañas se quedan siempre. */
+@media (max-height: 860px) {
+  [data-admin-tabbar] [data-tabbar-desc] {
+    display: none;
+  }
 }

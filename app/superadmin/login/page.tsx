@@ -175,7 +175,7 @@ export default function SuperAdminLoginPage() {
 
   if (resuming) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--surface-canvas)]">
+      <div className="flex min-h-dvh items-center justify-center bg-[var(--surface-canvas)]">
         <div className="flex flex-col items-center gap-3 text-[var(--text-tertiary)]">
           <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--brand-purple)" }} />
           <p className="text-sm font-medium">Entrando…</p>
@@ -185,7 +185,9 @@ export default function SuperAdminLoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">
+    /* Mismo esqueleto que /admin/login — tokens --login-* en globals.css
+       (§PANEL SHELL). Ver ahí el porqué de cada escalón. */
+    <div data-area="login" className="relative min-h-dvh overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">
       {/* CSS scoped que oculta widgets flotantes globales + focus violet del input */}
       <style jsx global>{`
         body[data-route="superadmin-login"] [data-floating-widget],
@@ -218,15 +220,15 @@ export default function SuperAdminLoginPage() {
       />
 
       {/* ─── COLUMNA IZQUIERDA — Form editorial centrado ─────────────── */}
-      <aside className="relative flex flex-col justify-center px-5 py-10 sm:px-10 sm:py-16 lg:px-16">
+      <aside className="relative flex flex-col justify-center px-5 sm:px-10 lg:px-16 2xl:px-20 py-[var(--login-pad-y)]">
         <div
           className={cn(
-            "relative z-10 w-full max-w-[460px] mx-auto",
+            "relative z-10 w-full max-w-[var(--login-form-max)] mx-auto",
             shaking && "animate-[shake_0.45s_ease-out]",
           )}
         >
           {/* Brand badge superior — violeta plataforma */}
-          <div className="flex items-center gap-2.5 mb-10">
+          <div className="flex items-center gap-2.5 mb-[var(--login-gap-lg)]">
             <div
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl shadow-md"
               style={{
@@ -256,7 +258,7 @@ export default function SuperAdminLoginPage() {
           >
             {challengeId ? "Verificación 2 pasos" : "Iniciar sesión"}
           </p>
-          <SectionTitle className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
+          <SectionTitle data-login-title className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-tight text-[var(--text-primary)] leading-[1.02]">
             {challengeId ? (
               <>
                 Confirmá
@@ -298,7 +300,7 @@ export default function SuperAdminLoginPage() {
 
           {/* Form login */}
           {!challengeId && (
-            <form onSubmit={handleLogin} className="mt-10 space-y-4">
+            <form onSubmit={handleLogin} className="mt-[var(--login-gap-lg)] space-y-[var(--login-gap-sm)]">
               {/* Honeypot */}
               <div
                 aria-hidden="true"
@@ -438,7 +440,7 @@ export default function SuperAdminLoginPage() {
 
           {/* Form 2FA */}
           {challengeId && (
-            <form onSubmit={handleVerify2FA} className="mt-10 space-y-4">
+            <form onSubmit={handleVerify2FA} className="mt-[var(--login-gap-lg)] space-y-[var(--login-gap-sm)]">
               <div className="space-y-2">
                 <label
                   htmlFor="su-code"
@@ -461,7 +463,7 @@ export default function SuperAdminLoginPage() {
                     maxLength={6}
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    className="w-full h-16 pl-12 pr-4 rounded-2xl border-2 bg-[var(--surface-canvas)] text-center text-2xl font-mono font-bold text-[var(--text-primary)] tracking-[0.5em] placeholder:text-[var(--text-tertiary)] outline-none transition-all"
+                    className="w-full h-16 pl-12 pr-4 rounded-2xl border-2 bg-[var(--surface-canvas)] text-center text-2xl font-mono font-bold text-[var(--text-primary)] tracking-[var(--ls-widest)] placeholder:text-[var(--text-tertiary)] outline-none transition-all"
                     style={{
                       borderColor: "color-mix(in oklab, var(--brand-purple) 30%, transparent)",
                     }}
@@ -510,7 +512,7 @@ export default function SuperAdminLoginPage() {
           )}
 
           {/* Switches a otros paneles — disclosure colapsado */}
-          <details className="mt-10 group">
+          <details className="mt-[var(--login-gap-lg)] group">
             <summary className="flex items-center justify-between gap-2 cursor-pointer py-3 px-4 -mx-4 rounded-xl hover:bg-[var(--surface-sunken)]/50 transition-colors list-none">
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 ¿Buscás otro panel?
@@ -537,7 +539,7 @@ export default function SuperAdminLoginPage() {
           </details>
 
           {/* Trust badge inferior */}
-          <p className="mt-12 flex items-center gap-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
+          <p className="mt-[var(--login-gap-xl)] flex items-center gap-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
             <ShieldCheck
               className="h-3.5 w-3.5 shrink-0"
               strokeWidth={2.25}
@@ -586,7 +588,7 @@ function PlatformConsolePreview() {
   const bars = [38, 52, 41, 65, 48, 78, 92];
 
   return (
-    <main className="relative hidden lg:flex items-center justify-center px-12 py-16 overflow-hidden">
+    <main className="relative hidden lg:flex items-center justify-center px-12 2xl:px-16 py-[var(--login-pad-y)] overflow-hidden lg:max-h-dvh">
       {/* Halos violeta atrás */}
       <div
         aria-hidden
@@ -610,7 +612,7 @@ function PlatformConsolePreview() {
       />
 
       <div
-        className="relative w-full max-w-[520px]"
+        className="relative w-full max-w-[var(--login-art,520px)]"
         style={{ transform: "rotate(1.2deg)" }}
       >
         {/* Sombra/ofset detrás */}
@@ -669,7 +671,7 @@ function PlatformConsolePreview() {
                 +24%
               </span>
             </div>
-            <p className="text-5xl font-black tracking-[-0.04em] tabular-nums leading-none text-[var(--text-primary)]">
+            <p className="text-5xl font-black tracking-tight tabular-nums leading-none text-[var(--text-primary)]">
               S/ <span style={{ color: "var(--brand-purple)" }}>14,830</span>
             </p>
             <p className="mt-2 text-sm text-[var(--text-secondary)]">

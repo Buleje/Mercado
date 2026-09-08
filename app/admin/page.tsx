@@ -350,7 +350,11 @@ function AdminPage() {
 
   return (
     <TrialExpiredGuard activeTab={tab}>
-    <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-[var(--surface-canvas)]" data-admin-shell="true" data-dark-fallback>
+    {/* `data-area="admin"`: lo lee globals.css (sección "PANEL SHELL") para
+        subir un escalón la escala tipográfica en monitores ≥1728px. Va acá y
+        no en el <main> porque el selector es `:root:has([data-area="admin"])`
+        — así los modales que van por portal a <body> escalan igual. */}
+    <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-[var(--surface-canvas)]" data-admin-shell="true" data-area="admin" data-dark-fallback>
       {/* B3: aviso "Último acceso" al entrar (lee sessionStorage del login) */}
       <LastLoginToast />
       {/* ADR-084: cuenta regresiva del trial — visible solo si plan=free + trial activo */}
@@ -379,14 +383,16 @@ function AdminPage() {
            sidebar aún no existe → contenido empujado y aplastado en tablets. */
         presentationMode ? "md:ml-0"
           : focusMode ? "md:ml-16"
-          : sidebarCompact ? "md:ml-[60px]"
-          /* configMode: sidebar (260px) + config panel (400px) = 660px */
-          : sidebarConfigMode ? "md:ml-[660px]"
+          : sidebarCompact ? "md:ml-[var(--admin-sidebar-w-compact,60px)]"
+          /* configMode: sidebar + panel de config, sumados desde los tokens
+             para que no puedan desincronizarse del ancho real. */
+          : sidebarConfigMode ? "md:ml-[calc(var(--admin-sidebar-w)+var(--admin-config-panel-w))]"
           /* Un solo valor: el sidebar ya no se auto-compacta por ancho (ver
              AdminSidebar), así que entre 768 y 1023px el margen coincide con
-             sus 260px reales. Antes reservaba 260px para un sidebar que ahí
-             medía 60px → 200px de hueco muerto y el contenido descentrado. */
-          : "md:ml-[260px]",
+             su ancho real. Antes reservaba 260px para un sidebar que ahí
+             medía 60px → 200px de hueco muerto y el contenido descentrado.
+             El token crece a 296/312px en monitores grandes (globals.css). */
+          : "md:ml-[var(--admin-sidebar-w,276px)]",
       )}>
         {/* ADR-087: alertas operativas — adentro del shell para respetar
             el margin del sidebar fixed (260px / 60px compact / 660px config).

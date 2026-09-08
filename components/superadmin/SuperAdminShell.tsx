@@ -768,10 +768,13 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
           sidebarBgClass,
           "transition-all duration-[var(--dur-base)]",
           // Desktop width
-          collapsed ? "w-16" : "w-60",
+          // Tokens del shell (globals.css §PANEL SHELL): 240px hasta 2099px,
+          // 280/296px en monitores grandes. El offset del contenido lee los
+          // MISMOS tokens, así que no pueden desincronizarse.
+          collapsed ? "w-[var(--sa-sidebar-w-compact,64px)]" : "w-[var(--sa-sidebar-w,240px)]",
           // Mobile: hidden by default, shown when mobileOpen
           "max-md:hidden",
-          mobileOpen ? "max-md:flex max-md:w-60" : "",
+          mobileOpen ? "max-md:flex max-md:w-[var(--sa-sidebar-w)]" : "",
           impersonating ? "pt-8" : "",
         ].join(" ")}
       >
@@ -1085,7 +1088,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
         className={[
           "flex-1 flex flex-col min-w-0 transition-all duration-[var(--dur-base)]",
           // Offset for sidebar on desktop
-          collapsed ? "md:ml-16" : "md:ml-60",
+          collapsed ? "md:ml-[var(--sa-sidebar-w-compact,64px)]" : "md:ml-[var(--sa-sidebar-w,240px)]",
           impersonating ? "pt-8" : "",
         ].join(" ")}
       >
@@ -1134,7 +1137,7 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
                   )
                 }
                 aria-label="Buscar (atajo Ctrl+K)"
-                className={`group hidden sm:flex items-center gap-2.5 h-10 flex-1 max-w-md px-3.5 ml-2 rounded-xl border cursor-pointer transition-colors ${headerPillClass}`}
+                className={`group hidden sm:flex items-center gap-2.5 h-10 flex-1 max-w-[var(--panel-search-max,30rem)] px-3.5 ml-2 rounded-xl border cursor-pointer transition-colors ${headerPillClass}`}
               >
                 <Search
                   className={`h-4 w-4 shrink-0 transition-colors group-hover:text-[var(--accent)] ${headerPillTextClass}`}
@@ -1198,9 +1201,15 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 sm:p-6">
-          <FinanceAlertBanner />
-          {children}
+        {/* El contenido se centra dentro de --panel-max en vez de estirarse
+            de borde a borde: en un 1440p una tabla de tenants de 2300px de
+            ancho obliga a barrer la cabeza de lado a lado para seguir una
+            fila. Debajo del tope, `mx-auto` no hace nada y se ve igual. */}
+        <main className="flex-1 overflow-auto p-4 sm:p-[var(--panel-gutter)]">
+          <div className="mx-auto w-full max-w-[var(--panel-max,1600px)]">
+            <FinanceAlertBanner />
+            {children}
+          </div>
         </main>
       </div>
 
@@ -1374,7 +1383,7 @@ function NavGroupsFlyout({
     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
   const dotClass = isBuleje ? "bg-[#14C2C2]" : "bg-[var(--accent)]";
 
-  const sidebarWidth = sidebarCollapsed ? 64 : 240;
+  const sidebarWidth = sidebarCollapsed ? "var(--sa-sidebar-w-compact)" : "var(--sa-sidebar-w)";
   const hoveredGroup = hoveredId ? (groups.find((g) => g.id === hoveredId) ?? null) : null;
   const hoveredVisibleItems = hoveredGroup?.items.filter((it) => visibleHrefs.has(it.href)) ?? [];
 
@@ -1539,7 +1548,11 @@ interface SuperAdminFlyoutProps {
   group: NavGroupDef;
   items: NavItem[];
   position: { top: number };
-  left: number;
+  /** Borde derecho del sidebar. String para poder pasar el token CSS
+   *  (`var(--sa-sidebar-w)`), que cambia de valor por resolución — con un
+   *  240 fijo el flyout quedaba 40-56px encimado sobre el sidebar en
+   *  monitores ≥2100px. */
+  left: number | string;
   pathname: string;
   isBuleje: boolean;
   onItemClick: () => void;
@@ -1882,13 +1895,13 @@ function NavGroupsAccordion({
       })}
 
       {/* Flyout lateral on hover — mismo panel que el modo colapsado, pegado al
-          borde derecho del sidebar expandido (w-60 = 240px). */}
+          borde derecho del sidebar expandido (token --sa-sidebar-w). */}
       {hoveredGroup && flyoutTop && hoveredItems.length > 0 && (
         <SuperAdminFlyout
           group={hoveredGroup}
           items={hoveredItems}
           position={flyoutTop}
-          left={240}
+          left="var(--sa-sidebar-w)"
           pathname={pathname}
           isBuleje={isBuleje}
           onItemClick={() => {

@@ -814,7 +814,12 @@ export const AdminSidebar = React.memo(function AdminSidebar({
           "hidden md:flex fixed top-0 bottom-0 z-40 flex-col transition-all duration-[var(--dur-base)] ease-in-out overflow-hidden border-r",
           themeClasses.bg,
           themeClasses.border,
-          effectiveCompact ? "w-[60px]" : "w-[260px]",
+          /* Anchos desde los tokens del shell (globals.css §PANEL SHELL):
+             el margen del contenido en app/admin/page.tsx lee LOS MISMOS, así
+             que sidebar y contenido no pueden desincronizarse. Crece a
+             296/312px en monitores ≥2100px — los labels de los 133 tabs
+             dejaban de entrar y se truncaban. */
+          effectiveCompact ? "w-[var(--admin-sidebar-w-compact,60px)]" : "w-[var(--admin-sidebar-w,276px)]",
           presentationMode && "hidden!"
         )}
         style={{
@@ -822,7 +827,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
              panel de configuración para que el usuario vea naturalmente de
              izquierda → derecha: edita en el Configurator y el resultado aparece
              inmediatamente al lado. */
-          left: configMode && !effectiveCompact ? 400 : 0,
+          left: configMode && !effectiveCompact ? "var(--admin-config-panel-w)" : 0,
         }}
       >
         {/* ── Header: tenant + user ── */}
@@ -1295,7 +1300,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
             "hidden md:flex fixed top-0 bottom-0 z-50 flex-col overflow-hidden border-r shadow-[var(--shadow-xl)]",
             themeClasses.border,
           )}
-          style={{ left: 0, width: 400 }}
+          style={{ left: 0, width: "var(--admin-config-panel-w)" }}
           aria-label="Configuración de barra lateral"
         >
           <SidebarConfigurator

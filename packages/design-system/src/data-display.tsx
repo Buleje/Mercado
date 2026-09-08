@@ -178,6 +178,9 @@ export function StatCard({
     <Container
       type={onClick ? "button" : undefined}
       onClick={onClick}
+      /* Marca para la densidad por altura del panel (globals.css): en una
+         laptop, cuatro KPIs de 120px son 120px que no ve de la tabla. */
+      data-stat-card=""
       className={cn(
         // Rediseño minimalista (Brandon 2026-06-10): rectangular (sin rounded),
         // fondo blanco (surface-raised), hairline border, sin sombra.

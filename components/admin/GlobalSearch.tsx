@@ -476,7 +476,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
           los ~576px que aparenta. Gotcha del DS: modales y popovers en rem. */}
       <div
         style={{ top: anchorTop }}
-        className="fixed left-2 sm:left-12 lg:left-[calc(var(--admin-sidebar-w,260px)+1rem)] right-2 sm:right-auto z-[9999] sm:w-[calc(100vw-3rem)] sm:max-w-[36rem] animate-in fade-in zoom-in-95 duration-[var(--dur-base)]"
+        className="fixed left-2 sm:left-12 lg:left-[calc(var(--admin-sidebar-w,276px)+1rem)] right-2 sm:right-auto z-[9999] sm:w-[calc(100vw-3rem)] sm:max-w-[36rem] animate-in fade-in zoom-in-95 duration-[var(--dur-base)]"
       >
         {/* `role="dialog"` + `aria-modal`: el buscador se comportaba como un
             modal —tapa la página, atrapa Escape, se cierra al click fuera— pero

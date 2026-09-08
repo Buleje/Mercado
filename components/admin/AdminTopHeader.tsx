@@ -168,10 +168,12 @@ export const AdminTopHeader = memo(function AdminTopHeader({
             // que la hamburguesa. En sm+ = pill de búsqueda con placeholder y
             // atajo ⌘K.
             //
-            // El ancho va en rem explícito: `sm:max-w-xl` valía 1440px acá
+            // El ancho va en un token propio: `sm:max-w-xl` valía 1440px acá
             // (globals.css overridea `--container-xl`), así que el pill se
             // estiraba hasta comerse el espacio de los botones de la derecha.
-            "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-[30rem] sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer shrink-0 sm:shrink sm:min-w-11",
+            // `--panel-search-max` sube de 30 a 36/44rem en monitores grandes
+            // — 480px fijos contra 2248px de contenido lo dejaban raquítico.
+            "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-[var(--panel-search-max,30rem)] sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer shrink-0 sm:shrink sm:min-w-11",
             "transition-[background-color,border-color,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-editorial)]",
             "max-sm:bg-primary/10! max-sm:text-[var(--accent)]! max-sm:ring-1 max-sm:ring-[color-mix(in_oklab,var(--accent)_18%,transparent)]! max-sm:border-0!",
             // Un solo juego de clases para los dos temas: la superficie y la

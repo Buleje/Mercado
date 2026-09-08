@@ -85,7 +85,9 @@ export default function DeliveryLoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">
+    /* Mismo esqueleto que /admin/login y /superadmin/login — tokens --login-*
+       en globals.css (§PANEL SHELL). */
+    <div data-area="login" className="relative min-h-dvh overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">
       {/* CSS scoped: oculta widgets flotantes globales + focus orange del input */}
       <style jsx global>{`
         body[data-route="delivery-login"] [data-floating-widget],
@@ -118,15 +120,15 @@ export default function DeliveryLoginPage() {
       />
 
       {/* ─── COLUMNA IZQUIERDA — Form editorial centrado ─────────────── */}
-      <aside className="relative flex flex-col justify-center px-5 py-10 sm:px-10 sm:py-16 lg:px-16">
+      <aside className="relative flex flex-col justify-center px-5 sm:px-10 lg:px-16 2xl:px-20 py-[var(--login-pad-y)]">
         <div
           className={cn(
-            "relative z-10 w-full max-w-[460px] mx-auto",
+            "relative z-10 w-full max-w-[var(--login-form-max)] mx-auto",
             shaking && "animate-[shake_0.45s_ease-out]",
           )}
         >
           {/* Brand badge superior */}
-          <div className="flex items-center gap-2.5 mb-10">
+          <div className="flex items-center gap-2.5 mb-[var(--login-gap-lg)]">
             <div
               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl shadow-md"
               style={{
@@ -156,7 +158,7 @@ export default function DeliveryLoginPage() {
           >
             Iniciar sesión
           </p>
-          <h1 className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-[-0.03em] text-[var(--text-primary)] leading-[1.02]">
+          <h1 data-login-title className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-tight text-[var(--text-primary)] leading-[1.02]">
             Maneja tu ruta,
             <br />
             <span className="italic font-serif" style={{ color: "var(--brand-secondary)" }}>
@@ -168,7 +170,7 @@ export default function DeliveryLoginPage() {
           </p>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="mt-10 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-[var(--login-gap-lg)] space-y-[var(--login-gap-sm)]">
             <div className="space-y-2">
               <label
                 htmlFor="login-phone"
@@ -297,7 +299,7 @@ export default function DeliveryLoginPage() {
           </p>
 
           {/* Switches a otros paneles — disclosure colapsado */}
-          <details className="mt-10 group">
+          <details className="mt-[var(--login-gap-lg)] group">
             <summary className="flex items-center justify-between gap-2 cursor-pointer py-3 px-4 -mx-4 rounded-xl hover:bg-[var(--surface-sunken)]/50 transition-colors list-none">
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 ¿Buscás otro panel?
@@ -324,7 +326,7 @@ export default function DeliveryLoginPage() {
           </details>
 
           {/* Trust badge inferior */}
-          <p className="mt-12 flex items-center gap-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
+          <p className="mt-[var(--login-gap-xl)] flex items-center gap-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
             <ShieldCheck
               className="h-3.5 w-3.5 shrink-0"
               strokeWidth={2.25}
@@ -371,7 +373,7 @@ function RiderAppPreview() {
   const bars = [0, 1, 3, 4, 2, 6, 5, 3];
 
   return (
-    <main className="relative hidden lg:flex items-center justify-center px-12 py-16 overflow-hidden">
+    <main className="relative hidden lg:flex items-center justify-center px-12 2xl:px-16 py-[var(--login-pad-y)] overflow-hidden lg:max-h-dvh">
       {/* Halos naranja atrás */}
       <div
         aria-hidden
@@ -395,7 +397,7 @@ function RiderAppPreview() {
       />
 
       <div
-        className="relative w-full max-w-[480px]"
+        className="relative w-full max-w-[var(--login-art,520px)]"
         style={{ transform: "rotate(1.2deg)" }}
       >
         {/* Sombra/ofset detrás */}
@@ -469,7 +471,7 @@ function RiderAppPreview() {
                 +S/ 27 vs. ayer
               </span>
             </div>
-            <p className="text-5xl font-black tracking-[-0.04em] tabular-nums leading-none text-[var(--text-primary)]">
+            <p className="text-5xl font-black tracking-tight tabular-nums leading-none text-[var(--text-primary)]">
               S/ <span style={{ color: "var(--brand-secondary)" }}>87</span>
             </p>
             <p className="mt-2 text-sm text-[var(--text-secondary)]">

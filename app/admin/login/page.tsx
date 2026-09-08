@@ -377,7 +377,7 @@ export default function AdminLoginPage() {
   // vería un parpadeo de login que desaparece solo apenas responde el refresh.
   if (resuming) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--surface-canvas)]">
+      <div className="flex min-h-dvh items-center justify-center bg-[var(--surface-canvas)]">
         <div className="flex flex-col items-center gap-3 text-[var(--text-tertiary)]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm font-medium">Entrando…</p>
@@ -387,7 +387,11 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">
+    /* `data-area="login"`: activa los tokens --login-* de globals.css.
+       `min-h-dvh` en vez de `min-h-screen` — en mobile con la barra del
+       navegador visible, 100vh es más alto que lo que se ve y el botón
+       "Entrar" quedaba debajo del pliegue. */
+    <div data-area="login" className="relative min-h-dvh overflow-hidden bg-[var(--surface-canvas)] grid lg:grid-cols-[1fr_1.15fr]">
       {/* CSS scoped que oculta widgets flotantes globales en el login */}
       <style jsx global>{`
         body[data-route="admin-login"] [data-floating-widget],
@@ -411,17 +415,22 @@ export default function AdminLoginPage() {
       />
 
       {/* ─── COLUMNA IZQUIERDA — Form editorial centrado ─────────────── */}
+      {/* El aire vertical sale de la ALTURA del viewport, que es la dimensión
+          que escasea en laptops: con `sm:py-16` fijo (128px arriba + 128 abajo)
+          el documento medía 957px en una pantalla de 768 y se cortaban el pie
+          legal y el desplegable "¿Buscás otro panel?". `clamp(1.5rem,4vh,4rem)`
+          da 30px a 768px de alto y 58px a 1440px. */}
       <aside
-        className="relative flex flex-col justify-center px-5 py-10 sm:px-10 sm:py-16 lg:px-16"
+        className="relative flex flex-col justify-center px-5 sm:px-10 lg:px-16 2xl:px-20 py-[var(--login-pad-y)]"
       >
         <div
           className={cn(
-            "relative z-10 w-full max-w-[460px] mx-auto",
+            "relative z-10 w-full max-w-[var(--login-form-max)] mx-auto",
             shaking && "animate-[shake_0.45s_ease-out]",
           )}
         >
           {/* Brand badge superior */}
-          <div className="flex items-center gap-2.5 mb-10">
+          <div className="flex items-center gap-2.5 mb-[var(--login-gap-lg)]">
             <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-600,var(--accent))] shadow-md shadow-[var(--accent)]/30">
               <Store className="h-5 w-5 text-white" strokeWidth={2.25} />
             </div>
@@ -439,7 +448,7 @@ export default function AdminLoginPage() {
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-3">
             Iniciar sesión
           </p>
-          <SectionTitle className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-tight text-[var(--text-primary)] leading-[1.02]">
+          <SectionTitle data-login-title className="text-[2.25rem] sm:text-[2.75rem] font-black tracking-tight text-[var(--text-primary)] leading-[1.02]">
             Bienvenido
             <br />
             <span className="italic font-serif text-[var(--accent)]">
@@ -452,7 +461,7 @@ export default function AdminLoginPage() {
 
           {/* ADR-120: selector de tienda cuando la credencial existe en varias */}
           {tenantChoices ? (
-            <div className="mt-10 space-y-3">
+            <div className="mt-[var(--login-gap-lg)] space-y-3">
               <p className="text-sm text-[var(--text-secondary)] max-w-sm">
                 Tu cuenta existe en varias tiendas. Elegí a cuál querés entrar:
               </p>
@@ -477,7 +486,7 @@ export default function AdminLoginPage() {
               </button>
             </div>
           ) : (
-          <form onSubmit={handleSubmit} className="mt-10 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-[var(--login-gap-lg)] space-y-[var(--login-gap-sm)]">
             <div className="space-y-2">
               <label
                 htmlFor="username"
@@ -673,7 +682,7 @@ export default function AdminLoginPage() {
           )}
 
           {/* Switches a otros paneles — disclosure colapsado por defecto */}
-          <details className="mt-10 group">
+          <details className="mt-[var(--login-gap-lg)] group">
             <summary className="flex items-center justify-between gap-2 cursor-pointer py-3 px-4 -mx-4 rounded-xl hover:bg-[var(--surface-sunken)]/50 transition-colors list-none">
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                 ¿Buscás otro panel?
@@ -700,7 +709,7 @@ export default function AdminLoginPage() {
           </details>
 
           {/* Trust badge inferior */}
-          <p className="mt-12 flex items-center gap-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
+          <p className="mt-[var(--login-gap-xl)] flex items-center gap-2 text-xs text-[var(--text-tertiary)] leading-relaxed">
             <ShieldCheck
               className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]"
               strokeWidth={2.25}
@@ -748,7 +757,7 @@ function DashboardPreview() {
   const bars = [42, 58, 38, 72, 55, 90, 68, 81];
 
   return (
-    <main className="relative hidden lg:flex items-center justify-center px-12 py-16 overflow-hidden">
+    <main className="relative hidden lg:flex items-center justify-center px-12 2xl:px-16 py-[var(--login-pad-y)] overflow-hidden lg:max-h-dvh">
       {/* Halos accent atrás */}
       <div
         aria-hidden
@@ -771,7 +780,7 @@ function DashboardPreview() {
 
       {/* Mockup principal — rotación sutil para look 3D */}
       <div
-        className="relative w-full max-w-[520px]"
+        className="relative w-full max-w-[var(--login-art,520px)]"
         style={{ transform: "rotate(1.2deg)" }}
       >
         {/* Card sombra/ofset detrás */}
