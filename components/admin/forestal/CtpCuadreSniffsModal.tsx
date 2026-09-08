@@ -124,7 +124,13 @@ export default function CtpCuadreSniffsModal({
               <th className="px-3 py-2 font-bold">Qué pasa</th>
               <th className="w-32 px-3 py-2 text-right font-bold">SNIFFS (m³)</th>
               <th className="w-32 px-3 py-2 text-right font-bold">Libro (m³)</th>
-              <th className="w-32 px-3 py-2 text-right font-bold">Diferencia</th>
+              {/* «Diferencia» no describe la fila de lo pendiente, donde el
+                  SNIFFS no dijo nada: lo que hay en juego son los m³ que
+                  esperan ser declarados. Un encabezado que sólo vale para la
+                  mitad de las filas hace leer mal la otra mitad. */}
+              <th className="w-32 px-3 py-2 text-right font-bold" title="Los m³ que hay que resolver en esa fila">
+                m³ en juego
+              </th>
               <th className="px-3 py-2">
                 <span className="sr-only">Resolver</span>
               </th>
@@ -161,15 +167,21 @@ export default function CtpCuadreSniffsModal({
                         : "difiere lo producido"}
                   </span>
                 </td>
+                {/* Las dos columnas comparan PRODUCCIÓN, que es de lo que
+                    habla la fila. En la de lo pendiente el SNIFFS no trae
+                    productos: ahí dice «—», y repetir el consumido a los dos
+                    lados hacía leer tres veces el mismo número. */}
                 <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
                   {cuadre.deltaProducidoM3 == null
-                    ? cuadre.consumidoSniffsM3 != null
-                      ? fmtM3(cuadre.consumidoSniffsM3)
+                    ? cuadre.estado === "difiere" && cuadre.consumidoSniffsM3 != null
+                      ? `${fmtM3(cuadre.consumidoSniffsM3)} consumidos`
                       : "—"
                     : fmtM3(cuadre.producidoSniffsM3)}
                 </td>
                 <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                  {cuadre.deltaProducidoM3 == null ? fmtM3(cuadre.consumidoLoteM3) : fmtM3(cuadre.producidoLoteM3)}
+                  {cuadre.deltaProducidoM3 == null && cuadre.estado === "difiere"
+                    ? `${fmtM3(cuadre.consumidoLoteM3)} consumidos`
+                    : fmtM3(cuadre.producidoLoteM3)}
                 </td>
                 <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                   {fmtM3(peso)}
