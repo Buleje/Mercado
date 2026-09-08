@@ -6,7 +6,6 @@ import { usePlanTier } from "@/hooks/use-plan-tier";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import { DashboardDataProvider } from "@/contexts/dashboard-data-context";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import {
@@ -218,33 +217,43 @@ export default function VendorDashboardModule() {
         persiste prefs por tab. */}
     <ChartsVisibilityProvider moduleId={`vendor-dashboard:${tab}`} key={tab}>
     <div className="space-y-4">
-      <AdminModuleHeader
-        title="Inicio"
-        description={TAB_DESCRIPTIONS[tab]}
-        icon={LayoutDashboard}
-        bgTint="bg-primary/10"
-        iconColorClass="text-[var(--data-success-500)]"
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla; las acciones del módulo, en
+          la misma banda. Recupera ~90px verticales por pantalla. */}
+      <AdminTabBar
+        heading={{
+          title: "Inicio",
+          description: TAB_DESCRIPTIONS[tab],
+          icon: LayoutDashboard,
+          actions: (
+            <>
+              {tab !== "marketplace" && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <ChartsVisibilityButton />
+                  <DashboardDateRange value={dateRange} onChange={setDateRange} />
+                </div>
+              )}
+              {tab === "marketplace" && (
+                <button
+                  onClick={() => void fetchDashboard(false)}
+                  disabled={loading}
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] disabled:opacity-50"
+                  title="Actualizar marketplace"
+                  aria-label="Actualizar datos del marketplace"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                </button>
+              )}
+            </>
+          ),
+        }}
+        tabs={availableTabs}
+        activeTab={tab}
+        onTabChange={(t) => setTab(t as InicioTab)}
+        onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()}
+        moduleId={MODULE_ID}
       >
-        {tab !== "marketplace" && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <ChartsVisibilityButton />
-            <DashboardDateRange value={dateRange} onChange={setDateRange} />
-          </div>
-        )}
-        {tab === "marketplace" && (
-          <button
-            onClick={() => void fetchDashboard(false)}
-            disabled={loading}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] disabled:opacity-50"
-            title="Actualizar marketplace"
-            aria-label="Actualizar datos del marketplace"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-        )}
-      </AdminModuleHeader>
-
-      <AdminTabBar tabs={availableTabs} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
         {tab === "general" && (
           <div className="space-y-6">
             {/* Brandon 2026-06-07 (idea #2): puente admin ↔ tienda pública —

@@ -4,7 +4,6 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Sparkles, GitMerge, ShoppingCart, Megaphone, Users, Home, Calendar } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 
 const Spinner = () => (
   <div className="flex items-center justify-center py-12">
@@ -39,8 +38,16 @@ export default function SugerenciasIAModule({ tenantId: _tenantId }: Props) {
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader title="Sugerencias IA" icon={Sparkles} />
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla. Recupera ~90px verticales,
+          que en una laptop de 677px útiles es la diferencia entre ver los
+          datos o sólo los encabezados.
+          El `eyebrow` se fue con el header: decía la categoría del sidebar
+          («Abastecimiento · Compras» sobre un título «Compras») — el mismo
+          dato tres veces contando el ítem marcado en el sidebar. */}
       <AdminTabBar
+        heading={{ title: "Sugerencias IA", icon: Sparkles }}
         tabs={TABS}
         activeTab={tab}
         onTabChange={setTab}

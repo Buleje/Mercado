@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { Palette, Globe } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -33,13 +32,16 @@ export default function MiTiendaHubModule({ initialTab }: { initialTab?: string 
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        eyebrow="Tienda · Personalización"
-        title="Mi Tienda"
-        description="Identidad, tema y contenido de tu tienda pública."
-        icon={Palette}
-      />
-      <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla. Recupera ~90px verticales,
+          que en una laptop de 677px útiles es la diferencia entre ver los
+          datos o sólo los encabezados.
+          El `eyebrow` se fue con el header: decía la categoría del sidebar
+          («Abastecimiento · Compras» sobre un título «Compras») — el mismo
+          dato tres veces contando el ítem marcado en el sidebar. */}
+      <AdminTabBar
+        heading={{ title: "Mi Tienda", description: "Identidad, tema y contenido de tu tienda pública.", icon: Palette }} tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "identidad" && <StoreCustomizer />}
         {sub === "pagina" && <StorePageAdminPage />}
       </AdminTabBar>

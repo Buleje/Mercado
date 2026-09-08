@@ -22,7 +22,8 @@ import {
   Tag,
   Share2,
 } from "@buleje/design-system/icons";
-import { PageTitle, SectionTitle, LoadingState } from "@buleje/design-system";
+import { SectionTitle, LoadingState } from "@buleje/design-system";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import { EMPTY_SALES_CHANNELS, type SalesChannelsConfig } from "@/lib/types/sales-channels";
@@ -123,23 +124,15 @@ export default function SalesChannelsTab() {
   const gaConnected = analyticsId.trim().length > 0;
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 px-4 sm:px-6 py-2">
-      <header className="flex items-start gap-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
-          <Share2 className="h-6 w-6" />
-        </span>
-        <div>
-          <PageTitle as="h1" className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)]">
-            Canales de venta
-          </PageTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">
-            Conectá tu tienda con TikTok Shop, Meta (Facebook + Instagram) y Google Analytics. Pegá
-            tus IDs de píxel/medición y se activan los eventos en tu tienda — incluida la conversión
-            de compra. Las integraciones profundas (catálogo en vivo, checkout nativo, live shopping)
-            se habilitan con la app de cada plataforma.
-          </p>
-        </div>
-      </header>
+    <div className="space-y-4">
+      {/* Header estándar del panel (AdminModuleHeader), no una tarjeta a
+          mano: era el único módulo con el título dentro de una caja con
+          borde doble, y sin la serif del resto de las cabeceras. */}
+      <AdminModuleHeader
+        title="Canales de venta"
+        description="Conectá TikTok Shop, Meta (Facebook + Instagram) y Google Analytics con tus IDs de píxel o medición: los eventos y la conversión de compra se activan solos en tu tienda."
+        icon={Share2}
+      />
 
       {/* Estado de conexión — resumen de un vistazo */}
       <div className="flex flex-wrap items-center gap-2">

@@ -36,7 +36,7 @@ const N8nPanel = dynamic(() => import("@/components/admin/automatizaciones/N8nPa
 
 export default function AutomatizacionesModule() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
         eyebrow="Asistente · Automatizaciones"
         title="Anotar desde afuera"

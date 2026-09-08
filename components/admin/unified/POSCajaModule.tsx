@@ -6,7 +6,6 @@ import {
   ShoppingCart, Wallet, CreditCard, Scale, HandCoins,
   Banknote, History, ArrowRight, Clock, Users,
 } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { cn } from "@/lib/utils";
@@ -321,20 +320,16 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
     <div className="space-y-3 sm:space-y-6">
       <OfflineIndicator />
 
-      <AdminModuleHeader
-        eyebrow="Operaciones · Punto de venta"
-        title="Ventas & Caja"
-        description="Vende, cobra, gestiona tu turno y cierra caja. Todo el flujo del mostrador en un solo lugar."
-        icon={ShoppingCart}
-      />
-
-      {/* La barra flotante 'Sin turno/Abrir Turno' se movio:
-          - Chip de status es ahora rightSlot del AdminTabBar (micro, inline)
-          - El boton CTA full se renderiza dentro de POSView/TurnosModule
-            donde pertenece contextualmente.
-          Gano ~60px verticales + accion en su contexto correcto. */}
-
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla. Recupera ~90px verticales,
+          que en una laptop de 677px útiles es la diferencia entre ver los
+          datos o sólo los encabezados.
+          El `eyebrow` se fue con el header: decía la categoría del sidebar
+          («Abastecimiento · Compras» sobre un título «Compras») — el mismo
+          dato tres veces contando el ítem marcado en el sidebar. */}
       <AdminTabBar
+        heading={{ title: "Ventas & Caja", description: "Vende, cobra, gestiona tu turno y cierra caja. Todo el flujo del mostrador en un solo lugar.", icon: ShoppingCart }}
         tabs={TABS.map(t => ({
           id: t.id,
           label: t.label,

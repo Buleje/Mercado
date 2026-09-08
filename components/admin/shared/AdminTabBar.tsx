@@ -6,6 +6,8 @@ import { ChevronLeft, ChevronRight, GripVertical } from "@buleje/design-system/i
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
+import { ModuleDepthProvider } from "@/components/admin/shared/module-depth";
+import { PageTitle } from "@buleje/design-system";
 
 export interface AdminTab {
   id: string;
@@ -36,6 +38,35 @@ interface AdminTabBarProps {
   onTabHover?: (id: string) => void;
   /** Contenido alineado a la derecha del tab bar (ej. status chip). */
   rightSlot?: ReactNode;
+  /**
+   * Identidad del módulo dibujada en la MISMA fila que las pestañas, a la
+   * izquierda, compartiendo con ellas la regla inferior.
+   *
+   * Por qué existe: un hub con dos niveles de pestañas apilaba título, regla,
+   * pestañas, subtítulo, regla y pestañas otra vez. Medido en Análisis a
+   * 1363x677 (una laptop con el chrome del navegador puesto): 232px hasta el
+   * primer dato, el 34% de la pantalla, y el subtítulo del segundo nivel
+   * repetía lo que ya decían las pestañas de abajo.
+   *
+   * Con `heading`, el título y las pestañas de primer nivel ocupan una sola
+   * banda. Reemplaza al <AdminModuleHeader> de arriba — no se usan los dos.
+   */
+  heading?: {
+    title: string;
+    description?: string;
+    icon?: LucideIcon;
+    /** Nivel semántico. `h1` salvo que el módulo cuelgue de otro título. */
+    as?: "h1" | "h2";
+    /**
+     * Acciones del módulo (actualizar, exportar, «Nueva receta»…): lo que
+     * antes iba como `children` del <AdminModuleHeader>. Comparten la banda:
+     * con el título en línea van al final (título · pestañas · acciones); si
+     * el título ocupa una fila propia (seis pestañas o más) van a la derecha
+     * del título, no de las pestañas. Distinto de `rightSlot`, que vive
+     * DENTRO del tablist (un chip de estado pegado a las pestañas).
+     */
+    actions?: ReactNode;
+  };
 }
 
 export default function AdminTabBar({
@@ -50,6 +81,7 @@ export default function AdminTabBar({
   children,
   onTabHover,
   rightSlot,
+  heading,
 }: AdminTabBarProps) {
   const { registerSubTabs, registerOnChange, clearSubTabs } = useModuleTabs();
 
@@ -59,6 +91,43 @@ export default function AdminTabBar({
    * con los hubs— repetirían ids y el lector de pantalla ataría mal los pares.
    */
   const barraId = useId();
+
+  /**
+   * ¿El título comparte línea con las pestañas, o se lleva una fila propia?
+   *
+   * No alcanza con `flex-wrap`: el tablist envuelve por dentro (`wrap`), así
+   * que con muchas pestañas es UN ítem flex de dos filas de alto y el título
+   * —alineado al fondo de su línea— aparecía debajo de la primera fila, como
+   * si fuera un pie. Pasó en Compras, que tiene 8 pestañas.
+   *
+   * El criterio es la cantidad, no una medición: medir el alto para decidir
+   * el layout que cambia ese alto es un lazo que oscila. Hasta cinco pestañas
+   * entran al lado del título en el ancho que deja el sidebar; de seis para
+   * arriba, no entran en ninguna resolución razonable.
+   *
+   * Con acciones en la banda el tope baja a tres: Inventario (4 pestañas +
+   * «Actualiza en…» + «Imprimir etiquetas») e Inicio (5 + «Gráficos» + rango
+   * de fechas) medidos a 1366px salían con las pestañas en dos filas y el
+   * título al lado de la segunda, como un pie de página.
+   */
+  const tituloEnLinea = Boolean(heading) && tabs.length <= (heading?.actions ? 3 : 5);
+
+  /**
+   * Cuando el contenedor se angosta y las pestañas bajan a su propia fila
+   * (`@max-[60rem]:basis-full`), las acciones suben junto al título vía
+   * `order`: la fila de arriba queda «título … acciones» y la de abajo, las
+   * pestañas — igual que con el título en fila propia.
+   */
+  const acciones = heading?.actions ? (
+    <div
+      className={cn(
+        "ml-auto flex shrink-0 flex-wrap items-center gap-2 pb-2",
+        tituloEnLinea ? "order-3 @max-[60rem]:order-2" : "self-center",
+      )}
+    >
+      {heading.actions}
+    </div>
+  ) : null;
   const idDeTab = (id: string) => `${barraId}-tab-${id}`;
   const idDelPanel = `${barraId}-panel`;
 
@@ -219,7 +288,7 @@ export default function AdminTabBar({
 
   if (vertical) {
     return (
-      <div className={cn("flex flex-col gap-3 lg:flex-row lg:items-stretch lg:gap-0", className)}>
+      <div data-admin-tabbar="" className={cn("flex flex-col gap-3 lg:flex-row lg:items-stretch lg:gap-0", className)}>
         {/* Sub-tab nav: flush against main sidebar with matching style */}
         <nav className={cn(
           "w-full shrink-0",
@@ -303,7 +372,9 @@ export default function AdminTabBar({
           tabIndex={children ? 0 : undefined}
           className="min-w-0 flex-1 outline-none lg:pl-4"
         >
-          {children}
+          {/* Todo lo que entre acá está DEBAJO de un título que ya se dibujó:
+              su propio AdminModuleHeader se compacta solo. Ver module-depth.tsx. */}
+          <ModuleDepthProvider>{children}</ModuleDepthProvider>
         </div>
       </div>
     );
@@ -311,8 +382,50 @@ export default function AdminTabBar({
 
   return (
     <>
-    <div className={cn("@container relative", className)}>
-      {canScrollLeft && (
+    {/* `data-admin-tabbar`: lo lee el AdminModuleHeader que va JUSTO ARRIBA
+        (`:has(+ …)`) para soltar su borde inferior. Sin esto quedaban dos
+        reglas horizontales a 40px una de otra. */}
+    <div
+      data-admin-tabbar=""
+      className={cn(
+        "@container relative",
+        // Con `heading`, la identidad del módulo y las pestañas comparten una
+        // sola banda y una sola regla. Los chevrons de scroll son `absolute`,
+        // así que el tablist puede ser hermano del título sin más.
+        heading && "flex flex-wrap items-end justify-between gap-x-6 gap-y-1 border-b border-[var(--rule-base)]",
+        className,
+      )}
+    >
+      {heading && (
+        <div className={cn("flex min-w-0 items-start gap-2.5 pb-2", !tituloEnLinea && "basis-full")}>
+          {heading.icon && (
+            <heading.icon
+              className="mt-1 h-5 w-5 shrink-0 text-[var(--text-tertiary)] dark:text-zinc-500"
+              strokeWidth={1.5}
+              aria-hidden
+            />
+          )}
+          <div className="min-w-0">
+            <PageTitle as={heading.as ?? "h1"} className="font-display tracking-tight leading-[1.05]">
+              {heading.title}
+            </PageTitle>
+            {/* `div`, no `p`: la descripción acepta JSX del que llama. Se
+                esconde con el contenedor angosto —ahí lo que importa es el
+                título y las pestañas— y en pantallas bajas, donde cada línea
+                le saca altura a los datos (regla en globals.css). */}
+            {heading.description && (
+              <div
+                data-tabbar-desc=""
+                className="mt-0.5 hidden truncate text-[length:var(--ts-sm)] text-[var(--text-secondary)] @min-[60rem]:block dark:text-zinc-400"
+              >
+                {heading.description}
+              </div>
+            )}
+          </div>
+          {!tituloEnLinea && acciones}
+        </div>
+      )}
+      {!heading && canScrollLeft && (
         <button
           onClick={() => scrollTabs("left")}
           className="absolute left-0 top-0 bottom-0 z-10 flex w-10 items-center bg-linear-to-r from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90 to-transparent transition-opacity duration-[var(--dur-base)]"
@@ -331,12 +444,26 @@ export default function AdminTabBar({
         aria-orientation="horizontal"
         onKeyDown={teclasDeBarra}
         className={cn(
-          "-mx-1 flex gap-0.5 border-b border-[var(--rule-base)] px-1 sm:gap-1",
+          "-mx-1 flex gap-0.5 px-1 sm:gap-1",
+          // La regla es del tablist salvo que la comparta con el título: con
+          // `heading` la dibuja la banda de afuera, y dos reglas pegadas leen
+          // como un borde doble.
+          heading
+            ? cn(
+                "min-w-0",
+                tituloEnLinea
+                  ? "order-2 flex-1 justify-end @max-[60rem]:order-3 @max-[60rem]:basis-full @max-[60rem]:justify-start"
+                  : "basis-full",
+              )
+            : "border-b border-[var(--rule-base)]",
           // Angosto: una sola fila que se desliza (recupera ~90px verticales
           // que las 3 filas del wrap le robaban al contenido). Desde 48rem de
           // CONTENEDOR —no de viewport, que ignora el ancho del sidebar—
           // vuelve el wrap de siempre.
-          wrap
+          // En línea con el título el riel NUNCA envuelve por dentro: si
+          // envolviera, el título (alineado al fondo de la banda) quedaría
+          // junto a la segunda fila de pestañas. Si no entra, se desliza.
+          wrap && !tituloEnLinea
             ? "overflow-x-auto scroll-smooth scrollbar-none @min-[48rem]:flex-wrap @min-[48rem]:gap-y-1 @min-[48rem]:overflow-x-visible"
             : "overflow-x-auto scroll-smooth scrollbar-none",
         )}
@@ -419,6 +546,7 @@ export default function AdminTabBar({
           </div>
         )}
       </div>
+      {tituloEnLinea && acciones}
 
       {canScrollRight && (
         <button
@@ -439,7 +567,7 @@ export default function AdminTabBar({
       tabIndex={children ? 0 : undefined}
       className="outline-none"
     >
-      {children}
+      <ModuleDepthProvider>{children}</ModuleDepthProvider>
     </div>
     </>
   );

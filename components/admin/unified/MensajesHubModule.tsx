@@ -3,7 +3,6 @@
 
 import dynamic from "next/dynamic";
 import { MessageCircle, MessageSquare, Inbox, FileText, Settings, BellRing } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -52,13 +51,16 @@ export default function MensajesHubModule({ initialTab }: { initialTab?: string 
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        eyebrow="Clientes · Mensajes"
-        title="Mensajes"
-        description="WhatsApp, chat con clientes y bandeja de soporte."
-        icon={MessageCircle}
-      />
-      <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla. Recupera ~90px verticales,
+          que en una laptop de 677px útiles es la diferencia entre ver los
+          datos o sólo los encabezados.
+          El `eyebrow` se fue con el header: decía la categoría del sidebar
+          («Abastecimiento · Compras» sobre un título «Compras») — el mismo
+          dato tres veces contando el ítem marcado en el sidebar. */}
+      <AdminTabBar
+        heading={{ title: "Mensajes", description: "WhatsApp, chat con clientes y bandeja de soporte.", icon: MessageCircle }} tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
         {sub === "whatsapp" && <WhatsAppInboxTab onGoToConfig={() => setSub("bot")} />}
         {sub === "chat" && <ChatTab />}
         {sub === "soporte" && <UnifiedSupportInbox />}

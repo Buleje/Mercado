@@ -11,7 +11,6 @@ import {
   Target, Clock, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { Sale, Customer } from "@/types/erp";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import ChartManager, { type ChartDefinition, useReportChartEmpty } from "@/components/admin/shared/ChartManager";
 import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
@@ -77,21 +76,30 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
 }) {
   return (
     <div className={cn(
-      "bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-6 transition-shadow hover:shadow-sm",
+      "@container bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4 sm:p-5 transition-shadow hover:shadow-sm",
       className,
     )}>
-      <div className="mb-5">
-        <div className="flex items-center gap-2.5">
+      {/* Encabezado en UNA línea. Antes era un bloque de ~62px: un icono
+          dentro de una caja de 36px, el título debajo y el subtítulo debajo
+          de ese. Multiplicado por las tarjetas de una sección, el módulo
+          gastaba más alto en presentarse que en mostrar datos.
+          El subtítulo pasa a la misma línea tras un punto medio, y se va
+          cuando la tarjeta es angosta: ahí el título ya alcanza. */}
+      <div className="mb-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+        <div className="flex min-w-0 items-center gap-2">
           {Icon && (
-            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Icon className="h-4.5 w-4.5 text-primary" />
-            </div>
+            <Icon className="h-4 w-4 shrink-0 text-[var(--accent)]" strokeWidth={2} aria-hidden />
           )}
-          <div>
-            <CardTitle className="text-lg font-semibold text-[var(--text-primary)] leading-tight">{title}</CardTitle>
-            {subtitle && <p className="text-sm text-[var(--text-secondary)] mt-0.5">{subtitle}</p>}
-          </div>
+          <CardTitle className="text-[length:var(--ts-lg)] font-semibold leading-tight text-[var(--text-primary)]">
+            {title}
+          </CardTitle>
         </div>
+        {subtitle && (
+          <p className="hidden min-w-0 truncate text-[length:var(--ts-sm)] text-[var(--text-secondary)] @min-[30rem]:block">
+            <span aria-hidden className="mr-2 text-[var(--text-tertiary)]">·</span>
+            {subtitle}
+          </p>
+        )}
       </div>
       <div className="w-full">{children}</div>
     </div>
@@ -195,10 +203,13 @@ function InlineKPIStrip() {
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3"
+          className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2.5"
         >
-          <p className="text-xs font-bold text-[var(--text-tertiary)]">{item.label}</p>
-          <p className={cn("mt-1 text-2xl font-extrabold tabular-nums", item.color)}>{item.value}</p>
+          <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)]">{item.label}</p>
+          {/* Token del DS y no `text-2xl` fijo: así la cifra sigue la densidad
+              del panel — se achica sola en una laptop y crece en un monitor
+              grande (globals.css §PANEL SHELL). */}
+          <p className={cn("mt-0.5 text-[length:var(--ts-2xl)] font-extrabold tabular-nums", item.color)}>{item.value}</p>
         </div>
       ))}
     </div>
@@ -841,17 +852,12 @@ export default function AnalyticsBIModule() {
 
   return (
     <div className="space-y-4">
-      {/* La descripción era «analítica avanzada de ventas, productos, clientes y
-          predicciones»: la lista de las pestañas que vienen justo abajo. */}
-      {/* `as="h2"`: el hub de Análisis ya puso el h1. Y título en español con
-          descripción, como el resto del panel — "Analytics BI" era el único
-          nombre en inglés y el único header sin una línea que lo explique. */}
-      <AdminModuleHeader
-        as="h2"
-        title="Métricas del negocio"
-        description="Ventas, productos, clientes y predicciones, en una sola vista."
-        icon={BarChart3}
-      />
+      {/* Acá vivía un segundo encabezado: «Métricas del negocio · Ventas,
+          productos, clientes y predicciones, en una sola vista.» Estaba
+          debajo de una pestaña ya marcada como «Analytics Pro» y encima de
+          las pestañas Resumen / Ventas / Productos / Clientes / Predicciones
+          — decía en prosa lo que la fila de abajo dice en botones. Eran 36px
+          de los 232 que el módulo gastaba antes del primer número. */}
       {dataState === "empty" ? (
         <ChartsEmptyState
           title="Todavía no hay datos para analizar"

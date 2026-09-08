@@ -33,8 +33,9 @@
  *   </AdminModuleHeader>
  */
 
-import { PageTitle, Kicker } from "@buleje/design-system";
+import { PageTitle, CardTitle, Kicker } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { useModuleDepth } from "@/components/admin/shared/module-depth";
 import type { LucideIcon } from "@buleje/design-system/icons";
 
 interface AdminModuleHeaderProps {
@@ -44,7 +45,7 @@ interface AdminModuleHeaderProps {
    * en la misma página rompen la jerarquía para lectores de pantalla y SEO.
    * El aspecto visual no cambia — PageTitle se ve igual en ambos niveles.
    */
-  as?: "h1" | "h2";
+  as?: "h1" | "h2" | "h3";
   /** Línea pequeña arriba del título (ej: "Inventario · Catálogo"). */
   eyebrow?: string;
   /** Título principal — se renderiza con font-display italic. */
@@ -63,6 +64,13 @@ interface AdminModuleHeaderProps {
   children?: React.ReactNode;
   /** Si true, omite el border-bottom (útil cuando el módulo empieza con filtros pegados). */
   noBorder?: boolean;
+  /**
+   * `"auto"` (default) — el header se compacta solo cuando está anidado bajo
+   * otro módulo que ya puso su título (lo detecta `useModuleDepth`).
+   * `"full"` — fuerza el editorial completo. Escape hatch para una superficie
+   * que arranca pantalla nueva pero cuelga del panel de un tab en el árbol.
+   */
+  variant?: "auto" | "full";
   className?: string;
 }
 
@@ -72,10 +80,67 @@ export default function AdminModuleHeader({
   description,
   icon: Icon,
   children,
-  as: nivel = "h1",
+  as,
   noBorder = false,
+  variant = "auto",
   className,
 }: AdminModuleHeaderProps) {
+  // Cuántos títulos de módulo hay arriba. >0 ⇒ este es un sub-módulo dentro
+  // de un hub y no necesita repetir el encabezado editorial entero.
+  const profundidad = useModuleDepth();
+  const anidado = variant === "auto" && profundidad > 0;
+
+  // Nivel semántico: con un h1 arriba, este tiene que ser h2 (o h3 si el hub
+  // ya estaba anidado a su vez — pasa en Documentos → Facturación → Impuestos).
+  const nivel: "h1" | "h2" | "h3" = anidado
+    ? (profundidad === 1 ? "h2" : "h3")
+    : (as ?? "h1");
+
+  if (anidado) {
+    return (
+      // Una sola línea: título + descripción + acciones. La regla vertical de
+      // acento a la izquierda dice "esto cuelga del título de arriba" sin
+      // gastar una línea en repetirlo. Sin border-bottom: la barra de
+      // pestañas que viene justo debajo ya trae su propia regla, y dos
+      // reglas seguidas leen como ruido.
+      <header
+        data-admin-module-header=""
+        className={cn(
+          "@container mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1",
+          "border-l-2 border-[var(--accent-muted)] pl-3",
+          className,
+        )}
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          {Icon && (
+            <Icon
+              className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] dark:text-zinc-500"
+              strokeWidth={1.5}
+              aria-hidden
+            />
+          )}
+          <CardTitle as={nivel} className="truncate">
+            {title}
+          </CardTitle>
+        </div>
+        {/* `div`, no `p`: la descripción acepta JSX del que llama y ya hubo
+            un caso de bloque inválido adentro de un párrafo. Se esconde en
+            angosto, igual que en el header completo. */}
+        {description && (
+          <div className="hidden @min-[34rem]:block min-w-0 text-[length:var(--ts-sm)] text-[var(--text-secondary)] dark:text-zinc-400">
+            <span aria-hidden className="mr-2 text-[var(--text-tertiary)]">·</span>
+            {description}
+          </div>
+        )}
+        {children && (
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {children}
+          </div>
+        )}
+      </header>
+    );
+  }
+
   return (
     // `@container`: el header se mide contra SU ancho real, no contra el
     // viewport. Con el sidebar abierto, una ventana de 991px deja ~700px de
@@ -88,9 +153,18 @@ export default function AdminModuleHeader({
     // ni siquiera existen `--container-2xl/3xl`, así que las variantes con
     // nombre valdrían otra cosa —o nada— sin avisar.
     <header
+      /* `data-admin-module-header`: lo lee globals.css para comprimir el aire
+         del encabezado en pantallas de poca altura. Ver «Densidad por ALTURA». */
+      data-admin-module-header=""
       className={cn(
-        "@container mb-6 pb-4",
+        "@container mb-4 pb-3",
         !noBorder && "border-b border-[var(--rule-soft)]",
+        // Cuando el hermano de abajo es la barra de pestañas, su propia regla
+        // y su aire ya separan: el borde del header quedaba 40px arriba del
+        // borde del tab bar — dos líneas horizontales para el mismo corte.
+        // `:has(+ …)` mira al hermano SIGUIENTE; si entre medio hay otra cosa
+        // (una fila de KPIs, un aviso) no aplica y el borde se queda.
+        "has-[+_[data-admin-tabbar]]:mb-3 has-[+_[data-admin-tabbar]]:pb-0 has-[+_[data-admin-tabbar]]:border-b-0",
         className,
       )}
     >

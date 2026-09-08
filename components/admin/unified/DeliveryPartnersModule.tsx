@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { Truck, Users, ClipboardList, Shield, RefreshCw, MapPin, FileText, Trophy, Activity } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { RepartidoresTab } from "@/components/admin/delivery-partners/tabs/RepartidoresTab";
 import { AsignacionesTab } from "@/components/admin/delivery-partners/tabs/AsignacionesTab";
@@ -70,22 +69,27 @@ export default function DeliveryPartnersModule({ initialTab }: { initialTab?: st
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        eyebrow="Operaciones · Delivery"
-        title="Delivery"
-        description="Gestiona repartidores, asignaciones y permisos."
-        icon={Truck}
-      >
-        <button
-          onClick={refreshKpis}
-          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
-          title="Actualizar"
-        >
-          <RefreshCw className={cn("h-4 w-4", kpisLoading && "animate-spin")} />
-        </button>
-      </AdminModuleHeader>
-
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla; las acciones del módulo, en
+          la misma banda. Recupera ~90px verticales por pantalla. */}
       <AdminTabBar
+        heading={{
+          title: "Delivery",
+          description: "Gestiona repartidores, asignaciones y permisos.",
+          icon: Truck,
+          actions: (
+            <>
+              <button
+                onClick={refreshKpis}
+                className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
+                title="Actualizar"
+              >
+                <RefreshCw className={cn("h-4 w-4", kpisLoading && "animate-spin")} />
+              </button>
+            </>
+          ),
+        }}
         tabs={TABS}
         activeTab={tab}
         onTabChange={(id) => setTab(id)}

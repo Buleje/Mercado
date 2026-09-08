@@ -3,7 +3,6 @@
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { CardTitle, LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
@@ -496,27 +495,32 @@ export default function RecetasModule() {
 
   return (
     <div className="space-y-6">
-      <AdminModuleHeader
-        eyebrow="Producción · Costos"
-        title="Recetas"
-        description="Producción interna con control de costos e ingredientes."
-        icon={FlaskConical}
-      >
-        {!loading && recetas.length > 0 && (
-          <span className="text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] px-2.5 py-1 rounded-full">{recetas.filter(r => r.activa).length} recetas</span>
-        )}
-        {activeTab === "recetas" && (
-          <button
-            onClick={() => { setShowNew(true); addIngrediente(); }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]"
-          >
-            <Plus className="h-4 w-4" />
-            Nueva Receta
-          </button>
-        )}
-      </AdminModuleHeader>
-
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla; las acciones del módulo, en
+          la misma banda. Recupera ~90px verticales por pantalla. */}
       <AdminTabBar
+        heading={{
+          title: "Recetas",
+          description: "Producción interna con control de costos e ingredientes.",
+          icon: FlaskConical,
+          actions: (
+            <>
+              {!loading && recetas.length > 0 && (
+                <span className="text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] px-2.5 py-1 rounded-full">{recetas.filter(r => r.activa).length} recetas</span>
+              )}
+              {activeTab === "recetas" && (
+                <button
+                  onClick={() => { setShowNew(true); addIngrediente(); }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]"
+                >
+                  <Plus className="h-4 w-4" />
+                  Nueva Receta
+                </button>
+              )}
+            </>
+          ),
+        }}
         moduleId={RECETAS_MODULE_ID}
         tabs={RECETAS_TAB_ITEMS}
         activeTab={activeTab}

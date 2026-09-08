@@ -10,7 +10,6 @@ import {
 } from "@buleje/design-system/icons";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AutoRefreshControl from "@/components/admin/shared/AutoRefreshControl";
 import { useAutoRefresh } from "@/hooks/use-auto-refresh";
 
@@ -134,34 +133,36 @@ export default function InventarioAlmacenesModule() {
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        title="Inventario"
-        description="Stock, movimientos, vencimientos y análisis"
-        icon={Package}
-        bgTint="bg-amber-50 dark:bg-amber-900/20"
-        iconColorClass="text-[var(--data-warning-600)] dark:text-amber-400"
-      >
-        {sub === "stock" && (
-          <AutoRefreshControl
-            secondsLeft={secondsLeft}
-            paused={paused}
-            isActive={isActive}
-            onTogglePause={togglePause}
-            onRefreshNow={refreshNow}
-          />
-        )}
-        {/* Mejora 7: Price labels button */}
-        <button
-          onClick={() => { setShowPriceLabels(true); void loadLabelProducts(); }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors"
-        >
-          Imprimir etiquetas
-        </button>
-      </AdminModuleHeader>
-
-
-
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla; las acciones del módulo, en
+          la misma banda. Recupera ~90px verticales por pantalla. */}
       <AdminTabBar
+        heading={{
+          title: "Inventario",
+          description: "Stock, movimientos, vencimientos y análisis",
+          icon: Package,
+          actions: (
+            <>
+              {sub === "stock" && (
+                <AutoRefreshControl
+                  secondsLeft={secondsLeft}
+                  paused={paused}
+                  isActive={isActive}
+                  onTogglePause={togglePause}
+                  onRefreshNow={refreshNow}
+                />
+              )}
+              {/* Mejora 7: Price labels button */}
+              <button
+                onClick={() => { setShowPriceLabels(true); void loadLabelProducts(); }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors"
+              >
+                Imprimir etiquetas
+              </button>
+            </>
+          ),
+        }}
         tabs={TABS}
         activeTab={sub}
         onTabChange={(id) => setSub(id as typeof sub)}

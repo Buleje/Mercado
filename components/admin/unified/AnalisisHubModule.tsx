@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { BarChart3, TrendingUp, Sparkles } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -36,18 +35,24 @@ export default function AnalisisHubModule({ initialTab }: { initialTab?: string 
 
   return (
     <div className="space-y-4">
-      {/* Header ARRIBA de las pestañas, igual que Mi Plata. Sin él, la primera
-          cosa de la pantalla era la barra de sub-tabs y el título aparecía
-          debajo — al revés que el resto del panel. (El breadcrumb que había
-          antes decía «Análisis › Analytics Pro» encima de una barra donde
-          «Analytics Pro» ya está marcada: dos líneas para el mismo dato.) */}
-      <AdminModuleHeader
-        eyebrow="Análisis · Negocio"
-        title="Análisis"
-        description="Métricas del negocio, predicción de demanda e inteligencia comercial."
-        icon={BarChart3}
-      />
-      <AdminTabBar tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
+      {/* El título va DENTRO de la barra de pestañas, no encima.
+          Medido a 1363x677 (laptop con el chrome del navegador puesto): el
+          apilado título → regla → pestañas → subtítulo → regla → pestañas
+          gastaba 232px hasta el primer número, el 34% de la pantalla. Y el
+          «eyebrow» decía «Análisis · Negocio» arriba de un título «Análisis»:
+          la misma palabra dos veces.
+          El subtítulo de segundo nivel se fue por lo mismo — ver AnalyticsBIModule. */}
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={sub}
+        onTabChange={setSub}
+        moduleId={MODULE_ID}
+        heading={{
+          title: "Análisis",
+          description: "Métricas del negocio, predicción de demanda e inteligencia comercial.",
+          icon: BarChart3,
+        }}
+      >
         {sub === "analytics" && <AnalyticsProModule />}
         {sub === "forecast" && <ForecastingDashboard />}
         {sub === "inteligencia" && <InteligenciaTab />}

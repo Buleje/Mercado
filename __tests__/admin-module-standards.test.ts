@@ -1,7 +1,9 @@
 /**
  * Test de estándares de módulos admin
  * Verifica que TODOS los módulos unified siguen el patrón estándar:
- * - Importan AdminModuleHeader
+ * - Dibujan su identidad con AdminModuleHeader (vista única) o con
+ *   `heading={{…}}` de AdminTabBar (módulo con pestañas: título y pestañas
+ *   en una sola banda — patrón acordado con Brandon 2026-09-07)
  * - Importan AdminTabBar (excepto AICommandModule que no tiene tabs)
  * - Tienen MODULE_ID definido (excepto AnalyticsProModule que es proxy)
  * - No usan clases dark: de Tailwind (forced light mode)
@@ -38,6 +40,18 @@ const NO_TABS_MODULES = [
   // DropshipModule (ADR-298): vista única (tabla de fulfillments al proveedor),
   // sin sub-tabs → no necesita AdminTabBar/MODULE_ID.
   "DropshipModule.tsx",
+  // AutomatizacionesModule (ADR-387/388/391): cuatro paneles apilados
+  // (salud IA, WhatsApp, Telegram, n8n), sin sub-tabs.
+  "AutomatizacionesModule.tsx",
+];
+// Sub-módulos que viven SIEMPRE dentro de la pestaña de un hub y no pintan
+// título propio: la pestaña marcada arriba ya lo dice, y su propia barra de
+// pestañas es lo primero que se ve. Ponerles identidad duplicaría el título
+// del hub (medido en Análisis: 36px de un segundo encabezado que decía en
+// prosa lo que la fila de pestañas dice en botones).
+const NESTED_SIN_TITULO = [
+  // Análisis → Analytics Pro → (Resumen · Ventas · Productos · Clientes · Predicciones)
+  "AnalyticsBIModule.tsx",
 ];
 // Módulos con header custom (no usan AdminModuleHeader, patrón legítimo documentado)
 const CUSTOM_HEADER_MODULES = [
@@ -91,21 +105,30 @@ describe("Admin Modules — Estándares de estructura", () => {
     expect(moduleFiles.length).toBeGreaterThanOrEqual(15);
   });
 
-  describe("AdminModuleHeader — presente en todos los módulos", () => {
+  describe("Identidad del módulo — AdminModuleHeader o heading en la barra", () => {
     for (const file of moduleFiles) {
       if (PROXY_MODULES.includes(file)) continue;
       if (CUSTOM_HEADER_MODULES.includes(file)) continue;
+      if (NESTED_SIN_TITULO.includes(file)) continue;
 
-      it(`${file} importa AdminModuleHeader`, () => {
+      it(`${file} dibuja su identidad (AdminModuleHeader o AdminTabBar heading=)`, () => {
         const content = readModule(file);
-        expect(content).toContain(
-          'import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader"',
-        );
+        const conHeader =
+          content.includes(
+            'import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader"',
+          ) && /<AdminModuleHeader[\s\n]/.test(content);
+        // `heading={{` dentro del <AdminTabBar …>: título + pestañas en una banda.
+        const enBanda = /<AdminTabBar\b[\s\S]*?\bheading=\{\{/.test(content);
+        expect(conHeader || enBanda).toBe(true);
       });
 
-      it(`${file} usa <AdminModuleHeader en el JSX`, () => {
+      it(`${file} no apila el header viejo ENCIMA de una barra con heading`, () => {
+        // Las dos cosas juntas son el apilado que el patrón elimina: título
+        // editorial, regla, y otra vez título en la banda de pestañas.
         const content = readModule(file);
-        expect(content).toMatch(/<AdminModuleHeader[\s\n]/);
+        const enBanda = /<AdminTabBar\b[\s\S]*?\bheading=\{\{/.test(content);
+        if (!enBanda) return;
+        expect(content).not.toMatch(/<AdminModuleHeader[\s\n]/);
       });
     }
   });

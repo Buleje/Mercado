@@ -1,7 +1,6 @@
 "use client";
 
 import { CardTitle, DataTable } from "@buleje/design-system";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -161,20 +160,6 @@ const DONDE_VIVE: Record<string, { tab: TabId; sub?: string }> = {
 
 /** El primer hijo de una pestaña, o la pestaña misma si no se divide. */
 const primeraSub = (tab: TabId): string => SUBS[tab]?.[0]?.id ?? tab;
-
-/**
- * Qué dice el encabezado en cada sección.
- *
- * Sólo las que tienen identidad propia —las que antes pintaban su PROPIO
- * encabezado debajo del de Mi Plata—. El resto hereda el general.
- */
-const CABECERA: Record<string, { eyebrow: string; title: string; description: string }> = {
-  adelantos: {
-    eyebrow: "Finanzas · Adelantos",
-    title: "Adelantos & Liquidaciones",
-    description: "Adelantos de dinero a personas por servicios. Se liquidan con lo que te entregan (producto o servicio).",
-  },
-};
 
 /**
  * Las secciones direccionables por `?vista=`, derivadas de la estructura real:
@@ -1309,40 +1294,38 @@ export default function FinanzasModule({ initialTab }: { initialTab?: string } =
 
   return (
     <div className="space-y-6">
-      {/* Brandon 2026-06-19: el header "Mi Plata" se muestra en TODAS las
-          sub-secciones — incluidas las foldeadas (Por cobrar, Fiados, Préstamos,
-          Adelantos, Activos, Scoring) — igual que Tesorería/Reportes. El módulo
-          hijo conserva su propio sub-header debajo, dando jerarquía clara
-          "Mi Plata → <sección>". Antes las foldeadas solo tenían un breadcrumb. */}
-      {/* El encabezado dice dónde estás DE VERDAD.
-          Fijo en «Mi Plata · Pérdidas y ganancias, gastos, flujo de caja»
-          mentía apenas se entraba a Adelantos o Fiados, y encima esas secciones
-          pintaban su propio encabezado completo debajo: dos títulos, dos
-          descripciones y tres barras de pestañas antes del primer dato. */}
-      <AdminModuleHeader
-        eyebrow={CABECERA[sub]?.eyebrow ?? "Finanzas · Reportes"}
-        title={CABECERA[sub]?.title ?? "Mi Plata"}
-        description={CABECERA[sub]?.description ?? "Pérdidas y ganancias, gastos, flujo de caja y reportes financieros."}
-        icon={Wallet}
-      >
-        {sub === "resumen" && (
-          <AutoRefreshControl
-            secondsLeft={autoRefresh.secondsLeft}
-            paused={autoRefresh.paused}
-            isActive={autoRefresh.isActive}
-            onTogglePause={autoRefresh.togglePause}
-            onRefreshNow={autoRefresh.refreshNow}
-          />
-        )}
-        <button
-          onClick={generarReporteBancario}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]"
-        >
-          Reporte Bancario
-        </button>
-      </AdminModuleHeader>
-
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla; las acciones del módulo, en
+          la misma banda. Recupera ~90px verticales por pantalla.
+          El título es FIJO «Mi Plata»: la sección en la que estás (Adelantos,
+          Fiados…) la dice su propio encabezado, que al colgar de esta barra se
+          compacta solo (module-depth.tsx) — ya no hay dos títulos grandes. */}
       <AdminTabBar
+        heading={{
+          title: "Mi Plata",
+          description: "Pérdidas y ganancias, gastos, flujo de caja y reportes financieros.",
+          icon: Wallet,
+          actions: (
+            <>
+              {sub === "resumen" && (
+                <AutoRefreshControl
+                  secondsLeft={autoRefresh.secondsLeft}
+                  paused={autoRefresh.paused}
+                  isActive={autoRefresh.isActive}
+                  onTogglePause={autoRefresh.togglePause}
+                  onRefreshNow={autoRefresh.refreshNow}
+                />
+              )}
+              <button
+                onClick={generarReporteBancario}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]"
+              >
+                Reporte Bancario
+              </button>
+            </>
+          ),
+        }}
         tabs={TABS}
         wrap
         activeTab={tab}
