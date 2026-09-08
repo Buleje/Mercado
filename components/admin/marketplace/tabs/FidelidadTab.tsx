@@ -158,7 +158,7 @@ export function MarketplaceFidelidadTab() {
           <button
             onClick={searchCustomer}
             disabled={loading || !phone.trim()}
-            className="inline-flex items-center gap-2 px-5 bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
             {loading ? (
               <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -251,7 +251,7 @@ export function MarketplaceFidelidadTab() {
               <button
                 onClick={handleEarn}
                 disabled={saving || !earnPoints}
-                className="inline-flex items-center gap-2 px-5 bg-[var(--data-success)] text-white text-sm font-bold hover:opacity-90 transition disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-5 bg-[var(--data-success)] text-white text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
               >
                 {saving ? (
                   <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

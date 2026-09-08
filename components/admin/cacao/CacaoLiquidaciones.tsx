@@ -98,8 +98,8 @@ export default function CacaoLiquidaciones() {
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar productor por nombre, código o sector…" className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
         </div>
-        <button type="button" onClick={exportCsv} disabled={view.length === 0} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Download className="h-4 w-4" />CSV</button>
-        <button type="button" onClick={load} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" />Actualizar</button>
+        <button type="button" onClick={exportCsv} disabled={view.length === 0} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"><Download className="h-4 w-4" />CSV</button>
+        <button type="button" onClick={load} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" />Actualizar</button>
       </div>
 
       {loading && groups.length === 0 ? (
@@ -135,7 +135,7 @@ export default function CacaoLiquidaciones() {
                   {g.telefono && (
                     <a href={waLink(g.telefono, g.nombre, g.totalSaldo)} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]" aria-label={`WhatsApp a ${g.nombre}`}><MessageCircle className="h-4 w-4" /></a>
                   )}
-                  <button type="button" onClick={() => setPayFor(g)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"><HandCoins className="h-4 w-4" />Pagar</button>
+                  <button type="button" onClick={() => setPayFor(g)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90"><HandCoins className="h-4 w-4" />Pagar</button>
                 </div>
                 {isOpen && (
                   <div className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2">
@@ -228,8 +228,8 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
             <p className="text-sm text-[var(--text-secondary)]">pagados a {grupo.nombre}. {done.saldoRestante > 0 ? `Queda S/ ${n2(done.saldoRestante)} pendiente.` : "Cuenta saldada."}</p>
           </div>
           <div className="flex justify-center gap-2">
-            <button type="button" onClick={() => openPrintable(receiptHtml(grupo, done.aplicado, done.saldoRestante, done.fecha))} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" />Imprimir comprobante</button>
-            <button type="button" onClick={onPaid} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90">Listo</button>
+            <button type="button" onClick={() => openPrintable(receiptHtml(grupo, done.aplicado, done.saldoRestante, done.fecha))} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Printer className="h-4 w-4" />Imprimir comprobante</button>
+            <button type="button" onClick={onPaid} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90">Listo</button>
           </div>
         </div>
       </AdminModal>
@@ -250,8 +250,8 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
         </div>
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">Cancelar</button>
-          <button type="button" disabled={!valido || submitting} onClick={pagar} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">
+          <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">Cancelar</button>
+          <button type="button" disabled={!valido || submitting} onClick={pagar} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <HandCoins className="h-4 w-4" />}Registrar pago
           </button>
         </div>

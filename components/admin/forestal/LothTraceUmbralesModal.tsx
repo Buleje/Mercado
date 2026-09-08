@@ -166,14 +166,14 @@ export default function LothTraceUmbralesModal({
           <button
             type="button"
             onClick={() => setDraft(UMBRALES_DEFAULT)}
-            className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
             <RotateCcw className="h-4 w-4" /> Volver al default
           </button>
           <button
             type="button"
             onClick={guardar}
-            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90"
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90"
           >
             <Save className="h-4 w-4" /> Guardar
           </button>

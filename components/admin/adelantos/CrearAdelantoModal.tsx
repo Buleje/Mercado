@@ -645,7 +645,7 @@ function PieDelFormulario({
           <button
             type="button"
             onClick={onClose}
-            className="h-12 rounded-xl px-5 text-base font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)]"
+            className="h-12 rounded-xl px-5 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)]"
           >
             Cancelar
           </button>
@@ -654,7 +654,7 @@ function PieDelFormulario({
             onClick={onSubmit}
             disabled={!puedeGuardar}
             title="Ctrl + Enter"
-            className={`h-12 rounded-xl px-6 text-base font-bold text-white shadow-[var(--shadow-sm)] transition-colors disabled:opacity-50 disabled:shadow-none ${
+            className={`h-12 rounded-xl px-6 text-base font-semibold text-white shadow-[var(--shadow-sm)] transition-colors disabled:opacity-50 disabled:shadow-none ${
               confirmando ? "bg-[var(--data-error)] hover:opacity-90" : "bg-primary hover:bg-primary-dark"
             }`}
           >

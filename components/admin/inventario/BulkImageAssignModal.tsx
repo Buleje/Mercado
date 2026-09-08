@@ -506,7 +506,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
           </p>
           <button
             onClick={() => onOpenChange(false)}
-            className="px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-extrabold hover:bg-primary-dark transition-colors"
+            className="px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
           >
             {totalAssigned > 0 ? `Listo (${totalAssigned} asignadas)` : "Cerrar"}
           </button>

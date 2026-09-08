@@ -88,7 +88,7 @@ export function SmartFolderModal({ initial, onSave, onClose }: { initial?: Smart
 
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button onClick={save} className={cn("rounded-xl bg-primary px-4 min-h-10 text-sm font-bold text-white hover:bg-primary/90")}>Guardar carpeta</button>
+          <button onClick={save} className={cn("rounded-xl bg-primary px-4 min-h-10 text-sm font-semibold text-white hover:bg-primary/90")}>Guardar carpeta</button>
         </div>
       </div>
     </div>

@@ -115,7 +115,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+              className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
             >
               <Upload className="h-4 w-4" /> Subir archivo
             </button>
@@ -192,7 +192,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-12 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-12 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             Cancelar
           </button>
@@ -203,7 +203,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
               onApply(result.vertices);
               onClose();
             }}
-            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40"
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
           >
             <Check className="h-4 w-4" /> Usar este polígono
           </button>

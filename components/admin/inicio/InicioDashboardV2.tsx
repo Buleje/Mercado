@@ -164,7 +164,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
         <button
           type="button"
           onClick={() => { setFetchError(null); setLoading(true); /* effect re-corre por cambio en setLoading? no — uso reload */ window.location.reload(); }}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--data-error-500)] text-white text-sm font-extrabold hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--data-error-500)] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
         >
           Reintentar
         </button>

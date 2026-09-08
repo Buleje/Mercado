@@ -1219,7 +1219,7 @@ export default function POSPaymentModal({
                       } catch { /* ignore */ }
                       setSavingCustomer(false);
                     }}
-                    className="flex-1 min-h-11 rounded-xl bg-[var(--data-success-500)] text-white text-base font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--data-success-500)]/90 transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 min-h-11 rounded-xl bg-[var(--data-success-500)] text-white text-base font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--data-success-500)]/90 transition-colors flex items-center justify-center gap-2"
                   >
                     {savingCustomer ? (
                       <>
@@ -1377,7 +1377,7 @@ export default function POSPaymentModal({
             onClick={handleConfirm}
             disabled={!canConfirm}
             className={cn(
-              "group relative w-full py-4 rounded-2xl font-extrabold text-base transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-between px-6 text-white overflow-hidden",
+              "group relative w-full py-4 rounded-2xl font-semibold text-base transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-between px-6 text-white overflow-hidden",
               isFiado
                 ? "bg-[var(--data-warning-500)] hover:brightness-110 shadow-lg"
                 : "bg-linear-to-r from-primary to-[var(--color-primary-dark)] hover:brightness-110 shadow-lg"

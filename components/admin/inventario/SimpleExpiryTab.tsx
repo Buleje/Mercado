@@ -161,7 +161,7 @@ export default function SimpleExpiryTab() {
           <span className="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><CheckCircle className="h-6 w-6" /></span>
           <p className="text-base font-extrabold text-[var(--text-primary)]">{filter !== "todos" ? "Sin lotes en esta categoría" : "Sin lotes con vencimiento"}</p>
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">Registra lotes con fecha de vencimiento para no perder mercadería.</p>
-          <button onClick={() => setShowRegister(true)} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-11 text-sm font-bold text-white hover:bg-primary/90"><Plus className="h-4 w-4" strokeWidth={2.5} /> Registrar lote</button>
+          <button onClick={() => setShowRegister(true)} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-11 text-sm font-semibold text-white hover:bg-primary/90"><Plus className="h-4 w-4" strokeWidth={2.5} /> Registrar lote</button>
         </div>
       ) : (
         <div className="space-y-2">
@@ -295,8 +295,8 @@ function RegisterBatchModal({ products, onClose, onSaved }: { products: Product[
             <Field label="Proveedor (opcional)" labelClassName={LABEL} className="col-span-2"><input value={supplier} onChange={e => setSupplier(e.target.value)} placeholder="Distribuidora…" className={FIELD} /></Field>
           </div>
           <div className="flex items-center gap-3 pt-1">
-            <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-            <button type="button" onClick={save} disabled={saving} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-white hover:bg-primary/90 disabled:opacity-50">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}{saving ? "Guardando…" : "Registrar lote"}</button>
+            <button type="button" onClick={onClose} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+            <button type="button" onClick={save} disabled={saving} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}{saving ? "Guardando…" : "Registrar lote"}</button>
           </div>
         </div>
       </div>

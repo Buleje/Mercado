@@ -281,7 +281,7 @@ export default function CacaoVentas() {
           type="button"
           onClick={exportCsv}
           disabled={view.length === 0}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
         >
           <Download className="h-4 w-4" />
           CSV
@@ -296,7 +296,7 @@ export default function CacaoVentas() {
             )
           }
           disabled={view.length === 0}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
         >
           <Printer className="h-4 w-4" />
           Reporte
@@ -304,7 +304,7 @@ export default function CacaoVentas() {
         <button
           type="button"
           onClick={() => setShowNew(true)}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"
+          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-base font-semibold text-white shadow-sm hover:opacity-90"
         >
           <Plus className="h-5 w-5" />
           Registrar venta
@@ -421,7 +421,7 @@ export default function CacaoVentas() {
               <button
                 type="button"
                 onClick={() => setShowNew(true)}
-                className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"
+                className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
               >
                 <Plus className="h-4 w-4" />
                 Registrar venta
@@ -491,7 +491,7 @@ export default function CacaoVentas() {
                   <button
                     type="button"
                     onClick={() => setCobro(null)}
-                    className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                    className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                   >
                     Cancelar
                   </button>
@@ -499,7 +499,7 @@ export default function CacaoVentas() {
                     type="button"
                     disabled={cobroBusy}
                     onClick={doCobro}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
                   >
                     {cobroBusy ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -536,7 +536,7 @@ export default function CacaoVentas() {
               <button
                 type="button"
                 onClick={() => setAnnulId(null)}
-                className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
               >
                 Cancelar
               </button>
@@ -544,7 +544,7 @@ export default function CacaoVentas() {
                 type="button"
                 disabled={annulBusy}
                 onClick={annul}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
               >
                 <AlertTriangle className="h-4 w-4" />
                 {annulBusy ? "Anulando…" : "Anular venta"}

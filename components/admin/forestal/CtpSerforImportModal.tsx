@@ -741,7 +741,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
             <button
               onClick={() => void bajarPlantilla(null)}
               disabled={bajandoPlantilla}
-              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--surface-raised)] px-4 text-base font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--surface-raised)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
             >
               <Download className="h-5 w-5" /> {bajandoPlantilla ? "Generando…" : "Libro completo"}
             </button>
@@ -769,7 +769,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
           </div>
           <button
             onClick={onClose}
-            className="h-12 rounded-xl px-5 text-base font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
+            className="h-12 rounded-xl px-5 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
           >
             Cerrar
           </button>
@@ -783,7 +783,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
               <button
                 onClick={() => void enviar("preview")}
                 disabled={cargando || totalListas === 0}
-                className="inline-flex h-12 items-center gap-2 rounded-xl px-4 text-base font-bold text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
+                className="inline-flex h-12 items-center gap-2 rounded-xl px-4 text-base font-semibold text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
               >
                 <FileText className="h-5 w-5" />
                 {cargando && modoEnvio === "preview" ? (paso ? `Revisando ${paso}…` : "Revisando…") : "Sólo revisar"}
@@ -791,7 +791,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
               <button
                 onClick={() => void enviar("commit")}
                 disabled={cargando || totalListas === 0}
-                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-5 text-base font-bold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-5 text-base font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
               >
                 <Upload className="h-5 w-5" />
                 {cargando && modoEnvio === "commit"

@@ -163,7 +163,7 @@ export function StartLiveModal({ onClose, onStart }: Props) {
             onClick={handleStart}
             disabled={!canStart}
             className={cn(
-              "flex-1 inline-flex items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-bold text-white transition-colors",
+              "flex-1 inline-flex items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-semibold text-white transition-colors",
               canStart ? "bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]" : "bg-gray-300 cursor-not-allowed"
             )}
           >

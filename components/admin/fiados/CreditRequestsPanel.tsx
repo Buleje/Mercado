@@ -145,7 +145,7 @@ export default function CreditRequestsPanel() {
                 type="button"
                 onClick={() => decide(r.id, "approve")}
                 disabled={busy[r.id] || !(Number(amounts[r.id]) > 0)}
-                className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-sm font-bold text-white transition-colors hover:bg-[var(--accent-dark,var(--accent))] disabled:opacity-50"
+                className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-dark,var(--accent))] disabled:opacity-50"
               >
                 {busy[r.id] ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

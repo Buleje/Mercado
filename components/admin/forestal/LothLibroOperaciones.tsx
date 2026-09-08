@@ -216,7 +216,7 @@ function SectionChip({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-xl border-2 px-3.5 min-h-10 text-sm font-bold transition ${
+      className={`inline-flex items-center gap-2 rounded-xl border-2 px-3.5 min-h-10 text-sm font-semibold transition ${
         active
           ? "border-[var(--data-success-600)] bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
           : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
@@ -665,7 +665,7 @@ export default function LothLibroOperaciones() {
           className={`inline-flex h-10 max-w-[18rem] items-center gap-2 rounded-xl border-2 px-3 text-sm transition-colors ${
             caratula
               ? "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
-              : "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] font-bold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
+              : "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
           }`}
         >
           <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -698,7 +698,7 @@ export default function LothLibroOperaciones() {
           <button
             type="button"
             onClick={() => setShowForm(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
           >
             <Plus className="h-4 w-4" />
             Nueva línea
@@ -872,7 +872,7 @@ export default function LothLibroOperaciones() {
           onClick={() => doPrintLabels()}
           disabled={printingLabels || entries.length === 0}
           title="Imprimir etiquetas con QR de origen para las trozas de esta sección"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
         >
           {printingLabels ? <RefreshCw className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
           <span>Etiquetas QR</span>
@@ -941,7 +941,7 @@ export default function LothLibroOperaciones() {
             type="button"
             onClick={() => setShowTrozar(true)}
             title="Registrar todas las trozas de un mismo árbol en una sola pantalla"
-            className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             <Scissors className="h-4 w-4" /> Trozar árbol
           </button>
@@ -950,7 +950,7 @@ export default function LothLibroOperaciones() {
           type="button"
           onClick={() => setShowImport(true)}
           title="Pegar un cuadro de Excel o subir un CSV con muchas líneas"
-          className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+          className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
         >
           <Upload className="h-4 w-4" /> Importar
         </button>
@@ -958,7 +958,7 @@ export default function LothLibroOperaciones() {
           type="button"
           onClick={() => descargarCsv(visibles, `libro-th-${section}.csv`)}
           disabled={visibles.length === 0}
-          className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
         >
           <FileSpreadsheet className="h-4 w-4" /> CSV
         </button>
@@ -974,14 +974,14 @@ export default function LothLibroOperaciones() {
             type="button"
             onClick={() => doPrintLabels(seleccionadas)}
             disabled={printingLabels}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             <QrCode className="h-4 w-4" /> Etiquetas QR
           </button>
           <button
             type="button"
             onClick={() => descargarCsv(seleccionadas, `libro-th-${section}-seleccion.csv`)}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             CSV de la selección
           </button>
@@ -989,14 +989,14 @@ export default function LothLibroOperaciones() {
             type="button"
             onClick={() => setAnularLineas(seleccionadas.filter((e) => e.status !== "anulado"))}
             disabled={seleccionadas.every((e) => e.status === "anulado")}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-error-500)] px-4 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-40 dark:text-[var(--data-error-500)]"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-error-500)] px-4 text-sm font-semibold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-40 dark:text-[var(--data-error-500)]"
           >
             <Ban className="h-4 w-4" /> Anular
           </button>
           <button
             type="button"
             onClick={() => setSeleccion(new Set())}
-            className="ml-auto inline-flex h-10 items-center rounded-xl px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="ml-auto inline-flex h-10 items-center rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
             Limpiar
           </button>
@@ -1074,7 +1074,7 @@ export default function LothLibroOperaciones() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0 || loading}
-                className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+                className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
               >
                 Anterior
               </button>
@@ -1085,7 +1085,7 @@ export default function LothLibroOperaciones() {
                 type="button"
                 onClick={() => setPage((p) => p + 1)}
                 disabled={(page + 1) * POR_PAGINA >= totalSeccion || loading}
-                className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+                className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
               >
                 Siguiente
               </button>
@@ -1212,7 +1212,7 @@ export default function LothLibroOperaciones() {
                 setAnularLineas([]);
                 setAnnulReason("");
               }}
-              className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)]"
+              className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
             >
               Cancelar
             </button>
@@ -1220,7 +1220,7 @@ export default function LothLibroOperaciones() {
               type="button"
               disabled={annulReason.trim().length < 3 || pending != null}
               onClick={() => doAnnul(anularLineas.map((e) => e.id))}
-              className="inline-flex h-11 items-center rounded-xl bg-[var(--data-error-600)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-11 items-center rounded-xl bg-[var(--data-error-600)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
             >
               {pending != null ? "Anulando…" : `Anular ${anularLineas.length > 1 ? anularLineas.length : ""}`}
             </button>

@@ -81,11 +81,11 @@ export default function CacaoCampo() {
       {/* Toolbar + leyenda */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-2xl border-2 border-[var(--rule-base)] p-0.5">
-          <button type="button" onClick={() => setVista("grilla")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-bold ${vista === "grilla" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><LayoutGrid className="h-4 w-4" />Grilla</button>
-          <button type="button" onClick={() => setVista("mapa")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-bold ${vista === "mapa" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><MapIcon className="h-4 w-4" />Mapa</button>
-          <button type="button" onClick={() => setVista("agenda")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-bold ${vista === "agenda" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><Calendar className="h-4 w-4" />Agenda</button>
-          <button type="button" onClick={() => setVista("analisis")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-bold ${vista === "analisis" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><TrendingUp className="h-4 w-4" />Análisis</button>
-          <button type="button" onClick={() => setVista("sanidad")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-bold ${vista === "sanidad" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><Stethoscope className="h-4 w-4" />Sanidad</button>
+          <button type="button" onClick={() => setVista("grilla")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-semibold ${vista === "grilla" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><LayoutGrid className="h-4 w-4" />Grilla</button>
+          <button type="button" onClick={() => setVista("mapa")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-semibold ${vista === "mapa" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><MapIcon className="h-4 w-4" />Mapa</button>
+          <button type="button" onClick={() => setVista("agenda")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-semibold ${vista === "agenda" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><Calendar className="h-4 w-4" />Agenda</button>
+          <button type="button" onClick={() => setVista("analisis")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-semibold ${vista === "analisis" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><TrendingUp className="h-4 w-4" />Análisis</button>
+          <button type="button" onClick={() => setVista("sanidad")} className={`inline-flex h-10 items-center gap-1.5 rounded-[13px] px-3 text-sm font-semibold ${vista === "sanidad" ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)]"}`}><Stethoscope className="h-4 w-4" />Sanidad</button>
         </div>
         <div className="mr-auto flex flex-wrap items-center gap-3 text-xs text-[var(--text-secondary)]">
           {(["al_dia", "pendiente", "vencido", "sin_labores"] as CacaoParcelaStatus[]).map((s) => {
@@ -93,9 +93,9 @@ export default function CacaoCampo() {
             return <span key={s} className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded-full" style={{ background: m.ring }} />{m.label}</span>;
           })}
         </div>
-        <button type="button" onClick={() => setIncludeInactive((v) => !v)} className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold ${includeInactive ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"} hover:bg-[var(--surface-canvas)]`}>{includeInactive ? "Todas" : "Activas"}</button>
-        <button type="button" onClick={load} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" />Actualizar</button>
-        <button type="button" onClick={() => setShowNew(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Nueva sección</button>
+        <button type="button" onClick={() => setIncludeInactive((v) => !v)} className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-semibold ${includeInactive ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"} hover:bg-[var(--surface-canvas)]`}>{includeInactive ? "Todas" : "Activas"}</button>
+        <button type="button" onClick={load} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><RefreshCw className="h-4 w-4" />Actualizar</button>
+        <button type="button" onClick={() => setShowNew(true)} className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-base font-semibold text-white shadow-sm hover:opacity-90"><Plus className="h-5 w-5" />Nueva sección</button>
       </div>
 
       {/* Mapa: dibujar/dividir el terreno en secciones (fase 2) */}
@@ -114,7 +114,7 @@ export default function CacaoCampo() {
           <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Trees className="h-7 w-7" /></span>
           <p className="text-base font-bold text-[var(--text-primary)]">Dibujá tu chacra</p>
           <p className="mx-auto mt-1 max-w-sm text-sm">Agregá cada sección de tu terreno (ej. una hectárea = un código). Después registrás poda, fertilización, cosecha y las ves acá por color.</p>
-          <button type="button" onClick={() => setShowNew(true)} className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Nueva sección</button>
+          <button type="button" onClick={() => setShowNew(true)} className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Nueva sección</button>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -189,8 +189,8 @@ function NuevaParcelaModal({ onClose, onSaved }: { onClose: () => void; onSaved:
         </div>
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
-          <button type="submit" disabled={!valido || submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Crear sección</button>
+          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
+          <button type="submit" disabled={!valido || submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Crear sección</button>
         </div>
       </form>
     </AdminModal>

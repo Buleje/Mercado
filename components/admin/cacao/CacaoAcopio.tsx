@@ -394,7 +394,7 @@ export default function CacaoAcopio() {
             <button
               type="button"
               onClick={() => setShowLote(true)}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
             >
               <Plus className="h-4 w-4" />
               Nuevo lote
@@ -462,7 +462,7 @@ export default function CacaoAcopio() {
             <button
               type="button"
               onClick={() => setShowFilters((s) => !s)}
-              className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold ${showFilters || activeFilters ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"} hover:bg-[var(--surface-canvas)]`}
+              className={`inline-flex h-12 items-center gap-2 rounded-2xl border-2 px-4 text-sm font-semibold ${showFilters || activeFilters ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"} hover:bg-[var(--surface-canvas)]`}
             >
               <Filter className="h-4 w-4" />
               Filtros
@@ -476,7 +476,7 @@ export default function CacaoAcopio() {
               type="button"
               onClick={exportCsv}
               disabled={lotes.length === 0}
-              className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+              className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
             >
               <Download className="h-4 w-4" />
               CSV
@@ -542,7 +542,7 @@ export default function CacaoAcopio() {
                 <button
                   type="button"
                   onClick={() => load("acopio")}
-                  className="inline-flex h-10 items-center rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90"
+                  className="inline-flex h-10 items-center rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90"
                 >
                   Aplicar filtros
                 </button>
@@ -556,7 +556,7 @@ export default function CacaoAcopio() {
                       setFTo("");
                       load("acopio", { variedad: "", grado: "", from: "", to: "" });
                     }}
-                    className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                    className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                   >
                     Limpiar
                   </button>
@@ -887,7 +887,7 @@ export default function CacaoAcopio() {
               <button
                 type="button"
                 onClick={() => setAnnulId(null)}
-                className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
               >
                 Cancelar
               </button>
@@ -895,7 +895,7 @@ export default function CacaoAcopio() {
                 type="button"
                 disabled={annulReason.trim().length < 3}
                 onClick={annul}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
               >
                 <AlertTriangle className="h-4 w-4" />
                 Anular lote
@@ -992,7 +992,7 @@ export default function CacaoAcopio() {
                   <button
                     type="button"
                     onClick={() => setPayId(null)}
-                    className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                    className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                   >
                     Cancelar
                   </button>
@@ -1000,7 +1000,7 @@ export default function CacaoAcopio() {
                     type="button"
                     disabled={invalido || paying}
                     onClick={pagar}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-success-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
                   >
                     <Wallet className="h-4 w-4" />
                     {paying ? "Guardando…" : "Registrar pago"}
@@ -1153,7 +1153,7 @@ function EmptyOrLoading({
         <button
           type="button"
           onClick={cta.onClick}
-          className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"
+          className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
         >
           <Plus className="h-4 w-4" />
           {cta.label}

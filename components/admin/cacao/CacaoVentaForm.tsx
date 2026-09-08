@@ -199,7 +199,7 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
             type="submit"
             form="cacao-venta-form"
             disabled={!isValid || excedeLote || submitting}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             {submitting ? (
               <>
@@ -375,7 +375,7 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
                           key={m}
                           type="button"
                           onClick={() => setMoneda(m)}
-                          className={`flex-1 rounded-xl text-sm font-bold transition ${moneda === m ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)]"}`}
+                          className={`flex-1 rounded-xl text-sm font-semibold transition ${moneda === m ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm" : "text-[var(--text-tertiary)]"}`}
                         >
                           {m === "PEN" ? "Soles" : "Dólares"}
                         </button>

@@ -316,7 +316,7 @@ export default function DeclaracionInventarioModule() {
         <button
           onClick={handleGenerar}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-colors"
+          className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50  transition-colors"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
           Generar Declaración

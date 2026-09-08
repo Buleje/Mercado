@@ -409,7 +409,7 @@ export default function CacaoBeneficio() {
           type="button"
           onClick={exportCsv}
           disabled={view.length === 0}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
         >
           <Download className="h-4 w-4" />
           CSV
@@ -417,7 +417,7 @@ export default function CacaoBeneficio() {
         <button
           type="button"
           onClick={() => setShowNew(true)}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-base font-bold text-white shadow-sm hover:opacity-90"
+          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-base font-semibold text-white shadow-sm hover:opacity-90"
         >
           <Plus className="h-5 w-5" />
           Nuevo beneficio
@@ -606,7 +606,7 @@ export default function CacaoBeneficio() {
               <button
                 type="button"
                 onClick={() => setShowNew(true)}
-                className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-bold text-white shadow-sm hover:opacity-90"
+                className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
               >
                 <Plus className="h-4 w-4" />
                 Nuevo beneficio
@@ -683,7 +683,7 @@ export default function CacaoBeneficio() {
                           key={m.v}
                           type="button"
                           onClick={() => setAdvMetodo(advMetodo === m.v ? "" : m.v)}
-                          className={`flex-1 rounded-xl px-3 min-h-10 text-sm font-bold transition ${advMetodo === m.v ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                          className={`flex-1 rounded-xl px-3 min-h-10 text-sm font-semibold transition ${advMetodo === m.v ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
                         >
                           {m.label}
                         </button>
@@ -775,7 +775,7 @@ export default function CacaoBeneficio() {
                   <button
                     type="button"
                     onClick={() => setAdvance(null)}
-                    className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                    className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                   >
                     Cancelar
                   </button>
@@ -783,7 +783,7 @@ export default function CacaoBeneficio() {
                     type="button"
                     disabled={advBusy || !canSubmit}
                     onClick={doAdvance}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
                   >
                     {advBusy ? (
                       <RefreshCw className="h-4 w-4 animate-spin" />
@@ -820,7 +820,7 @@ export default function CacaoBeneficio() {
               <button
                 type="button"
                 onClick={() => setAnnulId(null)}
-                className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
               >
                 Cancelar
               </button>
@@ -828,7 +828,7 @@ export default function CacaoBeneficio() {
                 type="button"
                 disabled={annulBusy}
                 onClick={annul}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
               >
                 <AlertTriangle className="h-4 w-4" />
                 {annulBusy ? "Anulando…" : "Anular beneficio"}

@@ -418,7 +418,7 @@ export default function POSReturnModal({
                 <button
                   onClick={handleConfirm}
                   disabled={selectedCount === 0 || processing}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                 >
                   {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   Confirmar devolucion
@@ -491,7 +491,7 @@ export default function POSReturnModal({
 
               <button
                 onClick={resetAndClose}
-                className="px-6 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+                className="px-6 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
               >
                 Cerrar
               </button>

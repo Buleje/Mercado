@@ -192,7 +192,7 @@ export default function MovementDetailModal({
                   type="button"
                   onClick={revertir}
                   disabled={revirtiendo}
-                  className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--data-warning-500)] px-4 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                  className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--data-warning-500)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
                   {revirtiendo ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Undo2 className="h-4 w-4" aria-hidden />}
                   Sí, revertir
@@ -201,7 +201,7 @@ export default function MovementDetailModal({
                   type="button"
                   onClick={() => setConfirma(false)}
                   disabled={revirtiendo}
-                  className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] disabled:opacity-50"
+                  className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] disabled:opacity-50"
                 >
                   No
                 </button>
@@ -212,7 +212,7 @@ export default function MovementDetailModal({
               type="button"
               onClick={() => setConfirma(true)}
               className={cn(
-                "inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--data-warning-500)]/50 hover:text-[var(--data-warning-600)] dark:hover:text-[var(--data-warning-500)]",
+                "inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--data-warning-500)]/50 hover:text-[var(--data-warning-600)] dark:hover:text-[var(--data-warning-500)]",
               )}
             >
               <Undo2 className="h-4 w-4" aria-hidden />

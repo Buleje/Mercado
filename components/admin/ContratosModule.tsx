@@ -1359,7 +1359,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         {wizardStep < 4 && (
                           <button
                             onClick={() => setWizardStep(s => s + 1)}
-                            className="flex items-center gap-2 px-4 min-h-10 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                            className="flex items-center gap-2 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
                           >
                             Siguiente
                             <ArrowRight className="h-4 w-4" />
@@ -1369,7 +1369,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <button
                             onClick={handleCreate}
                             disabled={creating}
-                            className="flex items-center gap-2 px-6 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                            className="flex items-center gap-2 px-6 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                           >
                             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                             Guardar Contrato
@@ -1653,7 +1653,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* Action Buttons */}
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => verPDF(selected)} className="flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors">
+                    <button onClick={() => verPDF(selected)} className="flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">
                       <Eye className="h-4 w-4" /> Ver PDF
                     </button>
                     <button onClick={() => downloadPDF(selected)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 transition-colors">
@@ -1667,7 +1667,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     disabled={archivando === selected.id}
                     // En dark el brand-ink es casi negro: sin borde el botón se
                     // funde con el panel y parece un hueco, no una acción.
-                    className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--brand-ink)] border border-transparent dark:border-white/20 hover:opacity-90 transition-opacity disabled:opacity-60"
+                    className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--brand-ink)] border border-transparent dark:border-white/20 hover:opacity-90 transition-opacity disabled:opacity-60"
                   >
                     {archivando === selected.id
                       ? <Loader2 className="h-4 w-4 animate-spin" />

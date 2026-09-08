@@ -175,7 +175,7 @@ export default function AdelantosModule() {
               setTab("lista");
               setCreando(true);
             }}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary-dark"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
           >
             <Plus className="h-4 w-4" />
             {sinPersonas ? "Agregar persona" : "Nuevo adelanto"}
@@ -265,7 +265,7 @@ function ResumenView({
         </div>
         <button
           onClick={() => onGoTab("personas")}
-          className="mt-6 inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-6 text-base font-bold text-white transition-colors hover:bg-primary-dark"
+          className="mt-6 inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-6 text-base font-semibold text-white transition-colors hover:bg-primary-dark"
         >
           <Plus className="h-5 w-5" /> Agregar primera persona
         </button>
@@ -558,7 +558,7 @@ function AdelantosView({
             <button
               onClick={() => setPlanilla(true)}
               title="Descontar los adelantos de sueldo del período, todos de una"
-              className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-base font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+              className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
             >
               <Users className="h-5 w-5" /> Descuentos de planilla
             </button>
@@ -569,7 +569,7 @@ function AdelantosView({
           <button
             onClick={() => onCreando(true)}
             disabled={beneficiarios.length === 0}
-            className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 lg:hidden"
+            className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 lg:hidden"
             title={beneficiarios.length === 0 ? "Creá primero una persona" : undefined}
           >
             <Plus className="h-5 w-5" /> Nuevo adelanto
@@ -616,7 +616,7 @@ function AdelantosView({
               onClick={() => descargarCsvAdelantos(filtrados, `adelantos-${new Date().toISOString().slice(0, 10)}.csv`)}
               disabled={filtrados.length === 0}
               title="Baja exactamente lo que estás viendo, con filtro y búsqueda aplicados"
-              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
+              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
             >
               <Download className="h-4 w-4" /> CSV ({filtrados.length})
             </button>
@@ -753,7 +753,7 @@ function PersonasView({
         </CardTitle>
         <button
           onClick={() => setShowCreate(true)}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-5 text-base font-bold text-white transition-colors hover:bg-primary-dark"
+          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-5 text-base font-semibold text-white transition-colors hover:bg-primary-dark"
         >
           <Plus className="h-5 w-5" /> Nueva persona
         </button>
@@ -832,7 +832,7 @@ function PersonasView({
               onClick={() => descargarCsvPersonas(ordenados, `personas-${new Date().toISOString().slice(0, 10)}.csv`)}
               disabled={ordenados.length === 0}
               title="Baja exactamente lo que estás viendo, con filtro y búsqueda aplicados"
-              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
+              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
             >
               <Download className="h-4 w-4" /> CSV ({ordenados.length})
             </button>
@@ -958,8 +958,8 @@ function EliminarPersonaModal({ persona, onClose, onDeleted }: { persona: Benefi
       </p>
       {err && <p className="mt-3 text-base font-semibold text-[var(--data-error)]">{err}</p>}
       <div className="mt-5 flex justify-end gap-2">
-        <button onClick={onClose} className="h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-        <button onClick={submit} disabled={saving} className="h-12 px-5 rounded-2xl bg-[var(--data-error)] text-white text-base font-bold hover:opacity-90 disabled:opacity-50">
+        <button onClick={onClose} className="h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+        <button onClick={submit} disabled={saving} className="h-12 px-5 rounded-2xl bg-[var(--data-error)] text-white text-base font-semibold hover:opacity-90 disabled:opacity-50">
           {saving ? "Eliminando…" : "Eliminar"}
         </button>
       </div>
@@ -1073,7 +1073,7 @@ function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[]; loadin
           <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por persona, código (ADL-2026-7) o recibo…" className="h-12 w-full rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary" />
         </div>
-        <button onClick={exportarPdf} disabled={filtrados.length === 0} className="inline-flex items-center gap-1 h-12 px-4 rounded-xl border border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50">
+        <button onClick={exportarPdf} disabled={filtrados.length === 0} className="inline-flex items-center gap-1 h-12 px-4 rounded-xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50">
           <FileText className="h-5 w-5" /> PDF
         </button>
       </div>
@@ -1148,7 +1148,7 @@ function RecurrentesView({ beneficiarios, onChange }: { beneficiarios: Beneficia
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">{recs.length} recurrente{recs.length === 1 ? "" : "s"}</CardTitle>
-        <button onClick={() => setShowCreate(true)} disabled={beneficiarios.length === 0} className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary-dark transition-colors disabled:opacity-50">
+        <button onClick={() => setShowCreate(true)} disabled={beneficiarios.length === 0} className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50">
           <Plus className="h-5 w-5" /> Nueva recurrente
         </button>
       </div>
@@ -1229,7 +1229,7 @@ function CrearRecurrenteModal({ beneficiarios, onClose, onCreated }: { beneficia
       <Field label="Frecuencia">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {(["semanal", "quincenal", "mensual"] as const).map((f) => (
-            <button key={f} type="button" onClick={() => setFrecuencia(f)} className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${frecuencia === f ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}>{FREC_LABEL[f]}</button>
+            <button key={f} type="button" onClick={() => setFrecuencia(f)} className={`h-12 rounded-2xl border-2 text-base font-semibold transition-colors ${frecuencia === f ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)]"}`}>{FREC_LABEL[f]}</button>
           ))}
         </div>
       </Field>

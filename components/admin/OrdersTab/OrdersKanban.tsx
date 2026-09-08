@@ -269,7 +269,7 @@ const OrderCard = memo(function OrderCard({
           >
             <span
               aria-hidden
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-base font-bold tracking-tight"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl shrink-0 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-base font-bold tracking-tight"
             >
               {initial}
             </span>
@@ -355,7 +355,9 @@ const OrderCard = memo(function OrderCard({
                 // basis auto, si el texto no entra junto a los otros botones, la
                 // fila envuelve y el label sale entero.
                 "flex-auto whitespace-nowrap inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-xs font-extrabold uppercase tracking-[var(--ls-wider)] transition-colors",
-                "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:opacity-90 active:scale-[0.99]",
+                // Primario teal como el resto del panel (Brandon 2026-09-07): el
+                // negro «editorial» era el único botón de acción de otro color.
+                "bg-primary text-white hover:bg-primary/90 active:scale-[0.99]",
               )}
             >
               <primaryAction.icon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
@@ -692,7 +694,7 @@ export function OrdersKanban({
               className={cn(
                 "w-full inline-flex items-center justify-center gap-1.5 h-10 px-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
                 isActive
-                  ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] shadow-[var(--shadow-sm)]"
+                  ? "bg-primary text-white shadow-[var(--shadow-sm)]"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
               )}
             >

@@ -237,7 +237,7 @@ export function OrdersDetailPanel({
           <div className="flex items-start gap-3 min-w-0">
             <span
               aria-hidden
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl shrink-0 bg-[var(--text-primary)] text-[var(--surface-canvas)] text-base font-bold tracking-tight"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-xl shrink-0 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-base font-bold tracking-tight"
             >
               {initial}
             </span>

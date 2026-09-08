@@ -67,7 +67,7 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-12 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-12 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             Cancelar
           </button>
@@ -75,7 +75,7 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
             type="button"
             disabled={listas.length === 0 || importing}
             onClick={() => onImport(listas)}
-            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40"
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
           >
             {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
             Importar {listas.length} árbol(es)

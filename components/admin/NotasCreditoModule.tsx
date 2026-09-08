@@ -1484,7 +1484,7 @@ export default function NotasCreditoModule() {
                         </button>
                         <div className="flex-1" />
                         <button onClick={() => setWizardStep(1)} disabled={!selectedVenta}
-                          className={cn("px-6 min-h-11 rounded-xl text-sm font-bold transition-all",
+                          className={cn("px-6 min-h-11 rounded-xl text-sm font-semibold transition-all",
                             selectedVenta
                               ? "text-white bg-primary hover:bg-primary-dark "
                               : "text-[var(--text-tertiary)] bg-[var(--surface-sunken)] cursor-not-allowed")}>
@@ -1649,7 +1649,7 @@ export default function NotasCreditoModule() {
                           if (!form.descripcionMotivo.trim()) { setCreateError("Completa la descripci\u00f3n"); return; }
                           if (montoNum <= 0) { setCreateError("El monto debe ser mayor a 0"); return; }
                           setCreateError(null); setWizardStep(2);
-                        }} className="flex-1 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors">
+                        }} className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">
                           Siguiente {"\u2192"}
                         </button>
                       </div>
@@ -1721,7 +1721,7 @@ export default function NotasCreditoModule() {
                           {"\u2190"} Atr{"\u00e1"}s
                         </button>
                         <button onClick={handleCreate} disabled={creating}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-all">
+                          className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-all">
                           {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                           Crear Nota de Cr{"\u00e9"}dito
                         </button>

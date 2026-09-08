@@ -173,7 +173,7 @@ export function AsignacionesTab() {
             onClick={() => setAssignModal({ open: true })}
             disabled={partnersActivos === 0}
             title={partnersActivos === 0 ? "No hay repartidores activos disponibles" : "Asignar nueva orden"}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
           >
             <Plus className="h-4 w-4" />
             Asignar orden
@@ -261,7 +261,7 @@ export function AsignacionesTab() {
             type="button"
             onClick={() => setAssignModal({ open: true })}
             disabled={partnersActivos === 0}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 mt-6"
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 mt-6"
           >
             <Plus className="h-4 w-4" />
             Crear primera asignación
@@ -432,7 +432,7 @@ export function AsignacionesTab() {
               <button
                 type="button"
                 onClick={() => setAssignModal({ open: false })}
-                className="flex-1 h-12 rounded-xl text-sm font-bold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:brightness-95 border border-[var(--rule-base)] transition-colors"
+                className="flex-1 h-12 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:brightness-95 border border-[var(--rule-base)] transition-colors"
               >
                 Cancelar
               </button>
@@ -440,7 +440,7 @@ export function AsignacionesTab() {
                 type="button"
                 onClick={handleAssign}
                 disabled={assigning || !selectedPartner}
-                className="flex-[2] inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
+                className="flex-[2] inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
               >
                 {assigning ? (
                   <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

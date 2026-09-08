@@ -299,7 +299,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
             </span>
             <button
               onClick={onClose}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 min-h-10 text-sm font-bold text-white hover:bg-primary/90"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 min-h-10 text-sm font-semibold text-white hover:bg-primary/90"
             >
               <Check className="h-4 w-4" />
               Listo

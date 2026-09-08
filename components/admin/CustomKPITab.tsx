@@ -127,7 +127,7 @@ export default function CustomKPITab() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10">
             <Download className="h-3.5 w-3.5" /> CSV
           </button>
-          <button onClick={openCreate} className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90">
+          <button onClick={openCreate} className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Nuevo KPI
           </button>
         </div>
@@ -145,7 +145,7 @@ export default function CustomKPITab() {
           <Target className="h-12 w-12 mb-3 text-[var(--text-tertiary)]" />
           <p className="font-bold text-[var(--text-secondary)] dark:text-muted">Sin KPIs definidos</p>
           <p className="text-sm mt-1">Crea tu primer KPI personalizado</p>
-          <button onClick={openCreate} className="mt-4 flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90">
+          <button onClick={openCreate} className="mt-4 flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Crear KPI
           </button>
         </div>
@@ -243,7 +243,7 @@ export default function CustomKPITab() {
             </div>
             <div className="flex justify-end gap-2 mt-5">
               <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] ">Cancelar</button>
-              <button onClick={save} disabled={saving || !form.name.trim()} className="px-4 min-h-10 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
+              <button onClick={save} disabled={saving || !form.name.trim()} className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
                 {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Guardar
               </button>
             </div>

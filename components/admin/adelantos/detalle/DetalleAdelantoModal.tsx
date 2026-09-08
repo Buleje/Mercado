@@ -184,7 +184,7 @@ export default function DetalleAdelantoModal({
                 modalidad: a.modalidad,
                 notas: a.notas,
               })}
-              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
             >
               <FileText className="h-4 w-4" /> Comprobante para firmar
             </button>
@@ -250,7 +250,7 @@ export default function DetalleAdelantoModal({
                         key={t}
                         type="button"
                         onClick={() => setTipo(t)}
-                        className={`h-12 rounded-2xl border-2 text-base font-bold transition-colors ${
+                        className={`h-12 rounded-2xl border-2 text-base font-semibold transition-colors ${
                           tipo === t
                             ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                             : "border-[var(--rule-base)] text-[var(--text-secondary)]"
@@ -304,7 +304,7 @@ export default function DetalleAdelantoModal({
                   <button
                     onClick={registrar}
                     disabled={saving}
-                    className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--data-success)] px-5 text-base font-bold text-white transition hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--data-success)] px-5 text-base font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                   >
                     <CheckCircle className="h-5 w-5" /> {saving ? "Registrando…" : "Registrar entrega"}
                   </button>

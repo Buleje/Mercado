@@ -1,7 +1,7 @@
 "use client";
 
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { CardTitle, LoadingState, StatCard } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
@@ -9,7 +9,7 @@ import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Search, Plus, X, Loader2, AlertTriangle, ChevronLeft, ChevronRight,
   Package, FlaskConical, Layers,
-  BookOpen, BarChart3, ChefHat,
+  BookOpen, BarChart3, ChefHat, Coins,
 } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { Field } from "@/components/admin/shared/Field";
@@ -107,17 +107,10 @@ function RecetasDashboard() {
       {/* KPIs */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { label: "Recetas activas", value: String(recetasActivas), border: "border-b-4 border-[var(--accent-ink)]" },
-          { label: "Lotes del mes", value: String(lotesMes), border: "border-b-4 border-secondary" },
-          { label: "Costo promedio", value: `S/${costoPromedio.toFixed(2)}`, border: "border-b-4 border-[var(--rule-base)]0" },
-          { label: "Ingredientes totales", value: String(ingredientesTotales), border: "border-b-4 border-[var(--data-success-500)]/30" },
-        ].map(k => (
-          <div key={k.label} className={cn("bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4 ", k.border)}>
-            <p className="text-xs text-[var(--text-secondary)] font-medium">{k.label}</p>
-            <p className="text-2xl font-mono font-bold mt-1 text-[var(--text-primary)]">{k.value}</p>
-          </div>
-        ))}
+        <StatCard label="Recetas activas" value={recetasActivas} icon={BookOpen} density="compact" />
+        <StatCard label="Lotes del mes" value={lotesMes} icon={Layers} density="compact" />
+        <StatCard label="Costo promedio" value={`S/${costoPromedio.toFixed(2)}`} icon={Coins} density="compact" />
+        <StatCard label="Ingredientes totales" value={ingredientesTotales} icon={FlaskConical} density="compact" />
       </div>
       </m.div>
 
@@ -921,7 +914,7 @@ export default function RecetasModule() {
                       {/* Producir button */}
                       <button
                         onClick={() => { setShowProducir(true); setProducirError(null); }}
-                        className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] transition-colors"
+                        className="w-full flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] transition-colors"
                       >
                         <Layers className="h-4 w-4" />
                         Producir Lote
@@ -1099,7 +1092,7 @@ export default function RecetasModule() {
                   {step < 3 ? (
                     <button
                       onClick={() => setStep(s => s + 1)}
-                      className="px-4 min-h-10 text-sm font-bold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] rounded-xl transition-colors"
+                      className="px-4 min-h-10 text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] rounded-xl transition-colors"
                     >
                       Siguiente
                     </button>
@@ -1107,7 +1100,7 @@ export default function RecetasModule() {
                     <button
                       onClick={handleCreate}
                       disabled={creating}
-                      className="flex items-center justify-center gap-2 px-4 min-h-10 text-sm font-bold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] disabled:opacity-50 rounded-xl transition-colors"
+                      className="flex items-center justify-center gap-2 px-4 min-h-10 text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] disabled:opacity-50 rounded-xl transition-colors"
                     >
                       {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                       Crear Receta
@@ -1265,7 +1258,7 @@ export default function RecetasModule() {
                   <button
                     onClick={handleProducir}
                     disabled={producing}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] disabled:opacity-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-ink)] hover:bg-[#1D4ED8] disabled:opacity-50 transition-colors"
                   >
                     {producing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
                     Producir

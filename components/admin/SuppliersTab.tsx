@@ -715,7 +715,7 @@ export default function SuppliersTab() {
               </div>
               <div className="flex flex-wrap gap-3">
                 <button type="button" onClick={() => setShowAdd(false)} className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
-                <button type="submit" disabled={saving} className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
+                <button type="submit" disabled={saving} className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando..." : "Agregar proveedor"}
                 </button>
               </div>

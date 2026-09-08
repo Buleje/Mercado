@@ -627,7 +627,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                         lineasRef.current = lineasRef.current.filter((l) => l.estado !== "listo");
                         setLineas([...lineasRef.current]);
                       }}
-                      className="w-full rounded-xl bg-primary min-h-11 text-sm font-extrabold text-white hover:opacity-90"
+                      className="w-full rounded-xl bg-primary min-h-11 text-sm font-semibold text-white hover:opacity-90"
                     >
                       Agregar los {lineas.filter((l) => l.estado === "listo").length} al carrito
                     </button>

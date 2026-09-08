@@ -118,7 +118,7 @@ export default function ReglaResaltado({
           <button
             onClick={() => { onAplicar(coincidencias, color); onCerrar(); }}
             disabled={!listo}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 min-h-10 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-45"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 min-h-10 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-45"
           >
             <Paintbrush className="h-4 w-4" /> Resaltar {coincidencias.length > 0 ? coincidencias.length : ""}
           </button>

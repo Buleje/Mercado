@@ -366,7 +366,7 @@ export default function DeliveryPartnersLiveMap() {
             type="button"
             onClick={() => void load()}
             disabled={refreshing}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
           >
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
             {refreshing ? "Actualizando..." : "Actualizar ahora"}

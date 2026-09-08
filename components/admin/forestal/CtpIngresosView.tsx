@@ -888,14 +888,14 @@ export default function CtpIngresosView({
               setBulkReason("");
               setBusy(null);
             }}
-            className="inline-flex h-10 items-center rounded-xl bg-[var(--data-error-600)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-10 items-center rounded-xl bg-[var(--data-error-600)] px-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             Confirmar rechazo
           </button>
           <button
             type="button"
             onClick={() => setBulkRejecting(false)}
-            className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)]"
+            className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)]"
           >
             Cancelar
           </button>

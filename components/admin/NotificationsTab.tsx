@@ -149,7 +149,7 @@ export default function NotificationsTab() {
             </div>
           )}
 
-          <button onClick={sendNotification} disabled={!selectedOrder || sending} className="w-full min-h-11 bg-primary/10 text-white rounded-xl font-bold text-sm hover:bg-primary/10 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
+          <button onClick={sendNotification} disabled={!selectedOrder || sending} className="w-full min-h-11 bg-primary/10 text-white rounded-xl font-semibold text-sm hover:bg-primary/10 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}Enviar por WhatsApp
           </button>
         </div>

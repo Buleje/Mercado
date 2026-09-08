@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { CardTitle, DataTable, StatCard, type StatCardEmphasis } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -245,16 +245,16 @@ function generarReporteBancario() {
 const DASHBOARD_EXPENSE_COLORS = SERIES;
 const PM_FALLBACK_COLORS = SERIES;
 
-type KpiDef = { key: string; label: string; icon: typeof TrendingUp; color: string; bg: string };
+type KpiDef = { key: string; label: string; icon: typeof TrendingUp; color: string };
 const KPI_DEFS: KpiDef[] = [
-  { key: "ingresos", label: "Ingresos del mes", icon: TrendingUp, color: "var(--accent)", bg: "bg-primary/10" },
-  { key: "gastos", label: "Gastos del mes", icon: TrendingDown, color: SERIE.gastos, bg: "bg-[var(--data-error-50)]" },
-  { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: SERIE.utilidad, bg: "bg-primary/10" },
-  { key: "margen", label: "Margen %", icon: Percent, color: SERIES[3], bg: "bg-[var(--surface-sunken)]" },
-  { key: "deuda", label: "Deuda proveedores", icon: Truck, color: SERIE.alerta, bg: "bg-[var(--data-warning-50)]" },
-  { key: "fiados", label: "Fiados pendientes", icon: CreditCard, color: SERIE.alerta, bg: "bg-[var(--data-warning-50)]" },
-  { key: "igv", label: "IGV a pagar", icon: Calculator, color: SERIE.gastos, bg: "bg-[var(--surface-sunken)]" },
-  { key: "puntoEq", label: "Punto equilibrio", icon: Target, color: "var(--color-primary)", bg: "bg-primary/10" },
+  { key: "ingresos", label: "Ingresos del mes", icon: TrendingUp, color: "var(--accent)" },
+  { key: "gastos", label: "Gastos del mes", icon: TrendingDown, color: SERIE.gastos },
+  { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: SERIE.utilidad },
+  { key: "margen", label: "Margen %", icon: Percent, color: SERIES[3] },
+  { key: "deuda", label: "Deuda proveedores", icon: Truck, color: SERIE.alerta },
+  { key: "fiados", label: "Fiados pendientes", icon: CreditCard, color: SERIE.alerta },
+  { key: "igv", label: "IGV a pagar", icon: Calculator, color: SERIE.gastos },
+  { key: "puntoEq", label: "Punto equilibrio", icon: Target, color: "var(--color-primary)" },
 ];
 function FinanzasDashboard() {
   const [kpis, setKpis] = useState<Record<string, number>>({});
@@ -585,12 +585,11 @@ function FinanzasDashboard() {
       {/* ════════ SECCION 1: 8 KPIs Premium ════════ */}
       <StaggerItem index={1}>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {KPI_DEFS.map((def, _kpiIdx) => {
-          const Icon = def.icon;
+        {KPI_DEFS.map((def) => {
           const val = kpis[def.key] ?? 0;
           let display: string;
-          let subtexto = "";
-          let valColor = "text-[var(--text-primary)]";
+          let subValue: string | undefined;
+          let emphasis: StatCardEmphasis = "neutral";
           // Delta REAL mes vs mes anterior desde monthlyData (antes Math.random).
           // Solo ingresos/gastos/utilidad tienen histórico fiable; el resto no muestra delta.
           const _lastM = monthlyData[monthlyData.length - 1];
@@ -604,62 +603,42 @@ function FinanzasDashboard() {
 
           if (def.key === "margen") {
             display = `${val}%`;
-            subtexto = val > 25 ? "Excelente" : val >= 15 ? "Aceptable" : "Bajo";
-            valColor = val > 25 ? "text-[var(--data-success-500)]" : val >= 15 ? "text-[var(--data-warning-600)]" : "text-[var(--data-error-600)]";
+            subValue = val > 25 ? "Excelente" : val >= 15 ? "Aceptable" : "Bajo";
+            emphasis = val > 25 ? "success" : val >= 15 ? "warning" : "error";
           } else if (def.key === "utilidad") {
             display = `${val >= 0 ? "+" : "-"}${formatCurrency(Math.abs(val), { decimals: 0 })}`;
-            valColor = val >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-600)]";
+            emphasis = val >= 0 ? "success" : "error";
           } else if (def.key === "igv") {
             display = formatCurrency(Math.abs(val), { decimals: 0 });
-            subtexto = val > 0 ? "A pagar" : "Crédito fiscal";
-            valColor = val > 0 ? "text-[var(--data-error-600)]" : "text-[var(--data-success-500)]";
+            subValue = val > 0 ? "A pagar" : "Crédito fiscal";
+            emphasis = val > 0 ? "error" : "success";
           } else if (def.key === "puntoEq") {
             display = formatCurrency(val, { decimals: 0 });
-            subtexto = "por día";
+            subValue = "por día";
           } else {
             display = formatCurrency(val, { decimals: 0 });
           }
-
-          // Zero-value gray styling
-          if (val === 0 && def.key !== "margen") valColor = "text-[var(--text-tertiary)]";
+          // Nota: se retira el gris de "valor en cero" del hand-rolled original
+          // (StatCardEmphasis no tiene un tono "neutral-tenue") — mismo criterio
+          // que ya usa VentasDashboard.tsx con este primitivo.
 
           // Sparkline REAL desde la serie mensual (antes era val*0.7..0.95 fabricado).
           // Solo para Ingresos/Gastos/Utilidad, que existen en monthlyData.
           const sparkData = (monthlyData.length >= 2 && (def.key === "ingresos" || def.key === "gastos" || def.key === "utilidad"))
-            ? monthlyData.map(m => ({ v: m[def.key as "ingresos" | "gastos" | "utilidad"] }))
+            ? monthlyData.map(m => m[def.key as "ingresos" | "gastos" | "utilidad"])
             : null;
 
           return (
-            <div key={def.key} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-4 hover:shadow-sm transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${def.bg}`}>
-                  <Icon className="h-5 w-5" style={{ color: def.color }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-[var(--text-secondary)] truncate">{def.label}</p>
-                  <div className="flex items-center gap-2">
-                    <p className={`text-xl sm:text-2xl font-mono font-extrabold truncate ${valColor}`}>{display}</p>
-                    {change !== null && (
-                      <span className={`text-xs ${change >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
-                        {change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%
-                      </span>
-                    )}
-                  </div>
-                  {subtexto && (
-                    <p className="text-xs text-[var(--text-tertiary)] font-medium">{subtexto}</p>
-                  )}
-                  {sparkData && (
-                    <div className="h-8 w-20 mt-1">
-                      <ResponsiveContainer minWidth={0} width="100%" height="100%">
-                        <LineChart data={sparkData}>
-                          <Line type="monotone" dataKey="v" stroke={def.color} strokeWidth={1.5} dot={false} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <StatCard
+              key={def.key}
+              label={def.label}
+              value={display}
+              subValue={subValue}
+              icon={def.icon}
+              emphasis={emphasis}
+              delta={change ?? undefined}
+              sparkline={sparkData ? { data: sparkData, color: def.color } : undefined}
+            />
           );
         })}
       </div>

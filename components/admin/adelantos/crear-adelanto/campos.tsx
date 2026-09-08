@@ -237,7 +237,7 @@ export function NotasRapidas({
           <button
             type="button"
             onClick={agregar}
-            className="h-10 shrink-0 rounded-xl bg-primary px-4 text-sm font-bold text-white hover:bg-primary-dark"
+            className="h-10 shrink-0 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-dark"
           >
             Agregar
           </button>
@@ -423,7 +423,7 @@ export function Comprobante({
         <button
           type="button"
           onClick={onAbrirCamara}
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary/12 px-3.5 text-sm font-bold text-[var(--accent-ink)] ring-1 ring-primary/40 transition-colors hover:bg-primary/20 dark:text-[var(--accent)]"
+          className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary/12 px-3.5 text-sm font-semibold text-[var(--accent-ink)] ring-1 ring-primary/40 transition-colors hover:bg-primary/20 dark:text-[var(--accent)]"
         >
           <Camera className="h-4 w-4" /> Tomar foto
         </button>
@@ -463,7 +463,7 @@ export function PiesTablares({
       <button
         type="button"
         onClick={() => setActivo(true)}
-        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
       >
         <Ruler className="h-4 w-4" /> Agregar Pt (pies tablares)
       </button>

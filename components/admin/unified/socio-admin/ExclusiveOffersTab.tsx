@@ -193,7 +193,7 @@ function OfferModal({
             </button>
             <button
               type="submit"
-              className="flex-1 h-10 inline-flex items-center justify-center gap-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+              className="flex-1 h-10 inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
             >
               <Save className="h-4 w-4" />
               Guardar
@@ -248,7 +248,7 @@ export function ExclusiveOffersTab() {
         </p>
         <button
           onClick={() => setModal({ open: true, offer: null })}
-          className="inline-flex items-center gap-2 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" />
           Nueva oferta

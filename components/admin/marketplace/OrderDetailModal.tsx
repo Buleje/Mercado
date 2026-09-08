@@ -338,7 +338,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
             <button
               type="button"
               onClick={onClose}
-              className="h-11 px-4 rounded-xl text-sm font-extrabold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] transition-colors"
+              className="h-11 px-4 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] transition-colors"
             >
               Cerrar
             </button>
@@ -347,7 +347,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
                 <button
                   type="button"
                   onClick={() => onWhatsApp(order)}
-                  className="h-11 px-4 rounded-xl inline-flex items-center gap-2 bg-[var(--data-success)] text-white text-sm font-extrabold hover:opacity-90 transition-colors"
+                  className="h-11 px-4 rounded-xl inline-flex items-center gap-2 bg-[var(--data-success)] text-white text-sm font-semibold hover:opacity-90 transition-colors"
                 >
                   <MessageCircle className="h-4 w-4" />
                   WhatsApp
@@ -357,7 +357,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
                 <button
                   type="button"
                   onClick={() => onChangeStatus(order)}
-                  className="h-11 px-4 rounded-xl inline-flex items-center gap-1.5 bg-[var(--accent)] text-white text-sm font-extrabold hover:opacity-90 transition-opacity"
+                  className="h-11 px-4 rounded-xl inline-flex items-center gap-1.5 bg-[var(--accent)] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
                 >
                   Cambiar estado
                   <ChevronRight className="h-4 w-4" />

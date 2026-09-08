@@ -406,8 +406,8 @@ export function MessageComposer({
                   className="h-10 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-sm font-bold outline-none focus:border-primary"
                 />
                 <div className="flex overflow-hidden rounded-lg border border-[var(--rule-base)]">
-                  <button type="button" onClick={() => setPayMethod("yape")} className={cn("px-3 text-sm font-bold transition-colors", payMethod === "yape" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-sunken)]")}>Yape</button>
-                  <button type="button" onClick={() => setPayMethod("plin")} className={cn("px-3 text-sm font-bold transition-colors", payMethod === "plin" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-sunken)]")}>Plin</button>
+                  <button type="button" onClick={() => setPayMethod("yape")} className={cn("px-3 text-sm font-semibold transition-colors", payMethod === "yape" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-sunken)]")}>Yape</button>
+                  <button type="button" onClick={() => setPayMethod("plin")} className={cn("px-3 text-sm font-semibold transition-colors", payMethod === "plin" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--surface-sunken)]")}>Plin</button>
                 </div>
               </div>
               <input
@@ -428,7 +428,7 @@ export function MessageComposer({
                 type="button"
                 onClick={handleSendPayment}
                 disabled={sendingPay || !(Number(payAmount) > 0)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary min-h-11 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary min-h-11 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-60"
               >
                 {sendingPay ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Wallet className="h-4 w-4" aria-hidden />}
                 Enviar cobro{Number(payAmount) > 0 ? ` · ${fmtSoles(Number(payAmount))}` : ""}
@@ -530,7 +530,7 @@ export function MessageComposer({
                     type="button"
                     onClick={handleSendOrder}
                     disabled={sendingOrder}
-                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary min-h-11 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
+                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary min-h-11 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-60"
                   >
                     {sendingOrder ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ReceiptText className="h-4 w-4" aria-hidden />}
                     Enviar pedido · {draft.reduce((a, i) => a + i.quantity, 0)} items · {fmtSoles(orderTotal(draft))}

@@ -237,14 +237,14 @@ function ShiftCloseModal({
         <div className="flex gap-3 px-6 pb-6">
           <button
             onClick={onClose}
-            className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
             disabled={loading || !!error || confirming}
-            className="flex-1 min-h-11 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
+            className="flex-1 min-h-11 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 text-sm font-semibold text-white transition-colors flex items-center justify-center gap-2"
           >
             {confirming ? "Cerrando..." : "Confirmar Cierre"}
             {!confirming && <ArrowRight className="h-4 w-4" />}

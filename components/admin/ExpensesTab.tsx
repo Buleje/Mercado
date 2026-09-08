@@ -249,7 +249,7 @@ export default function ExpensesTab() {
               <input type="checkbox" checked={form.recurring} onChange={e => setForm(f => ({ ...f, recurring: e.target.checked }))} className="rounded" />
               Gasto recurrente (mensual)
             </label>
-            <button onClick={add} disabled={saving || !form.description || !form.amount} className="w-full min-h-11 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
+            <button onClick={add} disabled={saving || !form.description || !form.amount} className="w-full min-h-11 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Guardar Gasto
             </button>
           </div>

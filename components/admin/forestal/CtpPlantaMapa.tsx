@@ -778,7 +778,7 @@ export default function CtpPlantaMapa({
               <span className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Pencil className="h-6 w-6" /></span>
               <p className="text-sm font-bold text-[var(--text-primary)]">Dibujá la primera zona de tu aserradero</p>
               <p className="mt-1 text-xs text-[var(--text-secondary)]">Tocá “Dibujar zona”, marcá el contorno del patio de trozas, la sierra o el despacho, y asignale su tipo. Aparecerá coloreada en el mapa.</p>
-              <button type="button" onClick={startDraw} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"><Pencil className="h-4 w-4" /><span className="hidden sm:inline">Dibujar zona</span></button>
+              <button type="button" onClick={startDraw} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Pencil className="h-4 w-4" /><span className="hidden sm:inline">Dibujar zona</span></button>
             </div>
           </div>
         )}

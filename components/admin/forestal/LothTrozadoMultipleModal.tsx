@@ -243,7 +243,7 @@ export default function LothTrozadoMultipleModal({
                   <button
                     type="button"
                     onClick={() => setRenglones((rs) => [...rs, nuevoRenglon(rs.length)])}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-dashed border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-dashed border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
                   >
                     <Plus className="h-4 w-4" /> Agregar troza
                   </button>
@@ -285,7 +285,7 @@ export default function LothTrozadoMultipleModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)]"
+            className="inline-flex h-11 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
           >
             {resultado ? "Cerrar" : "Cancelar"}
           </button>
@@ -294,7 +294,7 @@ export default function LothTrozadoMultipleModal({
               type="button"
               onClick={guardar}
               disabled={!arbol || listas.length === 0 || guardando}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
             >
               {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Scissors className="h-4 w-4" />}
               {guardando ? "Asentando…" : `Asentar ${listas.length} troza${listas.length === 1 ? "" : "s"}`}

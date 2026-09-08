@@ -924,7 +924,7 @@ export function ColumnasMenu<K extends string>({
           e.stopPropagation();
           setAbierto((v) => !v);
         }}
-        className={`inline-flex items-center gap-1.5 border-2 px-3 text-sm font-bold transition-colors ${className ?? "h-12 rounded-2xl"} ${
+        className={`inline-flex items-center gap-1.5 border-2 px-3 text-sm font-semibold transition-colors ${className ?? "h-12 rounded-2xl"} ${
           abierto
             ? "border-primary bg-primary/5 text-primary"
             : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary hover:text-primary"

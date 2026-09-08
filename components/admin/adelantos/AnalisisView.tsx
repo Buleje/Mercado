@@ -162,14 +162,14 @@ export function AnalisisView({ adelantos, loading }: { adelantos: DbAdelanto[]; 
                 <button
                   key={c}
                   onClick={() => setMoneda(c)}
-                  className={`h-10 px-4 text-sm font-bold transition-colors ${cur === c ? "bg-primary text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+                  className={`h-10 px-4 text-sm font-semibold transition-colors ${cur === c ? "bg-primary text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
                 >
                   {c === "USD" ? "US$" : "S/"}
                 </button>
               ))}
             </div>
           )}
-          <button onClick={exportarCsv} className="inline-flex items-center gap-1 h-10 px-4 rounded-xl border border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
+          <button onClick={exportarCsv} className="inline-flex items-center gap-1 h-10 px-4 rounded-xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
             <FileText className="h-5 w-5" /> Exportar CSV
           </button>
         </div>

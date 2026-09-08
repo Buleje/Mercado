@@ -471,7 +471,7 @@ export default function AdminLoginPage() {
                   type="button"
                   disabled={loading || redirecting}
                   onClick={() => handleSubmit(undefined, t.slug)}
-                  className="w-full flex items-center justify-between gap-3 h-14 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-left font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--accent)]/8 disabled:opacity-50 transition-all"
+                  className="w-full flex items-center justify-between gap-3 h-14 px-5 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-left font-semibold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--accent)]/8 disabled:opacity-50 transition-all"
                 >
                   <span className="truncate">{t.name}</span>
                   <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] shrink-0">{t.slug}</span>
@@ -641,7 +641,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading || redirecting || !pw || retryAfter > 0}
-              className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white text-base font-extrabold tracking-tight shadow-lg shadow-[var(--accent)]/30 hover:scale-[1.01] hover:shadow-xl hover:shadow-[var(--accent)]/40 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="w-full inline-flex items-center justify-center gap-2 h-14 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white text-base font-semibold tracking-tight shadow-lg shadow-[var(--accent)]/30 hover:scale-[1.01] hover:shadow-xl hover:shadow-[var(--accent)]/40 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {redirecting ? (
                 <>

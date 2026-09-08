@@ -180,10 +180,10 @@ export default function LothEspecieFueraModal({
               </label>
             </div>
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setModo("elegir")} className="h-11 rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Volver</button>
+              <button type="button" onClick={() => setModo("elegir")} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Volver</button>
               <button
                 type="button" onClick={() => void agregarAlPlan()} disabled={busy}
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
               >
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Agregar al plan
               </button>
@@ -202,10 +202,10 @@ export default function LothEspecieFueraModal({
               )}
             </p>
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setModo("elegir")} className="h-11 rounded-xl px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Volver</button>
+              <button type="button" onClick={() => setModo("elegir")} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Volver</button>
               <button
                 type="button" onClick={() => void descartar()} disabled={busy || enPie.length === 0}
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-error-700)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-error-700)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
               >
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Descartar {enPie.length}
               </button>

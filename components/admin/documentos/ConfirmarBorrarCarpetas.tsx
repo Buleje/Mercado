@@ -139,7 +139,7 @@ export function ConfirmarBorrarCarpetas({
             onClick={() => correr(documentos > 0)}
             disabled={!!ocupado}
             className={cn(
-              "inline-flex items-center justify-center gap-2 rounded-xl px-4 min-h-11 text-sm font-bold text-white transition-[filter]",
+              "inline-flex items-center justify-center gap-2 rounded-xl px-4 min-h-11 text-sm font-semibold text-white transition-[filter]",
               "bg-[var(--data-error-500)] hover:brightness-110 disabled:opacity-60",
             )}
           >
@@ -153,7 +153,7 @@ export function ConfirmarBorrarCarpetas({
             <button
               onClick={() => correr(false)}
               disabled={!!ocupado}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 min-h-11 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 min-h-11 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-60"
             >
               {ocupado === "sueltos" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
               Sólo {carpetasQueSeVan === 1 ? "la carpeta" : "las carpetas"} — dejar los documentos sueltos en el drive

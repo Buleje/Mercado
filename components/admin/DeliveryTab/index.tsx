@@ -372,7 +372,7 @@ export default function DeliveryTab() {
               type="button"
               onClick={refreshAll}
               disabled={routesState.loading}
-              className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
               <RefreshCw className={cn("h-4 w-4", routesState.loading && "animate-spin")} />
               Actualizar
@@ -484,7 +484,7 @@ export default function DeliveryTab() {
               type="button"
               onClick={() => setMobileTab(t)}
               className={cn(
-                "flex-1 inline-flex items-center justify-center gap-2 px-4 h-11 rounded-xl text-sm font-bold transition-colors capitalize",
+                "flex-1 inline-flex items-center justify-center gap-2 px-4 h-11 rounded-xl text-sm font-semibold transition-colors capitalize",
                 mobileTab === t
                   ? "bg-primary text-white"
                   : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:brightness-95",
@@ -592,7 +592,7 @@ export default function DeliveryTab() {
                   type="button"
                   onClick={() => setFeedFilter(f)}
                   className={cn(
-                    "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold transition-colors border",
+                    "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
                     feedFilter === f
                       ? "bg-primary text-white border-primary"
                       : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",

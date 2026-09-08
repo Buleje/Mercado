@@ -296,7 +296,7 @@ export default function DocumentosModule() {
       >
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors shadow-sm"
         >
           {uploading ? (
             <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -833,7 +833,7 @@ function EmptyState({ category, onUpload }: { category: DocCategory; onUpload: (
       </p>
       <button
         onClick={onUpload}
-        className="mt-5 inline-flex items-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+        className="mt-5 inline-flex items-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
       >
         <Upload className="h-4 w-4" /> Subir archivos
       </button>

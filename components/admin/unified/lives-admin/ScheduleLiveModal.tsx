@@ -201,7 +201,7 @@ export function ScheduleLiveModal({ onClose, onSchedule }: Props) {
           </button>
           <button
             type="submit"
-            className="flex-1 inline-flex items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
           >
             <Save className="h-4 w-4" />
             Programar

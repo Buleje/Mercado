@@ -96,7 +96,7 @@ function PayBtn({ active, label, icon, color, onClick }: PayBtnProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        "flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl border-2 font-bold text-sm transition-all min-h-[56px]",
+        "flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl border-2 font-semibold text-sm transition-all min-h-[56px]",
         active
           ? `${color} border-transparent text-white scale-105`
           : "border-gray-700 text-[var(--text-tertiary)] bg-gray-800 hover:border-gray-500 hover:text-[var(--text-tertiary)]"
@@ -565,7 +565,7 @@ export default function KioskPOS() {
               disabled={cart.length === 0 || step === "paying" || step === "success"}
               style={{ minHeight: 80 }}
               className={cn(
-                "w-full rounded-xl font-extrabold text-xl tracking-wide transition-all flex items-center justify-center gap-3",
+                "w-full rounded-xl font-semibold text-xl tracking-wide transition-all flex items-center justify-center gap-3",
                 "disabled:opacity-40 disabled:cursor-not-allowed",
                 cart.length > 0
                   ? "bg-[var(--accent-dark)] hover:bg-[var(--accent)] active:bg-[var(--accent-dark)] text-white"

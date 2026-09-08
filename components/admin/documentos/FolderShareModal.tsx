@@ -108,7 +108,7 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
                 <button
                   onClick={() => generar(clave.trim())}
                   disabled={creating || clave.trim().length < 4}
-                  className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-white disabled:opacity-40"
+                  className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-40"
                 >
                   {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                   {link ? "Rehacer con clave" : "Generar el enlace"}
@@ -140,7 +140,7 @@ export function FolderShareModal({ folder, onClose }: { folder: DbDocumentFolder
 
         <div className="flex items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-4">
           <button onClick={onClose} className="rounded-xl px-4 py-2.5 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cerrar</button>
-          <button onClick={whatsapp} disabled={creating || !link} className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 min-h-11 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]">
+          <button onClick={whatsapp} disabled={creating || !link} className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 min-h-11 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]">
             <MessageCircle className="h-4 w-4" /> WhatsApp
           </button>
         </div>

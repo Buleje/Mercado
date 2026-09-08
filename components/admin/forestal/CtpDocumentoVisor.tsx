@@ -322,7 +322,7 @@ export default function CtpDocumentoVisor({
             <button
               type="button"
               onClick={imprimir}
-              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white transition hover:brightness-110"
+              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white transition hover:brightness-110"
             >
               <Printer className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">Imprimir</span> PDF
             </button>

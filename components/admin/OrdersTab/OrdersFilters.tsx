@@ -230,13 +230,13 @@ export function OrdersFilters({ filters, dispatch, onClose }: OrdersFiltersProps
         <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 flex gap-3">
           <button
             onClick={handleClearAndClose}
-            className="flex-1 min-h-11 rounded-xl text-sm font-bold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             Limpiar filtros
           </button>
           <button
             onClick={onClose}
-            className="flex-1 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors"
+            className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
           >
             Aplicar filtros
           </button>

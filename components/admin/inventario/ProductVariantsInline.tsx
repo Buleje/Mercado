@@ -434,7 +434,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
               type="button"
               onClick={() => setShowTemplates(s => !s)}
               disabled={generatingFromTemplate}
-              className="h-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50"
+              className="h-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white text-sm font-semibold hover:opacity-90 transition-all disabled:opacity-50"
               title="Crear varias variantes desde una plantilla pre-armada"
             >
               {generatingFromTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}

@@ -1168,7 +1168,7 @@ export default function GuiasRemisionModule() {
                   </button>
                   <button
                     onClick={() => printGuiaSunat(selected, formatDate)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
                   >
                     <Printer className="h-4 w-4" /> GRR SUNAT
                   </button>
@@ -1352,7 +1352,7 @@ export default function GuiasRemisionModule() {
                     Cancelar
                   </button>
                   <button onClick={handleCreate} disabled={creating}
-                    className="flex items-center justify-center gap-2 px-4 min-h-10 text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 rounded-xl transition-colors">
+                    className="flex items-center justify-center gap-2 px-4 min-h-10 text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 rounded-xl transition-colors">
                     {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                     Crear Guía
                   </button>

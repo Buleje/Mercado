@@ -416,7 +416,7 @@ export default function PanelEntradaVoz({
             fijo={fijas.largo != null}
             onFijar={() => onAplicarFijas(fijas.largo != null ? (() => { const n = { ...fijas }; delete n.largo; return n; })() : { ...fijas, largo: Number(manual.largo) || 0 })}
           />
-          <button type="button" onClick={() => onConfirmarCarga(grillaId)} className="col-span-2 inline-flex h-11 items-center justify-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] sm:col-auto sm:h-10"><Plus className="h-4 w-4" /> Agregar a mano</button>
+          <button type="button" onClick={() => onConfirmarCarga(grillaId)} className="col-span-2 inline-flex h-11 items-center justify-center gap-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] sm:col-auto sm:h-10"><Plus className="h-4 w-4" /> Agregar a mano</button>
           {/* Precarga la medida típica del Comercial mínimo (2×8×10, Brandon
               2026-09-01) — NO agrega nada sola: sólo llena los campos para que
               el operario confirme la cantidad real que sacó y la agregue con
@@ -426,7 +426,7 @@ export default function PanelEntradaVoz({
             type="button"
             onClick={() => onManualChange({ cantidad: "1", espesor: "2", ancho: "8", largo: "10" })}
             title="Precarga 2×8×10 (Comercial) — confirmá la cantidad real que sacaste y tocá «Agregar a mano»"
-            className="col-span-2 inline-flex h-11 items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] sm:col-auto sm:h-10"
+            className="col-span-2 inline-flex h-11 items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] sm:col-auto sm:h-10"
           >
             <Plus className="h-4 w-4" /> Comercial mínimo
           </button>

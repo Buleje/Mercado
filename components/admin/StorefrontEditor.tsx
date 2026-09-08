@@ -715,13 +715,13 @@ function SectionEditorModal({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-5 h-11 rounded-xl text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] transition-colors"
+              className="px-5 h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={() => onSave({ productIds, title: title.trim() || undefined })}
-              className="flex items-center gap-2 px-6 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-md"
+              className="flex items-center gap-2 px-6 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 active:scale-[0.98] transition-all shadow-md"
             >
               <Save className="h-4 w-4" />
               Guardar sección
@@ -1260,7 +1260,7 @@ export default function StorefrontEditor() {
             onClick={handleSave}
             disabled={saving}
             className={cn(
-              "flex items-center gap-1.5 px-4 h-10 rounded-xl text-sm font-bold text-white transition-all",
+              "flex items-center gap-1.5 px-4 h-10 rounded-xl text-sm font-semibold text-white transition-all",
               saved
                 ? "bg-primary/10 hover:bg-primary/10"
                 : "bg-primary hover:bg-primary/90 active:scale-[0.98] shadow-md",

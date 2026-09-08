@@ -669,7 +669,7 @@ function PayInstructions({
           type="button"
           onClick={onBack}
           disabled={submitting}
-          className="inline-flex h-14 items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 text-sm font-bold text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+          className="inline-flex h-14 items-center justify-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 text-sm font-semibold text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
           Volver
