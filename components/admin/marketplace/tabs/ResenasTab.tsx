@@ -124,7 +124,7 @@ export function MarketplaceResenasTab() {
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
-                "inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 text-sm font-bold transition-all",
+                "inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 text-sm font-semibold transition-all",
                 active
                   ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"

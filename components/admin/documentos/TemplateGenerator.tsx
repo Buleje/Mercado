@@ -195,7 +195,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                   {generado && (
                     <button
                       onClick={() => setEnviando(true)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 min-h-11 text-sm font-bold text-white transition-opacity hover:opacity-90 dark:bg-[var(--data-success-500)]"
+                      className="inline-flex items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 min-h-11 text-sm font-semibold text-white transition-opacity hover:opacity-90 dark:bg-[var(--data-success-500)]"
                     >
                       <MessageCircle className="h-4 w-4" /> Mandarlo por WhatsApp
                     </button>
@@ -283,7 +283,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                 <button
                   onClick={handleGenerate}
                   disabled={generating}
-                  className="mt-5 w-full min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                  className="mt-5 w-full min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark disabled:opacity-50 inline-flex items-center justify-center gap-2"
                 >
                   {generating ? (
                     <>

@@ -87,7 +87,7 @@ export default function CtpApartados({
               title={a.hint}
               /* `h-12` = la altura de los campos de filtro de la barra: si
                  fueran más bajos, la fila se leería como dos filas. */
-              className={`inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-2xl border-2 px-3 text-sm font-bold transition-colors ${
+              className={`inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-2xl border-2 px-3 text-sm font-semibold transition-colors ${
                 esActivo
                   ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]"
@@ -133,7 +133,7 @@ export default function CtpApartados({
                 onClick={() => onIr(a.id)}
                 aria-current={esActivo ? "step" : undefined}
                 title={a.hint}
-                className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 min-h-10 text-sm font-bold transition-colors ${
+                className={`inline-flex items-center gap-2 rounded-xl border-2 px-3 min-h-10 text-sm font-semibold transition-colors ${
                   esActivo
                     ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]"

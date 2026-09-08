@@ -162,10 +162,10 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
         <div ref={containerRef} className="h-[440px] w-full bg-[var(--surface-sunken)]" />
 
         <div className="flex items-center justify-end gap-2 border-t-2 border-[var(--rule-base)] px-5 py-3">
-          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
             <X className="h-4 w-4" /> Cancelar
           </button>
-          <button type="button" onClick={save} disabled={draft.length < 3 || saving} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40">
+          <button type="button" onClick={save} disabled={draft.length < 3 || saving} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Guardar polígono
           </button>
         </div>

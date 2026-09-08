@@ -107,7 +107,7 @@ export function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
         <div className="px-6 py-3 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] ">
           <button
             onClick={onClose}
-            className="w-full min-h-11 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors"
+            className="w-full min-h-11 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-colors"
           >
             Cerrar
           </button>
@@ -359,7 +359,7 @@ export function ClearDataModal({
               <button
                 onClick={handleExecute}
                 disabled={clearConfirmText !== "BORRAR_TODO" || clearingData}
-                className="flex-1 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {clearingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 Borrar datos seleccionados

@@ -896,14 +896,14 @@ function ApprovalSection({ doc, onChanged }: { doc: DbDocument; onChanged: (d: D
         <>
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (opcional)" className="mb-2 h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
           <div className="flex gap-2">
-            <button onClick={() => act("approve")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--data-success-700)] px-3 min-h-10 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]"><Check className="h-4 w-4" /> Aprobar</button>
+            <button onClick={() => act("approve")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--data-success-700)] px-3 min-h-10 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]"><Check className="h-4 w-4" /> Aprobar</button>
             <button onClick={() => act("reject")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--data-error-500)]/40 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-50 dark:text-[var(--data-error-500)]"><X className="h-4 w-4" /> Rechazar</button>
           </div>
         </>
       ) : status === "approved" ? (
         <button onClick={() => act("request")} disabled={busy} className="text-xs font-semibold text-[var(--text-tertiary)] hover:text-primary disabled:opacity-50">Reabrir revisión</button>
       ) : (
-        <button onClick={() => act("request")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 min-h-10 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50"><PencilLine className="h-4 w-4" /> Solicitar aprobación</button>
+        <button onClick={() => act("request")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 min-h-10 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50"><PencilLine className="h-4 w-4" /> Solicitar aprobación</button>
       )}
     </section>
   );

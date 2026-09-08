@@ -904,7 +904,7 @@ export default function TurnosModule() {
               </div>
               <button
                 onClick={() => { setShowCierre(true); setCloseError(null); }}
-                className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 transition-colors shrink-0"
+                className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 transition-colors shrink-0"
               >
                 <Square className="h-4 w-4" />
                 <span className="hidden sm:inline">Cerrar turno</span>
@@ -1032,7 +1032,7 @@ export default function TurnosModule() {
               <button
                 onClick={handleAbrir}
                 disabled={opening}
-                className="inline-flex items-center justify-center gap-2 px-8 min-h-11 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors shadow-sm"
+                className="inline-flex items-center justify-center gap-2 px-8 min-h-11 rounded-xl text-base font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors shadow-sm"
               >
                 {opening ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Play className="h-5 w-5" strokeWidth={2} aria-hidden />}
                 Abrir turno
@@ -1088,7 +1088,7 @@ export default function TurnosModule() {
                         try { localStorage.setItem("turno-meta-ventas", String(val)); } catch {}
                         setShowMetaConfig(false);
                       }}
-                      className="flex-1 min-h-10 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                      className="flex-1 min-h-10 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
                     >
                       Guardar
                     </button>
@@ -1504,7 +1504,7 @@ export default function TurnosModule() {
                 <button
                   onClick={handleCreateCajero}
                   disabled={creatingCajero}
-                  className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors shadow-sm"
+                  className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl text-base font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors shadow-sm"
                 >
                   {creatingCajero ? <Loader2 className="h-5 w-5 animate-spin" /> : <User className="h-5 w-5" />}
                   Crear y seleccionar
@@ -1760,7 +1760,7 @@ export default function TurnosModule() {
                 <button
                   onClick={() => handleCerrar()}
                   disabled={closing}
-                  className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-50 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 min-h-11 rounded-xl text-base font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-50 transition-colors"
                 >
                   {closing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Square className="h-5 w-5" />}
                   Confirmar cierre
@@ -1872,7 +1872,7 @@ export default function TurnosModule() {
                   <button
                     onClick={() => handleCerrar({ confirmedAnormal: true })}
                     disabled={closing || notaDiffAnormal.trim().length < 8}
-                    className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl text-base font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl text-base font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     {closing ? <Loader2 className="h-5 w-5 animate-spin" /> : <AlertTriangle className="h-5 w-5" />}
                     Cerrar con nota
@@ -2184,7 +2184,7 @@ export default function TurnosModule() {
                   </button>
                   <button
                     onClick={() => setShowResumen(false)}
-                    className="flex-1 px-4 min-h-11 rounded-xl text-base font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                    className="flex-1 px-4 min-h-11 rounded-xl text-base font-semibold text-white bg-primary hover:bg-primary-dark transition-colors"
                   >
                     Cerrar
                   </button>

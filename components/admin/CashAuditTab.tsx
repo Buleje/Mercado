@@ -382,7 +382,7 @@ function CashCounter({
               disabled={saving || !hasCount || !registerId}
               aria-disabled={saving || !hasCount || !registerId}
               title={!registerId ? "No hay caja registradora abierta" : !hasCount ? "Contá al menos una denominación" : undefined}
-              className="px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? "Guardando…" : "Guardar arqueo"}
             </button>

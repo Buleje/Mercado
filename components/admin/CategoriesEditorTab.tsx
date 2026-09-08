@@ -328,7 +328,7 @@ export default function CategoriesEditorTab() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setShowNewForm((v) => !v)}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10 px-4 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10 px-4 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white"
           >
             <Plus className="h-4 w-4" />
             Nueva categoría
@@ -345,7 +345,7 @@ export default function CategoriesEditorTab() {
             onClick={handleSave}
             disabled={!hasChanges || saving}
             className={cn(
-              "inline-flex h-11 items-center gap-1.5 rounded-xl px-5 text-sm font-bold text-white transition-colors",
+              "inline-flex h-11 items-center gap-1.5 rounded-xl px-5 text-sm font-semibold text-white transition-colors",
               saved
                 ? "bg-[var(--data-success-500)]"
                 // Deshabilitado = gris de verdad: el teal al 40% parecía un
@@ -461,7 +461,7 @@ export default function CategoriesEditorTab() {
               <button
                 type="button"
                 onClick={() => { setShowNewForm(false); setNewCatName(""); }}
-                className="h-11 px-4 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] transition-colors"
+                className="h-11 px-4 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] transition-colors"
               >
                 Cancelar
               </button>
@@ -469,7 +469,7 @@ export default function CategoriesEditorTab() {
                 type="button"
                 onClick={handleCreateCategory}
                 disabled={!newCatName.trim()}
-                className="inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-[var(--accent)] text-white font-extrabold text-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+                className="inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-[var(--accent)] text-white font-semibold text-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
               >
                 <Plus className="h-4 w-4" aria-hidden />
                 Crear categoría
@@ -497,7 +497,7 @@ export default function CategoriesEditorTab() {
           </div>
           <button
             onClick={() => setShowNewForm(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-extrabold text-white transition-opacity hover:opacity-90 min-h-[44px]"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 min-h-[44px]"
           >
             <Plus className="h-4 w-4" />
             Crear primera categoría

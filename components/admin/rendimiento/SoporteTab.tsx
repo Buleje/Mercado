@@ -242,7 +242,7 @@ function StorageSection({ d }: { d: DeviceDiagnostics }) {
             onClick={clearCache}
             disabled={clearing}
             className={cn(
-              "inline-flex h-11 items-center gap-2 rounded-xl border-2 px-4 text-sm font-bold transition-colors disabled:opacity-60",
+              "inline-flex h-11 items-center gap-2 rounded-xl border-2 px-4 text-sm font-semibold transition-colors disabled:opacity-60",
               cleared
                 ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)]",
@@ -343,7 +343,7 @@ export default function SoporteTab() {
             type="button"
             onClick={handleCopy}
             className={cn(
-              "inline-flex h-12 items-center gap-2 rounded-2xl px-5 text-base font-bold shadow-sm transition-all",
+              "inline-flex h-12 items-center gap-2 rounded-2xl px-5 text-base font-semibold shadow-sm transition-all",
               copied
                 ? "bg-[var(--data-success-500)] text-white"
                 : "bg-[var(--accent)] text-white hover:brightness-105 shadow-[var(--shadow-md)]",

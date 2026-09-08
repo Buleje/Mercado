@@ -1,4 +1,5 @@
 import type React from "react";
+import { StatCard } from "@buleje/design-system";
 import { ChevronDown, ChevronUp, Clock, CheckCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
@@ -46,13 +47,10 @@ export function SortIcon({ k, currentKey, currentDir }: { k: string; currentKey:
 }
 
 export function KpiTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">{label}</p>
-      <p className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{value}</p>
-      {sub && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums mt-0.5">{sub}</p>}
-    </div>
-  );
+  // Wrapper sobre el primitivo del DS (sweep StatCard 2026-09-07): misma API
+  // externa (label/value/sub) para no tocar a sus consumidores (ProductosTab),
+  // pero ahora hereda el estándar visual único en vez de un tile a mano.
+  return <StatCard label={label} value={value} subValue={sub} density="compact" />;
 }
 
 // ── Tipos ──

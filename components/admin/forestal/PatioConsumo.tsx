@@ -221,7 +221,7 @@ export default function PatioConsumo() {
             <button
               type="button"
               onClick={() => { setElegida(null); setSeleccion(new Set()); setListo(null); }}
-              className="h-11 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-base font-bold text-[var(--text-secondary)]"
+              className="h-11 rounded-2xl border-2 border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-secondary)]"
             >
               Cambiar
             </button>
@@ -251,7 +251,7 @@ export default function PatioConsumo() {
             onClick={() => void guardar()}
             disabled={guardando || seleccion.size === 0}
             className={cn(
-              "flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-lg font-bold text-white transition",
+              "flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-lg font-semibold text-white transition",
               "bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)]",
               "disabled:opacity-40",
             )}

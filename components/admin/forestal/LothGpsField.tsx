@@ -127,7 +127,7 @@ export default function LothGpsField({ lat, lng, onChange, censo }: Props) {
           <button
             type="button"
             onClick={aplicarManual}
-            className="inline-flex h-12 items-center rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90"
+            className="inline-flex h-12 items-center rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
           >
             Aplicar
           </button>

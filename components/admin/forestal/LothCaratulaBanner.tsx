@@ -118,7 +118,7 @@ export default function LothCaratulaBanner({ caratula, titularSugerido, onSaved 
               type="button"
               onClick={guardar}
               disabled={!puedeGuardar || saving}
-              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40"
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Guardar
             </button>

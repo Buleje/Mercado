@@ -205,11 +205,11 @@ export default function ProductModifiersEditor({ productId, productName, onClose
             {!loading && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
                 <button onClick={addGroup}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 min-h-11 text-sm font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 min-h-11 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
                   <Plus className="h-4 w-4" /> Agregar grupo nuevo
                 </button>
                 <button onClick={() => setShowCatalog(true)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white px-4 min-h-11 text-sm font-bold hover:opacity-90 transition-all">
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-linear-to-r from-primary to-[var(--data-success-500)] text-white px-4 min-h-11 text-sm font-semibold hover:opacity-90 transition-all">
                   <BookOpen className="h-4 w-4" /> Importar del catálogo
                 </button>
               </div>
@@ -243,7 +243,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
                 Cancelar
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 min-h-10 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50">
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 min-h-10 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 Guardar
               </button>

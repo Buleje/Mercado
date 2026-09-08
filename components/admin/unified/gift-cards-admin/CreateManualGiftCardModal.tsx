@@ -162,7 +162,7 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 h-10 inline-flex items-center justify-center gap-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
+              className="flex-1 h-10 inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
               {saving ? (
                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

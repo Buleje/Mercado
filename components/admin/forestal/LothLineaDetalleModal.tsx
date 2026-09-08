@@ -207,7 +207,7 @@ export default function LothLineaDetalleModal({
                 onVerCadena(codigo);
                 onClose();
               }}
-              className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+              className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
             >
               <Link2 className="h-4 w-4" /> Cadena de custodia
             </button>
@@ -215,7 +215,7 @@ export default function LothLineaDetalleModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-11 items-center rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-bold text-white hover:opacity-90"
+            className="inline-flex h-11 items-center rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90"
           >
             Cerrar
           </button>

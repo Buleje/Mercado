@@ -334,7 +334,7 @@ function CustomCategoryEditor({
                 type="button"
                 onClick={addSub}
                 disabled={newSub.trim().length < 2}
-                className="h-12 px-4 rounded-2xl bg-[var(--accent)] text-white font-extrabold inline-flex items-center gap-1.5 disabled:opacity-50"
+                className="h-12 px-4 rounded-2xl bg-[var(--accent)] text-white font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
               >
                 <Plus className="h-4 w-4" /> Agregar
               </button>
@@ -345,7 +345,7 @@ function CustomCategoryEditor({
           <button
             type="button"
             onClick={onClose}
-            className="h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="h-12 px-5 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             Cancelar
           </button>
@@ -361,7 +361,7 @@ function CustomCategoryEditor({
               });
               onClose();
             }}
-            className="h-12 px-6 rounded-2xl bg-[var(--accent)] text-white text-base font-extrabold inline-flex items-center gap-2 disabled:opacity-50"
+            className="h-12 px-6 rounded-2xl bg-[var(--accent)] text-white text-base font-semibold inline-flex items-center gap-2 disabled:opacity-50"
           >
             <Check className="h-4 w-4" strokeWidth={3} />
             Guardar categoría
@@ -733,7 +733,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
               type="button"
               onClick={addCustomZone}
               disabled={customZoneInput.trim().length < 2}
-              className="h-10 px-3.5 rounded-xl bg-[var(--accent)] text-white font-extrabold inline-flex items-center gap-1.5 text-sm disabled:opacity-50"
+              className="h-10 px-3.5 rounded-xl bg-[var(--accent)] text-white font-semibold inline-flex items-center gap-1.5 text-sm disabled:opacity-50"
             >
               <Plus className="h-3.5 w-3.5" /> Agregar
             </button>

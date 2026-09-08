@@ -73,7 +73,7 @@ export default function ReporteDeImport({
         <button
           onClick={bajar}
           disabled={bajando}
-          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[var(--surface-sunken)] px-4 text-base font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[var(--surface-sunken)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
         >
           <Download className="h-5 w-5" /> Bajar el reporte
         </button>

@@ -290,7 +290,7 @@ export default function VendorDashboardModule() {
                 <p className="text-sm font-medium text-[var(--text-primary)] text-center">{error}</p>
                 <button
                   onClick={() => void fetchDashboard(false)}
-                  className="inline-flex items-center gap-2 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/10 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/10 transition-colors"
                 >
                   <RefreshCw className="h-4 w-4" /> Reintentar
                 </button>

@@ -297,7 +297,7 @@ export default function RecetarioAdminTab() {
         </select>
         <button
           onClick={openNew}
-          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark  transition-colors shrink-0"
         >
           <Plus className="h-4 w-4" />
           Nueva Receta
@@ -396,7 +396,7 @@ export default function RecetarioAdminTab() {
           <p className="text-sm text-[var(--text-secondary)]">Esta accion no se puede deshacer. La receta se eliminara del recetario público.</p>
           <div className="flex gap-2">
             <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-[var(--rule-soft)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)] transition-colors">Cancelar</button>
-            <button onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="flex-1 px-4 min-h-11 rounded-xl text-sm font-bold bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] transition-colors">Eliminar</button>
+            <button onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="flex-1 px-4 min-h-11 rounded-xl text-sm font-semibold bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] transition-colors">Eliminar</button>
           </div>
         </div>
       </AdminModal>
@@ -657,7 +657,7 @@ export default function RecetarioAdminTab() {
             <button
               onClick={handleSave}
               disabled={saving || !nombre.trim() || ingredientes.length === 0}
-              className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               {editing ? "Actualizar" : "Guardar"}

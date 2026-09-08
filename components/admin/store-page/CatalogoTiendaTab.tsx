@@ -454,7 +454,7 @@ export default function CatalogoTiendaTab() {
                   type="button"
                   onClick={() => setVisibilityFilter(opt.value as FilterVisibility)}
                   className={cn(
-                    "px-3.5 h-10 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5",
+                    "px-3.5 h-10 rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5",
                     active
                       ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                       : "text-muted hover:text-[var(--text-primary)]"
@@ -590,7 +590,7 @@ export default function CatalogoTiendaTab() {
             <button
               type="button"
               onClick={clearAllFilters}
-              className="mt-4 inline-flex items-center gap-1.5 px-4 h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90"
+              className="mt-4 inline-flex items-center gap-1.5 px-4 h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90"
             >
               Limpiar filtros
             </button>
@@ -735,7 +735,7 @@ export default function CatalogoTiendaTab() {
               type="button"
               disabled={bulkSaving}
               onClick={() => applyBulk(true, "selected")}
-              className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 active:scale-[0.98]"
             >
               <Eye className="h-4 w-4" />
               Mostrar
@@ -744,7 +744,7 @@ export default function CatalogoTiendaTab() {
               type="button"
               disabled={bulkSaving}
               onClick={() => applyBulk(false, "selected")}
-              className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl bg-background/10 hover:bg-background/20 text-background text-sm font-bold disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl bg-background/10 hover:bg-background/20 text-background text-sm font-semibold disabled:opacity-50"
             >
               <EyeOff className="h-4 w-4" />
               Ocultar

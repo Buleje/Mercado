@@ -155,14 +155,14 @@ export default function CapturaFoto({
               <button
                 onClick={repetir}
                 disabled={subiendo}
-                className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+                className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
               >
                 <RefreshCw className="h-4 w-4" /> Repetir
               </button>
               <button
                 onClick={() => void usar()}
                 disabled={subiendo}
-                className="h-12 flex-1 rounded-2xl bg-primary text-base font-bold text-white hover:bg-primary-dark disabled:opacity-50"
+                className="h-12 flex-1 rounded-2xl bg-primary text-base font-semibold text-white hover:bg-primary-dark disabled:opacity-50"
               >
                 {subiendo ? "Subiendo…" : "Usar esta foto"}
               </button>
@@ -171,7 +171,7 @@ export default function CapturaFoto({
             <button
               onClick={capturar}
               disabled={Boolean(error)}
-              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-bold text-white hover:bg-primary-dark disabled:opacity-50"
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-white hover:bg-primary-dark disabled:opacity-50"
             >
               <Camera className="h-5 w-5" /> Tomar foto
             </button>

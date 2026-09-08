@@ -242,7 +242,7 @@ export default function SalesChannelsTab() {
           type="button"
           onClick={save}
           disabled={saving}
-          className="flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-bold hover:bg-primary/90 disabled:opacity-50"
+          className="flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-semibold hover:bg-primary/90 disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
           Guardar canales

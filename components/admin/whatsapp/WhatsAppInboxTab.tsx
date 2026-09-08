@@ -395,7 +395,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
           <button
             type="button"
             onClick={handleStartNewChat}
-            className="inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-5 text-base font-bold text-white transition hover:opacity-90"
+            className="inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-5 text-base font-semibold text-white transition hover:opacity-90"
           >
             <MessageCircle className="h-5 w-5" />
             Abrir chat
@@ -423,7 +423,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
           <button
             type="button"
             onClick={onGoToConfig}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white transition hover:opacity-90"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90"
           >
             <Settings className="h-4 w-4" />
             Conectar mi número

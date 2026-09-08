@@ -113,7 +113,7 @@ export default function PlantacionPasoTitular({
                   disabled={soloLectura}
                   aria-pressed={datos.titularTipoPersona === t}
                   onClick={() => elegirTipoPersona(t)}
-                  className={`h-11 flex-1 rounded-xl border-2 text-sm font-bold transition ${
+                  className={`h-11 flex-1 rounded-xl border-2 text-sm font-semibold transition ${
                     datos.titularTipoPersona === t
                       ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]"

@@ -1680,11 +1680,11 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <button type="button" onClick={() => void guardarCubicacion()} disabled={guardando}
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95 disabled:opacity-50">
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50">
                 {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {guardando ? "Guardando…" : cubicacionActual ? "Actualizar" : "Guardar"}
               </button>
-              <button type="button" onClick={() => setShowGuardar(false)} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+              <button type="button" onClick={() => setShowGuardar(false)} className="h-11 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                 Cancelar
               </button>
               <span className="text-xs text-[var(--text-tertiary)]">Queda en tu cuenta: la ves desde cualquier dispositivo.</span>
@@ -1868,7 +1868,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   <span className="text-[length:var(--ts-xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
                     {filasVisibles.length} de {rows.length}
                   </span>
-                  <button type="button" onClick={limpiarFiltros} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">
+                  <button type="button" onClick={limpiarFiltros} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">
                     <X className="h-4 w-4" /> Limpiar
                   </button>
                 </>
@@ -1882,7 +1882,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   title="Elegir columnas visibles de la tabla"
                   aria-label="Elegir columnas visibles"
                   aria-expanded={colsMenuOpen}
-                  className={`inline-flex h-10 items-center gap-1.5 rounded-xl border px-3 text-sm font-bold transition ${colsMenuOpen ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
+                  className={`inline-flex h-10 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition ${colsMenuOpen ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
                 >
                   <Columns3 className="h-4 w-4" /> Columnas
                 </button>

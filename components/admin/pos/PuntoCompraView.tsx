@@ -1097,7 +1097,7 @@ export default function PuntoCompraView() {
           <button
             type="button"
             onClick={() => setShowNewExpense(true)}
-            className="inline-flex w-full sm:w-auto justify-center items-center gap-2 h-11 px-4 rounded-2xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors shadow-sm hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex w-full sm:w-auto justify-center items-center gap-2 h-11 px-4 rounded-2xl text-sm font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-sm hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <Plus className="h-4 w-4" />
             Nuevo gasto recurrente
@@ -1124,7 +1124,7 @@ export default function PuntoCompraView() {
               <button
                 type="button"
                 onClick={() => setShowNewExpense(true)}
-                className="mt-4 inline-flex items-center gap-2 h-12 px-5 rounded-2xl text-sm font-bold bg-primary text-white hover:bg-primary-dark transition-colors shadow"
+                className="mt-4 inline-flex items-center gap-2 h-12 px-5 rounded-2xl text-sm font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow"
               >
                 <Plus className="h-5 w-5" />
                 Crear mi primer gasto recurrente
@@ -1493,7 +1493,7 @@ export default function PuntoCompraView() {
                   <button
                     type="button"
                     onClick={() => { setShowInventario(true); setSoloReponer(true); }}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white hover:bg-primary-dark transition-colors"
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
                   >
                     Ver los {needsReorderCount} que faltan
                   </button>
@@ -1501,7 +1501,7 @@ export default function PuntoCompraView() {
                 <button
                   type="button"
                   onClick={() => setShowInventario(true)}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors"
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors"
                 >
                   Ver todo el inventario
                 </button>
@@ -2376,7 +2376,7 @@ export default function PuntoCompraView() {
                 type="button"
                 onClick={() => void handleCreateSupplier()}
                 disabled={creatingSupplier || !newSupplier.name.trim()}
-                className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
               >
                 {creatingSupplier ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

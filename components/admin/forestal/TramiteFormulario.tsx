@@ -679,7 +679,7 @@ export default function TramiteFormulario({
               type="button"
               onClick={() => setPanelMovil(t.key)}
               aria-pressed={panelMovil === t.key}
-              className={`inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border-2 text-sm font-bold transition ${
+              className={`inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border-2 text-sm font-semibold transition ${
                 panelMovil === t.key
                   ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]"

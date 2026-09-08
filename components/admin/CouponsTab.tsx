@@ -326,7 +326,7 @@ export default function CouponsTab() {
                 type="button"
                 onClick={() => setCouponScope("tienda")}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors min-h-[44px]",
+                  "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[44px]",
                   couponScope === "tienda"
                     ? "bg-primary/10 text-white "
                     : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
@@ -339,7 +339,7 @@ export default function CouponsTab() {
                 type="button"
                 onClick={() => setCouponScope("plataforma")}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors min-h-[44px]",
+                  "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-[44px]",
                   couponScope === "plataforma"
                     ? "bg-[var(--accent-600,var(--accent))] text-white "
                     : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
@@ -533,7 +533,7 @@ export default function CouponsTab() {
                     <button
                       onClick={() => { if (whatsappPhone.trim()) { sendWhatsapp(whatsappPhone, buildWhatsappMsg(whatsappCoupon)); } }}
                       disabled={!whatsappPhone.trim()}
-                      className="px-4 min-h-10 rounded-xl bg-primary/10 text-white text-sm font-bold hover:bg-primary/10 disabled:opacity-50 transition-colors inline-flex items-center gap-1"
+                      className="px-4 min-h-10 rounded-xl bg-primary/10 text-white text-sm font-semibold hover:bg-primary/10 disabled:opacity-50 transition-colors inline-flex items-center gap-1"
                     >
                       <MessageCircle className="h-4 w-4" /> Enviar
                     </button>

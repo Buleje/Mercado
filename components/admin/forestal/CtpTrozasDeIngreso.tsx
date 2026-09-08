@@ -222,7 +222,7 @@ export default function CtpTrozasDeIngreso({
           <button
             type="button"
             onClick={() => setImportando(true)}
-            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]"
+            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]"
           >
             <ClipboardList className="h-4 w-4" aria-hidden /> Pegar la lista del proveedor
           </button>

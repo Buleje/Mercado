@@ -299,7 +299,7 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 bg-[var(--surface-sunken)] px-6 py-4">
           <button
             onClick={onClose}
-            className="h-12 rounded-xl px-5 text-base font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
+            className="h-12 rounded-xl px-5 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
           >
             {hecho ? "Cerrar" : "Mejor no"}
           </button>
@@ -307,7 +307,7 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
             <button
               onClick={() => void vaciar()}
               disabled={borrando || escrito.trim().toUpperCase() !== palabra}
-              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--data-error)] px-5 text-base font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--data-error)] px-5 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               <Trash2 className="h-5 w-5" /> {borrando ? "Vaciando…" : `Vaciar ${esParcial ? "este alcance" : "el libro"}`}
             </button>

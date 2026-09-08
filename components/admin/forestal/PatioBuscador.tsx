@@ -133,7 +133,7 @@ export default function PatioBuscador() {
             type="button"
             onClick={() => void buscar()}
             disabled={buscando || !q.trim()}
-            className="inline-flex h-14 shrink-0 items-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white disabled:opacity-40"
+            className="inline-flex h-14 shrink-0 items-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white disabled:opacity-40"
           >
             {buscando ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Search className="h-5 w-5" aria-hidden />}
             Buscar

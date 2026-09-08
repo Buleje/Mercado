@@ -397,7 +397,7 @@ export function MarketplaceOrdenesTab() {
         </div>
         <button
           onClick={load}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-extrabold hover:bg-[var(--surface-sunken)] transition-colors"
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
           Actualizar
@@ -405,7 +405,7 @@ export function MarketplaceOrdenesTab() {
         <button
           onClick={exportCsv}
           disabled={filtered.length === 0}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-extrabold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           title="Descargar CSV de las órdenes filtradas (para Excel/SUNAT)"
         >
           <Download className="h-4 w-4" />

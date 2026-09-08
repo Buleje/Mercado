@@ -121,7 +121,7 @@ export function FolderEditModal({
           <button
             onClick={save}
             disabled={saving || !name.trim()}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-11 text-sm font-bold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-11 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
           >
             <Check className="h-4 w-4" /> Guardar
           </button>

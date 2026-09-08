@@ -384,7 +384,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                   type="button"
                   onClick={handleCreateCategory}
                   disabled={!newCatName.trim()}
-                  className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-2xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
+                  className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-2xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
                 >
                   <Check className="h-4 w-4" />
                   Guardar categoría
@@ -565,7 +565,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="flex-1 h-12 rounded-2xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] hover:border-[var(--text-secondary)] transition-colors disabled:opacity-50"
+            className="flex-1 h-12 rounded-2xl text-sm font-semibold text-[var(--text-secondary)] bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] hover:border-[var(--text-secondary)] transition-colors disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -573,7 +573,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
             type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex-1 sm:flex-[2] h-12 inline-flex items-center justify-center gap-2 rounded-2xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
+            className="flex-1 sm:flex-[2] h-12 inline-flex items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
             {submitting ? (
               <Loader2 className="h-5 w-5 animate-spin" />

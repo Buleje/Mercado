@@ -1510,11 +1510,11 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <button type="button" onClick={() => void guardarDistribucion()} disabled={guardandoDistribucion}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95 disabled:opacity-50">
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50">
                 {guardandoDistribucion ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {guardandoDistribucion ? "Guardando…" : distribucionActual ? "Actualizar" : "Guardar"}
               </button>
-              <button type="button" onClick={() => setMostrarGuardar(false)} className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+              <button type="button" onClick={() => setMostrarGuardar(false)} className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                 Cancelar
               </button>
               <span className="text-xs text-[var(--text-tertiary)]">Queda en tu cuenta: la ves desde cualquier dispositivo.</span>

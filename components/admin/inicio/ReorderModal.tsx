@@ -281,7 +281,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                     onClick={handleSubmit}
                     disabled={submitting || selectedCount === 0}
                     className={cn(
-                      "inline-flex items-center gap-2 px-4 min-h-10 text-sm font-bold rounded-xl transition-all",
+                      "inline-flex items-center gap-2 px-4 min-h-10 text-sm font-semibold rounded-xl transition-all",
                       "bg-primary text-white shadow-sm hover:shadow-md",
                       "disabled:opacity-50 disabled:cursor-not-allowed",
                     )}

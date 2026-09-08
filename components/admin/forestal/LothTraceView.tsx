@@ -230,21 +230,21 @@ export default function LothTraceView({
               ).catch((err) => console.error("[legajo] no se pudo abrir", err));
             }}
             disabled={seleccionadas.every(({ f }) => f.op == null)}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-40"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
           >
             <Printer className="h-4 w-4" /> Pasaporte de los {seleccionadas.filter(({ f }) => f.op != null).length}
           </button>
           <button
             type="button"
             onClick={() => descargar("trazabilidad-seleccion.csv", filasToCsv(seleccionadas.map(({ f }) => f)))}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             CSV de la selección
           </button>
           <button
             type="button"
             onClick={() => setSeleccion(new Set())}
-            className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
             <X className="h-4 w-4" /> Limpiar
           </button>
@@ -263,7 +263,7 @@ export default function LothTraceView({
           <button
             type="button"
             onClick={() => setExpandir((e) => ({ signal: e.signal + 1, todo: !e.todo }))}
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
             <ChevronsUpDown className="h-4 w-4" /> {expandir.todo ? "Colapsar todo" : "Expandir todo"}
           </button>
@@ -307,7 +307,7 @@ export default function LothTraceView({
             type="button"
             onClick={() => setPagina((p) => Math.max(0, p - 1))}
             disabled={pagActual === 0}
-            className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+            className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
           >
             Anterior
           </button>
@@ -318,7 +318,7 @@ export default function LothTraceView({
             type="button"
             onClick={() => setPagina((p) => Math.min(totalPaginas - 1, p + 1))}
             disabled={pagActual >= totalPaginas - 1}
-            className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+            className="h-10 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
           >
             Siguiente
           </button>

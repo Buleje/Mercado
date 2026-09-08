@@ -211,7 +211,7 @@ function SaveButton({ saving, saved, onClick, label = "Guardar cambios" }: {
       onClick={onClick}
       disabled={saving}
       className={cn(
-        "flex items-center gap-2 px-5 min-h-11 rounded-xl font-bold text-sm transition-all w-full justify-center",
+        "flex items-center gap-2 px-5 min-h-11 rounded-xl font-semibold text-sm transition-all w-full justify-center",
         saved ? "bg-primary/10 text-white" : "bg-gray-900 dark:bg-white dark:text-[var(--text-primary)] text-white hover:bg-gray-800 dark:hover:bg-gray-100"
       )}
     >
@@ -739,7 +739,7 @@ export default function SettingsModule({
         <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Activa, oculta o limpia datos de ejemplo por módulo. Los cambios se aplican inmediatamente.</p>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("open-module-manager"))}
-          className="w-full flex items-center justify-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors mt-2"
+          className="w-full flex items-center justify-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-colors mt-2"
         >
           <Layers className="h-4 w-4" /> Abrir gestión de módulos
         </button>
@@ -1083,7 +1083,7 @@ export default function SettingsModule({
             </div>
           )}
           {pwChangeError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{pwChangeError}</p>}
-          <button type="submit" disabled={saving} className="px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
+          <button type="submit" disabled={saving} className="px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
             <Lock className="h-4 w-4" /> Cambiar contraseña
           </button>
         </form>
@@ -1791,7 +1791,7 @@ export default function SettingsModule({
                   // crear endpoint con Zod safeParse + requireAdmin(["admin"]) + dry-run mode.
                   setRestoreError("Función de restauración aún no disponible. Contacta soporte para asistencia manual.");
                   setRestoring(false);
-                }} disabled={restoring} className="px-5 min-h-11 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 flex items-center gap-2">
+                }} disabled={restoring} className="px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 flex items-center gap-2">
                   {restoring ? <><Loader2 className="h-4 w-4 animate-spin" /> Restaurando...</> : <><AlertTriangle className="h-4 w-4" /> Confirmar</>}
                 </button>}
               </>)}
@@ -1845,7 +1845,7 @@ export default function SettingsModule({
             onResetTutorial?.();
             onNavigateTab?.("asistente-ia");
           }}
-          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-gray-900 dark:bg-white dark:text-[var(--text-primary)] hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-gray-900 dark:bg-white dark:text-[var(--text-primary)] hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
         >
           <Activity className="h-4 w-4" />
           Repetir tutorial de bienvenida
@@ -2124,7 +2124,7 @@ export default function SettingsModule({
             </div>
             <div className="flex justify-end gap-3 px-5 py-4 border-t border-[var(--rule-soft)]">
               <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]">Cancelar</button>
-              <button onClick={() => setShowMapPicker(false)} className="px-4 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90">Confirmar</button>
+              <button onClick={() => setShowMapPicker(false)} className="px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90">Confirmar</button>
             </div>
           </m.div>
         </div>

@@ -231,7 +231,7 @@ export default function LotesTabla({
             type="button"
             onClick={() => onPagina(actual - 1)}
             disabled={actual <= 1}
-            className="inline-flex h-12 items-center gap-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
+            className="inline-flex h-12 items-center gap-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
           >
             <ChevronLeft className="h-4 w-4" aria-hidden /> Anterior
           </button>
@@ -242,7 +242,7 @@ export default function LotesTabla({
             type="button"
             onClick={() => onPagina(actual + 1)}
             disabled={actual >= paginas}
-            className="inline-flex h-12 items-center gap-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
+            className="inline-flex h-12 items-center gap-1 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
           >
             Siguiente <ChevronRight className="h-4 w-4" aria-hidden />
           </button>

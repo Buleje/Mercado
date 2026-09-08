@@ -44,7 +44,7 @@ export function MarketplaceComisionesTab() {
             <button
               onClick={handleBulkPay}
               disabled={markingPaid === "bulk"}
-              className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
+              className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
             >
               <DollarSign className="h-4 w-4" />
               {markingPaid === "bulk" ? "Procesando..." : `Pagar liquidado · S/${summary.liquidado.toFixed(2)}`}
@@ -98,7 +98,7 @@ export function MarketplaceComisionesTab() {
               key={f.value}
               onClick={() => setFilterStatus(f.value)}
               className={cn(
-                "inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 text-sm font-bold transition-all tabular-nums",
+                "inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 text-sm font-semibold transition-all tabular-nums",
                 active
                   ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"

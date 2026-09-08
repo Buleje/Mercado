@@ -225,7 +225,7 @@ function PartnerModal({
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 inline-flex items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
+              className="flex-1 inline-flex items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
               {saving ? (
                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -481,7 +481,7 @@ export function RepartidoresTab() {
           <button
             type="button"
             onClick={() => setModal({ open: true, partner: null })}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shrink-0"
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors shrink-0"
           >
             <Plus className="h-4 w-4" />
             Nuevo repartidor
@@ -619,7 +619,7 @@ export function RepartidoresTab() {
             type="button"
             onClick={() => downloadCSV(filtered)}
             disabled={filtered.length === 0}
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-extrabold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title="Descargar CSV de los repartidores filtrados"
           >
             <Download className="h-4 w-4" />
@@ -696,7 +696,7 @@ export function RepartidoresTab() {
           <button
             type="button"
             onClick={() => setModal({ open: true, partner: null })}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors mt-6"
+            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors mt-6"
           >
             <Plus className="h-4 w-4" />
             Agregar primer repartidor
@@ -820,7 +820,7 @@ export function RepartidoresTab() {
                         <button
                           type="button"
                           onClick={() => setModal({ open: true, partner: p })}
-                          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-secondary)] hover:bg-primary/10 hover:border-primary/30 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors"
+                          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-primary/10 hover:border-primary/30 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors"
                         >
                           <Edit2 className="h-4 w-4" />
                           Editar

@@ -371,7 +371,7 @@ export default function GiftCardsAdminModule() {
       >
         <button
           onClick={() => setShowCreate(true)}
-          className="inline-flex items-center gap-2 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" />
           Emitir manual

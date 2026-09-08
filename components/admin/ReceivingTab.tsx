@@ -299,7 +299,7 @@ export default function ReceivingTab() {
           </button>
           <button
             onClick={() => setShowNew(true)}
-            className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition"
+            className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition"
           >
             <Plus className="h-4 w-4" /> Nueva recepción
           </button>
@@ -659,7 +659,7 @@ export default function ReceivingTab() {
 
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setShowNew(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] ">Cancelar</button>
-              <button onClick={saveReception} disabled={saving} className="px-4 min-h-10 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
+              <button onClick={saveReception} disabled={saving} className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 Guardar recepción
               </button>

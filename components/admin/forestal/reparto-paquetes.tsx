@@ -221,7 +221,7 @@ export default function RepartoPaquetesPicker({
           type="button"
           disabled={elegidos.length === 0}
           onClick={() => { onAgregar(elegidos); onCerrar(); }}
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:brightness-95 disabled:opacity-40"
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-40"
         >
           <Check className="h-4 w-4" aria-hidden />
           {elegidos.length === 0

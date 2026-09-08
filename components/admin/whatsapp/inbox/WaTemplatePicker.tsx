@@ -159,7 +159,7 @@ export default function WaTemplatePicker({ phoneNumberId, sending, onSend, onClo
                 if (ok) onClose();
               }}
               className={cn(
-                "inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-bold text-white transition hover:opacity-90",
+                "inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-white transition hover:opacity-90",
                 (!canSend || sending) && "cursor-not-allowed opacity-40",
               )}
             >

@@ -765,7 +765,7 @@ export function CtpEntriesView({
               vacio="No hay lotes con madera ni corridas por declarar. Armá uno en la pestaña Lotes."
             />
           ) : (
-            <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white shadow-sm transition hover:brightness-110 sm:flex-none">
+            <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white shadow-sm transition hover:brightness-110 sm:flex-none">
               <Plus className="h-5 w-5" /> {meta.cta}
             </button>
           )}
@@ -923,7 +923,7 @@ export function CtpEntriesView({
               <button
                 type="button"
                 onClick={() => setAbrirLotes((v) => v + 1)}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white shadow-sm transition hover:brightness-110"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white shadow-sm transition hover:brightness-110"
               >
                 <Boxes className="h-5 w-5" aria-hidden />
                 Elegir el lote que entra a la sierra
@@ -933,7 +933,7 @@ export function CtpEntriesView({
                 <button
                   type="button"
                   onClick={() => onIr("lotes")}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-base font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-base font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
                 >
                   <Boxes className="h-5 w-5" aria-hidden />
                   Armar un lote de aserrío
@@ -1240,8 +1240,8 @@ export function CtpEntriesView({
             <p className="mt-1 text-sm text-[var(--text-tertiary)]">Indicá el motivo (queda en el historial, no se borra).</p>
             <input autoFocus value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (min 3 caracteres)" className="mt-3 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm outline-none focus:border-[var(--data-error-500)]" />
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setAnnulId(null)} className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)]">Cancelar</button>
-              <button type="button" disabled={annulReason.trim().length < 3 || pending} onClick={annul} className="inline-flex h-10 items-center rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50">Confirmar anulación</button>
+              <button type="button" onClick={() => setAnnulId(null)} className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]">Cancelar</button>
+              <button type="button" disabled={annulReason.trim().length < 3 || pending} onClick={annul} className="inline-flex h-10 items-center rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">Confirmar anulación</button>
             </div>
           </div>
         </div>

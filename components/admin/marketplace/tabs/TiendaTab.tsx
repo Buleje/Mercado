@@ -406,7 +406,7 @@ export function MarketplaceTiendaTab() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-primary text-white text-base font-extrabold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
+            className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-primary text-white text-base font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
           >
             {saving ? (
               <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

@@ -192,7 +192,7 @@ export default function PlantacionPasoRevision({
         <button
           type="button"
           onClick={onGenerarDocumento}
-          className={`inline-flex h-12 items-center gap-2 rounded-2xl px-6 text-sm font-bold text-white transition ${
+          className={`inline-flex h-12 items-center gap-2 rounded-2xl px-6 text-sm font-semibold text-white transition ${
             datos.djAceptado ? "bg-[var(--brand-ink)] hover:opacity-90" : "bg-[var(--text-tertiary)]/60"
           }`}
         >

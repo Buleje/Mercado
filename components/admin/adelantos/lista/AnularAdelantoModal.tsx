@@ -144,7 +144,7 @@ export default function AnularAdelantoModal({
           <button
             type="button"
             onClick={onClose}
-            className="h-11 flex-1 rounded-xl text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+            className="h-11 flex-1 rounded-xl text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
           >
             Volver
           </button>
@@ -152,7 +152,7 @@ export default function AnularAdelantoModal({
             type="button"
             onClick={() => void anular()}
             disabled={saving}
-            className="h-11 flex-1 rounded-xl bg-[var(--data-error)] text-sm font-bold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+            className="h-11 flex-1 rounded-xl bg-[var(--data-error)] text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
           >
             {saving ? "Anulando…" : "Anular adelanto"}
           </button>

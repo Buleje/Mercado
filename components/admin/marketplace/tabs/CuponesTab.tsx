@@ -1,5 +1,5 @@
 "use client";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, StatCard } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -36,33 +36,18 @@ export function MarketplaceCuponesTab() {
   return (
     <div className="space-y-6">
       {/* ── Header con stats + CTA ── */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-5">
-          <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Cupones marketplace</p>
-            <p className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums leading-tight">{coupons.length}</p>
-          </div>
-          <div className="h-10 w-px bg-[var(--rule-base)]" />
-          <div className="flex items-center gap-5">
-            <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Activos</p>
-              <p className="text-base font-bold text-[var(--data-success)] tabular-nums">{activeCount}</p>
-            </div>
-            <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Usos</p>
-              <p className="text-base font-bold text-[var(--text-primary)] tabular-nums">{totalUses}</p>
-            </div>
-            {expiringSoon > 0 && (
-              <div>
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--data-warning)]">Vencen pronto</p>
-                <p className="text-base font-bold text-[var(--data-warning)] tabular-nums">{expiringSoon}</p>
-              </div>
-            )}
-          </div>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1 sm:max-w-xl">
+          <StatCard label="Cupones marketplace" value={coupons.length} density="compact" />
+          <StatCard label="Activos" value={activeCount} emphasis="success" density="compact" />
+          <StatCard label="Usos" value={totalUses} density="compact" />
+          {expiringSoon > 0 && (
+            <StatCard label="Vencen pronto" value={expiringSoon} emphasis="warning" density="compact" />
+          )}
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors shadow-sm shrink-0"
         >
           <Ticket className="h-4 w-4" />
           Nuevo cupón
@@ -91,7 +76,7 @@ export function MarketplaceCuponesTab() {
           </p>
           <button
             onClick={() => setShowForm(true)}
-            className="mt-5 inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+            className="mt-5 inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
           >
             <Ticket className="h-4 w-4" />
             Crear primer cupón
@@ -464,14 +449,14 @@ function NewCouponModal({
           <div className="flex items-center gap-3 ml-auto">
             <button
               onClick={onClose}
-              className="px-4 min-h-11 rounded-xl text-sm font-bold text-[var(--text-secondary)] border-2 border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
+              className="px-4 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] border-2 border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={onCreate}
               disabled={saving || !form.code || !form.discountValue}
-              className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
+              className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
             >
               {saving ? (
                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

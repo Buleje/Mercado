@@ -1128,7 +1128,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     type="button"
                     onClick={() => void consultarSerfor()}
                     disabled={serforCargando || !nroRegistroSerfor.trim()}
-                    className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-3.5 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {serforCargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                     Consultar SERFOR
@@ -1246,7 +1246,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                     type="button"
                     onClick={() => void cargarGuia()}
                     disabled={loadingGtf || !data.gtfNumber.trim()}
-                    className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--data-success-700)] px-3.5 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--data-success-700)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {loadingGtf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     Cargar guía
@@ -1254,7 +1254,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                   <button
                     type="button"
                     onClick={toggleGuias}
-                    className={`inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-bold transition-colors ${showGuias ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+                    className={`inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors ${showGuias ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
                   >
                     <Search className="h-4 w-4" /> Ver guías
                   </button>

@@ -207,12 +207,12 @@ export default function CacaoNoticiero() {
             onClick={() => setAuto((v) => !v)}
             aria-pressed={auto}
             title={auto ? "Lectura automática cada 5 min activada — click para pausar" : "Activar lectura automática cada 5 min"}
-            className={`inline-flex h-10 items-center gap-2 rounded-2xl border-2 px-3.5 text-sm font-bold transition ${auto ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
+            className={`inline-flex h-10 items-center gap-2 rounded-2xl border-2 px-3.5 text-sm font-semibold transition ${auto ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
           >
             <span className={`h-2 w-2 rounded-full ${auto ? "animate-pulse bg-[var(--accent)]" : "bg-[var(--rule-base)]"}`} aria-hidden />
             {auto ? <>Auto · <span className="font-mono tabular-nums">{mmss(countdown)}</span></> : "Auto off"}
           </button>
-          <button type="button" onClick={refreshNow} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
+          <button type="button" onClick={refreshNow} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Actualizar</button>
         </div>
       </VistaHeader>
 

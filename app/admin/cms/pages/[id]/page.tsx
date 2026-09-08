@@ -562,7 +562,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                 <button
                   onClick={saveBlockProps}
                   disabled={savingProps}
-                  className="w-full flex items-center justify-center gap-2 min-h-11 bg-primary/10 text-white text-sm font-bold rounded-xl hover:bg-primary/10 disabled:opacity-60 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 min-h-11 bg-primary/10 text-white text-sm font-semibold rounded-xl hover:bg-primary/10 disabled:opacity-60 transition-colors"
                 >
                   <Save className="w-4 h-4" />
                   {savingProps ? "Guardando cambios..." : "Guardar cambios"}

@@ -1,5 +1,5 @@
 "use client";
-import { CardTitle, DataTable, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, SectionTitle, StatCard, type StatCardEmphasis } from "@buleje/design-system";
 import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -185,32 +185,29 @@ function InlineKPIStrip() {
     );
   }
 
-  const items = [
-    { label: "Ventas hoy", value: `S/ ${Number(kpis.ventasHoy).toFixed(0)}`, color: "text-[var(--data-success-500)]" },
-    { label: "Ticket prom", value: `S/ ${Number(kpis.ticketPromedio).toFixed(0)}`, color: "text-[var(--data-success-500)]" },
-    { label: "Margen", value: `${Number(kpis.margen).toFixed(1)}%`, color: kpis.margen >= 20 ? "text-[var(--data-success-500)]" : "text-[var(--data-warning-500)]" },
-    { label: "Clientes hoy", value: String(kpis.clientesHoy), color: "text-[var(--text-secondary)]" },
-    { label: "Fiado pend.", value: `S/ ${Number(kpis.fiadoPendiente).toFixed(0)}`, color: kpis.fiadoPendiente > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-secondary)]" },
-    { label: "Rotación", value: `${Number(kpis.rotacion).toFixed(1)}x`, color: "text-[var(--data-info-500)]" },
+  const items: { label: string; value: React.ReactNode; emphasis: StatCardEmphasis }[] = [
+    { label: "Ventas hoy", value: `S/ ${Number(kpis.ventasHoy).toFixed(0)}`, emphasis: "success" },
+    { label: "Ticket prom", value: `S/ ${Number(kpis.ticketPromedio).toFixed(0)}`, emphasis: "success" },
+    { label: "Margen", value: `${Number(kpis.margen).toFixed(1)}%`, emphasis: kpis.margen >= 20 ? "success" : "warning" },
+    { label: "Clientes hoy", value: String(kpis.clientesHoy), emphasis: "neutral" },
+    { label: "Fiado pend.", value: `S/ ${Number(kpis.fiadoPendiente).toFixed(0)}`, emphasis: kpis.fiadoPendiente > 0 ? "error" : "neutral" },
+    {
+      label: "Rotación",
+      // StatCardEmphasis no tiene tono "info": se preserva el azul original
+      // coloreando el propio nodo (gana por especificidad sobre el color heredado
+      // del contenedor en emphasis="neutral").
+      value: <span className="text-[var(--data-info-500)]">{Number(kpis.rotacion).toFixed(1)}x</span>,
+      emphasis: "neutral",
+    },
   ];
 
   return (
-    // Mismo molde de tarjeta que "Por cobrar" y "Scoring": rounded-2xl sobre
-    // --surface-raised, rótulo arriba a la izquierda y cifra grande debajo.
-    // Antes eran cajitas centradas con `bg-[var(--surface-raised)]` crudo (sin variante dark) —
-    // el único KPI con esa forma en todo el panel.
+    // StatCard (DS) reemplaza las cajitas hechas a mano: mismo grid, misma
+    // densidad de 6 KPIs, ahora con el molde canónico (rectangular, hairline
+    // border, sin sombra — Brandon 2026-06-10).
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
       {items.map((item) => (
-        <div
-          key={item.label}
-          className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2.5"
-        >
-          <p className="text-[length:var(--ts-xs)] font-bold text-[var(--text-tertiary)]">{item.label}</p>
-          {/* Token del DS y no `text-2xl` fijo: así la cifra sigue la densidad
-              del panel — se achica sola en una laptop y crece en un monitor
-              grande (globals.css §PANEL SHELL). */}
-          <p className={cn("mt-0.5 text-[length:var(--ts-2xl)] font-extrabold tabular-nums", item.color)}>{item.value}</p>
-        </div>
+        <StatCard key={item.label} label={item.label} value={item.value} emphasis={item.emphasis} density="compact" />
       ))}
     </div>
   );

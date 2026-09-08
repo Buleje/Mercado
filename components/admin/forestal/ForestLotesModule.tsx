@@ -84,7 +84,7 @@ export default function ForestLotesModule() {
           type="button"
           onClick={() => setShowForm(true)}
           title="Agrupá corridas del Libro CTP en un lote comercial con código, grado y certificado QR"
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110"
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
         >
           <Plus className="h-4 w-4" /> Nuevo lote
         </button>
@@ -141,7 +141,7 @@ export default function ForestLotesModule() {
           <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
           <input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Buscar por código, especie, producto o destino..." className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
         </div>
-        <button type="button" onClick={load} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
+        <button type="button" onClick={load} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
         </button>
       </div>

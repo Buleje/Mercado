@@ -273,7 +273,7 @@ export default function OCPrintPreviewModal({
                       "td{border-bottom:1px solid #eee}" +
                       ".text-right{text-align:right}" +
                       ".font-mono{font-family:monospace}" +
-                      ".font-bold{font-weight:bold}" +
+                      ".font-semibold{font-weight:bold}" +
                       "</style></head><body>"
                   );
                   w.document.write(printArea.innerHTML);

@@ -98,7 +98,7 @@ export default function EditarNotasModal({
           <button
             type="button"
             onClick={onClose}
-            className="h-11 flex-1 rounded-xl text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+            className="h-11 flex-1 rounded-xl text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
           >
             Cancelar
           </button>
@@ -106,7 +106,7 @@ export default function EditarNotasModal({
             type="button"
             onClick={() => void guardar()}
             disabled={saving}
-            className="h-11 flex-1 rounded-xl bg-primary text-sm font-bold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+            className="h-11 flex-1 rounded-xl bg-primary text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
           >
             {saving ? "Guardando…" : "Guardar"}
           </button>
