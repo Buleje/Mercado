@@ -6,12 +6,14 @@
 // Uso:
 //   node scripts/dev-helpers/admin-tabs-screenshots.mjs <outDir> <tab1,tab2,…> <light,dark> [anchoxalto]
 //   node scripts/dev-helpers/admin-tabs-screenshots.mjs reports/visual-verify/hoy "plata,compras" light 1366x768
+//   SLUG=<tenant> node … para otro tenant (los libros forestales viven en otro).
 //
 // Necesita el dev server en :3000 y el usuario QA (qaadmin / tenant main).
 // Se ejecuta DESDE el repo (resuelve `playwright` de node_modules): copiarlo al
 // scratchpad y correrlo desde ahí falla con ERR_MODULE_NOT_FOUND.
+import { chromium } from "playwright";
 import { mkdir } from "node:fs/promises";
-const BASE = "http://localhost:3000", SLUG = "main", USER = "qaadmin", PASS = "Qa-admin-1234";
+const BASE = "http://localhost:3000", SLUG = process.env.SLUG || "main", USER = "qaadmin", PASS = "Qa-admin-1234";
 const OUT = process.argv[2] || "reports/visual-verify/2026-09-07-banda";
 const TABS = (process.argv[3] || "analytics-pro,plata,inventario,vendor-dashboard,marketplace,delivery-partners,recetas,canales,compras,clientes,ventas-caja,productos,pedidos,adelantos,socio-members").split(",");
 const THEMES = (process.argv[4] || "light,dark").split(",");
@@ -26,11 +28,18 @@ const rows = [];
 for (const theme of THEMES) for (const tab of TABS) {
   const url = `${BASE}/t/${SLUG}/admin?tab=${tab}`;
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 90_000 });
-  await page.evaluate((t) => { try { localStorage.setItem("onboarding-completed-main", "1"); localStorage.setItem("buleje-tour-marketplace-2026-04", "1"); sessionStorage.setItem("buleje-theme-session-v2", t); } catch {} }, theme);
+  await page.evaluate(({ t, slug }) => { try { localStorage.setItem(`onboarding-completed-${slug}`, "1"); localStorage.setItem("buleje-tour-marketplace-2026-04", "1"); sessionStorage.setItem("buleje-theme-session-v2", t); } catch {} }, { t: theme, slug: SLUG });
   await page.reload({ waitUntil: "domcontentloaded", timeout: 90_000 });
   await page.waitForTimeout(2500);
   try { await page.waitForLoadState("networkidle", { timeout: 8000 }); } catch {}
-  await page.evaluate(() => { document.querySelectorAll('[role="dialog"]').forEach((el) => { if ((el.textContent ?? "").includes("Configura tu bodega")) el.remove(); }); document.body.style.overflow = ""; });
+  // El asistente de onboarding («Configura tu tienda/bodega») tapa la pantalla
+  // en tenants que no lo completaron: se salta por su propio botón (robusto
+  // ante la clave de localStorage que use cada tenant) y, si queda, se quita.
+  for (let i = 0; i < 2; i++) {
+    const saltar = page.getByRole("button", { name: /^Saltar$/ }).first();
+    if (await saltar.isVisible().catch(() => false)) { await saltar.click().catch(() => {}); await page.waitForTimeout(600); }
+  }
+  await page.evaluate(() => { document.querySelectorAll('[role="dialog"]').forEach((el) => { if (/Configura tu (bodega|tienda)/.test(el.textContent ?? "")) el.remove(); }); document.body.style.overflow = ""; });
   await page.waitForTimeout(400);
   const m = await page.evaluate(() => {
     const main = document.querySelector("main") ?? document.body;
@@ -40,14 +49,15 @@ for (const theme of THEMES) for (const tab of TABS) {
     const compacto = document.querySelectorAll("header[data-admin-module-header].border-l-2").length;
     const headerFull = document.querySelectorAll("header[data-admin-module-header]:not(.border-l-2)").length;
     const panel = document.querySelector('[role="tabpanel"]');
+    const fase = document.querySelector('[aria-label="Fase del libro"]');
     const dark = document.documentElement.classList.contains("dark") || document.documentElement.dataset.theme === "dark";
     const bg = getComputedStyle(document.body).backgroundColor;
-    return { h1, banda: banda ? banda.textContent.trim().slice(0, 30) : "-", compacto, headerFull, panelY: panel ? Math.round(panel.getBoundingClientRect().top - top) : -1, dark, bg, title: document.title.slice(0, 40) };
+    return { h1, banda: banda ? banda.textContent.trim().slice(0, 30) : "-", compacto, headerFull, panelY: panel ? Math.round(panel.getBoundingClientRect().top - top) : -1, dark, bg, title: document.title.slice(0, 40), faseY: fase ? Math.round(fase.getBoundingClientRect().top - top) : -1 };
   });
   const file = `${OUT}/${tab}-${theme}.png`;
   await page.screenshot({ path: file, fullPage: false });
   rows.push({ tab, theme, ...m });
-  console.log(`${theme.padEnd(5)} ${tab.padEnd(18)} h1=${m.h1} banda="${m.banda}" compacto=${m.compacto} full=${m.headerFull} panelY=${m.panelY} dark=${m.dark} bg=${m.bg}`);
+  console.log(`${theme.padEnd(5)} ${tab.padEnd(18)} h1=${m.h1} banda="${m.banda}" compacto=${m.compacto} full=${m.headerFull} panelY=${m.panelY} faseY=${m.faseY} dark=${m.dark} bg=${m.bg}`);
 }
 await browser.close();
 console.log("DONE", OUT);

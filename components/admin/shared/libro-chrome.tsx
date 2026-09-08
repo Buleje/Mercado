@@ -230,40 +230,16 @@ export default function LibroChrome({
               {title}
             </PageTitle>
           </div>
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            {status}
-            {context}
-            {tools}
-            {/* Los atajos vivían en DOS tiras de texto al pie —una del libro y
-                otra de la tabla— que juntas se comían dos renglones de cada
-                vista para decir algo que se lee una vez. Acá quedan en un solo
-                botón que abre la hoja completa (que ya incluye los de la vista
-                activa vía `atajosDeVista`). */}
-            {flat.length > 1 && (
-              <button
-                type="button"
-                onClick={abrirAyuda}
-                title="Atajos del teclado (?)"
-                aria-label="Ver los atajos del teclado"
-                className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] lg:inline-flex"
-              >
-                <Keyboard className="h-4 w-4" />
-              </button>
-            )}
-            {actions && actions.length > 0 && <ActionMenu label={actionsLabel} actions={actions} />}
-          </div>
-        </div>
-
-        {/* Navegación: fase del libro → vista de esa fase.
-            En pantallas angostas cada riel se desliza en vez de envolver: con
-            wrap, los cuatro grupos se pisaban entre sí a 390px. */}
-        {flat.length > 1 && (
-        <div className="flex flex-col gap-2 border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:px-3">
-          {groups.length > 1 && (
+          {/* La FASE del libro comparte fila con el título (misma banda que
+              el resto del panel, Brandon 2026-09-07): las cuatro fases siempre
+              a la vista; las vistas de la activa, en el riel de abajo. Siguen
+              siendo dos rieles — lo que cambió es que el primero ya no gasta
+              una fila propia. */}
+          {flat.length > 1 && groups.length > 1 && (
           <div
             role="tablist"
             aria-label="Fase del libro"
-            className="flex max-w-full items-center gap-0.5 self-start overflow-x-auto rounded-xl bg-[var(--surface-sunken)] p-1 scrollbar-none"
+            className="flex max-w-full items-center gap-0.5 overflow-x-auto rounded-xl bg-[var(--surface-sunken)] p-1 scrollbar-none sm:ml-2"
             style={{ scrollbarWidth: "none" }}
           >
             {groups.map((g) => {
@@ -296,15 +272,18 @@ export default function LibroChrome({
             })}
           </div>
           )}
+        </div>
 
-          {groups.length > 1 && (
-            <span aria-hidden="true" className="hidden h-6 w-px bg-[var(--rule-base)] sm:block" />
-          )}
+        {/* Segundo riel: las vistas de la fase activa. La fase vive arriba,
+            en la fila del título (banda del panel). En angosto se desliza en
+            vez de envolver: con wrap las vistas se pisaban a 390px. */}
+        {flat.length > 1 && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-2 sm:px-3">
 
           <div
             role="tablist"
             aria-label={activeGroup?.label}
-            className="flex max-w-full items-center gap-1 overflow-x-auto scrollbar-none sm:flex-wrap"
+            className="flex min-w-0 max-w-full flex-1 items-center gap-1 overflow-x-auto scrollbar-none sm:flex-wrap"
             style={{ scrollbarWidth: "none" }}
           >
             {activeGroup?.views.map((v) => {
@@ -332,6 +311,34 @@ export default function LibroChrome({
                 </button>
               );
             })}
+          </div>
+          {/* Estado, contexto, herramientas y acciones del libro, a la derecha
+              del riel de vistas — como el rightSlot de la barra del panel.
+              Arriba, junto al título, ya no entran: la fase ocupa ese lugar y
+              con las acciones anchas (CTP, LOTH) se iban a una línea propia,
+              una fila más que antes. Acá comparten fila con las vistas y en
+              angosto envuelven. */}
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            {status}
+            {context}
+            {tools}
+            {/* Los atajos vivían en DOS tiras de texto al pie —una del libro y
+                otra de la tabla— que juntas se comían dos renglones de cada
+                vista para decir algo que se lee una vez. Acá quedan en un solo
+                botón que abre la hoja completa (que ya incluye los de la vista
+                activa vía `atajosDeVista`). */}
+            {flat.length > 1 && (
+              <button
+                type="button"
+                onClick={abrirAyuda}
+                title="Atajos del teclado (?)"
+                aria-label="Ver los atajos del teclado"
+                className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] lg:inline-flex"
+              >
+                <Keyboard className="h-4 w-4" />
+              </button>
+            )}
+            {actions && actions.length > 0 && <ActionMenu label={actionsLabel} actions={actions} />}
           </div>
         </div>
         )}

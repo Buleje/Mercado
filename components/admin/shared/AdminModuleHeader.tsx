@@ -33,7 +33,7 @@
  *   </AdminModuleHeader>
  */
 
-import { PageTitle, CardTitle, Kicker } from "@buleje/design-system";
+import { PageTitle, Kicker } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { useModuleDepth } from "@/components/admin/shared/module-depth";
 import type { LucideIcon } from "@buleje/design-system/icons";
@@ -65,8 +65,9 @@ interface AdminModuleHeaderProps {
   /** Si true, omite el border-bottom (útil cuando el módulo empieza con filtros pegados). */
   noBorder?: boolean;
   /**
-   * `"auto"` (default) — el header se compacta solo cuando está anidado bajo
-   * otro módulo que ya puso su título (lo detecta `useModuleDepth`).
+   * `"auto"` (default) — anidado bajo otro módulo que ya puso su título (lo
+   * detecta `useModuleDepth`), el header NO se dibuja: la pestaña marcada
+   * arriba ya dice dónde estás. Sobreviven sólo sus `children` (acciones).
    * `"full"` — fuerza el editorial completo. Escape hatch para una superficie
    * que arranca pantalla nueva pero cuelga del panel de un tab en el árbol.
    */
@@ -86,58 +87,27 @@ export default function AdminModuleHeader({
   className,
 }: AdminModuleHeaderProps) {
   // Cuántos títulos de módulo hay arriba. >0 ⇒ este es un sub-módulo dentro
-  // de un hub y no necesita repetir el encabezado editorial entero.
+  // de un hub: la pestaña marcada ya lo nombra.
   const profundidad = useModuleDepth();
   const anidado = variant === "auto" && profundidad > 0;
-
-  // Nivel semántico: con un h1 arriba, este tiene que ser h2 (o h3 si el hub
-  // ya estaba anidado a su vez — pasa en Documentos → Facturación → Impuestos).
-  const nivel: "h1" | "h2" | "h3" = anidado
-    ? (profundidad === 1 ? "h2" : "h3")
-    : (as ?? "h1");
+  const nivel: "h1" | "h2" | "h3" = as ?? "h1";
 
   if (anidado) {
+    // Brandon 2026-09-07: «segundo nivel sin línea compacta, exactamente como
+    // Analytics Pro». Antes acá iba una línea `▎Título · descripción`; decía
+    // en prosa lo que la pestaña de arriba dice en un botón. Quedan sólo las
+    // acciones, a la derecha, para que cada botón siga donde el usuario lo
+    // conoce. Sin acciones no se dibuja nada — ni un contenedor vacío que
+    // gaste su margen.
+    if (!children) return null;
     return (
-      // Una sola línea: título + descripción + acciones. La regla vertical de
-      // acento a la izquierda dice "esto cuelga del título de arriba" sin
-      // gastar una línea en repetirlo. Sin border-bottom: la barra de
-      // pestañas que viene justo debajo ya trae su propia regla, y dos
-      // reglas seguidas leen como ruido.
-      <header
+      <div
         data-admin-module-header=""
-        className={cn(
-          "@container mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1",
-          "border-l-2 border-[var(--accent-muted)] pl-3",
-          className,
-        )}
+        data-admin-module-actions=""
+        className={cn("mb-3 flex flex-wrap items-center justify-end gap-2", className)}
       >
-        <div className="flex min-w-0 items-center gap-2">
-          {Icon && (
-            <Icon
-              className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] dark:text-zinc-500"
-              strokeWidth={1.5}
-              aria-hidden
-            />
-          )}
-          <CardTitle as={nivel} className="truncate">
-            {title}
-          </CardTitle>
-        </div>
-        {/* `div`, no `p`: la descripción acepta JSX del que llama y ya hubo
-            un caso de bloque inválido adentro de un párrafo. Se esconde en
-            angosto, igual que en el header completo. */}
-        {description && (
-          <div className="hidden @min-[34rem]:block min-w-0 text-[length:var(--ts-sm)] text-[var(--text-secondary)] dark:text-zinc-400">
-            <span aria-hidden className="mr-2 text-[var(--text-tertiary)]">·</span>
-            {description}
-          </div>
-        )}
-        {children && (
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            {children}
-          </div>
-        )}
-      </header>
+        {children}
+      </div>
     );
   }
 

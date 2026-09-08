@@ -242,7 +242,7 @@ describe("panel — encabezado del módulo en la misma banda que las pestañas",
     // en Inventario, 4 pestañas + 2 acciones: las pestañas envolvían y el
     // título quedaba junto a la segunda fila).
     expect(bar, "se perdió el criterio de cuándo el título entra en línea").toMatch(
-      /const tituloEnLinea = Boolean\(heading\) && tabs\.length <= \(heading\?\.actions \? \d+ : \d+\);/,
+      /const tituloEnLinea = bandaConTitulo && tabs\.length <= \(heading\?\.actions \? \d+ : \d+\);/,
     );
     // Y en línea el riel no envuelve por dentro: la clase de wrap sólo se
     // aplica cuando el título tiene su fila.

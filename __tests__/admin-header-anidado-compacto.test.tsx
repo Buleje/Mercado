@@ -1,11 +1,13 @@
 /**
- * Tests — encabezado de módulo anidado (compacto)
+ * Tests — encabezado de módulo anidado
  *
  * Lo que blindan (medido en navegador 2026-09-07, `?tab=analytics-pro`):
  * un hub dibujaba su título editorial de 39px y el módulo hijo dibujaba OTRO
  * igual, con dos `h1` en la misma pantalla y 111px de alto para repetir dónde
- * estás. Ahora el hijo se compacta SOLO: lo detecta `useModuleDepth`, que
- * `AdminTabBar` incrementa alrededor de su panel.
+ * estás. Primero el hijo se compactó a una línea; después Brandon pidió que
+ * el segundo nivel no repita título en absoluto («exactamente como Analytics
+ * Pro»): anidado, el header dibuja sólo sus acciones — o nada. Lo detecta
+ * `useModuleDepth`, que `AdminTabBar` incrementa alrededor de su panel.
  *
  * Si alguno de estos tests se pone rojo, lo más probable es que se haya
  * quitado el `<ModuleDepthProvider>` de `AdminTabBar` — sin él vuelven los
@@ -40,41 +42,38 @@ describe("AdminModuleHeader — nivel raíz", () => {
 });
 
 describe("AdminModuleHeader — anidado", () => {
-  it("baja a h2 y se compacta cuando hay un título arriba", () => {
+  it("no dibuja título ni descripción: sólo sus acciones, a la derecha", () => {
     render(
       <ModuleDepthProvider>
         <AdminModuleHeader
           eyebrow="No debería verse"
           title="Métricas del negocio"
           description="Ventas, productos y clientes."
-        />
+        >
+          <button type="button">Exportar</button>
+        </AdminModuleHeader>
       </ModuleDepthProvider>,
     );
 
-    // h1 → h2: dos h1 en una pantalla rompen la jerarquía del lector de pantalla.
-    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
-    const titulo = screen.getByRole("heading", { level: 2, name: "Métricas del negocio" });
-
-    const header = titulo.closest("header")!;
-    expect(header.className).toContain("border-l-2");
-    expect(header.className).not.toContain("border-b");
-
-    // El eyebrow se cae: el hub de arriba ya dijo en qué sección estás.
+    // Brandon 2026-09-07: el segundo nivel no repite en prosa lo que la
+    // pestaña del hub dice en un botón — ni siquiera en una línea compacta.
+    expect(screen.queryByRole("heading")).toBeNull();
+    expect(screen.queryByText("Métricas del negocio")).toBeNull();
+    expect(screen.queryByText(/Ventas, productos y clientes/)).toBeNull();
     expect(screen.queryByText("No debería verse")).toBeNull();
-    // La descripción sobrevive — es lo único que el título de arriba no dice.
-    expect(screen.getByText(/Ventas, productos y clientes/)).toBeTruthy();
+
+    // Las acciones sobreviven: cada botón sigue donde el usuario lo conoce.
+    const accion = screen.getByRole("button", { name: "Exportar" });
+    expect(accion.closest("[data-admin-module-actions]")).toBeTruthy();
   });
 
-  it("baja a h3 con dos niveles de hub (Documentos → Facturación → Impuestos)", () => {
-    render(
+  it("sin acciones no deja ni un contenedor vacío", () => {
+    const { container } = render(
       <ModuleDepthProvider>
-        <ModuleDepthProvider>
-          <AdminModuleHeader title="Impuestos e IGV" />
-        </ModuleDepthProvider>
+        <AdminModuleHeader title="Impuestos e IGV" description="Nada que ver acá." />
       </ModuleDepthProvider>,
     );
-
-    expect(screen.getByRole("heading", { level: 3, name: "Impuestos e IGV" })).toBeTruthy();
+    expect(container.innerHTML).toBe("");
   });
 
   it("`variant=\"full\"` es el escape hatch: fuerza el editorial completo", () => {
@@ -109,6 +108,8 @@ describe("AdminTabBar — es quien suma el nivel", () => {
     // sobre los 14 hubs con módulos anidados.
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1, name: "Análisis" })).toBeTruthy();
-    expect(screen.getByRole("heading", { level: 2, name: "Métricas del negocio" })).toBeTruthy();
+    // El hijo no repite título: ni h1 ni h2 — la pestaña «Analytics Pro» ya lo dice.
+    expect(screen.queryByRole("heading", { level: 2 })).toBeNull();
+    expect(screen.queryByText("Métricas del negocio")).toBeNull();
   });
 });

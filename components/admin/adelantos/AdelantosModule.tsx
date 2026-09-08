@@ -26,7 +26,6 @@ import {
 } from "@buleje/design-system/icons";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { AnalisisView } from "./AnalisisView";
 import CrearAdelantoModal from "./CrearAdelantoModal";
@@ -159,18 +158,11 @@ export default function AdelantosModule() {
 
   return (
     <div>
-      {/* Encabezado propio pero COMPACTO: cuelga de la banda «Mi Plata» y
-          module-depth lo baja a una línea (h2 + descripción, sin eyebrow ni
-          borde), así que la sección se nombra sin repetir el título grande
-          del padre. Antes lo pintaba Mi Plata vía CABECERA — hoy la banda
-          del padre es fija y cada sección dice su nombre acá. La acción
-          primaria sigue en la barra de pestañas, pegada a lo que se mira. */}
-      <AdminModuleHeader
-        title="Adelantos & Liquidaciones"
-        description="Adelantos de dinero a personas por servicios. Se liquidan con lo que te entregan (producto o servicio)."
-        icon={Coins}
-      />
-
+      {/* SIN encabezado propio: la pestaña «Adelantos» de Mi Plata ya dice
+          dónde estás (Brandon 2026-09-07: el segundo nivel no repite su
+          título — un header anidado no se dibuja, ver AdminModuleHeader).
+          La acción primaria va en la barra de pestañas, pegada a lo que se
+          está mirando. */}
       <AdminTabBar
         tabs={TABS}
         activeTab={tab}

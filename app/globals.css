@@ -3841,11 +3841,7 @@ body.tenant-storefront > nav[aria-label="Breadcrumb"] {
   }
 }
 
-/* La descripción del módulo, cuando comparte banda con las pestañas, cede en
-   pantallas bajas: una línea explicativa vale menos que una fila de datos.
-   El título y las pestañas se quedan siempre. */
-@media (max-height: 860px) {
-  [data-admin-tabbar] [data-tabbar-desc] {
-    display: none;
-  }
-}
+/* La descripción del módulo en la banda se ve también en pantallas bajas.
+   Se ocultaba a ≤860px de alto (una línea explicativa contra una fila de
+   datos); Brandon 2026-09-07, sobre su laptop de 768: la quiere ver. Cuesta
+   ~18px por módulo. */

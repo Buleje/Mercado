@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, GripVertical } from "@buleje/design-system/i
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
-import { ModuleDepthProvider } from "@/components/admin/shared/module-depth";
+import { ModuleDepthProvider, useModuleDepth } from "@/components/admin/shared/module-depth";
 import { PageTitle } from "@buleje/design-system";
 
 export interface AdminTab {
@@ -50,6 +50,10 @@ interface AdminTabBarProps {
    *
    * Con `heading`, el título y las pestañas de primer nivel ocupan una sola
    * banda. Reemplaza al <AdminModuleHeader> de arriba — no se usan los dos.
+   *
+   * Si la barra está ANIDADA (cuelga del panel de otra barra, module-depth
+   * > 0) el título no se dibuja: la pestaña del hub ya lo dice. Sobreviven
+   * `actions`, dentro del riel, a la derecha de las pestañas.
    */
   heading?: {
     title: string;
@@ -110,7 +114,10 @@ export default function AdminTabBar({
    * de fechas) medidos a 1366px salían con las pestañas en dos filas y el
    * título al lado de la segunda, como un pie de página.
    */
-  const tituloEnLinea = Boolean(heading) && tabs.length <= (heading?.actions ? 3 : 5);
+  // Sólo el módulo dueño de la página dibuja su identidad en la banda.
+  const profundidad = useModuleDepth();
+  const bandaConTitulo = Boolean(heading) && profundidad === 0;
+  const tituloEnLinea = bandaConTitulo && tabs.length <= (heading?.actions ? 3 : 5);
 
   /**
    * Cuando el contenedor se angosta y las pestañas bajan a su propia fila
@@ -118,7 +125,7 @@ export default function AdminTabBar({
    * `order`: la fila de arriba queda «título … acciones» y la de abajo, las
    * pestañas — igual que con el título en fila propia.
    */
-  const acciones = heading?.actions ? (
+  const acciones = bandaConTitulo && heading?.actions ? (
     <div
       className={cn(
         "ml-auto flex shrink-0 flex-wrap items-center gap-2 pb-2",
@@ -128,6 +135,8 @@ export default function AdminTabBar({
       {heading.actions}
     </div>
   ) : null;
+  // Anidada: las acciones van dentro del riel, junto al `rightSlot`.
+  const accionesEnRiel = !bandaConTitulo && heading?.actions ? heading.actions : null;
   const idDeTab = (id: string) => `${barraId}-tab-${id}`;
   const idDelPanel = `${barraId}-panel`;
 
@@ -392,11 +401,11 @@ export default function AdminTabBar({
         // Con `heading`, la identidad del módulo y las pestañas comparten una
         // sola banda y una sola regla. Los chevrons de scroll son `absolute`,
         // así que el tablist puede ser hermano del título sin más.
-        heading && "flex flex-wrap items-end justify-between gap-x-6 gap-y-1 border-b border-[var(--rule-base)]",
+        bandaConTitulo && "flex flex-wrap items-end justify-between gap-x-6 gap-y-1 border-b border-[var(--rule-base)]",
         className,
       )}
     >
-      {heading && (
+      {bandaConTitulo && heading && (
         <div className={cn("flex min-w-0 items-start gap-2.5 pb-2", !tituloEnLinea && "basis-full")}>
           {heading.icon && (
             <heading.icon
@@ -410,9 +419,9 @@ export default function AdminTabBar({
               {heading.title}
             </PageTitle>
             {/* `div`, no `p`: la descripción acepta JSX del que llama. Se
-                esconde con el contenedor angosto —ahí lo que importa es el
-                título y las pestañas— y en pantallas bajas, donde cada línea
-                le saca altura a los datos (regla en globals.css). */}
+                esconde sólo con el contenedor angosto —ahí lo que importa es
+                el título y las pestañas—. En pantallas bajas se queda: Brandon
+                2026-09-07 la quiere ver en su laptop de 768. */}
             {heading.description && (
               <div
                 data-tabbar-desc=""
@@ -425,7 +434,7 @@ export default function AdminTabBar({
           {!tituloEnLinea && acciones}
         </div>
       )}
-      {!heading && canScrollLeft && (
+      {!bandaConTitulo && canScrollLeft && (
         <button
           onClick={() => scrollTabs("left")}
           className="absolute left-0 top-0 bottom-0 z-10 flex w-10 items-center bg-linear-to-r from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90 to-transparent transition-opacity duration-[var(--dur-base)]"
@@ -448,7 +457,7 @@ export default function AdminTabBar({
           // La regla es del tablist salvo que la comparta con el título: con
           // `heading` la dibuja la banda de afuera, y dos reglas pegadas leen
           // como un borde doble.
-          heading
+          bandaConTitulo
             ? cn(
                 "min-w-0",
                 tituloEnLinea
@@ -540,8 +549,9 @@ export default function AdminTabBar({
 
         {/* Slot derecho — status chip u otras acciones contextuales.
             ml-auto empuja todo a la derecha, pr-2 margen del borde. */}
-        {rightSlot && (
-          <div className="ml-auto flex shrink-0 items-center pr-2">
+        {(rightSlot || accionesEnRiel) && (
+          <div className="ml-auto flex shrink-0 items-center gap-2 pr-2">
+            {accionesEnRiel}
             {rightSlot}
           </div>
         )}
