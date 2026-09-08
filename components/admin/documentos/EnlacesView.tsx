@@ -120,7 +120,7 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-white p-10 text-sm text-[var(--text-tertiary)]">
+      <div className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-sm text-[var(--text-tertiary)]">
         <Loader2 className="h-4 w-4 animate-spin" /> Cargando enlaces…
       </div>
     );
@@ -135,7 +135,7 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
   }
   if (links.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white p-10 text-center">
+      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
         <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"><Link2 className="h-7 w-7" /></div>
         <p className="text-lg font-extrabold text-[var(--text-primary)]">No compartiste nada todavía</p>
         <p className="mt-1.5 text-sm text-[var(--text-secondary)]">Cuando mandes un documento o una carpeta por enlace, acá vas a ver quién puede abrirlo, cuántas veces lo abrieron y vas a poder cortarlo cuando quieras.</p>
@@ -155,7 +155,7 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
         </div>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-white">
+      <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-2.5">
           <p className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
             <Link2 className="h-3.5 w-3.5" /> {activos.length} {activos.length === 1 ? "enlace activo" : "enlaces activos"} de {links.length}
@@ -234,7 +234,7 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
                 <div className="flex shrink-0 items-center gap-1">
                   {estado === "activo" && (
                     <>
-                      <button onClick={() => copiar(l)} className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary" aria-label={`Copiar el enlace de ${l.targetName}`} title="Copiar el enlace">
+                      <button onClick={() => copiar(l)} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary" aria-label={`Copiar el enlace de ${l.targetName}`} title="Copiar el enlace">
                         {copiado === l.id ? <Check className="h-4 w-4 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" /> : <Copy className="h-4 w-4" />}
                       </button>
                       <a href={rutaDe(l)} target="_blank" rel="noopener noreferrer" className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary" aria-label={`Abrir el enlace de ${l.targetName}`} title="Abrir como lo ve quien lo recibe">
@@ -246,7 +246,7 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
                     <button
                       onClick={() => cortar(l)}
                       disabled={cortando === l.id}
-                      className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error)] disabled:opacity-50"
+                      className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error)] disabled:opacity-50"
                       aria-label={`Cortar el enlace de ${l.targetName}`}
                       title="Cortar el enlace"
                     >

@@ -52,7 +52,7 @@ export default function VelocidadDrive() {
   const conListado = (dias ?? []).filter((d) => d.tramos.listado && (d.tramos.listado.n ?? 0) > 0);
   if (conListado.length === 0) {
     return (
-      <div className="rounded-2xl border border-[var(--rule-base)] dark:border-white/10 p-4">
+      <div className="rounded-2xl border border-[var(--rule-base)] p-4">
         <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">
           Cuánto tarda en abrir
         </CardTitle>
@@ -85,7 +85,7 @@ export default function VelocidadDrive() {
   const maximo = Math.max(...conListado.map((d) => d.tramos.listado?.promedio ?? 0), 1);
 
   return (
-    <div className="rounded-2xl border border-[var(--rule-base)] dark:border-white/10 p-4 space-y-3">
+    <div className="rounded-2xl border border-[var(--rule-base)] p-4 space-y-3">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
@@ -144,7 +144,7 @@ export default function VelocidadDrive() {
               <span className="w-12 shrink-0 text-[var(--text-tertiary)] tabular-nums">
                 {d.dia.slice(5)}
               </span>
-              <span className="flex-1 h-2 rounded-full bg-[var(--surface-sunken)] dark:bg-white/10 overflow-hidden">
+              <span className="flex-1 h-2 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
                 <span
                   className={cn(
                     "block h-full rounded-full",

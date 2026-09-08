@@ -62,8 +62,8 @@ function Carnet({ f, avisos }: { f: CtpFicha; avisos: AvisoFicha[] }) {
   const estado = criticos > 0
     ? { texto: `${criticos} ${criticos === 1 ? "problema crítico" : "problemas críticos"}`, clase: "bg-[var(--data-error-500)] text-white", Icono: AlertCircle }
     : avisos.length > 0
-      ? { texto: `${avisos.length} ${avisos.length === 1 ? "aviso" : "avisos"}`, clase: "bg-white text-[var(--text-primary)]", Icono: AlertTriangle }
-      : { texto: "Lista para emitir", clase: "bg-white text-[var(--text-primary)]", Icono: CheckCircle2 };
+      ? { texto: `${avisos.length} ${avisos.length === 1 ? "aviso" : "avisos"}`, clase: "bg-[var(--surface-raised)] text-[var(--text-primary)]", Icono: AlertTriangle }
+      : { texto: "Lista para emitir", clase: "bg-[var(--surface-raised)] text-[var(--text-primary)]", Icono: CheckCircle2 };
 
   return (
     <div

@@ -72,7 +72,7 @@ export function Cuadro({
   pie?: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)]">
+    <section className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] ">
       <header className="border-b border-[var(--rule-base)] px-4 py-3">
         <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">{titulo}</CardTitle>
         <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitulo}</p>

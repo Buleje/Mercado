@@ -125,7 +125,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
             type="button"
             onClick={() => void saveTodo()}
             disabled={savingId !== null}
-            className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-lg border-2 border-[var(--data-warning-500)] px-3 text-sm font-bold text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)] disabled:opacity-50 dark:text-[var(--data-warning-500)] dark:hover:bg-transparent"
+            className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--data-warning-500)] px-3 text-sm font-bold text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)] disabled:opacity-50 dark:text-[var(--data-warning-500)] dark:hover:bg-transparent"
           >
             {savingId ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <CheckCircle2 className="h-4 w-4" aria-hidden />}
             Guardar todo
@@ -239,13 +239,13 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
                         if (e.key === "Escape") setDraft((dr) => { const n = { ...dr }; delete n[d.id]; return n; });
                       }}
                       aria-label={`Valor de venta del despacho ${d.id}`}
-                      placeholder="venta" className="h-11 w-28 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
+                      placeholder="venta" className="h-11 w-28 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent)]" />
                   </div>
                   <div className="min-w-[6rem] text-right">
                     <p className="text-xs text-[var(--text-tertiary)]">margen</p>
                     <p className={`text-sm font-bold ${d.margen == null ? "text-[var(--text-tertiary)]" : d.margen < 0 ? "text-[var(--data-error-700)]" : "text-[var(--data-success-700)]"}`} title={d.margen == null ? MOTIVO_LABEL[d.motivo] ?? d.motivo : ""}>{d.margen == null ? MOTIVO_LABEL[d.motivo] ?? "—" : `${money(d.margen, pnl.moneda)} · ${pct(d.margenPct)}`}</p>
                   </div>
-                  <button type="button" onClick={() => void saveVenta(d.id)} disabled={savingId === d.id || !dirty} className="inline-flex h-11 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
+                  <button type="button" onClick={() => void saveVenta(d.id)} disabled={savingId === d.id || !dirty} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
                     {savingId === d.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Guardar
                   </button>
                 </div>

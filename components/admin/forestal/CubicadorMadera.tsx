@@ -1829,14 +1829,14 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   onChange={(e) => setBusqueda(e.target.value)}
                   placeholder="Buscar medida (2x8, 8, tornillo…)"
                   aria-label="Buscar por medida, especie o tipo"
-                  className="h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-base)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
+                  className="h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-base)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
                 />
               </div>
               <select
                 value={filtroTipo}
                 onChange={(e) => setFiltroTipo(e.target.value as TipoComercial | "")}
                 aria-label="Filtrar por tipo"
-                className="h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+                className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
               >
                 <option value="">Todos los tipos</option>
                 {tiposLote.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -1845,7 +1845,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 value={filtroEspecie}
                 onChange={(e) => setFiltroEspecie(e.target.value)}
                 aria-label="Filtrar por especie"
-                className="h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+                className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
               >
                 <option value="">Todas las especies</option>
                 {especiesLote.map((e) => <option key={e} value={e}>{e}</option>)}
@@ -1856,7 +1856,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   value={filtroDueno}
                   onChange={(e) => setFiltroDueno(e.target.value)}
                   aria-label="Filtrar por dueño"
-                  className="h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+                  className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-base)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
                 >
                   <option value="">Todos los dueños</option>
                   {duenosLote.map((d) => <option key={d} value={d}>{d}</option>)}
@@ -1868,7 +1868,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   <span className="text-[length:var(--ts-xs)] font-bold tabular-nums text-[var(--text-tertiary)]">
                     {filasVisibles.length} de {rows.length}
                   </span>
-                  <button type="button" onClick={limpiarFiltros} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">
+                  <button type="button" onClick={limpiarFiltros} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">
                     <X className="h-4 w-4" /> Limpiar
                   </button>
                 </>
@@ -1882,7 +1882,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   title="Elegir columnas visibles de la tabla"
                   aria-label="Elegir columnas visibles"
                   aria-expanded={colsMenuOpen}
-                  className={`inline-flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-bold transition ${colsMenuOpen ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
+                  className={`inline-flex h-10 items-center gap-1.5 rounded-xl border px-3 text-sm font-bold transition ${colsMenuOpen ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
                 >
                   <Columns3 className="h-4 w-4" /> Columnas
                 </button>
@@ -2062,7 +2062,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                           value={r.especie ?? ""}
                           onChange={(e) => editarEspecie(r.id, e.target.value)}
                           aria-label="Especie de la pieza"
-                          className="max-w-[110px] rounded-md border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+                          className="max-w-[110px] rounded-xl border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
                         >
                           <option value="">—</option>
                           {ESPECIES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -2323,7 +2323,7 @@ function DuenoCell({ valor, onCommit }: { valor: string; onCommit: (v: string) =
       onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
       aria-label="Dueño de la pieza"
       placeholder="—"
-      className="w-[110px] rounded-md border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+      className="w-[110px] rounded-xl border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
     />
   );
 }
@@ -2371,7 +2371,7 @@ function Num({ v, onV, etiqueta, ancho = "w-14", fila, col, onKeyDown }: {
         const n = Number(limpio);
         if (limpio !== "" && Number.isFinite(n) && n > 0) onV(n);
       }}
-      className={`${ancho} rounded-md border border-transparent bg-transparent px-1 py-0.5 font-mono font-bold tabular-nums text-[var(--text-primary)] outline-none hover:border-[var(--rule-base)] focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] focus:ring-2 focus:ring-[var(--accent)]/25`}
+      className={`${ancho} rounded-xl border border-transparent bg-transparent px-1 py-0.5 font-mono font-bold tabular-nums text-[var(--text-primary)] outline-none hover:border-[var(--rule-base)] focus:border-[var(--accent)] focus:bg-[var(--surface-canvas)] focus:ring-2 focus:ring-[var(--accent)]/25`}
     />
   );
 }
@@ -2385,7 +2385,7 @@ function Dim({ v, u, onU, onV, etiqueta, fila, col, onKeyDown }: {
       {onV
         ? <Num v={v} onV={onV} etiqueta={`${etiqueta ?? "Medida"} (${u})`} fila={fila} col={col} onKeyDown={onKeyDown} />
         : <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{v}</span>}
-      <select value={u} onChange={(e) => onU(e.target.value as Unidad)} aria-label={`Unidad de ${etiqueta ?? "la medida"}`} className="rounded-md border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none">
+      <select value={u} onChange={(e) => onU(e.target.value as Unidad)} aria-label={`Unidad de ${etiqueta ?? "la medida"}`} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none">
         {UNIDADES.map((x) => <option key={x.v} value={x.v}>{x.label}</option>)}
       </select>
     </span>

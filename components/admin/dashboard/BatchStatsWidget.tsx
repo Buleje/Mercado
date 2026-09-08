@@ -38,8 +38,8 @@ function StatCard({
   if (loading) {
     return (
       <div className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4 animate-pulse">
-        <div className="h-3 w-20 bg-gray-200 dark:bg-surface rounded mb-3" />
-        <div className="h-8 w-12 bg-gray-200 dark:bg-surface rounded" />
+        <div className="h-3 w-20 bg-[var(--rule-base)] rounded mb-3" />
+        <div className="h-8 w-12 bg-[var(--rule-base)] rounded" />
       </div>
     );
   }
@@ -146,7 +146,7 @@ export default function BatchStatsWidget() {
           onClick={fetchStats}
           disabled={loading}
           title="Actualizar"
-          className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-40"
+          className="h-7 w-7 flex items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors disabled:opacity-40"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
         </button>

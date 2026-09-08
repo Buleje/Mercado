@@ -59,7 +59,7 @@ export default function CtpHistoriaLoteView({ loteInicial }: { loteInicial?: str
           value={loteId ?? ""}
           onChange={(e) => setLoteId(e.target.value || null)}
           aria-label="Elegí el lote"
-          className="h-9 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
+          className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
         >
           {cargandoLotes && <option value="">Cargando lotes…</option>}
           {lotes.map((l) => (

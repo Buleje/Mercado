@@ -551,7 +551,7 @@ export default function CtpConsumosView({
 
   if (cargando) {
     return (
-      <div className="flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-white px-4 py-6 text-sm text-[var(--text-secondary)] dark:bg-[var(--surface-raised)]">
+      <div className="flex items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-6 text-sm text-[var(--text-secondary)] ">
         <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
         Recorriendo la cadena de custodia del período…
       </div>

@@ -115,7 +115,7 @@ export default function CtpOperacionSwitcher({ vista }: { vista: string }) {
               role="menuitem"
               disabled={o.actual || !o.accesible || cambiando != null}
               onClick={() => void cambiar(o.slug)}
-              className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-sunken)] disabled:cursor-default disabled:opacity-70"
+              className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-[var(--surface-sunken)] disabled:cursor-default disabled:opacity-70"
             >
               <span className="font-bold text-[var(--text-primary)]">{o.nombre}</span>
               <span className="text-xs text-[var(--text-tertiary)]">
@@ -139,7 +139,7 @@ export default function CtpOperacionSwitcher({ vista }: { vista: string }) {
                 setAbierto(false);
                 setNueva(true);
               }}
-              className="mt-1 flex w-full items-center gap-2 rounded-lg border-t border-[var(--rule-soft)] px-3 py-2 text-left text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-primary"
+              className="mt-1 flex w-full items-center gap-2 rounded-xl border-t border-[var(--rule-soft)] px-3 py-2 text-left text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-primary"
             >
               <Plus className="h-4 w-4" /> Nueva operación…
             </button>

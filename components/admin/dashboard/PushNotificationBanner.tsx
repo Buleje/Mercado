@@ -147,7 +147,7 @@ export default function PushNotificationBanner() {
               onClick={handleActivate}
               disabled={state === "loading"}
               className={cn(
-                "min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 rounded-lg text-xs font-semibold transition-colors shrink-0",
+                "min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 rounded-xl text-xs font-semibold transition-colors shrink-0",
                 state === "error"
                   ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/60 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50"
                   : "bg-primary/10 dark:bg-primary/10 text-white hover:bg-primary/10 dark:hover:bg-primary/15 disabled:opacity-50 disabled:cursor-not-allowed"

@@ -141,7 +141,7 @@ export default function CtpDirectorioView() {
             aria-pressed={pestaña === p.id}
             title={p.id === "vehiculos" ? "Las placas que ya viajaron" : ROL_DESCRIPCION[p.id as RolParte]}
             onClick={() => setPestaña(p.id)}
-            className={`inline-flex h-10 items-center gap-1.5 rounded-lg border-2 px-3 text-sm font-bold transition-colors ${
+            className={`inline-flex h-10 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-bold transition-colors ${
               pestaña === p.id
                 ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
@@ -177,7 +177,7 @@ export default function CtpDirectorioView() {
             type="button"
             aria-pressed={soloIncompletos}
             onClick={() => setSoloIncompletos((v) => !v)}
-            className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border-2 px-3 text-sm font-bold transition-colors ${
+            className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-bold transition-colors ${
               soloIncompletos
                 ? "border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"

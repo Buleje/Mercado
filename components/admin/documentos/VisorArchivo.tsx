@@ -218,7 +218,7 @@ function VisorPdfPaginas({ docId, nombre }: { docId: string; nombre: string }) {
             src={`/api/admin/documents/${docId}/thumbnail?page=${i + 1}&s=2&r=${VERSION_MINIATURA}`}
             alt={`${nombre} — página ${i + 1} de ${paginas}`}
             loading={i < 2 ? "eager" : "lazy"}
-            className="w-full rounded-md border border-[var(--rule-base)] bg-white shadow-sm"
+            className="w-full rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-sm"
           />
         ))}
       </div>

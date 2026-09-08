@@ -256,7 +256,7 @@ function PanelRevision({ hallazgos, onCerrar }: { hallazgos: HallazgoRevision[];
             ? <><ShieldCheck className="h-4 w-4 text-[var(--data-success-600)] dark:text-[var(--data-success-500)]" aria-hidden /> Todo cuadra: no hay nada que corregir antes de registrar.</>
             : <><AlertTriangle className="h-4 w-4 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden /> Repaso antes de registrar</>}
         </span>
-        <button type="button" onClick={onCerrar} aria-label="Cerrar el repaso" className="rounded-lg p-1 text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]">
+        <button type="button" onClick={onCerrar} aria-label="Cerrar el repaso" className="rounded-xl p-1 text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -1632,7 +1632,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                                MISMO teal del acento (medido con
                                getComputedStyle), así que el color se perdía sin
                                que nada fallara. */
-                            className={`h-10 w-full min-w-[150px] rounded-lg border-2 bg-[var(--surface-raised)] px-1 text-sm font-bold outline-none focus:border-[var(--accent)] ${directa ? "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`}
+                            className={`h-10 w-full min-w-[150px] rounded-xl border-2 bg-[var(--surface-raised)] px-1 text-sm font-bold outline-none focus:border-[var(--accent)] ${directa ? "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`}
                           >
                             <option value="rolliza">Rolliza (troza)</option>
                             <option value="aserrada">Aserrada directa</option>
@@ -1644,7 +1644,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                       key: "permiso",
                       node: (
                         <td className="px-3 py-2.5">
-                          <input value={b.permiso ?? ""} onChange={(e) => editar(b.id, "permiso", e.target.value)} placeholder="19-SEC/REG-…" aria-label="N° de permiso de origen del bloque" title="Título habilitante de origen — dos permisos de la misma especie nunca se combinan en el desglose de abajo" className="h-10 w-full min-w-[130px] rounded-lg border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 font-mono text-sm text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]" />
+                          <input value={b.permiso ?? ""} onChange={(e) => editar(b.id, "permiso", e.target.value)} placeholder="19-SEC/REG-…" aria-label="N° de permiso de origen del bloque" title="Título habilitante de origen — dos permisos de la misma especie nunca se combinan en el desglose de abajo" className="h-10 w-full min-w-[130px] rounded-xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 font-mono text-sm text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]" />
                         </td>
                       ),
                     },
@@ -1652,7 +1652,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                       key: "especie",
                       node: (
                         <td className="px-3 py-2.5">
-                          <select value={b.especie} onChange={(e) => editar(b.id, "especie", e.target.value)} aria-label="Especie del bloque" className="h-10 w-full min-w-[110px] rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
+                          <select value={b.especie} onChange={(e) => editar(b.id, "especie", e.target.value)} aria-label="Especie del bloque" className="h-10 w-full min-w-[110px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
                             <option value="">Sin especie</option>
                             {ESPECIES_MADERA.map((s) => <option key={s} value={s}>{s}</option>)}
                           </select>
@@ -1671,7 +1671,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                             placeholder={directa ? "8" : "20"}
                             aria-label={directa ? "Metros cúbicos de madera ya aserrada" : "Metros cúbicos de rolliza"}
                             title={directa ? "m³ (A): la madera ya aserrada que entró. Es exactamente lo que este bloque ampara." : "m³ (R): la troza tal como llegó, antes de aserrar."}
-                            className={`h-10 w-24 rounded-lg border-2 bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${directa ? "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`}
+                            className={`h-10 w-24 rounded-xl border-2 bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${directa ? "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`}
                           />
                         </td>
                       ),
@@ -1682,7 +1682,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                          escribirlo, igual que el % aprovechable. */
                       node: (
                         <td className="px-3 py-2.5">
-                          <input value={b.dias ?? ""} onChange={(e) => editar(b.id, "dias", e.target.value)} inputMode="numeric" placeholder="1" aria-label="Días de aserrío del bloque" title="Se reparte lo amparado entre estas jornadas" className={`h-10 w-16 rounded-lg border-2 bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.dias == null || b.dias <= 1 ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`} />
+                          <input value={b.dias ?? ""} onChange={(e) => editar(b.id, "dias", e.target.value)} inputMode="numeric" placeholder="1" aria-label="Días de aserrío del bloque" title="Se reparte lo amparado entre estas jornadas" className={`h-10 w-16 rounded-xl border-2 bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.dias == null || b.dias <= 1 ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`} />
                         </td>
                       ),
                     },
@@ -1696,7 +1696,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                             onChange={(e) => editar(b.id, "fecha", e.target.value)}
                             aria-label="Fecha en que se aserró el bloque"
                             title="El día que va al Libro de Operaciones — con más de un día, el día en que arrancó"
-                            className={`h-10 w-[9.5rem] rounded-lg border-2 bg-[var(--surface-raised)] px-2 font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${!b.fecha ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`}
+                            className={`h-10 w-[9.5rem] rounded-xl border-2 bg-[var(--surface-raised)] px-2 font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${!b.fecha ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`}
                           />
                         </td>
                       ),
@@ -1713,7 +1713,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                           {directa ? (
                             <span className="block text-right font-mono text-sm tabular-nums text-[var(--text-tertiary)]" title="No aplica: la madera ya vino aserrada">—</span>
                           ) : (
-                            <input value={valorTexto(b.id, "aprovechablePct", b.aprovechablePct, true)} onChange={onCambioDecimal(b.id, "aprovechablePct")} onBlur={onBlurDecimal(b.id, "aprovechablePct")} inputMode="decimal" placeholder={String(APROVECHABLE_DEFAULT)} aria-label="Porcentaje aprovechable del bloque" title={b.aprovechablePct == null ? `Supuesto: ${APROVECHABLE_DEFAULT} % (centro del rango normal de aserrío). Escribí el tuyo.` : undefined} className={`h-10 w-20 rounded-lg border-2 bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.aprovechablePct == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`} />
+                            <input value={valorTexto(b.id, "aprovechablePct", b.aprovechablePct, true)} onChange={onCambioDecimal(b.id, "aprovechablePct")} onBlur={onBlurDecimal(b.id, "aprovechablePct")} inputMode="decimal" placeholder={String(APROVECHABLE_DEFAULT)} aria-label="Porcentaje aprovechable del bloque" title={b.aprovechablePct == null ? `Supuesto: ${APROVECHABLE_DEFAULT} % (centro del rango normal de aserrío). Escribí el tuyo.` : undefined} className={`h-10 w-20 rounded-xl border-2 bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.aprovechablePct == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--rule-base)] text-[var(--text-primary)]"}`} />
                           )}
                         </td>
                       ),
@@ -1763,7 +1763,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                                 inputMode="decimal"
                                 placeholder={fmtM3((Number(b.m3) || 0) * (ap / 100))}
                                 aria-label="Tope de metros cúbicos que puede amparar el bloque"
-                                className={`h-7 w-24 rounded-md border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.amparaManualM3 == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
+                                className={`h-7 w-24 rounded-xl border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.amparaManualM3 == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]" : "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
                               />
                             )}
                           </TopeDeBloque>
@@ -1796,7 +1796,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                               inputMode="numeric"
                               placeholder="todas"
                               aria-label={directa ? "Piezas de la madera ya aserrada" : "Tope de piezas del bloque"}
-                              className={`h-7 w-16 rounded-md border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.piezasManual == null
+                              className={`h-7 w-16 rounded-xl border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.piezasManual == null
                                 ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]"
                                 : "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
                             />
@@ -1808,7 +1808,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                       key: "costo",
                       node: (
                         <td className="px-3 py-2.5">
-                          <input value={valorTexto(b.id, "costoM3", b.costoM3, true)} onChange={onCambioDecimal(b.id, "costoM3")} onBlur={onBlurDecimal(b.id, "costoM3")} inputMode="decimal" placeholder="opcional" aria-label="Costo por metro cúbico de rolliza" className="h-10 w-24 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+                          <input value={valorTexto(b.id, "costoM3", b.costoM3, true)} onChange={onCambioDecimal(b.id, "costoM3")} onBlur={onBlurDecimal(b.id, "costoM3")} inputMode="decimal" placeholder="opcional" aria-label="Costo por metro cúbico de rolliza" className="h-10 w-24 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
                         </td>
                       ),
                     },
@@ -1861,7 +1861,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                           este bloque en el desglose de abajo: aparear las dos
                           vistas dejó de exigir leer la etiqueta en las dos. */}
                       <td className="border-l-[5px] py-2.5 pl-2 pr-3" style={{ borderLeftColor: colorDeBloque(indiceBloque.get(b.id)) }}>
-                        <input value={b.etiqueta} onChange={(e) => editar(b.id, "etiqueta", e.target.value)} placeholder={directa ? "Compra 12/08" : "GTF-0231"} aria-label="Etiqueta del bloque de rolliza" className="h-10 w-full min-w-[140px] rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+                        <input value={b.etiqueta} onChange={(e) => editar(b.id, "etiqueta", e.target.value)} placeholder={directa ? "Compra 12/08" : "GTF-0231"} aria-label="Etiqueta del bloque de rolliza" className="h-10 w-full min-w-[140px] rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
                       </td>
                       {celdas.filter((c) => cols[c.key]).map((c) => <Fragment key={c.key}>{c.node}</Fragment>)}
                       <td className="px-3 py-2.5 text-right">

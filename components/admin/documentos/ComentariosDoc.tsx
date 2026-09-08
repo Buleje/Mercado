@@ -180,7 +180,7 @@ export default function ComentariosDoc({ docId }: { docId: string }) {
                   onClick={() => borrar(c.id)}
                   title="Borrar la observación (sólo la tuya)"
                   aria-label="Borrar la observación"
-                  className="rounded-lg p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error)]"
+                  className="rounded-xl p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error)]"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>

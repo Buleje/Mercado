@@ -585,13 +585,13 @@ export default function TurnosModule() {
         <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-xl p-1 w-fit">
           <button
             onClick={() => { setMainTab("turnos"); try { localStorage.setItem("turnos-subtab", "turnos"); } catch {} }}
-            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "turnos" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+            className={cn("px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "turnos" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
           >
             <Clock className="h-3.5 w-3.5" /> Turnos
           </button>
           <button
             onClick={() => { setMainTab("cajeros"); try { localStorage.setItem("turnos-subtab", "cajeros"); } catch {} }}
-            className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "cajeros" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
+            className={cn("px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5", mainTab === "cajeros" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)]")}
           >
             <User className="h-3.5 w-3.5" /> Cajeros
           </button>
@@ -725,7 +725,7 @@ export default function TurnosModule() {
                           </div>
                         </div>
                         {/* Mini performance bar */}
-                        <div className="h-1.5 bg-[var(--surface-sunken)] dark:bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
                           <div
                             className={cn("h-full rounded-full transition-all", isTop ? "bg-[var(--data-warning-500)]" : "bg-primary")}
                             style={{ width: `${barWidth}%` }}
@@ -749,7 +749,7 @@ export default function TurnosModule() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-base">
                       <thead>
-                        <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left bg-gray-50/50 dark:bg-surface/30">
+                        <tr className="border-b border-[var(--rule-soft)] text-left bg-gray-50/50 dark:bg-surface/30">
                           <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide w-12 text-center">#</th>
                           <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Cajero</th>
                           <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide text-right">Turnos</th>
@@ -972,7 +972,7 @@ export default function TurnosModule() {
                         id={id}
                         value={selectedCajero}
                         onChange={e => setSelectedCajero(e.target.value)}
-                        className="flex-1 h-11 px-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                        className="flex-1 h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       >
                         <option value="">Yo mismo (usuario actual)</option>
                         {cajeros.map(c => (
@@ -1000,7 +1000,7 @@ export default function TurnosModule() {
                   value={efectivoInicial}
                   onChange={e => setEfectivoInicial(e.target.value)}
                   placeholder="S/ 0.00"
-                  className="w-full h-11 px-4 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-lg font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
+                  className="w-full h-11 px-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-lg font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
                 />
                 <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Dinero que abre en la caja al inicio del turno.</p>
               </Field>
@@ -1016,10 +1016,10 @@ export default function TurnosModule() {
                       type="button"
                       onClick={() => setEfectivoInicial(String(amount))}
                       className={cn(
-                        "px-4 py-2 rounded-lg text-sm font-semibold border transition-colors",
+                        "px-4 py-2 rounded-xl text-sm font-semibold border transition-colors",
                         active
                           ? "bg-primary text-white border-primary"
-                          : "bg-white dark:bg-white/5 text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
+                          : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-primary"
                       )}
                     >
                       S/ {amount}
@@ -1077,7 +1077,7 @@ export default function TurnosModule() {
                       value={metaInput}
                       onChange={e => setMetaInput(e.target.value)}
                       autoFocus
-                      className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-white/5 text-lg font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="flex-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-lg font-bold tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div className="flex gap-2">
@@ -1088,14 +1088,14 @@ export default function TurnosModule() {
                         try { localStorage.setItem("turno-meta-ventas", String(val)); } catch {}
                         setShowMetaConfig(false);
                       }}
-                      className="flex-1 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                      className="flex-1 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
                     >
                       Guardar
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowMetaConfig(false)}
-                      className="px-3 py-2 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-white/50 dark:hover:bg-white/5 transition-colors"
+                      className="px-3 py-2 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-white/50 dark:hover:bg-white/5 transition-colors"
                     >
                       Cancelar
                     </button>
@@ -1187,8 +1187,8 @@ export default function TurnosModule() {
                     {DIAS_SEMANA.map((dia, idx) => {
                       const turnos = weekMap.get(idx) || [];
                       return (
-                        <div key={dia} className={cn("border-r border-[var(--rule-soft)] dark:border-white/5 last:border-r-0", idx < 5 ? "" : "bg-gray-50/50 dark:bg-white/[0.02]")}>
-                          <div className="px-2 py-2.5 border-b border-[var(--rule-soft)] dark:border-white/5 text-center">
+                        <div key={dia} className={cn("border-r border-[var(--rule-soft)] last:border-r-0", idx < 5 ? "" : "bg-gray-50/50 dark:bg-white/[0.02]")}>
+                          <div className="px-2 py-2.5 border-b border-[var(--rule-soft)] text-center">
                             <p className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">{dia}</p>
                           </div>
                           <div className="p-2 min-h-[110px] space-y-1.5">
@@ -1233,7 +1233,7 @@ export default function TurnosModule() {
                   <div className="overflow-x-auto -mx-4 sm:mx-0">
                     <table className="w-full min-w-[550px] sm:min-w-0 text-sm">
                       <thead>
-                        <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left">
+                        <tr className="border-b border-[var(--rule-soft)] text-left">
                           <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)]">Cajero</th>
                           <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Turnos</th>
                           <th className="px-4 py-3 font-semibold text-[var(--text-tertiary)] text-right">Ventas total</th>
@@ -1282,8 +1282,8 @@ export default function TurnosModule() {
             <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Historial de turnos</CardTitle>
             {historial.length > 0 && (
               <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-lg p-0.5">
-                <button onClick={() => setHistorialView("tabla")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "tabla" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted")}>Tabla</button>
-                <button onClick={() => setHistorialView("timeline")} className={cn("px-2.5 py-1 rounded-md text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "timeline" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted")}>Timeline</button>
+                <button onClick={() => setHistorialView("tabla")} className={cn("px-2.5 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "tabla" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted")}>Tabla</button>
+                <button onClick={() => setHistorialView("timeline")} className={cn("px-2.5 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-all", historialView === "timeline" ? "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] " : "text-[var(--text-secondary)] dark:text-muted")}>Timeline</button>
               </div>
             )}
           </div>
@@ -1336,7 +1336,7 @@ export default function TurnosModule() {
                   <div key={t.id} className="flex gap-3">
                     <div className="flex flex-col items-center">
                       <div className={cn("w-3 h-3 rounded-full shrink-0 mt-1.5", cuadro === null ? "bg-[var(--rule-base)]" : cuadro ? "bg-primary/10" : "bg-[var(--data-warning-500)]")} />
-                      {idx < Math.min(historial.length, 10) - 1 && <div className="w-0.5 flex-1 bg-[var(--rule-soft)] dark:bg-gray-700 my-1" />}
+                      {idx < Math.min(historial.length, 10) - 1 && <div className="w-0.5 flex-1 bg-[var(--rule-soft)] my-1" />}
                     </div>
                     <div className="pb-4 flex-1 min-w-0">
                       <p className="text-sm font-bold text-[var(--text-primary)] truncate">
@@ -1356,7 +1356,7 @@ export default function TurnosModule() {
               <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <table className="w-full min-w-[650px] sm:min-w-0 text-base">
                   <thead>
-                    <tr className="border-b border-[var(--rule-soft)] dark:border-white/5 text-left bg-gray-50/50 dark:bg-surface/30">
+                    <tr className="border-b border-[var(--rule-soft)] text-left bg-gray-50/50 dark:bg-surface/30">
                       <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Operador</th>
                       <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Apertura</th>
                       <th className="px-4 py-3.5 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide hidden sm:table-cell">Cierre</th>
@@ -1367,7 +1367,7 @@ export default function TurnosModule() {
                   </thead>
                   <tbody>
                     {paginated.map(t => (
-                      <tr key={t.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
+                      <tr key={t.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-[var(--surface-alt)] transition-colors">
                         <td className="px-4 py-4 text-base font-semibold text-[var(--text-primary)] truncate max-w-[160px]">{cajeros.find(c => c.id === t.adminUserId)?.name || "Yo mismo"}</td>
                         <td className="px-4 py-4 text-sm text-[var(--text-secondary)] tabular-nums">{formatDateTime(t.abrioEn)}</td>
                         <td className="px-4 py-4 text-sm text-[var(--text-secondary)] hidden sm:table-cell tabular-nums">
@@ -1384,7 +1384,7 @@ export default function TurnosModule() {
                 </table>
               </div>
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-white/5">
+                <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] ">
                   <p className="text-xs text-[var(--text-tertiary)]">
                     {historial.length} turno{historial.length !== 1 ? "s" : ""} — Pag. {page}/{totalPages}
                   </p>
@@ -1392,14 +1392,14 @@ export default function TurnosModule() {
                     <button
                       disabled={page <= 1}
                       onClick={() => setPage(p => p - 1)}
-                      className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30 transition-colors"
+                      className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
                     <button
                       disabled={page >= totalPages}
                       onClick={() => setPage(p => p + 1)}
-                      className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 disabled:opacity-30 transition-colors"
+                      className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
@@ -1446,7 +1446,7 @@ export default function TurnosModule() {
                 <button
                   onClick={() => !creatingCajero && setShowCreateCajero(false)}
                   aria-label="Cerrar"
-                  className="p-2 hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 rounded-lg transition-colors"
+                  className="p-2 hover:bg-[var(--surface-sunken)] rounded-xl transition-colors"
                 >
                   <X className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </button>
@@ -1460,7 +1460,7 @@ export default function TurnosModule() {
                     onChange={e => { setNewCajeroName(e.target.value); if (createCajeroError) setCreateCajeroError(null); }}
                     placeholder="Ej. María Quispe"
                     autoFocus
-                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </Field>
                 <Field label="Usuario (para iniciar sesión)" labelClassName="block text-sm font-semibold text-[var(--text-secondary)] mb-2">
@@ -1470,7 +1470,7 @@ export default function TurnosModule() {
                     onChange={e => { setNewCajeroUsername(e.target.value.toLowerCase()); if (createCajeroError) setCreateCajeroError(null); }}
                     placeholder="maria.cajera"
                     autoComplete="off"
-                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                   <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Solo letras, números, puntos y guión bajo · 3-32 caracteres</p>
                 </Field>
@@ -1481,7 +1481,7 @@ export default function TurnosModule() {
                     onChange={e => { setNewCajeroPassword(e.target.value); if (createCajeroError) setCreateCajeroError(null); }}
                     placeholder="Mínimo 6 caracteres"
                     autoComplete="new-password"
-                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono transition-all"
+                    className="w-full h-12 px-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono transition-all"
                   />
                   <p className="text-xs text-[var(--text-tertiary)] mt-1.5">Compártela con la cajera. Ella podrá cambiarla luego en su perfil.</p>
                 </Field>
@@ -1497,7 +1497,7 @@ export default function TurnosModule() {
                 <button
                   onClick={() => !creatingCajero && setShowCreateCajero(false)}
                   disabled={creatingCajero}
-                  className="flex-1 h-12 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
+                  className="flex-1 h-12 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] disabled:opacity-50 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -1545,7 +1545,7 @@ export default function TurnosModule() {
                     <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y confirma el cierre</p>
                   </div>
                 </div>
-                <button onClick={resetCierreState} aria-label="Cerrar" className="p-2 hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5 rounded-lg transition-colors">
+                <button onClick={resetCierreState} aria-label="Cerrar" className="p-2 hover:bg-[var(--surface-sunken)] rounded-xl transition-colors">
                   <X className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
@@ -1553,7 +1553,7 @@ export default function TurnosModule() {
               {/* Body */}
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
                 {/* Resumen — card destacado */}
-                <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-5 space-y-2.5">
+                <div className="bg-[var(--surface-alt)] rounded-xl p-5 space-y-2.5">
                   <div className="flex justify-between items-center text-base">
                     <span className="text-[var(--text-secondary)]">Efectivo inicial</span>
                     <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(turnoActivo.inicioEfectivo)}</span>
@@ -1562,7 +1562,7 @@ export default function TurnosModule() {
                     <span className="text-[var(--text-secondary)]">Ventas del turno</span>
                     <span className="font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] tabular-nums">{formatCurrency(ventasTurnoLive ?? turnoActivo.ventasTotal)}</span>
                   </div>
-                  <div className="flex justify-between items-center border-t border-[var(--rule-base)] dark:border-white/10 pt-2.5">
+                  <div className="flex justify-between items-center border-t border-[var(--rule-base)] pt-2.5">
                     <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Efectivo esperado en caja</span>
                     <span className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">
                       {formatCurrency(cajaEsperado ?? (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal))}
@@ -1574,12 +1574,12 @@ export default function TurnosModule() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-[var(--text-secondary)]">Conteo de efectivo final</span>
-                    <div className="inline-flex rounded-lg bg-[var(--surface-sunken)] dark:bg-white/5 p-0.5 text-xs font-semibold">
+                    <div className="inline-flex rounded-lg bg-[var(--surface-sunken)] p-0.5 text-xs font-semibold">
                       <button
                         type="button"
                         onClick={() => setConteoMode("denominacion")}
                         className={cn(
-                          "px-2.5 py-1 rounded-md transition-colors",
+                          "px-2.5 py-1 rounded-lg transition-colors",
                           conteoMode === "denominacion"
                             ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                             : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
@@ -1591,7 +1591,7 @@ export default function TurnosModule() {
                         type="button"
                         onClick={() => setConteoMode("manual")}
                         className={cn(
-                          "px-2.5 py-1 rounded-md transition-colors",
+                          "px-2.5 py-1 rounded-lg transition-colors",
                           conteoMode === "manual"
                             ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                             : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
@@ -1603,14 +1603,14 @@ export default function TurnosModule() {
                   </div>
 
                   {conteoMode === "denominacion" ? (
-                    <div className="rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-alt)]/40 dark:bg-white/[0.03] p-3">
+                    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-alt)]/40 dark:bg-white/[0.03] p-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1.5">
                         {DENOMINACIONES_PEN.map(d => {
                           const key = String(d.valor);
                           const count = denomCounts[key] || 0;
                           const subtotal = d.valor * count;
                           return (
-                            <div key={key} className="flex items-center gap-2 py-1.5 px-1 border-b border-[var(--rule-soft)] dark:border-white/5 last:border-0">
+                            <div key={key} className="flex items-center gap-2 py-1.5 px-1 border-b border-[var(--rule-soft)] last:border-0">
                               <span className={cn(
                                 "inline-flex items-center justify-center text-xs font-bold rounded-md px-2 py-0.5 w-16 shrink-0",
                                 d.tipo === "billete"
@@ -1630,7 +1630,7 @@ export default function TurnosModule() {
                                   });
                                 }}
                                 disabled={count === 0}
-                                className="h-7 w-7 rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-30"
+                                className="h-7 w-7 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-30"
                                 aria-label={`Quitar ${d.label}`}
                               >
                                 −
@@ -1651,7 +1651,7 @@ export default function TurnosModule() {
                                   });
                                 }}
                                 placeholder="0"
-                                className="w-12 h-7 px-1 rounded-md border border-[var(--rule-base)] bg-white dark:bg-white/5 text-sm font-bold text-center tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                className="w-12 h-7 px-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-center tabular-nums text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                               />
                               <button
                                 type="button"
@@ -1663,7 +1663,7 @@ export default function TurnosModule() {
                                     return next;
                                   });
                                 }}
-                                className="h-7 w-7 rounded-md border border-primary/40 bg-primary/10 text-base font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20"
+                                className="h-7 w-7 rounded-lg border border-primary/40 bg-primary/10 text-base font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20"
                                 aria-label={`Agregar ${d.label}`}
                               >
                                 +
@@ -1675,7 +1675,7 @@ export default function TurnosModule() {
                           );
                         })}
                       </div>
-                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-[var(--rule-base)] dark:border-white/10">
+                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-[var(--rule-base)] ">
                         <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">Total contado</span>
                         <span className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">
                           {formatCurrency(calcularDesdeDenominaciones(denomCounts))}
@@ -1693,7 +1693,7 @@ export default function TurnosModule() {
                           value={cierreEfectivo}
                           onChange={e => { setCierreEfectivo(e.target.value); if (closeError) setCloseError(null); }}
                           placeholder="0.00"
-                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
+                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-right font-mono tabular-nums transition-all"
                         />
                       </div>
                       <p className="text-sm text-[var(--text-tertiary)] mt-1.5">Cuenta todo el dinero que queda en caja.</p>
@@ -1738,7 +1738,7 @@ export default function TurnosModule() {
                     onChange={e => setCierreNotas(e.target.value)}
                     placeholder="Ej: turno normal, nada raro..."
                     rows={2}
-                    className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                   />
                 </Field>
 
@@ -1753,7 +1753,7 @@ export default function TurnosModule() {
               <div className="px-6 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 flex gap-3">
                 <button
                   onClick={resetCierreState}
-                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors"
+                  className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] transition-colors"
                 >
                   Cancelar
                 </button>
@@ -1811,7 +1811,7 @@ export default function TurnosModule() {
                 </div>
 
                 <div className="px-6 py-5 space-y-4">
-                  <div className="rounded-xl bg-[var(--surface-alt)] dark:bg-white/5 p-4 space-y-2">
+                  <div className="rounded-xl bg-[var(--surface-alt)] p-4 space-y-2">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-[var(--text-secondary)]">Total esperado</span>
                       <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(esperado)}</span>
@@ -1820,7 +1820,7 @@ export default function TurnosModule() {
                       <span className="text-[var(--text-secondary)]">Contado en caja</span>
                       <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(monto)}</span>
                     </div>
-                    <div className="flex justify-between items-center border-t border-[var(--rule-base)] dark:border-white/10 pt-2">
+                    <div className="flex justify-between items-center border-t border-[var(--rule-base)] pt-2">
                       <span className="text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">
                         {sobrante ? "Sobrante" : "Faltante"}
                       </span>
@@ -1847,7 +1847,7 @@ export default function TurnosModule() {
                       placeholder="Ej: Falta S/30 por devolución no registrada de pollo broaster a las 18:30"
                       rows={3}
                       autoFocus
-                      className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                     />
                     <p className="text-xs text-[var(--text-tertiary)] mt-1.5">
                       Mínimo 8 caracteres. Queda en el log del turno para auditoría. <span className="opacity-70">(Distinta del campo Notas del cierre.)</span>
@@ -1865,7 +1865,7 @@ export default function TurnosModule() {
                   <button
                     onClick={() => !closing && setShowDiffConfirm(false)}
                     disabled={closing}
-                    className="flex-1 h-12 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
+                    className="flex-1 h-12 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] disabled:opacity-50 transition-colors"
                   >
                     Volver a contar
                   </button>
@@ -1908,7 +1908,7 @@ export default function TurnosModule() {
                     <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
                     Resumen del Turno
                   </CardTitle>
-                  <button onClick={() => setShowResumen(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-white/5">
+                  <button onClick={() => setShowResumen(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1952,7 +1952,7 @@ export default function TurnosModule() {
                 )}
 
                 {/* Card 3: Caja */}
-                <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-4">
+                <div className="bg-[var(--surface-alt)] rounded-xl p-4">
                   <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-3 flex items-center gap-1.5">
                     <DollarSign className="h-3.5 w-3.5" /> Caja
                   </h4>
@@ -1965,7 +1965,7 @@ export default function TurnosModule() {
                       <span className="text-[var(--text-tertiary)]">Efectivo al cierre</span>
                       <span className="font-bold text-[var(--text-primary)]">{formatCurrency(resumen.cierreEfectivo)}</span>
                     </div>
-                    <div className="flex justify-between text-sm border-t border-[var(--rule-base)] dark:border-white/10 pt-1.5">
+                    <div className="flex justify-between text-sm border-t border-[var(--rule-base)] pt-1.5">
                       <span className="text-[var(--text-tertiary)]">Diferencia</span>
                       <span className={cn("font-bold tabular-nums", Math.abs(resumen.diferencia) < 0.01 ? "text-[var(--data-success-500)]" : resumen.diferencia > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
                         {Math.abs(resumen.diferencia) < 0.01 ? formatCurrency(0) : (resumen.diferencia > 0 ? "+" : "") + formatCurrency(resumen.diferencia)}
@@ -1999,7 +1999,7 @@ export default function TurnosModule() {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-3 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">
+                    <div className="bg-[var(--surface-alt)] rounded-xl p-3 text-center text-xs text-[var(--text-tertiary)] dark:text-muted">
                       Sin descuentos aplicados en este turno
                     </div>
                   );
@@ -2044,11 +2044,11 @@ export default function TurnosModule() {
                       </p>
                     </m.div>
                   ) : (
-                    <div className="bg-[var(--surface-alt)] dark:bg-white/5 rounded-xl p-4 space-y-2">
+                    <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-2">
                       <p className="text-sm text-[var(--text-secondary)]">
                         Ventas: {formatCurrency(ventas)} de {formatCurrency(meta)} ({porcentaje}%)
                       </p>
-                      <div className="w-full bg-[var(--rule-soft)] dark:bg-white/10 rounded-full h-3">
+                      <div className="w-full bg-[var(--rule-soft)] rounded-full h-3">
                         <div
                           className="h-3 rounded-full bg-primary transition-all"
                           style={{ width: `${Math.min(100, porcentaje)}%` }}
@@ -2177,7 +2177,7 @@ export default function TurnosModule() {
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={() => window.print()}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] dark:hover:bg-white/10 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
                   >
                     <Printer className="h-4 w-4" />
                     Imprimir resumen

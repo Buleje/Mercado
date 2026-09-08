@@ -213,7 +213,7 @@ export function FiltroColumna({
         disabled={vacio}
         aria-label={`Filtrar por ${label}`}
         onChange={(e) => onChange(e.target.value)}
-        className={`h-9 w-full min-w-24 max-w-56 appearance-none truncate rounded-lg border-[1.5px] bg-[var(--surface-raised)] pl-2.5 pr-7 text-sm font-medium text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] disabled:opacity-50 ${
+        className={`h-9 w-full min-w-24 max-w-56 appearance-none truncate rounded-xl border-[1.5px] bg-[var(--surface-raised)] pl-2.5 pr-7 text-sm font-medium text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] disabled:opacity-50 ${
           value ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)]"
         }`}
       >

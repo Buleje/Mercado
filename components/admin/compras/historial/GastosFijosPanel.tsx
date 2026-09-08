@@ -223,7 +223,7 @@ export default function GastosFijosPanel({
             onClick={cargar}
             title="Recargar los fijos"
             aria-label="Recargar los gastos fijos"
-            className="rounded-lg border border-[var(--rule-base)] p-2 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="rounded-xl border border-[var(--rule-base)] p-2 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
@@ -234,7 +234,7 @@ export default function GastosFijosPanel({
             onClick={() => setAbierto((v) => !v)}
             aria-expanded={abierto}
             aria-label={abierto ? "Ocultar los gastos fijos" : "Mostrar los gastos fijos"}
-            className="rounded-lg border border-[var(--rule-base)] p-2 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="rounded-xl border border-[var(--rule-base)] p-2 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             <ChevronDown className={cn("h-4 w-4 transition-transform", !abierto && "-rotate-90")} />
           </button>
@@ -257,7 +257,7 @@ export default function GastosFijosPanel({
           <button
             type="button"
             onClick={() => setUnificando(true)}
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border-2 border-[var(--data-warning-500)]/50 bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--data-warning-500)]/50 bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
           >
             <Wand2 className="h-4 w-4" aria-hidden />
             Unificar

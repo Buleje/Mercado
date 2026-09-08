@@ -77,7 +77,7 @@ export default function ConflictosImport({
               type="button"
               onClick={() => onCambiar(valor)}
               aria-pressed={activa}
-              className={`flex flex-col gap-1 rounded-lg border-2 p-2.5 text-left transition-colors ${
+              className={`flex flex-col gap-1 rounded-xl border-2 p-2.5 text-left transition-colors ${
                 activa
                   ? "border-[var(--accent)] bg-primary/10"
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-canvas)]"

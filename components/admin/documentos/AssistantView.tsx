@@ -118,7 +118,7 @@ export function AssistantView({
   };
 
   return (
-    <div className="flex h-[68vh] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-white">
+    <div className="flex h-[68vh] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="flex items-center justify-between gap-2 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-2.5">
         <p className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
           <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--accent)]/15 text-[var(--accent)]"><Sparkles className="h-3.5 w-3.5" /></span>
@@ -130,12 +130,12 @@ export function AssistantView({
           ) : (
             <>
               {indexableCount > 0 && (
-                <button onClick={() => runIndex("new")} className="inline-flex items-center gap-1 rounded-md border-2 border-[var(--accent)]/40 px-2 py-0.5 text-xs font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10">
+                <button onClick={() => runIndex("new")} className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--accent)]/40 px-2 py-0.5 text-xs font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10">
                   <Sparkles className="h-3 w-3" /> Indexar {indexableCount}
                 </button>
               )}
               {reindexableCount > 0 && (
-                <button onClick={() => runIndex("all")} className="inline-flex items-center gap-1 rounded-md border-2 border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Re-describir TODOS los documentos con IA (los viejos ganan la descripción rica)">
+                <button onClick={() => runIndex("all")} className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Re-describir TODOS los documentos con IA (los viejos ganan la descripción rica)">
                   <RefreshCw className="h-3 w-3" /> Re-indexar todo
                 </button>
               )}
@@ -143,7 +143,7 @@ export function AssistantView({
           )}
           {conversations.length > 0 && (
             <div className="relative">
-              <button onClick={() => setShowConvos((s) => !s)} className="inline-flex items-center gap-1 rounded-md border-2 border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Conversaciones guardadas">
+              <button onClick={() => setShowConvos((s) => !s)} className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Conversaciones guardadas">
                 <History className="h-3 w-3" /> {conversations.length}
               </button>
               {showConvos && (
@@ -162,7 +162,7 @@ export function AssistantView({
             </div>
           )}
           {turns.length > 0 && (
-            <button onClick={newConversation} className="inline-flex items-center gap-1 rounded-md border-2 border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Nueva conversación">
+            <button onClick={newConversation} className="inline-flex items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary" title="Nueva conversación">
               <Plus className="h-3 w-3" /> Nueva
             </button>
           )}
@@ -205,7 +205,7 @@ export function AssistantView({
                       {t.a!.matchedDocs.length > 0 && (
                         <div className="space-y-1.5">
                           {t.a!.matchedDocs.map((d) => (
-                            <div key={d.id} className="overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-white">
+                            <div key={d.id} className="overflow-hidden rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)]">
                               <button
                                 onClick={() => onOpenDoc(d.id)}
                                 className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-[var(--surface-sunken)]"
@@ -228,7 +228,7 @@ export function AssistantView({
                                     <button
                                       key={label}
                                       onClick={() => { fn(d.id); if (label === "Aprobar") setApprovedIds((s) => new Set(s).add(d.id)); }}
-                                      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-primary"
+                                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-primary"
                                     >
                                       <Icon className="h-3.5 w-3.5" /> {label}
                                     </button>
@@ -249,7 +249,7 @@ export function AssistantView({
       </div>
 
       <div className="border-t border-[var(--rule-base)] p-3">
-        <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-white px-3 focus-within:border-primary">
+        <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 focus-within:border-primary">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}

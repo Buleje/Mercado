@@ -101,7 +101,7 @@ export function MarketplaceComisionesTab() {
                 "inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 text-sm font-bold transition-all tabular-nums",
                 active
                   ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                  : "border-[var(--rule-base)] bg-white text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
+                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
               )}
             >
               {f.label}
@@ -114,7 +114,7 @@ export function MarketplaceComisionesTab() {
       </div>
 
       {filtered.length === 0 && !error ? (
-        <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white">
+        <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             <DollarSign className="h-6 w-6" />
           </div>
@@ -128,7 +128,7 @@ export function MarketplaceComisionesTab() {
           </p>
         </div>
       ) : (
-        <div className="bg-white border border-[var(--rule-base)] rounded-2xl overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">

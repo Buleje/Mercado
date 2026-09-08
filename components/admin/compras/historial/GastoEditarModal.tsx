@@ -41,7 +41,7 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const INPUT =
-  "mt-1 h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-white px-3 text-base text-[var(--text-primary)] outline-none focus:border-primary/60 dark:bg-[var(--color-card)]";
+  "mt-1 h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-primary/60 ";
 
 export default function GastoEditarModal({
   item, categorias, onGuardado, onClose,
@@ -245,7 +245,7 @@ export default function GastoEditarModal({
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
               rows={2}
-              className="mt-1 w-full rounded-xl border-2 border-[var(--rule-base)] bg-white px-3 py-2 text-base text-[var(--text-primary)] outline-none focus:border-primary/60 dark:bg-[var(--color-card)]"
+              className="mt-1 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-base text-[var(--text-primary)] outline-none focus:border-primary/60 "
             />
           </Campo>
         </div>

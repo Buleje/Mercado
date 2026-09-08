@@ -127,7 +127,7 @@ export function PermisosTab() {
           <button
             type="button"
             onClick={() => setError(null)}
-            className="ml-auto p-1 rounded-lg hover:bg-[var(--data-error-100)] transition-colors"
+            className="ml-auto p-1 rounded-xl hover:bg-[var(--data-error-100)] transition-colors"
           >
             <X className="h-4 w-4" />
           </button>

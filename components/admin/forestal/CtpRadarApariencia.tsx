@@ -239,7 +239,7 @@ export default function CtpRadarApariencia({
                   title={p.hint}
                   onClick={() => onApariencia({ ...apariencia, colores: p.key === "sistema" ? {} : p.colores })}
                   aria-pressed={paleta?.key === p.key}
-                  className={`flex h-10 items-center gap-2 rounded-lg border-2 px-2.5 text-xs font-bold transition ${
+                  className={`flex h-10 items-center gap-2 rounded-xl border-2 px-2.5 text-xs font-bold transition ${
                     paleta?.key === p.key
                       ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 text-[var(--accent)]"
                       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
@@ -273,7 +273,7 @@ export default function CtpRadarApariencia({
                       type="button"
                       onClick={() => setColor(key, undefined)}
                       title={`Volver al color del sistema (${COLOR_TOKEN[key]})`}
-                      className="shrink-0 rounded-md px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
+                      className="shrink-0 rounded-lg px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]"
                     >
                       Al del sistema
                     </button>
@@ -331,7 +331,7 @@ export default function CtpRadarApariencia({
                 maxLength={LARGO_NOMBRE}
                 placeholder="Cierre de mes, Fiscalización…"
                 aria-label="Nombre de la vista a guardar"
-                className="h-9 min-w-0 flex-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none"
+                className="h-9 min-w-0 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none"
               />
               <button
                 type="submit"

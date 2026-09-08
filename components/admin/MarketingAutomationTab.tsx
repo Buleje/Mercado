@@ -311,7 +311,7 @@ export default function MarketingAutomationTab({
                       onClick={() => remove(c.id)}
                       disabled={busy}
                       aria-label="Eliminar campaña"
-                      className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/15 disabled:opacity-50 transition-colors"
+                      className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/15 disabled:opacity-50 transition-colors"
                     >
                       {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                     </button>
@@ -338,19 +338,19 @@ export default function MarketingAutomationTab({
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-[var(--text-secondary)]">Nombre</label>
-              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Oferta de fin de semana" className="w-full h-12 px-3 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] outline-none focus:border-primary" />
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Oferta de fin de semana" className="w-full h-12 px-3 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary" />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-[var(--text-secondary)]">Mensaje</label>
-              <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={3} placeholder="Hola {{nombre}}, hoy tenemos 20% en arroz. ¡Pásate por la bodega!" className="w-full px-3 py-2 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] outline-none focus:border-primary resize-none" />
+              <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={3} placeholder="Hola {{nombre}}, hoy tenemos 20% en arroz. ¡Pásate por la bodega!" className="w-full px-3 py-2 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary resize-none" />
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Usa <span className="font-mono font-semibold">{"{{nombre}}"}</span> para personalizar con el nombre del cliente.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[var(--text-secondary)]">A quién</label>
-                <select value={form.segment} onChange={e => setForm(f => ({ ...f, segment: e.target.value as Segment }))} className="w-full h-12 px-3 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] outline-none focus:border-primary">
+                <select value={form.segment} onChange={e => setForm(f => ({ ...f, segment: e.target.value as Segment }))} className="w-full h-12 px-3 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary">
                   {(Object.keys(SEGMENT_LABELS) as Segment[]).map(s => <option key={s} value={s}>{SEGMENT_LABELS[s]}</option>)}
                 </select>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] inline-flex items-center gap-1">
@@ -360,7 +360,7 @@ export default function MarketingAutomationTab({
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[var(--text-secondary)]">Canal</label>
-                <select value={form.channel} onChange={e => setForm(f => ({ ...f, channel: e.target.value as Channel }))} className="w-full h-12 px-3 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] outline-none focus:border-primary">
+                <select value={form.channel} onChange={e => setForm(f => ({ ...f, channel: e.target.value as Channel }))} className="w-full h-12 px-3 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary">
                   {(Object.keys(CHANNEL_META) as Channel[]).map(c => <option key={c} value={c}>{CHANNEL_META[c].label}</option>)}
                 </select>
               </div>
@@ -374,7 +374,7 @@ export default function MarketingAutomationTab({
                 ))}
               </div>
               {form.mode === "programar" && (
-                <input type="datetime-local" value={form.scheduledAt} min={nowLocalInput()} onChange={e => setForm(f => ({ ...f, scheduledAt: e.target.value }))} className="w-full h-12 px-3 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] outline-none focus:border-primary" />
+                <input type="datetime-local" value={form.scheduledAt} min={nowLocalInput()} onChange={e => setForm(f => ({ ...f, scheduledAt: e.target.value }))} className="w-full h-12 px-3 text-sm rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary" />
               )}
             </div>
 

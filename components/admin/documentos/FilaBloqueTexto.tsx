@@ -67,7 +67,7 @@ export default function FilaBloqueTexto({
         rows={1}
         aria-label={`Párrafo ${posicion}${bloque.formatoMixto ? " (formatos mezclados)" : ""}`}
         data-bloque={bloque.id}
-        className={`w-full resize-none overflow-hidden rounded-lg bg-transparent px-2 py-1.5 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:bg-primary/10 focus:ring-2 focus:ring-[var(--accent)] dark:focus:bg-[var(--accent)]/12 ${ESTILO_TIPO[bloque.tipo]} ${
+        className={`w-full resize-none overflow-hidden rounded-xl bg-transparent px-2 py-1.5 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:bg-primary/10 focus:ring-2 focus:ring-[var(--accent)] dark:focus:bg-[var(--accent)]/12 ${ESTILO_TIPO[bloque.tipo]} ${
           bloque.negrita ? "font-bold" : ""
         } ${bloque.cursiva ? "italic" : ""} ${
           bloque.formatoMixto ? "border-l-4 border-[var(--data-warning-500)]" : ""
@@ -80,7 +80,7 @@ export default function FilaBloqueTexto({
           onChange={(e) => onTipo(bloque.id, e.target.value as BloqueTexto["tipo"])}
           aria-label={`Tipo del párrafo ${posicion}`}
           title="Rol del párrafo en el documento"
-          className="h-7 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-xs font-bold text-[var(--text-secondary)] outline-none hover:bg-[var(--surface-canvas)]"
+          className="h-7 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-xs font-bold text-[var(--text-secondary)] outline-none hover:bg-[var(--surface-canvas)]"
         >
           <option value="parrafo">Normal</option>
           <option value="titulo">Título</option>

@@ -254,7 +254,7 @@ export default function HojaPreview({ url, mimeType, nombre, onEnviar, miniatura
               }}
               placeholder="Buscar en la hoja"
               aria-label="Buscar en la hoja"
-              className="h-9 w-44 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-8 pr-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none"
+              className="h-9 w-44 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-8 pr-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none"
             />
           </div>
           {busqueda.trim() !== "" && (

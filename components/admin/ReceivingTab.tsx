@@ -293,13 +293,13 @@ export default function ReceivingTab() {
               estado: STATUS_MAP[r.status].label, inspector: r.inspector,
               items: r.items.length, fotos: r.photos, no_conformidades: r.nonConformities,
             })), "recepciones")}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-accent transition"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition"
           >
             <Download className="h-4 w-4" /> Exportar
           </button>
           <button
             onClick={() => setShowNew(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 transition"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition"
           >
             <Plus className="h-4 w-4" /> Nueva recepción
           </button>
@@ -314,7 +314,7 @@ export default function ReceivingTab() {
           { label: "Aceptadas",        value: stats.accepted,     icon: CheckCircle2,  color: "text-[var(--data-success-500)]"  },
           { label: "No conformidades", value: stats.totalNonConf, icon: AlertTriangle, color: stats.totalNonConf > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]" },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
+          <div key={label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</p>
               <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", color)}>{value}</p>
@@ -339,7 +339,7 @@ export default function ReceivingTab() {
               "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
               filterStatus === p.id
                 ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
+                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
             )}
           >
             {p.label}
@@ -356,7 +356,7 @@ export default function ReceivingTab() {
           <input
             value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Buscar proveedor, ref, OC..."
-            className="w-full pl-9 pr-3 py-1.5 text-sm border border-[var(--rule-base)] rounded-lg bg-white dark:bg-[var(--color-card)] text-[var(--text-primary)] outline-none focus:border-primary"
+            className="w-full pl-9 pr-3 py-1.5 text-sm border border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary"
           />
         </div>
       </div>
@@ -369,7 +369,7 @@ export default function ReceivingTab() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
-                <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface">
+                <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] ">
                   <th className="px-4 py-3">Ref</th>
                   <th className="px-4 py-3">Proveedor</th>
                   <th className="px-4 py-3">Programada</th>
@@ -385,7 +385,7 @@ export default function ReceivingTab() {
                 {filtered.map(r => {
                   const discrepancies = getDiscrepancies(r.items);
                   return (
-                    <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-gray-50 dark:hover:bg-accent/20 transition">
+                    <tr key={r.id} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] dark:hover:bg-accent/20 transition">
                       <td className="px-4 py-3">
                         <div className="font-mono text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.ref}</div>
                         <div className="font-mono text-xs text-[var(--text-tertiary)]">{r.orderRef}</div>
@@ -416,7 +416,7 @@ export default function ReceivingTab() {
                         ) : null}
                       </td>
                       <td className="px-4 py-3">
-                        <button onClick={() => setDetail(r)} className="p-1 rounded-lg hover:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] transition">
+                        <button onClick={() => setDetail(r)} className="p-1 rounded-xl hover:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] transition">
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                       </td>
@@ -445,7 +445,7 @@ export default function ReceivingTab() {
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">OC: {detail.orderRef} · {detail.supplier}</p>
                 {detail.inspector && <p className="text-xs text-[var(--text-tertiary)]">Inspector: {detail.inspector}</p>}
               </div>
-              <button onClick={() => setDetail(null)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-surface">
+              <button onClick={() => setDetail(null)} className="p-1 rounded-xl hover:bg-[var(--rule-soft)] ">
                 <X className="h-4 w-4 text-[var(--text-tertiary)]" />
               </button>
             </div>
@@ -464,7 +464,7 @@ export default function ReceivingTab() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-sm">
                 <thead>
-                  <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-gray-50 dark:bg-surface">
+                  <tr className="text-left text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] ">
                     <th className="px-3 py-2">Producto</th>
                     <th className="px-3 py-2 text-center">Esperado</th>
                     <th className="px-3 py-2 text-center">Recibido</th>
@@ -539,7 +539,7 @@ export default function ReceivingTab() {
                 <select
                   value={selectedOcId}
                   onChange={(e) => applyOC(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
                 >
                   <option value="">— Elegir orden de compra —</option>
                   {pendingOCs.map((oc) => (
@@ -561,7 +561,7 @@ export default function ReceivingTab() {
                     no se puede escribir un proveedor/OC inexistente (reporte QA). */}
                 <input value={newForm.supplier} onChange={e => setNewForm(f => ({ ...f, supplier: e.target.value }))}
                   placeholder="Distribuidora ABC" list={selectedOcId ? undefined : "recep-proveedores"} readOnly={!!selectedOcId}
-                  className={cn("w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm", selectedOcId ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] cursor-not-allowed" : "bg-white dark:bg-surface")} />
+                  className={cn("w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm", selectedOcId ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] cursor-not-allowed" : "bg-[var(--surface-raised)] ")} />
                 <datalist id="recep-proveedores">
                   {supplierNames.map(n => <option key={n} value={n} />)}
                 </datalist>
@@ -569,17 +569,17 @@ export default function ReceivingTab() {
               <Field label="Nro. Orden de Compra" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={newForm.orderRef} onChange={e => setNewForm(f => ({ ...f, orderRef: e.target.value }))}
                   placeholder="OC-001" readOnly={!!selectedOcId}
-                  className={cn("w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-mono", selectedOcId ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] cursor-not-allowed" : "bg-white dark:bg-surface")} />
+                  className={cn("w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-mono", selectedOcId ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] cursor-not-allowed" : "bg-[var(--surface-raised)] ")} />
                 {selectedOcId && <p className="mt-1 text-xs text-primary">De la OC seleccionada</p>}
               </Field>
               <Field label="Fecha programada" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="date" value={newForm.scheduledDate} onChange={e => setNewForm(f => ({ ...f, scheduledDate: e.target.value }))}
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
               </Field>
               <Field label="Inspector" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input value={newForm.inspector} onChange={e => setNewForm(f => ({ ...f, inspector: e.target.value }))}
                   placeholder="Nombre del responsable"
-                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm" />
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
               </Field>
             </div>
 
@@ -593,7 +593,7 @@ export default function ReceivingTab() {
               </div>
               <div className="space-y-2">
                 {checklist.map((row, idx) => (
-                  <div key={idx} className="flex flex-wrap items-center gap-2 bg-gray-50 dark:bg-surface rounded-xl p-2">
+                  <div key={idx} className="flex flex-wrap items-center gap-2 bg-[var(--surface-sunken)] rounded-xl p-2">
                     <ProductCombobox
                       id={`recep-prod-${idx}`}
                       products={products}
@@ -603,17 +603,17 @@ export default function ReceivingTab() {
                       onSelect={(p) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, product: p.name, productId: typeof p.id === "number" ? p.id : undefined, expectedQty: r.expectedQty } : r))}
                     />
                     <input type="number" min="0" value={row.expectedQty} onChange={e => updateChecklistRow(idx, "expectedQty", +e.target.value)}
-                      placeholder="Esperado" className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
+                      placeholder="Esperado" className="w-20 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
                     <input type="number" min="0" value={row.receivedQty} onChange={e => updateChecklistRow(idx, "receivedQty", +e.target.value)}
-                      placeholder="Recibido" className="w-20 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
+                      placeholder="Recibido" className="w-20 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
                     <select value={row.condition} onChange={e => updateChecklistRow(idx, "condition", e.target.value as ItemCondition)}
-                      className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs">
+                      className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs">
                       {Object.entries(COND_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                     </select>
                     <input value={row.notes} onChange={e => updateChecklistRow(idx, "notes", e.target.value)}
-                      placeholder="Notas (opcional)" className="flex-1 min-w-24 px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
+                      placeholder="Notas (opcional)" className="flex-1 min-w-24 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
                     {checklist.length > 1 && (
-                      <button onClick={() => removeChecklistRow(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition">
+                      <button onClick={() => removeChecklistRow(idx)} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition">
                         <X className="h-3.5 w-3.5" />
                       </button>
                     )}
@@ -629,7 +629,7 @@ export default function ReceivingTab() {
                 Factura del proveedor <span className="font-normal text-[var(--text-tertiary)]">(opcional, foto)</span>
               </label>
               {invoiceUrl ? (
-                <div className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface px-3 py-2">
+                <div className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2">
                   <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)] shrink-0" aria-hidden />
                   <a href={invoiceUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline flex-1 truncate">
                     Ver factura adjunta
@@ -658,8 +658,8 @@ export default function ReceivingTab() {
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setShowNew(false)} className="px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
-              <button onClick={saveReception} disabled={saving} className="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
+              <button onClick={() => setShowNew(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] ">Cancelar</button>
+              <button onClick={saveReception} disabled={saving} className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 Guardar recepción
               </button>

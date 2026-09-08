@@ -148,7 +148,7 @@ export default function CubicacionesGuardadas({
                     type="button"
                     onClick={() => copiarCodigo(c)}
                     title={`Copiar el código de esta cubicación (${c.id}) — pegalo en Resumen por Permiso como objetivo`}
-                    className="mt-1 inline-flex items-center gap-1 rounded-md border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                    className="mt-1 inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
                   >
                     <Copy className="h-3 w-3" aria-hidden />
                     {copiadoId === c.id ? "Código copiado" : `Código …${c.id.slice(-8)}`}

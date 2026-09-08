@@ -56,7 +56,7 @@ export default function UbicacionDoc({ folderId, folders, onMover, compacto }: {
         aria-expanded={abierto}
         title={ruta.length > 0 ? `Está en ${etiqueta} — tocá para moverlo` : "No está en ninguna carpeta — tocá para guardarlo en una"}
         className={cn(
-          "inline-flex max-w-full items-center gap-1.5 rounded-lg border text-xs font-bold transition-colors",
+          "inline-flex max-w-full items-center gap-1.5 rounded-xl border text-xs font-bold transition-colors",
           compacto ? "px-2 py-1" : "w-full px-3 py-2 text-sm",
           folderId
             ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:border-primary hover:text-primary"

@@ -639,7 +639,7 @@ export default function ChatIAClean({
               }
               className={cn(
                 "w-full resize-none rounded-2xl border border-[var(--rule-base)]",
-                "bg-[var(--surface-sunken)] dark:bg-surface",
+                "bg-[var(--surface-sunken)] ",
                 "px-5 py-4 pr-36 text-base leading-relaxed",
                 "text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]",
                 "focus:outline-none focus:ring-2 focus:ring-[var(--text-primary)]/20 focus:border-[var(--text-primary)]/40",
@@ -710,7 +710,7 @@ export default function ChatIAClean({
                 className="absolute right-3 bottom-3 h-10 w-10 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 text-white flex items-center justify-center transition-colors"
                 aria-label="Detener"
               >
-                <span className="block h-3 w-3 bg-white dark:bg-[var(--color-card)] rounded-sm" />
+                <span className="block h-3 w-3 bg-[var(--surface-raised)] rounded-sm" />
               </button>
             ) : (
               <button
@@ -958,7 +958,7 @@ function MessageRow({
                 <button
                   type="button"
                   onClick={onCopy}
-                  className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] px-2 py-1 rounded-md hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] px-2 py-1 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
                   title="Copiar respuesta"
                 >
                   {copied ? (
@@ -1056,7 +1056,7 @@ function TarjetasDeAprobacion({
                 type="button"
                 disabled={enCurso === a.id}
                 onClick={() => { setEnCurso(a.id); onResolver(a.id, "approve"); }}
-                className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-60"
               >
                 {enCurso === a.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 Confirmar
@@ -1065,7 +1065,7 @@ function TarjetasDeAprobacion({
                 type="button"
                 disabled={enCurso === a.id}
                 onClick={() => { setEnCurso(a.id); onResolver(a.id, "reject"); }}
-                className="inline-flex h-10 items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
               >
                 Cancelar
               </button>
@@ -1103,7 +1103,7 @@ function BotonesDeAccion({ acciones }: { acciones?: AccionNavegar[] }) {
               new CustomEvent("admin:navigate", { detail: { tab: a.tab, vista: a.vista ?? undefined } }),
             );
           }}
-          className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--surface-sunken)] transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <ArrowRight className="h-4 w-4" aria-hidden />
           Abrir {a.label}

@@ -71,7 +71,7 @@ export default function CtpFletesCandidatosBanner({
             value={filtro}
             onChange={(e) => setFiltro(e.target.value)}
             placeholder="Filtrar por fletero…"
-            className="ml-auto h-9 w-full rounded-lg border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] sm:w-56"
+            className="ml-auto h-9 w-full rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] sm:w-56"
           />
         )}
       </div>

@@ -181,7 +181,7 @@ function OptionRadio({
               : "border-[var(--rule-strong)] bg-transparent"
           }`}
         >
-          {selected && <span className="block h-2 w-2 rounded-full bg-white" />}
+          {selected && <span className="block h-2 w-2 rounded-full bg-[var(--surface-raised)]" />}
         </span>
         <span className="text-base font-extrabold text-[var(--text-primary)]">
           {label}

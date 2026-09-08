@@ -114,7 +114,7 @@ export default function LothCadenaModal({ code, onClose }: { code: string; onClo
               <p className="truncate text-xs text-[var(--text-tertiary)]">Del árbol al despacho, con su autorización</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
+          <button type="button" onClick={onClose} aria-label="Cerrar" className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]">
             <X className="h-4 w-4" />
           </button>
         </header>

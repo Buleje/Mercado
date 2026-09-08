@@ -129,7 +129,7 @@ export default function VinculoContraparte({
       )}
 
       {abierto && (
-        <div className="space-y-2 rounded-xl border border-[var(--rule-base)] dark:border-white/10 p-2.5">
+        <div className="space-y-2 rounded-xl border border-[var(--rule-base)] p-2.5">
           <div className="flex gap-1.5">
             {([["proveedor", "Proveedor", Truck], ["cliente", "Cliente", User]] as const).map(([v, texto, Icono]) => (
               <button
@@ -151,7 +151,7 @@ export default function VinculoContraparte({
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por nombre o RUC…"
-            className="w-full rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 px-2.5 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+            className="w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
           />
 
           {cargando && <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />}

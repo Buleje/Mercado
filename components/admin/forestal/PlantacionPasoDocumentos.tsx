@@ -109,7 +109,7 @@ export default function PlantacionPasoDocumentos({
                 <select
                   value={doc.clasificacion}
                   onChange={(e) => actualizar(cat.key, { clasificacion: e.target.value as ClasificacionDocumento })}
-                  className="h-9 shrink-0 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-primary)]"
+                  className="h-9 shrink-0 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-primary)]"
                 >
                   <option value="requerido">Requerido</option>
                   <option value="opcional">Opcional</option>

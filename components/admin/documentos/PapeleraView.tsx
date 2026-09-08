@@ -87,7 +87,7 @@ export function PapeleraView({
 
   if (enPapelera.length === 0) {
     return (
-      <div className="bg-white dark:bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
+      <div className="bg-[var(--surface-raised)] border-2 border-dashed border-[var(--rule-base)] rounded-2xl p-10 text-center">
         <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)] mb-4">
           <Trash2 className="h-7 w-7" />
         </div>
@@ -104,7 +104,7 @@ export function PapeleraView({
   return (
     <div className="space-y-3">
       {/* Cuánto retiene la papelera + vaciarla de una */}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
           <HardDrive className="h-5 w-5" />
         </span>
@@ -139,7 +139,7 @@ export function PapeleraView({
           </span>
           <button
             onClick={() => setElegidos(todos ? new Set() : new Set(enPapelera.map((d) => d.id)))}
-            className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold"
+            className="text-xs px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold"
           >
             {todos ? "Ninguno" : `Elegir los ${enPapelera.length}`}
           </button>
@@ -148,7 +148,7 @@ export function PapeleraView({
               onClick={() => correr("restaurar", () => onRestoreMany([...elegidos]))}
               disabled={ocupado}
               aria-label={`Restaurar los ${elegidos.size} elegidos`}
-              className="text-xs px-2.5 py-1 rounded-md bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1 disabled:opacity-50"
+              className="text-xs px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold inline-flex items-center gap-1 disabled:opacity-50"
             >
               {trabajando === "restaurar" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
               Restaurar
@@ -161,7 +161,7 @@ export function PapeleraView({
               }
               disabled={ocupado}
               aria-label={`Eliminar definitivamente los ${elegidos.size} elegidos`}
-              className="text-xs px-2.5 py-1 rounded-md bg-[var(--data-error-500)] hover:brightness-110 font-bold inline-flex items-center gap-1 disabled:opacity-50"
+              className="text-xs px-2.5 py-1 rounded-lg bg-[var(--data-error-500)] hover:brightness-110 font-bold inline-flex items-center gap-1 disabled:opacity-50"
             >
               {trabajando === "eliminar" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
               Eliminar def.
@@ -173,7 +173,7 @@ export function PapeleraView({
         </div>
       )}
 
-      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)] overflow-hidden">
+      <div className="rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-2.5 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
           <input
             type="checkbox"

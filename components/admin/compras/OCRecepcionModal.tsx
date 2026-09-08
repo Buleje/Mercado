@@ -162,7 +162,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
               OC #{ocId.slice(-8).toUpperCase()} - Paso {step} de 3
             </p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
             <X className="h-5 w-5 text-[var(--text-secondary)]" />
           </button>
         </div>
@@ -174,7 +174,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
               key={s}
               className={cn(
                 "flex-1 h-1.5 rounded-full transition-colors",
-                s <= step ? "bg-primary" : "bg-gray-200 dark:bg-gray-700",
+                s <= step ? "bg-primary" : "bg-[var(--rule-base)] ",
               )}
             />
           ))}
@@ -227,7 +227,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                                 setError(null);
                                 updateItem(idx, { receivedQty: val, noLlego: false });
                               }}
-                              className="w-16 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                              className="w-16 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                               disabled={item.noLlego}
                             />
                           </td>
@@ -250,7 +250,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                               value={item.condition}
                               disabled={item.noLlego}
                               onChange={(e) => updateItem(idx, { condition: e.target.value as CondicionItem })}
-                              className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary disabled:opacity-50"
+                              className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary disabled:opacity-50"
                             >
                               {CONDICIONES.map((c) => (
                                 <option key={c.v} value={c.v}>{c.l}</option>
@@ -318,7 +318,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                                 step={0.01}
                                 value={item.unitPrice}
                                 onChange={(e) => updateItem(idx, { unitPrice: Math.max(0, parseFloat(e.target.value) || 0) })}
-                                className="w-24 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
+                                className="w-24 text-center border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 py-1 text-sm font-bold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                               />
                             </td>
                             <td className="py-2 px-1 text-right">
@@ -373,7 +373,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
               </div>
 
               {/* Items summary */}
-              <div className="bg-gray-50 dark:bg-accent/50 rounded-xl p-3 space-y-1 max-h-40 overflow-y-auto">
+              <div className="bg-[var(--surface-sunken)] dark:bg-accent/50 rounded-xl p-3 space-y-1 max-h-40 overflow-y-auto">
                 {receivedItems.map((item) => (
                   <div key={item.productId} className="flex justify-between text-xs">
                     <span className={cn("text-[var(--text-primary)] dark:text-[var(--text-primary)]", item.receivedQty === 0 && "line-through text-[var(--text-tertiary)]")}>
@@ -419,7 +419,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
           {step < 3 ? (
             <button
               onClick={() => setStep((s) => s + 1)}
-              className="flex items-center gap-1 px-4 py-2 bg-primary hover:bg-primary/90 text-white font-bold text-sm rounded-lg transition-colors"
+              className="flex items-center gap-1 px-4 py-2 bg-primary hover:bg-primary/90 text-white font-bold text-sm rounded-xl transition-colors"
             >
               Siguiente <ChevronRight className="h-4 w-4" />
             </button>
@@ -427,7 +427,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
             <button
               onClick={handleConfirm}
               disabled={saving || itemsRecibidos.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/10 disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/10 disabled:opacity-50 text-white font-bold text-sm rounded-xl transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Confirmar recepción

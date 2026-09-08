@@ -22,7 +22,7 @@ interface Props {
 const ESTILO_SEVERIDAD: Record<ContractRiesgo["severidad"], string> = {
   alta: "border-l-[var(--data-error-500)] bg-[var(--data-error-100)]/40 dark:bg-[var(--data-error-500)]/12",
   media: "border-l-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12",
-  baja: "border-l-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-white/5",
+  baja: "border-l-[var(--rule-base)] bg-[var(--surface-alt)] ",
 };
 
 const TEXTO_SEVERIDAD: Record<ContractRiesgo["severidad"], string> = {
@@ -85,7 +85,7 @@ export default function PanelRevision({ contratoId, revision, onRevisado }: Prop
 
       {actual && (
         <div className="space-y-2">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-alt)] dark:bg-white/5">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-alt)] ">
             <div className="text-center shrink-0">
               <p className={cn("text-2xl font-bold tabular-nums", colorPuntaje(actual.puntaje))}>
                 {actual.puntaje}

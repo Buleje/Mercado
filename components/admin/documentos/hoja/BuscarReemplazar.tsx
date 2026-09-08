@@ -81,7 +81,7 @@ export default function BuscarReemplazar({
         }}
         placeholder="Buscar en la hoja…"
         aria-label="Buscar en la hoja"
-        className="h-9 w-48 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+        className="h-9 w-48 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
       />
       <span className="min-w-[5rem] text-xs font-semibold text-[var(--text-tertiary)]">
         {texto === "" ? "" : coincidencias.length === 0 ? "Sin resultados" : `${Math.min(indice + 1, coincidencias.length)} de ${coincidencias.length}`}
@@ -100,7 +100,7 @@ export default function BuscarReemplazar({
         onChange={(e) => setPorQue(e.target.value)}
         placeholder="Reemplazar por…"
         aria-label="Reemplazar por"
-        className="h-9 w-44 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+        className="h-9 w-44 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
       />
       <button
         type="button"

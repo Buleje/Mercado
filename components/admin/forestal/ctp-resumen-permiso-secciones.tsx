@@ -115,7 +115,7 @@ export function SeccionObjetivo({
             onChange={(e) => onElegir(e.target.value)}
             disabled={cargandoCubicaciones || (cubicaciones?.length ?? 0) === 0}
             aria-label="Elegir una cubicación guardada como objetivo"
-            className="h-10 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-50"
+            className="h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-50"
           >
             <option value="">
               {cargandoCubicaciones
@@ -145,7 +145,7 @@ export function SeccionObjetivo({
           }}
           placeholder="o pegá el código: cub-…"
           aria-label="Código de la cubicación objetivo"
-          className="h-10 min-w-0 flex-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          className="h-10 min-w-0 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
         />
         <Btn variant="secondary" size="sm" onClick={onBuscar} disabled={buscando || !codigo.trim()}>
           <Search className="h-4 w-4" aria-hidden /> Buscar

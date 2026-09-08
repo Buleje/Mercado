@@ -908,7 +908,7 @@ export default function FiadosModule() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar fiado o cliente..."
-            className="w-full h-12 sm:h-10 pl-10 pr-4 text-sm rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] focus:border-primary/40 focus:ring-1 focus:ring-primary/30 outline-none transition-all"
+            className="w-full h-12 sm:h-10 pl-10 pr-4 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] focus:border-primary/40 focus:ring-1 focus:ring-primary/30 outline-none transition-all"
           />
         </div>
 
@@ -918,10 +918,10 @@ export default function FiadosModule() {
               key={f.key}
               onClick={() => setStatusFilter(f.key)}
               className={cn(
-                "inline-flex items-center rounded-md px-2.5 py-1.5 text-xs font-semibold border transition-colors",
+                "inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-semibold border transition-colors",
                 statusFilter === f.key
                   ? "bg-primary text-white border-primary"
-                  : "border-[var(--rule-base)] text-[var(--text-secondary)] bg-white dark:bg-[var(--color-card)] hover:border-primary/40 hover:text-primary"
+                  : "border-[var(--rule-base)] text-[var(--text-secondary)] bg-[var(--surface-raised)] hover:border-primary/40 hover:text-primary"
               )}
             >
               {f.label}
@@ -951,7 +951,7 @@ export default function FiadosModule() {
         </span>
 
         <AdminTooltip content="Recargar la lista de fiados">
-          <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-sunken)] transition-colors">
+          <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors">
             <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
           </button>
         </AdminTooltip>
@@ -966,7 +966,7 @@ export default function FiadosModule() {
         />
         <button
           onClick={() => setShowNew(true)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
           Nuevo fiado
@@ -977,7 +977,7 @@ export default function FiadosModule() {
       {activeTab !== "deudores" && (
         <div className="flex flex-wrap items-center gap-2 justify-end">
           <AdminTooltip content="Recargar la lista de fiados">
-            <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--surface-sunken)] transition-colors">
+            <button onClick={fetchFiados} aria-label="Actualizar" className="p-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors">
               <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={1.75} aria-hidden />
             </button>
           </AdminTooltip>
@@ -991,7 +991,7 @@ export default function FiadosModule() {
           />
           <button
             onClick={() => setShowNew(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
           >
             <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
             Nuevo fiado
@@ -1027,7 +1027,7 @@ export default function FiadosModule() {
       </div>}
 
       {/* Table — UX Mejora 18: Sticky header + Mejora 19: Sortable columns — solo tab Deudores */}
-      {activeTab === "deudores" && <div className={cn("bg-white dark:bg-[var(--color-card)] border border-[var(--rule-base)] rounded-xl overflow-hidden ", tableDensity === "compact" ? "table-compact" : tableDensity === "wide" ? "table-wide" : "")}>
+      {activeTab === "deudores" && <div className={cn("bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden ", tableDensity === "compact" ? "table-compact" : tableDensity === "wide" ? "table-wide" : "")}>
         {loading ? (
           <LoadingState />
         ) : error ? (
@@ -1051,7 +1051,7 @@ export default function FiadosModule() {
                   sticky positioning, sr-only labels. DataTable del DS
                   no soporta esta combinación de features (ADR-075). */}
               <table className="w-full min-w-[700px] sm:min-w-0 text-sm">
-                <thead className="sticky top-0 bg-white dark:bg-[var(--color-card)] z-10 shadow-[var(--shadow-sm)]">
+                <thead className="sticky top-0 bg-[var(--surface-raised)] z-10 shadow-[var(--shadow-sm)]">
                   <tr className="border-b border-[var(--rule-soft)] text-left">
                     <th className="px-2 py-3 w-8">
                       <span className="sr-only">Seleccionar</span>
@@ -1164,14 +1164,14 @@ export default function FiadosModule() {
                   <button
                     disabled={page <= 1}
                     onClick={() => setPage(p => p - 1)}
-                    className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
+                    className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                   <button
                     disabled={page >= totalPages}
                     onClick={() => setPage(p => p + 1)}
-                    className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
+                    className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -1203,7 +1203,7 @@ export default function FiadosModule() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className={cn("fixed inset-y-0 right-0 z-50 w-full bg-white dark:bg-[var(--color-card)] border-l border-[var(--rule-base)] overflow-y-auto transition-all duration-[var(--dur-base)]", isPanelWide ? "max-w-[500px]" : "max-w-md")}
+              className={cn("fixed inset-y-0 right-0 z-50 w-full bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto transition-all duration-[var(--dur-base)]", isPanelWide ? "max-w-[500px]" : "max-w-md")}
             >
               <div className="p-4 sm:p-6 space-y-5">
                 {/* Sheet header — UX Mejora 16: Width toggle */}
@@ -1212,12 +1212,12 @@ export default function FiadosModule() {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => { const next = !isPanelWide; setIsPanelWide(next); try { localStorage.setItem(tenantCacheKey("panel-width-preference"), next ? "wide" : "normal"); } catch {} }}
-                      className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors hidden sm:flex"
+                      className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors hidden sm:flex"
                       title={isPanelWide ? "Panel normal" : "Panel ancho"}
                     >
                       {isPanelWide ? <Minimize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /> : <Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />}
                     </button>
-                    <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
+                    <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                       <X className="h-5 w-5 text-[var(--text-secondary)]" />
                     </button>
                   </div>
@@ -1330,7 +1330,7 @@ export default function FiadosModule() {
                       <>
                         <button
                           onClick={() => { setShowPago(true); setPagoError(null); }}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark  transition-colors"
                         >
                           <DollarSign className="h-4 w-4" />
                           Registrar Pago
@@ -1342,7 +1342,7 @@ export default function FiadosModule() {
                             const d = new Date(); d.setDate(d.getDate() + 7);
                             setCompromisoFecha(d.toISOString().slice(0, 10));
                           }}
-                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-bold text-primary border-2 border-primary hover:bg-primary hover:text-white transition-colors"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-bold text-primary border-2 border-primary hover:bg-primary hover:text-white transition-colors"
                         >
                           <PenTool className="h-4 w-4" />
                           Compromiso de Pago
@@ -1375,7 +1375,7 @@ export default function FiadosModule() {
                               alert("Error al generar el link");
                             }
                           }}
-                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-bold text-primary border-2 border-primary hover:bg-primary hover:text-white transition-colors"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-bold text-primary border-2 border-primary hover:bg-primary hover:text-white transition-colors"
                         >
                           <Share2 className="h-4 w-4" />
                           Compartir estado de cuenta
@@ -1384,7 +1384,7 @@ export default function FiadosModule() {
                     )}
                     <button
                       onClick={() => window.print()}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
                     >
                       <Printer className="h-4 w-4" />
                       Imprimir

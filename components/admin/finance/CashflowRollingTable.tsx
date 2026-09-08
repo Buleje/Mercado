@@ -157,7 +157,7 @@ export default function CashflowRollingTable() {
           type="button"
           onClick={() => void fetchData()}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50  transition-colors shrink-0 min-h-[44px]"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50  transition-colors shrink-0 min-h-[44px]"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           Actualizar
@@ -190,7 +190,7 @@ export default function CashflowRollingTable() {
 
       {/* Starting balance card */}
       {data && (
-        <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)]">
+        <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div>
             <p className="text-xs font-bold text-[var(--text-tertiary)]">
               Saldo hoy
@@ -234,13 +234,13 @@ export default function CashflowRollingTable() {
 
       {/* Data table: 1 columna fija "Concepto" + 13 columnas semana */}
       {data && data.weeks.length > 0 && (
-        <div className="overflow-x-auto -mx-1 px-1 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-[var(--surface-raised)]">
+        <div className="overflow-x-auto -mx-1 px-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <DataTable className="w-full min-w-[1100px] text-sm border-collapse">
             <thead>
-              <tr className="border-b border-[var(--rule-base)] dark:border-white/10">
+              <tr className="border-b border-[var(--rule-base)] ">
                 <th
                   scope="col"
-                  className="sticky left-0 z-10 bg-gray-50 dark:bg-[var(--surface-raised)]/80 text-left py-3 px-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] border-r border-[var(--rule-base)] dark:border-white/10"
+                  className="sticky left-0 z-10 bg-[var(--surface-sunken)] dark:bg-[var(--surface-raised)]/80 text-left py-3 px-3 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] border-r border-[var(--rule-base)] "
                 >
                   Concepto
                 </th>
@@ -272,17 +272,17 @@ export default function CashflowRollingTable() {
                   <tr
                     key={row.key}
                     className={cn(
-                      "border-b border-[var(--rule-soft)] dark:border-white/5",
+                      "border-b border-[var(--rule-soft)] ",
                       isClosing &&
-                        "bg-gray-50 dark:bg-white/5 border-t-2 border-[var(--rule-base)] dark:border-white/20",
+                        "bg-[var(--surface-sunken)] border-t-2 border-[var(--rule-base)] ",
                     )}
                   >
                     <th
                       scope="row"
                       className={cn(
-                        "sticky left-0 z-10 text-left py-3 px-3 text-xs font-bold border-r border-[var(--rule-base)] dark:border-white/10",
+                        "sticky left-0 z-10 text-left py-3 px-3 text-xs font-bold border-r border-[var(--rule-base)] ",
                         isClosing
-                          ? "bg-gray-100 dark:bg-white/10 text-[var(--text-primary)]"
+                          ? "bg-[var(--rule-soft)] text-[var(--text-primary)]"
                           : "bg-[var(--surface-raised)] text-[var(--text-secondary)]",
                       )}
                     >

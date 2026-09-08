@@ -131,7 +131,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
               max={100}
               value={config.semillerosPct}
               onChange={(e) => onConfig({ ...config, semillerosPct: Math.max(0, Math.min(100, Number(e.target.value) || 0)) })}
-              className="h-10 w-20 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
+              className="h-10 w-20 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold text-[var(--text-primary)]"
             />
             % de los árboles que superan el DMC (se reservan los de mayor DAP)
           </label>
@@ -150,7 +150,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
                       placeholder={String(oficial.cm)}
                       value={config.dmcOverrides[normKey(e.especie)] ?? ""}
                       onChange={(ev) => setDmc(e.especie, ev.target.value)}
-                      className="h-10 w-20 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold text-[var(--text-primary)]"
+                      className="h-10 w-20 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold text-[var(--text-primary)]"
                     />
                     <span className="w-16 shrink-0 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                       {oficial.fuente === "oficial" ? `norma ${oficial.cm}` : `gral. ${oficial.cm}`}

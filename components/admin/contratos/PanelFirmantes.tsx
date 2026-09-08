@@ -172,10 +172,10 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
           {firmantes.map(f => (
             <li
               key={f.id}
-              className="p-2.5 rounded-xl bg-[var(--surface-alt)] dark:bg-white/5 border border-[var(--rule-soft)] dark:border-white/10"
+              className="p-2.5 rounded-xl bg-[var(--surface-alt)] border border-[var(--rule-soft)] "
             >
               <div className="flex items-center gap-2">
-                <span className="h-6 w-6 shrink-0 rounded-full bg-[var(--surface-sunken)] dark:bg-white/10 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] flex items-center justify-center">
+                <span className="h-6 w-6 shrink-0 rounded-full bg-[var(--surface-sunken)] text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] flex items-center justify-center">
                   {f.orden}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -192,7 +192,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
                       ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
                       : f.estado === "RECHAZADO"
                         ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/25 text-[var(--data-error-500)]"
-                        : "bg-[var(--surface-sunken)] dark:bg-white/10 text-[var(--text-secondary)]",
+                        : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
                   )}
                 >
                   {ESTADO_TEXTO[f.estado] ?? f.estado}
@@ -215,7 +215,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
                   </button>
                   <button
                     onClick={() => copiarLink(f)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] transition-colors"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
                   >
                     {copiado === f.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                     {copiado === f.id ? "Copiado" : "Copiar link"}
@@ -232,7 +232,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
           {borradores.map((b, i) => (
             <div
               key={i}
-              className="p-2.5 rounded-xl border border-[var(--rule-base)] dark:border-white/10 space-y-1.5"
+              className="p-2.5 rounded-xl border border-[var(--rule-base)] space-y-1.5"
             >
               <div className="flex items-center gap-2">
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
@@ -245,7 +245,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
                       prev.map((x, j) => (j === i ? { ...x, rol: e.target.value as SignerRol } : x)),
                     )
                   }
-                  className="text-xs px-2 py-1 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-[var(--text-primary)]"
+                  className="text-xs px-2 py-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)]"
                 >
                   <option value="EMISOR">Tu lado</option>
                   <option value="CONTRAPARTE">Contraparte</option>
@@ -265,7 +265,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
                   setBorradores(prev => prev.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))
                 }
                 placeholder="Nombre completo"
-                className="w-full px-2.5 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+                className="w-full px-2.5 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
               />
               <div className="grid grid-cols-2 gap-1.5">
                 <input
@@ -276,7 +276,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
                     )
                   }
                   placeholder="DNI o RUC"
-                  className="px-2.5 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+                  className="px-2.5 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
                 />
                 <input
                   value={b.telefono}
@@ -287,7 +287,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
                   }
                   placeholder="WhatsApp (9 dígitos)"
                   inputMode="tel"
-                  className="px-2.5 py-2 rounded-lg border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+                  className="px-2.5 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
                 />
               </div>
             </div>
@@ -297,7 +297,7 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
             onClick={() =>
               setBorradores(prev => [...prev, { nombre: "", documento: "", telefono: "", rol: "TESTIGO" }])
             }
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] border border-dashed border-[var(--rule-base)] dark:border-white/15 hover:bg-[var(--surface-sunken)] transition-colors"
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[var(--text-secondary)] border border-dashed border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <Plus className="h-3.5 w-3.5" /> Agregar otro firmante
           </button>
@@ -310,14 +310,14 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
             <button
               onClick={guardar}
               disabled={guardando}
-              className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-60"
+              className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-60"
             >
               {guardando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
               Guardar y generar links
             </button>
             <button
               onClick={() => { setEditando(false); setError(null); }}
-              className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] dark:bg-white/5 hover:bg-[var(--rule-soft)] transition-colors"
+              className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
             >
               <X className="h-3.5 w-3.5" /> Cancelar
             </button>

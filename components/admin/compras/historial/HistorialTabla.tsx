@@ -82,7 +82,7 @@ export default function HistorialTabla({
   const agrupaPorMes = orden.campo === "fecha";
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)]">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] ">
       {/* El scroll vive acá: el header `sticky` necesita un contenedor que
           scrollee en Y, no un `overflow-hidden` en el padre.
           En celular no hace falta un render aparte: el shell del admin ya
@@ -251,7 +251,7 @@ export default function HistorialTabla({
           <button
             type="button"
             onClick={verMas}
-            className="inline-flex h-10 items-center rounded-lg border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
+            className="inline-flex h-10 items-center rounded-xl border-2 border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
           >
             Ver más
           </button>

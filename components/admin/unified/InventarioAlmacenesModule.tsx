@@ -156,7 +156,7 @@ export default function InventarioAlmacenesModule() {
               {/* Mejora 7: Price labels button */}
               <button
                 onClick={() => { setShowPriceLabels(true); void loadLabelProducts(); }}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors"
               >
                 Imprimir etiquetas
               </button>
@@ -209,11 +209,11 @@ export default function InventarioAlmacenesModule() {
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Conteo Físico</CardTitle>
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
-                  <button onClick={() => setConteoMode("wizard")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "wizard" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Guiado</button>
-                  <button onClick={() => setConteoMode("manual")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "manual" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Manual</button>
-                  <button onClick={() => setConteoMode("scanner")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "scanner" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted")}>Escáner</button>
+                  <button onClick={() => setConteoMode("wizard")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "wizard" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted")}>Guiado</button>
+                  <button onClick={() => setConteoMode("manual")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "manual" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted")}>Manual</button>
+                  <button onClick={() => setConteoMode("scanner")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "scanner" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted")}>Escáner</button>
                 </div>
-                <button onClick={() => setShowConteoModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
+                <button onClick={() => setShowConteoModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                   <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
@@ -233,7 +233,7 @@ export default function InventarioAlmacenesModule() {
           <div className="bg-[var(--surface-raised)] w-full sm:max-w-5xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] sticky top-0 bg-[var(--surface-raised)] z-10">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Declaración de Inventario</CardTitle>
-              <button onClick={() => setShowDeclaracionModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface transition-colors">
+              <button onClick={() => setShowDeclaracionModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                 <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>
             </div>
@@ -273,7 +273,7 @@ export default function InventarioAlmacenesModule() {
           <div className="bg-[var(--surface-raised)] rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between">
               <CardTitle className="font-bold text-[var(--text-primary)] text-sm">Imprimir Etiquetas de Precio</CardTitle>
-              <button onClick={() => setShowPriceLabels(false)} className="p-1 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
+              <button onClick={() => setShowPriceLabels(false)} className="p-1 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                 <span className="text-[var(--text-tertiary)] text-lg">&times;</span>
               </button>
             </div>
@@ -312,7 +312,7 @@ export default function InventarioAlmacenesModule() {
               )}
             </div>
             <div className="px-5 py-4 border-t border-[var(--rule-soft)]">
-              <button onClick={handlePrintLabels} disabled={selectedLabelIds.size === 0} className="w-full py-2.5 rounded-lg text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--color-primary)]" style={{ backgroundColor: "var(--color-primary)" }}>
+              <button onClick={handlePrintLabels} disabled={selectedLabelIds.size === 0} className="w-full py-2.5 rounded-xl text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--color-primary)]" style={{ backgroundColor: "var(--color-primary)" }}>
                 Generar etiquetas ({selectedLabelIds.size})
               </button>
             </div>

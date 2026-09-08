@@ -84,7 +84,7 @@ export default function CtpPatioBandeja({ cola }: { cola: PatioColaState }) {
                   onClick={() => { void borrar(a.id).then(() => cola.refrescar()); }}
                   aria-label={`Descartar la anotación ${a.resumen}`}
                   title="Descartar: la anotación se pierde"
-                  className="rounded-lg border-2 border-[var(--rule-base)] p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-700)]"
+                  className="rounded-xl border-2 border-[var(--rule-base)] p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-700)]"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>

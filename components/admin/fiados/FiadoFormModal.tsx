@@ -92,7 +92,7 @@ export default function FiadoFormModal({
                             setCreateError(null);
                           }}
                           placeholder="Ej: 987654321"
-                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                         />
                       </div>
                     )}
@@ -101,7 +101,7 @@ export default function FiadoFormModal({
                   {/* Mejora M1: Resumen visual del cliente */}
                   {newForm.customerId.trim().length >= 6 && (
                     clienteResumenLoading ? (
-                      <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
+                      <div className="flex items-center gap-2 p-3 bg-[var(--surface-sunken)] rounded-xl">
                         <Loader2 className="h-4 w-4 animate-spin text-primary" />
                         <span className="text-xs text-[var(--text-secondary)]">Buscando historial...</span>
                       </div>
@@ -148,7 +148,7 @@ export default function FiadoFormModal({
                       // Fix #9: si el valor no parece un teléfono (pocos dígitos),
                       // mostrar aviso preventivo en lugar del mensaje positivo engañoso
                       /^[\d\s+-]{6,}$/.test(newForm.customerId.trim()) ? (
-                        <div className="border border-[var(--rule-base)] dark:border-white/10 bg-gray-50 dark:bg-white/5 rounded-xl p-3 flex items-center justify-between gap-2">
+                        <div className="border border-[var(--rule-base)] bg-[var(--surface-sunken)] rounded-xl p-3 flex items-center justify-between gap-2">
                           <p className="text-xs text-[var(--text-tertiary)]">Cliente nuevo — sin historial de fiados</p>
                           {onCrearCliente && (
                             <button
@@ -183,7 +183,7 @@ export default function FiadoFormModal({
                           value={newForm.total}
                           onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, total: e.target.value }))}
                           placeholder="0.00"
-                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-2xl font-bold text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal text-right font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                         />
                       </div>
                     )}
@@ -202,7 +202,7 @@ export default function FiadoFormModal({
                           onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, descripcion: e.target.value }))}
                           placeholder="Detalle de lo que se llevó..."
                           rows={2}
-                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
+                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none transition-all"
                         />
                       </div>
                     )}
@@ -220,7 +220,7 @@ export default function FiadoFormModal({
                           type="date"
                           value={newForm.fechaVence}
                           onChange={e => setNewForm((p: FiadoNewForm) => ({ ...p, fechaVence: e.target.value }))}
-                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] dark:border-white/10 bg-white dark:bg-white/5 text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                          className="w-full pl-12 pr-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                         />
                       </div>
                     )}
@@ -240,7 +240,7 @@ export default function FiadoFormModal({
                             alt="DNI del cliente"
                             width={200}
                             height={120}
-                            className="object-cover rounded-xl border border-[var(--rule-base)] dark:border-white/10"
+                            className="object-cover rounded-xl border border-[var(--rule-base)] "
                             unoptimized
                           />
                           <button
@@ -252,7 +252,7 @@ export default function FiadoFormModal({
                           </button>
                         </div>
                       ) : (
-                        <label className="flex items-center justify-center gap-2 w-full py-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-white/20 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                        <label className="flex items-center justify-center gap-2 w-full py-6 rounded-lg border-2 border-dashed border-[var(--rule-base)] cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
                           <Camera className="h-5 w-5 text-[var(--text-tertiary)]" />
                           <span className="text-xs text-[var(--text-secondary)]">Tomar foto o seleccionar imagen</span>
                           <input
@@ -288,7 +288,7 @@ export default function FiadoFormModal({
         <div className="px-6 py-4 border-t border-[var(--rule-soft)] bg-gray-50/50 flex gap-3">
           <button
             onClick={() => setShowNew(false)}
-            className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:bg-gray-50 transition-colors"
+            className="flex-1 py-3 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             Cancelar
           </button>

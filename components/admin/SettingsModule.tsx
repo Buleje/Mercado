@@ -92,7 +92,7 @@ const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc:
   { id: "appearance", icon: <Palette className="h-5 w-5" />, title: "Apariencia", desc: "Colores, slogan, tema", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { id: "storefront", icon: <Monitor className="h-5 w-5" />, title: "Mi Tienda Web", desc: "Secciones visibles y orden del home", color: "text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 dark:bg-primary/20" },
   // ── Sistema avanzado ──
-  { id: "system", icon: <Settings className="h-5 w-5" />, title: "Configuración del Sistema", desc: "Formato, moneda, impuestos", color: "text-slate-500 bg-slate-50 dark:bg-slate-950/30" },
+  { id: "system", icon: <Settings className="h-5 w-5" />, title: "Configuración del Sistema", desc: "Formato, moneda, impuestos", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)] " },
   { id: "security", icon: <Lock className="h-5 w-5" />, title: "Usuarios y Seguridad", desc: "Contraseña, sesiones, acceso", color: "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/30" },
   { id: "audit", icon: <Activity className="h-5 w-5" />, title: "Auditoría y Control", desc: "Logs, retención, alertas", color: "text-[var(--text-secondary)] bg-[var(--surface-sunken)]" },
   { id: "backup", icon: <HardDrive className="h-5 w-5" />, title: "Respaldo y Mantenimiento", desc: "Backups, estado, limpieza", color: "text-[var(--accent)] bg-teal-50 dark:bg-teal-950/30" },
@@ -127,7 +127,7 @@ function TextInput({ value, onChange, placeholder, mono, type = "text", disabled
       disabled={disabled}
       className={cn(
         "w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]",
-        "bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm",
+        "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm",
         "outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         mono && "font-mono"
@@ -146,7 +146,7 @@ function NumberInput({ value, onChange, min, max, step, suffix }: {
         value={value}
         onChange={e => onChange(Number(e.target.value))}
         min={min} max={max} step={step}
-        className="flex-1 px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-mono"
+        className="flex-1 px-3 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-mono"
       />
       {suffix && <span className="text-xs text-[var(--text-secondary)] dark:text-muted font-medium shrink-0">{suffix}</span>}
     </div>
@@ -160,7 +160,7 @@ function SelectInput({ value, onChange, options }: {
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
-      className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors"
+      className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors"
     >
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
@@ -171,7 +171,7 @@ function Toggle({ enabled, onChange, label, desc, danger }: {
   enabled: boolean; onChange: (v: boolean) => void; label: string; desc?: string; danger?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{label}</p>
         {desc && <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{desc}</p>}
@@ -184,7 +184,7 @@ function Toggle({ enabled, onChange, label, desc, danger }: {
           enabled ? (danger ? "bg-[var(--data-error-500)]" : "bg-primary") : "bg-gray-300 dark:bg-gray-600"
         )}
       >
-        <span className={cn("absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white dark:bg-[var(--color-card)] shadow transition-transform", enabled && "translate-x-5")} />
+        <span className={cn("absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-[var(--surface-raised)] shadow transition-transform", enabled && "translate-x-5")} />
       </button>
     </div>
   );
@@ -250,7 +250,7 @@ function OverviewCard({ section, completionPct, onClick }: {
         <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] dark:text-muted mt-0.5 line-clamp-1">{section.desc}</p>
       </div>
       <div className="w-full flex items-center gap-2 mt-auto">
-        <div className="flex-1 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+        <div className="flex-1 h-1.5 bg-[var(--rule-soft)] rounded-full overflow-hidden">
           <div className={cn("h-full rounded-full transition-all", completionPct === 100 ? "bg-primary/10" : "bg-primary/60")} style={{ width: `${completionPct}%` }} />
         </div>
         <span className={cn("text-[length:var(--ts-2xs)] font-bold shrink-0", completionPct === 100 ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>{completionPct}%</span>
@@ -723,7 +723,7 @@ export default function SettingsModule({
     <div className="space-y-4 animate-pulse">
       {[1, 2, 3, 4].map(i => (
         <div key={i} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6">
-          <div className="flex items-center gap-4"><div className="h-12 w-12 bg-gray-200 dark:bg-surface rounded-xl" /><div className="flex-1 space-y-2"><div className="h-5 bg-gray-200 dark:bg-surface rounded w-1/3" /><div className="h-3 bg-gray-200 dark:bg-surface rounded w-2/3" /></div></div>
+          <div className="flex items-center gap-4"><div className="h-12 w-12 bg-[var(--rule-base)] rounded-xl" /><div className="flex-1 space-y-2"><div className="h-5 bg-[var(--rule-base)] rounded w-1/3" /><div className="h-3 bg-[var(--rule-base)] rounded w-2/3" /></div></div>
         </div>
       ))}
     </div>
@@ -739,7 +739,7 @@ export default function SettingsModule({
         <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Activa, oculta o limpia datos de ejemplo por módulo. Los cambios se aplican inmediatamente.</p>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent("open-module-manager"))}
-          className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors mt-2"
+          className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors mt-2"
         >
           <Layers className="h-4 w-4" /> Abrir gestión de módulos
         </button>
@@ -791,29 +791,29 @@ export default function SettingsModule({
           )}
           <div className="space-y-3">
             {customShortcuts.map(sc => (
-              <div key={sc.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+              <div key={sc.id} className="flex items-center gap-3 p-3 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <Zap className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
                 <input
                   value={sc.label}
                   onChange={e => updateShortcut(sc.id, "label", e.target.value)}
-                  className="flex-1 px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                  className="flex-1 px-2 py-1.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                   placeholder="Nombre del acceso"
                 />
                 <select
                   value={sc.tabId}
                   onChange={e => updateShortcut(sc.id, "tabId", e.target.value)}
-                  className="px-2 py-1.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+                  className="px-2 py-1.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
                 >
                   {availableTabs.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
-                <button onClick={() => removeShortcut(sc.id)} className="p-1.5 rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors">
+                <button onClick={() => removeShortcut(sc.id)} className="p-1.5 rounded-xl text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] transition-colors">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             ))}
           </div>
           {customShortcuts.length < 6 && (
-            <button onClick={addShortcut} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors mt-2">
+            <button onClick={addShortcut} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:text-primary hover:border-primary transition-colors mt-2">
               <Plus className="h-4 w-4" /> Agregar acceso directo
             </button>
           )}
@@ -867,7 +867,7 @@ export default function SettingsModule({
             <FieldLabel icon={<MapPin className="h-3.5 w-3.5" />}>Dirección</FieldLabel>
             <div className="flex gap-2">
               <div className="flex-1"><TextInput value={businessAddress} onChange={setBusinessAddress} /></div>
-              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30 transition-colors shrink-0">
+              <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-xl text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30 transition-colors shrink-0">
                 <MapPin className="h-4 w-4" />
               </button>
               <button
@@ -884,7 +884,7 @@ export default function SettingsModule({
                     { enableHighAccuracy: true }
                   );
                 }}
-                className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30 transition-colors shrink-0 flex items-center gap-1.5"
+                className="px-3 py-2 rounded-xl text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30 transition-colors shrink-0 flex items-center gap-1.5"
               >
                 <MapPin className="h-4 w-4" /> Mi ubicación
               </button>
@@ -895,7 +895,7 @@ export default function SettingsModule({
           <div><FieldLabel icon={<Clock className="h-3.5 w-3.5" />}>Horario</FieldLabel><TextInput value={hours} onChange={setHours} placeholder="Lun - Sáb: 7am - 9pm" /></div>
         </div>
         <div><FieldLabel icon={<AlignLeft className="h-3.5 w-3.5" />}>Descripción</FieldLabel>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
         </div>
       </SectionCard>
 
@@ -992,19 +992,19 @@ export default function SettingsModule({
       <SectionCard title="Credenciales de acceso" desc="Usuario y contraseña para iniciar sesión en el panel">
         <div className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <div className="p-3 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="flex items-center gap-2 mb-1.5">
                 <User className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Usuario</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-[var(--text-primary)] font-mono">admin</span>
-                <button type="button" onClick={() => { navigator.clipboard.writeText("admin"); }} className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Copiar usuario">
+                <button type="button" onClick={() => { navigator.clipboard.writeText("admin"); }} className="p-1.5 rounded-xl hover:bg-[var(--rule-base)] transition-colors" title="Copiar usuario">
                   <Copy className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <div className="p-3 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="flex items-center gap-2 mb-1.5">
                 <Key className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">Contraseña</span>
@@ -1012,10 +1012,10 @@ export default function SettingsModule({
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-[var(--text-primary)] font-mono">{showCredPw ? storedAdminPw : "••••••••"}</span>
                 <div className="flex items-center gap-1">
-                  <button type="button" onClick={() => setShowCredPw(v => !v)} className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title={showCredPw ? "Ocultar" : "Mostrar"}>
+                  <button type="button" onClick={() => setShowCredPw(v => !v)} className="p-1.5 rounded-xl hover:bg-[var(--rule-base)] transition-colors" title={showCredPw ? "Ocultar" : "Mostrar"}>
                     {showCredPw ? <EyeOff className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /> : <Eye className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />}
                   </button>
-                  <button type="button" onClick={() => { navigator.clipboard.writeText(storedAdminPw); }} className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Copiar contraseña">
+                  <button type="button" onClick={() => { navigator.clipboard.writeText(storedAdminPw); }} className="p-1.5 rounded-xl hover:bg-[var(--rule-base)] transition-colors" title="Copiar contraseña">
                     <Copy className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                   </button>
                 </div>
@@ -1036,7 +1036,7 @@ export default function SettingsModule({
                 alert("Credenciales copiadas al portapapeles");
               }
             }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/5 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/5 transition-colors"
           >
             <Send className="h-4 w-4" /> Compartir credenciales
           </button>
@@ -1076,14 +1076,14 @@ export default function SettingsModule({
               <div className="flex gap-1">
                 {[1, 2, 3, 4].map(i => {
                   const strength = (newPw.length >= 4 ? 1 : 0) + (newPw.length >= 8 ? 1 : 0) + (/[A-Z]/.test(newPw) ? 1 : 0) + (/[0-9]/.test(newPw) ? 1 : 0);
-                  return <div key={i} className={cn("h-1.5 flex-1 rounded-full", i <= strength ? (strength <= 1 ? "bg-[var(--data-error-500)]" : strength <= 2 ? "bg-[var(--data-warning-500)]" : strength <= 3 ? "bg-primary/10" : "bg-primary/10") : "bg-gray-200 dark:bg-surface")} />;
+                  return <div key={i} className={cn("h-1.5 flex-1 rounded-full", i <= strength ? (strength <= 1 ? "bg-[var(--data-error-500)]" : strength <= 2 ? "bg-[var(--data-warning-500)]" : strength <= 3 ? "bg-primary/10" : "bg-primary/10") : "bg-[var(--rule-base)] ")} />;
                 })}
               </div>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{newPw.length < 4 ? "Muy corta" : newPw.length < 8 ? "Aceptable" : "Fuerte"}</p>
             </div>
           )}
           {pwChangeError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{pwChangeError}</p>}
-          <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
+          <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
             <Lock className="h-4 w-4" /> Cambiar contraseña
           </button>
         </form>
@@ -1152,13 +1152,13 @@ export default function SettingsModule({
       <SectionCard title="Navegación del sitio" desc="Orden y visibilidad del menú">
         <div className="space-y-2">
           {navLinks.map((link, idx) => (
-            <div key={link.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <div key={link.id} className="flex items-center gap-3 p-3 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="flex flex-col gap-0.5">
                 <button disabled={idx === 0} onClick={() => { const n = [...navLinks]; [n[idx], n[idx - 1]] = [n[idx - 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-25"><ArrowUp className="h-3.5 w-3.5" /></button>
                 <button disabled={idx === navLinks.length - 1} onClick={() => { const n = [...navLinks]; [n[idx], n[idx + 1]] = [n[idx + 1], n[idx]]; setNavLinks(n); }} className="p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-25"><ArrowDown className="h-3.5 w-3.5" /></button>
               </div>
               <span className="flex-1 font-semibold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{NAV_LABEL[link.id] || link.id}</span>
-              <button onClick={() => setNavLinks(prev => prev.map((l, i) => i === idx ? { ...l, visible: !l.visible } : l))} className={cn("p-1.5 rounded-lg", link.visible ? "text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10" : "text-[var(--text-tertiary)]")}>
+              <button onClick={() => setNavLinks(prev => prev.map((l, i) => i === idx ? { ...l, visible: !l.visible } : l))} className={cn("p-1.5 rounded-xl", link.visible ? "text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10" : "text-[var(--text-tertiary)]")}>
                 {link.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
               </button>
             </div>
@@ -1224,7 +1224,7 @@ export default function SettingsModule({
               <TextInput value={val} onChange={v => setInvoiceSeries(p => ({ ...p, [key]: v }))} mono />
               <div className="mt-1">
                 <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Inicio: </span>
-                <input type="number" min={1} value={invoiceStart[val] || 1} onChange={e => setInvoiceStart(p => ({ ...p, [val]: Number(e.target.value) }))} className="w-20 px-2 py-1 text-xs font-mono rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface outline-none" />
+                <input type="number" min={1} value={invoiceStart[val] || 1} onChange={e => setInvoiceStart(p => ({ ...p, [val]: Number(e.target.value) }))} className="w-20 px-2 py-1 text-xs font-mono rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] outline-none" />
               </div>
             </div>
           ))}
@@ -1266,7 +1266,7 @@ export default function SettingsModule({
 
       <SectionCard title="Pie de comprobante">
         <FieldLabel>Texto legal / agradecimiento</FieldLabel>
-        <textarea value={invoiceFooterText} onChange={e => setInvoiceFooterText(e.target.value)} rows={2} placeholder="Gracias por su compra. Conserve este comprobante." className="w-full px-3 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+        <textarea value={invoiceFooterText} onChange={e => setInvoiceFooterText(e.target.value)} rows={2} placeholder="Gracias por su compra. Conserve este comprobante." className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
       </SectionCard>
 
       <SaveButton saving={saving} saved={savedSection === "sales"} onClick={() => patch({
@@ -1324,7 +1324,7 @@ export default function SettingsModule({
           {adjustReasons.map((reason, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <TextInput value={reason} onChange={v => setAdjustReasons(p => p.map((r, i) => i === idx ? v : r))} />
-              <button onClick={() => setAdjustReasons(p => p.filter((_, i) => i !== idx))} className="p-2 rounded-lg text-[var(--data-error-500)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => setAdjustReasons(p => p.filter((_, i) => i !== idx))} className="p-2 rounded-xl text-[var(--data-error-500)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)]"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
           <button onClick={() => setAdjustReasons(p => [...p, ""])} className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"><Plus className="h-3.5 w-3.5" /> Agregar motivo</button>
@@ -1367,7 +1367,7 @@ export default function SettingsModule({
               </div>
               <div>
                 <FieldLabel>QR de Yape</FieldLabel>
-                <button onClick={() => yapeImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--rule-base)]0 text-sm font-semibold text-[var(--text-secondary)] bg-[var(--surface-sunken)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
+                <button onClick={() => yapeImgRef.current?.click()} className="w-full py-3 rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-[var(--rule-base)]0 text-sm font-semibold text-[var(--text-secondary)] bg-[var(--surface-sunken)] transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR</button>
                 <input ref={yapeImgRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload(setYapeImage, "yape", "payments")} />
                 {yapeImage && <div className="mt-2 flex items-center gap-3 p-2 bg-[var(--surface-sunken)] rounded-lg"><Image src={yapeImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setYapeImage("")} className="text-xs text-[var(--data-error-500)] hover:text-[var(--data-error-500)]">Quitar</button></div>}
               </div>
@@ -1381,7 +1381,7 @@ export default function SettingsModule({
                 <div><FieldLabel>Número</FieldLabel><TextInput value={plinPhone} onChange={setPlinPhone} mono /></div>
               </div>
               <div>
-                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-lg border-2 border-dashed border-[var(--data-success-500)]/30 hover:border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
+                <button onClick={() => plinImgRef.current?.click()} className="w-full py-3 rounded-xl border-2 border-dashed border-[var(--data-success-500)]/30 hover:border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 transition-colors"><Upload className="h-4 w-4 inline mr-1.5" />Subir QR Plin</button>
                 <input ref={plinImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setPlinImage, "plin", "payments")} />
                 {plinImage && <div className="mt-2 flex items-center gap-3 p-2 bg-primary/10 rounded-lg"><Image src={plinImage} alt="QR" width={64} height={64} className="rounded-lg object-contain border" unoptimized /><button onClick={() => setPlinImage("")} className="text-xs text-[var(--data-error-500)]">Quitar</button></div>}
               </div>
@@ -1421,19 +1421,19 @@ export default function SettingsModule({
       <SectionCard title="Zonas de delivery" desc="Define zonas con tarifas y tiempos diferentes">
         <div className="space-y-2">
           {deliveryZones.map((zone, idx) => (
-            <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <div key={idx} className="flex items-center gap-2 p-3 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="flex-1 grid grid-cols-3 gap-2">
-                <input value={zone.name} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, name: e.target.value } : z))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm bg-[var(--surface-raised)] outline-none" />
+                <input value={zone.name} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, name: e.target.value } : z))} placeholder="Nombre" className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm bg-[var(--surface-raised)] outline-none" />
                 <div className="flex items-center gap-1">
-                  <input type="number" value={zone.fee} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, fee: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white dark:bg-[var(--color-card)] outline-none" />
+                  <input type="number" value={zone.fee} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, fee: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-sm font-mono bg-[var(--surface-raised)] outline-none" />
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">S/</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <input type="number" value={zone.estimatedMin} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, estimatedMin: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white dark:bg-[var(--color-card)] outline-none" />
+                  <input type="number" value={zone.estimatedMin} onChange={e => setDeliveryZones(p => p.map((z, i) => i === idx ? { ...z, estimatedMin: Number(e.target.value) } : z))} min={0} className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-sm font-mono bg-[var(--surface-raised)] outline-none" />
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">min</span>
                 </div>
               </div>
-              <button onClick={() => setDeliveryZones(p => p.filter((_, i) => i !== idx))} className="p-1.5 rounded-lg text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => setDeliveryZones(p => p.filter((_, i) => i !== idx))} className="p-1.5 rounded-xl text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
           <button onClick={() => setDeliveryZones(p => [...p, { name: "", fee: 0, estimatedMin: 30 }])} className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"><Plus className="h-3.5 w-3.5" /> Agregar zona</button>
@@ -1458,11 +1458,11 @@ export default function SettingsModule({
       <SectionCard title="Repartidores" desc="Equipo de delivery">
         <div className="space-y-2">
           {riders.map((rider, idx) => (
-            <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-surface rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <div key={idx} className="flex items-center gap-2 p-2 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div className="flex-1 grid grid-cols-3 gap-2">
-                <input value={rider.name} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, name: e.target.value } : r))} placeholder="Nombre" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm bg-white dark:bg-[var(--color-card)] outline-none" />
-                <input value={rider.phone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, phone: e.target.value } : r))} placeholder="Teléfono" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm font-mono bg-white dark:bg-[var(--color-card)] outline-none" />
-                <input value={rider.zone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, zone: e.target.value } : r))} placeholder="Zona" className="px-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-sm bg-white dark:bg-[var(--color-card)] outline-none" />
+                <input value={rider.name} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, name: e.target.value } : r))} placeholder="Nombre" className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-sm bg-[var(--surface-raised)] outline-none" />
+                <input value={rider.phone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, phone: e.target.value } : r))} placeholder="Teléfono" className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-sm font-mono bg-[var(--surface-raised)] outline-none" />
+                <input value={rider.zone} onChange={e => setRiders(p => p.map((r, i) => i === idx ? { ...r, zone: e.target.value } : r))} placeholder="Zona" className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] text-sm bg-[var(--surface-raised)] outline-none" />
               </div>
               <button onClick={() => setRiders(p => p.filter((_, i) => i !== idx))} className="p-1.5 text-[var(--data-error-500)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
             </div>
@@ -1534,7 +1534,7 @@ export default function SettingsModule({
             { label: "SUNAT", ok: sunatProvider !== "none" && !!sunatApiKey },
             { label: "Google Analytics", ok: !!googleAnalyticsId },
           ].map(s => (
-            <div key={s.label} className={cn("flex items-center gap-2 p-3 rounded-xl border", s.ok ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : "bg-gray-50 dark:bg-surface border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
+            <div key={s.label} className={cn("flex items-center gap-2 p-3 rounded-xl border", s.ok ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30" : "bg-[var(--surface-sunken)] border-[var(--rule-base)] dark:border-[var(--rule-base)]")}>
               {s.ok ? <Wifi className="h-4 w-4 text-[var(--data-success-500)]" /> : <WifiOff className="h-4 w-4 text-[var(--text-tertiary)]" />}
               <span className={cn("text-xs font-semibold", s.ok ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>{s.label}</span>
             </div>
@@ -1722,10 +1722,10 @@ export default function SettingsModule({
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
             if (typeof window !== "undefined") localStorage.setItem("buleje-last-backup", new Date().toISOString());
             setLastBackupAt(new Date().toISOString());
-          }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-teal-200 bg-white dark:bg-[var(--color-card)] hover:bg-teal-50 text-sm font-semibold text-[var(--accent-dark)] dark:text-[var(--accent)]">
+          }} className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-teal-200 bg-[var(--surface-raised)] hover:bg-teal-50 text-sm font-semibold text-[var(--accent-dark)] dark:text-[var(--accent)]">
             <Download className="h-4 w-4" /> Generar respaldo
           </button>
-          <button onClick={() => setShowRestoreModal(true)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-[var(--data-info-500)] bg-white dark:bg-[var(--color-card)] hover:bg-[var(--data-info-50)] text-sm font-semibold text-[var(--data-info-500)]">
+          <button onClick={() => setShowRestoreModal(true)} className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--surface-raised)] hover:bg-[var(--data-info-50)] text-sm font-semibold text-[var(--data-info-500)]">
             <Upload className="h-4 w-4" /> Restaurar desde respaldo
           </button>
         </div>
@@ -1743,7 +1743,7 @@ export default function SettingsModule({
           <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Restaurar Base de Datos</CardTitle>
-              {!restoring && <button onClick={() => setShowRestoreModal(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100"><X className="h-5 w-5" /></button>}
+              {!restoring && <button onClick={() => setShowRestoreModal(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)]"><X className="h-5 w-5" /></button>}
             </div>
             <div className="px-6 py-5 space-y-4">
               {!restoreSuccess && !restoreFile && (
@@ -1761,14 +1761,14 @@ export default function SettingsModule({
                       setRestoreFile(file); setRestorePreview({ date: data.exportDate || "?", products: data.products?.length || 0, orders: data.orders?.length || 0, customers: data.customers?.length || 0, size: (file.size / 1024).toFixed(2) + " KB" });
                     } catch { setRestoreError("JSON inválido"); }
                   }} />
-                  <button onClick={() => fileInputRef.current?.click()} className="w-full py-8 rounded-lg border-2 border-dashed border-[var(--data-info-500)] bg-[var(--data-info-50)] text-[var(--data-info-500)] hover:border-[var(--data-info-500)] hover:bg-[var(--data-info-100)] transition-colors">
+                  <button onClick={() => fileInputRef.current?.click()} className="w-full py-8 rounded-xl border-2 border-dashed border-[var(--data-info-500)] bg-[var(--data-info-50)] text-[var(--data-info-500)] hover:border-[var(--data-info-500)] hover:bg-[var(--data-info-100)] transition-colors">
                     <Upload className="h-8 w-8 mx-auto mb-2" /><p className="text-sm font-semibold">Seleccionar archivo .json</p>
                   </button>
                   {restoreError && <p className="text-xs text-[var(--data-error-500)] font-semibold bg-[var(--data-error-50)] p-3 rounded-xl">{restoreError}</p>}
                 </>
               )}
               {restoreFile && !restoreSuccess && restorePreview && (
-                <div className="bg-gray-50 rounded-xl p-4 border border-[var(--rule-base)]">
+                <div className="bg-[var(--surface-sunken)] rounded-xl p-4 border border-[var(--rule-base)]">
                   <p className="text-xs font-bold mb-2">Vista previa</p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div><span className="text-[var(--text-secondary)] block">Productos:</span><span className="font-semibold">{restorePreview.products}</span></div>
@@ -1784,14 +1784,14 @@ export default function SettingsModule({
             </div>
             <div className="flex justify-end gap-3 px-6 py-4 border-t border-[var(--rule-soft)]">
               {!restoreSuccess && (<>
-                <button onClick={() => { setShowRestoreModal(false); setRestoreFile(null); setRestorePreview(null); setRestoreError(null); }} disabled={restoring} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-gray-100">Cancelar</button>
+                <button onClick={() => { setShowRestoreModal(false); setRestoreFile(null); setRestorePreview(null); setRestoreError(null); }} disabled={restoring} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]">Cancelar</button>
                 {restoreFile && <button onClick={async () => {
                   if (!restoreFile) return; setRestoring(true); setRestoreError(null);
                   // [SECURITY F3] /api/restore aún no implementado — bloqueado hasta
                   // crear endpoint con Zod safeParse + requireAdmin(["admin"]) + dry-run mode.
                   setRestoreError("Función de restauración aún no disponible. Contacta soporte para asistencia manual.");
                   setRestoring(false);
-                }} disabled={restoring} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 flex items-center gap-2">
+                }} disabled={restoring} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 flex items-center gap-2">
                   {restoring ? <><Loader2 className="h-4 w-4 animate-spin" /> Restaurando...</> : <><AlertTriangle className="h-4 w-4" /> Confirmar</>}
                 </button>}
               </>)}
@@ -1845,7 +1845,7 @@ export default function SettingsModule({
             onResetTutorial?.();
             onNavigateTab?.("asistente-ia");
           }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-gray-900 dark:bg-white dark:text-[var(--text-primary)] hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gray-900 dark:bg-white dark:text-[var(--text-primary)] hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
         >
           <Activity className="h-4 w-4" />
           Repetir tutorial de bienvenida
@@ -1889,8 +1889,8 @@ export default function SettingsModule({
         title="Configuración"
         description="Personaliza tu tienda, pagos, inventario y más"
         icon={SlidersHorizontal}
-        bgTint="bg-slate-50 dark:bg-slate-900/20"
-        iconColorClass="text-slate-600 dark:text-slate-400"
+        bgTint="bg-[var(--surface-sunken)] "
+        iconColorClass="text-[var(--text-secondary)] "
       >
         {/* Completion badge */}
         <span className={cn(
@@ -1909,7 +1909,7 @@ export default function SettingsModule({
             value={searchQuery}
             onChange={e => { setSearchQuery(e.target.value); if (e.target.value) setShowOverview(true); }}
             placeholder="Buscar configuración..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-surface text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
@@ -2021,7 +2021,7 @@ export default function SettingsModule({
                 {showMobileNav && (
                   <div className="flex items-center justify-between mb-4 sm:hidden">
                     <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Secciones</CardTitle>
-                    <button onClick={() => setShowMobileNav(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100">
+                    <button onClick={() => setShowMobileNav(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)]">
                       <X className="h-5 w-5" />
                     </button>
                   </div>
@@ -2029,7 +2029,7 @@ export default function SettingsModule({
                 {/* Back to overview */}
                 <button
                   onClick={() => setShowOverview(true)}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 mb-2 transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 mb-2 transition-colors"
                 >
                   <ChevronDown className="h-3.5 w-3.5 rotate-90" /> Ver todas las secciones
                 </button>
@@ -2044,7 +2044,7 @@ export default function SettingsModule({
                         "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group",
                         activeSection === s.id
                           ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold "
-                          : "text-[var(--text-secondary)] dark:text-muted hover:bg-gray-50 dark:hover:bg-accent"
+                          : "text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
                       )}
                     >
                       <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105", s.color)}>
@@ -2053,7 +2053,7 @@ export default function SettingsModule({
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold truncate">{s.title}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <div className="flex-1 h-1 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                          <div className="flex-1 h-1 bg-[var(--rule-soft)] rounded-full overflow-hidden">
                             <div
                               className={cn("h-full rounded-full transition-all", pct === 100 ? "bg-primary/10" : "bg-primary/60")}
                               style={{ width: `${pct}%` }}
@@ -2080,7 +2080,7 @@ export default function SettingsModule({
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{SECTION_META.find(s => s.id === activeSection)?.desc}</p>
                   </div>
                   {/* Mobile nav toggle */}
-                  <button onClick={() => setShowMobileNav(!showMobileNav)} className="sm:hidden p-2 rounded-lg bg-gray-100 dark:bg-accent">
+                  <button onClick={() => setShowMobileNav(!showMobileNav)} className="sm:hidden p-2 rounded-xl bg-[var(--rule-soft)] dark:bg-accent">
                     <Settings className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -2114,17 +2114,17 @@ export default function SettingsModule({
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ubicación del negocio</CardTitle>
-              <button onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-gray-100"><X className="h-5 w-5" /></button>
+              <button onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--rule-soft)]"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-4 flex flex-col gap-3">
-              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30">
+              <button onClick={() => { if (!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(pos => { setPickerLat(pos.coords.latitude); setPickerLon(pos.coords.longitude); setBusinessLat(pos.coords.latitude); setBusinessLon(pos.coords.longitude); }); }} className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 hover:bg-primary/10 border border-[var(--data-success-500)]/30">
                 <MapPin className="h-4 w-4" /> Usar ubicación actual
               </button>
               <LeafletMap lat={pickerLat} lon={pickerLon} zoom={15} height={340} onPick={(lat: number, lon: number, address: string) => { setPickerLat(lat); setPickerLon(lon); setBusinessLat(lat); setBusinessLon(lon); setBusinessAddress(address); }} />
             </div>
             <div className="flex justify-end gap-3 px-5 py-4 border-t border-[var(--rule-soft)]">
-              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-[var(--text-secondary)] hover:bg-gray-100">Cancelar</button>
-              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90">Confirmar</button>
+              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]">Cancelar</button>
+              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90">Confirmar</button>
             </div>
           </m.div>
         </div>
@@ -2170,7 +2170,7 @@ function ImageDropCard({
 }: ImageDropCardProps) {
   const safeUrl = value && !value.startsWith("data:") ? value : "";
   return (
-    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-surface p-4 flex flex-col gap-3">
+    <div className="rounded-2xl border-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex flex-col gap-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -2180,7 +2180,7 @@ function ImageDropCard({
       </div>
 
       {/* Donde aparece (mini-mockup) */}
-      <div className="rounded-xl bg-gray-50 dark:bg-[var(--surface-sunken)] p-3 border border-[var(--rule-soft)]">
+      <div className="rounded-xl bg-[var(--surface-sunken)] p-3 border border-[var(--rule-soft)]">
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">
           Aparece en
         </p>
@@ -2191,7 +2191,7 @@ function ImageDropCard({
       {/* Preview o dropzone */}
       <div className="space-y-2">
         {value ? (
-          <div className={`relative w-full overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-gray-50 dark:bg-surface ${previewClass}`}>
+          <div className={`relative w-full overflow-hidden rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] ${previewClass}`}>
             <Image src={value} alt={label} fill className="object-contain" unoptimized onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             <button
               onClick={() => onChange("")}
@@ -2213,7 +2213,7 @@ function ImageDropCard({
             type="button"
             disabled={uploading}
             onClick={() => inputRef.current?.click()}
-            className={`w-full flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-primary text-[var(--text-secondary)] hover:text-primary bg-gray-50 dark:bg-[var(--surface-sunken)] transition-all disabled:opacity-60 disabled:cursor-wait ${previewClass}`}
+            className={`w-full flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--rule-base)] hover:border-primary text-[var(--text-secondary)] hover:text-primary bg-[var(--surface-sunken)] transition-all disabled:opacity-60 disabled:cursor-wait ${previewClass}`}
           >
             {uploading ? (
               <>
@@ -2234,7 +2234,7 @@ function ImageDropCard({
           value={safeUrl}
           onChange={(e) => onChange(e.target.value)}
           placeholder="o pegá URL: https://…"
-          className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-white dark:bg-[var(--surface-canvas)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/30"
         />
       </div>
     </div>
@@ -2263,7 +2263,7 @@ function MockHeader({ logoUrl }: { logoUrl: string }) {
 
 function MockStoreCard({ coverUrl, logoUrl, businessName }: { coverUrl: string; logoUrl: string; businessName: string }) {
   return (
-    <div className="rounded-md overflow-hidden border border-[var(--rule-soft)] bg-white dark:bg-[var(--surface-canvas)]">
+    <div className="rounded-md overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)] ">
       <div className="aspect-[4/3] bg-linear-to-br from-primary/10 to-primary/30 relative">
         {coverUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
@@ -2273,7 +2273,7 @@ function MockStoreCard({ coverUrl, logoUrl, businessName }: { coverUrl: string; 
         )}
         {logoUrl && (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={logoUrl} alt="" className="absolute bottom-1 left-1 h-4 w-4 rounded-md ring-1 ring-white object-cover bg-white dark:bg-[var(--color-card)]" />
+          <img src={logoUrl} alt="" className="absolute bottom-1 left-1 h-4 w-4 rounded-md ring-1 ring-white object-cover bg-[var(--surface-raised)] " />
         )}
       </div>
       <div className="px-1.5 py-1">
@@ -2285,7 +2285,7 @@ function MockStoreCard({ coverUrl, logoUrl, businessName }: { coverUrl: string; 
 
 function MockStorefront({ bannerUrl, logoUrl, businessName }: { bannerUrl: string; logoUrl: string; businessName: string }) {
   return (
-    <div className="rounded-md overflow-hidden border border-[var(--rule-soft)] bg-white dark:bg-[var(--surface-canvas)]">
+    <div className="rounded-md overflow-hidden border border-[var(--rule-soft)] bg-[var(--surface-raised)] ">
       <div className="aspect-[16/5] bg-linear-to-r from-primary/15 via-primary/25 to-primary/10 relative">
         {bannerUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */

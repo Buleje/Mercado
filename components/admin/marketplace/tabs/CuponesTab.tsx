@@ -81,7 +81,7 @@ export function MarketplaceCuponesTab() {
       )}
 
       {coupons.length === 0 ? (
-        <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white">
+        <div className="text-center py-20 px-6 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             <Ticket className="h-6 w-6" />
           </div>
@@ -108,7 +108,7 @@ export function MarketplaceCuponesTab() {
                 className={cn(
                   "group relative overflow-hidden rounded-2xl border-2 p-4 transition-all",
                   c.active && !expired
-                    ? "bg-white border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md"
+                    ? "bg-[var(--surface-raised)] border-[var(--rule-base)] hover:border-primary/40 hover:shadow-md"
                     : "bg-[var(--surface-sunken)] border-[var(--rule-base)] opacity-75"
                 )}
               >
@@ -190,21 +190,21 @@ export function MarketplaceCuponesTab() {
                     <button
                       onClick={() => navigator.clipboard?.writeText(c.code).catch(() => { /* clipboard best-effort */ })}
                       title="Copiar código"
-                      className="p-2 rounded-lg hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors text-[var(--text-tertiary)]"
+                      className="p-2 rounded-xl hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors text-[var(--text-tertiary)]"
                     >
                       <Star className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => toggleActive(c.id, c.active)}
                       title={c.active ? "Desactivar" : "Activar"}
-                      className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors text-[var(--text-tertiary)]"
+                      className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors text-[var(--text-tertiary)]"
                     >
                       {c.active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4 text-[var(--data-success)]" />}
                     </button>
                     <button
                       onClick={() => deleteCoupon(c.id)}
                       title="Eliminar"
-                      className="p-2 rounded-lg hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] transition-colors text-[var(--text-tertiary)]"
+                      className="p-2 rounded-xl hover:bg-[var(--data-error-50)] hover:text-[var(--data-error)] transition-colors text-[var(--text-tertiary)]"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -255,7 +255,7 @@ function NewCouponModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-3xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
         role="dialog"
         aria-modal="true"
         aria-label="Crear nuevo cupón"
@@ -264,7 +264,7 @@ function NewCouponModal({
         <div className="relative overflow-hidden rounded-t-3xl bg-linear-to-br from-primary/15 via-primary/5 to-transparent p-6 border-b border-[var(--rule-base)]">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 h-8 w-8 inline-flex items-center justify-center rounded-full bg-white border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors"
+            className="absolute top-4 right-4 h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors"
             aria-label="Cerrar"
           >
             <X className="h-4 w-4" />
@@ -279,7 +279,7 @@ function NewCouponModal({
 
           {/* Preview ticket */}
           <div className="mt-5 relative">
-            <div className="relative inline-flex items-stretch rounded-xl bg-white border-2 border-dashed border-primary/40 overflow-hidden shadow-sm">
+            <div className="relative inline-flex items-stretch rounded-xl bg-[var(--surface-raised)] border-2 border-dashed border-primary/40 overflow-hidden shadow-sm">
               <div className="flex items-center justify-center px-4 py-3 bg-primary text-white">
                 <Ticket className="h-5 w-5" />
               </div>
@@ -314,7 +314,7 @@ function NewCouponModal({
                     placeholder="BIENVENIDO10"
                     value={form.code}
                     onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase().replace(/\s+/g, "") })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-mono font-bold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase tracking-wider"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono font-bold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase tracking-wider"
                     maxLength={20}
                   />
                 </Field>
@@ -328,7 +328,7 @@ function NewCouponModal({
                     placeholder="Descuento de bienvenida"
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
                 </Field>
               </div>
@@ -357,7 +357,7 @@ function NewCouponModal({
                       "flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all",
                       active
                         ? "border-primary bg-primary/5"
-                        : "border-[var(--rule-base)] bg-white hover:border-[var(--text-tertiary)]"
+                        : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--text-tertiary)]"
                     )}
                   >
                     <span className={cn(
@@ -383,7 +383,7 @@ function NewCouponModal({
                   labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]"
                 >
                   {(id) => (
-                    <div className="flex items-stretch rounded-xl border-2 border-[var(--rule-base)] bg-white focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
+                    <div className="flex items-stretch rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
                       <input
                         id={id}
                         type="number"
@@ -412,7 +412,7 @@ function NewCouponModal({
                     onChange={(e) => setForm({ ...form, minPurchase: e.target.value })}
                     min={0}
                     step={0.5}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
                   />
                 </Field>
               </div>
@@ -435,7 +435,7 @@ function NewCouponModal({
                     value={form.maxUses}
                     onChange={(e) => setForm({ ...form, maxUses: e.target.value })}
                     min={1}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all tabular-nums"
                   />
                 </Field>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vacío = sin tope de canjes</p>
@@ -447,7 +447,7 @@ function NewCouponModal({
                     type="datetime-local"
                     value={form.expiresAt ? form.expiresAt.slice(0, 16) : ""}
                     onChange={(e) => setForm({ ...form, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-white text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
                 </Field>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Vacío = sin vencimiento</p>

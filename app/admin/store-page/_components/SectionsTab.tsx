@@ -266,11 +266,11 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
           <div className="flex items-center justify-between gap-2 border-b border-[var(--rule-soft)] px-3 py-2">
             <span className="truncate text-xs font-bold text-[var(--text-secondary)]">Vista previa · /t/{slug} · se actualiza al guardar</span>
             <div className="flex shrink-0 items-center gap-1">
-              <button type="button" onClick={() => setPreviewKey((k) => k + 1)} aria-label="Recargar vista previa" className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"><RotateCcw className="h-4 w-4" /></button>
-              <button type="button" onClick={() => setShowPreview(false)} aria-label="Cerrar vista previa" className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"><X className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setPreviewKey((k) => k + 1)} aria-label="Recargar vista previa" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"><RotateCcw className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setShowPreview(false)} aria-label="Cerrar vista previa" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"><X className="h-4 w-4" /></button>
             </div>
           </div>
-          <iframe key={previewKey} src={`/t/${slug}`} title="Vista previa de la tienda" className="w-full flex-1 bg-white" />
+          <iframe key={previewKey} src={`/t/${slug}`} title="Vista previa de la tienda" className="w-full flex-1 bg-[var(--surface-raised)]" />
         </div>
       )}
 
@@ -347,7 +347,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
                       onClick={() => moveSection(section.id, -1)}
                       disabled={idx === 0}
                       aria-label="Subir"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       <ArrowUp className="h-4 w-4" />
                     </button>
@@ -356,7 +356,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
                       onClick={() => moveSection(section.id, 1)}
                       disabled={idx === sections.length - 1}
                       aria-label="Bajar"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       <ArrowDown className="h-4 w-4" />
                     </button>
@@ -365,7 +365,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
                       type="button"
                       onClick={() => toggleVisible(section.id)}
                       aria-label={section.visible ? "Ocultar" : "Mostrar"}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
                     >
                       {section.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                     </button>
@@ -374,7 +374,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
                       type="button"
                       onClick={() => setEditingId(isEditing ? null : section.id)}
                       aria-label={isEditing ? "Cerrar editor" : "Editar"}
-                      className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
                         isEditing
                           ? "bg-[var(--accent)] text-white"
                           : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
@@ -388,7 +388,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
                       onClick={() => duplicateSection(section.id)}
                       aria-label="Duplicar sección"
                       title="Duplicar"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors"
                     >
                       <Copy className="h-4 w-4" />
                     </button>
@@ -397,7 +397,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
                       type="button"
                       onClick={() => removeSection(section.id)}
                       aria-label="Eliminar"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--data-error-500)] hover:bg-[var(--data-error-50,#fef2f2)] transition-colors"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-50,#fef2f2)] transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -789,7 +789,7 @@ function SectionEditor({
                 type="button"
                 onClick={() => removeImage(i)}
                 aria-label="Eliminar imagen"
-                className="text-[var(--data-error-500)] hover:bg-[var(--data-error-50,#fef2f2)] inline-flex h-9 w-9 items-center justify-center rounded-md shrink-0"
+                className="text-[var(--data-error-500)] hover:bg-[var(--data-error-50,#fef2f2)] inline-flex h-9 w-9 items-center justify-center rounded-lg shrink-0"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -843,7 +843,7 @@ function SectionEditor({
             <button
               type="button"
               onClick={() => onChange({ imagePosition: "left" })}
-              className={`flex-1 rounded-lg border-2 px-3 h-10 text-xs font-extrabold transition-all ${
+              className={`flex-1 rounded-xl border-2 px-3 h-10 text-xs font-extrabold transition-all ${
                 data.imagePosition === "left"
                   ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)]"
@@ -854,7 +854,7 @@ function SectionEditor({
             <button
               type="button"
               onClick={() => onChange({ imagePosition: "right" })}
-              className={`flex-1 rounded-lg border-2 px-3 h-10 text-xs font-extrabold transition-all ${
+              className={`flex-1 rounded-xl border-2 px-3 h-10 text-xs font-extrabold transition-all ${
                 data.imagePosition === "right"
                   ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)]"
@@ -876,7 +876,7 @@ function SectionEditor({
                 key={b.id}
                 type="button"
                 onClick={() => onChange({ background: b.id })}
-                className={`flex-1 rounded-lg border-2 px-3 h-10 text-xs font-extrabold transition-all ${
+                className={`flex-1 rounded-xl border-2 px-3 h-10 text-xs font-extrabold transition-all ${
                   (data.background ?? "light") === b.id
                     ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] text-[var(--text-secondary)]"

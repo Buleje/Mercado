@@ -323,7 +323,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
             <button
               onClick={() => setEnviando(true)}
               title="Mandar este archivo por WhatsApp"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] transition-colors"
             >
               <MessageCircle className="h-3.5 w-3.5" /> Enviar
             </button>
@@ -591,7 +591,7 @@ function VersionsTab({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Nota del cambio (opcional)…"
-          className="w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary mb-2"
+          className="w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary mb-2"
         />
         <input
           ref={fileRef}
@@ -602,7 +602,7 @@ function VersionsTab({
         <button
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark disabled:opacity-50"
         >
           <Upload className="h-3.5 w-3.5" /> {uploading ? "Subiendo…" : "Elegir archivo…"}
         </button>
@@ -664,7 +664,7 @@ function VersionsTab({
                   {!verDiff ? (
                     <button
                       onClick={() => setVerDiff(true)}
-                      className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
                     >
                       <GitCompare className="h-3.5 w-3.5" /> Ver qué cambió
                     </button>
@@ -828,7 +828,7 @@ function RelatedSection({ doc, allDocs, onChanged }: { doc: DbDocument; allDocs:
           defaultValue=""
           onChange={(e) => { if (e.target.value) toggle(e.target.value, true); }}
           disabled={busy}
-          className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-white px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary dark:bg-[var(--surface-sunken)]"
+          className="h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary dark:bg-[var(--surface-sunken)]"
         >
           <option value="" disabled>Elegí un documento…</option>
           {candidates.map((d) => (
@@ -894,7 +894,7 @@ function ApprovalSection({ doc, onChanged }: { doc: DbDocument; onChanged: (d: D
 
       {status === "review" ? (
         <>
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (opcional)" className="mb-2 h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (opcional)" className="mb-2 h-10 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
           <div className="flex gap-2">
             <button onClick={() => act("approve")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--data-success-700)] px-3 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 dark:bg-[var(--data-success-500)]"><Check className="h-4 w-4" /> Aprobar</button>
             <button onClick={() => act("reject")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl border-2 border-[var(--data-error-500)]/40 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-50 dark:text-[var(--data-error-500)]"><X className="h-4 w-4" /> Rechazar</button>
@@ -1038,7 +1038,7 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
             onChange={(e) => save("folder", { folderId: e.target.value || null })}
             disabled={saving === "folder"}
             aria-label="Mover a otra carpeta"
-            className="h-9 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)] disabled:opacity-50"
+            className="h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)] disabled:opacity-50"
           >
             <option value="">Sin carpeta (raíz)</option>
             {arbolCarpetas.map(({ folder, depth }) => (
@@ -1080,12 +1080,12 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
             type="date"
             defaultValue={expiryValue}
             onChange={(e) => save("expiry", { expiresAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
-            className="px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+            className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
           />
           {doc.expiresAt && (
             <button
               onClick={() => save("expiry", { expiresAt: null })}
-              className="px-2.5 py-2 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--surface-canvas)] text-xs font-bold text-[var(--text-secondary)]"
+              className="px-2.5 py-2 rounded-xl bg-[var(--surface-sunken)] hover:bg-[var(--surface-canvas)] text-xs font-bold text-[var(--text-secondary)]"
             >
               Quitar
             </button>
@@ -1116,7 +1116,7 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
             <select
               value={doc.customerId ?? ""}
               onChange={(e) => save("customer", { customerId: e.target.value || null })}
-              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
+              className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
             >
               <option value="">— Ninguno —</option>
               {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -1127,7 +1127,7 @@ function DetailsTab({ doc, allDocs, folders, onPatched, onAbrirOtro }: { doc: Db
             <select
               value={doc.supplierId ?? ""}
               onChange={(e) => save("supplier", { supplierId: e.target.value || null })}
-              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
+              className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary bg-[var(--surface-raised)]"
             >
               <option value="">— Ninguno —</option>
               {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -1200,7 +1200,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
             <input
               type="number" min={1} max={90} value={days}
               onChange={(e) => setDays(Math.max(1, Math.min(90, Number(e.target.value))))}
-              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+              className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
             />
           </label>
           <label className="block">
@@ -1211,7 +1211,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
             {usePwd && (
               <input
                 type="text" value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="Mínimo 4 caracteres"
-                className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
               />
             )}
           </label>
@@ -1219,7 +1219,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
         <button
           onClick={handleCreate}
           disabled={creating || (usePwd && pwd.length < 4)}
-          className="mt-3 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark disabled:opacity-50"
+          className="mt-3 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark disabled:opacity-50"
         >
           <Share2 className="h-3.5 w-3.5" /> {creating ? "Generando…" : "Generar link"}
         </button>
@@ -1242,14 +1242,14 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
                       value={url}
                       onClick={(e) => (e.target as HTMLInputElement).select()}
                       className={cn(
-                        "flex-1 min-w-0 px-2 py-1.5 rounded-md border text-xs font-mono",
+                        "flex-1 min-w-0 px-2 py-1.5 rounded-xl border text-xs font-mono",
                         active ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]" : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] line-through"
                       )}
                     />
                     <button
                       onClick={() => copyLink(s.token)}
                       disabled={!active}
-                      className="px-2 py-1.5 rounded-md bg-[var(--surface-sunken)] hover:bg-[var(--surface-canvas)] text-xs font-bold text-[var(--text-secondary)] inline-flex items-center gap-1 disabled:opacity-50"
+                      className="px-2 py-1.5 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--surface-canvas)] text-xs font-bold text-[var(--text-secondary)] inline-flex items-center gap-1 disabled:opacity-50"
                     >
                       {copied === s.token ? <Check className="h-3 w-3" /> : <Clipboard className="h-3 w-3" />}
                       {copied === s.token ? "Copiado" : "Copiar"}
@@ -1268,7 +1268,7 @@ function ShareTab({ docId, shares, reload }: { docId: string; shares: DbDocument
                     {active && (
                       <button
                         onClick={async () => { await revokeShare(s.id); await reload(); }}
-                        className="px-2 py-1.5 rounded-md bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 hover:bg-[var(--data-error-100)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] text-xs font-bold"
+                        className="px-2 py-1.5 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 hover:bg-[var(--data-error-100)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)] text-xs font-bold"
                       >
                         Revocar
                       </button>
@@ -1408,7 +1408,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
         {savedSig && !result && (
           <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border-2 border-primary/30 bg-primary/5 p-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={savedSig.png} alt="Mi firma" className="h-10 w-24 rounded bg-white object-contain" />
+            <img src={savedSig.png} alt="Mi firma" className="h-10 w-24 rounded bg-[var(--surface-raised)] object-contain" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold text-[var(--text-primary)]">{savedSig.name}</p>
               {savedSig.role && <p className="truncate text-xs text-[var(--text-tertiary)]">{savedSig.role}</p>}
@@ -1416,7 +1416,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
             <button
               onClick={() => doSign(savedSig.name, savedSig.role, savedSig.png)}
               disabled={signing}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white hover:bg-primary-dark disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white hover:bg-primary-dark disabled:opacity-50"
             >
               {signing && <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />}
               <PencilLine className="h-3.5 w-3.5" /> Firmar con mi firma
@@ -1430,7 +1430,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
             <span className="text-xs font-bold text-[var(--text-secondary)]">Tu nombre</span>
             <input
               type="text" value={signerName} onChange={(e) => setSignerName(e.target.value)}
-              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+              className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
             />
           </label>
           <label className="block">
@@ -1438,7 +1438,7 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
             <input
               type="text" value={signerRole} onChange={(e) => setSignerRole(e.target.value)}
               placeholder="Gerente, Contador…"
-              className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+              className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
             />
           </label>
         </div>
@@ -1458,16 +1458,16 @@ function SignTab({ docId, onSigned }: { docId: string; onSigned: () => void }) {
           />
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-3">
-          <button onClick={clear} className="px-3 py-2 rounded-lg bg-[var(--surface-sunken)] hover:bg-[var(--surface-canvas)] text-xs font-bold text-[var(--text-secondary)]">Limpiar</button>
+          <button onClick={clear} className="px-3 py-2 rounded-xl bg-[var(--surface-sunken)] hover:bg-[var(--surface-canvas)] text-xs font-bold text-[var(--text-secondary)]">Limpiar</button>
           <button
             onClick={handleSign}
             disabled={signing || !signerName.trim()}
-            className="px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark disabled:opacity-50 inline-flex items-center gap-1.5"
+            className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-dark disabled:opacity-50 inline-flex items-center gap-1.5"
           >
             {signing && <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
             <PencilLine className="h-3.5 w-3.5" /> Firmar PDF
           </button>
-          <button onClick={saveMySignature} className="px-3 py-2 rounded-lg border-2 border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary inline-flex items-center gap-1.5" title="Guardá tu firma para reusarla con 1 clic">
+          <button onClick={saveMySignature} className="px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary inline-flex items-center gap-1.5" title="Guardá tu firma para reusarla con 1 clic">
             <Save className="h-3.5 w-3.5" /> Guardar mi firma
           </button>
           {savedNote && <span className="text-xs font-semibold text-[var(--text-tertiary)]">{savedNote}</span>}

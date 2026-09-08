@@ -342,7 +342,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
             <p className="text-sm font-extrabold text-[var(--text-primary)]">{isSign ? "Solicitar firma" : multi ? `Enviar ${docs.length} documentos por WhatsApp` : "Enviar por WhatsApp"}</p>
             <p className="truncate text-xs text-[var(--text-tertiary)]">{multi ? docs.map((d) => d.name).join(" · ") : doc?.name}</p>
           </div>
-          <button onClick={onClose} className="rounded-md p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
@@ -482,7 +482,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
               ) : (
                 <div className="flex items-center gap-2">
                   <code className="min-w-0 flex-1 truncate rounded-md bg-[var(--surface-raised)] px-2 py-1.5 text-xs text-[var(--text-secondary)]">{link}</code>
-                  <button onClick={copyLink} className="inline-flex shrink-0 items-center gap-1 rounded-md border-2 border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary">
+                  <button onClick={copyLink} className="inline-flex shrink-0 items-center gap-1 rounded-lg border-2 border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary">
                     {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} {copied ? "Copiado" : "Copiar"}
                   </button>
                 </div>
@@ -525,7 +525,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
                   value={contactQuery}
                   onChange={(e) => setContactQuery(e.target.value)}
                   placeholder="Buscar contacto…"
-                  className="w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-2 pl-8 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+                  className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-2 pl-8 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
                 />
               </div>
               <ul className="max-h-40 space-y-0.5 overflow-y-auto">
@@ -536,7 +536,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
                       <button
                         onClick={() => setPhone(c.phone)}
                         className={cn(
-                          "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors",
+                          "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors",
                           active ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]"
                         )}
                       >

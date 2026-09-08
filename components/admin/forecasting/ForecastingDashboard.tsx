@@ -453,7 +453,7 @@ export default function ForecastingDashboard() {
                   <p className="text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     {formatCurrency(state.forecast.weeklyAvg)}
                   </p>
-                  <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 mt-0.5">
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                     proyectados en los proximos 7 dias
                   </p>
                 </div>
@@ -499,7 +499,7 @@ export default function ForecastingDashboard() {
                           />
                         </div>
                         {/* Nombre del día */}
-                        <span className="text-xs font-bold text-[var(--text-secondary)] dark:text-zinc-400">
+                        <span className="text-xs font-bold text-[var(--text-secondary)] ">
                           {d.dia}
                         </span>
                       </div>
@@ -532,7 +532,7 @@ export default function ForecastingDashboard() {
                 return (
                   <li key={item.productId} className="flex items-center gap-3">
                     {/* Posición */}
-                    <span className="w-7 text-center text-sm font-bold text-[var(--text-secondary)] dark:text-zinc-400 shrink-0">
+                    <span className="w-7 text-center text-sm font-bold text-[var(--text-secondary)] shrink-0">
                       {medal}
                     </span>
                     {/* Nombre + barra */}
@@ -575,7 +575,7 @@ export default function ForecastingDashboard() {
                   onClick={ejecutarAutoReorder}
                   disabled={autoReordering}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold",
+                    "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold",
                     "bg-[var(--text-primary)] hover:opacity-90 dark:bg-zinc-700 dark:hover:bg-zinc-600",
                     "text-white transition-colors",
                     "disabled:opacity-60 disabled:cursor-not-allowed",
@@ -611,11 +611,11 @@ export default function ForecastingDashboard() {
                 <DataTable className="w-full min-w-[540px] text-xs">
                   <thead>
                     <tr className="border-b border-[var(--rule-soft)]">
-                      <th className="text-left py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Producto</th>
-                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Stock actual</th>
-                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Demanda LT</th>
-                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Pedir</th>
-                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] dark:text-zinc-400">Total est.</th>
+                      <th className="text-left py-2 px-2 font-semibold text-[var(--text-secondary)] ">Producto</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] ">Stock actual</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] ">Demanda LT</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] ">Pedir</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[var(--text-secondary)] ">Total est.</th>
                       <th className="py-2 px-2"></th>
                     </tr>
                   </thead>
@@ -855,7 +855,7 @@ function MetricChip({
 }) {
   return (
     <div className="rounded-xl bg-[var(--surface-sunken)] p-2.5 text-center">
-      <p className="text-xs text-[var(--text-secondary)] dark:text-zinc-400 font-medium mb-0.5">{label}</p>
+      <p className="text-xs text-[var(--text-secondary)] font-medium mb-0.5">{label}</p>
       <p className={cn(
         "text-sm font-extrabold",
         danger
@@ -946,7 +946,7 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
       </div>
 
       {/* Detalle */}
-      <p className="text-sm text-[var(--text-secondary)] dark:text-zinc-400 leading-relaxed">
+      <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
         {s.detail}
       </p>
 
@@ -960,7 +960,7 @@ function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esBaja }: 
         onClick={onAplicar}
         disabled={isApplied || isApplying}
         className={cn(
-          "w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold",
+          "w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold",
           "transition-colors min-h-[44px]", // touch target
           isApplied
             ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)] cursor-default"

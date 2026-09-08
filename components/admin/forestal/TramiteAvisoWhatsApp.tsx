@@ -92,7 +92,7 @@ export default function TramiteAvisoWhatsApp({
         onChange={(e) => { setTelefono(e.target.value); setAviso(null); }}
         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void enviar(); } }}
         placeholder="Número de WhatsApp — 9XX XXX XXX"
-        className="h-9 min-w-[180px] flex-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]"
+        className="h-9 min-w-[180px] flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]"
       />
       <button
         type="button"

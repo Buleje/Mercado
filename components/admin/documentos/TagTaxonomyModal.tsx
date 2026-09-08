@@ -68,7 +68,7 @@ export function TagTaxonomyModal({ onChanged, onClose }: { onChanged: () => void
             <p className="text-sm font-extrabold text-[var(--text-primary)]">Etiquetas</p>
             <p className="text-xs text-[var(--text-tertiary)]">Renombrá, fusioná o borrá en todos los documentos</p>
           </div>
-          <button onClick={onClose} className="rounded-md p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-2">
@@ -89,14 +89,14 @@ export function TagTaxonomyModal({ onChanged, onClose }: { onChanged: () => void
                       autoFocus
                       maxLength={40}
                       aria-label={`Renombrar etiqueta ${t.tag}`}
-                      className="min-w-0 flex-1 rounded-md border-2 border-primary bg-[var(--surface-raised)] px-2 py-1 text-sm font-bold text-[var(--text-primary)] outline-none"
+                      className="min-w-0 flex-1 rounded-xl border-2 border-primary bg-[var(--surface-raised)] px-2 py-1 text-sm font-bold text-[var(--text-primary)] outline-none"
                     />
                   ) : (
                     <>
                       <span className="min-w-0 flex-1 truncate text-sm font-bold text-primary">#{t.tag}</span>
                       <span className="shrink-0 rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold tabular-nums text-[var(--text-tertiary)]">{t.count}</span>
-                      <button onClick={() => startEdit(t.tag)} disabled={busy} className="shrink-0 rounded-md p-1.5 text-[var(--text-tertiary)] opacity-0 transition-colors hover:bg-[var(--surface-raised)] hover:text-primary group-hover:opacity-100 disabled:opacity-40" aria-label={`Renombrar ${t.tag}`} title="Renombrar / fusionar"><Pencil className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => remove(t.tag)} disabled={busy} className="shrink-0 rounded-md p-1.5 text-[var(--text-tertiary)] opacity-0 transition-colors hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-700)] group-hover:opacity-100 dark:hover:bg-[var(--data-error-500)]/15 dark:hover:text-[var(--data-error-500)] disabled:opacity-40" aria-label={`Borrar ${t.tag}`} title="Borrar de todos los documentos"><Trash2 className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => startEdit(t.tag)} disabled={busy} className="shrink-0 rounded-xl p-1.5 text-[var(--text-tertiary)] opacity-0 transition-colors hover:bg-[var(--surface-raised)] hover:text-primary group-hover:opacity-100 disabled:opacity-40" aria-label={`Renombrar ${t.tag}`} title="Renombrar / fusionar"><Pencil className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => remove(t.tag)} disabled={busy} className="shrink-0 rounded-xl p-1.5 text-[var(--text-tertiary)] opacity-0 transition-colors hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-700)] group-hover:opacity-100 dark:hover:bg-[var(--data-error-500)]/15 dark:hover:text-[var(--data-error-500)] disabled:opacity-40" aria-label={`Borrar ${t.tag}`} title="Borrar de todos los documentos"><Trash2 className="h-3.5 w-3.5" /></button>
                     </>
                   )}
                 </li>

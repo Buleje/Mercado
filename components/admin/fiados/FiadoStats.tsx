@@ -651,7 +651,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               onClick={() => fiadosDia.length > 0 && setCalDiaSeleccionado(calDiaSeleccionado === diaKey ? null : diaKey)}
               aria-label={fiadosDia.length > 0 ? `Día ${d}: ${fiadosDia.length} fiados, S/${montoDia.toFixed(2)}` : `Día ${d}: sin vencimientos`}
               className={cn(
-                "p-1 min-h-[44px] rounded-lg text-center transition-colors relative flex flex-col items-center justify-start gap-0.5",
+                "p-1 min-h-[44px] rounded-xl text-center transition-colors relative flex flex-col items-center justify-start gap-0.5",
                 esHoy && "ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--surface-raised)]",
                 tieneVencidos && "bg-[color-mix(in_oklch,var(--data-error)_10%,transparent)] border border-[var(--data-error-500)]/20",
                 tienePorVencer && "bg-[color-mix(in_oklch,var(--data-warning)_10%,transparent)] border border-[var(--data-warning-500)]/20",
@@ -713,7 +713,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 <button
                   onClick={() => setCalMes(p => { const d = new Date(p.year, p.month - 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
                   aria-label="Mes anterior"
-                  className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
@@ -721,7 +721,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 <button
                   onClick={() => setCalMes(p => { const d = new Date(p.year, p.month + 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
                   aria-label="Mes siguiente"
-                  className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>

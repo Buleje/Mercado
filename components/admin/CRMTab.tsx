@@ -545,7 +545,7 @@ export default function CRMTab() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Nombre o teléfono..."
-            className="w-full pl-10 pr-9 h-11 sm:h-auto sm:py-2.5 text-sm rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] focus:border-[var(--text-primary)] focus:ring-2 focus:ring-[var(--rule-base)] outline-none transition-all"
+            className="w-full pl-10 pr-9 h-11 sm:h-auto sm:py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] focus:border-[var(--text-primary)] focus:ring-2 focus:ring-[var(--rule-base)] outline-none transition-all"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -597,7 +597,7 @@ export default function CRMTab() {
 
         {/* Acciones */}
         <AdminTooltip content="Recargar clientes desde la base de datos">
-          <button onClick={load} aria-label="Actualizar" className="p-2 rounded-lg bg-[var(--surface-sunken)] dark:bg-surface hover:bg-[var(--rule-soft)] dark:hover:bg-accent transition-colors">
+          <button onClick={load} aria-label="Actualizar" className="p-2 rounded-xl bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
             <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
           </button>
         </AdminTooltip>
@@ -718,7 +718,7 @@ export default function CRMTab() {
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
         <div className="max-h-[65vh] overflow-y-auto overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead className="sticky top-0 bg-[var(--surface-alt)] dark:bg-surface border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] z-10 shadow-[var(--shadow-sm)]">
+            <thead className="sticky top-0 bg-[var(--surface-alt)] border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] z-10 shadow-[var(--shadow-sm)]">
               <tr>
                 {compareMode && <th className="w-10 px-2 py-3"><span className="sr-only">Seleccionar</span></th>}
                 <th className="text-center px-3 py-3 text-xs font-bold text-[var(--text-tertiary)] w-14">Rank</th>
@@ -778,7 +778,7 @@ export default function CRMTab() {
                         if (rank === 1) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-extrabold">1</span>;
                         if (rank === 2) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--surface-sunken)] text-[var(--text-primary)] text-xs font-extrabold">2</span>;
                         if (rank === 3) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--data-warning-100)] text-[var(--data-warning-500)] text-xs font-extrabold">3</span>;
-                        if (rank <= 10) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted text-xs font-bold">#{rank}</span>;
+                        if (rank <= 10) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted text-xs font-bold">#{rank}</span>;
                         return <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">—</span>;
                       })()}
                     </td>
@@ -831,7 +831,7 @@ export default function CRMTab() {
                             step={0.01}
                             value={creditLimitInput}
                             onChange={e => setCreditLimitInput(e.target.value)}
-                            className="w-20 text-xs border border-primary/40 rounded-lg px-2 py-1 bg-[var(--surface-raised)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            className="w-20 text-xs border border-primary/40 rounded-xl px-2 py-1 bg-[var(--surface-raised)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                             placeholder="0.00"
                           />
                           <button type="submit" className="text-xs px-1.5 py-1 bg-primary text-white rounded-lg font-bold">OK</button>
@@ -899,7 +899,7 @@ export default function CRMTab() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] dark:bg-surface">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-alt)] ">
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
               Página {effectivePage} de {totalPages} · {filtered.length} clientes
             </p>
@@ -907,7 +907,7 @@ export default function CRMTab() {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={effectivePage === 1}
-                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
+                className="p-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
               >
                 <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
               </button>
@@ -930,7 +930,7 @@ export default function CRMTab() {
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={effectivePage === totalPages}
-                className="p-1.5 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
+                className="p-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-raised)] dark:hover:bg-[var(--surface-raised)] disabled:opacity-40 transition-colors"
               >
                 <ChevronRight className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
               </button>
@@ -949,14 +949,14 @@ export default function CRMTab() {
             <div className="flex gap-2">
               <button
                 onClick={() => { setComparePhones(new Set()); }}
-                className="px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
+                className="px-3 py-2 rounded-xl text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
               >
                 Limpiar
               </button>
               <button
                 onClick={() => setShowCompareModal(true)}
                 disabled={comparePhones.size < 2}
-                className="px-4 py-2 rounded-lg text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors"
               >
                 Ver comparativa
               </button>
@@ -990,7 +990,7 @@ export default function CRMTab() {
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-[var(--text-secondary)]" /> Comparativa de Clientes
                   </CardTitle>
-                  <button onClick={() => setShowCompareModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] dark:hover:bg-surface">
+                  <button onClick={() => setShowCompareModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>

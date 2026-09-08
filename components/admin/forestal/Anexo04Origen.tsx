@@ -75,7 +75,7 @@ export default function Anexo04Origen({
       <select
         value={valor}
         onChange={(e) => elegir(e.target.value)}
-        className="h-9 min-w-0 flex-1 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+        className="h-9 min-w-0 flex-1 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
       >
         <option value={ORIGEN_ACTUAL}>
           {piezasActuales > 0 ? `Lote actual del cubicador (${piezasActuales} medidas)` : "Lote actual del cubicador (vacío)"}

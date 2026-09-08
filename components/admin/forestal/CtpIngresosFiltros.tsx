@@ -306,7 +306,7 @@ function StatusChip({
       <span className={`h-2 w-2 rounded-full ${dotCls}`} aria-hidden="true" />
       {label}
       {count != null && (
-        <span className={`rounded-full px-1.5 text-xs tabular-nums ${active ? "bg-black/5 dark:bg-white/10" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}>
+        <span className={`rounded-full px-1.5 text-xs tabular-nums ${active ? "bg-black/5 " : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"}`}>
           {count}
         </span>
       )}

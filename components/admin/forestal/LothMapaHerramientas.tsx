@@ -220,7 +220,7 @@ export default function LothMapaHerramientas({
           <button
             type="button"
             onClick={irACoordenada}
-            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90"
+            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90"
           >
             <Locate className="h-3.5 w-3.5" /> Ir
           </button>
@@ -281,7 +281,7 @@ export default function LothMapaHerramientas({
               max={500}
               value={fajaAnchoM}
               onChange={(e) => onFajaAncho(Math.max(0, Math.min(500, Number(e.target.value) || 0)))}
-              className="h-9 w-20 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold text-[var(--text-primary)]"
+              className="h-9 w-20 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right font-mono text-sm font-bold text-[var(--text-primary)]"
             />
             m
           </label>
@@ -352,7 +352,7 @@ export default function LothMapaHerramientas({
               value={wayback.releaseNum}
               onChange={(e) => onWayback(releases.find((r) => r.releaseNum === e.target.value) ?? null)}
               aria-label="Versión de la imagen histórica"
-              className="ml-auto h-9 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-primary)]"
+              className="ml-auto h-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-primary)]"
             >
               {releases.map((r) => (
                 <option key={r.releaseNum} value={r.releaseNum}>

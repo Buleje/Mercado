@@ -550,7 +550,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="shrink-0 rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -576,7 +576,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 onChange={(e) => setJustificacionDmc(e.target.value)}
                 placeholder="Motivo (ej. árbol caído por viento, autorización especial N°…)"
                 aria-label="Justificación de la tala bajo DMC"
-                className="h-12 w-full rounded-lg border-2 border-[var(--data-error-500)]/50 bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]"
+                className="h-12 w-full rounded-xl border-2 border-[var(--data-error-500)]/50 bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)]"
               />
               <p className="text-xs font-semibold opacity-80">
                 Con el motivo escrito la línea se registra y queda anotada en el libro y en la auditoría.
@@ -607,7 +607,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
               <select
                 value={planId ?? ""}
                 onChange={(e) => setPlanId(e.target.value || null)}
-                className="h-8 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none"
+                className="h-8 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs font-bold text-[var(--text-primary)] outline-none"
               >
                 {plans.length === 0 && <option value="">Sin plan</option>}
                 {plans.map((p) => (
@@ -714,7 +714,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 value={correctionNote}
                 onChange={(e) => setCorrectionNote(e.target.value)}
                 placeholder="Motivo de la corrección (ej.: el Ø mayor se anotó en cm, no en m)"
-                className="mt-2 h-11 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]"
+                className="mt-2 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-info-500)]"
               />
             </div>
           )}
@@ -978,7 +978,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={photoUploading}
-                className="inline-flex h-12 items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {photoUploading
                   ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -1057,13 +1057,13 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
             )}
           </div>
           <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-            <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">
+            <button type="button" onClick={onClose} disabled={submitting} className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">
               Cancelar
             </button>
-            <button type="button" onClick={(e) => handleSubmit(e, true)} disabled={!isValid || submitting} className="inline-flex h-10 items-center rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="button" onClick={(e) => handleSubmit(e, true)} disabled={!isValid || submitting} className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50">
               Guardar y otro
             </button>
-            <button type="submit" form="loth-entry-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--data-success-700)] px-4 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="submit" form="loth-entry-form" disabled={!isValid || submitting} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-success-700)] px-4 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
               {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" />Guardando</>) : "Registrar línea"}
             </button>
           </div>

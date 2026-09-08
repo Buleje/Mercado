@@ -317,11 +317,11 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
   return (
     <div className="h-screen flex flex-col">
       {/* Toolbar */}
-      <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
+      <div className="bg-[var(--surface-raised)] border-b px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/admin/cms")}
-            className="p-2 hover:bg-gray-100 rounded"
+            className="p-2 hover:bg-[var(--rule-soft)] rounded"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -339,7 +339,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => window.open(`/cms/${page.slug}`, "_blank")}
-            className="px-4 py-2 border rounded-lg hover:bg-gray-50 flex items-center gap-2"
+            className="px-4 py-2 border rounded-xl hover:bg-[var(--surface-sunken)] flex items-center gap-2"
             disabled={!page.id}
           >
             <Eye className="w-4 h-4" />
@@ -348,7 +348,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
           <button
             onClick={savePage}
             disabled={saving}
-            className="px-4 py-2 bg-primary/10 text-white rounded-lg hover:bg-primary/10 flex items-center gap-2"
+            className="px-4 py-2 bg-primary/10 text-white rounded-xl hover:bg-primary/10 flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
             {saving ? "Guardando..." : "Guardar"}
@@ -358,7 +358,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Blocks */}
-        <div className="w-64 bg-gray-50 border-r overflow-y-auto">
+        <div className="w-64 bg-[var(--surface-sunken)] border-r overflow-y-auto">
           <div className="p-4">
             <CardTitle className="font-bold mb-3">Bloques disponibles</CardTitle>
             <div className="space-y-2">
@@ -366,7 +366,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                 <button
                   key={block.type}
                   onClick={() => addBlock(block.type)}
-                  className="w-full p-3 bg-white border rounded-lg hover:bg-primary/10 hover:border-[var(--data-success-500)]/30 text-left flex items-center gap-2"
+                  className="w-full p-3 bg-[var(--surface-raised)] border rounded-xl hover:bg-primary/10 hover:border-[var(--data-success-500)]/30 text-left flex items-center gap-2"
                 >
                   <block.icon className="h-5 w-5 text-[var(--data-success-500)]" />
                   <span className="font-medium">{block.name}</span>
@@ -383,11 +383,11 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                 .map((block: Block) => (
                   <div
                     key={block.id}
-                    className={`p-2 bg-white border rounded cursor-pointer ${
-                      selectedBlock === block.id
-                        ? "border-[var(--data-success-500)]/30 bg-primary/10"
-                        : ""
-                    }`}
+                    className={`p-2 bg-[var(--surface-raised)] border rounded cursor-pointer ${
+ selectedBlock === block.id
+ ? "border-[var(--data-success-500)]/30 bg-primary/10"
+ : ""
+ }`}
                     onClick={() => setSelectedBlock(block.id)}
                   >
                     <div className="flex justify-between items-center">
@@ -400,7 +400,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                             e.stopPropagation();
                             toggleBlockVisibility(block.id, !block.visible);
                           }}
-                          className="p-1 hover:bg-gray-100 rounded"
+                          className="p-1 hover:bg-[var(--rule-soft)] rounded"
                           title={block.visible ? "Ocultar" : "Mostrar"}
                         >
                           <Eye
@@ -427,8 +427,8 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
         </div>
 
         {/* Canvas */}
-        <div className="flex-1 overflow-y-auto bg-gray-100 p-8">
-          <div className="max-w-6xl mx-auto bg-white">
+        <div className="flex-1 overflow-y-auto bg-[var(--rule-soft)] p-8">
+          <div className="max-w-6xl mx-auto bg-[var(--surface-raised)]">
             {page.blocks.length === 0 ? (
               <div className="p-16 text-center text-[var(--text-secondary)]">
                 <p className="text-xl mb-2">No hay bloques</p>
@@ -466,9 +466,9 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
           if (!block) return null;
           const fields = BLOCK_FIELDS[block.type] ?? [];
           return (
-            <div className="w-80 bg-white border-l overflow-y-auto flex flex-col">
+            <div className="w-80 bg-[var(--surface-raised)] border-l overflow-y-auto flex flex-col">
               {/* Panel header */}
-              <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between sticky top-0 z-10">
+              <div className="px-4 py-3 border-b bg-[var(--surface-sunken)] flex items-center justify-between sticky top-0 z-10">
                 <div>
                   <CardTitle className="font-bold text-sm">Editar bloque</CardTitle>
                   <p className="text-xs text-[var(--text-secondary)] capitalize">{block.type}</p>
@@ -502,12 +502,12 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                         {field.type === "boolean" ? (
                           <button
                             onClick={() => setDraftProps((p) => ({ ...p, [field.key]: !val }))}
-                            className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg border text-sm font-semibold transition-colors ${
-                              val ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] bg-gray-50 text-[var(--text-secondary)]"
-                            }`}
+                            className={`flex items-center gap-2 w-full px-3 py-2 rounded-xl border text-sm font-semibold transition-colors ${
+ val ? "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+ }`}
                           >
                             <span className={`w-9 h-5 rounded-full transition-colors relative ${val ? "bg-primary/10" : "bg-gray-300"}`}>
-                              <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${val ? "left-4" : "left-0.5"}`} />
+                              <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transition-all ${val ? "left-4" : "left-0.5"}`} />
                             </span>
                             {val ? "Activado" : "Desactivado"}
                           </button>
@@ -524,7 +524,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                               value={val ?? ""}
                               onChange={(e) => setDraftProps((p) => ({ ...p, [field.key]: e.target.value }))}
                               placeholder="#312e81"
-                              className="flex-1 px-3 py-2 rounded-lg border border-[var(--rule-base)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 focus:border-[var(--data-success-500)]/30 font-mono"
+                              className="flex-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] text-xs focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 focus:border-[var(--data-success-500)]/30 font-mono"
                             />
                           </div>
                         ) : field.type === "textarea" ? (
@@ -533,7 +533,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                             onChange={(e) => setDraftProps((p) => ({ ...p, [field.key]: e.target.value }))}
                             placeholder={field.placeholder}
                             rows={3}
-                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 focus:border-[var(--data-success-500)]/30 resize-y"
+                            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 focus:border-[var(--data-success-500)]/30 resize-y"
                           />
                         ) : (
                           <input
@@ -541,7 +541,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                             value={val ?? ""}
                             onChange={(e) => setDraftProps((p) => ({ ...p, [field.key]: e.target.value }))}
                             placeholder={field.placeholder}
-                            className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 focus:border-[var(--data-success-500)]/30"
+                            className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40 focus:border-[var(--data-success-500)]/30"
                           />
                         )}
 
@@ -558,11 +558,11 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
               </div>
 
               {/* Footer save button */}
-              <div className="px-4 py-3 border-t bg-gray-50 sticky bottom-0">
+              <div className="px-4 py-3 border-t bg-[var(--surface-sunken)] sticky bottom-0">
                 <button
                   onClick={saveBlockProps}
                   disabled={savingProps}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary/10 text-white text-sm font-bold rounded-lg hover:bg-primary/10 disabled:opacity-60 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary/10 text-white text-sm font-bold rounded-xl hover:bg-primary/10 disabled:opacity-60 transition-colors"
                 >
                   <Save className="w-4 h-4" />
                   {savingProps ? "Guardando cambios..." : "Guardar cambios"}

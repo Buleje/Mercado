@@ -48,12 +48,12 @@ function fmtDate(iso: string) {
 function SkeletonRow() {
   return (
     <div className="flex items-center gap-3 py-2.5 animate-pulse">
-      <div className="h-8 w-8 rounded-lg bg-gray-200 dark:bg-surface shrink-0" />
+      <div className="h-8 w-8 rounded-lg bg-[var(--rule-base)] shrink-0" />
       <div className="flex-1 space-y-1.5">
-        <div className="h-3 w-36 bg-gray-200 dark:bg-surface rounded" />
-        <div className="h-2.5 w-24 bg-gray-200 dark:bg-surface rounded" />
+        <div className="h-3 w-36 bg-[var(--rule-base)] rounded" />
+        <div className="h-2.5 w-24 bg-[var(--rule-base)] rounded" />
       </div>
-      <div className="h-5 w-16 bg-gray-200 dark:bg-surface rounded-full" />
+      <div className="h-5 w-16 bg-[var(--rule-base)] rounded-full" />
     </div>
   );
 }
@@ -154,7 +154,7 @@ export default function ExpiringBatchesAlert() {
                       key={batch.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-accent/30 transition-colors"
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--surface-sunken)] dark:hover:bg-accent/30 transition-colors"
                     >
                       <div
                         className={cn(

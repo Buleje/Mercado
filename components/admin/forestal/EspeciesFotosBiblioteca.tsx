@@ -143,7 +143,7 @@ export default function EspeciesFotosBiblioteca() {
         }}
       />
 
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-white px-4 py-3 dark:bg-[var(--surface-raised)]">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 ">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Trees className="h-5 w-5" aria-hidden />
         </span>
@@ -220,7 +220,7 @@ export default function EspeciesFotosBiblioteca() {
           {fotos.map((f) => (
             <li
               key={f.clave}
-              className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-raised)]"
+              className="overflow-hidden rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] "
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={f.url} alt={`Foto de ${f.nombre}`} className="h-32 w-full object-cover" loading="lazy" />
@@ -237,7 +237,7 @@ export default function EspeciesFotosBiblioteca() {
                     <button
                       type="button"
                       onClick={() => pedirArchivo(f.nombre, f.cientifico)}
-                      className="rounded-lg p-1.5 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                      className="rounded-xl p-1.5 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
                       title="Reemplazar la foto"
                     >
                       <Upload className="h-4 w-4" aria-hidden />
@@ -245,7 +245,7 @@ export default function EspeciesFotosBiblioteca() {
                     <button
                       type="button"
                       onClick={() => void quitar(f.nombre)}
-                      className="rounded-lg p-1.5 text-[var(--text-secondary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-700)] dark:hover:bg-transparent dark:hover:text-[var(--data-error-500)]"
+                      className="rounded-xl p-1.5 text-[var(--text-secondary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-700)] dark:hover:bg-transparent dark:hover:text-[var(--data-error-500)]"
                       title="Quitar la foto"
                     >
                       <Trash2 className="h-4 w-4" aria-hidden />

@@ -308,7 +308,7 @@ export default function SyncEscritorioView({
                     <button
                       type="button"
                       onClick={() => void olvidar(e.equipoId)}
-                      className="shrink-0 rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-700)]"
+                      className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-700)]"
                       aria-label={`Olvidar el equipo ${e.nombre}`}
                       title="Olvidar este equipo (no desinstala el agente)"
                     >

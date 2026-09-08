@@ -165,7 +165,7 @@ export default function CtpFletesView({ period }: { period: CtpPeriod }) {
             type="button"
             aria-pressed={pestaña === p.id}
             onClick={() => setPestaña(p.id)}
-            className={`inline-flex h-10 items-center gap-1.5 rounded-lg border-2 px-3 text-sm font-bold transition-colors ${
+            className={`inline-flex h-10 items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-bold transition-colors ${
               pestaña === p.id
                 ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"

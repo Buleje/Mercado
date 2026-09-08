@@ -90,10 +90,10 @@ export default function LothCampoBar({
         onClick={onToggle}
         aria-pressed={activo}
         className={`inline-flex h-9 items-center gap-1.5 rounded-lg border-2 px-3 text-xs font-bold transition ${
-          activo
-            ? "border-transparent bg-[#2563eb] text-white"
-            : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
-        }`}
+ activo
+ ? "border-transparent bg-[var(--accent-ink)] text-white"
+ : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+ }`}
       >
         <Navigation className="h-3.5 w-3.5" /> {activo ? "Siguiendo tu GPS" : "Modo campo"}
       </button>
@@ -127,7 +127,7 @@ export default function LothCampoBar({
           <button
             type="button"
             onClick={() => onMarcarAqui([posicion.lat, posicion.lng])}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#2563eb] px-3 text-xs font-bold text-white hover:opacity-90"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
           >
             <MapPin className="h-3.5 w-3.5" /> Marcar acá
           </button>

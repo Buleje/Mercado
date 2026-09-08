@@ -75,9 +75,9 @@ const Anexo04Preview = forwardRef<HTMLDivElement, {
             {editando ? "Editando" : "Editar medidas"}
           </button>
           <div className="flex items-center gap-1">
-            <button type="button" onClick={() => onZoom(-0.25)} aria-label="Alejar" className="rounded-lg border border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><Minus className="h-3.5 w-3.5" /></button>
+            <button type="button" onClick={() => onZoom(-0.25)} aria-label="Alejar" className="rounded-xl border border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><Minus className="h-3.5 w-3.5" /></button>
             <span className="w-12 text-center font-mono text-xs font-bold text-[var(--text-secondary)]">{Math.round(escala * 100)}%</span>
-            <button type="button" onClick={() => onZoom(0.25)} aria-label="Acercar" className="rounded-lg border border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><Plus className="h-3.5 w-3.5" /></button>
+            <button type="button" onClick={() => onZoom(0.25)} aria-label="Acercar" className="rounded-xl border border-[var(--rule-base)] p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><Plus className="h-3.5 w-3.5" /></button>
           </div>
         </div>
       </div>

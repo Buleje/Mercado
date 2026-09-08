@@ -149,7 +149,7 @@ export default function FiltrosDoc({ filtros, onCambiar, presentes, tagsPresente
           "inline-flex h-[42px] items-center gap-1.5 rounded-xl border-2 px-3 text-sm font-bold transition-colors",
           activos > 0
             ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-            : "border-[var(--rule-base)] bg-white text-[var(--text-tertiary)] hover:border-primary/40 dark:bg-[var(--surface-raised)]",
+            : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:border-primary/40 ",
         )}
         aria-expanded={abierto}
         title="Filtrar por tipo de archivo, peso, fecha o vencimiento"
@@ -170,7 +170,7 @@ export default function FiltrosDoc({ filtros, onCambiar, presentes, tagsPresente
         // propio para que siempre se pueda llegar a "Limpiar todo".
         <div
           className={cn(
-            "absolute right-0 z-40 max-h-[min(70vh,32rem)] w-[min(22rem,calc(100vw-2rem))] space-y-3 overflow-y-auto overscroll-contain rounded-2xl border-2 border-[var(--rule-base)] bg-white p-3 shadow-[var(--shadow-lg)] dark:border-white/10 dark:bg-[var(--surface-raised)]",
+            "absolute right-0 z-40 max-h-[min(70vh,32rem)] w-[min(22rem,calc(100vw-2rem))] space-y-3 overflow-y-auto overscroll-contain rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)] ",
             haciaArriba ? "bottom-full mb-2" : "top-full mt-2",
           )}
         >

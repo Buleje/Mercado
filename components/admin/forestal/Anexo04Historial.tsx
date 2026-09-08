@@ -160,7 +160,7 @@ export default function Anexo04Historial({
                 <button type="button" onClick={() => onDescargar(a)} title="Re-descargar el PDF tal como se emitió" aria-label="Re-descargar el PDF" className={ICONO}>
                   <Download className="h-3.5 w-3.5" />
                 </button>
-                <button type="button" onClick={() => void borrar(a)} disabled={borrando === a.id} title="Quitar del historial" aria-label="Quitar del historial" className="rounded-lg border border-[var(--rule-base)] p-1.5 text-[var(--text-tertiary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-700)] disabled:opacity-50">
+                <button type="button" onClick={() => void borrar(a)} disabled={borrando === a.id} title="Quitar del historial" aria-label="Quitar del historial" className="rounded-xl border border-[var(--rule-base)] p-1.5 text-[var(--text-tertiary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-700)] disabled:opacity-50">
                   {borrando === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                 </button>
               </div>

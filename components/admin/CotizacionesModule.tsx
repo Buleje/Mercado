@@ -732,13 +732,13 @@ export default function CotizacionesModule() {
                   aria-label="Buscar cotizaciones"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setShowQuickClient(true)}
-                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-primary hover:text-white hover:border-primary text-[var(--text-secondary)] transition-colors"
+                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-primary hover:text-white hover:border-primary text-[var(--text-secondary)] transition-colors"
                 title="Crear cliente rápido"
               >
                 <Plus className="h-4 w-4" />
@@ -838,7 +838,7 @@ export default function CotizacionesModule() {
                 </div>
                 <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin cotizaciones</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Envía presupuestos profesionales a tus clientes</p>
-                <button onClick={() => setActiveTab("nueva")} className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary-dark">Nueva cotización</button>
+                <button onClick={() => setActiveTab("nueva")} className="bg-primary text-white px-6 py-2.5 rounded-xl font-medium hover:bg-primary-dark">Nueva cotización</button>
               </div>
             ) : (
               <>
@@ -938,10 +938,10 @@ export default function CotizacionesModule() {
                       {cotizaciones.length} cotizaci{cotizaciones.length !== 1 ? "ones" : "ón"} — Pág. {page}/{totalPages}
                     </p>
                     <div className="flex gap-1">
-                      <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
+                      <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                         <ChevronLeft className="h-4 w-4" />
                       </button>
-                      <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
+                      <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors">
                         <ChevronRight className="h-4 w-4" />
                       </button>
                     </div>
@@ -987,7 +987,7 @@ export default function CotizacionesModule() {
                       value={clienteNombre}
                       onChange={e => setClienteNombre(e.target.value)}
                       placeholder="Nombre o razón social"
-                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
                 )}
@@ -1003,7 +1003,7 @@ export default function CotizacionesModule() {
                       onChange={e => setClienteRuc(e.target.value)}
                       placeholder="20XXXXXXXXX"
                       maxLength={20}
-                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
                 )}
@@ -1011,7 +1011,7 @@ export default function CotizacionesModule() {
               <div className="flex justify-end pt-2">
                 <button
                   onClick={() => { if (clienteNombre.trim()) setStep(2); else setCreateError("Nombre del cliente requerido"); }}
-                  className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors"
                 >
                   Siguiente
                 </button>
@@ -1066,7 +1066,7 @@ export default function CotizacionesModule() {
                               onChange={e => { updateItem(idx, "descripcion", e.target.value); setProductSearch(e.target.value); setActiveItemIdx(idx); }}
                               onFocus={() => setActiveItemIdx(idx)}
                               placeholder="Buscar producto o escribir..."
-                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
+                              className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30"
                             />
                             {activeItemIdx === idx && productResults.length > 0 && (
                               <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-h-40 overflow-y-auto">
@@ -1085,21 +1085,21 @@ export default function CotizacionesModule() {
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="1" step="1" value={item.cantidad} onChange={e => updateItem(idx, "cantidad", e.target.value)}
-                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
+                              className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="0" step="0.01" value={item.precioUnit} onChange={e => updateItem(idx, "precioUnit", e.target.value)}
                               placeholder="0.00"
-                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-right" />
+                              className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-right" />
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="0" max="100" step="1" value={item.descuento} onChange={e => updateItem(idx, "descuento", e.target.value)}
-                              className="w-full px-2 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
+                              className="w-full px-2 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30 text-center" />
                           </td>
                           <td className="py-2 text-right font-medium text-[var(--text-primary)]">{formatCurrency(sub)}</td>
                           <td className="py-2 pl-1">
                             {items.length > 1 && (
-                              <button onClick={() => removeItem(idx)} className="p-1 rounded-lg hover:bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors">
+                              <button onClick={() => removeItem(idx)} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] text-[var(--data-error-500)] hover:text-[var(--data-error-500)] transition-colors">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             )}
@@ -1128,10 +1128,10 @@ export default function CotizacionesModule() {
               </div>
 
               <div className="flex gap-2 justify-between pt-2">
-                <button onClick={() => setStep(1)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
+                <button onClick={() => setStep(1)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                   Atrás
                 </button>
-                <button onClick={() => setStep(3)} className="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors">
+                <button onClick={() => setStep(3)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors">
                   Siguiente
                 </button>
               </div>
@@ -1155,7 +1155,7 @@ export default function CotizacionesModule() {
                       type="date"
                       value={validoHasta}
                       onChange={e => setValidoHasta(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
                 )}
@@ -1166,20 +1166,20 @@ export default function CotizacionesModule() {
                   onChange={e => setNotas(e.target.value)}
                   placeholder="Condiciones, observaciones..."
                   rows={2}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                 />
               </Field>
 
               {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
               <div className="flex gap-2 justify-between pt-1">
-                <button onClick={() => setStep(2)} className="px-4 py-2.5 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
+                <button onClick={() => setStep(2)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                   Atrás
                 </button>
                 <button
                   onClick={handleCreate}
                   disabled={creating}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                 >
                   {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   Crear Cotización
@@ -1213,7 +1213,7 @@ export default function CotizacionesModule() {
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Cotización {selected.numero}</CardTitle>
-                  <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors">
+                  <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1347,7 +1347,7 @@ export default function CotizacionesModule() {
                   {selected.status === "BORRADOR" && (
                     <>
                       <button onClick={() => updateStatus("ENVIADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors">
                         <Send className="h-4 w-4" /> Enviar
                       </button>
                     </>
@@ -1355,18 +1355,18 @@ export default function CotizacionesModule() {
                   {selected.status === "ENVIADA" && (
                     <>
                       <button onClick={() => updateStatus("ACEPTADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50 transition-colors">
                         <Check className="h-4 w-4" /> Aceptada
                       </button>
                       <button onClick={() => updateStatus("RECHAZADA")} disabled={actionLoading}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 transition-colors">
                         <XCircle className="h-4 w-4" /> Rechazada
                       </button>
                     </>
                   )}
                   {selected.status === "ACEPTADA" && (
                     <button onClick={convertirAOrden} disabled={actionLoading}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors">
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors">
                       <ShoppingCart className="h-4 w-4" /> Convertir a Orden
                     </button>
                   )}
@@ -1397,7 +1397,7 @@ export default function CotizacionesModule() {
                       const url = phone ? `https://wa.me/${phone}?text=${encodedText}` : `https://wa.me/?text=${encodedText}`;
                       window.open(url, "_blank");
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#25D366] hover:bg-[#1da851] transition-colors"
                   >
                     <MessageCircle className="h-4 w-4" /> WhatsApp
                   </button>
@@ -1414,17 +1414,17 @@ export default function CotizacionesModule() {
                       setActiveTab("nueva");
                       setStep(2);
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors"
                   >
                     <Copy className="h-4 w-4" /> Duplicar
                   </button>
                   <button onClick={handlePrint}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors">
                     <Printer className="h-4 w-4" /> Imprimir PDF
                   </button>
                   <button
                     onClick={() => { setShowSaveTemplate(true); setTemplateName(""); }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors"
                   >
                     <Bookmark className="h-4 w-4" /> Guardar como plantilla
                   </button>
@@ -1440,20 +1440,20 @@ export default function CotizacionesModule() {
                       onChange={e => setTemplateName(e.target.value)}
                       placeholder="Nombre de la plantilla..."
                       maxLength={60}
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                       onKeyDown={e => e.key === "Enter" && handleSaveTemplate()}
                     />
                     <div className="flex gap-2">
                       <button
                         onClick={() => setShowSaveTemplate(false)}
-                        className="flex-1 px-3 py-2 rounded-lg text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
+                        className="flex-1 px-3 py-2 rounded-xl text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] transition-colors"
                       >
                         Cancelar
                       </button>
                       <button
                         onClick={handleSaveTemplate}
                         disabled={!templateName.trim()}
-                        className="flex-1 px-3 py-2 rounded-lg text-xs font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
+                        className="flex-1 px-3 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
                       >
                         Guardar
                       </button>
@@ -1489,7 +1489,7 @@ export default function CotizacionesModule() {
               <div className="w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Seleccionar plantilla</CardTitle>
-                  <button onClick={() => setShowTemplateModal(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)]">
+                  <button onClick={() => setShowTemplateModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)]">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1501,7 +1501,7 @@ export default function CotizacionesModule() {
                       <button
                         key={tpl.id}
                         onClick={() => handleLoadTemplate(tpl)}
-                        className="w-full text-left p-3 bg-[var(--surface-alt)] rounded-lg hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all"
+                        className="w-full text-left p-3 bg-[var(--surface-alt)] rounded-xl hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all"
                       >
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -1547,7 +1547,7 @@ export default function CotizacionesModule() {
               <div className="w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Plantillas guardadas</CardTitle>
-                  <button onClick={() => setShowTemplateList(false)} className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)]">
+                  <button onClick={() => setShowTemplateList(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)]">
                     <X className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                 </div>
@@ -1578,7 +1578,7 @@ export default function CotizacionesModule() {
                         </button>
                         <button
                           onClick={() => handleDeleteTemplate(tpl.id)}
-                          className="p-1.5 rounded-lg hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
+                          className="p-1.5 rounded-xl hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>

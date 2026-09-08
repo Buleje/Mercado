@@ -146,9 +146,9 @@ export default function ExploradorDoc({
   const nombreActual = ruta.length > 0 ? ruta[ruta.length - 1].name : "Todos los documentos";
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-[var(--rule-base)] bg-[var(--surface-raised)] dark:border-white/10">
+    <aside className="flex w-64 shrink-0 flex-col border-r border-[var(--rule-base)] bg-[var(--surface-raised)] ">
       {/* Dónde estoy parado */}
-      <div className="border-b border-[var(--rule-base)] px-2.5 py-2 dark:border-white/10">
+      <div className="border-b border-[var(--rule-base)] px-2.5 py-2 ">
         <nav className="flex flex-wrap items-center gap-0.5 text-[length:var(--ts-2xs)]">
           <button
             onClick={() => onNavegar(null)}
@@ -320,7 +320,7 @@ export default function ExploradorDoc({
       {lote && elegidos.size > 0 && (
         <div
           aria-label="Acciones para los archivos elegidos"
-          className="border-t border-[var(--rule-base)] bg-primary p-2 text-white dark:border-white/10"
+          className="border-t border-[var(--rule-base)] bg-primary p-2 text-white "
         >
           <div className="mb-1.5 flex items-center justify-between gap-2">
             <span className="text-xs font-bold tabular-nums">
@@ -348,21 +348,21 @@ export default function ExploradorDoc({
             <button
               onClick={() => conLote(() => lote.onWhatsApp(elegidosDocs), false)}
               disabled={ocupado}
-              className="inline-flex items-center justify-center gap-1 rounded-md bg-white/20 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold hover:bg-white/30 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/20 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold hover:bg-white/30 disabled:opacity-60"
             >
               <MessageCircle className="h-3 w-3" /> WhatsApp
             </button>
             <button
               onClick={() => conLote(() => lote.onDescargarZip(elegidosDocs), false)}
               disabled={ocupado}
-              className="inline-flex items-center justify-center gap-1 rounded-md bg-white/20 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold hover:bg-white/30 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/20 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold hover:bg-white/30 disabled:opacity-60"
             >
               {ocupado ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />} Descargar
             </button>
             <button
               onClick={() => conLote(() => lote.onFavorito([...elegidos]))}
               disabled={ocupado}
-              className="inline-flex items-center justify-center gap-1 rounded-md bg-white/20 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold hover:bg-white/30 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/20 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold hover:bg-white/30 disabled:opacity-60"
             >
               <Star className="h-3 w-3" /> Favorito
             </button>
@@ -376,7 +376,7 @@ export default function ExploradorDoc({
                 conLote(() => lote.onEliminar([...elegidos]));
               }}
               disabled={ocupado}
-              className="inline-flex items-center justify-center gap-1 rounded-md bg-white/20 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold hover:bg-white/30 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-1 rounded-lg bg-white/20 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold hover:bg-white/30 disabled:opacity-60"
             >
               <Trash2 className="h-3 w-3" /> Eliminar
             </button>

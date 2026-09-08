@@ -112,7 +112,7 @@ export default function ConfirmarPagoModal({
                 value={monto}
                 onChange={(e) => setMonto(e.target.value)}
                 aria-invalid={!montoValido}
-                className="h-14 w-full rounded-xl border-2 border-[var(--rule-base)] bg-white px-3 text-3xl font-extrabold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 dark:bg-[var(--color-card)]"
+                className="h-14 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-3xl font-extrabold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 "
               />
             </div>
           </label>
@@ -155,7 +155,7 @@ export default function ConfirmarPagoModal({
             value={fecha}
             max={hoyLocal()}
             onChange={(e) => setFecha(e.target.value)}
-            className="mt-1 h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-white px-3 text-base tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 dark:bg-[var(--color-card)]"
+            className="mt-1 h-12 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 "
           />
           <span className="mt-1 block text-sm text-[var(--text-secondary)]">
             Si lo pagaste otro día, cambialo: el período se cuenta por esta fecha.

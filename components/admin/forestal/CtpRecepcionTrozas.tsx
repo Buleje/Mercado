@@ -206,7 +206,7 @@ export default function CtpRecepcionTrozas({
             value={fechaLote}
             onChange={(e) => setFechaLote(e.target.value)}
             aria-label="Fecha de recepción a aplicar a todas"
-            className="h-9 rounded-lg border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-9 rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
         </label>
         <button

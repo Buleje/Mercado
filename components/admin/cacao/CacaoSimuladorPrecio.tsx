@@ -122,7 +122,7 @@ export default function CacaoSimuladorPrecio({
                 value={pct}
                 onChange={(e) => setPct(clampPct(Number(e.target.value) || 0))}
                 aria-label="Porcentaje libre"
-                className="h-9 w-16 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-center font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]"
+                className="h-9 w-16 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-center font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]"
               />
               <span className="text-sm font-bold text-[var(--text-tertiary)]">%</span>
             </div>

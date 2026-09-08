@@ -277,7 +277,7 @@ export default function CtpPapelesDespachoModal({
                             setPapeles((prev) => prev.map((x) => (x.id === p.id ? { ...x, numero: e.target.value } : x)))
                           }
                           placeholder="Confirmá el número"
-                          className="h-8 w-44 rounded-lg border-2 border-[var(--data-warning-500)] bg-[var(--surface-base)] px-2 font-mono text-xs text-[var(--text-primary)]"
+                          className="h-8 w-44 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--surface-base)] px-2 font-mono text-xs text-[var(--text-primary)]"
                         />
                         <span className="text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                           se leyó de la imagen: confirmalo

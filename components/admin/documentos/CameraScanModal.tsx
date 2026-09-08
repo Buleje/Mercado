@@ -77,10 +77,10 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl bg-white dark:bg-[var(--color-card)] shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-[var(--rule-base)] p-4">
           <CardTitle as="h3" className="inline-flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><Camera className="h-5 w-5 text-primary" /> Escanear a PDF</CardTitle>
-          <button onClick={onClose} className="rounded-lg p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
@@ -131,7 +131,7 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
 
           <label className="mt-4 block text-xs font-semibold text-[var(--text-secondary)]">
             Nombre del documento (opcional)
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: DNI escaneado" className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: DNI escaneado" className="mt-1 h-11 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] dark:bg-[var(--surface-sunken)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary" />
           </label>
 
           {error && <p className="mt-2 text-xs font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</p>}

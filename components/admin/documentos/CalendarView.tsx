@@ -65,7 +65,7 @@ export function CalendarView({ docs, onOpenDoc }: { docs: DbDocument[]; onOpenDo
   );
 
   return (
-    <div className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-4">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -79,10 +79,10 @@ export function CalendarView({ docs, onOpenDoc }: { docs: DbDocument[]; onOpenDo
           <button onClick={() => setCursor(new Date(today.getFullYear(), today.getMonth(), 1))} className="rounded-lg px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
             Hoy
           </button>
-          <button onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} className="rounded-lg p-1.5 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]" aria-label="Mes anterior">
+          <button onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} className="rounded-xl p-1.5 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]" aria-label="Mes anterior">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} className="rounded-lg p-1.5 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]" aria-label="Mes siguiente">
+          <button onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} className="rounded-xl p-1.5 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]" aria-label="Mes siguiente">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>

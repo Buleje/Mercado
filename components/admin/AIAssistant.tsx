@@ -694,7 +694,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             action.status === "done" ? "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" :
             action.status === "error" ? "bg-[var(--data-error-50)] dark:bg-red-950/20 border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" :
             action.status === "executing" ? "bg-[var(--data-warning-50)] dark:bg-amber-950/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/40 text-[var(--data-warning-500)]" :
-            "bg-white dark:bg-accent/30 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)]"
+            "bg-[var(--surface-raised)] dark:bg-accent/30 border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)]"
           )}>
             {action.status === "pending" && (
               <button onClick={() => handleExecuteAction(msg.id, i)} className="flex items-center gap-1.5 font-semibold text-primary hover:underline">
@@ -865,7 +865,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             placeholder={isListening ? "Escuchando..." : isOffline ? "Modo offline..." : "Pregunta algo... (/ para comandos)"}
             rows={1}
             className={cn(
-              "w-full resize-none rounded-lg border px-3 py-2 text-xs bg-[var(--surface-alt)] dark:bg-surface text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
+              "w-full resize-none rounded-xl border px-3 py-2 text-xs bg-[var(--surface-alt)] text-[var(--text-primary)] dark:text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
               isListening ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)]/30 dark:bg-red-950/10" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
             )}
             style={{ maxHeight: compact ? 60 : 80 }}
@@ -874,7 +874,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
         </div>
         <button onClick={toggleVoice}
           className={cn("h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
-            isListening ? "bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] animate-pulse" : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] dark:hover:bg-accent"
+            isListening ? "bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] animate-pulse" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
           )}
           title={isListening ? "Detener" : "Hablar"}>
           {isListening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
@@ -883,7 +883,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           className={cn("h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
             input.trim() && !loading
               ? "bg-[var(--text-primary)] text-[var(--surface-canvas)] hover:opacity-90 "
-              : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
+              : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-muted cursor-not-allowed"
           )}>
           <Send className="h-3.5 w-3.5" />
         </button>
@@ -922,7 +922,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                   if (cmd.navTo && onNavigate) onNavigate(cmd.navTo);
                   else if (cmd.prompt) sendMessage(cmd.prompt);
                 }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors">
                   <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                   <span className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{cmd.cmd}</span>
                   <span className="flex-1">{cmd.label}</span>
@@ -952,11 +952,11 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             </p>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={() => setTtsEnabled(!ttsEnabled)} className={cn("p-1.5 rounded-lg transition-colors", ttsEnabled ? "bg-white/30" : "hover:bg-white/20")} title={ttsEnabled ? "Silenciar voz" : "Activar voz"}>
+            <button onClick={() => setTtsEnabled(!ttsEnabled)} className={cn("p-1.5 rounded-xl transition-colors", ttsEnabled ? "bg-white/30" : "hover:bg-white/20")} title={ttsEnabled ? "Silenciar voz" : "Activar voz"}>
               {ttsEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
             </button>
             <AdminTooltip content="Borrar toda la conversación con el asistente">
-              <button onClick={clearHistory} aria-label="Limpiar historial" className="p-1.5 rounded-lg hover:bg-white/20 transition-colors">
+              <button onClick={clearHistory} aria-label="Limpiar historial" className="p-1.5 rounded-xl hover:bg-white/20 transition-colors">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </AdminTooltip>
@@ -1057,7 +1057,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
                       if (cmd.navTo && onNavigate) onNavigate(cmd.navTo);
                       else if (cmd.prompt) { setOpen(true); setTimeout(() => sendMessage(cmd.prompt), 200); }
                     }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5 transition-colors">
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] transition-colors">
                       <Icon className="h-4 w-4 text-[var(--text-tertiary)]" />
                       <span className="font-mono text-xs text-[var(--text-secondary)]">{cmd.cmd}</span>
                       <span className="flex-1 text-left">{cmd.label}</span>
@@ -1100,25 +1100,25 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
               </p>
             </div>
             <div className="flex items-center gap-1">
-              <button onClick={() => setTtsEnabled(!ttsEnabled)} className={cn("p-1.5 rounded-lg transition-colors", ttsEnabled ? "bg-white/30" : "hover:bg-white/20")} title={ttsEnabled ? "Silenciar" : "Voz"}>
+              <button onClick={() => setTtsEnabled(!ttsEnabled)} className={cn("p-1.5 rounded-xl transition-colors", ttsEnabled ? "bg-white/30" : "hover:bg-white/20")} title={ttsEnabled ? "Silenciar" : "Voz"}>
                 {ttsEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
               </button>
-              <button onClick={() => setShowPanel(showPanel === "history" ? "chat" : "history")} className={cn("p-1.5 rounded-lg transition-colors", showPanel === "history" ? "bg-white/30" : "hover:bg-white/20")} title="Historial">
+              <button onClick={() => setShowPanel(showPanel === "history" ? "chat" : "history")} className={cn("p-1.5 rounded-xl transition-colors", showPanel === "history" ? "bg-white/30" : "hover:bg-white/20")} title="Historial">
                 <History className="h-3.5 w-3.5" />
               </button>
-              <button onClick={() => setShowPanel(showPanel === "stats" ? "chat" : "stats")} className={cn("p-1.5 rounded-lg transition-colors", showPanel === "stats" ? "bg-white/30" : "hover:bg-white/20")} title="Stats">
+              <button onClick={() => setShowPanel(showPanel === "stats" ? "chat" : "stats")} className={cn("p-1.5 rounded-xl transition-colors", showPanel === "stats" ? "bg-white/30" : "hover:bg-white/20")} title="Stats">
                 <BarChart3 className="h-3.5 w-3.5" />
               </button>
-              <AdminTooltip content="Borrar historial de la conversación"><button onClick={clearHistory} aria-label="Limpiar" className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"><Trash2 className="h-3.5 w-3.5" /></button></AdminTooltip>
+              <AdminTooltip content="Borrar historial de la conversación"><button onClick={clearHistory} aria-label="Limpiar" className="p-1.5 rounded-xl hover:bg-white/20 transition-colors"><Trash2 className="h-3.5 w-3.5" /></button></AdminTooltip>
               {/* Mejora 28: Size cycle */}
               <button onClick={() => setWidgetSize(s => s === "mini" ? "medium" : s === "medium" ? "large" : "mini")}
-                className="p-1.5 rounded-lg hover:bg-white/20 transition-colors" title="Cambiar tamaño">
+                className="p-1.5 rounded-xl hover:bg-white/20 transition-colors" title="Cambiar tamaño">
                 {widgetSize === "mini" ? <Minimize2 className="h-3.5 w-3.5" /> : widgetSize === "large" ? <Maximize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
               </button>
-              <button onClick={() => setExpanded(!expanded)} className="p-1.5 rounded-lg hover:bg-white/20 transition-colors" title={expanded ? "Reducir" : "Expandir"}>
+              <button onClick={() => setExpanded(!expanded)} className="p-1.5 rounded-xl hover:bg-white/20 transition-colors" title={expanded ? "Reducir" : "Expandir"}>
                 {expanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
               </button>
-              <button onClick={() => { setOpen(false); if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel(); }} className="p-1.5 rounded-lg hover:bg-white/20 transition-colors" title="Cerrar">
+              <button onClick={() => { setOpen(false); if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel(); }} className="p-1.5 rounded-xl hover:bg-white/20 transition-colors" title="Cerrar">
                 <X className="h-4 w-4" />
               </button>
             </div>

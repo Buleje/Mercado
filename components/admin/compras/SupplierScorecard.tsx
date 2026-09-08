@@ -47,7 +47,7 @@ function MetricBar({ label, value, icon: Icon }: { label: string; value: number;
         </span>
         <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{value}%</span>
       </div>
-      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+      <div className="h-2 bg-[var(--rule-base)] rounded-full overflow-hidden">
         <div
           className={cn("h-full rounded-full transition-all duration-[var(--dur-slow)]", color)}
           style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
@@ -61,16 +61,16 @@ function SkeletonCard() {
   return (
     <div className="animate-pulse bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
       <div className="flex items-center gap-3">
-        <div className="h-16 w-16 rounded-full bg-gray-200 dark:bg-gray-700" />
+        <div className="h-16 w-16 rounded-full bg-[var(--rule-base)] " />
         <div className="space-y-2 flex-1">
-          <div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded" />
-          <div className="h-3 w-1/3 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="h-4 w-1/2 bg-[var(--rule-base)] rounded" />
+          <div className="h-3 w-1/3 bg-[var(--rule-base)] rounded" />
         </div>
       </div>
       <div className="space-y-2">
-        <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded" />
-        <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded" />
-        <div className="h-2 w-3/4 bg-gray-200 dark:bg-gray-700 rounded" />
+        <div className="h-2 w-full bg-[var(--rule-base)] rounded" />
+        <div className="h-2 w-full bg-[var(--rule-base)] rounded" />
+        <div className="h-2 w-3/4 bg-[var(--rule-base)] rounded" />
       </div>
     </div>
   );
@@ -101,7 +101,7 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
     // depende de vos. Con la barra, la espera tiene final visible.
     const hechas = Math.min(data.totalOC, MIN_OC_EVALUACION);
     return (
-      <div className="bg-gray-50 dark:bg-accent/50 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
+      <div className="bg-[var(--surface-sunken)] dark:bg-accent/50 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
         <AlertTriangle className="h-6 w-6 text-[var(--text-tertiary)] mx-auto mb-2" />
         <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
           Todavía no alcanza para calificarlo

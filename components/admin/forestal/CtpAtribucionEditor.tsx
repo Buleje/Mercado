@@ -236,13 +236,13 @@ export default function CtpAtribucionEditor({
                   max={r.disponible}
                   value={r.quantity}
                   onChange={(e) => setRows((prev) => (prev ?? []).map((x) => (x.id === r.id ? { ...x, quantity: e.target.value } : x)))}
-                  className={`h-9 w-28 shrink-0 rounded-lg border bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none transition-colors focus:ring-1 ${over ? "border-[var(--data-error-500)] focus:border-[var(--data-error-600)] focus:ring-[var(--data-error-600)]/20" : "border-[var(--rule-base)] focus:border-[var(--data-success-600)] focus:ring-[var(--data-success-600)]/20"}`}
+                  className={`h-9 w-28 shrink-0 rounded-xl border bg-[var(--surface-raised)] px-2 text-right font-mono text-sm tabular-nums text-[var(--text-primary)] outline-none transition-colors focus:ring-1 ${over ? "border-[var(--data-error-500)] focus:border-[var(--data-error-600)] focus:ring-[var(--data-error-600)]/20" : "border-[var(--rule-base)] focus:border-[var(--data-success-600)] focus:ring-[var(--data-success-600)]/20"}`}
                 />
                 <button
                   type="button"
                   onClick={() => setRows((prev) => (prev ?? []).filter((x) => x.id !== r.id))}
                   aria-label={`Quitar ${r.label}`}
-                  className="shrink-0 rounded-lg p-1.5 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-700)]"
+                  className="shrink-0 rounded-xl p-1.5 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-700)]"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

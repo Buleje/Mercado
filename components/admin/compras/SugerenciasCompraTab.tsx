@@ -106,13 +106,13 @@ type FilterKey = "todos" | "CRITICO" | "URGENTE" | "PLANIFICAR" | "sin-proveedor
 
 function SkeletonCard() {
   return (
-    <div className="bg-white dark:bg-[var(--color-card)] border-2 border-[var(--rule-base)] rounded-2xl p-4 animate-pulse">
+    <div className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl p-4 animate-pulse">
       <div className="flex gap-3">
-        <div className="h-6 w-6 rounded bg-gray-200 dark:bg-white/10" />
+        <div className="h-6 w-6 rounded bg-[var(--rule-base)] " />
         <div className="flex-1 space-y-2">
-          <div className="h-4 w-2/3 bg-gray-200 dark:bg-white/10 rounded" />
-          <div className="h-3 w-1/3 bg-gray-200 dark:bg-white/10 rounded" />
-          <div className="h-3 w-1/2 bg-gray-200 dark:bg-white/10 rounded" />
+          <div className="h-4 w-2/3 bg-[var(--rule-base)] rounded" />
+          <div className="h-3 w-1/3 bg-[var(--rule-base)] rounded" />
+          <div className="h-3 w-1/2 bg-[var(--rule-base)] rounded" />
         </div>
       </div>
     </div>
@@ -136,7 +136,7 @@ function KPICard({ label, value, sub, icon: Icon, accent = "neutral" }: KPIProps
   }[accent];
   return (
     <div className={cn(
-      "bg-white dark:bg-[var(--color-card)] border-2 rounded-2xl p-4 flex items-center gap-3 min-w-0 transition-shadow hover:shadow-sm",
+      "bg-[var(--surface-raised)] border-2 rounded-2xl p-4 flex items-center gap-3 min-w-0 transition-shadow hover:shadow-sm",
       cfg.border,
     )}>
       <span className={cn("inline-flex items-center justify-center h-11 w-11 rounded-xl shrink-0", cfg.iconBg)}>
@@ -404,10 +404,10 @@ export default function SugerenciasCompraTab() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-24 bg-gray-100 dark:bg-white/5 rounded-2xl animate-pulse" />
+        <div className="h-24 bg-[var(--rule-soft)] rounded-2xl animate-pulse" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 bg-gray-100 dark:bg-white/5 rounded-2xl animate-pulse" />
+            <div key={i} className="h-24 bg-[var(--rule-soft)] rounded-2xl animate-pulse" />
           ))}
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -460,7 +460,7 @@ export default function SugerenciasCompraTab() {
           <select
             value={ventanaDias}
             onChange={(e) => setVentanaDias(Number(e.target.value))}
-            className="h-11 rounded-2xl border-2 border-[var(--rule-base)] bg-white px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary/60 dark:bg-[var(--color-card)]"
+            className="h-11 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-primary/60 "
           >
             <option value={30}>Últimos 30 días</option>
             <option value={60}>Últimos 60 días</option>
@@ -473,7 +473,7 @@ export default function SugerenciasCompraTab() {
           type="button"
           onClick={() => void load(true)}
           disabled={refreshing}
-          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors disabled:opacity-50"
         >
           <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
           Recalcular
@@ -532,7 +532,7 @@ export default function SugerenciasCompraTab() {
             type="button"
             onClick={() => void load(true)}
             disabled={refreshing}
-            className="mt-5 inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-white px-5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:opacity-50 dark:bg-[var(--color-card)]"
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:opacity-50 "
           >
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
             Volver a calcular
@@ -583,7 +583,7 @@ export default function SugerenciasCompraTab() {
             placeholder="Buscar producto o categoría..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-12 pl-12 pr-12 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary transition-colors"
+            className="w-full h-12 pl-12 pr-12 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary transition-colors"
           />
           {search && (
             <button
@@ -622,7 +622,7 @@ export default function SugerenciasCompraTab() {
                   "inline-flex items-center gap-2 h-11 px-4 rounded-2xl text-sm font-bold transition-colors border-2",
                   active
                     ? toneCls.active
-                    : "bg-white dark:bg-[var(--color-card)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
+                    : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
                 )}
               >
                 {p.label}
@@ -671,7 +671,7 @@ export default function SugerenciasCompraTab() {
         const allSelectedInUrgency = items.every((i) => selected.has(i.productId));
 
         return (
-          <section key={urgency} className={cn("rounded-2xl border-2 bg-white dark:bg-[var(--color-card)] overflow-hidden", config.border)}>
+          <section key={urgency} className={cn("rounded-2xl border-2 bg-[var(--surface-raised)] overflow-hidden", config.border)}>
             {/* Section header */}
             <header className={cn("flex items-center gap-3 px-5 py-3.5 flex-wrap", config.bg)}>
               <button
@@ -736,7 +736,7 @@ export default function SugerenciasCompraTab() {
                         "text-left rounded-2xl border-2 p-4 transition-all flex items-start gap-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                         isSelected
                           ? cn("border-primary ring-2 ring-primary/30 bg-primary/5 dark:bg-primary/10")
-                          : "border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] hover:border-[var(--text-tertiary)] hover:shadow-sm",
+                          : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--text-tertiary)] hover:shadow-sm",
                       )}
                     >
                       {/* Checkbox */}
@@ -840,7 +840,7 @@ export default function SugerenciasCompraTab() {
           <button
             type="button"
             onClick={() => { setFilter("todos"); setSearch(""); }}
-            className="mt-4 inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
+            className="mt-4 inline-flex items-center gap-2 h-11 px-4 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
           >
             Ver todas
           </button>
@@ -850,7 +850,7 @@ export default function SugerenciasCompraTab() {
       {/* Sticky bottom bar — solo aparece con seleccionados */}
       {selected.size > 0 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-[calc(100vw-1.5rem)] w-full sm:w-auto px-2">
-          <div className="bg-white dark:bg-[var(--color-card)] border-2 border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-xl)] flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3">
+          <div className="bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] rounded-2xl shadow-[var(--shadow-xl)] flex items-center gap-3 sm:gap-4 px-3 sm:px-5 py-3">
             <span className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-primary/10 shrink-0">
               <Sparkles className="h-5 w-5 text-primary" strokeWidth={2.2} />
             </span>
@@ -912,7 +912,7 @@ export default function SugerenciasCompraTab() {
           </button>
 
           {verSinRotacion && (
-            <ul className="divide-y divide-[var(--rule-soft)] border-t-2 border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)]">
+            <ul className="divide-y divide-[var(--rule-soft)] border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] ">
               {sinRotacion.slice(0, 40).map((s) => (
                 <li key={s.productId} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3">
                   <span className="min-w-0 flex-1 truncate font-bold text-[var(--text-primary)]">{s.productName}</span>

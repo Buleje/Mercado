@@ -116,7 +116,7 @@ export default function FiadoMarketplaceToggle() {
       >
         <span
           className={
-            "inline-flex h-5 w-5 translate-x-0 items-center justify-center rounded-full bg-white shadow transition-transform " +
+            "inline-flex h-5 w-5 translate-x-0 items-center justify-center rounded-full bg-[var(--surface-raised)] shadow transition-transform " +
             (enabled ? "translate-x-5" : "translate-x-0.5")
           }
         >

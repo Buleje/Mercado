@@ -76,7 +76,7 @@ export default function PestanasHojas({
               if (e.key === "Enter") confirmarRenombre();
               if (e.key === "Escape") setRenombrando(null);
             }}
-            className="w-32 shrink-0 rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-canvas)] px-2 py-1 text-xs font-bold text-[var(--text-primary)] outline-none"
+            className="w-32 shrink-0 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-canvas)] px-2 py-1 text-xs font-bold text-[var(--text-primary)] outline-none"
           />
         ) : (
           <button

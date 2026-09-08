@@ -96,7 +96,7 @@ export default function TramitePreview({
         // HTML es 100% estático (todo pasa por `esc()`), no hay nada que
         // ejecutar. Sin edición, sandbox vacío como antes (opaco, no toca la app).
         sandbox={editable ? "allow-same-origin" : ""}
-        className="h-[62vh] w-full bg-white"
+        className="h-[62vh] w-full bg-[var(--surface-raised)]"
       />
     </div>
   );

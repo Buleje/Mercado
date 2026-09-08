@@ -63,7 +63,7 @@ function Boton({ icono: Icono, texto, onClick, destacado, peligro }: {
     <button
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-colors",
+        "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm font-medium transition-colors",
         peligro
           ? "text-[var(--data-error)] hover:bg-[var(--data-error-500)]/10"
           : destacado
@@ -101,7 +101,7 @@ export default function BarraHerramientasDoc({ acciones: a, esPdf, favorito, est
               key={e.valor}
               onClick={() => a.onSetStatus?.(estado === e.valor ? "none" : e.valor)}
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-colors",
+                "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm font-medium transition-colors",
                 estado === e.valor
                   ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",

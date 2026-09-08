@@ -83,7 +83,7 @@ export default function BarraHerramientas({
         onChange={(e) => acciones.formato({ tamano: Number(e.target.value) })}
         title="Tamaño de letra"
         aria-label="Tamaño de letra"
-        className="h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-xs font-bold text-[var(--text-secondary)] outline-none hover:bg-[var(--surface-sunken)]"
+        className="h-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-xs font-bold text-[var(--text-secondary)] outline-none hover:bg-[var(--surface-sunken)]"
       >
         {(TAMANOS.includes(tamanoSeleccion) ? TAMANOS : [...TAMANOS, tamanoSeleccion].sort((a, b) => a - b)).map((t) => (
           <option key={t} value={t}>{t}</option>

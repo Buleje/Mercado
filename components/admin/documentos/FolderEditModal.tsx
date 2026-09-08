@@ -50,7 +50,7 @@ export function FolderEditModal({
             <FolderGlyph folder={{ icon, color }} className="h-5 w-5" active />
           </span>
           <p className="flex-1 text-sm font-extrabold text-[var(--text-primary)]">Editar carpeta</p>
-          <button onClick={onClose} className="rounded-md p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-4 w-4" /></button>
         </div>
 
         <div className="space-y-5 p-5">

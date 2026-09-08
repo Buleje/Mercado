@@ -6,7 +6,7 @@
  * Rediseño v5 (2026-05-28):
  * - Layout de dos paneles: formulario (izq, scroll) + vista previa en vivo
  *   tipo "boleta" (der, sticky) estilo Stripe/Linear "create".
- * - 100% dark-mode safe: tokens del DS, cero `bg-white` hardcodeado.
+ * - 100% dark-mode safe: tokens del DS, cero `bg-[var(--surface-raised)]` hardcodeado.
  * - Secciones numeradas, inputs consistentes, footer con progreso real.
  * - Un solo color de acento (verde forestal), cero emojis, cero gradientes.
  */
@@ -1021,7 +1021,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="shrink-0 rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >
             <X className="h-4 w-4" />
           </button>

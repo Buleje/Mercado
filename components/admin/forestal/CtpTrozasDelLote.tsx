@@ -243,7 +243,7 @@ export default function CtpTrozasDelLote({
             onChange={(e) => setDesde(e.target.value)}
             placeholder="desde"
             aria-label="Código de planta desde"
-            className="h-11 w-28 rounded-lg border-[1.5px] sm:h-9 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-11 w-28 rounded-xl border-[1.5px] sm:h-9 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
           <span className="text-sm text-[var(--text-tertiary)]">a</span>
           <input
@@ -251,7 +251,7 @@ export default function CtpTrozasDelLote({
             onChange={(e) => setHasta(e.target.value)}
             placeholder="hasta"
             aria-label="Código de planta hasta"
-            className="h-11 w-28 rounded-lg border-[1.5px] sm:h-9 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            className="h-11 w-28 rounded-xl border-[1.5px] sm:h-9 border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
           {/* Cuántas caen en el rango, ANTES de aplicarlo: un botón que dice
               «tildar» sin decir cuántas invita a probar y deshacer. */}
@@ -262,7 +262,7 @@ export default function CtpTrozasDelLote({
             type="button"
             disabled={enElRango.length === 0}
             onClick={() => aplicarRango(true)}
-            className="h-11 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 sm:h-9 sm:px-3"
+            className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 sm:h-9 sm:px-3"
           >
             Tildar
           </button>
@@ -270,7 +270,7 @@ export default function CtpTrozasDelLote({
             type="button"
             disabled={enElRango.length === 0}
             onClick={() => aplicarRango(false)}
-            className="h-11 rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 sm:h-9 sm:px-3"
+            className="h-11 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 sm:h-9 sm:px-3"
           >
             Destildar
           </button>
@@ -311,7 +311,7 @@ export default function CtpTrozasDelLote({
                   onChange={(e) => setBusca(e.target.value)}
                   placeholder="Buscar"
                   aria-label="Buscar una troza por código de planta o GTF"
-                  className="h-8 w-full min-w-28 rounded-lg border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] pl-7 pr-2 text-sm font-normal normal-case tracking-normal text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  className="h-8 w-full min-w-28 rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] pl-7 pr-2 text-sm font-normal normal-case tracking-normal text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
               </span>
             </th>

@@ -123,31 +123,31 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-white rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
+        className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
       >
-        <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-200 shrink-0">
+        <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100">
               <Sparkles className="h-5 w-5 text-[var(--accent)]" />
             </span>
             <div>
-              <p className="text-base font-extrabold text-slate-900">Generador de plantillas</p>
-              <p className="text-xs text-slate-500">Contratos, recibos, cotizaciones y acuerdos listos en 1 minuto.</p>
+              <p className="text-base font-extrabold text-[var(--text-primary)]">Generador de plantillas</p>
+              <p className="text-xs text-[var(--text-secondary)]">Contratos, recibos, cotizaciones y acuerdos listos en 1 minuto.</p>
             </div>
           </div>
-          <button onClick={onClose} className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-slate-100 border border-slate-200 text-slate-500 hover:text-slate-900">
+          <button onClick={onClose} className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--rule-soft)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-slate-900">
             <X className="h-4 w-4" />
           </button>
         </header>
 
         <div className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-[280px_1fr] min-h-0">
           {/* Sidebar plantillas */}
-          <aside className="border-r border-slate-200 overflow-y-auto p-3">
+          <aside className="border-r border-[var(--rule-base)] overflow-y-auto p-3">
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-3 py-2">Plantillas del sistema</p>
             {loading ? (
-              <p className="text-sm text-slate-500 px-3 py-2">Cargando…</p>
+              <p className="text-sm text-[var(--text-secondary)] px-3 py-2">Cargando…</p>
             ) : templates.length === 0 ? (
-              <p className="text-sm text-slate-500 px-3 py-2">Sin plantillas. Reabrí el módulo.</p>
+              <p className="text-sm text-[var(--text-secondary)] px-3 py-2">Sin plantillas. Reabrí el módulo.</p>
             ) : (
               <ul className="space-y-1">
                 {templates.map((t) => (
@@ -155,16 +155,16 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                     <button
                       onClick={() => { elegirPlantilla(t); setSuccess(null); setGenerado(null); }}
                       className={cn(
-                        "w-full text-left px-3 py-2.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-2",
-                        selected?.id === t.id ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-slate-700 hover:bg-slate-50"
+                        "w-full text-left px-3 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center gap-2",
+                        selected?.id === t.id ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                       )}
                     >
-                      <FileText className={cn("h-4 w-4 shrink-0", selected?.id === t.id ? "text-primary" : "text-slate-400")} />
+                      <FileText className={cn("h-4 w-4 shrink-0", selected?.id === t.id ? "text-primary" : "text-[var(--text-tertiary)]")} />
                       <div className="flex-1 min-w-0">
                         <p className="truncate">{t.name}</p>
                         <p className="text-[length:var(--ts-2xs)] font-normal text-[var(--text-tertiary)] truncate">{t.description}</p>
                       </div>
-                      <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      <ChevronRight className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
                     </button>
                   </li>
                 ))}
@@ -173,9 +173,9 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
           </aside>
 
           {/* Form */}
-          <div className="overflow-y-auto p-5 bg-slate-50">
+          <div className="overflow-y-auto p-5 bg-[var(--surface-sunken)]">
             {!selected ? (
-              <div className="h-full flex items-center justify-center text-center text-slate-500 text-sm py-20">
+              <div className="h-full flex items-center justify-center text-center text-[var(--text-secondary)] text-sm py-20">
                 <div>
                   <FileText className="h-12 w-12 mx-auto text-slate-300 mb-3" />
                   Elegí una plantilla para empezar.
@@ -209,23 +209,23 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                <p className="text-base font-extrabold text-slate-900">{selected.name}</p>
-                {selected.description && <p className="text-xs text-slate-500 mt-0.5">{selected.description}</p>}
+              <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-5">
+                <p className="text-base font-extrabold text-[var(--text-primary)]">{selected.name}</p>
+                {selected.description && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{selected.description}</p>}
 
                 {/* Traer al cliente del sistema en vez de tipearlo: menos errores
                     en el DNI y el teléfono queda listo para mandarlo. */}
                 {clientes.length > 0 && (
-                  <div className="mt-4 rounded-xl border-2 border-slate-200 bg-slate-50 p-3">
-                    <p className="mb-1.5 text-xs font-bold text-slate-700">Traer datos de un cliente</p>
+                  <div className="mt-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+                    <p className="mb-1.5 text-xs font-bold text-[var(--text-primary)]">Traer datos de un cliente</p>
                     <div className="relative">
-                      <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                      <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
                       <input
                         value={buscaCliente}
                         onChange={(e) => setBuscaCliente(e.target.value)}
                         placeholder="Buscar cliente…"
                         aria-label="Buscar cliente"
-                        className="w-full rounded-lg border-2 border-slate-200 bg-white py-2 pl-8 pr-3 text-sm outline-none focus:border-primary"
+                        className="w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] py-2 pl-8 pr-3 text-sm outline-none focus:border-primary"
                       />
                     </div>
                     {buscaCliente.trim() !== "" && (
@@ -237,14 +237,14 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                               onClick={() => { usarCliente(c); setBuscaCliente(""); }}
                               className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-white"
                             >
-                              <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                              <span className="min-w-0 flex-1 truncate font-bold text-slate-700">{c.nombre}</span>
-                              <span className="shrink-0 text-xs tabular-nums text-slate-500">{c.telefono}</span>
+                              <User className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
+                              <span className="min-w-0 flex-1 truncate font-bold text-[var(--text-primary)]">{c.nombre}</span>
+                              <span className="shrink-0 text-xs tabular-nums text-[var(--text-secondary)]">{c.telefono}</span>
                             </button>
                           </li>
                         ))}
                         {clientesFiltrados.length === 0 && (
-                          <li className="px-2 py-2 text-center text-xs italic text-slate-500">Sin coincidencias.</li>
+                          <li className="px-2 py-2 text-center text-xs italic text-[var(--text-secondary)]">Sin coincidencias.</li>
                         )}
                       </ul>
                     )}
@@ -254,7 +254,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                 <div className="mt-4 space-y-3">
                   {selected.fields.map((f) => (
                     <label key={f.name} className="block">
-                      <span className="text-xs font-bold text-slate-700">
+                      <span className="text-xs font-bold text-[var(--text-primary)]">
                         {f.label}
                         {f.required && <span className="text-[var(--data-error)]"> *</span>}
                       </span>
@@ -264,7 +264,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                           onChange={(e) => setField(f.name, e.target.value)}
                           placeholder={f.placeholder ?? ""}
                           rows={3}
-                          className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm outline-none focus:border-primary"
+                          className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
                         />
                       ) : (
                         <input
@@ -273,7 +273,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
                           value={values[f.name] ?? ""}
                           onChange={(e) => setField(f.name, e.target.value)}
                           placeholder={f.placeholder ?? ""}
-                          className="mt-1 w-full px-3 py-2 rounded-lg border-2 border-slate-200 text-sm outline-none focus:border-primary"
+                          className="mt-1 w-full px-3 py-2 rounded-xl border-2 border-[var(--rule-base)] text-sm outline-none focus:border-primary"
                         />
                       )}
                     </label>

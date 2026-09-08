@@ -61,7 +61,7 @@ export function ActivityView() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-white p-10 text-sm text-[var(--text-tertiary)]">
+      <div className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-sm text-[var(--text-tertiary)]">
         <Loader2 className="h-4 w-4 animate-spin" /> Cargando actividad…
       </div>
     );
@@ -76,7 +76,7 @@ export function ActivityView() {
   }
   if (activity.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white p-10 text-center">
+      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
         <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"><History className="h-7 w-7" /></div>
         <p className="text-lg font-extrabold text-[var(--text-primary)]">Sin actividad todavía</p>
         <p className="mt-1.5 text-sm text-[var(--text-secondary)]">Cuando subas, muevas, firmes o compartas documentos, vas a ver acá el registro de quién hizo qué y cuándo.</p>
@@ -85,7 +85,7 @@ export function ActivityView() {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-white">
+    <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="flex items-center justify-between border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-2.5">
         <p className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]"><History className="h-3.5 w-3.5" /> Actividad reciente del drive</p>
         <button onClick={load} className="text-xs font-bold text-[var(--text-tertiary)] hover:text-primary">Actualizar</button>

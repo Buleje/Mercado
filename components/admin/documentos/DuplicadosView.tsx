@@ -99,14 +99,14 @@ export default function DuplicadosView({ onOpenDoc, onEliminar }: {
   }
   if (grupos === null) {
     return (
-      <div className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-white p-10 text-sm text-[var(--text-tertiary)]">
+      <div className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-sm text-[var(--text-tertiary)]">
         <Loader2 className="h-4 w-4 animate-spin" /> Buscando archivos repetidos…
       </div>
     );
   }
   if (grupos.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-white p-10 text-center">
+      <div className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
         <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]">
           <ShieldCheck className="h-7 w-7" />
         </div>
@@ -136,7 +136,7 @@ export default function DuplicadosView({ onOpenDoc, onEliminar }: {
           const estado = verificado[g.clave];
           const ocupado = trabajando === g.clave;
           return (
-            <li key={g.clave} className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-white">
+            <li key={g.clave} className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
               <div className="flex flex-wrap items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2.5">
                 <Copy className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
                 <p className="min-w-0 flex-1 truncate text-sm font-bold text-[var(--text-primary)]">{g.nombre}</p>

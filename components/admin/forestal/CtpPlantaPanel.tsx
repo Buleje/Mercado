@@ -177,7 +177,7 @@ export default function CtpPlantaPanel({
           <span className="min-w-0 flex-1 truncate text-xs font-bold text-[var(--text-primary)]">
             {corto(enMano.label)} <span className="font-medium text-[var(--text-secondary)]">→ tocá la zona</span>
           </span>
-          <button type="button" onClick={() => onEnMano(null)} aria-label="Soltar el ítem" className="shrink-0 rounded-md p-0.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]">
+          <button type="button" onClick={() => onEnMano(null)} aria-label="Soltar el ítem" className="shrink-0 rounded-xl p-0.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)]">
             <XIcon className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -220,7 +220,7 @@ export default function CtpPlantaPanel({
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar guía, especie o zona…"
             aria-label="Buscar qué ubicar"
-            className="h-9 w-full rounded-lg border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-7 pr-7 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none"
+            className="h-9 w-full rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-7 pr-7 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none"
           />
           {q && (
             <button type="button" onClick={() => setQ("")} aria-label="Limpiar búsqueda" className="absolute right-1.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]">
@@ -296,7 +296,7 @@ export default function CtpPlantaPanel({
           <button
             type="button"
             onClick={() => setParaDespachar(new Set())}
-            className="shrink-0 rounded-md px-1.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)]"
+            className="shrink-0 rounded-lg px-1.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)]"
           >
             Soltar
           </button>

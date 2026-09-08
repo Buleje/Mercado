@@ -970,7 +970,7 @@ export default function PuntoCompraView() {
             }}
             disabled={processing}
             aria-label="Seleccionar proveedor"
-            className="flex-1 sm:flex-none min-h-11 sm:min-h-0 px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
+            className="flex-1 sm:flex-none min-h-11 sm:min-h-0 px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
           >
             <option value="">Todos los proveedores</option>
             {suppliers.map((s) => (
@@ -1013,7 +1013,7 @@ export default function PuntoCompraView() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar producto..."
           aria-label="Buscar producto por nombre o código"
-          className="flex-1 min-w-full sm:min-w-36 min-h-11 sm:min-h-0 px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="flex-1 min-w-full sm:min-w-36 min-h-11 sm:min-h-0 px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         />
 
         {/* Botón escáner de código de barras */}
@@ -1041,7 +1041,7 @@ export default function PuntoCompraView() {
           type="button"
           onClick={() => setViewMode((v) => (v === "grid" ? "list" : "grid"))}
           aria-label={viewMode === "grid" ? "Cambiar a vista lista" : "Cambiar a vista cuadrícula"}
-          className="p-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="p-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           {viewMode === "grid" ? (
             <List className="h-4 w-4" />
@@ -1109,7 +1109,7 @@ export default function PuntoCompraView() {
           {expenseCatalogLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-32 rounded-2xl bg-[var(--surface-sunken)] dark:bg-white/5 animate-pulse" />
+                <div key={i} className="h-32 rounded-2xl bg-[var(--surface-sunken)] animate-pulse" />
               ))}
             </div>
           ) : expenseCatalog.length === 0 ? (
@@ -1371,7 +1371,7 @@ export default function PuntoCompraView() {
             }}
             placeholder="Escanea o escribe el código de barras..."
             autoFocus
-            className="flex-1 px-3 py-2 border border-primary rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:ring-2 focus:ring-primary"
+            className="flex-1 px-3 py-2 border border-primary rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus:ring-2 focus:ring-primary"
           />
           <button
             type="button"
@@ -1922,7 +1922,7 @@ export default function PuntoCompraView() {
                         Math.min(100, Math.max(0, Number(e.target.value))),
                       )
                     }
-                    className="flex-1 px-2 py-1 border border-[var(--rule-base)] rounded-lg text-sm text-right bg-[var(--surface-raised)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className="flex-1 px-2 py-1 border border-[var(--rule-base)] rounded-xl text-sm text-right bg-[var(--surface-raised)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   />
                 </div>
 
@@ -1968,7 +1968,7 @@ export default function PuntoCompraView() {
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
                   aria-label="Método de pago"
-                  className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   <option value="contado">Contado</option>
                   <option value="credito_7">Crédito 7 días</option>
@@ -2004,7 +2004,7 @@ export default function PuntoCompraView() {
                     disabled={processing}
                     rows={2}
                     placeholder="Notas al proveedor..."
-                    className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-lg text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] resize-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] resize-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -2073,7 +2073,7 @@ export default function PuntoCompraView() {
                     type="button"
                     onClick={generateWhatsApp}
                     disabled={processing}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--data-success-500)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--data-success-500)]"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--data-success-500)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--data-success-500)]"
                   >
                     <MessageCircle aria-hidden="true" className="h-3.5 w-3.5" />
                     WhatsApp
@@ -2083,7 +2083,7 @@ export default function PuntoCompraView() {
                     type="button"
                     onClick={() => setShowPrintPreview(true)}
                     disabled={processing}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)] rounded-lg text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)] rounded-xl text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
                     <FileDown aria-hidden="true" className="h-3.5 w-3.5" />
                     PDF
@@ -2093,7 +2093,7 @@ export default function PuntoCompraView() {
                     type="button"
                     onClick={handleSaveDraft}
                     disabled={processing}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)] rounded-lg text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)] rounded-xl text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
                     <BookmarkIcon aria-hidden="true" className="h-3.5 w-3.5" />
                     Borrador
@@ -2104,7 +2104,7 @@ export default function PuntoCompraView() {
                     onClick={() => setShowOrderCreator(true)}
                     disabled={processing}
                     title="Flujo DISTINTO: crea un pedido de VENTA a un cliente con estos productos (no es la compra al proveedor)."
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-secondary)] rounded-lg text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-secondary)] rounded-xl text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
                     <Users aria-hidden="true" className="h-3.5 w-3.5" />
                     Vender a cliente
@@ -2114,7 +2114,7 @@ export default function PuntoCompraView() {
                     type="button"
                     onClick={confirmarOC}
                     disabled={processing || cart.length === 0}
-                    className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
                     {processing ? (
                       <Loader2
@@ -2237,7 +2237,7 @@ export default function PuntoCompraView() {
                 type="button"
                 onClick={() => !creatingSupplier && setShowNewSupplier(false)}
                 aria-label="Cerrar"
-                className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
+                className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
               >
                 <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>
@@ -2263,7 +2263,7 @@ export default function PuntoCompraView() {
                     inputMode="numeric"
                     autoFocus
                     placeholder="20XXXXXXXXX"
-                    className="w-full pl-3 pr-10 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono"
+                    className="w-full pl-3 pr-10 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono"
                   />
                   {rucLookup.status === "loading" && (
                     <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[var(--text-tertiary)]" />
@@ -2296,7 +2296,7 @@ export default function PuntoCompraView() {
                   onChange={(e) => setNewSupplier((s) => ({ ...s, name: e.target.value }))}
                   onKeyDown={(e) => e.key === "Enter" && newSupplier.name.trim() && void handleCreateSupplier()}
                   placeholder="ej. Distribuidora ABC"
-                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                 />
               </div>
 
@@ -2310,7 +2310,7 @@ export default function PuntoCompraView() {
                     type="text"
                     value={newSupplier.razonSocial}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, razonSocial: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
               )}
@@ -2325,7 +2325,7 @@ export default function PuntoCompraView() {
                     type="text"
                     value={newSupplier.address}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, address: e.target.value }))}
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-primary/10 text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
               )}
@@ -2341,7 +2341,7 @@ export default function PuntoCompraView() {
                     value={newSupplier.phone}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, phone: e.target.value }))}
                     placeholder="+51 9XX XXX XXX"
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
                 <div>
@@ -2354,7 +2354,7 @@ export default function PuntoCompraView() {
                     value={newSupplier.email}
                     onChange={(e) => setNewSupplier((s) => ({ ...s, email: e.target.value }))}
                     placeholder="ventas@proveedor.com"
-                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
               </div>
@@ -2368,7 +2368,7 @@ export default function PuntoCompraView() {
                 type="button"
                 onClick={() => !creatingSupplier && setShowNewSupplier(false)}
                 disabled={creatingSupplier}
-                className="flex-1 py-2.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -2376,7 +2376,7 @@ export default function PuntoCompraView() {
                 type="button"
                 onClick={() => void handleCreateSupplier()}
                 disabled={creatingSupplier || !newSupplier.name.trim()}
-                className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
               >
                 {creatingSupplier ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
