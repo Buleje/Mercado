@@ -31,6 +31,7 @@ import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { uidDeFila } from "@/lib/forestal/despacho-lista";
 import type { FilaDeclarada } from "@/lib/forestal/cubicacion-cuadre";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { esInventarioDeApertura } from "@/lib/forestal/lotes-aserrio";
 
 interface PaqueteDisponible {
@@ -79,6 +80,44 @@ const claveFila = (f: FilaTabla) => uidDeFila(f.corrida.id, f.paquete?.id ?? nul
 
 const nf = (n: number) => n.toLocaleString("es-PE");
 const norm = (v: string | null | undefined) => (v ?? "").toLowerCase().trim();
+
+/**
+ * «Tornillo» y «TORNILLO» son la MISMA especie (Brandon, 2026-09-08).
+ *
+ * El filtro ya comparaba normalizado, pero las OPCIONES del desplegable y sus
+ * pesos se agrupaban por el texto exacto: salían dos entradas para la misma
+ * madera, cada una mostrando la mitad del volumen, y elegir cualquiera de las
+ * dos traía el total. Dos opciones que hacen lo mismo y dos números que no
+ * cuadran con lo que muestran al elegirlos.
+ *
+ * `claveEspecie` es la misma que agrupa el resto del libro (quita tildes y el
+ * paréntesis del científico), así que «Ishpíngo» e «Ishpingo» también caen
+ * juntas. Para el permiso alcanza con la caja y los espacios: un código de
+ * título habilitante no lleva tildes, pero sí se tipea con espacios de más.
+ */
+const clavePermiso = (v: string | null | undefined) =>
+  (v ?? "").trim().toUpperCase().replace(/\s+/g, " ");
+
+/**
+ * Agrupa por clave y devuelve UN nombre por grupo: el que más veces aparece en
+ * el libro. Se muestra tal como está escrito en algún asiento — inventar una
+ * forma canónica pondría en pantalla un texto que no está en ninguno.
+ */
+function agruparPorClave(valores: string[], clave: (v: string) => string): string[] {
+  const grupos = new Map<string, Map<string, number>>();
+  for (const bruto of valores) {
+    const v = (bruto ?? "").trim();
+    if (!v) continue;
+    const k = clave(v);
+    if (!k) continue;
+    const cuenta = grupos.get(k) ?? new Map<string, number>();
+    cuenta.set(v, (cuenta.get(v) ?? 0) + 1);
+    grupos.set(k, cuenta);
+  }
+  return [...grupos.values()]
+    .map((cuenta) => [...cuenta.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es-PE"))[0][0])
+    .sort((a, b) => a.localeCompare(b, "es-PE"));
+}
 
 const fmtDia = (iso: string) =>
   new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
@@ -178,12 +217,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     }
   }, [recargar]);
 
-  const opciones = useMemo(() => {
-    const especies = [...new Set(corridas.map((c) => (c.especie ?? "").trim()).filter(Boolean))].sort();
-    const productos = [...new Set(corridas.map((c) => (c.producto ?? "").trim()).filter(Boolean))].sort();
-    const permisos = [...new Set(corridas.flatMap((c) => c.titularOrigen ?? []).map((p) => p.trim()).filter(Boolean))].sort();
-    return { especies, productos, permisos };
-  }, [corridas]);
+  const opciones = useMemo(() => ({
+    especies: agruparPorClave(corridas.map((c) => c.especie ?? ""), claveEspecie),
+    productos: agruparPorClave(corridas.map((c) => c.producto ?? ""), claveEspecie),
+    permisos: agruparPorClave(corridas.flatMap((c) => c.titularOrigen ?? []), clavePermiso),
+  }), [corridas]);
 
   /**
    * Cuánto m³ DISPONIBLE hay detrás de cada valor (ADR-400).
@@ -193,30 +231,34 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
    * Un permiso con 0.4 m³ y otro con 40 se eligen distinto.
    */
   const pesos = useMemo(() => {
-    const sumar = (clave: (c: CorridaDisponible) => string[]) => {
+    /* Suma por CLAVE, no por texto: si no, cada grafía muestra su mitad y el
+       número de la opción no es el que aparece al elegirla. */
+    const sumar = (valores: (c: CorridaDisponible) => string[], clave: (v: string) => string) => {
       const m = new Map<string, number>();
       for (const c of corridas) {
-        for (const k of clave(c)) {
-          const v = k.trim();
-          if (!v) continue;
-          m.set(v, (m.get(v) ?? 0) + c.disponible);
+        for (const bruto of valores(c)) {
+          const k = clave(bruto ?? "");
+          if (!k) continue;
+          m.set(k, (m.get(k) ?? 0) + c.disponible);
         }
       }
       return m;
     };
     return {
-      especies: sumar((c) => [c.especie ?? ""]),
-      productos: sumar((c) => [c.producto ?? ""]),
-      permisos: sumar((c) => c.titularOrigen ?? []),
+      especies: sumar((c) => [c.especie ?? ""], claveEspecie),
+      productos: sumar((c) => [c.producto ?? ""], claveEspecie),
+      permisos: sumar((c) => c.titularOrigen ?? [], clavePermiso),
     };
   }, [corridas]);
 
   const visibles = useMemo(() => {
     const q = norm(texto);
     return corridas.filter((c) => {
-      if (especie && norm(c.especie) !== norm(especie)) return false;
-      if (producto && norm(c.producto) !== norm(producto)) return false;
-      if (permiso && !(c.titularOrigen ?? []).some((p) => norm(p) === norm(permiso))) return false;
+      /* La misma clave con la que se arman las opciones: filtrar con otra regla
+         es como se llega a un desplegable que ofrece algo y no trae nada. */
+      if (especie && claveEspecie(c.especie ?? "") !== claveEspecie(especie)) return false;
+      if (producto && claveEspecie(c.producto ?? "") !== claveEspecie(producto)) return false;
+      if (permiso && !(c.titularOrigen ?? []).some((p) => clavePermiso(p) === clavePermiso(permiso))) return false;
       if (q) {
         const campos = [c.especie, c.producto, c.lote, ...c.paquetes.map((p) => p.codigo)];
         if (!campos.some((x) => norm(x).includes(q))) return false;
@@ -272,7 +314,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     () => ({
       volumen: Math.round(visibles.reduce((a, c) => a + c.disponible, 0) * 10000) / 10000,
       paquetes: visibles.reduce((a, c) => a + c.paquetes.length, 0),
-      especies: new Set(visibles.map((c) => norm(c.especie)).filter(Boolean)).size,
+      especies: new Set(visibles.map((c) => claveEspecie(c.especie ?? "")).filter(Boolean)).size,
       productos: new Set(visibles.map((c) => norm(c.producto)).filter(Boolean)).size,
     }),
     [visibles],
@@ -309,7 +351,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 opciones: opciones.especies.map((e) => ({
                   value: e,
                   label: e,
-                  hint: `${fmtM3(pesos.especies.get(e) ?? 0)} m³`,
+                  hint: `${fmtM3(pesos.especies.get(claveEspecie(e)) ?? 0)} m³`,
                 })),
                 onChange: (v) => setEspecie(v ?? ""),
               },
@@ -321,7 +363,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 opciones: opciones.permisos.map((p) => ({
                   value: p,
                   label: p,
-                  hint: `${fmtM3(pesos.permisos.get(p) ?? 0)} m³`,
+                  hint: `${fmtM3(pesos.permisos.get(clavePermiso(p)) ?? 0)} m³`,
                 })),
                 onChange: (v) => setPermiso(v ?? ""),
               },
@@ -333,7 +375,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 opciones: opciones.productos.map((p) => ({
                   value: p,
                   label: productLabel(p),
-                  hint: `${fmtM3(pesos.productos.get(p) ?? 0)} m³`,
+                  hint: `${fmtM3(pesos.productos.get(claveEspecie(p)) ?? 0)} m³`,
                 })),
                 onChange: (v) => setProducto(v ?? ""),
               },
