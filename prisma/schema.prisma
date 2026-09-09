@@ -5893,6 +5893,12 @@ model ForestCtpEntry {
   // Origen / materia prima
   gtfIngreso      String? // GTF con la que ingresó la materia prima
   materiaPrimaRef String? // referencia libre a la materia prima / lote
+  /// N° de permiso DECLARADO del asiento (ADR-402). Una corrida hereda el
+  /// permiso de la madera que consumió (`WoodEntry.originCode` de sus guías);
+  /// esto es para la que no consumió ninguna —una existencia de apertura—, que
+  /// no tenía ningún lugar donde registrarlo. Se lee sólo si no hay heredado:
+  /// la guía manda cuando existe, o el libro diría dos cosas del mismo origen.
+  originCode      String?
 
   speciesCommon     String?
   speciesScientific String?

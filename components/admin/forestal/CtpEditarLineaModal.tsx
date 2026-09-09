@@ -112,13 +112,24 @@ export default function CtpEditarLineaModal({
     Object.fromEntries(CAMPOS_EDITABLES.map((c) => [c.key, valorInicial(actual[c.key])])),
   );
 
-  /* El permiso vive en la guía y puede haber más de uno: con dos permisos
-     distintos no hay un valor que corregir sin decidir por el operario. */
+  /**
+   * El permiso siempre se puede escribir; lo que cambia es DÓNDE queda:
+   *
+   *  · con guías → en la(s) guía(s), que es de donde la corrida lo hereda y de
+   *    donde lo heredan también todas sus otras corridas;
+   *  · sin guías (una existencia de apertura, que no consumió madera de
+   *    ninguna) → en el propio asiento (ADR-402). Antes acá no había ningún
+   *    lugar donde registrarlo y el campo quedaba trabado con un candado.
+   *
+   * Con dos permisos distintos entre sus guías no hay un valor que «corregir»:
+   * el campo arranca vacío y lo que se escriba las unifica, dicho antes.
+   */
   const guias = linea.gtfOrigen ?? [];
   const permisos = [...new Set((linea.permisos ?? []).filter((p) => !esCampoSinDato(p)).map((p) => p.trim()))];
   const permisoActual = permisos.length === 1 ? permisos[0] : "";
   const permisoAmbiguo = permisos.length > 1;
-  const puedeTocarPermiso = guias.length > 0 && !permisoAmbiguo;
+  /** Sin guía de origen el permiso es un campo del asiento, no de la guía. */
+  const permisoEnAsiento = guias.length === 0;
   const [permiso, setPermiso] = useState(permisoActual);
 
   const [guardando, setGuardando] = useState(false);
@@ -129,7 +140,12 @@ export default function CtpEditarLineaModal({
   const bloqueado = (c: DefCampoEditable) => c.registro && !!linea.atadaPorque;
   const reparto = partirCambios(actual, valores);
   const permisoNuevo = permiso.trim();
-  const permisoCambio = puedeTocarPermiso && permisoNuevo !== "" && permisoNuevo !== permisoActual;
+  const permisoCambio = permisoNuevo !== "" && permisoNuevo !== permisoActual;
+  /* Sin guía el permiso viaja con el resto de las correcciones del asiento: una
+     sola llamada y una sola entrada en la auditoría, no dos. */
+  const camposCorregir = permisoCambio && permisoEnAsiento
+    ? { ...reparto.corregir, originCode: permisoNuevo }
+    : reparto.corregir;
   const algoQueGuardar = hayCambios(reparto) || permisoCambio;
 
   const pedir = async (url: string, body: unknown) => {
@@ -175,11 +191,11 @@ export default function CtpEditarLineaModal({
         hechos.push(...r.hechos);
         faltaron.push(...r.faltaron);
       }
-      if (Object.keys(reparto.corregir).length > 0) {
+      if (Object.keys(camposCorregir).length > 0) {
         const r = await pedir("/api/admin/forestal/ctp", {
           id: linea.id,
           action: "corregir_linea",
-          campos: reparto.corregir,
+          campos: camposCorregir,
         });
         hechos.push(...r.hechos);
         faltaron.push(...r.faltaron);
@@ -188,7 +204,7 @@ export default function CtpEditarLineaModal({
          consumió madera de dos, las dos comparten ese origen. Completar (estaba
          en blanco) y corregir (decía otra cosa) son dos acciones distintas
          porque dejan dos rastros distintos. */
-      if (permisoCambio) {
+      if (permisoCambio && !permisoEnAsiento) {
         for (const gtf of guias) {
           const r = await pedir("/api/admin/forestal/wood-entries", {
             action: permisoActual ? "corregir_guia" : "completar_guia",
@@ -362,36 +378,33 @@ export default function CtpEditarLineaModal({
             eso, sin guía de la que heredarlo, no hay dónde escribirlo. */}
         <div className="mt-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
           <label className="block">
-            <span className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
-              N° de permiso
-              {!puedeTocarPermiso && <Lock className="h-3 w-3 text-[var(--text-tertiary)]" aria-hidden />}
-            </span>
+            <span className="text-xs font-bold text-[var(--text-secondary)]">N° de permiso</span>
             <input
               type="text"
-              value={permisoAmbiguo ? permisos.join(" · ") : permiso}
-              disabled={!puedeTocarPermiso}
+              value={permiso}
               onChange={(e) => setPermiso(e.target.value)}
-              placeholder={puedeTocarPermiso ? "Vacío" : "Sin guía de origen"}
+              placeholder={permisoAmbiguo ? `Uno solo para las ${permisos.length} guías` : "Vacío"}
               className={`${INPUT} bg-[var(--surface-raised)]`}
             />
           </label>
           <p className="mt-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
             {permisoAmbiguo ? (
               <>
-                Esta corrida consumió madera de <b>{permisos.length} permisos distintos</b>: no hay un valor
-                que corregir sin elegir por vos. Se corrige en cada guía, desde Ingresos.
+                Esta corrida consumió madera de <b>{permisos.length} permisos distintos</b> (
+                {permisos.join(" · ")}). Lo que escribas acá los <b>unifica</b>: queda el mismo en{" "}
+                {guias.join(", ")} y en todas sus corridas. Si de verdad son dos títulos, corregí cada guía
+                desde Ingresos.
               </>
-            ) : puedeTocarPermiso ? (
+            ) : permisoEnAsiento ? (
+              <>
+                Esta corrida no consumió madera de ninguna guía —es una existencia de apertura—, así que el
+                permiso se guarda <b>en el propio asiento</b> y vale sólo para ella.
+              </>
+            ) : (
               <>
                 Una corrida no tiene permiso propio: lo hereda de la madera que consumió. Esto se guarda en{" "}
                 {guias.length === 1 ? `la guía ${guias[0]}` : `las guías ${guias.join(", ")}`} y lo heredan{" "}
                 <b>todas</b> sus corridas, no sólo ésta.
-              </>
-            ) : (
-              <>
-                Esta corrida no consumió madera de ninguna guía —es un inventario de apertura—, así que no hay
-                ingreso del que heredar el permiso. Registrarlo necesita un campo propio del asiento, que hoy
-                no existe.
               </>
             )}
           </p>

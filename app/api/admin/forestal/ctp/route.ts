@@ -248,6 +248,10 @@ const patchSchema = z.discriminatedUnion("action", [
         speciesCommon: z.string().trim().max(120).optional(),
         speciesScientific: z.string().trim().max(160).optional(),
         productType: z.string().trim().max(120).optional(),
+        /* El N° de permiso declarado del asiento (ADR-402). Sólo tiene efecto
+           donde no hay guía de la que heredarlo; la pantalla lo sabe y manda
+           uno u otro camino. */
+        originCode: z.string().trim().max(120).optional(),
         unit: z.string().trim().max(20).optional(),
         quantity: z
           .string()

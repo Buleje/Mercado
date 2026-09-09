@@ -136,10 +136,19 @@ export const CAMPOS_CORREGIBLES = [
   "unit",
   "quantity",
   "volumeInputM3",
+  "originCode",
 ] as const;
 export type CampoCorregible = (typeof CAMPOS_CORREGIBLES)[number];
 
-/** Los del REGISTRO entre los corregibles: piden que nada dependa del asiento. */
+/**
+ * Los del REGISTRO entre los corregibles: piden que nada dependa del asiento.
+ *
+ * `originCode` NO está, y es deliberado (ADR-402): el permiso declarado del
+ * asiento sólo existe donde no hay guía de la que heredarlo, así que hoy es un
+ * **hueco**, no una afirmación que algo esté citando. Además el permiso de una
+ * guía ya se corrige con los mismos candados (`WoodEntriesDB.corregirGuia`):
+ * ser más estricto acá dejaría el mismo dato con dos reglas según dónde viva.
+ */
 const CAMPOS_CORREGIBLES_DEL_REGISTRO: readonly CampoCorregible[] = [
   "speciesCommon",
   "speciesScientific",
@@ -150,6 +159,7 @@ const CAMPOS_CORREGIBLES_DEL_REGISTRO: readonly CampoCorregible[] = [
 ];
 
 const ETIQUETA_CAMPO_CORREGIBLE: Record<CampoCorregible, string> = {
+  originCode: "N° de permiso",
   observations: "observaciones",
   presentacion: "presentación",
   materiaPrimaRef: "referencia de materia prima",
@@ -819,6 +829,12 @@ export class ForestCtpDB {
       if (!codigo) continue;
       const previos = permisoDeCorrida.get(c.ctpEntryId) ?? [];
       if (!previos.includes(codigo)) permisoDeCorrida.set(c.ctpEntryId, [...previos, codigo]);
+    }
+    /* Sin permiso heredado vale el declarado en el asiento (ADR-402) — es el
+       único que tiene una existencia de apertura, que no consumió guía. */
+    for (const e of entries) {
+      const propio = (e.originCode ?? "").trim();
+      if (propio && !permisoDeCorrida.has(e.id)) permisoDeCorrida.set(e.id, [propio]);
     }
 
     return {
@@ -1831,7 +1847,7 @@ export class ForestCtpDB {
         id: true, lineNo: true, section: true, status: true, entryDate: true,
         observations: true, presentacion: true, materiaPrimaRef: true,
         speciesCommon: true, speciesScientific: true, productType: true,
-        unit: true, quantity: true, volumeInputM3: true,
+        unit: true, quantity: true, volumeInputM3: true, originCode: true,
       },
     });
     if (!actual) throw new CtpInvariantError("Esa línea no existe.", "LOTE_NO_ENCONTRADO");
@@ -2174,9 +2190,14 @@ export class ForestCtpDB {
         const gtfOrigen = [
           ...new Set(c.consumos.map((x) => (x.woodEntry?.gtfNumber ?? "").trim()).filter(Boolean)),
         ];
-        const titularOrigen = [
+        const heredados = [
           ...new Set(c.consumos.map((x) => (x.woodEntry?.originCode ?? "").trim()).filter(Boolean)),
         ];
+        /* El permiso DECLARADO del asiento (ADR-402) sólo se usa cuando no hay
+           ninguno heredado: la guía manda cuando existe, o la misma corrida
+           mostraría dos orígenes distintos según quién la lea. */
+        const propio = (c.originCode ?? "").trim();
+        const titularOrigen = heredados.length > 0 ? heredados : propio ? [propio] : [];
         return {
           id: c.id,
           lineNo: c.lineNo,
@@ -2194,6 +2215,10 @@ export class ForestCtpDB {
           gtfOrigen: gtfOrigen.length > 0 ? gtfOrigen : c.gtfIngreso ? [c.gtfIngreso] : [],
           /** Título habilitante / plan de manejo del que salió esa madera. */
           titularOrigen,
+          /** El declarado a mano en el asiento, si lo tiene (ADR-402): la
+           *  pantalla necesita saber si el valor que muestra es de la guía o
+           *  del propio asiento, porque no se corrigen en el mismo lugar. */
+          permisoPropio: propio || null,
           rendimientoPct: c.rendimientoPct != null ? Number(c.rendimientoPct) : null,
           /** Materia prima que la corrida declara haber consumido (m³). Es un
            *  campo del asiento —no un derivado—: el editor lo corrige (ADR-401). */
