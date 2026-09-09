@@ -38,6 +38,7 @@ import {
   type AsignacionMedida,
   type Distribucion,
 } from "@/lib/forestal/cubicacion-reparto";
+import { etiquetaSinRecorte } from "@/lib/forestal/reparto-anexo";
 
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -142,7 +143,7 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
       const lista = libres.get(tipo) ?? [];
       lista.push({
         id: b.bloque.id,
-        etiqueta: b.bloque.etiqueta,
+        etiqueta: etiquetaSinRecorte(b.bloque.etiqueta),
         permiso: (b.bloque.permiso ?? "").trim() || null,
         m3: r4(Number(b.bloque.m3) || 0),
         libreM3: r4(b.libreM3),
@@ -217,7 +218,7 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
           bloques: [
             {
               id: b.bloque.id,
-              etiqueta: b.bloque.etiqueta,
+              etiqueta: etiquetaSinRecorte(b.bloque.etiqueta),
               permiso: (b.bloque.permiso ?? "").trim() || null,
               m3: r4(Number(b.bloque.m3) || 0),
               libreM3: r4(b.libreM3),

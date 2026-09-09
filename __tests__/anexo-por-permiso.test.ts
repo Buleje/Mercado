@@ -8,6 +8,7 @@
 
 import { describe, expect, it } from "vitest";
 import { anexosPorPermiso, filasDelAnexo } from "@/lib/forestal/anexo-por-permiso";
+import { etiquetaSinRecorte } from "@/lib/forestal/reparto-anexo";
 import { distribuirPorCapacidad, type BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 
@@ -78,5 +79,30 @@ describe("anexosPorPermiso", () => {
     const vacio = bloque({ id: "z1", etiqueta: "GTF-Z", permiso: "P-3", m3: 0 });
     const anexos = anexosPorPermiso(distribuirPorCapacidad([vacio], PIEZAS, "tipo"));
     expect(anexos.some((x) => x.permiso === "P-3")).toBe(false);
+  });
+});
+
+describe("etiquetaSinRecorte — la etiqueta es del bloque, no del filtro", () => {
+  it("saca el recorte que el puente pegaba y deja el producto y el lote", () => {
+    expect(
+      etiquetaSinRecorte(
+        "MADERA ASERRADA (COMERCIAL) · 6-2026 (permisos 19-SEC/REG-PLT-2018-020, 19-SEC/REG-PLT-2026-032 · especie TORNILLO)",
+      ),
+    ).toBe("MADERA ASERRADA (COMERCIAL) · 6-2026");
+    expect(etiquetaSinRecorte("MADERA ASERRADA (PAQUETERIA LARGA) · 15-2026 (permiso CON-25-UCA-0142)")).toBe(
+      "MADERA ASERRADA (PAQUETERIA LARGA) · 15-2026",
+    );
+    expect(etiquetaSinRecorte("Trozas en el patio · Tornillo (especie TORNILLO)")).toBe(
+      "Trozas en el patio · Tornillo",
+    );
+  });
+
+  it("NO toca el paréntesis del producto ni una etiqueta normal", () => {
+    expect(etiquetaSinRecorte("MADERA ASERRADA (COMERCIAL) · 6-2026")).toBe(
+      "MADERA ASERRADA (COMERCIAL) · 6-2026",
+    );
+    expect(etiquetaSinRecorte("GTF-0231")).toBe("GTF-0231");
+    /* Un paréntesis que no es el recorte se respeta: no se adivina qué sobra. */
+    expect(etiquetaSinRecorte("Lote 15-2026 (reproceso)")).toBe("Lote 15-2026 (reproceso)");
   });
 });

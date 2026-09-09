@@ -45,6 +45,7 @@ import { AlertaDescuadre, OpcionesExportacion } from "./reparto-opciones";
 import { diagnosticarReparto } from "@/lib/forestal/cubicacion-reparto-diagnostico";
 import {
   alternarClaveAnexo,
+  etiquetaSinRecorte,
   leerClaveAnexo,
   piezasDelBloque,
   piezasDelDia,
@@ -484,7 +485,22 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
   useEffect(() => {
     try {
       const raw = localStorage.getItem(claveLocal("-rolliza"));
-      if (raw) setBloques(JSON.parse(raw) as BloqueRolliza[]);
+      if (raw) {
+        /* Limpieza de una vez: los bloques sembrados desde Capacidad antes del
+           2026-09-09 llevan el recorte del filtro pegado a la etiqueta —
+           «… (permisos A, B · especie TORNILLO)»—, que muestra dos títulos
+           sobre un bloque que declara uno y encima se imprime en el papel. Se
+           saca al cargar y se vuelve a guardar: el permiso ya vive en su campo. */
+        const guardados = JSON.parse(raw) as BloqueRolliza[];
+        const limpios = guardados.map((b) => {
+          const etiqueta = etiquetaSinRecorte(b.etiqueta ?? "");
+          return etiqueta === b.etiqueta ? b : { ...b, etiqueta };
+        });
+        setBloques(limpios);
+        if (limpios.some((b, i) => b !== guardados[i])) {
+          try { localStorage.setItem(claveLocal("-rolliza"), JSON.stringify(limpios)); } catch { /* quota */ }
+        }
+      }
       const m = localStorage.getItem(claveLocal("-rolliza-marcas"));
       if (m) setMarcadas(new Set(JSON.parse(m) as string[]));
       const s = localStorage.getItem(claveLocal("-rolliza-anexo-sel"));

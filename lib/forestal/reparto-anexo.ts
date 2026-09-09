@@ -68,6 +68,23 @@ export function piezasDelDia(
 }
 
 /**
+ * Saca de la etiqueta el recorte que el puente de Capacidad le pegaba —
+ * `«… (permisos A, B · especie TORNILLO)»`.
+ *
+ * Ese texto describía el FILTRO con el que se eligió la madera, no el bloque:
+ * mostraba dos títulos habilitantes sobre un bloque que declara uno solo
+ * (Brandon, 2026-09-09), y encima es lo que después imprime el papel. El
+ * permiso vive en su campo (`BloqueRolliza.permiso`), que es donde se lee.
+ *
+ * Ojo con el paréntesis del producto: `MADERA ASERRADA (COMERCIAL) · 6-2026`
+ * conserva el suyo. Sólo se corta el sufijo que empieza con «permiso»,
+ * «permisos» o «especie», que es el que escribía el puente.
+ */
+export function etiquetaSinRecorte(raw: string): string {
+  return raw.replace(/\s*\((?:permisos?|especie)\b[^)]*\)\s*$/i, "").trim();
+}
+
+/**
  * La clave con la que se elige qué entra al Anexo 04 conjunto.
  *
  * Sin día = el bloque entero, que es como funcionaba antes de las jornadas —
