@@ -16,6 +16,7 @@ import {
 } from "@/lib/forestal/reproceso-sugerido";
 import { distribuirPorCapacidad, type BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { medidasDeMeta } from "@/lib/forestal/cubicacion-meta";
 
 /**
  * Piezas de 6×6×10' = **paquetería larga** (sección exacta 6×6, largo ≥ 6').
@@ -265,5 +266,22 @@ describe("agruparPorOrigen — el producto original con todo lo que sale de él"
     // Nada salió todavía: el total es 0 y el original sigue entero.
     expect(g.saleM3).toBe(0);
     expect(g.quedaM3).toBe(g.origenM3);
+  });
+});
+
+describe("medidasDeMeta — la meta también se corta en escuadrías", () => {
+  it("desglosa el tipo de la meta y los porcentajes suman 100", () => {
+    const rows: PiezaCubicada[] = [pieza("m1", 20), pieza("m2", 10)];
+    const { filas, piezas, pieTablar } = medidasDeMeta(rows, "Paquetería larga");
+    expect(piezas).toBe(30);
+    expect(filas.length).toBe(1); // misma medida en los dos renglones
+    expect(filas[0].pctDelTipo).toBe(100);
+    expect(pieTablar).toBeCloseTo(rows.reduce((a, p) => a + (p.pieTablar ?? 0), 0), 2);
+  });
+
+  it("un tipo que el lote no tiene devuelve vacío, no ceros inventados", () => {
+    const { filas, pieTablar } = medidasDeMeta([pieza("m3", 5)], "Tabla");
+    expect(filas).toEqual([]);
+    expect(pieTablar).toBe(0);
   });
 });

@@ -28,7 +28,7 @@
  */
 
 import { useState } from "react";
-import { ChevronRight, Info, RefreshCw, Target } from "@buleje/design-system/icons";
+import { ChevronRight, Info, RefreshCw } from "@buleje/design-system/icons";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import type {
   CuadreDeDistribucion,
@@ -175,18 +175,9 @@ function TablaSalidas({
 export default function ReprocesosSugeridos({
   grupos,
   cuadre,
-  meta,
 }: {
   grupos: GrupoDeReproceso[];
   cuadre: CuadreDeDistribucion;
-  /** La meta de mix, si hay lote cubicado: cierra la cuenta del apartado. */
-  meta?: {
-    tipo: string;
-    pctMinimo: number;
-    actual: number;
-    cumple: boolean;
-    aporteM3: number;
-  } | null;
 }) {
   if (grupos.length === 0) return null;
 
@@ -245,29 +236,6 @@ export default function ReprocesosSugeridos({
             </div>
           ))}
         </div>
-      )}
-
-      {meta && (
-        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-[var(--rule-base)] px-3 py-2 text-xs text-[var(--text-secondary)]">
-          <Target className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" aria-hidden />
-          <b className="text-[var(--text-primary)]">
-            Meta: {meta.tipo} ≥ {meta.pctMinimo} %
-          </b>
-          <span>· hoy {meta.actual} %</span>
-          {meta.aporteM3 > 0 ? (
-            <span>
-              · los reprocesos hacia {meta.tipo.toLowerCase()} suman{" "}
-              <b className="font-mono tabular-nums">{fmtM3(meta.aporteM3)} m³</b>
-            </span>
-          ) : (
-            <span>· ninguna sugerencia apunta a ese tipo</span>
-          )}
-          {meta.cumple && (
-            <span className="font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-              · ya cumple
-            </span>
-          )}
-        </p>
       )}
 
       {grupos.map((g) => (

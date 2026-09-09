@@ -11,7 +11,7 @@
  */
 import type { PiezaCubicada } from "./cubicacion";
 import { agruparPor, type PrecioPt } from "./cubicacion-resumen";
-import { ORDEN_TIPO, type TipoComercial } from "./cubicacion-tipo";
+import { ORDEN_TIPO, tipoDePieza, type TipoComercial } from "./cubicacion-tipo";
 
 export interface MetaMix {
   /** Tipo comercial que se quiere maximizar (el que mejor se paga). */
@@ -50,6 +50,59 @@ export function evaluarMeta(rows: PiezaCubicada[], meta: MetaMix, precio: Precio
     faltanPuntos,
     // Cuánto PT habría que sumar a ese tipo (a total constante) para llegar.
     faltanPt: cumple ? 0 : r2((faltanPuntos / 100) * res.total.pieTablar),
+  };
+}
+
+/** Una medida del tipo que persigue la meta, como se lee en el patio. */
+export interface FilaMedidaMeta {
+  clave: string;
+  medida: string;
+  piezas: number;
+  pieTablar: number;
+  m3: number;
+  /** Qué parte del pie tablar de ESE tipo aporta esta medida. */
+  pctDelTipo: number;
+}
+
+/**
+ * Las MEDIDAS que componen hoy el tipo de la meta (Brandon, 2026-09-09: «quiero
+ * que la meta también tenga sus medidas y cuadre»).
+ *
+ * Una meta de mix dice «quiero 50 % de comercial» pero se cumple cortando
+ * escuadrías: sin ver de qué medidas está hecho ese 50 % no se sabe qué pedirle
+ * a la sierra. Sale de las MISMAS piezas que evalúa `evaluarMeta` —el lote
+ * cubicado— para que el porcentaje de arriba y el detalle de abajo no puedan
+ * contradecirse.
+ */
+export function medidasDeMeta(
+  rows: readonly PiezaCubicada[],
+  tipo: TipoComercial,
+): { filas: FilaMedidaMeta[]; piezas: number; pieTablar: number; m3: number } {
+  const mias = rows.filter((p) => tipoDePieza(p) === tipo);
+  const mapa = new Map<string, FilaMedidaMeta>();
+  for (const p of mias) {
+    const clave = `${p.espesor}${p.uEspesor}x${p.ancho}${p.uAncho}x${p.largo}${p.uLargo}`;
+    const acc = mapa.get(clave) ?? {
+      clave,
+      medida: `${p.espesor}×${p.ancho}×${p.largo}`,
+      piezas: 0,
+      pieTablar: 0,
+      m3: 0,
+      pctDelTipo: 0,
+    };
+    acc.piezas += p.cantidad;
+    acc.pieTablar = r2(acc.pieTablar + (p.pieTablar ?? 0));
+    acc.m3 = Math.round((acc.m3 + (p.m3 ?? 0)) * 10000) / 10000;
+    mapa.set(clave, acc);
+  }
+  const filas = [...mapa.values()].sort((a, b) => b.pieTablar - a.pieTablar);
+  const pieTablar = r2(filas.reduce((a, f) => a + f.pieTablar, 0));
+  for (const f of filas) f.pctDelTipo = pieTablar > 0 ? r2((f.pieTablar / pieTablar) * 100) : 0;
+  return {
+    filas,
+    piezas: filas.reduce((a, f) => a + f.piezas, 0),
+    pieTablar,
+    m3: Math.round(filas.reduce((a, f) => a + f.m3, 0) * 10000) / 10000,
   };
 }
 

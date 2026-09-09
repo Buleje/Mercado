@@ -17,7 +17,7 @@
  */
 
 import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Trash2, Download, Share2, AlertTriangle, Info, Layers, ArrowDown, FileText, FileSpreadsheet, Scale, HelpCircle, ShieldCheck, SlidersHorizontal, Combine, X, Boxes, Save, FolderOpen, Check, Loader2, RefreshCw, Ruler, TreePine } from "@buleje/design-system/icons";
+import { Trash2, Download, Share2, AlertTriangle, Info, Layers, ArrowDown, FileText, FileSpreadsheet, Scale, HelpCircle, ShieldCheck, SlidersHorizontal, Combine, X, Boxes, Save, FolderOpen, Check, Loader2, RefreshCw, Ruler, Target, TreePine } from "@buleje/design-system/icons";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { ModuleActionMenu, type ModuleActionItem } from "@/components/admin/shared/ModuleActionMenu";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -55,7 +55,10 @@ import {
   resumenDeSugerencias,
   sugerenciasDeReproceso,
 } from "@/lib/forestal/reproceso-sugerido";
-import { evaluarMeta, META_DEFAULT, type MetaMix } from "@/lib/forestal/cubicacion-meta";
+import { anexosPorPermiso } from "@/lib/forestal/anexo-por-permiso";
+import AnexoPorPermiso from "./reparto-anexo-permiso";
+import MetaConMedidas from "./reparto-meta";
+import { evaluarMeta, medidasDeMeta, META_DEFAULT, type MetaMix } from "@/lib/forestal/cubicacion-meta";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import { tipoComercialDelProducto } from "@/lib/forestal/loctp-catalogos";
 import ReprocesosSugeridos from "./reparto-reprocesos";
@@ -860,6 +863,12 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
   const resumenReprocesos = useMemo(() => resumenDeSugerencias(reprocesos), [reprocesos]);
   /** Las mismas sugerencias juntadas por PRODUCTO ORIGINAL, que es como se leen. */
   const gruposReproceso = useMemo(() => agruparPorOrigen(reprocesos), [reprocesos]);
+  /**
+   * Un Anexo 04 por permiso, con todo lo suyo unificado (ADR-406). El papel se
+   * presenta contra un título habilitante: el permiso es la unidad, no el
+   * bloque.
+   */
+  const anexosDePermiso = useMemo(() => anexosPorPermiso(dist), [dist]);
   /** El cierre del apartado: qué falta, qué tapan los reprocesos y qué queda. */
   const cuadre = useMemo(
     () =>
@@ -891,12 +900,21 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     const aporteM3 = reprocesos
       .filter((s) => s.haciaTipo.toLowerCase() === metaMix.tipo.toLowerCase())
       .reduce((a, s) => a + s.convertirM3, 0);
+    /* Las MEDIDAS de ese tipo, de las mismas piezas que evalúa la meta: una
+       meta se cumple cortando escuadrías, y sin verlas no se sabe qué pedirle
+       a la sierra (Brandon, 2026-09-09). */
+    const detalle = medidasDeMeta(rows, metaMix.tipo);
     return {
       tipo: metaMix.tipo,
       pctMinimo: metaMix.pctMinimo,
       actual: estado.actual,
       cumple: estado.cumple,
+      faltanPt: estado.faltanPt,
       aporteM3: Math.round(aporteM3 * 10000) / 10000,
+      medidas: detalle.filas,
+      medidasPt: detalle.pieTablar,
+      medidasPiezas: detalle.piezas,
+      medidasM3: detalle.m3,
     };
   }, [rows, metaMix, precioDe, reprocesos]);
   const t = dist.totales;
@@ -1452,7 +1470,64 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             </span>
           }
         >
-          <ReprocesosSugeridos grupos={gruposReproceso} cuadre={cuadre} meta={metaDelApartado} />
+          <ReprocesosSugeridos grupos={gruposReproceso} cuadre={cuadre} />
+        </SeccionResumen>
+      )}
+
+      {/* La meta y sus MEDIDAS: se mira haya o no reprocesos que sugerir. */}
+      {metaDelApartado && (
+        <SeccionResumen
+          icon={Target}
+          titulo="La meta, y de qué medidas está hecha"
+          hint={
+            <span>
+              {metaDelApartado.tipo} · hoy{" "}
+              <span className="font-mono tabular-nums">{metaDelApartado.actual} %</span> de{" "}
+              {metaDelApartado.pctMinimo} %
+            </span>
+          }
+        >
+          <MetaConMedidas meta={metaDelApartado} />
+        </SeccionResumen>
+      )}
+
+      {/* El papel por título habilitante: todas las medidas de ese permiso,
+          unificadas y cuadradas (ADR-406). */}
+      {anexosDePermiso.length > 0 && (
+        <SeccionResumen
+          icon={FileText}
+          titulo="Anexo 04 por permiso"
+          hint={
+            <span>
+              {anexosDePermiso.length} {anexosDePermiso.length === 1 ? "permiso" : "permisos"} ·{" "}
+              <span className="font-mono tabular-nums">
+                {fmtM3(anexosDePermiso.reduce((a, x) => a + x.totalM3, 0))} m³
+              </span>
+            </span>
+          }
+        >
+          <AnexoPorPermiso
+            anexos={anexosDePermiso}
+            onAbrir={(piezas, etiqueta, especie) =>
+              setAnexoDe({
+                piezas,
+                especie,
+                etiqueta,
+                /* Un permiso puede juntar bloques de troza y de aserrada
+                   directa: el checklist tiene que decir de cuáles salió. */
+                procedencia: {
+                  rolliza: dist.especies
+                    .flatMap((e) => e.bloques)
+                    .filter((b) => !esAserradaDirecta(b.bloque) && (b.bloque.permiso ?? "").trim() === (etiqueta === "Sin permiso declarado" ? "" : etiqueta))
+                    .length,
+                  aserradaDirecta: dist.especies
+                    .flatMap((e) => e.bloques)
+                    .filter((b) => esAserradaDirecta(b.bloque) && (b.bloque.permiso ?? "").trim() === (etiqueta === "Sin permiso declarado" ? "" : etiqueta))
+                    .length,
+                },
+              })
+            }
+          />
         </SeccionResumen>
       )}
 
