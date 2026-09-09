@@ -49,6 +49,10 @@ const saveSchema = z.object({
   modo: z.enum(["oficial", "compacto"]).default("oficial"),
   especieGlobal: z.string().trim().max(60).nullish(),
   ctpEntryId: z.string().trim().max(60).nullish(),
+  /* El total declarado A MANO en el papel. No reemplaza al recalculado —ese
+     sigue saliendo de las piezas— pero sin guardarlo no se puede re-imprimir
+     el documento que se entregó. */
+  totalManualM3: z.coerce.number().nonnegative().max(999999).nullish(),
   // Un anexo de varias hojas son 35 filas por bloque × 4 × N hojas; el tope
   // protege el KV sin estorbar un despacho grande de verdad.
   piezas: z.array(piezaSchema).min(1).max(1000),
@@ -102,7 +106,7 @@ export const POST = withApiHandler("forestal-anexos-post", async (req: NextReque
       { status: 400 },
     );
   }
-  const { id, fecha, especieGlobal, ctpEntryId, piezas, ...datos } = parsed.data;
+  const { id, fecha, especieGlobal, ctpEntryId, piezas, totalManualM3, ...datos } = parsed.data;
   try {
     const anexo = await ForestAnexosDB.save(
       auth.tenantId,
@@ -112,6 +116,7 @@ export const POST = withApiHandler("forestal-anexos-post", async (req: NextReque
         datos,
         especieGlobal: especieGlobal ?? undefined,
         ctpEntryId: ctpEntryId ?? undefined,
+        totalManualM3: totalManualM3 ?? null,
         // Las piezas llegan ya cubicadas del cliente; los TOTALES del anexo se
         // recalculan igual en `construirEmision`, que es lo que se guarda.
         piezas: piezas.map((p, i) => ({

@@ -42,6 +42,9 @@ import { declararColaEnElLibro, declararEnElLibro } from "@/lib/forestal/reproce
 import { FRASE_REGLA } from "@/lib/forestal/reproceso-reglas";
 import { claveDeConversion, estadoDeclarado, type DeclaradoDelPar } from "@/lib/forestal/reproceso-cruce";
 import { useReprocesosDeclarados } from "@/hooks/use-reprocesos-declarados";
+import { useCorridasParaReproceso, type CorridaParaReproceso } from "@/hooks/use-corridas-para-reproceso";
+import DeclararReprocesoPicker from "./reparto-declarar-reproceso";
+import CtpReprocesoModal from "./CtpReprocesoModal";
 import type {
   AmparoImposible,
   CuadreDeDistribucion,
@@ -141,6 +144,8 @@ function TablaSalidas({
   onMarcar,
   declarados,
   diasDeclarados,
+  onDeclarar,
+  sugeridoPorPar,
 }: {
   titulo: string;
   ayuda: string;
@@ -159,6 +164,18 @@ function TablaSalidas({
   declarados: ReadonlyMap<string, DeclaradoDelPar>;
   /** Ventana de esa búsqueda, para poder decir «en los últimos N días». */
   diasDeclarados: number;
+  /** Abre el «¿de qué corrida sale?» — declarar sin salir de la distribución. */
+  onDeclarar: (destino: FilaSalida) => void;
+  /**
+   * Cuánto ampara la distribución ENTERA de cada par (clave de conversión).
+   *
+   * El Libro no sabe de qué bloque del cubicador salió un reproceso —no hay
+   * vínculo entre un asiento y una troza de esta pantalla— así que el cruce es
+   * por PAR. Comparar lo declarado contra UNA fila marcaba «declarado de MÁS»
+   * en el bloque chico por un reproceso que era del grande (visto en pantalla,
+   * 2026-09-09). El denominador honesto es el par completo.
+   */
+  sugeridoPorPar: ReadonlyMap<string, number>;
 }) {
   const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
   const alternar = (clave: string) =>
@@ -198,10 +215,12 @@ function TablaSalidas({
             const abierto = abiertos.has(clave);
             /* Lo mismo, ¿ya está en el Libro? El mismo tipo no se declara nunca,
                así que ahí no se pregunta. */
-            const yaDeclarado = d.mismoTipo
-              ? undefined
-              : declarados.get(claveDeConversion(grupo.especie, grupo.desdeTipo, d.tipo));
-            const estado = estadoDeclarado(d.m3, yaDeclarado?.m3 ?? 0);
+            const clavePar = claveDeConversion(grupo.especie, grupo.desdeTipo, d.tipo);
+            const yaDeclarado = d.mismoTipo ? undefined : declarados.get(clavePar);
+            /* Contra lo que ampara TODA la distribución de ese par, nunca contra
+               esta sola fila. */
+            const amparaElPar = Math.max(sugeridoPorPar.get(clavePar) ?? 0, d.m3);
+            const estado = estadoDeclarado(amparaElPar, yaDeclarado?.m3 ?? 0);
             return [
               <tr
                 key={clave}
@@ -271,16 +290,37 @@ function TablaSalidas({
                       su m³ y decide el operario (2026-09-09). */}
                   {yaDeclarado && (
                     <span
-                      title={`El Libro declara ${fmtM3(yaDeclarado.m3)} m³ de ${grupo.desdeTipo} → ${d.tipo} (${grupo.especie}) en ${yaDeclarado.veces} ${yaDeclarado.veces === 1 ? "asiento" : "asientos"} de los últimos ${diasDeclarados} días. Acá se sugieren ${fmtM3(d.m3)} m³.`}
+                      title={[
+                        `El Libro declara que SALIERON ${fmtM3(yaDeclarado.m3)} m³ de ${grupo.desdeTipo} → ${d.tipo} (${grupo.especie}) en ${yaDeclarado.veces} ${yaDeclarado.veces === 1 ? "asiento" : "asientos"} de los últimos ${diasDeclarados} días; volvieron a la sierra ${fmtM3(yaDeclarado.entroM3)} m³.`,
+                        `Toda la distribución ampara ${fmtM3(amparaElPar)} m³ de esta conversión (esta fila, ${fmtM3(d.m3)}).`,
+                        yaDeclarado.repartido
+                          ? "Algún asiento mezcla varias conversiones: lo que salió se repartió entre ellas en proporción a lo que entró (es un derivado, no un número del Libro)."
+                          : "",
+                        estado === "de-mas"
+                          ? "Puede ser madera de otro lote del mes — o el mismo asiento cargado dos veces. Miralo antes de declarar otro."
+                          : "",
+                      ].filter(Boolean).join(" ")}
                       className={`ml-1.5 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold ${
                         estado === "cubierto"
                           ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                          : "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                          : estado === "de-mas"
+                            ? "bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                            : "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                       }`}
                     >
                       {estado === "cubierto" && <Check className="h-3 w-3" aria-hidden />}
-                      {estado === "cubierto" ? "ya declarado" : "declarado en parte"}{" "}
+                      {estado === "de-mas" && <AlertTriangle className="h-3 w-3" aria-hidden />}
+                      {estado === "cubierto"
+                        ? "ya declarado"
+                        : estado === "de-mas"
+                          ? "declarado de MÁS"
+                          : "declarado en parte"}{" "}
                       <span className="font-mono tabular-nums">{fmtM3(yaDeclarado.m3)} m³</span>
+                      {estado === "de-mas" && (
+                        <span className="font-normal opacity-80">
+                          contra {fmtM3(amparaElPar)} que ampara la distribución
+                        </span>
+                      )}
                       {yaDeclarado.ultimaFecha && (
                         <span className="font-normal opacity-80">
                           · {fechaCorta(yaDeclarado.ultimaFecha)}
@@ -312,21 +352,11 @@ function TablaSalidas({
                        elige de qué corrida sale (eso no se adivina). */
                     <button
                       type="button"
-                      onClick={() =>
-                        declararEnElLibro({
-                          desdeTipo: grupo.desdeTipo,
-                          haciaTipo: d.tipo,
-                          productoDestino: productoDelTipoComercial(d.tipo),
-                          m3: d.m3,
-                          especie: grupo.especie,
-                          etiqueta: grupo.etiquetas.join(" · "),
-                          permiso: grupo.permiso,
-                        })
-                      }
+                      onClick={() => onDeclarar(d)}
                       className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-[var(--rule-base)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-                      title={`Declarar este reproceso en el Libro: ${fmtM3(d.m3)} m³ de ${grupo.desdeTipo} a ${d.tipo}`}
+                      title={`Declarar este reproceso sin salir de acá: ${fmtM3(d.m3)} m³ de ${grupo.desdeTipo} a ${d.tipo}. Se elige de qué corrida sale y se registra en el Libro.`}
                     >
-                      <ExternalLink className="h-3.5 w-3.5" aria-hidden /> Declarar
+                      <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Declarar
                     </button>
                   )}
                 </td>
@@ -460,7 +490,16 @@ export default function ReprocesosSugeridos({
   /* Lo que el Libro ya declaró en el último mes: marca las filas que ya están
      registradas para no declararlas dos veces. Falla en silencio si el Libro
      está apagado — esta sección es del cubicador. */
-  const { porPar, dias } = useReprocesosDeclarados();
+  const { porPar, dias, recargar: recargarDeclarados } = useReprocesosDeclarados();
+  /* Las corridas con saldo, para poder declarar acá mismo. */
+  const { corridas, cargando: cargandoCorridas, disponible: libroDisponible, recargar: recargarCorridas } =
+    useCorridasParaReproceso();
+  /** La conversión que se está declarando: primero se elige la corrida. */
+  const [declarando, setDeclarando] = useState<{ grupo: GrupoDeReproceso; destino: FilaSalida } | null>(null);
+  /** La corrida elegida: con ella se abre el modal de reproceso del Libro. */
+  const [origenElegido, setOrigenElegido] = useState<CorridaParaReproceso | null>(null);
+  /** Lo que pasó al declarar — se dice acá y no en un toast que se va solo. */
+  const [nota, setNota] = useState<string | null>(null);
   /**
    * Los tildados que SÍ se declaran, en el orden en que se leen.
    *
@@ -468,6 +507,22 @@ export default function ReprocesosSugeridos({
    * prefijo `=` y acá se arma sin él. Declarar «comercial → comercial» sería
    * registrar un reproceso que no ocurrió.
    */
+  /**
+   * Cuánto ampara la distribución de cada conversión, sumando TODOS los bloques.
+   * Sólo lo ya amparado: las opciones compiten por la misma capacidad y sumarlas
+   * inflaría el denominador contra el que se juzga lo declarado.
+   */
+  const sugeridoPorPar = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const g of grupos) {
+      for (const d of g.amparados) {
+        const k = claveDeConversion(g.especie, g.desdeTipo, d.tipo);
+        m.set(k, r3((m.get(k) ?? 0) + d.m3));
+      }
+    }
+    return m;
+  }, [grupos]);
+
   const marcadosParaDeclarar = useMemo(() => {
     const out: Parameters<typeof declararColaEnElLibro>[0][number][] = [];
     for (const g of grupos) {
@@ -492,6 +547,19 @@ export default function ReprocesosSugeridos({
   return (
     <div className="space-y-3">
       <RespaldosImposibles imposibles={imposibles} />
+      {nota && (
+        <p className="flex items-start gap-1.5 rounded-xl border border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 px-3 py-2 text-sm text-[var(--text-secondary)]">
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" aria-hidden />
+          <span>{nota}</span>
+          <button
+            type="button"
+            onClick={() => setNota(null)}
+            className="ml-auto text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] underline hover:text-[var(--text-primary)]"
+          >
+            Cerrar
+          </button>
+        </p>
+      )}
       {marcadas.size > 0 && (
         <div className="flex flex-wrap items-center justify-end gap-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
           {/* Declarar la TANDA: el Libro los ofrece uno tras otro y al terminar
@@ -666,6 +734,8 @@ export default function ReprocesosSugeridos({
               onMarcar={alternar}
               declarados={porPar}
               diasDeclarados={dias}
+              onDeclarar={(destino) => setDeclarando({ grupo: g, destino })}
+              sugeridoPorPar={sugeridoPorPar}
             />
             {/* Las opciones se suman cuando ENTRAN JUNTAS en lo libre: de
                 2.500 salen paquetería larga 1.500 y larga angosta 0.800 a la
@@ -687,6 +757,8 @@ export default function ReprocesosSugeridos({
               onMarcar={alternar}
               declarados={porPar}
               diasDeclarados={dias}
+              onDeclarar={(destino) => setDeclarando({ grupo: g, destino })}
+              sugeridoPorPar={sugeridoPorPar}
             />
 
             {/* La cuenta completa del producto, para que cierre contra la tabla
@@ -783,14 +855,70 @@ export default function ReprocesosSugeridos({
         </div>
       ))}
 
+      {/* Declarar sin salir: primero de qué corrida sale (eso no se adivina) y
+          después el MISMO modal de reproceso del Libro, con el producto y el
+          volumen puestos. Lo registrado es idéntico se entre por acá o allá. */}
+      {declarando && !origenElegido && (
+        <DeclararReprocesoPicker
+          desdeTipo={declarando.grupo.desdeTipo}
+          haciaTipo={declarando.destino.tipo}
+          m3={declarando.destino.m3}
+          especie={declarando.grupo.especie}
+          etiqueta={declarando.grupo.etiquetas.join(" · ")}
+          corridas={corridas}
+          cargando={cargandoCorridas}
+          disponible={libroDisponible}
+          onElegir={setOrigenElegido}
+          onIrAlLibro={() =>
+            declararEnElLibro({
+              desdeTipo: declarando.grupo.desdeTipo,
+              haciaTipo: declarando.destino.tipo,
+              productoDestino: productoDelTipoComercial(declarando.destino.tipo),
+              m3: declarando.destino.m3,
+              especie: declarando.grupo.especie,
+              etiqueta: declarando.grupo.etiquetas.join(" · "),
+              permiso: declarando.grupo.permiso,
+            })
+          }
+          onCerrar={() => setDeclarando(null)}
+        />
+      )}
+      {declarando && origenElegido && (
+        <CtpReprocesoModal
+          origen={{
+            id: origenElegido.id,
+            lineNo: origenElegido.lineNo,
+            especie: origenElegido.especie,
+            producto: origenElegido.producto,
+            unidad: origenElegido.unidad,
+            disponible: origenElegido.disponible,
+          }}
+          sugerencia={{
+            producto: productoDelTipoComercial(declarando.destino.tipo),
+            m3: declarando.destino.m3,
+            desdeTipo: declarando.grupo.desdeTipo,
+          }}
+          onClose={() => setOrigenElegido(null)}
+          onListo={(msg, detalle) => {
+            setNota(`${msg} — ${detalle}`);
+            setOrigenElegido(null);
+            setDeclarando(null);
+            /* La fila tiene que decir «ya declarado» en el acto, y la corrida
+               quedó con menos saldo: se releen las dos cosas. */
+            recargarDeclarados();
+            recargarCorridas();
+          }}
+        />
+      )}
+
       <p className="flex items-start gap-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
         <span>
           Al recortar suben las piezas y <b>baja</b> el volumen: el reproceso nunca convierte más de
           lo que hay. <b>Qué se puede reprocesar:</b> {FRASE_REGLA} Si el respaldo cierra unos
           litros por encima del bloque, es el cierre por diferencia de medición del reparto (hasta 3
-          piezas y 1 % del bloque). Esto no mueve nada en el Libro — el reproceso se registra desde
-          Productos disponibles.
+          piezas y 1 % del bloque). <b>Declarar</b> registra el reproceso en el Libro (hay que decir
+          de qué corrida sale); mientras no lo hagas, acá no se mueve nada.
         </span>
       </p>
     </div>

@@ -13,7 +13,7 @@
  * es el que se está distribuyendo hoy, y marcar la fila con eso sería enseñar a
  * ignorar la marca.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { cruzarReprocesosDeclarados, type DeclaradoDelPar } from "@/lib/forestal/reproceso-cruce";
 import type { ReprocesoDeclarado } from "@/lib/forestal/reprocesos-declarados";
@@ -23,8 +23,11 @@ const VACIO = new Map<string, DeclaradoDelPar>();
 export function useReprocesosDeclarados(dias = 30): {
   porPar: Map<string, DeclaradoDelPar>;
   dias: number;
+  /** Volver a leer: se llama al declarar uno para que la fila lo diga en el acto. */
+  recargar: () => void;
 } {
   const [porPar, setPorPar] = useState<Map<string, DeclaradoDelPar>>(VACIO);
+  const [token, setToken] = useState(0);
 
   useEffect(() => {
     let vivo = true;
@@ -42,7 +45,9 @@ export function useReprocesosDeclarados(dias = 30): {
         if (vivo) setPorPar(VACIO);
       });
     return () => { vivo = false; };
-  }, [dias]);
+    /* `token` fuerza la relectura tras declarar; la URL lleva un `from` con la
+       hora, así que nunca choca con la caché de `ctpGet`. */
+  }, [dias, token]);
 
-  return { porPar, dias };
+  return { porPar, dias, recargar: useCallback(() => setToken((t) => t + 1), []) };
 }

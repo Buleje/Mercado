@@ -226,13 +226,21 @@ async function construirDoc(rows: PiezaCubicada[], datos: DatosAnexo04, opts: An
  * por anexo — cada documento se lee solo, aunque viajen juntos.
  */
 export async function exportarAnexosPDF(
-  items: Array<{ piezas: PiezaCubicada[]; datos: DatosAnexo04; especieGlobal?: string }>,
+  items: Array<{
+    piezas: PiezaCubicada[];
+    datos: DatosAnexo04;
+    especieGlobal?: string;
+    /** El (3) VOLUMEN TOTAL declarado a mano en ESE anexo, si tuvo uno. */
+    totalManualM3?: number | null;
+  }>,
   nombre = `anexos-04-${new Date().toISOString().slice(0, 10)}.pdf`,
 ): Promise<void> {
   if (items.length === 0) return;
   const { jsPDF: JsPDF } = await import("jspdf");
   const doc = new JsPDF({ unit: "pt", format: "a4" });
-  items.forEach((it, i) => agregarAnexo(doc, it.piezas, it.datos, { especieGlobal: it.especieGlobal }, i === 0));
+  items.forEach((it, i) =>
+    agregarAnexo(doc, it.piezas, it.datos, { especieGlobal: it.especieGlobal, totalManualM3: it.totalManualM3 }, i === 0),
+  );
   doc.save(nombre);
 }
 

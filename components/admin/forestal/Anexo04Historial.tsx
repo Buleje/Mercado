@@ -149,7 +149,21 @@ export default function Anexo04Historial({
                   {etiquetaEmision(a)}
                 </p>
                 <p className="mt-0.5 font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                  {fecha(a.fecha)} · {a.hojas} hoja{a.hojas === 1 ? "" : "s"} · {a.totalPiezas} pzas · {fmtAnexo(a.totalM3)} m³
+                  {fecha(a.fecha)} · {a.hojas} hoja{a.hojas === 1 ? "" : "s"} · {a.totalPiezas} pzas ·{" "}
+                  {a.totalManualM3 != null ? (
+                    /* El papel llevaba un total declarado a mano: se muestra ESE
+                       —es el que ampara la guía— y al lado lo que suman las
+                       piezas, que es lo único que el servidor puede verificar. */
+                    <span title={`Declarado a mano en el papel. Las piezas suman ${fmtAnexo(a.totalM3)} m³.`}>
+                      <b className="text-[var(--text-primary)]">{fmtAnexo(a.totalManualM3)} m³</b>{" "}
+                      <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                        declarado
+                      </span>{" "}
+                      (piezas {fmtAnexo(a.totalM3)})
+                    </span>
+                  ) : (
+                    <>{fmtAnexo(a.totalM3)} m³</>
+                  )}
                   {a.firmante ? ` · ${a.firmante}` : ""}
                 </p>
               </div>

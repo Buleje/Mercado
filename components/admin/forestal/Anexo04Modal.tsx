@@ -264,6 +264,9 @@ export default function Anexo04Modal({
     setPiezasGuardadas(a.piezas);
     setEspecieOrigen(undefined);
     setOrigen(`emitido:${a.id}`);
+    /* Y su (3) VOLUMEN TOTAL declarado, si el papel llevaba uno: cargar la
+       emisión tiene que devolver el MISMO documento, casillero por casillero. */
+    setTotalBuffer(a.totalManualM3 != null ? String(a.totalManualM3).replace(".", ",") : "");
     setVerHistorial(false);
   };
 

@@ -23,9 +23,14 @@ export function useAnexo04Salidas(ctx: {
   ctpEntryId?: string;
   /**
    * Volumen total declarado a mano (ver `Anexo04Opts.totalManualM3`): viaja
-   * al PDF/Excel para que lo descargado sea igual al preview. La bandeja
-   * (`registrar`) NO lo manda — el servidor recalcula el total desde las
-   * piezas a propósito, por diseño (nunca confía en un total del cliente).
+   * al PDF/Excel para que lo descargado sea igual al preview, y desde
+   * 2026-09-09 **también a la bandeja**, en su propio campo.
+   *
+   * El total que el servidor guarda como `totalM3` sigue saliendo de las
+   * piezas —nunca se cree un total del cliente—; el declarado se guarda al
+   * lado para poder re-imprimir el papel que se entregó. Sin eso, un anexo
+   * emitido con 1,890 declarados sobre 1,840 calculados se re-descargaba con
+   * otro número en el casillero (3).
    */
   totalManualM3?: number | null;
   onAviso?: (msg: string, tono: "success" | "error") => void;
@@ -40,7 +45,7 @@ export function useAnexo04Salidas(ctx: {
    * falla, el PDF ya se descargó y el operario no puede hacer nada al respecto
    * — se avisa y sigue.
    */
-  const registrar = useCallback((piezas: PiezaCubicada[], d: DatosAnexo04) => {
+  const registrar = useCallback((piezas: PiezaCubicada[], d: DatosAnexo04, totalManual?: number | null) => {
     if (piezas.length === 0) return;
     fetch("/api/admin/forestal/anexos", {
       method: "POST",
@@ -51,6 +56,7 @@ export function useAnexo04Salidas(ctx: {
         documento: d.documento, cargo: d.cargo, observaciones: d.observaciones,
         unidadV: d.unidadV, modo: d.modo, especieGlobal: especieGlobal ?? null,
         ctpEntryId: ctpEntryId ?? null, piezas,
+        totalManualM3: totalManual ?? null,
       }),
     })
       .then((r) => { if (r.ok) onRegistrado(); })
@@ -62,7 +68,7 @@ export function useAnexo04Salidas(ctx: {
     exportarAnexo04PDF(filas, datos, { especieGlobal, totalManualM3 })
       .then(() => {
         onAviso?.("Anexo N° 04 descargado y registrado", "success");
-        registrar(filas, datos);
+        registrar(filas, datos, totalManualM3);
       })
       .catch(() => onAviso?.("No se pudo generar el PDF.", "error"))
       .finally(() => setGenerando(false));
@@ -76,7 +82,8 @@ export function useAnexo04Salidas(ctx: {
 
   /** Re-descarga un anexo tal como se emitió, sin tocar lo que hay en pantalla. */
   const reDescargar = useCallback((a: AnexoEmitido) => {
-    exportarAnexo04PDF(a.piezas, { ...datos, ...a }, { especieGlobal: a.especieGlobal })
+    /* Con su total declarado: es el número que llevaba el papel. */
+    exportarAnexo04PDF(a.piezas, { ...datos, ...a }, { especieGlobal: a.especieGlobal, totalManualM3: a.totalManualM3 })
       .then(() => onAviso?.("Anexo re-descargado", "success"))
       .catch(() => onAviso?.("No se pudo generar el PDF.", "error"));
   }, [datos, onAviso]);
@@ -84,7 +91,10 @@ export function useAnexo04Salidas(ctx: {
   /** Todos los anexos elegidos en un PDF: el archivo del mes, listo para imprimir. */
   const pdfDeLote = useCallback((seleccion: AnexoEmitido[]) => {
     if (seleccion.length === 0) { onAviso?.("No hay anexos para imprimir.", "error"); return; }
-    exportarAnexosPDF(seleccion.map((a) => ({ piezas: a.piezas, datos: { ...datos, ...a }, especieGlobal: a.especieGlobal })))
+    exportarAnexosPDF(seleccion.map((a) => ({
+      piezas: a.piezas, datos: { ...datos, ...a }, especieGlobal: a.especieGlobal,
+      totalManualM3: a.totalManualM3,
+    })))
       .then(() => onAviso?.(`${seleccion.length} anexos en un PDF`, "success"))
       .catch(() => onAviso?.("No se pudo generar el PDF del lote.", "error"));
   }, [datos, onAviso]);

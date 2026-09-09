@@ -50,6 +50,21 @@ function declarado(
 }
 
 describe("cruzarReprocesosDeclarados", () => {
+  it("cuenta lo que SALIÓ, no lo que entró — la merma no es «declarado de más»", () => {
+    /* 🚨 El bug que se vio en pantalla al declarar uno de verdad (2026-09-09):
+       entraron 0.700 y salieron 0.637, y la fila marcaba «declarado de MÁS»
+       contra una sugerencia de 0.637. Todo reproceso sano tiene merma: si se
+       compara la entrada, TODOS quedan marcados. */
+    const mapa = cruzarReprocesosDeclarados([
+      declarado([{ producto: COMERCIAL, cantidad: 0.7 }], { salio: 0.637 }),
+    ]);
+    const par = mapa.get(claveDeConversion("Tornillo", "Comercial", "Paquetería larga"))!;
+    expect(par.m3).toBeCloseTo(0.637, 4);
+    expect(par.entroM3).toBeCloseTo(0.7, 4);
+    expect(par.repartido).toBe(false);
+    expect(estadoDeclarado(0.637, par.m3)).toBe("cubierto");
+  });
+
   it("suma el mismo par de varios asientos y se queda con la fecha más nueva", () => {
     const mapa = cruzarReprocesosDeclarados([
       declarado([{ producto: COMERCIAL, cantidad: 0.5 }], { fecha: "2026-09-01", salio: 0.4 }),
@@ -57,9 +72,28 @@ describe("cruzarReprocesosDeclarados", () => {
     ]);
     const par = mapa.get(claveDeConversion("Tornillo", "Comercial", "Paquetería larga"));
     expect(par).toBeTruthy();
-    expect(par!.m3).toBeCloseTo(0.75, 4);
+    expect(par!.m3).toBeCloseTo(0.6, 4);      // 0.4 + 0.2 que SALIERON
+    expect(par!.entroM3).toBeCloseTo(0.75, 4); // 0.5 + 0.25 que entraron
     expect(par!.veces).toBe(2);
     expect(par!.ultimaFecha).toBe("2026-09-09");
+  });
+
+  it("un asiento con DOS pares reparte lo que salió en proporción a lo que entró, y lo marca", () => {
+    const mapa = cruzarReprocesosDeclarados([
+      declarado(
+        [
+          { producto: COMERCIAL, cantidad: 0.6 },
+          { producto: PAQ_LARGA, cantidad: 0.4 },
+        ],
+        { producto: PAQ_CORTA, salio: 0.9 },
+      ),
+    ]);
+    const desdeComercial = mapa.get(claveDeConversion("Tornillo", "Comercial", "Paquetería corta"))!;
+    const desdeLarga = mapa.get(claveDeConversion("Tornillo", "Paquetería larga", "Paquetería corta"))!;
+    expect(desdeComercial.m3).toBeCloseTo(0.54, 4); // 0.9 × 0.6/1.0
+    expect(desdeLarga.m3).toBeCloseTo(0.36, 4);     // 0.9 × 0.4/1.0
+    expect(desdeComercial.m3 + desdeLarga.m3).toBeCloseTo(0.9, 4);
+    expect(desdeComercial.repartido).toBe(true);
   });
 
   it("la clave no distingue tildes ni mayúsculas: «TORNILLO» es «Tornillo»", () => {
@@ -93,7 +127,8 @@ describe("cruzarReprocesosDeclarados", () => {
     ]);
     const par = mapa.get(claveDeConversion("Tornillo", "Comercial", "Paquetería larga"))!;
     expect(par.veces).toBe(1);
-    expect(par.m3).toBeCloseTo(0.5, 4);
+    expect(par.entroM3).toBeCloseTo(0.5, 4); // 0.2 + 0.3 del MISMO par
+    expect(par.repartido).toBe(false);       // un solo par: lo que salió va entero
   });
 });
 
@@ -103,8 +138,16 @@ describe("estadoDeclarado — con la tolerancia del patio (10 litros)", () => {
     [0.637, 0.2, "parcial"],
     [0.637, 0.63, "cubierto"],   // 7 litros menos: la misma madera con otra cinta
     [0.637, 0.62, "parcial"],    // 17 litros: falta declarar de verdad
-    [0.637, 0.7, "cubierto"],
+    [0.637, 0.68, "cubierto"],   // 43 litros de más: todavía es la misma madera
+    [0.637, 0.7, "de-mas"],      // 63 litros: ya es otra cosa — o un asiento repetido
+    [0.637, 1.4, "de-mas"],
   ] as const)("sugerido %s con %s declarado → %s", (sug, dec, esperado) => {
     expect(estadoDeclarado(sug, dec)).toBe(esperado);
+  });
+
+  it("«de más» necesita MEDIA TABLA de diferencia, no una milésima", () => {
+    // 0.05 m³ es el mismo piso con el que se sugiere un reproceso.
+    expect(estadoDeclarado(1, 1.05)).toBe("cubierto");
+    expect(estadoDeclarado(1, 1.051)).toBe("de-mas");
   });
 });

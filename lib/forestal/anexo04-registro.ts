@@ -25,7 +25,20 @@ export interface AnexoEmitido {
   /** Cuántas hojas salió el anexo (informativo en la bandeja). */ hojas: number;
   totalPiezas: number;
   totalPt: number;
-  /** (3) VOLUMEN TOTAL en m³. */ totalM3: number;
+  /** (3) VOLUMEN TOTAL en m³, recalculado desde las piezas. */ totalM3: number;
+  /**
+   * El (3) VOLUMEN TOTAL que el emisor declaró A MANO, si declaró uno.
+   *
+   * Se guarda para poder **re-imprimir el mismo papel**: sin esto, un anexo
+   * emitido con un total declarado (porque la guía ampara ese número y las
+   * piezas caen 3 litros abajo) se re-descargaba con el total calculado y el
+   * papel de la fiscalización no era el que se entregó (Brandon, 2026-09-09).
+   *
+   * NO reemplaza a `totalM3`: ese sigue saliendo de las piezas, que es lo que
+   * el servidor sabe verificar. Los dos conviven, y la bandeja muestra la
+   * diferencia cuando la hay.
+   */
+  totalManualM3?: number | null;
   /** Las medidas exactas que se imprimieron: sin esto no se puede re-emitir. */
   piezas: PiezaCubicada[];
   /** Especie del lote al emitir: sin ella, una pieza sin especie propia
@@ -43,6 +56,8 @@ export interface EntradaEmision {
   id?: string;
   datos: Pick<DatosAnexo04, "numero" | "gtf" | "empresa" | "firmante" | "documento" | "cargo" | "observaciones" | "unidadV" | "modo">;
   piezas: PiezaCubicada[];
+  /** El (3) VOLUMEN TOTAL declarado a mano al emitir, si hubo uno. */
+  totalManualM3?: number | null;
   especieGlobal?: string;
   ctpEntryId?: string;
   fecha?: string;
@@ -75,6 +90,14 @@ export function construirEmision(input: EntradaEmision): AnexoEmitido {
     totalPiezas: anexo.totalPiezas,
     totalPt: anexo.totalPt,
     totalM3: anexo.totalM3,
+    /* Sólo si difiere de verdad del calculado: guardar «1,840 declarado» sobre
+       un anexo que ya suma 1,840 es un campo que después hay que explicar. */
+    totalManualM3:
+      input.totalManualM3 != null &&
+      Number.isFinite(input.totalManualM3) &&
+      Math.abs(input.totalManualM3 - anexo.totalM3) >= 0.0005
+        ? Math.round(input.totalManualM3 * 1000) / 1000
+        : null,
     piezas,
     especieGlobal: input.especieGlobal,
     ctpEntryId: input.ctpEntryId,
