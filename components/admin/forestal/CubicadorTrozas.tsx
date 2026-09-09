@@ -32,6 +32,17 @@ interface Fila extends TrozaCubicada {
   sospechosa?: boolean;
 }
 
+/** Lo que hace falta de un asiento del libro para cotejar contra su guía. */
+interface GuiaLibro {
+  id: string;
+  gtfNumber: string;
+  volumeM3: number | string;
+  providerName?: string | null;
+  speciesCommonName?: string | null;
+  /** Cuántas trozas tiene ya cargadas — para no volver a medir lo medido. */
+  trozasCount?: number | null;
+}
+
 const fmtM3 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const storageKey = () => {
@@ -248,6 +259,37 @@ export default function CubicadorTrozas() {
   }, [ventana.propsContenedor]);
   /** Columnas vivas — para el colSpan de los `<tr>` colchón. */
   const colsTotales = colSpanTotales + (colsVisibles.m3 ? 1 : 0) + 1;
+
+  /**
+   * Las guías del libro, para cotejar contra el volumen DECLARADO de verdad.
+   *
+   * El «según la GTF» se tipeaba a mano: el número contra el que se decide si un
+   * camión llegó corto salía de la memoria del que carga, no del libro. Acá se
+   * elige la guía y el volumen lo pone el asiento.
+   *
+   * Es sólo LECTURA. Mandar estas trozas al libro es otra cosa —toca las
+   * invariantes del ingreso— y necesita su propio ADR.
+   */
+  const [guias, setGuias] = useState<GuiaLibro[]>([]);
+  const [guiaId, setGuiaId] = useState("");
+  const [guiasError, setGuiasError] = useState<string | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/admin/forestal/wood-entries?limit=100", { credentials: "include", cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((j: { entries?: GuiaLibro[] }) => { if (vivo) setGuias(j.entries ?? []); })
+      .catch((err) => {
+        /* El cubicador funciona igual sin el libro: se sigue pudiendo tipear el
+           volumen a mano. Se dice, no se traga. */
+        if (vivo) setGuiasError(String(err instanceof Error ? err.message : err));
+      });
+    return () => { vivo = false; };
+  }, []);
+  const guiaElegida = useMemo(() => guias.find((g) => g.id === guiaId) ?? null, [guias, guiaId]);
+  /* Al elegir una guía manda su volumen declarado; soltarla devuelve el campo. */
+  useEffect(() => {
+    if (guiaElegida) setGtfM3(String(Number(guiaElegida.volumeM3) || 0));
+  }, [guiaElegida]);
 
   // Caption en vivo agrupado en tríos, como el cubicador de aserrada.
   const liveGroups = useMemo(() => {
@@ -590,12 +632,42 @@ export default function CubicadorTrozas() {
 
         {/* Contra la guía: ¿lo que llegó coincide con lo declarado? */}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-3">
-          <label className="flex items-center gap-2">
-            <Scale className="h-4 w-4 text-[var(--accent)]" />
-            <span className="text-sm font-bold text-[var(--text-primary)]">Según la GTF</span>
-            <input type="number" inputMode="decimal" value={gtfM3} onChange={(e) => setGtfM3(e.target.value)} placeholder="0.000" className="h-9 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" />
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+              <Scale className="h-4 w-4 text-[var(--accent)]" /> Según la GTF
+            </span>
+            {/* Elegir la guía del libro en vez de tipear su volumen: el número
+                contra el que se decide si un camión llegó corto tiene que salir
+                del asiento, no de la memoria del que carga. */}
+            {guias.length > 0 && (
+              <select
+                value={guiaId}
+                onChange={(e) => setGuiaId(e.target.value)}
+                aria-label="Guía del libro contra la que comparar"
+                className="h-9 max-w-[18rem] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              >
+                <option value="">Escribir el volumen a mano</option>
+                {guias.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.gtfNumber}
+                    {g.providerName ? ` · ${g.providerName}` : ""} · {fmtM3(Number(g.volumeM3) || 0)} m³
+                    {g.trozasCount ? ` · ${g.trozasCount} trozas ya cargadas` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+            <input
+              type="number"
+              inputMode="decimal"
+              value={gtfM3}
+              onChange={(e) => setGtfM3(e.target.value)}
+              disabled={!!guiaElegida}
+              placeholder="0.000"
+              aria-label="Metros cúbicos declarados en la guía"
+              className="h-9 w-28 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-60"
+            />
             <span className="text-sm text-[var(--text-tertiary)]">m³ declarados</span>
-          </label>
+          </div>
           {cmpGtf ? (
             <div className="text-right">
               <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Patio vs. guía</div>
@@ -605,9 +677,21 @@ export default function CubicadorTrozas() {
               <div className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{cmpGtf.deltaM3 < 0 ? "llegó menos de lo declarado" : "llegó más de lo declarado"}</div>
             </div>
           ) : (
-            <p className="text-xs text-[var(--text-tertiary)]">Poné los m³ de la guía para comparar con lo cubicado.</p>
+            <p className="text-xs text-[var(--text-tertiary)]">
+              {guiasError
+                ? "No se pudo leer el libro — escribí los m³ de la guía a mano para comparar."
+                : "Elegí la guía del libro (o escribí los m³) para comparar con lo cubicado."}
+            </p>
           )}
         </div>
+
+        {guiaElegida && (guiaElegida.trozasCount ?? 0) > 0 && (
+          <p className="mt-2 flex items-center gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2.5 py-1.5 text-xs font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            Esa guía ya tiene {guiaElegida.trozasCount} trozas cargadas en el libro: si las estás volviendo a
+            medir, mirá primero el detalle de la guía para no contar la misma madera dos veces.
+          </p>
+        )}
 
         {/* Referencias */}
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
