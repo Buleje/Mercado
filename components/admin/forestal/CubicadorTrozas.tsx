@@ -12,7 +12,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Check, Columns3, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Square, Table, Trash2, AlertTriangle, Upload, Volume2,
+  Boxes, Check, Columns3, Layers, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Sigma, Square, Table, Trash2, AlertTriangle, Upload, Volume2,
 } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { detectarComando, ESPECIES_MADERA, mejoresNumeros, PT_POR_M3 } from "@/lib/forestal/cubicacion";
@@ -24,6 +24,7 @@ import { loadConfig } from "@/lib/forestal/cubicador-config";
 import { useVozContinua } from "@/hooks/use-voz-continua";
 import { useLecturaEnVoz } from "@/hooks/use-lectura-en-voz";
 import ControlLecturaFlotante from "./cubicador-lectura-flotante";
+import { Kpi } from "./cubicador-kpis";
 import ImportarTrozasModal from "./ImportarTrozasModal";
 
 interface Fila extends TrozaCubicada {
@@ -204,6 +205,33 @@ export default function CubicadorTrozas() {
     [rows],
   );
 
+  /**
+   * El resumen del patio. Todo esto ya se calculaba o estaba a un `reduce` de
+   * distancia; lo que faltaba era tenerlo ARRIBA, que es donde se mira mientras
+   * se cubica un camión, y no repartido entre el pie de la tabla y tres
+   * tarjetas al final de la pantalla.
+   */
+  const resumenPatio = useMemo(() => {
+    const porEspecie = new Map<string, number>();
+    let sumaD = 0;
+    let largoTotal = 0;
+    for (const r of rows) {
+      porEspecie.set(r.especie?.trim() || "Sin especie", (porEspecie.get(r.especie?.trim() || "Sin especie") ?? 0) + r.m3);
+      /* El diámetro de una troza es el promedio de sus dos puntas: es lo que
+         usa Smalian, y promediar sólo el menor subestimaría el patio. */
+      sumaD += (r.d1 + r.d2) / 2;
+      largoTotal += r.largo;
+    }
+    const especies = [...porEspecie.entries()].sort((a, b) => b[1] - a[1]);
+    return {
+      especies,
+      dominante: especies[0] ?? null,
+      pctDominante: totales.m3 > 0 && especies[0] ? (especies[0][1] / totales.m3) * 100 : 0,
+      diametroMedio: rows.length > 0 ? sumaD / rows.length : 0,
+      largoMedio: rows.length > 0 ? largoTotal / rows.length : 0,
+    };
+  }, [rows, totales.m3]);
+
   // Caption en vivo agrupado en tríos, como el cubicador de aserrada.
   const liveGroups = useMemo(() => {
     if (!voz.listening || !voz.liveText) return null;
@@ -226,6 +254,74 @@ export default function CubicadorTrozas() {
 
   return (
     <div className="space-y-4">
+      {/* El patio de un vistazo, antes del micrófono — el mismo lugar y el
+          mismo lenguaje que en el cubicador de aserrada. Con el patio vacío no
+          se dibuja: seis tarjetas en cero antes de la primera troza son ruido. */}
+      {rows.length > 0 && (
+        <section
+          aria-label="Resumen del patio de trozas"
+          className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
+        >
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              Lo que llevás cubicado
+            </p>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Todo el patio</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+            <Kpi
+              Icono={Boxes}
+              rotulo="Volumen"
+              valor={fmtM3(totales.m3)}
+              unidad="m³"
+              destacado
+              sub={`${Math.round(totales.m3 * PT_POR_M3).toLocaleString("es-PE")} PT equivalentes`}
+            />
+            <Kpi
+              Icono={Layers}
+              rotulo="Trozas"
+              valor={totales.trozas.toLocaleString("es-PE")}
+              unidad={totales.trozas === 1 ? "troza" : "trozas"}
+              sub={`${fmtM3(totales.trozas > 0 ? totales.m3 / totales.trozas : 0)} m³ cada una`}
+            />
+            <Kpi
+              Icono={Sigma}
+              rotulo="Especies"
+              valor={String(resumenPatio.especies.length)}
+              unidad={resumenPatio.especies.length === 1 ? "especie" : "especies"}
+              sub={resumenPatio.dominante ? `${resumenPatio.dominante[0]} · ${resumenPatio.pctDominante.toFixed(0)} %` : undefined}
+            />
+            <Kpi
+              Icono={Ruler}
+              rotulo="Ø promedio"
+              valor={resumenPatio.diametroMedio.toFixed(1)}
+              unidad="cm"
+              sub={`largo medio ${resumenPatio.largoMedio.toFixed(2)} m`}
+            />
+            {/* El cotejo contra la guía es el dato de compliance de esta
+                pantalla: si el patio no coincide con lo declarado, eso se
+                resuelve ANTES de firmar el ingreso, no al final. Sin GTF
+                cargada se dice, no se inventa un cero. */}
+            <Kpi
+              Icono={Scale}
+              rotulo="Contra la GTF"
+              valor={cmpGtf ? `${cmpGtf.deltaM3 > 0 ? "+" : ""}${fmtM3(cmpGtf.deltaM3)}` : "—"}
+              unidad={cmpGtf ? "m³" : undefined}
+              apagado={!cmpGtf}
+              sub={cmpGtf ? `${cmpGtf.deltaPct > 0 ? "+" : ""}${cmpGtf.deltaPct} % contra la guía` : "poné los m³ de la guía"}
+            />
+          </div>
+
+          {sospechosas > 0 && (
+            <p className="mt-3 flex items-center gap-1.5 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+              {sospechosas === 1 ? "Una troza tiene" : `${sospechosas} trozas tienen`} medidas fuera de rango — revisalas
+              antes de cerrar el ingreso.
+            </p>
+          )}
+        </section>
+      )}
+
       {/* Panel de voz */}
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <CardTitle as="h3" className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">

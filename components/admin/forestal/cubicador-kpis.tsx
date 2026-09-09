@@ -291,7 +291,12 @@ export default function CubicadorKpis({
   );
 }
 
-function Kpi({
+/**
+ * Una tarjeta de KPI. Exportada porque el cubicador de TROZAS usa las mismas:
+ * son el mismo tipo de dato en la misma pantalla, y dos tarjetas parecidas pero
+ * distintas es lo que hace que un panel se vea desprolijo.
+ */
+export function Kpi({
   Icono,
   rotulo,
   valor,
