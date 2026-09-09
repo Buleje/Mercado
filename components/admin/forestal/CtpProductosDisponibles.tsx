@@ -26,7 +26,7 @@ import CtpReprocesoModal from "./CtpReprocesoModal";
 import CtpCubicarProductoModal from "./CtpCubicarProductoModal";
 import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
 import CtpMarcarUsadoModal from "./CtpMarcarUsadoModal";
-import CtpCompletarLineaModal, { type LineaCompletable } from "./CtpCompletarLineaModal";
+import CtpEditarLineaModal, { type LineaEditable } from "./CtpEditarLineaModal";
 import CtpBarraSeleccion from "./ctp-barra-seleccion";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { uidDeFila } from "@/lib/forestal/despacho-lista";
@@ -53,10 +53,15 @@ interface CorridaDisponible {
   lineNo: number | null;
   fecha: string;
   especie: string | null;
+  especieCientifica: string | null;
   producto: string | null;
   presentacion: string | null;
   unidad: string | null;
   lote: string | null;
+  /** `quantity` del asiento — lo que el editor corrige (ADR-401). */
+  cantidad: number | null;
+  /** `volumeInputM3` del asiento: materia prima que entró a la sierra. */
+  volumenConsumidoM3: number | null;
   producido: number;
   despachado: number;
   reprocesado: number;
@@ -164,8 +169,8 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
    * misma que dibuja la fila, así que tildar y mirar hablan de lo mismo.
    */
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
-  /** La corrida cuyos huecos se están rellenando (ADR-401 §1.2). */
-  const [completar, setCompletar] = useState<LineaCompletable | null>(null);
+  /** La corrida que se está editando (ADR-401): completar huecos y corregir. */
+  const [editar, setEditar] = useState<LineaEditable | null>(null);
   /** El modal abierto para cubicar TODO lo tildado. */
   const [cubicarConjunto, setCubicarConjunto] = useState(false);
   /** La guía de despacho abierta con lo tildado ya cargado (`presetUids`). */
@@ -680,23 +685,26 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                */}
               <td className="px-3 py-2">
                 <div className="flex items-center justify-end gap-1">
-                  {/* Rellenar lo que quedó en blanco. Va primero porque es lo
-                      que se hace ANTES de cubicar o despachar: un producto sin
-                      presentación ni especie no se busca en la pila. */}
+                  {/* Editar los datos de la fila. Va primero porque es lo que
+                      se hace ANTES de cubicar o despachar: un producto con la
+                      especie mal escrita no se busca en la pila. */}
                   <IconAction
                     icon={Pencil}
                     tone="muted"
                     onClick={() =>
-                      setCompletar({
+                      setEditar({
                         id: c.id,
                         lineNo: c.lineNo,
                         fecha: c.fecha,
                         observations: c.observations,
                         presentacion: c.presentacion,
-                        materiaPrimaRef: null,
+                        materiaPrimaRef: c.lote,
                         speciesCommon: c.especie,
-                        speciesScientific: null,
+                        speciesScientific: c.especieCientifica,
                         productType: c.producto,
+                        unit: c.unidad,
+                        quantity: c.cantidad,
+                        volumeInputM3: c.volumenConsumidoM3,
                         /* El saldo despachado/reprocesado es lo que la pantalla
                            ya sabe de las ataduras: alcanza para avisar antes de
                            abrir. El servidor vuelve a decidir con la verdad. */
@@ -706,9 +714,13 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                           : null,
                         permisos: c.titularOrigen,
                         gtfOrigen: c.gtfOrigen,
+                        /* Las especies que este libro ya escribió: sugerencia
+                           para no inventar una grafía nueva de la misma madera
+                           («Tornillo» y «TORNILLO» eran dos, ADR-400 §6). */
+                        especiesConocidas: opciones.especies,
                       })
                     }
-                    label="Completar los campos que quedaron en blanco"
+                    label="Editar los datos de la fila: especie, producto, cantidad, volumen, permiso"
                   />
                   <IconAction
                     icon={PackageOpen}
@@ -818,11 +830,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
         />
       )}
 
-      {completar && (
-        <CtpCompletarLineaModal
-          linea={completar}
-          onCerrar={() => setCompletar(null)}
-          onListo={() => { invalidarCtp(); void recargar(); }}
+      {editar && (
+        <CtpEditarLineaModal
+          linea={editar}
+          onCerrar={() => setEditar(null)}
+          onListo={(resumen) => { setNota(resumen); invalidarCtp(); void recargar(); }}
         />
       )}
 

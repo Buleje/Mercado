@@ -152,6 +152,13 @@ export type CtpAuditAction =
    * se llenó» de «acá decía otra cosa».
    */
   | "ctp_linea_completar"
+  /**
+   * Campos YA CARGADOS de una corrida corregidos (ADR-401 §4). Se distingue de
+   * `ctp_linea_completar` a propósito: acá el libro **decía otra cosa**, y el
+   * detalle narra el antes y el después de cada campo. Una corrección sin ese
+   * rastro es indistinguible de una adulteración.
+   */
+  | "ctp_linea_update"
   | "ctp_linea_annul"
   | "ctp_linea_delete"
   /** Marcado a mano como "ya se usó": sale de Productos disponibles sin

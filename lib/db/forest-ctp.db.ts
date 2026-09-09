@@ -120,6 +120,47 @@ export const CAMPOS_COMPLETABLES = [
 ] as const;
 export type CampoCompletable = (typeof CAMPOS_COMPLETABLES)[number];
 
+/**
+ * Los campos que se pueden CORREGIR (sobrescribir) — ADR-401 §1. Incluye los
+ * numéricos, que `completarLinea` no toca: ahí ponerle valor a un hueco movería
+ * saldos, pero corregir uno ya escrito es justamente lo que se pide cuando se
+ * cargó mal.
+ */
+export const CAMPOS_CORREGIBLES = [
+  "observations",
+  "presentacion",
+  "materiaPrimaRef",
+  "speciesCommon",
+  "speciesScientific",
+  "productType",
+  "unit",
+  "quantity",
+  "volumeInputM3",
+] as const;
+export type CampoCorregible = (typeof CAMPOS_CORREGIBLES)[number];
+
+/** Los del REGISTRO entre los corregibles: piden que nada dependa del asiento. */
+const CAMPOS_CORREGIBLES_DEL_REGISTRO: readonly CampoCorregible[] = [
+  "speciesCommon",
+  "speciesScientific",
+  "productType",
+  "unit",
+  "quantity",
+  "volumeInputM3",
+];
+
+const ETIQUETA_CAMPO_CORREGIBLE: Record<CampoCorregible, string> = {
+  observations: "observaciones",
+  presentacion: "presentación",
+  materiaPrimaRef: "referencia de materia prima",
+  speciesCommon: "especie",
+  speciesScientific: "especie científica",
+  productType: "producto",
+  unit: "unidad",
+  quantity: "cantidad",
+  volumeInputM3: "volumen consumido",
+};
+
 /** Los que definen QUÉ se produjo: no se tocan si algo depende del asiento. */
 const CAMPOS_DEL_REGISTRO: readonly CampoCompletable[] = [
   "speciesCommon",
@@ -1753,6 +1794,165 @@ export class ForestCtpDB {
     return { ok: true as const, aplicados, omitidos };
   }
 
+  /**
+   * Corregir campos YA CARGADOS de una corrida (ADR-401 §1 y §2).
+   *
+   * Es la hermana peligrosa de `completarLinea`: acá se SOBRESCRIBE lo que el
+   * libro ya afirmaba. Por eso lleva los seis candados del ADR y no uno menos:
+   *
+   *  · **Descriptivos** (`observations`, `presentacion`, `materiaPrimaRef`) —
+   *    con el período abierto, aunque la corrida ya se haya usado. No cambian
+   *    ninguna cuenta ni ninguna cadena de custodia.
+   *  · **Del registro** (`speciesCommon`, `speciesScientific`, `productType`,
+   *    `unit`, `quantity`, `volumeInputM3`) — sólo si NADA depende del asiento:
+   *    sin despachos que lo citen, sin reproceso, sin lote. Cambiar la especie
+   *    de una corrida ya despachada dejaría una guía emitida citando madera que
+   *    el libro ahora dice que era otra.
+   *
+   * `entryDate` no está: mover la fecha cambia de qué mes es la producción y
+   * toca dos períodos a la vez (decisión de Brandon, ADR-401 §1.1). Una fecha
+   * mal puesta se anula y se rehace.
+   *
+   * La auditoría narra **el antes y el después de cada campo**. Una corrección
+   * sin ese detalle es indistinguible de una adulteración.
+   */
+  static async corregirLinea(
+    tenantId: string,
+    id: string,
+    campos: Partial<Record<CampoCorregible, string>>,
+    user = "unknown",
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!id) throw new Error("id is required");
+
+    const actual = await prisma.forestCtpEntry.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      select: {
+        id: true, lineNo: true, section: true, status: true, entryDate: true,
+        observations: true, presentacion: true, materiaPrimaRef: true,
+        speciesCommon: true, speciesScientific: true, productType: true,
+        unit: true, quantity: true, volumeInputM3: true,
+      },
+    });
+    if (!actual) throw new CtpInvariantError("Esa línea no existe.", "LOTE_NO_ENCONTRADO");
+    if (actual.status !== "registrado") {
+      throw new CtpInvariantError(
+        `Una línea ${actual.status} no se corrige: registrala de nuevo.`,
+        "ESTADO_NO_EDITABLE",
+        { status: actual.status },
+      );
+    }
+    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, actual.entryDate);
+    if (cerrado) {
+      throw new CtpInvariantError(
+        `El período ${cerrado.label} está cerrado: no se corrigen líneas de un mes cerrado. Reabrí el período.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+
+    const [despachos, reprocesos, enLote, salidas, reproSalida, consumido] = await Promise.all([
+      prisma.forestCtpDespachoOrigen.count({ where: { tenantId, produccionEntryId: id } }),
+      prisma.forestCtpReproceso.count({ where: { tenantId, origenEntryId: id } }),
+      prisma.forestProdLoteMiembro.count({ where: { tenantId, produccionEntryId: id } }),
+      prisma.forestCtpDespachoOrigen.aggregate({ where: { tenantId, produccionEntryId: id }, _sum: { quantity: true } }),
+      prisma.forestCtpReproceso.aggregate({ where: { tenantId, origenEntryId: id }, _sum: { quantity: true } }),
+      /* Lo que la corrida YA tiene atribuido de materia prima: bajar el volumen
+         consumido por debajo de eso rompe I1 (Σ consumos ≤ volumeInputM3). */
+      prisma.forestCtpConsumo.aggregate({ where: { tenantId, ctpEntryId: id }, _sum: { volumeM3: true } }),
+    ]);
+    const atado =
+      /* Un DESPACHO no pasa por acá con sus campos del registro: sus ataduras
+         son otras (I3 Σ despachado ≤ Σ producido, I4 Σ orígenes ≤ quantity) y
+         se cuentan sobre `despachoEntryId`, que estas tres lecturas no miran.
+         Dejarlo entrar significaría subir la cantidad de una salida —o cambiar
+         su producto con la GTF ya emitida— sin que ninguna invariante lo vea.
+         Los descriptivos sí: no tocan ninguna cuenta. */
+      actual.section === "despacho" ? "es una línea de despacho: sus cantidades y su producto se corrigen desde la guía"
+      : despachos > 0 ? "ya tiene despachos que la citan como origen"
+      : reprocesos > 0 ? "ya alimentó un reproceso"
+      : enLote > 0 ? "es miembro de un lote de producción"
+      : null;
+    /** Lo ya comprometido: ninguna cantidad nueva puede quedar por debajo. */
+    const comprometido =
+      Number(salidas._sum.quantity ?? 0) + Number(reproSalida._sum.quantity ?? 0);
+    /** Materia prima ya atribuida a esta corrida (I1). */
+    const atribuidoM3 = Number(consumido._sum.volumeM3 ?? 0);
+
+    const cambios: string[] = [];
+    const rechazados: { campo: string; motivo: string }[] = [];
+    const data: Record<string, string | number> = {};
+
+    for (const [campo, bruto] of Object.entries(campos) as [CampoCorregible, string][]) {
+      const valor = (bruto ?? "").trim();
+      if (!valor) continue;
+      if (CAMPOS_CORREGIBLES_DEL_REGISTRO.includes(campo) && atado) {
+        rechazados.push({
+          campo,
+          motivo: actual.section === "despacho" ? atado : `la corrida ${atado}`,
+        });
+        continue;
+      }
+      const previo = actual[campo];
+      const previoTexto = previo == null ? "—" : String(previo);
+      if (previoTexto === valor) continue;
+
+      if (campo === "quantity" || campo === "volumeInputM3") {
+        const n = Number(valor);
+        if (!Number.isFinite(n) || n < 0) {
+          rechazados.push({ campo, motivo: "no es un número válido" });
+          continue;
+        }
+        /* Defensa en profundidad (ADR-401 §3): el guard de arriba ya hace
+           imposible este caso —una corrida despachada no llega hasta acá— y
+           aun así se revalida, porque las invariantes son ley traducida a
+           código, no una optimización. */
+        if (campo === "quantity" && n < comprometido) {
+          rechazados.push({
+            campo,
+            motivo: `ya hay ${comprometido} comprometidos entre despachos y reprocesos: la cantidad no puede quedar por debajo (I3/I5)`,
+          });
+          continue;
+        }
+        /* I1: la corrida no puede declarar que consumió MENOS de lo que ya
+           tiene atribuido de las guías. El acta y la atribución dicen lo mismo
+           o el libro se contradice consigo mismo. */
+        if (campo === "volumeInputM3" && n < atribuidoM3) {
+          rechazados.push({
+            campo,
+            motivo: `ya tiene ${atribuidoM3.toFixed(4)} m³ atribuidos de las guías de ingreso: el volumen consumido no puede quedar por debajo (I1). Cambiá primero la atribución.`,
+          });
+          continue;
+        }
+        data[campo] = n;
+      } else {
+        data[campo] = valor;
+      }
+      cambios.push(`${ETIQUETA_CAMPO_CORREGIBLE[campo]} ${previoTexto} → ${valor}`);
+    }
+
+    if (cambios.length === 0) {
+      return { ok: false as const, cambios: [], rechazados };
+    }
+
+    await prisma.forestCtpEntry.update({ where: { id, tenantId }, data });
+    auditCtp({
+      tenantId,
+      action: "ctp_linea_update",
+      entity: "ForestCtpEntry",
+      entityId: id,
+      detail:
+        `Corrigió la línea N° ${actual.lineNo ?? "?"} · ${cambios.join(" · ")}` +
+        (rechazados.length ? ` · sin tocar: ${rechazados.map((r) => `${r.campo} (${r.motivo})`).join(", ")}` : ""),
+      user,
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
+    return { ok: true as const, cambios, rechazados };
+  }
+
+
 
   /**
    * Declara (o deshace) que una corrida es EXISTENCIA DE APERTURA (ADR-394):
@@ -1995,6 +2195,13 @@ export class ForestCtpDB {
           /** Título habilitante / plan de manejo del que salió esa madera. */
           titularOrigen,
           rendimientoPct: c.rendimientoPct != null ? Number(c.rendimientoPct) : null,
+          /** Materia prima que la corrida declara haber consumido (m³). Es un
+           *  campo del asiento —no un derivado—: el editor lo corrige (ADR-401). */
+          volumenConsumidoM3: c.volumeInputM3 != null ? Number(c.volumeInputM3) : null,
+          /** `quantity` tal como está en el asiento. `producido` es lo mismo
+           *  pasado por `saldosDeCorridas`; el editor necesita el campo, no el
+           *  derivado —un `null` tiene que llegar como null y no como 0—. */
+          cantidad: c.quantity != null ? Number(c.quantity) : null,
           /* Con qué texto arranca la nota de la corrida — "Inventario de
              apertura" es lo que escribe siempre el import (`ctp-serfor-a-libro.ts`):
              alcanza para que la pantalla distinga un paquete importado de uno

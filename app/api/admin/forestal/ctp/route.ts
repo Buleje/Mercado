@@ -230,6 +230,41 @@ const patchSchema = z.discriminatedUnion("action", [
       }),
   }),
   /**
+   * Corregir campos YA CARGADOS de una corrida (ADR-401 §1). Es la hermana
+   * peligrosa de `completar_linea`: acá se SOBRESCRIBE lo que el libro decía.
+   * Quién puede tocar qué lo decide `corregirLinea` —los descriptivos siempre
+   * con el período abierto; los del registro sólo si nada depende del asiento—,
+   * acá sólo se valida la FORMA del dato. Los números viajan como texto para
+   * que el trim y el redondeo los haga un solo lugar (Decimal 14,4 / 12,4).
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("corregir_linea"),
+    campos: z
+      .object({
+        observations: z.string().trim().max(2000).optional(),
+        presentacion: z.string().trim().max(120).optional(),
+        materiaPrimaRef: z.string().trim().max(200).optional(),
+        speciesCommon: z.string().trim().max(120).optional(),
+        speciesScientific: z.string().trim().max(160).optional(),
+        productType: z.string().trim().max(120).optional(),
+        unit: z.string().trim().max(20).optional(),
+        quantity: z
+          .string()
+          .trim()
+          .regex(/^\d{1,10}(\.\d{1,4})?$/, "La cantidad va en números, con hasta 4 decimales.")
+          .optional(),
+        volumeInputM3: z
+          .string()
+          .trim()
+          .regex(/^\d{1,8}(\.\d{1,4})?$/, "El volumen va en m³, con hasta 4 decimales.")
+          .optional(),
+      })
+      .refine((c) => Object.values(c).some((v) => (v ?? "").trim() !== ""), {
+        message: "Mandá al menos un campo con contenido.",
+      }),
+  }),
+  /**
    * Declara una corrida como EXISTENCIA DE APERTURA (ADR-394): madera anterior
    * al libro, sin nada que atar. No toca números; el certificado sigue
    * bloqueado. Reversible.
@@ -675,6 +710,15 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
     }
     if (parsed.data.action === "completar_linea") {
       const r = await ForestCtpDB.completarLinea(
+        auth.tenantId,
+        parsed.data.id,
+        parsed.data.campos,
+        auth.username ?? "unknown",
+      );
+      return NextResponse.json(r);
+    }
+    if (parsed.data.action === "corregir_linea") {
+      const r = await ForestCtpDB.corregirLinea(
         auth.tenantId,
         parsed.data.id,
         parsed.data.campos,

@@ -340,7 +340,25 @@ const completarGuiaSchema = z.object({
     }),
 });
 
-const patchBodySchema = z.union([recepcionGuiaSchema, completarGuiaSchema]);
+/**
+ * Corregir campos de origen de una guía ya cargados (ADR-401 §1). Mismo cuerpo
+ * que completar; lo que cambia es que SOBRESCRIBE, y por eso su rastro narra el
+ * antes y el después.
+ */
+const corregirGuiaSchema = z.object({
+  action: z.literal("corregir_guia"),
+  gtfNumber: z.string().trim().min(1).max(60),
+  campos: z
+    .object({
+      originCode: z.string().trim().max(120).optional(),
+      speciesScientificName: z.string().trim().max(160).optional(),
+    })
+    .refine((c) => Object.values(c).some((v) => (v ?? "").trim() !== ""), {
+      message: "Mandá al menos un campo con contenido.",
+    }),
+});
+
+const patchBodySchema = z.union([recepcionGuiaSchema, completarGuiaSchema, corregirGuiaSchema]);
 
 export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
@@ -362,6 +380,15 @@ export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: N
   }
 
   try {
+    if (parsed.data.action === "corregir_guia") {
+      const r = await WoodEntriesDB.corregirGuia(
+        auth.tenantId,
+        parsed.data.gtfNumber,
+        parsed.data.campos,
+        auth.username ?? "unknown",
+      );
+      return NextResponse.json(r);
+    }
     if (parsed.data.action === "completar_guia") {
       const r = await WoodEntriesDB.completarGuia(
         auth.tenantId,

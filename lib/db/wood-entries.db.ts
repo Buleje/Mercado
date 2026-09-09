@@ -3144,8 +3144,9 @@ export class WoodEntriesDB {
    * completar un hueco no es corregir. Un `originCode` que pasa de vacío al
    * permiso real no contradice nada de lo que el ingreso declaró — **agrega el
    * dato de origen legal que faltaba**, que es justo lo que un fiscalizador
-   * echa de menos. Por eso se admite también sobre ingresos ya validados; lo
-   * que sigue sin admitirse es SOBRESCRIBIR un permiso ya cargado.
+   * echa de menos. Por eso se admite también sobre ingresos ya validados.
+   * Sobrescribir un permiso ya cargado es otra cosa y tiene su propia puerta:
+   * `corregirGuia`, que narra el antes y el después.
    *
    * Va por GUÍA y no por asiento porque **el permiso es de la guía**: una GTF
    * con tres especies son tres asientos que comparten origen, y completar uno
@@ -3209,6 +3210,93 @@ export class WoodEntriesDB {
         entity: "WoodEntry",
         entityId: a.id,
         detail: `Completó campos vacíos del ingreso ${a.gtfNumber} (${a.speciesCommonName ?? "sin especie"}) · ${narra.join(" · ")}`,
+        user,
+      });
+      aplicados.push(`${a.gtfNumber} · ${a.speciesCommonName ?? "sin especie"}: ${narra.join(" · ")}`);
+    }
+
+    if (aplicados.length > 0) {
+      try {
+        invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+      } catch {}
+    }
+    return { ok: aplicados.length > 0, asientos: asientos.length, aplicados, omitidos };
+  }
+
+  /**
+   * Corregir los campos de origen de una GUÍA entera — sobrescribiendo lo que
+   * ya decía (ADR-401 §1, hermano de `ForestCtpDB.corregirLinea`).
+   *
+   * Es la puerta que faltaba al lado de `completarGuia`: un permiso **mal
+   * tipeado** no es un hueco, y hasta ahora la única salida era anular los
+   * ingresos y registrarlos de nuevo — con eso se perdían los consumos ya
+   * atribuidos. Acá el dato se corrige y el rastro dice qué decía antes.
+   *
+   * Los candados son los de completar, porque el riesgo es el mismo dato:
+   * asiento vivo (ni anulado ni rechazado) y **período abierto** —un mes
+   * cerrado es un acta firmada—. Lo que cambia es la auditoría: `«X» → Y` en
+   * vez de `→ Y`, porque un fiscalizador tiene que poder distinguir «acá
+   * faltaba» de «acá decía otra cosa».
+   *
+   * ⚠️ Escribe en **todos los asientos de la guía**: el permiso es de la guía,
+   * y todas las corridas que consumieron esa madera lo heredan. Quien lo toca
+   * tiene que saber que no está corrigiendo una fila.
+   */
+  static async corregirGuia(
+    tenantId: string,
+    gtfNumber: string,
+    campos: { originCode?: string; speciesScientificName?: string },
+    user = "unknown",
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const gtf = (gtfNumber ?? "").trim();
+    if (!gtf) throw new Error("gtfNumber is required");
+
+    const asientos = await prisma.woodEntry.findMany({
+      where: { tenantId, gtfNumber: gtf, deletedAt: null },
+      select: {
+        id: true, gtfNumber: true, status: true, entryDate: true,
+        originCode: true, speciesScientificName: true, speciesCommonName: true,
+      },
+    });
+    if (asientos.length === 0) {
+      throw new CtpInvariantError(`No hay ingresos con la guía ${gtf}.`, "VALIDACION");
+    }
+
+    const aplicados: string[] = [];
+    const omitidos: { gtf: string; campo: string; motivo: string }[] = [];
+
+    for (const a of asientos) {
+      if (a.status === "anulado" || a.status === "rechazado") {
+        omitidos.push({ gtf: a.gtfNumber, campo: "todos", motivo: `el asiento está ${a.status}` });
+        continue;
+      }
+      await WoodEntriesDB.assertPeriodoAbierto(tenantId, a.id, "corregir");
+
+      const data: Record<string, string> = {};
+      const narra: string[] = [];
+      for (const [campo, bruto] of Object.entries(campos) as ["originCode" | "speciesScientificName", string][]) {
+        const valor = (bruto ?? "").trim();
+        if (!valor) continue;
+        const previo = a[campo];
+        const previoTexto = esCampoSinDato(previo) ? "—" : String(previo);
+        /* Escribir lo mismo que ya decía no es una corrección: no se toca y no
+           se audita, o el rastro se llena de cambios que no cambiaron nada. */
+        if (previoTexto === valor) continue;
+        data[campo] = valor;
+        narra.push(
+          `${campo === "originCode" ? "N° de permiso" : "especie científica"} «${previoTexto}» → ${valor}`,
+        );
+      }
+      if (Object.keys(data).length === 0) continue;
+
+      await prisma.woodEntry.update({ where: { id: a.id, tenantId }, data });
+      auditCtp({
+        tenantId,
+        action: "ctp_ingreso_update",
+        entity: "WoodEntry",
+        entityId: a.id,
+        detail: `Corrigió el ingreso ${a.gtfNumber} (${a.speciesCommonName ?? "sin especie"}) · ${narra.join(" · ")}`,
         user,
       });
       aplicados.push(`${a.gtfNumber} · ${a.speciesCommonName ?? "sin especie"}: ${narra.join(" · ")}`);
