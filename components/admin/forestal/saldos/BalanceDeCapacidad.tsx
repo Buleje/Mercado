@@ -13,10 +13,11 @@
  *
  * Tres cosas que esta tarjeta hace y conviene no deshacer:
  *
- *  1. **Los filtros se cruzan.** Cada desplegable ofrece sólo lo que se puede
- *     combinar con lo ya elegido —los permisos de esa especie, las guías de ese
- *     permiso— y cada opción muestra cuánto hay detrás. En cualquier orden:
- *     especie primero y permiso después da lo mismo que al revés.
+ *  1. **Los filtros se cruzan y admiten varios valores.** Cada menú ofrece sólo
+ *     lo que se puede combinar con lo ya elegido —los permisos de esa especie,
+ *     las guías de ese permiso—, cada opción muestra cuánto hay detrás, y se
+ *     pueden tildar varias: tres permisos de los cinco que tienen tornillo.
+ *     En cualquier orden: especie primero y permiso después da lo mismo.
  *  2. **Lo que no se puede atribuir queda en cero y lo DICE.** Un cero mudo se
  *     lee como «no hay»; acá significa «no se puede saber sin recorrer la
  *     cadena», que es una respuesta distinta.
@@ -29,55 +30,28 @@ import { ChevronRight } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
-import type {
-  BalanceCapacidad,
-  FiltrosCapacidad,
-  FuenteDeCapacidad,
-  OpcionFiltro,
+import {
+  alternarEnRecorte,
+  hayFiltro,
+  type BalanceCapacidad,
+  type ClaveFiltro,
+  type FiltrosCapacidad,
+  type FuenteDeCapacidad,
+  type OpcionFiltro,
 } from "@/lib/forestal/capacidad-de-planta";
+import FiltroMulti from "./FiltroMulti";
 
-const SELECT =
-  "h-9 w-56 max-w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-sm font-medium text-[var(--text-primary)]";
-
-/** Un filtro con sus opciones; cada una dice cuánta madera tiene detrás. */
-function Filtro({
-  etiqueta,
-  valor,
-  opciones,
-  todos,
-  onChange,
-}: {
+/** Los tres recortes, con el nombre de su lista de opciones. */
+const FILTROS: {
+  clave: ClaveFiltro;
   etiqueta: string;
-  valor: string;
-  opciones: OpcionFiltro[];
   todos: string;
-  onChange: (v: string) => void;
-}) {
-  /* Se dibuja si hay opciones O si ya hay un valor puesto: con un filtro que
-     llegó por la URL y el patio todavía cargando, las opciones están vacías y
-     sin esto el filtro quedaba invisible — imposible de ver y de quitar. */
-  if (opciones.length === 0 && !valor) return null;
-  const conocido = opciones.some((o) => o.valor === valor);
-  return (
-    <label className="flex items-center gap-2 text-xs">
-      <span className="font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-        {etiqueta}
-      </span>
-      <select value={valor} onChange={(e) => onChange(e.target.value)} className={SELECT}>
-        <option value="">{todos}</option>
-        {/* Un valor que no está entre las opciones (link viejo, o datos que
-            aún no llegaron) se muestra igual: un select en blanco con un
-            filtro activo es un filtro fantasma. */}
-        {valor && !conocido && <option value={valor}>{valor}</option>}
-        {opciones.map((o) => (
-          <option key={o.valor} value={o.valor}>
-            {o.valor} · {fmtM3(o.m3)} m³ ({o.piezas})
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
+  lista: "permisos" | "especies" | "guias";
+}[] = [
+  { clave: "permiso", etiqueta: "Permiso", todos: "Todos los permisos", lista: "permisos" },
+  { clave: "especie", etiqueta: "Especie", todos: "Todas las especies", lista: "especies" },
+  { clave: "guia", etiqueta: "Guía", todos: "Todas las guías", lista: "guias" },
+];
 
 export default function BalanceDeCapacidad({
   balance,
@@ -95,7 +69,7 @@ export default function BalanceDeCapacidad({
 }) {
   const { fuentes, totalProducto } = balance;
   const hayAlgo = totalProducto > 0 || fuentes.some((f) => f.m3 > 0 || f.filas > 0);
-  const conFiltro = Boolean(filtros.permiso || filtros.especie || filtros.guia);
+  const conFiltro = hayFiltro(filtros);
   if (!hayAlgo && !conFiltro) return null;
 
   return (
@@ -118,32 +92,24 @@ export default function BalanceDeCapacidad({
       {onFiltros && opciones && (
         <div className="mt-3 flex flex-wrap items-center gap-3">
           {/* Los otros filtros NO se sueltan al cambiar uno: las opciones de
-              cada desplegable ya salen cruzadas con los demás, así que lo que
-              se puede elegir siempre tiene madera detrás. Y si una combinación
-              queda imposible —un link viejo, o quitar el filtro que las hacía
-              compatibles—, `sanearFiltros` suelta el que sobra en vez de dejar
+              cada menú ya salen cruzadas con los demás, así que lo que se puede
+              tildar siempre tiene madera detrás. Y si una combinación queda
+              imposible —un link viejo, o quitar el filtro que las hacía
+              compatibles—, `sanearFiltros` suelta lo que sobra en vez de dejar
               una tarjeta en cero. */}
-          <Filtro
-            etiqueta="Permiso"
-            valor={filtros.permiso ?? ""}
-            opciones={opciones.permisos}
-            todos="Todos los permisos"
-            onChange={(permiso) => onFiltros({ ...filtros, permiso: permiso || undefined }, "permiso")}
-          />
-          <Filtro
-            etiqueta="Especie"
-            valor={filtros.especie ?? ""}
-            opciones={opciones.especies}
-            todos="Todas las especies"
-            onChange={(especie) => onFiltros({ ...filtros, especie: especie || undefined }, "especie")}
-          />
-          <Filtro
-            etiqueta="Guía"
-            valor={filtros.guia ?? ""}
-            opciones={opciones.guias}
-            todos="Todas las guías"
-            onChange={(guia) => onFiltros({ ...filtros, guia: guia || undefined }, "guia")}
-          />
+          {FILTROS.map((f) => (
+            <FiltroMulti
+              key={f.clave}
+              etiqueta={f.etiqueta}
+              valores={filtros[f.clave] ?? []}
+              opciones={opciones[f.lista]}
+              todos={f.todos}
+              onAlternar={(v) =>
+                onFiltros({ ...filtros, [f.clave]: alternarEnRecorte(filtros[f.clave], v) }, f.clave)
+              }
+              onLimpiar={() => onFiltros({ ...filtros, [f.clave]: undefined }, f.clave)}
+            />
+          ))}
           {conFiltro && (
             <button
               type="button"

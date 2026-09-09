@@ -66,28 +66,57 @@ export interface BalanceCapacidad {
 }
 
 /**
- * Los tres recortes de la capacidad, **cruzados entre sí**: cada uno acota las
- * opciones de los otros dos, en cualquier orden. Elegida la especie, sólo se
- * ofrecen los permisos y las guías que la traen; elegido el permiso, sólo las
- * especies que tiene. Ver `opcionesDeCapacidad`.
+ * Los tres recortes de la capacidad. Dos reglas y ninguna es un detalle:
+ *
+ *  · **Cada uno admite VARIOS valores** (Brandon, 2026-09-08): tres permisos de
+ *    los cinco que tienen tornillo. Dentro de un recorte los valores suman (O);
+ *    entre recortes se cruzan (Y) — «tornillo, de estos tres permisos».
+ *  · **Se cruzan entre sí**: cada uno acota las opciones de los otros dos, en
+ *    cualquier orden. Ver `opcionesDeCapacidad`.
+ *
+ * Una lista vacía es lo mismo que no tener el recorte puesto: «todos».
  */
 export interface FiltrosCapacidad {
-  permiso?: string;
-  especie?: string;
-  guia?: string;
+  permiso?: readonly string[];
+  especie?: readonly string[];
+  guia?: readonly string[];
 }
+
+/** Las tres claves, para recorrerlas sin repetirlas en cada archivo. */
+export const CLAVES_DE_FILTRO = ["permiso", "especie", "guia"] as const;
+export type ClaveFiltro = (typeof CLAVES_DE_FILTRO)[number];
 
 export const SIN_FILTROS: FiltrosCapacidad = {};
 
+/** ¿Este recorte está puesto? Una lista vacía es «todos», no «ninguno». */
+export const recortePuesto = (r?: readonly string[]): boolean => (r?.length ?? 0) > 0;
+
 /** ¿Hay algún filtro puesto? */
 export function hayFiltro(f: FiltrosCapacidad): boolean {
-  return Boolean(f.permiso || f.especie || f.guia);
+  return CLAVES_DE_FILTRO.some((k) => recortePuesto(f[k]));
+}
+
+/** Suma o saca un valor del recorte; devuelve `undefined` si queda vacío. */
+export function alternarEnRecorte(
+  actual: readonly string[] | undefined,
+  valor: string,
+): string[] | undefined {
+  const lista = actual ?? [];
+  const proximo = lista.includes(valor) ? lista.filter((v) => v !== valor) : [...lista, valor];
+  return proximo.length > 0 ? proximo : undefined;
 }
 
 const r4 = (v: number) => Math.round(v * 10000) / 10000;
 const txt = (v: unknown) => String(v ?? "").trim();
 const num = (v: unknown) => Number(v ?? 0) || 0;
 const mismaEspecie = (a: unknown, b: string) => txt(a).toUpperCase() === b.toUpperCase();
+
+/** El valor de la fila cae dentro del recorte (O entre los elegidos). */
+const dentro = (r: readonly string[] | undefined, v: unknown) =>
+  !recortePuesto(r) || r!.includes(txt(v));
+/** Igual, comparando especies como las compara el resto del libro. */
+const dentroEspecie = (r: readonly string[] | undefined, v: unknown) =>
+  !recortePuesto(r) || r!.some((x) => mismaEspecie(v, x));
 
 /* ── Lo que entra ─────────────────────────────────────────────────────────── */
 
@@ -189,28 +218,35 @@ export function esPorRecepcionar(t: TrozaConsumible): boolean {
 }
 
 function pasaFiltros(t: TrozaConsumible, f: FiltrosCapacidad): boolean {
-  if (f.permiso && txt(t.permiso) !== f.permiso) return false;
-  if (f.especie && !mismaEspecie(t.especieComun, f.especie)) return false;
-  if (f.guia && txt(t.gtfNumber) !== f.guia) return false;
-  return true;
+  return (
+    dentro(f.permiso, t.permiso) &&
+    dentroEspecie(f.especie, t.especieComun) &&
+    dentro(f.guia, t.gtfNumber)
+  );
 }
 
 /**
- * Una corrida se atribuye a un permiso (o a una guía) sólo si TODA su madera
- * vino de ese permiso. Con dos títulos adentro no se reparte: repartir sería
+ * Una corrida (o un lote) se atribuye a un permiso —o a una guía— sólo si TODA
+ * su madera vino de ahí. Con dos títulos adentro no se reparte: repartir sería
  * inventar de qué permiso salió cada tablón, que es justo lo que el libro
  * existe para no hacer. Se cuenta aparte como «mezcla».
+ *
+ * Con varios valores tildados la regla NO se ablanda: la corrida entra si toda
+ * su madera es de UNO de ellos. La mezcla no se deshace porque el filtro sea
+ * más ancho.
  */
-function origenUnico(lista: readonly string[], valor: string): boolean {
+const origenDentro = (lista: readonly string[], r?: readonly string[]): boolean => {
+  if (!recortePuesto(r)) return true;
   const unicos = [...new Set(lista.map(txt).filter(Boolean))];
-  return unicos.length === 1 && unicos[0] === valor;
-}
+  return unicos.length === 1 && r!.includes(unicos[0]);
+};
 
 function pasaFiltrosCorrida(c: CorridaDisponible, f: FiltrosCapacidad): boolean {
-  if (f.permiso && !origenUnico(c.titularOrigen, f.permiso)) return false;
-  if (f.especie && !mismaEspecie(c.especie, f.especie)) return false;
-  if (f.guia && !origenUnico(c.gtfOrigen, f.guia)) return false;
-  return true;
+  return (
+    origenDentro(c.titularOrigen, f.permiso) &&
+    dentroEspecie(f.especie, c.especie) &&
+    origenDentro(c.gtfOrigen, f.guia)
+  );
 }
 
 /* ── Las opciones de cada filtro, con lo que hay detrás ───────────────────── */
@@ -267,9 +303,9 @@ export function opcionesDeCapacidad(
 
   for (const t of trozas) {
     const m3 = num(t.volumenM3);
-    const okPermiso = !filtros.permiso || txt(t.permiso) === filtros.permiso;
-    const okEspecie = !filtros.especie || mismaEspecie(t.especieComun, filtros.especie);
-    const okGuia = !filtros.guia || txt(t.gtfNumber) === filtros.guia;
+    const okPermiso = dentro(filtros.permiso, t.permiso);
+    const okEspecie = dentroEspecie(filtros.especie, t.especieComun);
+    const okGuia = dentro(filtros.guia, t.gtfNumber);
     if (okEspecie && okGuia) acumular(permisos, txt(t.permiso), m3);
     if (okPermiso && okGuia) acumular(especies, txt(t.especieComun).toUpperCase(), m3);
     if (okPermiso && okEspecie) acumular(guias, txt(t.gtfNumber), m3);
@@ -279,9 +315,9 @@ export function opcionesDeCapacidad(
        vino de ahí: repartirla sería inventar de qué título salió cada tablón. */
     const permiso = [...new Set(c.titularOrigen.map(txt).filter(Boolean))];
     const guia = [...new Set(c.gtfOrigen.map(txt).filter(Boolean))];
-    const okPermiso = !filtros.permiso || origenUnico(c.titularOrigen, filtros.permiso);
-    const okEspecie = !filtros.especie || mismaEspecie(c.especie, filtros.especie);
-    const okGuia = !filtros.guia || origenUnico(c.gtfOrigen, filtros.guia);
+    const okPermiso = origenDentro(c.titularOrigen, filtros.permiso);
+    const okEspecie = dentroEspecie(filtros.especie, c.especie);
+    const okGuia = origenDentro(c.gtfOrigen, filtros.guia);
     if (okEspecie && okGuia && permiso.length === 1) acumular(permisos, permiso[0], c.disponible);
     if (okPermiso && okGuia) acumular(especies, txt(c.especie).toUpperCase(), c.disponible);
     if (okPermiso && okEspecie && guia.length === 1) acumular(guias, guia[0], c.disponible);
@@ -318,26 +354,30 @@ export function sanearFiltros(
   if (!hayFiltro(filtros)) return filtros;
   if (patio.length === 0 && corridas.length === 0) return filtros;
 
-  const resto: (keyof FiltrosCapacidad)[] = (["especie", "permiso", "guia"] as const).filter(
+  const resto: ClaveFiltro[] = (["especie", "permiso", "guia"] as const).filter(
     (k) => k !== prioridad,
   );
   const orden = prioridad ? [prioridad, ...resto] : resto;
 
-  /* Se aceptan de a uno contra lo YA aceptado: así el segundo filtro se juzga
-     con el primero puesto, que es como se va a leer la tarjeta. */
+  /* Se aceptan de a uno contra lo YA aceptado: así el segundo recorte se juzga
+     con el primero puesto, que es como se va a leer la tarjeta. Dentro de un
+     recorte se cae valor por valor: elegidos tres permisos, se suelta sólo el
+     que no acompaña, no los tres. */
   let acc: FiltrosCapacidad = {};
   for (const k of orden) {
-    const valor = filtros[k];
-    if (!valor) continue;
+    const valores = filtros[k];
+    if (!recortePuesto(valores)) continue;
     const o = opcionesDeCapacidad(patio, acc, corridas);
     const lista = k === "permiso" ? o.permisos : k === "especie" ? o.especies : o.guias;
-    if (lista.some((x) => x.valor === valor)) acc = { ...acc, [k]: valor };
+    const quedan = valores!.filter((v) => lista.some((x) => x.valor === v));
+    if (quedan.length > 0) acc = { ...acc, [k]: quedan };
   }
 
   /* Si no cambió nada se devuelve el MISMO objeto: el estado vive en la URL y
      un objeto nuevo por render dispararía una navegación en bucle. */
-  const igual =
-    acc.permiso === filtros.permiso && acc.especie === filtros.especie && acc.guia === filtros.guia;
+  const igualLista = (a?: readonly string[], b?: readonly string[]) =>
+    (a?.length ?? 0) === (b?.length ?? 0) && (a ?? []).every((v, i) => v === (b ?? [])[i]);
+  const igual = CLAVES_DE_FILTRO.every((k) => igualLista(acc[k], filtros[k]));
   return igual ? filtros : acc;
 }
 
@@ -430,14 +470,13 @@ export function lotesDeFuente(
   lotes: readonly LoteDeCapacidad[],
   filtros: FiltrosCapacidad,
 ): LoteDeCapacidad[] {
-  if (filtros.guia) return [];
+  if (recortePuesto(filtros.guia)) return [];
   return lotes.filter(
     (l) =>
-      /* Con un permiso elegido el lote entra sólo si TODA su madera es de ese
-         permiso — la misma regla que las corridas. Un lote con dos títulos
+      /* Con permisos elegidos el lote entra sólo si TODA su madera es de UNO de
+         ellos — la misma regla que las corridas. Un lote con dos títulos
          adentro atribuido entero a cada uno sumaba la misma madera dos veces. */
-      (!filtros.permiso || origenUnico(l.permisos, filtros.permiso)) &&
-      (!filtros.especie || mismaEspecie(l.especie, filtros.especie)),
+      origenDentro(l.permisos, filtros.permiso) && dentroEspecie(filtros.especie, l.especie),
   );
 }
 
@@ -446,12 +485,12 @@ export function lotesMezclados(
   lotes: readonly LoteDeCapacidad[],
   filtros: FiltrosCapacidad,
 ): LoteDeCapacidad[] {
-  if (!filtros.permiso || filtros.guia) return [];
+  if (!recortePuesto(filtros.permiso) || recortePuesto(filtros.guia)) return [];
   return lotes.filter(
     (l) =>
       new Set(l.permisos.map(txt).filter(Boolean)).size > 1 &&
-      l.permisos.includes(filtros.permiso!) &&
-      (!filtros.especie || mismaEspecie(l.especie, filtros.especie)),
+      l.permisos.some((p) => filtros.permiso!.includes(txt(p))) &&
+      dentroEspecie(filtros.especie, l.especie),
   );
 }
 
@@ -536,13 +575,13 @@ function filaProductos(entrada: EntradaCapacidad, filtros: FiltrosCapacidad): Fu
   const restantes = enM3.filter((c) => !atribuibles.includes(c));
   const mezcla = restantes.filter(
     (c) =>
-      (filtros.permiso && new Set(c.titularOrigen.map(txt).filter(Boolean)).size > 1) ||
-      (filtros.guia && new Set(c.gtfOrigen.map(txt).filter(Boolean)).size > 1),
+      (recortePuesto(filtros.permiso) && new Set(c.titularOrigen.map(txt).filter(Boolean)).size > 1) ||
+      (recortePuesto(filtros.guia) && new Set(c.gtfOrigen.map(txt).filter(Boolean)).size > 1),
   );
   const sinOrigen = restantes.filter(
     (c) =>
-      (filtros.permiso && c.titularOrigen.filter(Boolean).length === 0) ||
-      (filtros.guia && c.gtfOrigen.filter(Boolean).length === 0),
+      (recortePuesto(filtros.permiso) && c.titularOrigen.filter(Boolean).length === 0) ||
+      (recortePuesto(filtros.guia) && c.gtfOrigen.filter(Boolean).length === 0),
   );
   const m3De = (cs: CorridaDisponible[]) => r4(cs.reduce((a, c) => a + c.disponible, 0));
 
@@ -691,7 +730,7 @@ export function armarBalance(
       filas: lotes.length,
       noAtribuible:
         lotesNoLlego ??
-        (filtros.guia
+        (recortePuesto(filtros.guia)
           ? "Un lote junta piezas de varias guías: no se puede acotar a una sola"
           : undefined),
     },

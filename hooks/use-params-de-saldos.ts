@@ -23,6 +23,15 @@ import type { FiltrosCapacidad } from "@/lib/forestal/capacidad-de-planta";
 export const PARAM_SECCION = "seccion";
 export const PARAMS_DE_FILTRO = ["permiso", "especie", "guia"] as const;
 
+/**
+ * Varios valores en un mismo parámetro van separados por coma —
+ * `?permiso=CON-25-UCA-0142,CON-25-PAS-0033`—, que es como se leen los links de
+ * este panel cuando alguien los pega en un chat. Ni los códigos de título
+ * habilitante ni las guías ni las especies llevan comas; si algún día las
+ * llevaran, este es el lugar donde cambiar el separador.
+ */
+export const SEP_FILTRO = ",";
+
 /** Lo que la URL dice hoy, validado. Puro, para poder testearlo. */
 export function leerParams<S extends string>(
   search: string,
@@ -32,8 +41,17 @@ export function leerParams<S extends string>(
   const s = p.get(PARAM_SECCION);
   const filtros: FiltrosCapacidad = {};
   for (const k of PARAMS_DE_FILTRO) {
-    const v = p.get(k)?.trim();
-    if (v) filtros[k] = v;
+    /* Sin duplicados y sin vacíos: `permiso=A,,A` es un link tipeado a mano y
+       tiene que dar el mismo recorte que `permiso=A`. */
+    const valores = [
+      ...new Set(
+        (p.get(k) ?? "")
+          .split(SEP_FILTRO)
+          .map((v) => v.trim())
+          .filter(Boolean),
+      ),
+    ];
+    if (valores.length > 0) filtros[k] = valores;
   }
   return { seccion: s && (secciones as readonly string[]).includes(s) ? (s as S) : null, filtros };
 }
@@ -42,8 +60,8 @@ export function leerParams<S extends string>(
 export function escribirParams(url: URL, seccion: string, filtros: FiltrosCapacidad): URL {
   url.searchParams.set(PARAM_SECCION, seccion);
   for (const k of PARAMS_DE_FILTRO) {
-    const v = filtros[k]?.trim();
-    if (v) url.searchParams.set(k, v);
+    const valores = (filtros[k] ?? []).map((v) => v.trim()).filter(Boolean);
+    if (valores.length > 0) url.searchParams.set(k, valores.join(SEP_FILTRO));
     else url.searchParams.delete(k);
   }
   return url;

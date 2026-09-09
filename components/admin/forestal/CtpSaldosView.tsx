@@ -31,10 +31,11 @@ import CtpKardexModal from "./CtpKardexModal";
 import CtpPatioAging from "./CtpPatioAging";
 import LotesConSaldo, { diasParaVencer } from "./saldos/LotesConSaldo";
 import BalanceDeCapacidad from "./saldos/BalanceDeCapacidad";
-import DetalleDeFuente, { textoDeFiltros } from "./saldos/DetalleDeFuente";
+import DetalleDeFuente, { textoDeFiltros, textoDeRecortes } from "./saldos/DetalleDeFuente";
 import {
   armarBalance,
   opcionesDeCapacidad,
+  recortePuesto,
   sanearFiltros,
   type CorridaDisponible,
   type EntradaCapacidad,
@@ -391,11 +392,17 @@ export function CtpSaldosView({
   /** Los lotes bajo el mismo recorte que la tarjeta (permiso y especie; la guía no aplica). */
   const lotesFiltrados = useMemo(() => {
     const f = filtrosCapacidad;
-    if (f.guia) return [];
+    if (recortePuesto(f.guia)) return [];
+    const enEspecie = (v: string) =>
+      !recortePuesto(f.especie) ||
+      f.especie!.some((e) => e.trim().toUpperCase() === v.trim().toUpperCase());
     return lotes.filter(
       (l) =>
-        (!f.permiso || permisosDelLote(l).includes(f.permiso)) &&
-        (!f.especie || l.speciesCommon.trim().toUpperCase() === f.especie.toUpperCase()),
+        /* Con varios permisos tildados alcanza con que el lote tenga UNO: es el
+           mismo «o» que aplica la tarjeta. */
+        (!recortePuesto(f.permiso) ||
+          permisosDelLote(l).some((p) => f.permiso!.includes(p))) &&
+        enEspecie(l.speciesCommon),
     );
   }, [lotes, filtrosCapacidad]);
 
@@ -800,9 +807,9 @@ export function CtpSaldosView({
                   vacioMotivo={
                     lotes.length === 0
                       ? undefined
-                      : filtrosCapacidad.guia
+                      : recortePuesto(filtrosCapacidad.guia)
                         ? "Un lote junta piezas de varias guías: no se puede acotar a una sola. Quitá el filtro de guía para verlos."
-                        : `Ningún lote de ${[filtrosCapacidad.permiso && `permiso ${filtrosCapacidad.permiso}`, filtrosCapacidad.especie && `especie ${filtrosCapacidad.especie}`].filter(Boolean).join(" y ")}.`
+                        : `Ningún lote de ${textoDeRecortes(filtrosCapacidad)}.`
                   }
                 />
               </>

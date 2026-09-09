@@ -17,6 +17,7 @@ import {
   esPorRecepcionar,
   filaDeTroza,
   lotesDeFuente,
+  alternarEnRecorte,
   opcionesDeCapacidad,
   sanearFiltros,
   trozasDeFuente,
@@ -108,12 +109,12 @@ describe("qué troza entra en cada fuente", () => {
 
 describe("filtros encadenados", () => {
   it("las especies salen de lo que tiene el permiso elegido", () => {
-    const { especies } = opcionesDeCapacidad(PATIO, { permiso: "P-2" });
+    const { especies } = opcionesDeCapacidad(PATIO, { permiso: ["P-2"] });
     expect(especies.map((e) => e.valor)).toEqual(["TORNILLO"]);
   });
 
   it("las guías salen de lo que queda tras permiso Y especie", () => {
-    const { guias } = opcionesDeCapacidad(PATIO, { permiso: "P-1", especie: "TORNILLO" });
+    const { guias } = opcionesDeCapacidad(PATIO, { permiso: ["P-1"], especie: ["TORNILLO"] });
     // G-1 (la pieza libre A) y G-4 (la que no llegó). G-2 es CAPIRONA.
     expect(guias.map((g) => g.valor).sort()).toEqual(["G-1", "G-4"]);
   });
@@ -144,13 +145,13 @@ describe("el balance bajo filtros", () => {
   });
 
   it("el pendiente del libro NO se reparte entre permisos", () => {
-    const b = armarBalance(ENTRADA, { permiso: "P-1" });
+    const b = armarBalance(ENTRADA, { permiso: ["P-1"] });
     const rec = b.fuentes.find((x) => x.clave === "porRecepcionar")!;
     expect(rec.m3).toBe(5); // sólo la troza D; el pendiente de 7 se cae
   });
 
   it("los productos se atribuyen SÓLO por corrida entera de ese permiso", () => {
-    const b = armarBalance(ENTRADA, { permiso: "P-1" });
+    const b = armarBalance(ENTRADA, { permiso: ["P-1"] });
     const prod = b.fuentes.find((x) => x.clave === "productos")!;
     expect(prod.m3).toBe(10); // c1 sí; c2 (mezcla) y c3 (sin origen) no
     expect(prod.filas).toBe(1);
@@ -159,7 +160,7 @@ describe("el balance bajo filtros", () => {
   });
 
   it("con un permiso que ninguna corrida trae entera, cero y el porqué", () => {
-    const b = armarBalance(ENTRADA, { permiso: "P-2" });
+    const b = armarBalance(ENTRADA, { permiso: ["P-2"] });
     const prod = b.fuentes.find((x) => x.clave === "productos")!;
     expect(prod.m3).toBe(0);
     expect(prod.noAtribuible).toMatch(/mezclado/);
@@ -185,19 +186,19 @@ describe("el balance bajo filtros", () => {
   });
 
   it("con una guía elegida los lotes se caen y lo dicen", () => {
-    const b = armarBalance(ENTRADA, { guia: "G-1" });
+    const b = armarBalance(ENTRADA, { guia: ["G-1"] });
     const lotesF = b.fuentes.find((x) => x.clave === "lotes")!;
     expect(lotesF.m3).toBe(0);
     expect(lotesF.noAtribuible).toMatch(/varias guías/i);
   });
 
   it("los lotes SÍ honran permiso y especie", () => {
-    expect(lotesDeFuente(ENTRADA.lotes, { permiso: "P-2" }).map((l) => l.code)).toEqual(["L-2"]);
-    expect(lotesDeFuente(ENTRADA.lotes, { especie: "tornillo" }).map((l) => l.code)).toEqual(["L-1"]);
+    expect(lotesDeFuente(ENTRADA.lotes, { permiso: ["P-2"] }).map((l) => l.code)).toEqual(["L-2"]);
+    expect(lotesDeFuente(ENTRADA.lotes, { especie: ["tornillo"] }).map((l) => l.code)).toEqual(["L-1"]);
   });
 
   it("el total es la suma de lo convertido, no de los m³ crudos", () => {
-    const b = armarBalance(ENTRADA, { permiso: "P-2" });
+    const b = armarBalance(ENTRADA, { permiso: ["P-2"] });
     // patio C(6)·0.56 = 3.36 · por recepcionar 0 · lote L-2 = 1 · productos 0
     expect(b.totalProducto).toBeCloseTo(4.36, 4);
   });
@@ -205,7 +206,7 @@ describe("el balance bajo filtros", () => {
 
 describe("las filas del detalle", () => {
   it("el patio filtrado trae sólo lo libre que cumple", () => {
-    const filas = trozasDeFuente("patio", PATIO, { permiso: "P-1" });
+    const filas = trozasDeFuente("patio", PATIO, { permiso: ["P-1"] });
     expect(filas.map((t) => t.id)).toEqual(["A", "B"]);
   });
 
@@ -224,7 +225,7 @@ describe("las filas del detalle", () => {
   });
 
   it("la especie del filtro no distingue mayúsculas", () => {
-    expect(trozasDeFuente("patio", PATIO, { especie: "tornillo" }).map((t) => t.id)).toEqual(["A", "C"]);
+    expect(trozasDeFuente("patio", PATIO, { especie: ["tornillo"] }).map((t) => t.id)).toEqual(["A", "C"]);
   });
 });
 
@@ -279,17 +280,35 @@ describe("la URL de Saldos", () => {
   it("lee pestaña y filtros, ignorando una pestaña que no existe", () => {
     expect(leerParams("?seccion=capacidad&permiso=P-1&guia=G-1", SECC)).toEqual({
       seccion: "capacidad",
-      filtros: { permiso: "P-1", guia: "G-1" },
+      filtros: { permiso: ["P-1"], guia: ["G-1"] },
     });
     expect(leerParams("?seccion=otra", SECC).seccion).toBeNull();
   });
 
+  it("varios valores en un parámetro viajan separados por coma", () => {
+    const { filtros } = leerParams("?seccion=capacidad&permiso=P-1,P-2&especie=TORNILLO", SECC);
+    expect(filtros.permiso).toEqual(["P-1", "P-2"]);
+    expect(filtros.especie).toEqual(["TORNILLO"]);
+  });
+
+  it("un link tipeado a mano con vacíos y repetidos da el mismo recorte", () => {
+    expect(leerParams("?seccion=capacidad&permiso=P-1,,P-1, P-2 ", SECC).filtros.permiso).toEqual([
+      "P-1",
+      "P-2",
+    ]);
+  });
+
   it("escribe lo que hay y borra lo vacío", () => {
-    const url = escribirParams(new URL("http://x/admin?tab=ctp&vista=saldos&especie=VIEJA"), "capacidad", { permiso: "P-1" });
+    const url = escribirParams(new URL("http://x/admin?tab=ctp&vista=saldos&especie=VIEJA"), "capacidad", { permiso: ["P-1", "P-2"] });
     expect(url.searchParams.get("seccion")).toBe("capacidad");
-    expect(url.searchParams.get("permiso")).toBe("P-1");
+    expect(url.searchParams.get("permiso")).toBe("P-1,P-2");
     expect(url.searchParams.has("especie")).toBe(false);
     expect(url.searchParams.get("vista")).toBe("saldos");
+  });
+
+  it("una lista vacía se borra igual que un filtro sin poner", () => {
+    const url = escribirParams(new URL("http://x/admin?permiso=P-9"), "capacidad", { permiso: [] });
+    expect(url.searchParams.has("permiso")).toBe(false);
   });
 });
 
@@ -368,7 +387,7 @@ describe("las cinco fuentes", () => {
         lote({ code: "U", permisos: ["P-1"], consumidoM3: 10, esperado56M3: 5.6, producidoM3: 0, restaM3: 5.6 }),
       ],
     };
-    const f = armarBalance(entrada, { permiso: "P-1" }).fuentes.find((x) => x.clave === "lotes")!;
+    const f = armarBalance(entrada, { permiso: ["P-1"] }).fuentes.find((x) => x.clave === "lotes")!;
     expect(f.m3).toBe(5.6);
     expect(f.detalle).toMatch(/5\.6 m³ en 1 lote con permisos mezclados/);
   });
@@ -422,32 +441,32 @@ describe("el CSV no ejecuta fórmulas", () => {
 describe("los filtros se cruzan en las dos direcciones (Brandon, 2026-09-08)", () => {
   it("elegida la especie, los permisos son los que TIENEN esa especie", () => {
     // CAPIRONA sólo está en P-1 (troza B). Antes se ofrecían P-1 y P-2.
-    const { permisos } = opcionesDeCapacidad(PATIO, { especie: "CAPIRONA" });
+    const { permisos } = opcionesDeCapacidad(PATIO, { especie: ["CAPIRONA"] });
     expect(permisos.map((p) => p.valor)).toEqual(["P-1"]);
     expect(permisos[0]).toMatchObject({ piezas: 1, m3: 4 });
   });
 
   it("con TORNILLO quedan los dos permisos, cada uno con lo suyo", () => {
-    const { permisos } = opcionesDeCapacidad(PATIO, { especie: "TORNILLO" });
+    const { permisos } = opcionesDeCapacidad(PATIO, { especie: ["TORNILLO"] });
     expect(permisos.map((p) => p.valor).sort()).toEqual(["P-1", "P-2"]);
     // P-1: A(10) + D(5) sin recibir. La E ya está en un lote.
     expect(permisos.find((p) => p.valor === "P-1")).toMatchObject({ piezas: 2, m3: 15 });
   });
 
   it("elegida la guía, el permiso y la especie se acotan a ella", () => {
-    const o = opcionesDeCapacidad(PATIO, { guia: "G-3" });
+    const o = opcionesDeCapacidad(PATIO, { guia: ["G-3"] });
     expect(o.permisos.map((p) => p.valor)).toEqual(["P-2"]);
     expect(o.especies.map((e) => e.valor)).toEqual(["TORNILLO"]);
   });
 
   it("un filtro no se saca a sí mismo de su propia lista", () => {
-    const { especies } = opcionesDeCapacidad(PATIO, { especie: "CAPIRONA", permiso: "P-1" });
+    const { especies } = opcionesDeCapacidad(PATIO, { especie: ["CAPIRONA"], permiso: ["P-1"] });
     expect(especies.map((e) => e.valor).sort()).toEqual(["CAPIRONA", "TORNILLO"]);
   });
 
   it("las corridas con DOS permisos adentro no se reparten entre ellos", () => {
     const mezcla = corrida({ id: "m", disponible: 3, titularOrigen: ["P-1", "P-2"], especie: "TORNILLO" });
-    const { permisos } = opcionesDeCapacidad([], { especie: "TORNILLO" }, [mezcla]);
+    const { permisos } = opcionesDeCapacidad([], { especie: ["TORNILLO"] }, [mezcla]);
     expect(permisos).toEqual([]);
   });
 });
@@ -455,25 +474,70 @@ describe("los filtros se cruzan en las dos direcciones (Brandon, 2026-09-08)", (
 describe("sanearFiltros suelta lo que quedó sin madera", () => {
   it("una combinación imposible pierde el filtro que no se cumple", () => {
     // G-3 es TORNILLO de P-2: con CAPIRONA no hay nada.
-    const r = sanearFiltros(PATIO, [], { especie: "CAPIRONA", guia: "G-3" });
+    const r = sanearFiltros(PATIO, [], { especie: ["CAPIRONA"], guia: ["G-3"] });
     expect(r.guia).toBeUndefined();
-    expect(r.especie).toBe("CAPIRONA");
+    expect(r.especie).toEqual(["CAPIRONA"]);
   });
 
   it("una combinación que existe se deja intacta", () => {
-    const f = { permiso: "P-1", especie: "TORNILLO", guia: "G-1" };
+    const f = { permiso: ["P-1"], especie: ["TORNILLO"], guia: ["G-1"] };
     expect(sanearFiltros(PATIO, [], f)).toBe(f);
   });
 
   it("el filtro recién tocado no se suelta: se suelta el que ya no lo acompaña", () => {
     // El operador acaba de elegir la guía G-3 (TORNILLO de P-2) teniendo CAPIRONA.
-    const r = sanearFiltros(PATIO, [], { especie: "CAPIRONA", guia: "G-3" }, "guia");
-    expect(r.guia).toBe("G-3");
+    const r = sanearFiltros(PATIO, [], { especie: ["CAPIRONA"], guia: ["G-3"] }, "guia");
+    expect(r.guia).toEqual(["G-3"]);
     expect(r.especie).toBeUndefined();
   });
 
   it("sin datos cargados no toca nada: un [] puede ser «todavía no llegó»", () => {
-    const f = { permiso: "P-9" };
+    const f = { permiso: ["P-9"] };
     expect(sanearFiltros([], [], f)).toBe(f);
+  });
+});
+
+describe("varios valores por filtro (Brandon, 2026-09-08)", () => {
+  it("dos permisos tildados suman su madera, no la de uno solo", () => {
+    const soloP1 = armarBalance(ENTRADA, { permiso: ["P-1"] });
+    const losDos = armarBalance(ENTRADA, { permiso: ["P-1", "P-2"] });
+    const patioDe = (b: ReturnType<typeof armarBalance>) =>
+      b.fuentes.find((f) => f.clave === "patio")!.m3;
+    expect(patioDe(soloP1)).toBe(14); // A(10) + B(4)
+    expect(patioDe(losDos)).toBe(20); // + C(6)
+  });
+
+  it("las opciones cruzadas también se abren: dos especies traen sus dos permisos", () => {
+    const { permisos } = opcionesDeCapacidad(PATIO, { especie: ["CAPIRONA"] });
+    expect(permisos.map((p) => p.valor)).toEqual(["P-1"]);
+    const dos = opcionesDeCapacidad(PATIO, { especie: ["CAPIRONA", "TORNILLO"] });
+    expect(dos.permisos.map((p) => p.valor).sort()).toEqual(["P-1", "P-2"]);
+  });
+
+  it("una corrida con dos títulos adentro no entra ni tildando los dos", () => {
+    // La mezcla no se deshace porque el filtro sea más ancho: sigue sin repartirse.
+    const b = armarBalance(ENTRADA, { permiso: ["P-1", "P-2"] });
+    const productos = b.fuentes.find((f) => f.clave === "productos")!;
+    expect(productos.m3).toBe(10); // sólo c1 (P-1); c2 mezcla y c3 sin origen quedan afuera
+    expect(productos.noAtribuible ?? productos.detalle).toMatch(/mezclado/);
+  });
+
+  it("sanearFiltros cae valor por valor, no suelta el recorte entero", () => {
+    // De los tres, P-9 no existe: quedan los dos que sí.
+    const r = sanearFiltros(PATIO, [], { permiso: ["P-1", "P-9", "P-2"] });
+    expect(r.permiso).toEqual(["P-1", "P-2"]);
+  });
+
+  it("si NINGUNO de los valores sobrevive, el recorte se suelta entero", () => {
+    const r = sanearFiltros(PATIO, [], { especie: ["TORNILLO"], guia: ["G-2"] }, "especie");
+    expect(r.especie).toEqual(["TORNILLO"]);
+    expect(r.guia).toBeUndefined();
+  });
+
+  it("alternar suma, saca, y devuelve undefined cuando queda vacío", () => {
+    expect(alternarEnRecorte(undefined, "A")).toEqual(["A"]);
+    expect(alternarEnRecorte(["A"], "B")).toEqual(["A", "B"]);
+    expect(alternarEnRecorte(["A", "B"], "A")).toEqual(["B"]);
+    expect(alternarEnRecorte(["A"], "A")).toBeUndefined();
   });
 });

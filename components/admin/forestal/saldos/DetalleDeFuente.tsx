@@ -48,14 +48,36 @@ import { printCapacidadDetalle } from "@/lib/forestal/capacidad-detalle-print";
 
 const pt = (v: number) => pieTablarDe(v).toLocaleString("es-PE");
 
+/**
+ * Cómo se lee un recorte de varios valores. Hasta tres se nombran —es lo que
+ * entra en una línea de encabezado y en el pie del reporte—; de ahí en más se
+ * cuentan, porque «permiso A, B, C, D, E, F» ya no se lee, se saltea.
+ */
+function lista(valores: readonly string[] | undefined, uno: string, varios: string): string | null {
+  const v = (valores ?? []).filter(Boolean);
+  if (v.length === 0) return null;
+  if (v.length === 1) return `${uno} ${v[0]}`;
+  if (v.length <= 3) return `${varios} ${v.join(", ")}`;
+  return `${v.length} ${varios}`;
+}
+
+/** Los recortes puestos, en palabras: «permiso X · especie Y». */
+export function textoDeRecortes(f: FiltrosCapacidad): string {
+  return (
+    [
+      lista(f.permiso, "permiso", "permisos"),
+      lista(f.especie, "especie", "especies"),
+      lista(f.guia, "guía", "guías"),
+    ]
+      .filter(Boolean)
+      .join(" · ") || "toda la planta"
+  );
+}
+
 /** Cómo se lee el filtro puesto, para el encabezado y para el reporte. */
 export function textoDeFiltros(f: FiltrosCapacidad): string {
-  const partes = [
-    f.permiso && `permiso ${f.permiso}`,
-    f.especie && `especie ${f.especie}`,
-    f.guia && `guía ${f.guia}`,
-  ].filter(Boolean);
-  return partes.length === 0 ? "Toda la planta" : `Sólo ${partes.join(" · ")}`;
+  const partes = textoDeRecortes(f);
+  return partes === "toda la planta" ? "Toda la planta" : `Sólo ${partes}`;
 }
 
 function Valor({ col, v }: { col: string; v: Celda }) {
