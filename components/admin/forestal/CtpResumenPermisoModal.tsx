@@ -64,8 +64,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, Layers, Share2 } from "@buleje/
 import { DataTable, StatCard } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn } from "./ctp-shared";
-import { slugKey } from "./CubicacionResumenes";
-import { TOOL_ONCE_KEY } from "./ForestalHerramientas";
+import { abrirResumenesDelCubicador, sembrarBloques } from "@/lib/forestal/sembrar-reparto";
 import { FilaSeleccionable, SeccionObjetivo, SeccionResumenPermiso } from "./ctp-resumen-permiso-secciones";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import {
@@ -77,7 +76,6 @@ import {
 import { esLoteDeInventario, salidaDelLote, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { agruparPor } from "@/lib/forestal/cubicacion-resumen";
 import { RENDIMIENTO_META, productoDelTipoComercial } from "@/lib/forestal/loctp-catalogos";
-import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 
@@ -310,30 +308,20 @@ export default function CtpResumenPermisoModal({
    * individual que si se hubiera sembrado uno solo.
    */
   function sembrarYAbrir(candidatos: CandidatoBloque[]) {
-    try {
-      const raw = localStorage.getItem(slugKey("-rolliza"));
-      const actuales: BloqueRolliza[] = raw ? JSON.parse(raw) : [];
-      const yaCargados = new Set(actuales.map((b) => `${b.etiqueta}::${b.especie}`));
-      const nuevos: BloqueRolliza[] = candidatos
-        .filter((c) => !yaCargados.has(`${c.etiqueta}::${c.especie}`))
-        .map((c, i) => ({
-          id: `permiso-${Date.now().toString(36)}-${i}`,
-          etiqueta: c.etiqueta,
-          especie: c.especie,
-          m3: c.m3,
-          permiso: c.permiso ?? null,
-          origen: "manual" as const,
-        }));
-      if (nuevos.length > 0) {
-        localStorage.setItem(slugKey("-rolliza"), JSON.stringify([...actuales, ...nuevos]));
-      }
-      localStorage.setItem(slugKey("-vista-resumen"), "rolliza");
-      sessionStorage.setItem(TOOL_ONCE_KEY, "resumenes");
-    } catch {
-      /* localStorage puede fallar (modo privado) — igual navegamos: el
-         operario puede cargar los bloques a mano en la pantalla real. */
-    }
-    window.location.href = "/admin?tab=forestal-herramientas";
+    /* Sembrar y navegar viven en `sembrar-reparto.ts` desde 2026-09-08: los usa
+       también «Llevar al cubicador» de Capacidad de la planta, y dos copias del
+       guardado terminan escribiendo la misma hoja con reglas distintas. */
+    sembrarBloques(
+      candidatos.map((c) => ({
+        etiqueta: c.etiqueta,
+        especie: c.especie,
+        m3: c.m3,
+        permiso: c.permiso ?? null,
+        origen: "manual" as const,
+      })),
+      "permiso",
+    );
+    abrirResumenesDelCubicador();
   }
 
   /**

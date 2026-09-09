@@ -21,6 +21,7 @@
  * **m³ con tres decimales**, en todas las vistas.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import {
   RefreshCw, Download, PackageOpen, Printer, Layers, Boxes, Lightbulb, Target,
   ArrowLeftRight, SlidersHorizontal, Share2, Compass, Table,
@@ -54,14 +55,12 @@ const VISTAS: { value: Vista; label: string; icon: typeof Compass }[] = [
   { value: "metas", label: "Metas", icon: Target },
 ];
 
-/** Exportada: el modal de resumen por permiso (Consumo) siembra la MISMA
- *  clave de rolliza para que «Distribuir esta madera» abra el tool real con
- *  los bloques ya cargados, en vez de reinventar el guardado. */
-export function slugKey(sufijo = "") {
-  let slug = "main";
-  try { slug = localStorage.getItem("active-tenant-slug") ?? "main"; } catch { /* ignore */ }
-  return `buleje-cubicacion-${slug}${sufijo}`;
-}
+/* La clave vive en `lib/forestal/sembrar-reparto.ts`: la escriben también las
+   pantallas que SIEMBRAN bloques desde otro módulo (resumen por permiso,
+   capacidad de la planta), y dos definiciones de la misma clave es como se
+   termina guardando en dos lugares distintos. Se re-exporta para no cambiar a
+   los que ya la importaban de acá. */
+export { slugKey };
 
 /** Lee el lote + precios del localStorage y arma el resolver de precio por pieza. */
 function leerLote(): { rows: PiezaCubicada[]; precioDe: (r: PiezaCubicada) => number; conValor: boolean } {
@@ -95,9 +94,30 @@ function vistaGuardada(): Vista {
   return "panorama";
 }
 
+/** Cuántos bloques de rolliza hay cargados hoy — puede haberlos sin lote cubicado. */
+function contarBloquesRolliza(): number {
+  try {
+    const raw = localStorage.getItem(slugKey("-rolliza"));
+    const lista = raw ? (JSON.parse(raw) as unknown[]) : [];
+    return Array.isArray(lista) ? lista.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export default function CubicacionResumenes() {
   const [{ rows, precioDe, conValor }, setLote] = useState(() => (typeof window === "undefined" ? { rows: [], precioDe: () => 0, conValor: false } : leerLote()));
-  const recargar = useCallback(() => setLote(leerLote()), []);
+  /**
+   * Sembrar bloques desde otra pantalla (Capacidad de la planta, Resumen por
+   * permiso) y encontrarse con «todavía no hay lote cubicado» es perder la
+   * madera que uno acaba de mandar: está guardada, pero invisible. Con bloques
+   * cargados la pantalla entra igual, con la distribución sola.
+   */
+  const [bloquesRolliza, setBloquesRolliza] = useState(0);
+  const recargar = useCallback(() => {
+    setLote(leerLote());
+    setBloquesRolliza(contarBloquesRolliza());
+  }, []);
   useEffect(() => {
     recargar();
     const onStorage = (e: StorageEvent) => { if (e.key?.startsWith("buleje-cubicacion-")) recargar(); };
@@ -173,7 +193,7 @@ export default function CubicacionResumenes() {
     a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
 
-  if (rows.length === 0) {
+  if (rows.length === 0 && bloquesRolliza === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-16 text-center">
         <PackageOpen className="h-10 w-10 text-[var(--text-tertiary)]" />
@@ -182,6 +202,30 @@ export default function CubicacionResumenes() {
         <button type="button" onClick={recargar} className={`mt-1 ${BTN}`}>
           <RefreshCw className="h-4 w-4" /> Actualizar
         </button>
+      </div>
+    );
+  }
+
+  /* Hay bloques y todavía no hay aserrada: se muestra la distribución sola, que
+     ya sabe listar la rolliza sin nada que repartir, y se dice cuál es el paso
+     que falta. Las otras vistas no tendrían nada que mostrar. */
+  if (rows.length === 0) {
+    return (
+      <div className="space-y-5">
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+          <p className="text-base font-bold text-[var(--text-primary)]">
+            {bloquesRolliza} {bloquesRolliza === 1 ? "bloque cargado" : "bloques cargados"}, sin
+            madera cubicada todavía
+          </p>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--text-tertiary)]">
+            La madera que mandaste ya está acá abajo. Para repartirla hay que cubicar lo aserrado
+            en <b>Cubicador de madera</b>: la distribución le pone las medidas a cada bloque.
+          </p>
+          <button type="button" onClick={recargar} className={`mt-3 ${BTN}`}>
+            <RefreshCw className="h-4 w-4" /> Actualizar
+          </button>
+        </div>
+        <ResumenReparto rows={rows} precioDe={precioDe} />
       </div>
     );
   }

@@ -26,7 +26,7 @@
  */
 
 import { CardTitle } from "@buleje/design-system";
-import { ChevronRight } from "@buleje/design-system/icons";
+import { ChevronRight, Ruler } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
@@ -59,6 +59,7 @@ export default function BalanceDeCapacidad({
   opciones,
   onFiltros,
   onDetalle,
+  onLlevar,
 }: {
   balance: BalanceCapacidad;
   filtros: FiltrosCapacidad;
@@ -66,6 +67,8 @@ export default function BalanceDeCapacidad({
   /** `prioridad` = el filtro que se acaba de tocar: ése manda si hay que soltar. */
   onFiltros?: (f: FiltrosCapacidad, prioridad?: keyof FiltrosCapacidad) => void;
   onDetalle?: (f: FuenteDeCapacidad) => void;
+  /** Mandar lo filtrado a la distribución del cubicador (ADR-403). */
+  onLlevar?: () => void;
 }) {
   const { fuentes, totalProducto } = balance;
   const hayAlgo = totalProducto > 0 || fuentes.some((f) => f.m3 > 0 || f.filas > 0);
@@ -117,6 +120,18 @@ export default function BalanceDeCapacidad({
               className="text-xs font-bold text-[var(--accent-dark)] underline underline-offset-2 dark:text-[var(--accent)]"
             >
               Quitar filtros
+            </button>
+          )}
+          {/* De «cuánto puede salir» a «repartilo»: la misma madera que se está
+              mirando, cargada como bloques en el cubicador sin retipearla. */}
+          {onLlevar && (
+            <button
+              type="button"
+              onClick={onLlevar}
+              className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-3 text-xs font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 dark:text-[var(--accent)]"
+            >
+              <Ruler className="h-3.5 w-3.5" aria-hidden />
+              Llevar al cubicador
             </button>
           )}
         </div>

@@ -6,10 +6,11 @@
  * hoy trae el cubicador de madera por voz; se le suman más herramientas como
  * sub-vistas sin tocar el cableado del sidebar.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { Wrench, Calculator, Activity, Ruler, Gauge, BarChart3, Trees } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
+import { TOOL_ONCE_STORAGE_KEY } from "@/lib/forestal/sembrar-reparto";
 
 const cargando = (
   <div className="flex h-64 items-center justify-center rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-tertiary)]">
@@ -25,10 +26,11 @@ const EspeciesFotosBiblioteca = dynamic(() => import("./EspeciesFotosBiblioteca"
 type Tool = "cubicador" | "trozas" | "rendimiento" | "resumenes" | "especies";
 const HERRAMIENTAS_MODULE_ID = "forestal-herramientas";
 /** Salto de una sola vez desde otro módulo (ej. «Resumen por permiso» en
- *  Consumo, que siembra bloques de rolliza y quiere abrir directo en
- *  Resúmenes). Se lee y se borra: no es la pestaña que se recuerda de ahí en
- *  más, sólo la de ESTA visita. */
-export const TOOL_ONCE_KEY = "buleje-herramientas-tool-once";
+ *  Consumo o «Llevar al cubicador» en Capacidad de la planta, que siembran
+ *  bloques de rolliza y quieren abrir directo en Resúmenes). Se lee y se
+ *  borra: no es la pestaña que se recuerda de ahí en más, sólo la de ESTA
+ *  visita. La escribe `abrirResumenesDelCubicador()`. */
+export const TOOL_ONCE_KEY = TOOL_ONCE_STORAGE_KEY;
 const TOOLS: { key: Tool; label: string; icon: typeof Calculator; hint: string }[] = [
   { key: "cubicador", label: "Cubicador de madera", icon: Calculator, hint: "Aserrada: pie tablar + m³ por voz" },
   { key: "trozas", label: "Cubicador de trozas", icon: Ruler, hint: "Rolliza: Smalian en patio, contra la GTF" },
@@ -43,15 +45,28 @@ const TOOL_GROUPS: LibroGroup[] = [
 ];
 
 export default function ForestalHerramientas() {
-  const [tool, setTool] = useState<Tool>(() => {
-    if (typeof window === "undefined") return "cubicador";
+  const [tool, setTool] = useState<Tool>("cubicador");
+
+  /**
+   * El salto de una sola vez se consume en un EFECTO, no en el initializer del
+   * `useState` (bug real, encontrado 2026-09-08 llevando madera desde Saldos).
+   *
+   * Leer-y-borrar dentro del initializer parece equivalente, pero en desarrollo
+   * React lo invoca DOS veces: la primera lectura devolvía «resumenes» y
+   * borraba la clave, y el estado que quedaba era el de la segunda —que ya no
+   * encontraba nada— así que la herramienta abría en el cubicador y el salto se
+   * perdía en silencio. Un initializer no puede tener efectos secundarios.
+   */
+  useEffect(() => {
     try {
       const v = sessionStorage.getItem(TOOL_ONCE_KEY);
+      if (!v) return;
       sessionStorage.removeItem(TOOL_ONCE_KEY);
-      if (v && TOOLS.some((t) => t.key === v)) return v as Tool;
-    } catch { /* ignore */ }
-    return "cubicador";
-  });
+      if (TOOLS.some((t) => t.key === v)) setTool(v as Tool);
+    } catch {
+      /* sin sessionStorage se abre la herramienta por defecto */
+    }
+  }, []);
 
   return (
     <LibroChrome

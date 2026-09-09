@@ -32,8 +32,11 @@ import CtpPatioAging from "./CtpPatioAging";
 import LotesConSaldo, { diasParaVencer } from "./saldos/LotesConSaldo";
 import BalanceDeCapacidad from "./saldos/BalanceDeCapacidad";
 import DetalleDeFuente, { textoDeFiltros, textoDeRecortes } from "./saldos/DetalleDeFuente";
+import LlevarAlCubicadorModal from "./saldos/LlevarAlCubicadorModal";
+import { bloquesDesdeCapacidad } from "@/lib/forestal/capacidad-a-bloques";
 import {
   armarBalance,
+  hayFiltro,
   opcionesDeCapacidad,
   recortePuesto,
   sanearFiltros,
@@ -131,6 +134,8 @@ export function CtpSaldosView({
   } = useParamsDeSaldos<Seccion>(SECCION_IDS, "estado");
   /** La fuente cuyo detalle está abierto en el modal. */
   const [detalleFuente, setDetalleFuente] = useState<FuenteDeCapacidad | null>(null);
+  /** Abierto el paso previo a mandar la madera filtrada al cubicador. */
+  const [llevando, setLlevando] = useState(false);
   /** Las corridas con saldo en el depósito HOY (foto, sin período). `null` = cargando. */
   const [corridas, setCorridas] = useState<CorridaDisponible[] | null>(null);
   /* Cómo llegó cada fetch. Un `[]` que en realidad es «todavía no» o «falló»
@@ -781,6 +786,7 @@ export function CtpSaldosView({
                   opciones={opcionesCapacidad}
                   onFiltros={aplicarFiltrosCapacidad}
                   onDetalle={setDetalleFuente}
+                  onLlevar={() => setLlevando(true)}
                 />
 
                 {/* Lo que de ese techo NO puede salir con papeles. Va pegado al
@@ -878,6 +884,18 @@ export function CtpSaldosView({
           filtros={filtrosCapacidad}
           periodoLabel={period.label}
           onClose={() => setDetalleFuente(null)}
+        />
+      )}
+
+      {/* La misma madera que muestra la tarjeta, lista para repartir. Los
+          candidatos se arman con las MISMAS funciones que arman el balance
+          (`bloquesDesdeCapacidad`), así que lo que viaja es exactamente lo
+          filtrado — ni un metro más. */}
+      {llevando && (
+        <LlevarAlCubicadorModal
+          candidatos={bloquesDesdeCapacidad(entradaCapacidad, filtrosCapacidad)}
+          recorte={hayFiltro(filtrosCapacidad) ? textoDeRecortes(filtrosCapacidad) : ""}
+          onCerrar={() => setLlevando(false)}
         />
       )}
 
