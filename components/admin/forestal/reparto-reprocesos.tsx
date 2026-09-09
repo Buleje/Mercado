@@ -501,6 +501,11 @@ export default function ReprocesosSugeridos({
             <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
               {fmtM3(g.origenM3)} m³{g.esRolliza ? " (R)" : ""}
             </span>
+            {g.clave.startsWith("t:") && g.etiquetas.length > 1 && (
+              <span className="rounded-md bg-[var(--surface-canvas)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
+                {g.etiquetas.length} bloques juntos
+              </span>
+            )}
             {g.origenPiezas != null && (
               <span className="text-xs text-[var(--text-secondary)]">
                 {fmtPiezas(g.origenPiezas)} pzas
@@ -590,7 +595,29 @@ export default function ReprocesosSugeridos({
             {/* La cuenta completa del producto, para que cierre contra la tabla
                 de bloques: lo que ampara de OTRO tipo (el reproceso), lo que
                 ampara de su MISMO tipo (no hace falta reproceso) y lo que
-                queda sin amparar. Las tres suman lo que el bloque ampara. */}
+                queda sin amparar. Las tres suman lo que el bloque ampara.
+
+                ⚠️ Sólo cierra cuando la tarjeta es UN bloque. Cuando junta
+                varios (clave `t:`, una capacidad compartida para tapar el mismo
+                faltante), lo que cada uno ampara se detalla en SU tarjeta y
+                sumarlo acá dejaba un «ampara 0.879» con filas por 0.378 —una
+                resta que el operario no puede reconstruir— (2026-09-09). */}
+            {g.clave.startsWith("t:") ? (
+              <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 border-t border-[var(--rule-soft)] pt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                <span>
+                  Capacidad de{" "}
+                  <b className="text-[var(--text-secondary)]">{g.etiquetas.length} bloques</b> juntos:{" "}
+                  <b className="font-mono tabular-nums text-[var(--text-secondary)]">
+                    {fmtM3(g.libreM3)} m³
+                  </b>{" "}
+                  libres de {fmtM3(g.capacidadM3)} m³.
+                </span>
+                <span>
+                  Lo que cada uno ya ampara —y el reproceso que eso da por hecho— va en{" "}
+                  <b>su propia tarjeta</b>.
+                </span>
+              </p>
+            ) : (
             <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 border-t border-[var(--rule-soft)] pt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               <span>
                 De{" "}
@@ -654,6 +681,7 @@ export default function ReprocesosSugeridos({
                 </span>
               ) : null}
             </p>
+            )}
           </div>
         </div>
       ))}
