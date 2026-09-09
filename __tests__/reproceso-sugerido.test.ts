@@ -93,8 +93,29 @@ const M3_PAQUETERIA = PAQUETERIA.reduce((a, p) => a + (p.m3 ?? 0), 0);
 
 /** Lo que hay que despachar cuando el destino es paquetería CORTA. */
 const PAQ_CORTA: PiezaCubicada[] = [piezaCorta("pc1", 40), piezaCorta("pc2", 40)];
-/** Lo que hay que despachar cuando el destino es COMERCIAL (nadie puede darlo). */
+/** Lo que hay que despachar cuando el destino es COMERCIAL. */
 const COMERCIAL: PiezaCubicada[] = [piezaComercial("cm1", 30)];
+
+/**
+ * Piezas de 1.25×8×10' = **«Otro»**: no es tabla (espesor ≠ 1"), no es comercial
+ * (espesor < 1.5") y no es larga angosta (ancho > 5"). Nadie puede reprocesarse
+ * en «Otro»: no es un producto del Libro.
+ */
+function piezaOtro(id: string, cantidad: number): PiezaCubicada {
+  const base = {
+    id,
+    cantidad,
+    espesor: 1.25,
+    ancho: 8,
+    largo: 10,
+    uEspesor: "pulg" as const,
+    uAncho: "pulg" as const,
+    uLargo: "pies" as const,
+    especie: "Tornillo",
+  };
+  const { m3, pieTablar } = cubicarPieza(base);
+  return { ...base, m3, pieTablar };
+}
 
 /** Un bloque de COMERCIAL que sólo lleva comercial: rechaza la paquetería. */
 const comercialQueNoAmpara = (m3: number) =>
@@ -208,19 +229,33 @@ describe("el piso de lo sugerible", () => {
 });
 
 describe("sólo lo que la sierra puede hacer (ADR-407)", () => {
-  it("no ofrece reprocesar paquetería en comercial: eso sería agrandar la madera", () => {
-    /* Sobra paquetería larga (con «lleva sólo», así queda capacidad libre) y
-       falta comercial. Antes esto salía como sugerencia. */
-    const paqLibre = bloque({
+  it("un producto terminado no se ofrece como origen: de una tabla no sale comercial", () => {
+    /* Sobra tabla (con «lleva sólo», así queda capacidad libre) y falta
+       comercial. La tabla ya salió de la sierra: no vuelve a entrar. */
+    const tablaLibre = bloque({
       id: "r1",
-      etiqueta: "Saldo paquetería",
+      etiqueta: "Saldo tabla",
+      m3: 5,
+      tipoProducto: "Tabla",
+      gruposFiltro: ["tipo|Tabla"],
+    });
+    const d = distribuirPorCapacidad([tablaLibre], COMERCIAL, "tipo");
+    expect(d.totales.faltanteM3).toBeGreaterThan(0); // hay comercial sin respaldo
+    expect(sugerenciasDeReproceso(d)).toEqual([]);
+  });
+
+  it("de paquetería larga SÍ sale comercial: Brandon lo corrigió el 2026-09-09", () => {
+    const paqLibre = bloque({
+      id: "r1b",
       m3: 5,
       tipoProducto: "Paquetería larga",
       gruposFiltro: ["tipo|Paquetería larga"],
     });
-    const d = distribuirPorCapacidad([paqLibre], COMERCIAL, "tipo");
-    expect(d.totales.faltanteM3).toBeGreaterThan(0); // hay comercial sin respaldo
-    expect(sugerenciasDeReproceso(d)).toEqual([]);
+    const s = sugerenciasDeReproceso(
+      distribuirPorCapacidad([paqLibre], COMERCIAL, "tipo"),
+    ).filter((x) => x.motivo === "faltante");
+    expect(s.length).toBe(1);
+    expect(s[0]).toMatchObject({ desdeTipo: "Paquetería larga", haciaTipo: "Comercial" });
   });
 
   it("de paquetería larga SÍ sale paquetería corta: es un recorte de largo", () => {
@@ -238,22 +273,23 @@ describe("sólo lo que la sierra puede hacer (ADR-407)", () => {
   });
 
   it("un respaldo imposible NO se ofrece declarar: sale como advertencia aparte", () => {
-    /* Un bloque de paquetería que ampara comercial. El reparto lo permite —no
-       mira tipos—, pero declararlo sería firmar que la sierra agrandó. */
-    const paq = bloque({ id: "r3", etiqueta: "GTF-9", m3: 5, tipoProducto: "Paquetería larga" });
-    const d = distribuirPorCapacidad([paq], COMERCIAL, "tipo");
+    /* Un bloque de TABLA que ampara comercial. El reparto lo permite —no mira
+       tipos—, pero declararlo sería firmar que una tabla volvió a la sierra y
+       salió comercial. */
+    const tabla = bloque({ id: "r3", etiqueta: "GTF-9", m3: 5, tipoProducto: "Tabla" });
+    const d = distribuirPorCapacidad([tabla], COMERCIAL, "tipo");
     expect(sugerenciasDeReproceso(d).filter((x) => x.motivo === "amparado")).toEqual([]);
 
     const imp = amparosImposibles(d);
     expect(imp.length).toBe(1);
     expect(imp[0]).toMatchObject({
-      desdeTipo: "Paquetería larga",
+      desdeTipo: "Tabla",
       haciaTipo: "Comercial",
       etiqueta: "GTF-9",
     });
     expect(imp[0].m3).toBeGreaterThan(0);
     expect(imp[0].piezas).toBeGreaterThan(0);
-    expect(imp[0].porque).toMatch(/no agranda/);
+    expect(imp[0].porque).toMatch(/producto terminado/);
   });
 
   it("un reproceso posible sigue siendo sugerencia, no advertencia", () => {
@@ -265,10 +301,10 @@ describe("sólo lo que la sierra puede hacer (ADR-407)", () => {
 
   it("la cuenta del producto CIERRA con lo imposible incluido", () => {
     /* Un bloque de paquetería larga que ampara las tres cosas: su mismo tipo,
-       paquetería corta (reproceso válido) y comercial (imposible). Sin el
-       renglón de lo imposible, «sale + mismo tipo» no llega a lo amparado y se
-       lee como un descuadre inventado. */
-    const mezcla: PiezaCubicada[] = [pieza("m1", 10), piezaCorta("m2", 10), piezaComercial("m3", 10)];
+       paquetería corta (reproceso válido) y «Otro» (imposible: no es un
+       producto del Libro). Sin el renglón de lo imposible, «sale + mismo tipo»
+       no llega a lo amparado y se lee como un descuadre inventado. */
+    const mezcla: PiezaCubicada[] = [pieza("m1", 10), piezaCorta("m2", 10), piezaOtro("m3", 10)];
     const paq = bloque({ id: "r5", m3: 6, tipoProducto: "Paquetería larga" });
     const d = distribuirPorCapacidad([paq], mezcla, "tipo");
     const imp = amparosImposibles(d);

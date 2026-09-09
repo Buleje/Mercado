@@ -7,7 +7,11 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { anexosPorPermiso, filasDelAnexo } from "@/lib/forestal/anexo-por-permiso";
+import {
+  anexosPorPermiso,
+  filasDelAnexo,
+  resumenPorEspecieTipo,
+} from "@/lib/forestal/anexo-por-permiso";
 import { etiquetaSinRecorte } from "@/lib/forestal/reparto-anexo";
 import { distribuirPorCapacidad, type BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
@@ -104,5 +108,52 @@ describe("etiquetaSinRecorte — la etiqueta es del bloque, no del filtro", () =
     expect(etiquetaSinRecorte("GTF-0231")).toBe("GTF-0231");
     /* Un paréntesis que no es el recorte se respeta: no se adivina qué sobra. */
     expect(etiquetaSinRecorte("Lote 15-2026 (reproceso)")).toBe("Lote 15-2026 (reproceso)");
+  });
+});
+
+describe("resumenPorEspecieTipo — qué sale de este permiso", () => {
+  /* 40 piezas 2×8×10 (comercial) + 10 piezas 6×6×10 (paquetería larga). */
+  const anexoDe = (m3: number) =>
+    anexosPorPermiso(distribuirPorCapacidad([bloque({ id: "r1", permiso: "P-7", m3 })], PIEZAS, "tipo"))[0];
+
+  it("junta las medidas de un tipo en UNA línea y cierra contra el total", () => {
+    const anexo = anexoDe(4);
+    const r = resumenPorEspecieTipo(anexo);
+    /* Una línea por especie × tipo, no una por medida. */
+    expect(r.length).toBeLessThan(filasDelAnexo(anexo).length + 1);
+    expect(new Set(r.map((x) => x.clave)).size).toBe(r.length);
+    const suma = r.reduce((a, x) => a + x.m3, 0);
+    expect(Math.abs(suma - anexo.totalM3)).toBeLessThanOrEqual(0.001);
+    expect(r.reduce((a, x) => a + x.piezas, 0)).toBe(anexo.totalPiezas);
+    expect(Math.abs(r.reduce((a, x) => a + x.pieTablar, 0) - anexo.totalPt)).toBeLessThanOrEqual(0.05);
+  });
+
+  it("dice piezas, pie tablar y m³ de cada tipo — los tres, como se declara", () => {
+    const r = resumenPorEspecieTipo(anexoDe(4));
+    for (const linea of r) {
+      expect(linea.piezas).toBeGreaterThan(0);
+      expect(linea.pieTablar).toBeGreaterThan(0);
+      expect(linea.m3).toBeGreaterThan(0);
+      expect(linea.medidas).toBeGreaterThan(0);
+      expect(linea.especie).toBe("Tornillo");
+    }
+  });
+
+  it("los porcentajes son del anexo y suman 100", () => {
+    const r = resumenPorEspecieTipo(anexoDe(4));
+    expect(Math.abs(r.reduce((a, x) => a + x.pctM3, 0) - 100)).toBeLessThanOrEqual(0.2);
+  });
+
+  it("el comercial va primero: el orden es el canónico, no el del volumen", () => {
+    const r = resumenPorEspecieTipo(anexoDe(4));
+    const tipos = r.map((x) => x.tipo);
+    if (tipos.includes("Comercial") && tipos.includes("Paquetería larga")) {
+      expect(tipos.indexOf("Comercial")).toBeLessThan(tipos.indexOf("Paquetería larga"));
+    }
+  });
+
+  it("un anexo vacío no inventa porcentajes", () => {
+    const vacio = anexosPorPermiso(distribuirPorCapacidad([], PIEZAS, "tipo"));
+    expect(vacio).toEqual([]);
   });
 });

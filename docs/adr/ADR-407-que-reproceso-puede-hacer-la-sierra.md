@@ -13,12 +13,15 @@ ofrecía «reprocesá paquetería en comercial». En el patio eso no existe — 
 sierra recorta, no agranda —, y declararlo sería afirmar ante SERFOR una
 transformación que la máquina no puede hacer.
 
-Brandon lo dictó el 2026-09-09 sobre la pantalla:
+Brandon lo dictó el 2026-09-09 sobre la pantalla, en dos pasos. Primero:
 
 > «de comercial para reprocesar a paquetería, corta, larga angosta se pueda
-> poner con la cantidad aumentada pero el volumen menos […] pero de paquetería a
-> comercial no se pueda, ni paquetería a corta ni tabla; pero sí paquetería
-> larga a paquetería corta eso sí se pueda».
+> poner con la cantidad aumentada pero el volumen menos».
+
+Y al ver la primera versión funcionando, se corrigió el mismo día:
+
+> «me equivoqué, ponele que sí se pueda de la paquetería poder reprocesar a
+> comercial, tabla, larga angosta, corta y paquetería larga y corta».
 
 ## Decisión
 
@@ -26,19 +29,23 @@ Brandon lo dictó el 2026-09-09 sobre la pantalla:
 
 | De ↓ · a → | Comercial | Paq. larga | Paq. corta | Tabla | L. angosta | Corta |
 |---|---|---|---|---|---|---|
-| **Comercial**  | — | ✅ | ✅ | ✖ | ✅ | ✅ |
-| **Paq. larga** | ✖ | — | ✅ | ✖ | ✖ | ✖ |
-| **Paq. corta** | ✖ | ✖ | — | ✖ | ✖ | ✖ |
+| **Comercial**  | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Paq. larga** | ✅ | — | ✅ | ✅ | ✅ | ✅ |
+| **Paq. corta** | ✅ | ✅ | — | ✅ | ✅ | ✅ |
 | **Tabla**      | ✖ | ✖ | ✖ | — | ✖ | ✖ |
 | **L. angosta** | ✖ | ✖ | ✖ | ✖ | — | ✖ |
 | **Corta**      | ✖ | ✖ | ✖ | ✖ | ✖ | — |
 
-En una frase: **la comercial es la madera de la que sale todo lo demás** y **la
-paquetería sólo se recorta de largo**. Nada vuelve a comercial, a tabla ni a
-«Otro» (que además no es un producto del Libro).
+En una frase: **los dos productos de sección plena —comercial y paquetería— son
+origen de cualquier otro tipo**; **tabla, larga angosta y corta no son origen de
+nada**: ya salieron de la sierra. Y nadie se reprocesa en «Otro», que no es un
+producto del Libro.
 
-Lo que la regla no dice se prohíbe: una sugerencia de más manda madera a la
-sierra sin necesidad y ensucia el papel; una de menos sólo no aparece.
+Queda anotada una pregunta abierta: de una pieza **corta** salen tipos que se
+definen por ser **largos** (comercial, tabla, larga angosta, paquetería larga) y
+la sierra no alarga una pieza. Se deja como Brandon lo pidió —él conoce el
+patio— pero está marcado en el código para preguntarlo, no para corregirlo por
+cuenta propia.
 
 **2. Lo que un bloque ampara sin poder darlo deja de ser «reproceso a declarar»
 y pasa a ser un respaldo imposible** (`amparosImposibles`). No es lo mismo:
@@ -76,9 +83,13 @@ corrigió una vez (`quedaM3 = origenM3 − amparadoM3`).
 - **Derivar la regla de las medidas** (permitir sólo lo que quepa dentro de la
   pieza de origen): la comercial de 2×8 no da un 6×6 y sin embargo Brandon la
   quiere como origen de paquetería — el criterio del patio es comercial, no
-  geométrico. Una regla derivada habría contradicho al dueño del negocio.
+  geométrico. Una regla derivada habría contradicho al dueño del negocio, y de
+  hecho la primera versión de la matriz —más estricta— él mismo la aflojó a las
+  horas.
 - **Seguir sugiriendo todo y marcar en amarillo lo imposible**: una lista que
   ofrece cosas que no se pueden hacer enseña a ignorar la lista entera (la
   lección de los siete rojos falsos del importador CTP).
-- **Permitir comercial → tabla** por ser el reaserrado más clásico: Brandon no
-  lo nombró. Queda como pregunta abierta, a una fila de distancia.
+- **Dejar la primera matriz** (paquetería sólo se recorta de largo): duró unas
+  horas. La lección para la próxima regla de negocio de este tipo es mostrarla
+  funcionando rápido y barata de cambiar —una fila del mapa— antes que
+  discutirla en abstracto.

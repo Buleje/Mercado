@@ -10,23 +10,34 @@
  *
  * ## La regla, como la dictó Brandon
  *
- * > «de comercial para reprocesar a paquetería, corta, larga angosta se pueda
- * > poner con la cantidad aumentada pero el volumen menos […] pero de
- * > paquetería a comercial no se pueda, ni paquetería a corta ni tabla; pero sí
- * > paquetería larga a paquetería corta eso sí se pueda».
+ * Primero (2026-09-09, mañana):
  *
- * En una frase: **la comercial es la madera de la que sale todo lo demás**, y
- * **la paquetería sólo se recorta de largo** (larga → corta). Nada vuelve a
- * comercial, a tabla ni a «Otro».
+ * > «de comercial para reprocesar a paquetería, corta, larga angosta se pueda
+ * > poner con la cantidad aumentada pero el volumen menos».
+ *
+ * Y después se corrigió a sí mismo sobre la pantalla, el mismo día:
+ *
+ * > «me equivoqué, ponele que sí se pueda de la paquetería poder reprocesar a
+ * > comercial, tabla, larga angosta, corta y paquetería larga y corta».
+ *
+ * Así que los dos productos de sección plena —**comercial** y **paquetería**—
+ * son origen de cualquier otro tipo. Los productos terminados (tabla, larga
+ * angosta, corta) no son origen de nada: lo que sale de ellos ya salió.
  *
  * | De ↓ · a → | Comercial | Paq. larga | Paq. corta | Tabla | L. angosta | Corta |
  * |---|---|---|---|---|---|---|
- * | **Comercial**   | — | ✅ | ✅ | ✖ | ✅ | ✅ |
- * | **Paq. larga**  | ✖ | — | ✅ | ✖ | ✖ | ✖ |
- * | **Paq. corta**  | ✖ | ✖ | — | ✖ | ✖ | ✖ |
+ * | **Comercial**   | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+ * | **Paq. larga**  | ✅ | — | ✅ | ✅ | ✅ | ✅ |
+ * | **Paq. corta**  | ✅ | ✅ | — | ✅ | ✅ | ✅ |
  * | **Tabla**       | ✖ | ✖ | ✖ | — | ✖ | ✖ |
  * | **L. angosta**  | ✖ | ✖ | ✖ | ✖ | — | ✖ |
  * | **Corta**       | ✖ | ✖ | ✖ | ✖ | ✖ | — |
+ *
+ * ⚠️ Queda una pregunta abierta que Brandon todavía no respondió: de una pieza
+ * **corta** (largo < 6') salen tipos que se definen por ser **largos**
+ * (comercial, tabla, larga angosta, paquetería larga). La sierra no alarga una
+ * tabla. Se deja como él lo pidió —él conoce el patio— pero está anotado acá
+ * para preguntarlo, no para "arreglarlo" por cuenta propia.
  *
  * Lo que la regla NO dice se prohíbe: una sugerencia de más manda madera a la
  * sierra sin necesidad y ensucia el papel; una de menos sólo no aparece.
@@ -38,7 +49,7 @@
  * PURO y client-safe: sólo strings.
  */
 
-import type { TipoComercial } from "./cubicacion-tipo";
+import { ORDEN_TIPO, type TipoComercial } from "./cubicacion-tipo";
 
 /** Sin tildes, sin mayúsculas: «Paquetería larga» y «PAQUETERIA LARGA» son lo mismo. */
 const norm = (v: string) =>
@@ -54,12 +65,11 @@ const norm = (v: string) =>
  * muestra.
  */
 export const SALIDAS_DE_REPROCESO: Readonly<Record<string, readonly TipoComercial[]>> = {
-  /* La comercial es sección plena y larga: de ahí sale lo que se necesite. */
-  comercial: ["Paquetería larga", "Paquetería corta", "Larga angosta", "Corta"],
-  /* La paquetería es 6×6 vendida como tal: sólo se recorta de largo. */
-  "paqueteria larga": ["Paquetería corta"],
-  /* Final de su línea. */
-  "paqueteria corta": [],
+  /* Los dos de sección plena son origen de cualquier otro tipo. */
+  comercial: ["Paquetería larga", "Paquetería corta", "Tabla", "Larga angosta", "Corta"],
+  "paqueteria larga": ["Comercial", "Paquetería corta", "Tabla", "Larga angosta", "Corta"],
+  "paqueteria corta": ["Comercial", "Paquetería larga", "Tabla", "Larga angosta", "Corta"],
+  /* Productos terminados: de acá no sale nada más. */
   tabla: [],
   "larga angosta": [],
   corta: [],
@@ -107,19 +117,16 @@ export function porQueNoSePuede(
   if (h === "otro") {
     return "«Otro» no es un producto del Libro: corregí la medida o el tipo de esas piezas antes de ampararlas.";
   }
-  if (h === "comercial") {
-    return `La comercial es la escuadría más grande: no sale de ${De} — la sierra recorta, no agranda.`;
+  if (salidasDeReproceso(d).length === 0) {
+    return `De ${De} no sale ${A}: es un producto terminado, no un origen de reproceso.`;
   }
-  if (d === "paqueteria larga") {
-    return `La paquetería sólo se recorta de largo: de ${De} sale paquetería corta y nada más.`;
-  }
-  if (d === "paqueteria corta") {
-    return `La paquetería corta ya es el final de su línea: no se convierte en ${A}.`;
-  }
-  if (d === "comercial") {
-    return `De comercial no se declara ${A}: la conversión no está entre las que hace el aserradero.`;
-  }
-  return `De ${De} no sale ${A}: es un producto terminado, no un origen de reproceso.`;
+  return `De ${De} no se declara ${A}: la conversión no está entre las que hace el aserradero.`;
+}
+
+/** «a, b y c» — para que la frase de ayuda se lea como la diría una persona. */
+function lista(xs: readonly string[]): string {
+  if (xs.length <= 1) return xs[0] ?? "";
+  return `${xs.slice(0, -1).join(", ")} y ${xs[xs.length - 1]}`;
 }
 
 /**
@@ -127,11 +134,27 @@ export function porQueNoSePuede(
  * mano— así no se puede desincronizar de lo que el cálculo aplica.
  */
 export const FRASE_REGLA = (() => {
-  const partes = Object.entries(SALIDAS_DE_REPROCESO)
-    .filter(([, salidas]) => salidas.length > 0)
-    .map(([desde, salidas]) => {
-      const nombre = desde === "comercial" ? "comercial" : desde.replace("paqueteria", "paquetería");
-      return `de ${nombre} sale ${salidas.map((s) => s.toLowerCase()).join(", ")}`;
-    });
-  return `${partes.join("; ")}. Nada vuelve a comercial ni a tabla: la sierra recorta, no agranda.`;
+  const nombre = (k: string) => k.replace("paqueteria", "paquetería");
+  /* Un origen que puede dar TODOS los demás tipos no se enumera: la lista
+     completa cinco veces es ilegible y dice lo mismo que «cualquier otro». */
+  const universales: string[] = [];
+  const puntuales: string[] = [];
+  const terminados: string[] = [];
+  for (const [desde, salidas] of Object.entries(SALIDAS_DE_REPROCESO)) {
+    if (desde === "otro") continue;
+    if (salidas.length === 0) {
+      terminados.push(nombre(desde));
+      continue;
+    }
+    const otros = ORDEN_TIPO.filter((t) => t !== "Otro" && norm(t) !== desde);
+    if (otros.every((t) => salidas.some((sa) => norm(sa) === norm(t)))) universales.push(nombre(desde));
+    else puntuales.push(`de ${nombre(desde)} sale ${lista(salidas.map((sa) => sa.toLowerCase()))}`);
+  }
+  const partes: string[] = [];
+  if (universales.length > 0) partes.push(`de ${lista(universales)} sale cualquier otro tipo`);
+  partes.push(...puntuales);
+  if (terminados.length > 0) {
+    partes.push(`de ${lista(terminados)} no sale nada: ya son producto terminado`);
+  }
+  return `${partes.join("; ")}.`;
 })();

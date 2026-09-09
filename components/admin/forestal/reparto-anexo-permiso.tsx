@@ -14,18 +14,38 @@
  *    sostiene, y eso se ve ANTES de imprimir.
  *  · **De qué bloques sale**: un anexo que junta cuatro guías tiene que poder
  *    decir cuáles, o no se puede reconstruir de dónde salió cada tabla.
+ *
+ * Y dos que pidió Brandon el 2026-09-09:
+ *  · **El resumen por especie y tipo**, arriba del detalle: «de tornillo salen X
+ *    m³ de comercial, en tantos PT y tantas piezas». El detalle por medida no
+ *    responde eso sin sumar veinte filas a ojo.
+ *  · **Ocultar las medidas queda guardado**: *«cuando voy a ocultar y voy a otra
+ *    pestaña y vuelvo, la tabla debe estar oculta»*. Se recuerda por tenant en
+ *    `localStorage`, como el resto de los plegados del cubicador.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, ChevronRight, FileText } from "@buleje/design-system/icons";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
-import { filasDelAnexo, type AnexoDePermiso } from "@/lib/forestal/anexo-por-permiso";
+import {
+  filasDelAnexo,
+  resumenPorEspecieTipo,
+  type AnexoDePermiso,
+} from "@/lib/forestal/anexo-por-permiso";
+import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 
 const TH =
   "px-2 py-1 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
 const TD = "px-2 py-1.5 text-sm text-[var(--text-secondary)]";
 const NUM = `${TD} text-right font-mono tabular-nums`;
+
+/**
+ * Dónde se recuerda que el detalle está plegado. Sufijo del lote del cubicador,
+ * igual que el resto de los derivados (`-rolliza`, `-meta`): así el ajuste vive
+ * por tenant y no se mezcla entre negocios.
+ */
+const CLAVE_MEDIDAS = () => slugKey("-anexo-permiso-medidas");
 
 export default function AnexoPorPermiso({
   anexos,
@@ -39,11 +59,33 @@ export default function AnexoPorPermiso({
   /** La tabla del detalle se puede plegar: son tantas filas como medidas, y
    *  muchas veces sólo se quiere el total o abrir el papel (Brandon). */
   const [abierta, setAbierta] = useState(true);
+  /* Se hidrata en un efecto y no en el initializer: este árbol se monta dentro
+     del panel (client), pero leer `localStorage` durante el primer render es
+     lo que rompe si algún día esta pantalla se renderiza en el server. */
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(CLAVE_MEDIDAS()) === "0") setAbierta(false);
+    } catch {
+      /* modo privado: se queda abierta, que es el default */
+    }
+  }, []);
+  const alternarMedidas = () =>
+    setAbierta((v) => {
+      const next = !v;
+      try {
+        localStorage.setItem(CLAVE_MEDIDAS(), next ? "1" : "0");
+      } catch {
+        /* quota / modo privado: el plegado vale para esta sesión */
+      }
+      return next;
+    });
   const actual = useMemo(
     () => anexos.find((a) => (a.permiso ?? " sin") === (elegido ?? anexos[0]?.permiso ?? " sin")) ?? anexos[0],
     [anexos, elegido],
   );
   const filas = useMemo(() => (actual ? filasDelAnexo(actual) : []), [actual]);
+  /** Qué sale de cada especie y tipo — la lectura de negocio del permiso. */
+  const resumen = useMemo(() => (actual ? resumenPorEspecieTipo(actual) : []), [actual]);
 
   if (anexos.length === 0) return null;
 
@@ -96,7 +138,7 @@ export default function AnexoPorPermiso({
             </span>
             <button
               type="button"
-              onClick={() => setAbierta((v) => !v)}
+              onClick={alternarMedidas}
               aria-expanded={abierta}
               className="ml-auto inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
             >
@@ -145,6 +187,68 @@ export default function AnexoPorPermiso({
               </>
             )}
           </p>
+
+          {/* Qué sale de cada especie y tipo — la lectura de negocio del
+              permiso, arriba del detalle por medida. No se pliega: es el
+              resumen, y son pocas filas (tipos × especies del permiso). */}
+          {resumen.length > 0 && (
+            <div className="overflow-x-auto px-3 pb-2">
+              <p className="px-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Resumen por especie y tipo{" "}
+                <span className="font-normal normal-case tracking-normal">
+                  · qué sale de este permiso
+                </span>
+              </p>
+              <table className="mt-1 w-full">
+                <thead>
+                  <tr className="border-b border-[var(--rule-soft)]">
+                    <th className={TH}>Especie</th>
+                    <th className={TH}>Tipo</th>
+                    <th className={`${TH} text-right`}>Piezas</th>
+                    <th className={`${TH} text-right`}>Pie tablar</th>
+                    <th className={`${TH} text-right`}>m³</th>
+                    <th className={`${TH} text-right`}>% del anexo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resumen.map((r) => (
+                    <tr key={r.clave} className="border-b border-[var(--rule-soft)] last:border-0">
+                      <td className={TD}>{r.especie}</td>
+                      <td className={TD}>
+                        <span className="font-bold text-[var(--text-primary)]">{r.tipo}</span>{" "}
+                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                          · {r.medidas} {r.medidas === 1 ? "medida" : "medidas"}
+                        </span>
+                      </td>
+                      <td className={NUM}>{fmtPiezas(r.piezas)}</td>
+                      <td className={NUM}>{fmtPt(r.pieTablar)}</td>
+                      <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(r.m3)}</td>
+                      <td className={`${NUM} text-[var(--text-tertiary)]`}>
+                        {r.pctM3.toLocaleString("es-PE", { maximumFractionDigits: 1 })} %
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-[var(--rule-base)]">
+                    <td className={`${TD} font-bold text-[var(--text-primary)]`} colSpan={2}>
+                      Total del permiso
+                    </td>
+                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                      {fmtPiezas(actual.totalPiezas)}
+                    </td>
+                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                      {fmtPt(actual.totalPt)}
+                    </td>
+                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                      {fmtM3(actual.totalM3)}
+                    </td>
+                    <td className={`${NUM} text-[var(--text-tertiary)]`}>100 %</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
 
           {abierta && (
           <div className="overflow-x-auto px-3 pb-3">

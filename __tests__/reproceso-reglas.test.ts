@@ -1,11 +1,11 @@
 /**
  * La matriz de lo que la sierra puede hacer (ADR-407).
  *
- * Lo que se protege acá es la regla que Brandon dictó el 2026-09-09: de
- * comercial sale paquetería, larga angosta y corta; de paquetería larga sale
- * paquetería corta; **nada vuelve a comercial ni a tabla**. Una conversión de
- * más no es una sugerencia de más: es una transformación imposible declarada
- * ante SERFOR.
+ * La regla, como Brandon la dejó el 2026-09-09 después de corregirse: los dos
+ * productos de sección plena —**comercial** y **paquetería**— son origen de
+ * cualquier otro tipo; **tabla, larga angosta y corta no son origen de nada**,
+ * ya son producto terminado. Ofrecer un origen que no puede dar el destino es
+ * hacer declarar ante SERFOR una transformación que la máquina no hace.
  */
 
 import { describe, expect, it } from "vitest";
@@ -22,27 +22,42 @@ describe("lo que SÍ se puede", () => {
   it.each([
     ["Comercial", "Paquetería larga"],
     ["Comercial", "Paquetería corta"],
+    ["Comercial", "Tabla"],
     ["Comercial", "Larga angosta"],
     ["Comercial", "Corta"],
     ["Paquetería larga", "Paquetería corta"],
+    ["Paquetería larga", "Comercial"],
+    ["Paquetería larga", "Tabla"],
+    ["Paquetería larga", "Larga angosta"],
+    ["Paquetería larga", "Corta"],
+    ["Paquetería corta", "Comercial"],
+    ["Paquetería corta", "Paquetería larga"],
+    ["Paquetería corta", "Corta"],
   ])("de %s sale %s", (desde, hacia) => {
     expect(puedeReprocesarse(desde, hacia)).toBe(true);
     expect(porQueNoSePuede(desde, hacia)).toBeNull();
+  });
+
+  it("comercial y paquetería dan CUALQUIER otro tipo del catálogo", () => {
+    for (const desde of ["Comercial", "Paquetería larga", "Paquetería corta"]) {
+      for (const hacia of ORDEN_TIPO) {
+        if (hacia === "Otro" || hacia === desde) continue;
+        expect([desde, hacia, puedeReprocesarse(desde, hacia)]).toEqual([desde, hacia, true]);
+      }
+    }
   });
 });
 
 describe("lo que NO se puede", () => {
   it.each([
-    ["Paquetería larga", "Comercial"],
-    ["Paquetería corta", "Comercial"],
     ["Tabla", "Comercial"],
+    ["Tabla", "Corta"],
     ["Corta", "Comercial"],
+    ["Corta", "Paquetería larga"],
     ["Larga angosta", "Comercial"],
-    ["Paquetería larga", "Corta"],
-    ["Paquetería larga", "Tabla"],
-    ["Paquetería corta", "Corta"],
-    ["Paquetería corta", "Paquetería larga"],
+    ["Larga angosta", "Corta"],
     ["Comercial", "Otro"],
+    ["Paquetería larga", "Otro"],
   ])("de %s no sale %s", (desde, hacia) => {
     expect(puedeReprocesarse(desde, hacia)).toBe(false);
     /* Y siempre dice POR QUÉ: una fila que desaparece sin explicación se lee
@@ -50,16 +65,15 @@ describe("lo que NO se puede", () => {
     expect(porQueNoSePuede(desde, hacia)).toBeTruthy();
   });
 
-  it("ningún tipo vuelve a comercial: la sierra recorta, no agranda", () => {
-    for (const t of ORDEN_TIPO) {
-      expect(puedeReprocesarse(t, "Comercial")).toBe(false);
+  it("un producto terminado no es origen de nada", () => {
+    for (const desde of ["Tabla", "Larga angosta", "Corta", "Otro"]) {
+      expect(salidasDeReproceso(desde)).toEqual([]);
+      for (const hacia of ORDEN_TIPO) expect(puedeReprocesarse(desde, hacia)).toBe(false);
     }
   });
 
-  it("nadie produce tabla por reproceso", () => {
-    for (const t of ORDEN_TIPO) {
-      expect(puedeReprocesarse(t, "Tabla")).toBe(false);
-    }
+  it("nadie se reprocesa en «Otro»: no es un producto del Libro", () => {
+    for (const t of ORDEN_TIPO) expect(puedeReprocesarse(t, "Otro")).toBe(false);
   });
 });
 
@@ -96,11 +110,12 @@ describe("bordes", () => {
 });
 
 describe("la frase que se muestra sale del mapa, no de la mano", () => {
-  it("nombra las conversiones vivas y ninguna muerta", () => {
+  it("nombra los orígenes vivos y dice cuáles no lo son", () => {
+    expect(FRASE_REGLA).toContain("comercial");
     expect(FRASE_REGLA).toContain("paquetería larga");
-    expect(FRASE_REGLA).toContain("larga angosta");
-    expect(FRASE_REGLA).toMatch(/no agranda/);
-    /* Los tipos sin salidas no aparecen como origen. */
+    expect(FRASE_REGLA).toMatch(/cualquier otro tipo/);
+    expect(FRASE_REGLA).toMatch(/producto terminado/);
+    /* Los tipos sin salidas no aparecen como origen de nada. */
     expect(FRASE_REGLA).not.toMatch(/de tabla sale/i);
   });
 });
