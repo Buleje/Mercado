@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Boxes, CheckCircle2, Download, Layers, PackageOpen, RefreshCw, RotateCcw, Ruler, Search, TreePine, Truck } from "@buleje/design-system/icons";
+import { Boxes, CheckCircle2, Download, Layers, PackageOpen, Pencil, RefreshCw, RotateCcw, Ruler, Search, TreePine, Truck } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
@@ -26,6 +26,7 @@ import CtpReprocesoModal from "./CtpReprocesoModal";
 import CtpCubicarProductoModal from "./CtpCubicarProductoModal";
 import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
 import CtpMarcarUsadoModal from "./CtpMarcarUsadoModal";
+import CtpCompletarLineaModal, { type LineaCompletable } from "./CtpCompletarLineaModal";
 import CtpBarraSeleccion from "./ctp-barra-seleccion";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { uidDeFila } from "@/lib/forestal/despacho-lista";
@@ -161,6 +162,8 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
    * misma que dibuja la fila, así que tildar y mirar hablan de lo mismo.
    */
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  /** La corrida cuyos huecos se están rellenando (ADR-401 §1.2). */
+  const [completar, setCompletar] = useState<LineaCompletable | null>(null);
   /** El modal abierto para cubicar TODO lo tildado. */
   const [cubicarConjunto, setCubicarConjunto] = useState(false);
   /** La guía de despacho abierta con lo tildado ya cargado (`presetUids`). */
@@ -675,6 +678,34 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                */}
               <td className="px-3 py-2">
                 <div className="flex items-center justify-end gap-1">
+                  {/* Rellenar lo que quedó en blanco. Va primero porque es lo
+                      que se hace ANTES de cubicar o despachar: un producto sin
+                      presentación ni especie no se busca en la pila. */}
+                  <IconAction
+                    icon={Pencil}
+                    tone="muted"
+                    onClick={() =>
+                      setCompletar({
+                        id: c.id,
+                        lineNo: c.lineNo,
+                        fecha: c.fecha,
+                        observations: c.observations,
+                        presentacion: c.presentacion,
+                        materiaPrimaRef: null,
+                        speciesCommon: c.especie,
+                        speciesScientific: null,
+                        productType: c.producto,
+                        /* El saldo despachado/reprocesado es lo que la pantalla
+                           ya sabe de las ataduras: alcanza para avisar antes de
+                           abrir. El servidor vuelve a decidir con la verdad. */
+                        atadaPorque:
+                          c.despachado > 0 ? "ya tiene madera despachada"
+                          : c.reprocesado > 0 ? "ya alimentó un reproceso"
+                          : null,
+                      })
+                    }
+                    label="Completar los campos que quedaron en blanco"
+                  />
                   <IconAction
                     icon={PackageOpen}
                     tone="muted"
@@ -780,6 +811,14 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
           filas={elegidas}
           onClose={() => setCubicarConjunto(false)}
           onGuardada={(msg) => { setCubicarConjunto(false); setSeleccion(new Set()); setNota(msg); }}
+        />
+      )}
+
+      {completar && (
+        <CtpCompletarLineaModal
+          linea={completar}
+          onCerrar={() => setCompletar(null)}
+          onListo={() => { invalidarCtp(); void recargar(); }}
         />
       )}
 

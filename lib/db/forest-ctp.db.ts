@@ -103,6 +103,39 @@ function especieDeProductLabel(label: string): string {
   return i >= 0 ? label.slice(i + 3).trim() : "";
 }
 
+/**
+ * Los campos de una corrida que se pueden COMPLETAR cuando están vacíos
+ * (ADR-401 §1.2). Ni `quantity` ni `volumeInputM3` ni `unit` ni `entryDate`:
+ * ponerles un valor mueve saldos e invariantes, y para eso está
+ * `declarar_produccion`, que es otra puerta con otras reglas.
+ */
+export const CAMPOS_COMPLETABLES = [
+  "observations",
+  "presentacion",
+  "materiaPrimaRef",
+  "speciesCommon",
+  "speciesScientific",
+  "productType",
+] as const;
+export type CampoCompletable = (typeof CAMPOS_COMPLETABLES)[number];
+
+/** Los que definen QUÉ se produjo: no se tocan si algo depende del asiento. */
+const CAMPOS_DEL_REGISTRO: readonly CampoCompletable[] = [
+  "speciesCommon",
+  "speciesScientific",
+  "productType",
+];
+
+/** Cómo se llama cada campo en el detalle de auditoría, en el idioma del libro. */
+const ETIQUETA_CAMPO: Record<CampoCompletable, string> = {
+  observations: "observaciones",
+  presentacion: "presentación",
+  materiaPrimaRef: "referencia de materia prima",
+  speciesCommon: "especie",
+  speciesScientific: "especie científica",
+  productType: "producto",
+};
+
 export interface SpeciesBalance {
   especie: string;
   scientific: string | null;
@@ -1600,6 +1633,120 @@ export class ForestCtpDB {
     } catch {}
     return actualizada;
   }
+
+  /**
+   * Completar los campos VACÍOS de una corrida (ADR-401 §1.2).
+   *
+   * No es «editar»: es llenar un hueco. Un asiento que decía `presentacion:
+   * null` y pasa a decir «Paquete 2×8» no contradice nada de lo que el libro
+   * afirmó — agrega lo que faltaba. Por eso esta puerta existe y la de
+   * sobrescribir un valor ya escrito, no: **un campo con dato NO se toca acá**,
+   * aunque venga en el payload. Se ignora en silencio del lado del dato y se
+   * dice en la respuesta.
+   *
+   * Dos niveles, como el ADR:
+   *  · Descriptivos (`observations`, `presentacion`, `materiaPrimaRef`) — se
+   *    completan con el período abierto, aunque la corrida ya se haya usado.
+   *  · Del registro (`speciesCommon`, `speciesScientific`, `productType`) —
+   *    sólo si NADA depende del asiento: sin despachos que lo citen, sin
+   *    reproceso, sin lote, y no anulado.
+   *
+   * `quantity`, `volumeInputM3`, `unit` y `entryDate` quedan afuera: aunque
+   * estén vacíos, ponerles un número mueve saldos e invariantes — eso es
+   * declarar producción (`declarar_produccion`), que ya tiene su propia puerta
+   * con sus propias reglas.
+   */
+  static async completarLinea(
+    tenantId: string,
+    id: string,
+    campos: Partial<Record<CampoCompletable, string>>,
+    user = "unknown",
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (!id) throw new Error("id is required");
+
+    const actual = await prisma.forestCtpEntry.findFirst({
+      where: { id, tenantId, deletedAt: null },
+      select: {
+        id: true, lineNo: true, section: true, status: true, entryDate: true,
+        observations: true, presentacion: true, materiaPrimaRef: true,
+        speciesCommon: true, speciesScientific: true, productType: true,
+      },
+    });
+    if (!actual) throw new CtpInvariantError("Esa línea no existe.", "LOTE_NO_ENCONTRADO");
+    if (actual.status !== "registrado") {
+      throw new CtpInvariantError(
+        `Una línea ${actual.status} no se completa: registrala de nuevo.`,
+        "ESTADO_NO_EDITABLE",
+        { status: actual.status },
+      );
+    }
+    const cerrado = await ForestCtpCierreDB.closedPeriodOf(tenantId, actual.entryDate);
+    if (cerrado) {
+      throw new CtpInvariantError(
+        `El período ${cerrado.label} está cerrado: no se completan líneas de un mes cerrado. Reabrí el período para corregir.`,
+        "PERIODO_CERRADO",
+        { periodKey: cerrado.periodKey },
+      );
+    }
+
+    /* ¿Algo depende de este asiento? Decide si los campos del REGISTRO se
+       pueden tocar. Se cuenta en paralelo: son tres lecturas chicas por id. */
+    const [despachos, reprocesos, enLote] = await Promise.all([
+      prisma.forestCtpDespachoOrigen.count({ where: { tenantId, produccionEntryId: id } }),
+      prisma.forestCtpReproceso.count({ where: { tenantId, origenEntryId: id } }),
+      prisma.forestProdLoteMiembro.count({ where: { tenantId, produccionEntryId: id } }),
+    ]);
+    const atado =
+      despachos > 0 ? "ya tiene despachos que la citan como origen"
+      : reprocesos > 0 ? "ya alimentó un reproceso"
+      : enLote > 0 ? "es miembro de un lote de producción"
+      : null;
+
+    const vacio = (v: string | null | undefined) => v == null || v.trim() === "";
+    const aplicados: string[] = [];
+    const omitidos: { campo: string; motivo: string }[] = [];
+    const data: Record<string, string> = {};
+
+    for (const [campo, bruto] of Object.entries(campos) as [CampoCompletable, string][]) {
+      const valor = (bruto ?? "").trim();
+      if (!valor) continue;
+      const previo = actual[campo] as string | null;
+      if (!vacio(previo)) {
+        omitidos.push({ campo, motivo: `ya dice «${previo}»` });
+        continue;
+      }
+      if (CAMPOS_DEL_REGISTRO.includes(campo) && atado) {
+        omitidos.push({ campo, motivo: `la corrida ${atado}` });
+        continue;
+      }
+      data[campo] = valor;
+      aplicados.push(`${ETIQUETA_CAMPO[campo]} → ${valor}`);
+    }
+
+    if (aplicados.length === 0) {
+      return { ok: false as const, aplicados: [], omitidos };
+    }
+
+    await prisma.forestCtpEntry.update({ where: { id, tenantId }, data });
+    auditCtp({
+      tenantId,
+      action: "ctp_linea_completar",
+      entity: "ForestCtpEntry",
+      entityId: id,
+      /* Sólo los campos que estaban VACÍOS, con lo que se les puso: el «antes»
+         era la nada, así que el detalle no necesita narrarlo. */
+      detail:
+        `Completó campos vacíos de la línea N° ${actual.lineNo ?? "?"} · ${aplicados.join(" · ")}` +
+        (omitidos.length ? ` · sin tocar: ${omitidos.map((o) => `${o.campo} (${o.motivo})`).join(", ")}` : ""),
+      user,
+    });
+    try {
+      invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`);
+    } catch {}
+    return { ok: true as const, aplicados, omitidos };
+  }
+
 
   /**
    * Declara (o deshace) que una corrida es EXISTENCIA DE APERTURA (ADR-394):

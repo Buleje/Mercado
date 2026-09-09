@@ -145,6 +145,13 @@ export type CtpAuditAction =
   | "ctp_linea_create"
   /** Cerró una corrida abierta en el patio declarando qué salió (ADR-340). */
   | "ctp_linea_produccion_declarada"
+  /**
+   * Campos VACÍOS de una corrida rellenados (ADR-401 §1.2). Va aparte de un
+   * `update` porque no corrige nada: completa lo que el asiento nunca dijo, y
+   * un fiscalizador tiene que poder distinguir «acá siempre estuvo en blanco y
+   * se llenó» de «acá decía otra cosa».
+   */
+  | "ctp_linea_completar"
   | "ctp_linea_annul"
   | "ctp_linea_delete"
   /** Marcado a mano como "ya se usó": sale de Productos disponibles sin

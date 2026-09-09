@@ -208,6 +208,28 @@ const patchSchema = z.discriminatedUnion("action", [
     motivo: z.string().trim().max(500).optional(),
   }),
   /**
+   * Rellenar los campos VACÍOS de una corrida (ADR-401 §1.2). No sobrescribe:
+   * un campo que ya dice algo se ignora y la respuesta lo informa. Los límites
+   * de largo son los del schema; lo que decide si el campo se puede tocar es
+   * `completarLinea`, no esto.
+   */
+  z.object({
+    id: z.string().trim().min(1),
+    action: z.literal("completar_linea"),
+    campos: z
+      .object({
+        observations: z.string().trim().max(2000).optional(),
+        presentacion: z.string().trim().max(120).optional(),
+        materiaPrimaRef: z.string().trim().max(200).optional(),
+        speciesCommon: z.string().trim().max(120).optional(),
+        speciesScientific: z.string().trim().max(160).optional(),
+        productType: z.string().trim().max(120).optional(),
+      })
+      .refine((c) => Object.values(c).some((v) => (v ?? "").trim() !== ""), {
+        message: "Mandá al menos un campo con contenido.",
+      }),
+  }),
+  /**
    * Declara una corrida como EXISTENCIA DE APERTURA (ADR-394): madera anterior
    * al libro, sin nada que atar. No toca números; el certificado sigue
    * bloqueado. Reversible.
@@ -650,6 +672,15 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         user: auth.username ?? "unknown",
       });
       return NextResponse.json({ entry });
+    }
+    if (parsed.data.action === "completar_linea") {
+      const r = await ForestCtpDB.completarLinea(
+        auth.tenantId,
+        parsed.data.id,
+        parsed.data.campos,
+        auth.username ?? "unknown",
+      );
+      return NextResponse.json(r);
     }
     if (parsed.data.action === "marcar_usado") {
       const entry = await ForestCtpDB.marcarUsado(auth.tenantId, parsed.data.id, {
