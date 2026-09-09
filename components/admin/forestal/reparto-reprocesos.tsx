@@ -20,17 +20,26 @@
  * Las salidas van en dos grupos porque no se comportan igual:
  *  · **Ya está amparando** — se suman: el bloque respalda todo eso a la vez, y
  *    es lo que hay que declarar en el Libro.
- *  · **Podés cubrir con lo libre** — compiten: cada opción usaría la MISMA
- *    capacidad libre, así que se elige una. Sumarlas diría que con 0.7 m³ se
- *    tapan tres huecos.
+ *  · **Podés cubrir con lo libre** — se suman si entran juntas en la capacidad
+ *    libre («comercial 2.500 → paquetería larga 1.500 + larga angosta 0.800»,
+ *    Brandon 2026-09-09) y compiten sólo cuando la suma se pasa: ahí sí hay que
+ *    elegir una, porque usarían el mismo m³ dos veces.
+ *
+ * Y sólo se ofrecen las conversiones que la sierra puede hacer (ADR-407): de
+ * comercial sale paquetería, larga angosta y corta; de paquetería larga sale
+ * paquetería corta. Lo que un bloque ampara sin poder darlo no se ofrece
+ * declarar — se avisa arriba, en rojo: no es un reproceso pendiente, es un
+ * respaldo que hay que corregir antes del papel.
  *
  * Es una SUGERENCIA, no un movimiento: acá no se registra nada en el Libro.
  */
 
 import { useState } from "react";
-import { ChevronRight, Info, RefreshCw } from "@buleje/design-system/icons";
+import { AlertTriangle, ChevronRight, Info, RefreshCw } from "@buleje/design-system/icons";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { FRASE_REGLA } from "@/lib/forestal/reproceso-reglas";
 import type {
+  AmparoImposible,
   CuadreDeDistribucion,
   DestinoDeReproceso,
   GrupoDeReproceso,
@@ -50,14 +59,16 @@ function TablaSalidas({
   destinos,
   totalM3,
   totalPiezas,
+  totalLabel = "Total que sale",
   tono,
 }: {
   titulo: string;
   ayuda: string;
   destinos: DestinoDeReproceso[];
-  /** `null` = este grupo NO se suma (las opciones compiten entre sí). */
+  /** `null` = este grupo NO se suma (las opciones no entran juntas: compiten). */
   totalM3: number | null;
   totalPiezas: number | null;
+  totalLabel?: string;
   tono: "amparado" | "opcion";
 }) {
   const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
@@ -158,7 +169,7 @@ function TablaSalidas({
         {totalM3 != null && (
           <tfoot>
             <tr className="border-t-2 border-[var(--rule-base)]">
-              <td className={`${TD} font-bold text-[var(--text-primary)]`}>Total que sale</td>
+              <td className={`${TD} font-bold text-[var(--text-primary)]`}>{totalLabel}</td>
               <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(totalM3)}</td>
               <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
                 {totalPiezas != null ? fmtPiezas(totalPiezas) : "—"}
@@ -172,17 +183,90 @@ function TablaSalidas({
   );
 }
 
+/**
+ * Lo que un bloque ampara y de él NO puede salir (ADR-407).
+ *
+ * Va arriba de todo y en rojo porque no se arregla firmando: un reproceso sin
+ * declarar se declara, pero «de paquetería salió comercial» no se declara de
+ * ninguna forma — hay que corregir el respaldo o el tipo de las piezas antes
+ * de que el papel lo afirme.
+ */
+function RespaldosImposibles({ imposibles }: { imposibles: AmparoImposible[] }) {
+  if (imposibles.length === 0) return null;
+  const totalM3 = imposibles.reduce((a, i) => a + i.m3, 0);
+  return (
+    <div className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 p-3">
+      <p className="flex items-start gap-1.5 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+        <span>
+          {imposibles.length}{" "}
+          {imposibles.length === 1 ? "respaldo que la sierra no puede dar" : "respaldos que la sierra no puede dar"}
+          {" · "}
+          <span className="font-mono tabular-nums">{fmtM3(totalM3)} m³</span>
+        </span>
+      </p>
+      <ul className="mt-2 space-y-1.5">
+        {imposibles.map((i) => (
+          <li
+            key={`${i.bloqueId}|${i.haciaTipo}`}
+            className="rounded-lg bg-[var(--surface-canvas)] px-2 py-1.5"
+          >
+            <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm text-[var(--text-secondary)]">
+              <span className={`${CHIP} bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]`}>
+                {i.desdeTipo}
+              </span>
+              <span className="text-[var(--text-tertiary)]" aria-label="ampara">
+                →
+              </span>
+              <span className={`${CHIP} bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]`}>
+                {i.haciaTipo}
+              </span>
+              <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
+                {fmtM3(i.m3)} m³
+              </span>
+              <span className="text-xs text-[var(--text-tertiary)]">
+                {fmtPiezas(i.piezas)} pzas · {i.especie}
+              </span>
+              <span className="ml-auto truncate text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                {i.etiqueta}
+              </span>
+            </p>
+            <p className="mt-0.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
+              {i.porque}
+              {i.medidas.length > 0 && (
+                <>
+                  {" · "}
+                  {i.medidas.slice(0, 4).map((m) => m.medida).join(" · ")}
+                  {i.medidas.length > 4 && ` +${i.medidas.length - 4}`}
+                </>
+              )}
+            </p>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
+        <b>Cómo se arregla:</b> marcá el bloque con «Lleva sólo» para que no ampare ese tipo, traé un
+        producto de origen del que sí salga, o corregí el tipo de esas piezas si la medida está mal
+        cargada.
+      </p>
+    </div>
+  );
+}
+
 export default function ReprocesosSugeridos({
   grupos,
   cuadre,
+  imposibles = [],
 }: {
   grupos: GrupoDeReproceso[];
   cuadre: CuadreDeDistribucion;
+  imposibles?: AmparoImposible[];
 }) {
-  if (grupos.length === 0) return null;
+  if (grupos.length === 0 && imposibles.length === 0) return null;
 
   return (
     <div className="space-y-3">
+      <RespaldosImposibles imposibles={imposibles} />
       {/* La cuenta de cierre: qué falta, con qué se tapa, qué queda. Con todo
           respaldado, cuatro ceros no dicen nada: se dice en una línea. */}
       {cuadre.faltaM3 <= 0 ? (
@@ -282,12 +366,20 @@ export default function ReprocesosSugeridos({
               totalPiezas={g.salePiezas}
               tono="amparado"
             />
+            {/* Las opciones se suman cuando ENTRAN JUNTAS en lo libre: de
+                2.500 salen paquetería larga 1.500 y larga angosta 0.800 a la
+                vez. Compiten sólo si la suma se pasa — ahí sí, elegir una. */}
             <TablaSalidas
               titulo="Podés cubrir con lo libre"
-              ayuda={`compiten por los mismos ${fmtM3(g.libreM3)} m³ · elegí uno`}
+              ayuda={
+                g.opcionesCabenJuntas
+                  ? `entran juntas: ${fmtM3(g.opcionesM3)} de los ${fmtM3(g.libreM3)} m³ libres`
+                  : `no entran juntas (${fmtM3(g.opcionesM3)} de ${fmtM3(g.libreM3)} m³ libres) · elegí una`
+              }
               destinos={g.opciones}
-              totalM3={null}
-              totalPiezas={null}
+              totalM3={g.opcionesCabenJuntas ? g.opcionesM3 : null}
+              totalPiezas={g.opcionesCabenJuntas ? g.opcionesPiezas : null}
+              totalLabel="Total si las hacés todas"
               tono="opcion"
             />
 
@@ -307,13 +399,18 @@ export default function ReprocesosSugeridos({
                 </b>
                 :
               </span>
-              <span>
-                <b className="font-mono tabular-nums text-[var(--text-secondary)]">
-                  {fmtM3(g.saleM3)} m³
-                </b>{" "}
-                de otro tipo{g.salePiezas > 0 && ` (${fmtPiezas(g.salePiezas)} pzas)`} —{" "}
-                <b>reproceso a declarar</b>
-              </span>
+              {/* Sólo si hay algo que declarar: «0.000 m³ de otro tipo» en un
+                  producto que todavía no ampara nada es un renglón que ocupa
+                  lugar y no dice nada. */}
+              {g.saleM3 > 0 && (
+                <span>
+                  <b className="font-mono tabular-nums text-[var(--text-secondary)]">
+                    {fmtM3(g.saleM3)} m³
+                  </b>{" "}
+                  de otro tipo{g.salePiezas > 0 && ` (${fmtPiezas(g.salePiezas)} pzas)`} —{" "}
+                  <b>reproceso a declarar</b>
+                </span>
+              )}
               {g.mismoTipoM3 > 0 && (
                 <span>
                   ·{" "}
@@ -323,6 +420,16 @@ export default function ReprocesosSugeridos({
                   de su mismo tipo
                   {g.mismoTipoPiezas > 0 && ` (${fmtPiezas(g.mismoTipoPiezas)} pzas)`} —{" "}
                   <b>no hace falta reprocesar</b>
+                </span>
+              )}
+              {g.imposibleM3 > 0 && (
+                /* Sin este renglón, «reproceso + mismo tipo» no llega a lo que
+                   ampara el bloque y la resta parece un descuadre inventado. */
+                <span className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                  ·{" "}
+                  <b className="font-mono tabular-nums">{fmtM3(g.imposibleM3)} m³</b>
+                  {g.imposiblePiezas > 0 && ` (${fmtPiezas(g.imposiblePiezas)} pzas)`} que de acá{" "}
+                  <b>no pueden salir</b> — mirá el aviso de arriba
                 </span>
               )}
               {g.excedeM3 > 0 ? (
@@ -351,9 +458,10 @@ export default function ReprocesosSugeridos({
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
         <span>
           Al recortar suben las piezas y <b>baja</b> el volumen: el reproceso nunca convierte más de
-          lo que hay. Si el respaldo cierra unos litros por encima del bloque, es el cierre por
-          diferencia de medición del reparto (hasta 3 piezas y 1 % del bloque). Esto no mueve nada
-          en el Libro — el reproceso se registra desde Productos disponibles.
+          lo que hay. <b>Qué se puede reprocesar:</b> {FRASE_REGLA} Si el respaldo cierra unos
+          litros por encima del bloque, es el cierre por diferencia de medición del reparto (hasta 3
+          piezas y 1 % del bloque). Esto no mueve nada en el Libro — el reproceso se registra desde
+          Productos disponibles.
         </span>
       </p>
     </div>

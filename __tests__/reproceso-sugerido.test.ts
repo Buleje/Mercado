@@ -10,6 +10,7 @@
 import { describe, expect, it } from "vitest";
 import {
   agruparPorOrigen,
+  amparosImposibles,
   cuadreDeDistribucion,
   resumenDeSugerencias,
   sugerenciasDeReproceso,
@@ -52,9 +53,48 @@ const bloque = (o: Partial<BloqueRolliza> & { id: string }): BloqueRolliza => ({
   ...o,
 });
 
+/** Piezas de 6×6×4' = **paquetería corta** (sección 6×6, largo < 6'). */
+function piezaCorta(id: string, cantidad: number, especie = "Tornillo"): PiezaCubicada {
+  const base = {
+    id,
+    cantidad,
+    espesor: 6,
+    ancho: 6,
+    largo: 4,
+    uEspesor: "pulg" as const,
+    uAncho: "pulg" as const,
+    uLargo: "pies" as const,
+    especie,
+  };
+  const { m3, pieTablar } = cubicarPieza(base);
+  return { ...base, m3, pieTablar };
+}
+
+/** Piezas de 2×8×10' = **comercial** (espesor ≥ 1.5", ancho ≥ 6", largo ≥ 6'). */
+function piezaComercial(id: string, cantidad: number, especie = "Tornillo"): PiezaCubicada {
+  const base = {
+    id,
+    cantidad,
+    espesor: 2,
+    ancho: 8,
+    largo: 10,
+    uEspesor: "pulg" as const,
+    uAncho: "pulg" as const,
+    uLargo: "pies" as const,
+    especie,
+  };
+  const { m3, pieTablar } = cubicarPieza(base);
+  return { ...base, m3, pieTablar };
+}
+
 /** 80 paquetes de 6×6×10' ≈ 5.66 m³ — lo que hay que despachar. */
 const PAQUETERIA: PiezaCubicada[] = [pieza("p1", 40), pieza("p2", 40)];
 const M3_PAQUETERIA = PAQUETERIA.reduce((a, p) => a + (p.m3 ?? 0), 0);
+
+/** Lo que hay que despachar cuando el destino es paquetería CORTA. */
+const PAQ_CORTA: PiezaCubicada[] = [piezaCorta("pc1", 40), piezaCorta("pc2", 40)];
+/** Lo que hay que despachar cuando el destino es COMERCIAL (nadie puede darlo). */
+const COMERCIAL: PiezaCubicada[] = [piezaComercial("cm1", 30)];
 
 /** Un bloque de COMERCIAL que sólo lleva comercial: rechaza la paquetería. */
 const comercialQueNoAmpara = (m3: number) =>
@@ -167,13 +207,134 @@ describe("el piso de lo sugerible", () => {
   });
 });
 
+describe("sólo lo que la sierra puede hacer (ADR-407)", () => {
+  it("no ofrece reprocesar paquetería en comercial: eso sería agrandar la madera", () => {
+    /* Sobra paquetería larga (con «lleva sólo», así queda capacidad libre) y
+       falta comercial. Antes esto salía como sugerencia. */
+    const paqLibre = bloque({
+      id: "r1",
+      etiqueta: "Saldo paquetería",
+      m3: 5,
+      tipoProducto: "Paquetería larga",
+      gruposFiltro: ["tipo|Paquetería larga"],
+    });
+    const d = distribuirPorCapacidad([paqLibre], COMERCIAL, "tipo");
+    expect(d.totales.faltanteM3).toBeGreaterThan(0); // hay comercial sin respaldo
+    expect(sugerenciasDeReproceso(d)).toEqual([]);
+  });
+
+  it("de paquetería larga SÍ sale paquetería corta: es un recorte de largo", () => {
+    const paqLibre = bloque({
+      id: "r2",
+      m3: 5,
+      tipoProducto: "Paquetería larga",
+      gruposFiltro: ["tipo|Paquetería larga"],
+    });
+    const s = sugerenciasDeReproceso(
+      distribuirPorCapacidad([paqLibre], PAQ_CORTA, "tipo"),
+    ).filter((x) => x.motivo === "faltante");
+    expect(s.length).toBe(1);
+    expect(s[0]).toMatchObject({ desdeTipo: "Paquetería larga", haciaTipo: "Paquetería corta" });
+  });
+
+  it("un respaldo imposible NO se ofrece declarar: sale como advertencia aparte", () => {
+    /* Un bloque de paquetería que ampara comercial. El reparto lo permite —no
+       mira tipos—, pero declararlo sería firmar que la sierra agrandó. */
+    const paq = bloque({ id: "r3", etiqueta: "GTF-9", m3: 5, tipoProducto: "Paquetería larga" });
+    const d = distribuirPorCapacidad([paq], COMERCIAL, "tipo");
+    expect(sugerenciasDeReproceso(d).filter((x) => x.motivo === "amparado")).toEqual([]);
+
+    const imp = amparosImposibles(d);
+    expect(imp.length).toBe(1);
+    expect(imp[0]).toMatchObject({
+      desdeTipo: "Paquetería larga",
+      haciaTipo: "Comercial",
+      etiqueta: "GTF-9",
+    });
+    expect(imp[0].m3).toBeGreaterThan(0);
+    expect(imp[0].piezas).toBeGreaterThan(0);
+    expect(imp[0].porque).toMatch(/no agranda/);
+  });
+
+  it("un reproceso posible sigue siendo sugerencia, no advertencia", () => {
+    const comercial = bloque({ id: "r4", m3: 3, tipoProducto: "Comercial" });
+    const d = distribuirPorCapacidad([comercial], PAQUETERIA, "tipo");
+    expect(amparosImposibles(d)).toEqual([]);
+    expect(sugerenciasDeReproceso(d).some((x) => x.motivo === "amparado")).toBe(true);
+  });
+
+  it("la cuenta del producto CIERRA con lo imposible incluido", () => {
+    /* Un bloque de paquetería larga que ampara las tres cosas: su mismo tipo,
+       paquetería corta (reproceso válido) y comercial (imposible). Sin el
+       renglón de lo imposible, «sale + mismo tipo» no llega a lo amparado y se
+       lee como un descuadre inventado. */
+    const mezcla: PiezaCubicada[] = [pieza("m1", 10), piezaCorta("m2", 10), piezaComercial("m3", 10)];
+    const paq = bloque({ id: "r5", m3: 6, tipoProducto: "Paquetería larga" });
+    const d = distribuirPorCapacidad([paq], mezcla, "tipo");
+    const imp = amparosImposibles(d);
+    expect(imp.length).toBe(1);
+    const [g] = agruparPorOrigen(sugerenciasDeReproceso(d), imp);
+    expect(g.imposibleM3).toBeCloseTo(imp[0].m3, 4);
+    expect(g.imposiblePiezas).toBe(imp[0].piezas);
+    expect(g.saleM3 + g.mismoTipoM3 + g.imposibleM3).toBeCloseTo(g.amparadoM3, 3);
+  });
+});
+
+describe("las opciones que entran juntas se suman; las que no, compiten", () => {
+  /* Faltan paquetería larga y paquetería corta; sobra comercial. Las dos
+     salidas caben en la capacidad libre: «de 2.500 salen 1.500 y 0.800»
+     (Brandon, 2026-09-09). */
+  const dosDestinos: PiezaCubicada[] = [pieza("o1", 10), piezaCorta("o2", 10)];
+
+  it("con capacidad de sobra, entran las dos y el total se muestra", () => {
+    const grande = bloque({
+      id: "o-big",
+      m3: 50,
+      tipoProducto: "Comercial",
+      gruposFiltro: ["tipo|Comercial"],
+    });
+    const [g] = agruparPorOrigen(
+      sugerenciasDeReproceso(distribuirPorCapacidad([grande], dosDestinos, "tipo")),
+    );
+    expect(g.opciones.length).toBe(2);
+    expect(g.opcionesM3).toBeCloseTo(g.opciones.reduce((a, d) => a + d.m3, 0), 4);
+    expect(g.opcionesM3).toBeLessThanOrEqual(g.libreM3);
+    expect(g.opcionesCabenJuntas).toBe(true);
+    expect(g.opcionesPiezas).toBe(g.opciones.reduce((a, d) => a + d.piezas, 0));
+    // Sumarlas para preguntar si entran NO las convierte en madera que salió.
+    expect(g.saleM3).toBe(0);
+  });
+
+  it("con poca capacidad compiten: elegir una es elegir la otra", () => {
+    const chico = bloque({
+      id: "o-min",
+      m3: 0.3,
+      tipoProducto: "Comercial",
+      gruposFiltro: ["tipo|Comercial"],
+    });
+    const [g] = agruparPorOrigen(
+      sugerenciasDeReproceso(distribuirPorCapacidad([chico], dosDestinos, "tipo")),
+    );
+    expect(g.opciones.length).toBe(2);
+    expect(g.opcionesM3).toBeGreaterThan(g.libreM3);
+    expect(g.opcionesCabenJuntas).toBe(false);
+  });
+});
+
 describe("resumenDeSugerencias", () => {
   it("no cuenta dos veces el mismo destino", () => {
+    /* Los dos orígenes tienen que poder DAR el destino (ADR-407): comercial y
+       paquetería larga son los dos que dan paquetería corta. */
     const dosOrigenes = [
       comercialQueNoAmpara(1),
-      bloque({ id: "x2", m3: 1, tipoProducto: "Tabla", gruposFiltro: ["tipo|Tabla"] }),
+      bloque({
+        id: "x2",
+        m3: 1,
+        tipoProducto: "Paquetería larga",
+        gruposFiltro: ["tipo|Paquetería larga"],
+      }),
     ];
-    const s = sugerenciasDeReproceso(distribuirPorCapacidad(dosOrigenes, PAQUETERIA, "tipo")).filter(
+    const s = sugerenciasDeReproceso(distribuirPorCapacidad(dosOrigenes, PAQ_CORTA, "tipo")).filter(
       (x) => x.motivo === "faltante",
     );
     expect(s.length).toBe(2); // dos orígenes para el mismo destino
@@ -187,19 +348,24 @@ describe("cuadreDeDistribucion", () => {
   it("cuenta el aporte UNA vez por destino: dos orígenes no tapan el doble", () => {
     const dos = [
       comercialQueNoAmpara(1),
-      bloque({ id: "t1", m3: 1, tipoProducto: "Tabla", gruposFiltro: ["tipo|Tabla"] }),
+      bloque({
+        id: "t1",
+        m3: 1,
+        tipoProducto: "Paquetería larga",
+        gruposFiltro: ["tipo|Paquetería larga"],
+      }),
     ];
-    const d = distribuirPorCapacidad(dos, PAQUETERIA, "tipo");
+    const d = distribuirPorCapacidad(dos, PAQ_CORTA, "tipo");
     const s = sugerenciasDeReproceso(d);
     const c = cuadreDeDistribucion(
       { faltanteM3: d.totales.faltanteM3, libreM3: d.totales.libreM3 },
       40,
       s,
     );
-    // Los dos ofrecen 1 m³ para la MISMA paquetería: tapan 1, no 2.
+    // Los dos ofrecen 1 m³ para la MISMA paquetería corta: tapan 1, no 2.
     expect(c.cubreReprocesoM3).toBe(1);
-    expect(c.faltaM3).toBeCloseTo(M3_PAQUETERIA, 3);
-    expect(c.quedaM3).toBeCloseTo(M3_PAQUETERIA - 1, 3);
+    expect(c.faltaM3).toBeCloseTo(d.totales.faltanteM3, 3);
+    expect(c.quedaM3).toBeCloseTo(d.totales.faltanteM3 - 1, 3);
   });
 
   it("lo que ya se ampara no cuenta como tapón: ese hueco no existe", () => {

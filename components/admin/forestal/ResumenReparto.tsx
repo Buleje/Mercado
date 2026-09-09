@@ -52,6 +52,7 @@ import {
 } from "@/lib/forestal/reparto-anexo";
 import {
   agruparPorOrigen,
+  amparosImposibles,
   cuadreDeDistribucion,
   resumenDeSugerencias,
   sugerenciasDeReproceso,
@@ -876,9 +877,18 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
     [dim, dist, bloques, rows, precioDe],
   );
   const reprocesos = useMemo(() => sugerenciasDeReproceso(distPorTipo), [distPorTipo]);
+  /**
+   * Lo que un bloque ampara y de él NO puede salir (ADR-407): de paquetería no
+   * sale comercial ni tabla. No es un reproceso pendiente —no hay reproceso que
+   * declarar— así que va aparte y en rojo, no como sugerencia.
+   */
+  const imposibles = useMemo(() => amparosImposibles(distPorTipo), [distPorTipo]);
   const resumenReprocesos = useMemo(() => resumenDeSugerencias(reprocesos), [reprocesos]);
   /** Las mismas sugerencias juntadas por PRODUCTO ORIGINAL, que es como se leen. */
-  const gruposReproceso = useMemo(() => agruparPorOrigen(reprocesos), [reprocesos]);
+  const gruposReproceso = useMemo(
+    () => agruparPorOrigen(reprocesos, imposibles),
+    [reprocesos, imposibles],
+  );
   /**
    * Un Anexo 04 por permiso, con todo lo suyo unificado (ADR-406). El papel se
    * presenta contra un título habilitante: el permiso es la unidad, no el
@@ -1108,16 +1118,28 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       revisarDistribucion(
         bloques,
         dist,
-        reprocesos
-          .filter((r) => r.motivo === "amparado")
-          .map((r) => ({
-            desdeTipo: r.desdeTipo,
-            haciaTipo: r.haciaTipo,
-            m3: r.convertirM3,
-            bloques: r.bloques.map((b) => ({ id: b.id, etiqueta: b.etiqueta })),
+        [
+          ...reprocesos
+            .filter((r) => r.motivo === "amparado")
+            .map((r) => ({
+              desdeTipo: r.desdeTipo,
+              haciaTipo: r.haciaTipo,
+              m3: r.convertirM3,
+              bloques: r.bloques.map((b) => ({ id: b.id, etiqueta: b.etiqueta })),
+            })),
+          /* Un respaldo que la sierra no puede dar no se arregla declarando:
+             va como ERROR, antes de firmar el papel (ADR-407). */
+          ...imposibles.map((i) => ({
+            desdeTipo: i.desdeTipo,
+            haciaTipo: i.haciaTipo,
+            m3: i.m3,
+            bloques: [{ id: i.bloqueId, etiqueta: i.etiqueta }],
+            imposible: true,
+            porque: i.porque,
           })),
+        ],
       ),
-    [bloques, dist, reprocesos],
+    [bloques, dist, reprocesos, imposibles],
   );
   const cuenta = contarRevision(hallazgos);
   const [revisionAbierta, setRevisionAbierta] = useState(false);
@@ -1471,7 +1493,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       {/* Lo que sobra de un tipo puede tapar lo que falta de otro: pasar la
           comercial por la sierra da paquetería —más piezas, menos m³—. Va
           pegado al balance porque es la respuesta a «¿y esto que falta?». */}
-      {reprocesos.length > 0 && (
+      {(reprocesos.length > 0 || imposibles.length > 0) && (
         <SeccionResumen
           icon={RefreshCw}
           titulo="Reprocesos que cuadrarían la distribución"
@@ -1486,7 +1508,11 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             </span>
           }
         >
-          <ReprocesosSugeridos grupos={gruposReproceso} cuadre={cuadre} />
+          <ReprocesosSugeridos
+            grupos={gruposReproceso}
+            cuadre={cuadre}
+            imposibles={imposibles}
+          />
         </SeccionResumen>
       )}
 

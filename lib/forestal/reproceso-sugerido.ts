@@ -31,6 +31,18 @@
  *
  * Los dos se cruzan **dentro de la misma especie**: reprocesar tornillo no
  * produce cachimbo. Y nunca de un tipo hacia sí mismo.
+ *
+ * ## Y sólo las conversiones que la sierra puede hacer (ADR-407)
+ *
+ * De comercial sale paquetería, larga angosta y corta; de paquetería larga sale
+ * paquetería corta. **Nada vuelve a comercial ni a tabla**: la sierra recorta,
+ * no agranda. La matriz vive en `reproceso-reglas.ts` y acá sólo se consulta.
+ *
+ * Eso parte la detección 2 en dos: si el bloque ampara un tipo que SÍ puede
+ * salir de él, es un reproceso a declarar; si ampara uno que **no** puede
+ * salir, no es un reproceso — es un respaldo imposible (`amparosImposibles`),
+ * y sugerir «declaralo» sería hacer firmar una transformación que la máquina
+ * no hace.
  */
 
 import {
@@ -39,6 +51,7 @@ import {
   type Distribucion,
 } from "@/lib/forestal/cubicacion-reparto";
 import { etiquetaSinRecorte } from "@/lib/forestal/reparto-anexo";
+import { porQueNoSePuede, puedeReprocesarse } from "@/lib/forestal/reproceso-reglas";
 
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -184,8 +197,11 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
       for (const [desdeTipo, bloques] of libres) {
         /* De un tipo hacia sí mismo no hay reproceso que hacer: si sobra
            comercial y falta comercial, lo que hay es capacidad sin usar y de
-           eso ya avisa el diagnóstico del reparto. */
+           eso ya avisa el diagnóstico del reparto.
+           Y sólo lo que la sierra puede hacer (ADR-407): ofrecer «reprocesá
+           paquetería en comercial» es ofrecer agrandar la madera. */
         if (mismoTipo(desdeTipo, f.label)) continue;
+        if (!puedeReprocesarse(desdeTipo, f.label)) continue;
         const disponibleM3 = r4(bloques.reduce((a, b) => a + b.libreM3, 0));
         if (!(disponibleM3 > EPS)) continue;
         const convertirM3 = r4(Math.min(disponibleM3, f.m3));
@@ -221,6 +237,11 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
       if (!tipo) continue;
       for (const g of b.asignado) {
         if (!(g.m3 > EPS) || mismoTipo(tipo, g.label)) continue;
+        /* Lo que el bloque ampara PERO no puede salir de él no es un reproceso
+           a declarar: es un respaldo imposible, y sale por `amparosImposibles`
+           como advertencia. Declararlo sería firmar que la sierra agrandó la
+           madera (ADR-407). */
+        if (!puedeReprocesarse(tipo, g.label)) continue;
         out.push({
           especie: e.especie,
           motivo: "amparado",
@@ -261,6 +282,69 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
   return out
     .filter((s) => s.convertirM3 >= MINIMO_SUGERIBLE_M3)
     .sort((a, b) => b.convertirM3 - a.convertirM3);
+}
+
+/**
+ * Un respaldo que la sierra no puede sostener: el bloque ampara un tipo que de
+ * él NO sale (ADR-407).
+ *
+ * No es un reproceso pendiente —no hay reproceso que declarar— es un **error
+ * del respaldo**: o el bloque de origen no es el que corresponde, o el tipo de
+ * esas piezas está mal puesto. Se muestra aparte y en rojo porque, a diferencia
+ * de un reproceso sin declarar, no hay forma de arreglarlo firmando: hay que
+ * corregir la distribución antes del papel.
+ */
+export interface AmparoImposible {
+  especie: string;
+  bloqueId: string;
+  etiqueta: string;
+  permiso: string | null;
+  /** El tipo del bloque que está respaldando. */
+  desdeTipo: string;
+  /** El tipo de las piezas que ampara y que de ahí no pueden salir. */
+  haciaTipo: string;
+  m3: number;
+  piezas: number;
+  /** Las escuadrías involucradas, para ir a buscarlas en la tabla. */
+  medidas: AsignacionMedida[];
+  /** Por qué no se puede, en la lengua del patio. */
+  porque: string;
+}
+
+/**
+ * Los respaldos imposibles de toda la distribución.
+ *
+ * Va aparte de `sugerenciasDeReproceso` a propósito: son dos preguntas
+ * distintas —«qué reproceso me falta declarar» y «qué respaldo no se sostiene»—
+ * y mezclarlas en una lista fue justamente lo que hacía que la pantalla
+ * ofreciera declarar una conversión imposible.
+ */
+export function amparosImposibles(d: Distribucion): AmparoImposible[] {
+  const out: AmparoImposible[] = [];
+  for (const e of d.especies) {
+    for (const b of e.bloques) {
+      const tipo = tipoDelBloque(b.bloque);
+      if (!tipo) continue;
+      for (const g of b.asignado) {
+        if (!(g.m3 > EPS) || mismoTipo(tipo, g.label)) continue;
+        if (puedeReprocesarse(tipo, g.label)) continue;
+        out.push({
+          especie: e.especie,
+          bloqueId: b.bloque.id,
+          etiqueta: etiquetaSinRecorte(b.bloque.etiqueta),
+          permiso: (b.bloque.permiso ?? "").trim() || null,
+          desdeTipo: tipo,
+          haciaTipo: g.label,
+          m3: r4(g.m3),
+          piezas: g.piezas,
+          medidas: g.medidas.filter((m) => m.piezas > 0),
+          porque: porQueNoSePuede(tipo, g.label) ?? "",
+        });
+      }
+    }
+  }
+  /* Lo más grande primero: es la madera que más pesa en el papel. */
+  return out.sort((a, b) => b.m3 - a.m3);
 }
 
 /** El permiso de los bloques, si TODOS declaran el mismo. Si no, `null`. */
@@ -336,6 +420,26 @@ export interface GrupoDeReproceso {
   /** m³ que salen del original (sólo lo ya amparado: eso es lo que ocurre hoy). */
   saleM3: number;
   salePiezas: number;
+  /**
+   * La suma de las opciones y si **entran todas juntas** en la capacidad libre.
+   *
+   * Brandon, 2026-09-09: «comercial 5 piezas 2.500 se puede reprocesar a
+   * paquetería larga 56 piezas 1.500 m³ y otro por ejemplo larga angosta 19
+   * piezas 0.800 m³». Ahí las dos salidas caben (1.500 + 0.800 ≤ 2.500) y
+   * decirle «elegí una» sería falso. Compiten sólo cuando la suma se pasa de lo
+   * libre — y entonces sí hay que elegir.
+   */
+  opcionesM3: number;
+  opcionesPiezas: number;
+  opcionesCabenJuntas: boolean;
+  /**
+   * Lo que el bloque ampara y **de él no puede salir** (ADR-407). No es
+   * reproceso ni es de su mismo tipo: sin este renglón la cuenta del pie
+   * —reproceso + mismo tipo = amparado— dejaría de cerrar y se leería como un
+   * descuadre inventado.
+   */
+  imposibleM3: number;
+  imposiblePiezas: number;
   /** Lo que quedaría del original después de esas salidas. */
   quedaM3: number;
   /** Todo lo que el bloque ampara — el mismo número de la tabla de bloques. */
@@ -364,6 +468,12 @@ export interface GrupoDeReproceso {
  */
 export function agruparPorOrigen(
   sugerencias: readonly SugerenciaReproceso[],
+  /**
+   * Lo que esos mismos bloques amparan y no puede salir de ellos. Se pasa
+   * aparte —no se recalcula— para que el pie del producto cierre contra el m³
+   * que muestra la tabla de bloques.
+   */
+  imposibles: readonly AmparoImposible[] = [],
 ): GrupoDeReproceso[] {
   const grupos = new Map<string, GrupoDeReproceso>();
   for (const s of sugerencias) {
@@ -384,6 +494,11 @@ export function agruparPorOrigen(
         opciones: [],
         saleM3: 0,
         salePiezas: 0,
+        opcionesM3: 0,
+        opcionesPiezas: 0,
+        opcionesCabenJuntas: true,
+        imposibleM3: 0,
+        imposiblePiezas: 0,
         quedaM3: 0,
         excedeM3: 0,
         amparadoM3: r4(s.bloques.reduce((a, b) => a + b.usadoM3, 0)),
@@ -404,6 +519,17 @@ export function agruparPorOrigen(
     grupos.set(clave, g);
   }
 
+  /* Lo que cada bloque ampara sin poder darlo. Se indexa por bloque porque un
+     amparo es siempre de UNO —el grupo `t:` sólo existe para el faltante—. */
+  const imposiblePorBloque = new Map<string, { m3: number; piezas: number }>();
+  for (const i of imposibles) {
+    const acc = imposiblePorBloque.get(i.bloqueId) ?? { m3: 0, piezas: 0 };
+    imposiblePorBloque.set(i.bloqueId, {
+      m3: acc.m3 + i.m3,
+      piezas: acc.piezas + i.piezas,
+    });
+  }
+
   for (const g of grupos.values()) {
     g.amparados.sort((a, b) => b.m3 - a.m3);
     g.opciones.sort((a, b) => b.m3 - a.m3);
@@ -411,6 +537,18 @@ export function agruparPorOrigen(
        sobre la misma capacidad libre, y sumarlas inventaría madera. */
     g.saleM3 = r4(g.amparados.reduce((a, d) => a + d.m3, 0));
     g.salePiezas = g.amparados.reduce((a, d) => a + d.piezas, 0);
+    /* Las opciones se suman sólo para PREGUNTAR si entran juntas — nunca se
+       cuentan como madera que ya salió. */
+    g.opcionesM3 = r4(g.opciones.reduce((a, d) => a + d.m3, 0));
+    g.opcionesPiezas = g.opciones.reduce((a, d) => a + d.piezas, 0);
+    g.opcionesCabenJuntas = g.opcionesM3 <= g.libreM3 + EPS;
+    /* El amparo imposible sale del grupo del bloque (clave `b:`); un grupo de
+       varios bloques no lo lleva, para no repartir a ojo lo que es de uno. */
+    if (g.clave.startsWith("b:")) {
+      const imp = imposiblePorBloque.get(g.clave.slice(2));
+      g.imposibleM3 = r4(imp?.m3 ?? 0);
+      g.imposiblePiezas = imp?.piezas ?? 0;
+    }
     /* Lo que queda es lo que el bloque NO ampara: su m³ menos TODO lo amparado
        —el reproceso y lo de su mismo tipo—. Restarle sólo «lo que sale» daba un
        «quedan 0.803» sobre un bloque cuya tabla decía «ampara 3.077», y eso se

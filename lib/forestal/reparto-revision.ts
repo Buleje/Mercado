@@ -80,7 +80,20 @@ export function revisarDistribucion(
    * ampara paquetería es un reproceso que el Libro todavía no tiene, y eso hay
    * que verlo ANTES de firmar el papel, no después.
    */
-  reprocesosSinDeclarar: readonly { desdeTipo: string; haciaTipo: string; m3: number; bloques: readonly { id: string; etiqueta: string }[] }[] = [],
+  reprocesosSinDeclarar: readonly {
+    desdeTipo: string;
+    haciaTipo: string;
+    m3: number;
+    bloques: readonly { id: string; etiqueta: string }[];
+    /**
+     * `true` = la sierra NO puede hacer esa conversión (ADR-407). No es un
+     * reproceso pendiente sino un respaldo que no se sostiene: va como error,
+     * porque no hay forma de arreglarlo declarándolo.
+     */
+    imposible?: boolean;
+    /** Por qué no se puede, para no repetir la regla en la pantalla. */
+    porque?: string;
+  }[] = [],
 ): HallazgoRevision[] {
   const out: HallazgoRevision[] = [];
 
@@ -347,16 +360,20 @@ export function revisarDistribucion(
     }
   }
 
-  // 5. Reprocesos que el papel da por hecho y el Libro no tiene.
+  // 5. Reprocesos que el papel da por hecho y el Libro no tiene — y los que
+  //    directamente no se pueden hacer, que son otra cosa (ADR-407).
   for (const r of reprocesosSinDeclarar) {
     out.push({
       id: `repro:${r.bloques[0]?.id ?? ""}:${r.desdeTipo}:${r.haciaTipo}`,
-      severidad: "aviso",
+      severidad: r.imposible ? "error" : "aviso",
       bloqueId: r.bloques[0]?.id ?? null,
       donde: r.bloques.map((b) => b.etiqueta || "sin etiqueta").join(" · "),
-      que: `El respaldo es ${r.desdeTipo.toLowerCase()} y ampara ${r.m3.toFixed(3)} m³ de ${r.haciaTipo.toLowerCase()}.`,
-      comoArreglar:
-        "Declará el reproceso en el Libro (Productos disponibles → Reprocesar) o marcá el bloque con «Lleva sólo» para que no ampare otro tipo.",
+      que: r.imposible
+        ? `El respaldo es ${r.desdeTipo.toLowerCase()} y ampara ${r.m3.toFixed(3)} m³ de ${r.haciaTipo.toLowerCase()}, que de ahí no puede salir.`
+        : `El respaldo es ${r.desdeTipo.toLowerCase()} y ampara ${r.m3.toFixed(3)} m³ de ${r.haciaTipo.toLowerCase()}.`,
+      comoArreglar: r.imposible
+        ? `${r.porque ?? "Esa conversión no la hace la sierra."} Marcá el bloque con «Lleva sólo», traé un producto de origen del que sí salga, o corregí el tipo de esas piezas.`
+        : "Declará el reproceso en el Libro (Productos disponibles → Reprocesar) o marcá el bloque con «Lleva sólo» para que no ampare otro tipo.",
     });
   }
 
