@@ -38,6 +38,13 @@ export interface LineaCompletable {
   productType: string | null;
   /** Por qué la corrida está atada, si lo está: se muestra en los bloqueados. */
   atadaPorque?: string | null;
+  /**
+   * El N° de permiso que la corrida HEREDA de la madera que consumió, y las
+   * guías de las que lo hereda. Una corrida no tiene permiso propio: si está
+   * vacío, el hueco está en el ingreso, no acá.
+   */
+  permisos?: string[];
+  gtfOrigen?: string[];
 }
 
 type Campo = keyof Pick<
@@ -66,6 +73,7 @@ export default function CtpCompletarLineaModal({
   onListo: () => void;
 }) {
   const [valores, setValores] = useState<Partial<Record<Campo, string>>>({});
+  const [permiso, setPermiso] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,21 +85,47 @@ export default function CtpCompletarLineaModal({
      muestra como hueco bloqueado, con el motivo. */
   const bloqueado = (c: (typeof CAMPOS)[number]) => c.registro && !!linea.atadaPorque;
   const editables = huecos.filter((c) => !bloqueado(c));
-  const algoEscrito = Object.values(valores).some((v) => (v ?? "").trim() !== "");
+  /**
+   * El permiso es el caso raro: no es un campo de la corrida, así que su
+   * formulario escribe en la GUÍA. Sólo se ofrece si el hueco se puede llenar —
+   * o sea, si hay una guía de la que heredarlo.
+   */
+  const guias = linea.gtfOrigen ?? [];
+  const permisoVacio = !(linea.permisos ?? []).some((p) => !esCampoSinDato(p));
+  const puedeCompletarPermiso = permisoVacio && guias.length > 0;
+  const algoEscrito =
+    Object.values(valores).some((v) => (v ?? "").trim() !== "") || permiso.trim() !== "";
 
   const guardar = async () => {
     if (!algoEscrito || guardando) return;
     setGuardando(true);
     setError(null);
     try {
-      const r = await fetch("/api/admin/forestal/ctp", {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", ...csrfHeaders() },
-        body: JSON.stringify({ id: linea.id, action: "completar_linea", campos: valores }),
-      });
-      const j = await r.json().catch(() => null);
-      if (!r.ok) throw new Error(j?.message ?? j?.error ?? `HTTP ${r.status}`);
+      const hayCampos = Object.values(valores).some((v) => (v ?? "").trim() !== "");
+      if (hayCampos) {
+        const r = await fetch("/api/admin/forestal/ctp", {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json", ...csrfHeaders() },
+          body: JSON.stringify({ id: linea.id, action: "completar_linea", campos: valores }),
+        });
+        const j = await r.json().catch(() => null);
+        if (!r.ok) throw new Error(j?.message ?? j?.error ?? `HTTP ${r.status}`);
+      }
+      /* El permiso va a la GUÍA, y a TODAS las guías que alimentaron la corrida:
+         si consumió madera de dos, las dos comparten ese origen. */
+      if (permiso.trim() && puedeCompletarPermiso) {
+        for (const gtf of guias) {
+          const r = await fetch("/api/admin/forestal/wood-entries", {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "Content-Type": "application/json", ...csrfHeaders() },
+            body: JSON.stringify({ action: "completar_guia", gtfNumber: gtf, campos: { originCode: permiso.trim() } }),
+          });
+          const j = await r.json().catch(() => null);
+          if (!r.ok) throw new Error(j?.message ?? j?.error ?? `HTTP ${r.status}`);
+        }
+      }
       onListo();
       onCerrar();
     } catch (e) {
@@ -186,6 +220,42 @@ export default function CtpCompletarLineaModal({
                 )}
               </label>
             ))}
+          </div>
+        )}
+
+        {/* El N° de permiso: no es un campo de la corrida, se hereda de la
+            madera. Por eso su formulario escribe en la guía y lo dice — y por
+            eso, sin guía de la que heredarlo, no hay dónde escribirlo. */}
+        {permisoVacio && (
+          <div className="mt-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
+            <label className="block">
+              <span className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)]">
+                N° de permiso {!puedeCompletarPermiso && <Lock className="h-3 w-3 text-[var(--text-tertiary)]" aria-hidden />}
+              </span>
+              <input
+                type="text"
+                value={permiso}
+                disabled={!puedeCompletarPermiso}
+                onChange={(e) => setPermiso(e.target.value)}
+                placeholder={puedeCompletarPermiso ? "Vacío" : "Sin guía de origen"}
+                className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-50"
+              />
+            </label>
+            <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+              {puedeCompletarPermiso ? (
+                <>
+                  Una corrida no tiene permiso propio: lo hereda de la madera que consumió. Esto se guarda
+                  en {guias.length === 1 ? `la guía ${guias[0]}` : `las guías ${guias.join(", ")}`} y lo
+                  heredan <b>todas</b> sus corridas.
+                </>
+              ) : (
+                <>
+                  Esta corrida no consumió madera de ninguna guía —es un inventario de apertura—, así que no
+                  hay ingreso del que heredar el permiso. Registrarlo necesita un campo propio del asiento,
+                  que hoy no existe.
+                </>
+              )}
+            </p>
           </div>
         )}
 

@@ -66,6 +66,8 @@ interface CorridaDisponible {
   /** N° de Permiso (código de origen) de los ingresos que alimentaron la
    *  corrida — la corrida no tiene uno propio, hereda el de la madera. */
   titularOrigen: string[];
+  /** Las guías de esa madera: es DONDE vive el permiso cuando falta. */
+  gtfOrigen: string[];
   /** Marcado a mano como "ya usado" (Brandon, 2026-09-01): `null` = disponible como siempre. */
   usadoAt: string | null;
   usadoMotivo: string | null;
@@ -702,6 +704,8 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                           c.despachado > 0 ? "ya tiene madera despachada"
                           : c.reprocesado > 0 ? "ya alimentó un reproceso"
                           : null,
+                        permisos: c.titularOrigen,
+                        gtfOrigen: c.gtfOrigen,
                       })
                     }
                     label="Completar los campos que quedaron en blanco"

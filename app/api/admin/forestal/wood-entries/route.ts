@@ -322,6 +322,26 @@ const recepcionGuiaSchema = z.object({
   fecha: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usá el formato AAAA-MM-DD").optional(),
 });
 
+/**
+ * Completar los campos VACÍOS de una guía (ADR-401 §1.2). Va por `gtfNumber` y
+ * no por id porque **el permiso es de la guía**: una GTF con tres especies son
+ * tres asientos que comparten origen.
+ */
+const completarGuiaSchema = z.object({
+  action: z.literal("completar_guia"),
+  gtfNumber: z.string().trim().min(1).max(60),
+  campos: z
+    .object({
+      originCode: z.string().trim().max(120).optional(),
+      speciesScientificName: z.string().trim().max(160).optional(),
+    })
+    .refine((c) => Object.values(c).some((v) => (v ?? "").trim() !== ""), {
+      message: "Mandá al menos un campo con contenido.",
+    }),
+});
+
+const patchBodySchema = z.union([recepcionGuiaSchema, completarGuiaSchema]);
+
 export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
@@ -336,12 +356,21 @@ export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: N
 
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
-  const parsed = recepcionGuiaSchema.safeParse(body);
+  const parsed = patchBodySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
   }
 
   try {
+    if (parsed.data.action === "completar_guia") {
+      const r = await WoodEntriesDB.completarGuia(
+        auth.tenantId,
+        parsed.data.gtfNumber,
+        parsed.data.campos,
+        auth.username ?? "unknown",
+      );
+      return NextResponse.json(r);
+    }
     const r = await WoodEntriesDB.recepcionarGuia(
       auth.tenantId,
       parsed.data.ids,
@@ -358,8 +387,10 @@ export const PATCH = withApiHandler("forestal-wood-entries-patch", async (req: N
     }
     return NextResponse.json(r);
   } catch (err) {
-    logger.error("[wood-entries.PATCH] recepcionar_guia failed", { error: String(err) });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    /* Las invariantes del libro (período cerrado, estado del asiento) llegan al
+       operario con su motivo. `ctpErrorResponse` es el mismo helper que usa el
+       POST: un segundo manejo de errores acá divergiría del de al lado. */
+    return ctpErrorResponse(err, "wood-entries.PATCH", auth.tenantId);
   }
 });
 
