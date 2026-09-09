@@ -23,6 +23,13 @@ import CtpKpiFiltros from "./CtpKpiFiltros";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 import CtpPaqueteFicha from "./CtpPaqueteFicha";
 import CtpReprocesoModal from "./CtpReprocesoModal";
+import ReprocesoSugeridoBanda from "./reproceso-sugerido-banda";
+import {
+  leerBorradorDeReproceso,
+  olvidarBorradorDeReproceso,
+  type BorradorDeReproceso,
+} from "@/lib/forestal/reproceso-borrador";
+import { tipoComercialDelProducto } from "@/lib/forestal/loctp-catalogos";
 import CtpCubicarProductoModal from "./CtpCubicarProductoModal";
 import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
 import CtpMarcarUsadoModal from "./CtpMarcarUsadoModal";
@@ -160,6 +167,14 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
   const [fichaPaquete, setFichaPaquete] = useState<string | null>(null);
   /** Producto que vuelve a la sierra (ADR-316). */
   const [reprocesar, setReprocesar] = useState<CorridaDisponible | null>(null);
+  /**
+   * El reproceso que viene sugerido desde la distribución (ADR-404). Se lee en
+   * un efecto y no en el initializer: `sessionStorage` no existe en el server.
+   */
+  const [sugerido, setSugerido] = useState<BorradorDeReproceso | null>(null);
+  useEffect(() => {
+    setSugerido(leerBorradorDeReproceso());
+  }, []);
   /** Fila que se está cubicando para el ANEXO N° 04. */
   const [cubicar, setCubicar] = useState<{ corrida: CorridaDisponible; paquete: PaqueteDisponible | null } | null>(null);
   /**
@@ -333,6 +348,22 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
    *  una corrida sin paquetes, así que sumar acá no repite ninguna corrida. */
   const totalPiezas = useMemo(() => filas.reduce((a, f) => a + (f.paquete?.cantidad ?? 0), 0), [filas]);
 
+  /**
+   * Las corridas que podrían alimentar el reproceso sugerido: las que declaran
+   * el MISMO tipo comercial que la sugerencia dice reprocesar y tienen saldo.
+   * Se compara por tipo y no por el texto del producto: «MADERA ASERRADA
+   * (COMERCIAL)» y «Comercial» son lo mismo escrito en dos idiomas.
+   */
+  const candidatasSugeridas = useMemo(() => {
+    if (!sugerido) return [];
+    const norma = (v: string | null | undefined) =>
+      (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const buscado = norma(sugerido.desdeTipo);
+    return corridas
+      .filter((c) => c.disponible > 0 && norma(tipoComercialDelProducto(c.producto)) === buscado)
+      .map((c) => ({ id: c.id, lineNo: c.lineNo, disponible: c.disponible }));
+  }, [corridas, sugerido]);
+
   if (error) {
     return (
       <p className="rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]">
@@ -343,6 +374,23 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
 
   return (
     <div className="space-y-3">
+      {/* Lo que la distribución sugirió reprocesar, esperando que el operario
+          diga de qué corrida sale — eso no se adivina (ADR-404 → ADR-316). */}
+      {sugerido && (
+        <ReprocesoSugeridoBanda
+          borrador={sugerido}
+          candidatas={candidatasSugeridas}
+          onUsar={(id) => {
+            const c = corridas.find((x) => x.id === id);
+            if (c) setReprocesar(c);
+          }}
+          onDescartar={() => {
+            olvidarBorradorDeReproceso();
+            setSugerido(null);
+          }}
+        />
+      )}
+
       {/* Todos detrás del botón «Indicadores» (Brandon, 2026-09-03); el titular
           —cuánto hay y en cuántos paquetes— va en la línea de resumen. */}
       <CtpKpisPlegables
@@ -887,9 +935,20 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             unidad: reprocesar.unidad,
             disponible: reprocesar.disponible,
           }}
+          /* Lo que la distribución ya calculó no se vuelve a tipear: producto
+             y m³ llegan puestos y el operario confirma. */
+          sugerencia={
+            sugerido
+              ? { producto: sugerido.productoDestino, m3: sugerido.m3, desdeTipo: sugerido.desdeTipo }
+              : undefined
+          }
           onClose={() => setReprocesar(null)}
           onListo={(msg, detalle) => {
             setReprocesar(null);
+            /* El pase se consume: dejarlo colgado ofrecería declarar dos veces
+               el mismo reproceso. */
+            olvidarBorradorDeReproceso();
+            setSugerido(null);
             setNota(`${msg} — ${detalle}`);
             /* La madera dejó de estar disponible: la lista tiene que decirlo ya. */
             void recargar();

@@ -54,17 +54,32 @@ const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
 
 export default function CtpReprocesoModal({
   origen,
+  sugerencia,
   onListo,
   onClose,
 }: {
   origen: OrigenDeReproceso;
+  /**
+   * Lo que la distribución ya calculó (ADR-404): el producto que hace falta y
+   * cuánto. Llega puesto para que nadie lo retipee —cada retipeo es una
+   * oportunidad de declarar otra cosa— pero **es editable**: el que firma es
+   * el operario, no el cálculo.
+   */
+  sugerencia?: { producto: string | null; m3: number; desdeTipo?: string };
   onListo: (mensaje: string, detalle: string) => void;
   onClose: () => void;
 }) {
   const [fecha, setFecha] = useState(hoyIso);
   const [entra, setEntra] = useState(String(origen.disponible));
-  const [sale, setSale] = useState("");
-  const [producto, setProducto] = useState<string>(TIPOS_PRODUCTO_SALIDA[0]?.valor ?? "");
+  /* Lo que la sugerencia dice que hace falta. `entra` NO se toca: cuánto
+     producto vuelve a la sierra depende del saldo de esta corrida, y la
+     sugerencia habla del bloque del cubicador, que puede ser otro. */
+  const [sale, setSale] = useState(
+    sugerencia && sugerencia.m3 > 0 ? String(r4(sugerencia.m3)) : "",
+  );
+  const [producto, setProducto] = useState<string>(
+    sugerencia?.producto ?? TIPOS_PRODUCTO_SALIDA[0]?.valor ?? "",
+  );
   const [motivo, setMotivo] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -35,8 +35,10 @@
  */
 
 import { useState } from "react";
-import { AlertTriangle, ChevronRight, Info, RefreshCw } from "@buleje/design-system/icons";
+import { AlertTriangle, ChevronRight, ExternalLink, Info, RefreshCw } from "@buleje/design-system/icons";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { productoDelTipoComercial } from "@/lib/forestal/loctp-catalogos";
+import { declararEnElLibro } from "@/lib/forestal/reproceso-borrador";
 import { FRASE_REGLA } from "@/lib/forestal/reproceso-reglas";
 import type {
   AmparoImposible,
@@ -61,6 +63,7 @@ function TablaSalidas({
   totalPiezas,
   totalLabel = "Total que sale",
   tono,
+  grupo,
 }: {
   titulo: string;
   ayuda: string;
@@ -70,6 +73,8 @@ function TablaSalidas({
   totalPiezas: number | null;
   totalLabel?: string;
   tono: "amparado" | "opcion";
+  /** El producto original: de ahí salen la especie, la etiqueta y el permiso del pase. */
+  grupo: GrupoDeReproceso;
 }) {
   const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
   const alternar = (clave: string) =>
@@ -92,6 +97,9 @@ function TablaSalidas({
             <th className={`${TH} text-right`}>m³</th>
             <th className={`${TH} text-right`}>Piezas</th>
             <th className={`${TH} text-right`}>Falta</th>
+            <th className={TH}>
+              <span className="sr-only">Declarar en el Libro</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -138,10 +146,33 @@ function TablaSalidas({
                       ? "cubre todo"
                       : `${fmtM3(d.restaM3)} m³`}
                 </td>
+                <td className={`${TD} text-right`}>
+                  {/* Del sugerido al declarado sin retipear: el Libro abre con
+                      el producto y el volumen puestos, y el operario sólo
+                      elige de qué corrida sale (eso no se adivina). */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      declararEnElLibro({
+                        desdeTipo: grupo.desdeTipo,
+                        haciaTipo: d.tipo,
+                        productoDestino: productoDelTipoComercial(d.tipo),
+                        m3: d.m3,
+                        especie: grupo.especie,
+                        etiqueta: grupo.etiquetas.join(" · "),
+                        permiso: grupo.permiso,
+                      })
+                    }
+                    className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-[var(--rule-base)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                    title={`Declarar este reproceso en el Libro: ${fmtM3(d.m3)} m³ de ${grupo.desdeTipo} a ${d.tipo}`}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden /> Declarar
+                  </button>
+                </td>
               </tr>,
               abierto ? (
                 <tr key={`${clave}:medidas`} className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-                  <td colSpan={4} className="px-2 py-1.5">
+                  <td colSpan={5} className="px-2 py-1.5">
                     <table className="w-full">
                       <tbody>
                         {d.medidas.map((m) => (
@@ -174,6 +205,7 @@ function TablaSalidas({
               <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
                 {totalPiezas != null ? fmtPiezas(totalPiezas) : "—"}
               </td>
+              <td />
               <td />
             </tr>
           </tfoot>
@@ -365,6 +397,7 @@ export default function ReprocesosSugeridos({
               totalM3={g.saleM3}
               totalPiezas={g.salePiezas}
               tono="amparado"
+              grupo={g}
             />
             {/* Las opciones se suman cuando ENTRAN JUNTAS en lo libre: de
                 2.500 salen paquetería larga 1.500 y larga angosta 0.800 a la
@@ -381,6 +414,7 @@ export default function ReprocesosSugeridos({
               totalPiezas={g.opcionesCabenJuntas ? g.opcionesPiezas : null}
               totalLabel="Total si las hacés todas"
               tono="opcion"
+              grupo={g}
             />
 
             {/* La cuenta completa del producto, para que cierre contra la tabla
