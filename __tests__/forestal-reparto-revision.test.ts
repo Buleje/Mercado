@@ -182,3 +182,63 @@ describe("revisarDistribucion · la tolerancia es del negocio, no del float", ()
     expect(h.find((x) => x.id === "esp:Tornillo:libre")?.severidad).toBe("aviso");
   });
 });
+
+/**
+ * La auditoría de CUADRE (ADR-405): que la línea cierre con sus medidas, que
+ * las jornadas cierren con el bloque y que lo cubicado = lo amparado + lo que
+ * falta. Son cuentas que tienen que dar por construcción; si alguna no da, el
+ * papel declara un número que su propio detalle no respalda.
+ */
+describe("auditoría de cuadre", () => {
+  const piezasQA = (cantidad: number, espesor: number, ancho: number, largo: number, id: string) => {
+    const pt = (cantidad * espesor * ancho * largo) / 12;
+    return {
+      id, cantidad, espesor, ancho, largo,
+      uEspesor: "pulg" as const, uAncho: "pulg" as const, uLargo: "pies" as const,
+      especie: "Tornillo", pieTablar: pt, m3: Math.round((pt / 424) * 10000) / 10000,
+    };
+  };
+
+  it("una distribución sana no inventa hallazgos de cuadre", () => {
+    const bloque = {
+      id: "ok1", etiqueta: "GTF-1", especie: "Tornillo", m3: 5, origen: "manual" as const,
+      permiso: "P-1", fechaAserrio: "2026-09-01", aprovechablePct: 55, costoM3: null,
+    };
+    const d = distribuirPorCapacidad([bloque], [piezasQA(40, 2, 8, 10, "p1")], "tipo");
+    const ids = revisarDistribucion([bloque], d).map((h) => h.id);
+    expect(ids.filter((x) => x.includes(":medidas"))).toEqual([]);
+    expect(ids.filter((x) => x.includes(":jornadas"))).toEqual([]);
+    expect(ids.filter((x) => x.includes(":pt"))).toEqual([]);
+  });
+
+  it("las jornadas tienen que sumar el bloque: es el papel de cada día", () => {
+    const bloque = {
+      id: "d3", etiqueta: "GTF-2", especie: "Tornillo", m3: 5, origen: "manual" as const,
+      permiso: "P-1", fechaAserrio: "2026-09-01", aprovechablePct: 55, costoM3: null, dias: 3,
+    };
+    const d = distribuirPorCapacidad([bloque], [piezasQA(40, 2, 8, 10, "p2")], "tipo");
+    const bd = d.especies[0].bloques[0];
+    expect(bd.porDia.length).toBe(3);
+    /* La partición por día tiene que reconstruir el bloque — si no, el Anexo 04
+       del día 2 declara madera que el del bloque no tiene. */
+    const m3 = bd.porDia.reduce((a, x) => a + x.m3, 0);
+    const pz = bd.porDia.reduce((a, x) => a + x.piezas, 0);
+    expect(Math.abs(m3 - bd.usadoM3)).toBeLessThanOrEqual(0.01);
+    expect(pz).toBe(bd.asignado.reduce((a, g) => a + g.piezas, 0));
+    expect(revisarDistribucion([bloque], d).some((h) => h.id.includes(":jornadas"))).toBe(false);
+  });
+
+  it("los reprocesos sin declarar entran como aviso, con su bloque", () => {
+    const bloque = {
+      id: "r1", etiqueta: "Saldo comercial", especie: "Tornillo", m3: 5, origen: "manual" as const,
+      permiso: "P-1", fechaAserrio: "2026-09-01", aprovechablePct: 55, costoM3: null,
+    };
+    const d = distribuirPorCapacidad([bloque], [piezasQA(40, 2, 8, 10, "p3")], "tipo");
+    const h = revisarDistribucion([bloque], d, [
+      { desdeTipo: "Comercial", haciaTipo: "Paquetería larga", m3: 1.2, bloques: [{ id: "r1", etiqueta: "Saldo comercial" }] },
+    ]);
+    const aviso = h.find((x) => x.id.startsWith("repro:"));
+    expect(aviso?.severidad).toBe("aviso");
+    expect(aviso?.que).toContain("paquetería larga");
+  });
+});

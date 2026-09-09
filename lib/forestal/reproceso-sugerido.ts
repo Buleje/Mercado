@@ -33,7 +33,11 @@
  * produce cachimbo. Y nunca de un tipo hacia sí mismo.
  */
 
-import { tipoDelBloque, type Distribucion } from "@/lib/forestal/cubicacion-reparto";
+import {
+  tipoDelBloque,
+  type AsignacionMedida,
+  type Distribucion,
+} from "@/lib/forestal/cubicacion-reparto";
 
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -93,6 +97,14 @@ export interface SugerenciaReproceso {
   piezasDesde: number | null;
   /** m³ del bloque (o bloques) de origen, para leer de qué tamaño es lo que hay. */
   m3Desde: number;
+  /**
+   * Las MEDIDAS que salen (2×8×10 · 12 pzas · 0.226 m³), igual que en los
+   * bloques distribuidos (Brandon, 2026-09-09: «que tenga ahí las medidas que
+   * se usarán… para que todo cuadre según la meta y las medidas»). Sin esto la
+   * sugerencia dice un volumen que nadie puede mandar a la sierra: el aserrador
+   * corta escuadrías, no metros cúbicos.
+   */
+  medidas: AsignacionMedida[];
   /** Lo que se puede convertir: nunca más de lo que hay. */
   convertirM3: number;
   /** `true` si con eso el faltante queda cubierto. */
@@ -159,6 +171,9 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
           faltantePiezas: f.piezas,
           piezasDesde: piezasDe(bloques),
           m3Desde: r4(bloques.reduce((a, b) => a + b.m3, 0)),
+          /* Las medidas del FALTANTE: son las piezas que están esperando
+             respaldo, con su escuadría. */
+          medidas: f.medidas.filter((m) => m.piezas > 0),
           convertirM3,
           cubreTodo: disponibleM3 + EPS >= f.m3,
           restaM3: r4(Math.max(0, f.m3 - convertirM3)),
@@ -189,6 +204,8 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
           faltantePiezas: g.piezas,
           piezasDesde: b.bloque.piezasOrigen ?? b.bloque.piezasManual ?? null,
           m3Desde: r4(Number(b.bloque.m3) || 0),
+          /* Las medidas que ese bloque YA está amparando de este tipo. */
+          medidas: g.medidas.filter((m) => m.piezas > 0),
           convertirM3: r4(g.m3),
           cubreTodo: true,
           restaM3: 0,
@@ -236,6 +253,8 @@ export interface DestinoDeReproceso {
   cubreTodo: boolean;
   /** Lo que seguiría faltando de ese tipo (sólo en las opciones). */
   restaM3: number;
+  /** Con qué escuadrías: lo que el aserrador necesita para cortar. */
+  medidas: AsignacionMedida[];
 }
 
 /**
@@ -322,6 +341,7 @@ export function agruparPorOrigen(
       motivo: s.motivo,
       cubreTodo: s.cubreTodo,
       restaM3: s.restaM3,
+      medidas: s.medidas,
     };
     if (s.motivo === "amparado") g.amparados.push(destino);
     else g.opciones.push(destino);

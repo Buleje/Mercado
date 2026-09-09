@@ -45,7 +45,7 @@ const TONO = {
 
 /** Una especie: sus bloques llenados y lo que le quedó sin respaldo. */
 export function BloqueEspecie({
-  e, dim, conCosto, marcadas, marcar, onAnexo,
+  e, dim, conCosto, marcadas, marcar, onAnexo, onAnexoDia, anexoElegidos, onAlternarAnexo,
   editarBloque, valorTexto, onCambioDecimal, onBlurDecimal, onAgregarBloqueSugerido,
   onEditarLinea, valorTextoLinea, onCambioDecimalLinea, onBlurDecimalLinea,
   indiceBloque,
@@ -64,6 +64,11 @@ export function BloqueEspecie({
   marcar: (claves: string[], estado?: boolean) => void;
   /** Abre el Anexo 04 con las piezas de ESE bloque. */
   onAnexo?: (b: BloqueDistribuido) => void;
+  /** Abre el Anexo 04 con las piezas de UNA jornada del bloque (ADR-405). */
+  onAnexoDia?: (b: BloqueDistribuido, dia: number) => void;
+  /** Claves (`bloqueId#dia`) tildadas para el Anexo 04 conjunto. */
+  anexoElegidos?: ReadonlySet<string>;
+  onAlternarAnexo?: (clave: string) => void;
   /**
    * Editar `amparaManualM3`/`piezasManual` DESDE el resultado ya distribuido:
    * mismo campo que la tabla de entrada de arriba (misma fuente de verdad),
@@ -424,6 +429,9 @@ export function BloqueEspecie({
                 valorTextoLinea={valorTextoLinea}
                 onCambioDecimalLinea={onCambioDecimalLinea}
                 onBlurDecimalLinea={onBlurDecimalLinea}
+                onAnexoDia={onAnexoDia ? (d) => onAnexoDia(b, d) : undefined}
+                anexoElegido={anexoElegidos?.has(`${b.bloque.id}#${dia.dia}`)}
+                onAlternarAnexo={onAlternarAnexo ? (d) => onAlternarAnexo(`${b.bloque.id}#${d}`) : undefined}
               />
             ))
           )}
@@ -517,9 +525,18 @@ export function BloqueEspecie({
 function JornadaBloque({
   bloque, dia, dias, dim, etiquetaCol, marcadas, marcar,
   editableLinea, onEditarLinea, valorTextoLinea, onCambioDecimalLinea, onBlurDecimalLinea,
+  onAnexoDia, anexoElegido, onAlternarAnexo,
 }: {
   bloque: BloqueRolliza;
   dia: DiaDistribuido;
+  /**
+   * El Anexo 04 de ESA jornada. El Libro se registra día por día: el papel que
+   * respalda un día no puede traer las piezas de los otros (ADR-405).
+   */
+  onAnexoDia?: (dia: number) => void;
+  /** `true` si esta jornada está tildada para el Anexo 04 conjunto. */
+  anexoElegido?: boolean;
+  onAlternarAnexo?: (dia: number) => void;
   /** Jornadas del bloque: con una sola no se dibuja la cabecera de día. */
   dias: number;
   dim: DimensionResumen;
@@ -566,6 +583,33 @@ function JornadaBloque({
                 : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"}`}>
                 {listas}/{claves.length} distribuidas
               </span>
+            )}
+            {/* El papel de ESTE día: solo, o tildado para juntarlo con otros
+                en un anexo conjunto (ADR-405). */}
+            {dia.grupos.length > 0 && onAlternarAnexo && (
+              <label
+                className="ml-2 inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-1.5 py-0.5 text-xs font-bold text-[var(--text-secondary)]"
+                title="Juntar este día con otros en un solo Anexo 04"
+              >
+                <input
+                  type="checkbox"
+                  checked={!!anexoElegido}
+                  onChange={() => onAlternarAnexo(dia.dia)}
+                  aria-label={`Juntar el día ${dia.dia} en el Anexo 04 conjunto`}
+                  className="h-3.5 w-3.5 accent-[var(--accent)]"
+                />
+                juntar
+              </label>
+            )}
+            {dia.grupos.length > 0 && onAnexoDia && (
+              <button
+                type="button"
+                onClick={() => onAnexoDia(dia.dia)}
+                title={`Anexo 04 sólo con lo del día ${dia.dia}`}
+                className="ml-1 inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-1.5 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+              >
+                <FileText className="h-3.5 w-3.5" aria-hidden /> Anexo del día
+              </button>
             )}
           </span>
         </div>

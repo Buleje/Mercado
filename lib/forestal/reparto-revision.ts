@@ -34,6 +34,18 @@ import {
  */
 export const TOL_REVISION_M3 = 0.01;
 
+/**
+ * El cierre por diferencia de medición del reparto son unas pocas piezas
+ * sueltas (`TOL_CIERRE_M3` = 50 litros por bloque). Por debajo de eso, que un
+ * bloque ampare de más es lo esperado y avisarlo sería ruido; por encima ya no
+ * es medición, es madera que necesita otro bloque.
+ */
+const TOL_CIERRE_VISIBLE_M3 = 0.05;
+
+/** Pie tablar que quedó sin respaldo en una especie. */
+const faltantePt = (e: { faltante: readonly { pieTablar: number }[] }): number =>
+  e.faltante.reduce((a, f) => a + f.pieTablar, 0);
+
 export type SeveridadRevision = "error" | "aviso";
 
 export interface HallazgoRevision {
@@ -62,6 +74,13 @@ const vacio = (v: string | null | undefined) => (v ?? "").trim() === "";
 export function revisarDistribucion(
   bloques: readonly BloqueRolliza[],
   dist: Distribucion,
+  /**
+   * Los reprocesos que el respaldo da por hecho (ADR-404). Se pasan aparte
+   * porque la revisión no los calcula: los cruza. Un bloque de comercial que
+   * ampara paquetería es un reproceso que el Libro todavía no tiene, y eso hay
+   * que verlo ANTES de firmar el papel, no después.
+   */
+  reprocesosSinDeclarar: readonly { desdeTipo: string; haciaTipo: string; m3: number; bloques: readonly { id: string; etiqueta: string }[] }[] = [],
 ): HallazgoRevision[] {
   const out: HallazgoRevision[] = [];
 
@@ -248,6 +267,97 @@ export function revisarDistribucion(
           : "Verificá el m³ de rolliza cargado y que esté cubicada toda la madera que salió de esa troza.",
       });
     }
+  }
+
+  // ── Que todo CUADRE: la línea con sus medidas, el bloque con sus días ──
+  /*
+   * Brandon, 2026-09-09: «una auditoría general que toda la distribución
+   * —aserrada, lotes, rolliza— cuadre según medidas y tipo».
+   *
+   * Son cuentas que tienen que dar por construcción; si alguna no da, el papel
+   * declara un número que su propio detalle no respalda. Ninguna la ve `tsc`.
+   */
+  for (const e of dist.especies) {
+    for (const d of e.bloques) {
+      const rot = rotulo(d.bloque);
+
+      // 1. Cada línea contra el detalle de medidas que la justifica.
+      for (const g of d.asignado) {
+        if (g.m3Declarado) continue; // el operario declaró el m³ a conciencia
+        const suma = g.medidas.reduce((a, m) => a + m.m3, 0);
+        if (Math.abs(suma - g.m3) > TOL_REVISION_M3) {
+          out.push({
+            id: `${d.bloque.id}:${g.clave}:medidas`,
+            severidad: "error",
+            bloqueId: d.bloque.id,
+            donde: `${rot} · ${g.label}`,
+            que: `La línea dice ${g.m3.toFixed(3)} m³ y sus medidas suman ${suma.toFixed(3)}.`,
+            comoArreglar:
+              "El detalle de medidas es lo que respalda la línea: si no suman lo mismo, el Anexo 04 declara un total que su propio detalle no sostiene. Revisá los overrides de esa línea.",
+          });
+        }
+      }
+
+      // 2. Las jornadas contra el bloque: cada día se registra por separado.
+      if (d.dias > 1) {
+        const porDiaM3 = d.porDia.reduce((a, x) => a + x.m3, 0);
+        const porDiaPz = d.porDia.reduce((a, x) => a + x.piezas, 0);
+        const piezasBloque = d.asignado.reduce((a, g) => a + g.piezas, 0);
+        if (Math.abs(porDiaM3 - d.usadoM3) > TOL_REVISION_M3 || porDiaPz !== piezasBloque) {
+          out.push({
+            id: `${d.bloque.id}:jornadas`,
+            severidad: "error",
+            bloqueId: d.bloque.id,
+            donde: rot,
+            que: `Las ${d.dias} jornadas suman ${porDiaM3.toFixed(3)} m³ / ${porDiaPz} pzas y el bloque ${d.usadoM3.toFixed(3)} m³ / ${piezasBloque} pzas.`,
+            comoArreglar:
+              "Cada día se registra en el Libro por separado y su Anexo 04 sale de esa partición: si los días no suman el bloque, un papel declara madera que otro no tiene.",
+          });
+        }
+      }
+
+      // 3. El bloque contra su propia capacidad, con el margen del cierre.
+      const exceso = d.usadoM3 - d.capacidadM3;
+      if (exceso > TOL_CIERRE_VISIBLE_M3) {
+        out.push({
+          id: `${d.bloque.id}:excede`,
+          severidad: "aviso",
+          bloqueId: d.bloque.id,
+          donde: rot,
+          que: `Ampara ${d.usadoM3.toFixed(3)} m³ y declara ${d.capacidadM3.toFixed(3)}: ${exceso.toFixed(3)} m³ de más.`,
+          comoArreglar:
+            "El reparto cierra hasta 3 piezas por diferencia de medición; más que eso es madera que necesita otro bloque. Subí el m³ del bloque o dejá esas piezas en «Falta por distribuir».",
+        });
+      }
+    }
+
+    // 4. Lo cubicado = lo amparado + lo que falta (en pie tablar, la unidad
+    //    con la que se vende y se declara).
+    const cuadraPt = Math.abs(e.aserradaPt - (e.amparadaPt + faltantePt(e))) > 1;
+    if (cuadraPt) {
+      out.push({
+        id: `esp:${e.especie}:pt`,
+        severidad: "error",
+        bloqueId: null,
+        donde: e.especie || "Sin especie",
+        que: `Cubicado ${e.aserradaPt.toFixed(2)} PT, amparado ${e.amparadaPt.toFixed(2)} + faltante ${faltantePt(e).toFixed(2)}.`,
+        comoArreglar:
+          "Lo repartido y lo que falta tienen que reconstruir el lote entero. Si no cierra, hay piezas contadas dos veces o ninguna.",
+      });
+    }
+  }
+
+  // 5. Reprocesos que el papel da por hecho y el Libro no tiene.
+  for (const r of reprocesosSinDeclarar) {
+    out.push({
+      id: `repro:${r.bloques[0]?.id ?? ""}:${r.desdeTipo}:${r.haciaTipo}`,
+      severidad: "aviso",
+      bloqueId: r.bloques[0]?.id ?? null,
+      donde: r.bloques.map((b) => b.etiqueta || "sin etiqueta").join(" · "),
+      que: `El respaldo es ${r.desdeTipo.toLowerCase()} y ampara ${r.m3.toFixed(3)} m³ de ${r.haciaTipo.toLowerCase()}.`,
+      comoArreglar:
+        "Declará el reproceso en el Libro (Productos disponibles → Reprocesar) o marcá el bloque con «Lleva sólo» para que no ampare otro tipo.",
+    });
   }
 
   // Errores primero: es el orden en que hay que resolverlos.

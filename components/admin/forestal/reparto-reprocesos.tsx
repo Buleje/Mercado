@@ -27,8 +27,9 @@
  * Es una SUGERENCIA, no un movimiento: acá no se registra nada en el Libro.
  */
 
-import { Info, RefreshCw, Target } from "@buleje/design-system/icons";
-import { fmtM3, fmtPiezas } from "@/lib/forestal/cubicacion-formato";
+import { useState } from "react";
+import { ChevronRight, Info, RefreshCw, Target } from "@buleje/design-system/icons";
+import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import type {
   CuadreDeDistribucion,
   DestinoDeReproceso,
@@ -59,6 +60,14 @@ function TablaSalidas({
   totalPiezas: number | null;
   tono: "amparado" | "opcion";
 }) {
+  const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
+  const alternar = (clave: string) =>
+    setAbiertos((prev) => {
+      const next = new Set(prev);
+      if (next.has(clave)) next.delete(clave);
+      else next.add(clave);
+      return next;
+    });
   if (destinos.length === 0) return null;
   return (
     <div className="mt-2">
@@ -75,33 +84,76 @@ function TablaSalidas({
           </tr>
         </thead>
         <tbody>
-          {destinos.map((d) => (
-            <tr
-              key={`${d.tipo}|${d.motivo}`}
-              className="border-b border-[var(--rule-soft)] last:border-0"
-            >
-              <td className={TD}>
-                <span
-                  className={`${CHIP} ${
-                    tono === "amparado"
-                      ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                      : "bg-[var(--data-info-500)]/15 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
-                  }`}
-                >
-                  {d.tipo}
-                </span>
-              </td>
-              <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(d.m3)}</td>
-              <td className={NUM}>{fmtPiezas(d.piezas)}</td>
-              <td className={`${NUM} text-[var(--text-tertiary)]`}>
-                {d.motivo === "amparado"
-                  ? "—"
-                  : d.cubreTodo
-                    ? "cubre todo"
-                    : `${fmtM3(d.restaM3)} m³`}
-              </td>
-            </tr>
-          ))}
+          {destinos.map((d) => {
+            const clave = `${d.tipo}|${d.motivo}`;
+            const abierto = abiertos.has(clave);
+            return [
+              <tr key={clave} className="border-b border-[var(--rule-soft)]">
+                <td className={TD}>
+                  {/* El desglose de MEDIDAS va plegado, igual que en los bloques
+                      distribuidos: desplegado son 4× las filas y se pierde la
+                      lectura de cuánto ampara cada tipo. */}
+                  <button
+                    type="button"
+                    onClick={() => alternar(clave)}
+                    disabled={d.medidas.length === 0}
+                    aria-expanded={abierto}
+                    className="inline-flex items-center gap-1 disabled:cursor-default"
+                    title={d.medidas.length > 0 ? "Ver las medidas" : "Sin medidas declaradas"}
+                  >
+                    {d.medidas.length > 0 && (
+                      <ChevronRight
+                        className={`h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)] transition-transform ${abierto ? "rotate-90" : ""}`}
+                        aria-hidden
+                      />
+                    )}
+                    <span
+                      className={`${CHIP} ${
+                        tono === "amparado"
+                          ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                          : "bg-[var(--data-info-500)]/15 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+                      }`}
+                    >
+                      {d.tipo}
+                    </span>
+                  </button>
+                </td>
+                <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(d.m3)}</td>
+                <td className={NUM}>{fmtPiezas(d.piezas)}</td>
+                <td className={`${NUM} text-[var(--text-tertiary)]`}>
+                  {d.motivo === "amparado"
+                    ? "—"
+                    : d.cubreTodo
+                      ? "cubre todo"
+                      : `${fmtM3(d.restaM3)} m³`}
+                </td>
+              </tr>,
+              abierto ? (
+                <tr key={`${clave}:medidas`} className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
+                  <td colSpan={4} className="px-2 py-1.5">
+                    <table className="w-full">
+                      <tbody>
+                        {d.medidas.map((m) => (
+                          <tr key={m.clave}>
+                            <td className="py-0.5 pl-6 text-xs text-[var(--text-secondary)]">{m.medida}</td>
+                            <td className="py-0.5 text-right font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+                              {fmtM3(m.m3)} m³
+                            </td>
+                            <td className="py-0.5 text-right font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+                              {fmtPiezas(m.piezas)} pzas
+                            </td>
+                            <td className="py-0.5 pr-2 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
+                              {fmtPt(m.pieTablar)} PT
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              ) : null,
+            ];
+          })}
         </tbody>
         {totalM3 != null && (
           <tfoot>

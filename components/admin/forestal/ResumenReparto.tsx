@@ -28,7 +28,7 @@ import {
 import {
   APROVECHABLE_DEFAULT, aprovechableDe, bloquesDesdeTrozas, claveOverrideLinea, distribucionACsv,
   distribuirPorCapacidad, esAserradaDirecta, juzgarRendimiento,
-  type BloqueDistribuido, type BloqueRolliza, type FiltroLargo,
+  type BloqueRolliza, type FiltroLargo,
 } from "@/lib/forestal/cubicacion-reparto";
 import type { ProcedenciaBloques } from "@/lib/forestal/anexo04-validacion";
 import { exportarDistribucionExcel, exportarDistribucionPDF, filtrarPorEspecies, type FirmaResponsable } from "@/lib/forestal/distribucion-export";
@@ -43,6 +43,12 @@ import { BloqueEspecie } from "./reparto-vistas";
 import { DiferenciaDistribucion } from "./reparto-diferencia";
 import { AlertaDescuadre, OpcionesExportacion } from "./reparto-opciones";
 import { diagnosticarReparto } from "@/lib/forestal/cubicacion-reparto-diagnostico";
+import {
+  alternarClaveAnexo,
+  leerClaveAnexo,
+  piezasDelBloque,
+  piezasDelDia,
+} from "@/lib/forestal/reparto-anexo";
 import {
   agruparPorOrigen,
   cuadreDeDistribucion,
@@ -329,40 +335,6 @@ function TopeDeBloque({ children, titulo, alerta }: { children: ReactNode; titul
 }
 
 /**
- * Las piezas de un bloque, en el formato que entiende el Anexo 04.
- *
- * La asignación guarda MEDIDAS con su conteo (12 piezas de 2×8×10); el anexo
- * pide filas de pieza cubicada. Se reconstruyen con sus dimensiones y unidades
- * originales —no se recalcula el volumen— así el papel declara exactamente lo
- * que la pantalla repartió.
- */
-function piezasDelBloque(b: BloqueDistribuido, especie: string): PiezaCubicada[] {
-  const out: PiezaCubicada[] = [];
-  for (const g of b.asignado) {
-    for (const m of g.medidas) {
-      if (m.piezas <= 0) continue;
-      out.push({
-        id: `${b.bloque.id}-${g.clave}-${m.clave}`,
-        cantidad: m.piezas,
-        espesor: m.espesor,
-        ancho: m.ancho,
-        largo: m.largo,
-        uEspesor: m.uEspesor as PiezaCubicada["uEspesor"],
-        uAncho: m.uAncho as PiezaCubicada["uAncho"],
-        uLargo: m.uLargo as PiezaCubicada["uLargo"],
-        especie,
-        /* El tipo se conserva: el Anexo 04 abre UN bloque por especie + tipo de
-           producto, así que perderlo mezclaría paquetería con comercial. */
-        tipo: g.label as PiezaCubicada["tipo"],
-        pieTablar: m.pieTablar,
-        m3: m.m3,
-      });
-    }
-  }
-  return out;
-}
-
-/**
  * El N° de permiso de un lote — según el de sus trozas (Brandon, 2026-09-01:
  * "se tiene que rellenar según el número de permiso de las trozas"), no algo
  * que se tipee de nuevo. Si el lote mezcla trozas de MÁS de un permiso, se
@@ -568,10 +540,9 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
   };
   /** Marca/desmarca un bloque para juntarlo con otros en un solo Anexo 04. */
   const alternarSeleccionAnexo = (id: string) => {
-    const next = new Set(seleccionAnexo);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    guardarSeleccionAnexo(next);
+    guardarSeleccionAnexo(alternarClaveAnexo(seleccionAnexo, id));
   };
+
   /** Borrar un bloque lo saca también de la selección para el Anexo 04 conjunto. */
   const quitarBloque = (id: string) => {
     guardar(bloques.filter((x) => x.id !== id));
@@ -948,12 +919,32 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    * misma medida dos veces, una por bloque de origen.
    */
   const combinadoAnexo = useMemo(() => {
-    const elegidos = bloquesDistribuidos.filter(({ b }) => seleccionAnexo.has(b.bloque.id));
-    const piezas = unificarPorMedida(elegidos.flatMap(({ b, especie }) => piezasDelBloque(b, especie)));
+    /* Cada clave elegida es un bloque entero o UNA jornada suya: el papel
+       conjunto junta lo que se haya tildado, sin repetir (elegir un día suelta
+       el bloque entero y al revés — `alternarClaveAnexo`). */
+    const elegidos = [...seleccionAnexo]
+      .map((clave) => {
+        const { bloqueId, dia } = leerClaveAnexo(clave);
+        const encontrado = bloquesDistribuidos.find(({ b }) => b.bloque.id === bloqueId);
+        return encontrado ? { ...encontrado, dia, clave } : null;
+      })
+      .filter((x): x is NonNullable<typeof x> => x != null);
+    const piezas = unificarPorMedida(
+      elegidos.flatMap(({ b, especie, dia }) =>
+        dia == null ? piezasDelBloque(b, especie) : piezasDelDia(b, dia, especie),
+      ),
+    );
     return {
       piezas,
-      amparaM3: elegidos.reduce((a, { b }) => a + b.capacidadM3, 0),
-      etiqueta: elegidos.map(({ b }) => b.bloque.etiqueta || "sin etiqueta").join(" + "),
+      /* La capacidad de un bloque es del bloque entero: sumarla por cada día
+         elegido diría que el mismo respaldo ampara N veces. */
+      amparaM3: [...new Map(elegidos.map((x) => [x.b.bloque.id, x.b])).values()].reduce(
+        (a, b) => a + b.capacidadM3,
+        0,
+      ),
+      etiqueta: elegidos
+        .map(({ b, dia }) => `${b.bloque.etiqueta || "sin etiqueta"}${dia == null ? "" : ` · día ${dia}`}`)
+        .join(" + "),
       especies: [...new Set(elegidos.map(({ especie }) => especie).filter(Boolean))],
       cantidad: elegidos.length,
       /**
@@ -1075,7 +1066,25 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
    * (puro, con tests) porque son reglas de negocio: qué le falta a un bloque
    * para poder declararse, y qué combinaciones no se pueden presentar.
    */
-  const hallazgos = useMemo(() => revisarDistribucion(bloques, dist), [bloques, dist]);
+  /* La revisión cruza también los reprocesos que el respaldo da por hecho: un
+     bloque de comercial amparando paquetería es un reproceso que el Libro no
+     tiene, y eso se mira ANTES de firmar (ADR-404 · ADR-405). */
+  const hallazgos = useMemo(
+    () =>
+      revisarDistribucion(
+        bloques,
+        dist,
+        reprocesos
+          .filter((r) => r.motivo === "amparado")
+          .map((r) => ({
+            desdeTipo: r.desdeTipo,
+            haciaTipo: r.haciaTipo,
+            m3: r.convertirM3,
+            bloques: r.bloques.map((b) => ({ id: b.id, etiqueta: b.etiqueta })),
+          })),
+      ),
+    [bloques, dist, reprocesos],
+  );
   const cuenta = contarRevision(hallazgos);
   const [revisionAbierta, setRevisionAbierta] = useState(false);
 
@@ -2121,6 +2130,16 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             etiqueta: b.bloque.etiqueta || "Sin etiqueta",
             procedencia: esAserradaDirecta(b.bloque) ? { rolliza: 0, aserradaDirecta: 1 } : { rolliza: 1, aserradaDirecta: 0 },
           })}
+          /* El papel de UNA jornada: el Libro se registra día por día, así que
+             el anexo del día 2 no puede traer las piezas del día 1 (ADR-405). */
+          onAnexoDia={(b, dia) => setAnexoDe({
+            piezas: piezasDelDia(b, dia, e.especie),
+            especie: e.especie,
+            etiqueta: `${b.bloque.etiqueta || "Sin etiqueta"} · día ${dia}`,
+            procedencia: esAserradaDirecta(b.bloque) ? { rolliza: 0, aserradaDirecta: 1 } : { rolliza: 1, aserradaDirecta: 0 },
+          })}
+          anexoElegidos={seleccionAnexo}
+          onAlternarAnexo={alternarSeleccionAnexo}
           editarBloque={editar}
           valorTexto={valorTexto}
           onCambioDecimal={onCambioDecimal}
