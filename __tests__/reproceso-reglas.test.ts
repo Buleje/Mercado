@@ -10,6 +10,8 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  avisoDeConversion,
+  esConversionHabitual,
   FRASE_REGLA,
   porQueNoSePuede,
   puedeReprocesarse,
@@ -117,5 +119,38 @@ describe("la frase que se muestra sale del mapa, no de la mano", () => {
     expect(FRASE_REGLA).toMatch(/producto terminado/);
     /* Los tipos sin salidas no aparecen como origen de nada. */
     expect(FRASE_REGLA).not.toMatch(/de tabla sale/i);
+  });
+});
+
+describe("la vista del LIBRO: esConversionHabitual (avisa, no bloquea)", () => {
+  it("un tipo hacia SÍ MISMO es un reproceso real, aunque no sea una sugerencia", () => {
+    /* Un tablón comercial 4×8×10 partido en dos comerciales 2×8×10 volvió a la
+       sierra de verdad. En la sugerencia de la distribución eso no significa
+       nada (es capacidad sin usar) y por eso las dos funciones difieren. */
+    expect(esConversionHabitual("Comercial", "Comercial")).toBe(true);
+    expect(puedeReprocesarse("Comercial", "Comercial")).toBe(false);
+    expect(avisoDeConversion("Comercial", "Comercial")).toBeNull();
+  });
+
+  it("lo que la matriz permite no avisa nada", () => {
+    expect(esConversionHabitual("Paquetería larga", "Comercial")).toBe(true);
+    expect(avisoDeConversion("Comercial", "Corta")).toBeNull();
+  });
+
+  it("de un producto terminado avisa, y el aviso pide explicarlo", () => {
+    expect(esConversionHabitual("Tabla", "Comercial")).toBe(false);
+    const aviso = avisoDeConversion("Tabla", "Comercial");
+    expect(aviso).toBeTruthy();
+    expect(aviso).toMatch(/producto terminado/);
+    expect(aviso).toMatch(/explic/i);
+  });
+
+  it("sin saber el tipo de alguna punta NO se afirma que sea raro", () => {
+    /* «MADERA ASERRADA» a secas no dice el tipo: inventar una advertencia sobre
+       eso enseña a ignorar las advertencias. */
+    expect(esConversionHabitual(null, "Comercial")).toBe(true);
+    expect(esConversionHabitual("Tabla", null)).toBe(true);
+    expect(esConversionHabitual("", "")).toBe(true);
+    expect(avisoDeConversion(null, "Comercial")).toBeNull();
   });
 });

@@ -66,6 +66,26 @@ Compiten sólo cuando la suma se pasa de lo libre.
 no llegaría a lo que el bloque ampara y se leería como el descuadre que ya se
 corrigió una vez (`quedaM3 = origenM3 − amparadoM3`).
 
+**5. En el Libro (Productos disponibles → Reprocesar) la regla AVISA, no bloquea.**
+El sugeridor de la distribución propone; el Libro **registra hechos que ya
+pasaron** —una tabla que se hinchó y volvió a la sierra, una devolución del
+cliente—. Rechazar el asiento no deshace el hecho: empuja a falsear el tipo para
+poder anotarlo, que es el fraude que la trazabilidad quiere evitar (la misma
+lógica del «≤ nunca ==» de los invariantes). Entonces:
+
+- el desplegable «Producto que sale» separa **lo que sale de este producto** de
+  **lo que no es habitual**;
+- elegir del segundo grupo muestra el porqué y **exige una explicación** (15
+  caracteres, no un «ok»);
+- la explicación viaja a las **observaciones del asiento** con la marca de la
+  conversión, y el servidor la anota en la **auditoría** (`conversión NO
+  habitual: #23 Tabla → Comercial`).
+
+Ojo con la diferencia de semántica: en el Libro **un tipo hacia sí mismo es un
+reproceso real** (un tablón comercial 4×8×10 partido en dos comerciales 2×8×10),
+mientras que en la sugerencia no significa nada. Por eso hay dos funciones:
+`puedeReprocesarse` (sugerencia) y `esConversionHabitual` (Libro).
+
 ## Consecuencias
 
 - Una conversión nueva del aserradero se agrega en **una fila** de

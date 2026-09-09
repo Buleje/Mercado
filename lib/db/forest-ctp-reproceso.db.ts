@@ -4,6 +4,8 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { CtpInvariantError } from "./forest-ctp-consumo.db";
+import { tipoComercialDelProducto } from "@/lib/forestal/loctp-catalogos";
+import { esConversionHabitual } from "@/lib/forestal/reproceso-reglas";
 import { explicarSaldo, saldosDeCorridas } from "./forest-ctp-saldo-corrida";
 
 /**
@@ -177,6 +179,17 @@ export async function setReprocesoOrigenes(
       await tx.forestCtpEntry.update({ where: { id: destinoEntryId }, data: { codigoRaiz } });
     }
 
+    /* Las conversiones que el aserradero no hace (ADR-407) NO se rechazan: el
+       Libro registra hechos que ya pasaron —una tabla hinchada que volvió a la
+       sierra, una devolución— y rechazar el asiento no deshace el hecho, sólo
+       empuja a falsear el tipo para poder anotarlo. Lo que sí queda es DICHO,
+       acá y en las observaciones del asiento: es lo que se lee después. */
+    const tipoDestino = tipoComercialDelProducto(destino.productType);
+    const noHabituales = corridas
+      .filter((c) => limpias.some((l) => l.origenEntryId === c.id))
+      .filter((c) => !esConversionHabitual(tipoComercialDelProducto(c.productType), tipoDestino))
+      .map((c) => `#${c.lineNo} ${tipoComercialDelProducto(c.productType) ?? c.productType} → ${tipoDestino ?? destino.productType}`);
+
     const detalleAntes = antes.map((a) => `#${a.origen.lineNo} ${Number(a.quantity)}`).join(", ") || "nada";
     const detalleAhora =
       limpias.map((l) => `#${corridas.find((c) => c.id === l.origenEntryId)?.lineNo} ${l.quantity}`).join(", ") || "nada";
@@ -185,12 +198,18 @@ export async function setReprocesoOrigenes(
       action: "ctp_reproceso_set",
       entity: "ForestCtpEntry",
       entityId: destinoEntryId,
-      detail: `Reproceso de la corrida #${destino.lineNo}: entra ${detalleAhora} (antes ${detalleAntes})`,
+      detail:
+        `Reproceso de la corrida #${destino.lineNo}: entra ${detalleAhora} (antes ${detalleAntes})` +
+        (noHabituales.length > 0
+          ? ` · conversión NO habitual: ${noHabituales.join(", ")}`
+          : ""),
       user: usuario,
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
 
-    return { destinoEntryId, lineas: limpias, codigoRaiz };
+    /* `noHabituales` viaja al que llama: la pantalla lo usa para decirlo sin
+       volver a calcular la regla (y para no afirmar que fue habitual). */
+    return { destinoEntryId, lineas: limpias, codigoRaiz, noHabituales };
   });
 }
 

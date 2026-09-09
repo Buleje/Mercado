@@ -158,3 +158,47 @@ export const FRASE_REGLA = (() => {
   }
   return `${partes.join("; ")}.`;
 })();
+
+/**
+ * ¿Esta conversión es de las que hace el aserradero, mirándola desde el **Libro**?
+ *
+ * Difiere de `puedeReprocesarse` en un caso y por una razón: **un tipo hacia sí
+ * mismo es un reproceso real** (un tablón comercial 4×8×10 partido en dos
+ * comerciales 2×8×10 es madera que volvió a la sierra y cambió de medida),
+ * mientras que en la SUGERENCIA de la distribución no significa nada — ahí, si
+ * sobra comercial y falta comercial, lo que hay es capacidad sin usar.
+ *
+ * Se usa para avisar en el Libro, no para bloquear: ver la nota de abajo.
+ */
+export function esConversionHabitual(
+  desde: string | null | undefined,
+  hacia: string | null | undefined,
+): boolean {
+  const d = norm(desde ?? "");
+  const h = norm(hacia ?? "");
+  /* Sin saber de qué tipo es alguna de las dos puntas no se puede afirmar que
+     algo sea raro: el producto genérico «MADERA ASERRADA» no dice el tipo. */
+  if (!d || !h) return true;
+  if (d === h) return true;
+  return puedeReprocesarse(d, h);
+}
+
+/**
+ * El aviso para una conversión fuera de lo habitual, o `null` si es habitual.
+ *
+ * ⚠️ **Avisa, no bloquea — y es a propósito.** El Libro registra hechos que ya
+ * pasaron: una tabla que se hinchó y volvió a la sierra, una devolución del
+ * cliente. Rechazar el asiento no deshace el hecho; empuja a falsear el tipo
+ * para poder registrarlo, que es exactamente el fraude que la trazabilidad
+ * quiere evitar (la misma lógica del «≤ nunca ==» de los invariantes). Lo que
+ * sí hace falta es que quede **dicho**: el aviso pide explicarlo y el motivo
+ * viaja al asiento y a la auditoría.
+ */
+export function avisoDeConversion(
+  desde: string | null | undefined,
+  hacia: string | null | undefined,
+): string | null {
+  if (esConversionHabitual(desde, hacia)) return null;
+  const porque = porQueNoSePuede(desde, hacia);
+  return `${porque ?? ""} Si igual pasó, explicá abajo por qué: queda en el libro y es lo que se muestra en una fiscalización.`.trim();
+}

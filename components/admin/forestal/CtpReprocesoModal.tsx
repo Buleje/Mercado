@@ -15,14 +15,27 @@
  * declara qué salió) y después se le atribuye el **origen**. Si la atribución
  * falla, la corrida queda creada y se dice cómo terminarla: borrar el asiento de
  * una madera que ya volvió a la sierra sería negar un hecho.
+ *
+ * ## Las conversiones que hace el aserradero (ADR-407)
+ *
+ * El producto que sale se ofrece en dos grupos: **lo que sale de este producto**
+ * y **lo que no es habitual**. Elegir del segundo grupo no está prohibido —el
+ * Libro registra hechos, y bloquear el asiento de una madera que ya volvió a la
+ * sierra empuja a falsear el tipo para poder anotarla— pero **hay que
+ * explicarlo**: el aviso lo pide y el motivo viaja al asiento y a la auditoría.
  */
 
-import { useState } from "react";
-import { Loader2, RefreshCw } from "@buleje/design-system/icons";
+import { useMemo, useState } from "react";
+import { AlertTriangle, Loader2, RefreshCw } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
-import { TIPOS_PRODUCTO_SALIDA, presentacionSugerida } from "@/lib/forestal/loctp-catalogos";
+import {
+  TIPOS_PRODUCTO_SALIDA,
+  presentacionSugerida,
+  tipoComercialDelProducto,
+} from "@/lib/forestal/loctp-catalogos";
+import { avisoDeConversion, esConversionHabitual } from "@/lib/forestal/reproceso-reglas";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { Btn, Field, I, ModalBody, ModalFooter } from "./ctp-shared";
 
@@ -56,6 +69,26 @@ export default function CtpReprocesoModal({
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /** El tipo comercial del producto que entra: de él depende qué puede salir. */
+  const tipoOrigen = useMemo(() => tipoComercialDelProducto(origen.producto), [origen.producto]);
+  /* Dos grupos en el desplegable: primero lo que sale de este producto. Sin
+     tipo conocido («MADERA ASERRADA» a secas) no se agrupa nada: no hay de qué
+     afirmar que algo es raro. */
+  const { habituales, otros } = useMemo(() => {
+    const hab: typeof TIPOS_PRODUCTO_SALIDA = [];
+    const otr: typeof TIPOS_PRODUCTO_SALIDA = [];
+    for (const t of TIPOS_PRODUCTO_SALIDA) {
+      const destino = tipoComercialDelProducto(t.valor);
+      if (!tipoOrigen || !destino || esConversionHabitual(tipoOrigen, destino)) hab.push(t);
+      else otr.push(t);
+    }
+    return { habituales: hab, otros: otr };
+  }, [tipoOrigen]);
+  const aviso = useMemo(
+    () => avisoDeConversion(tipoOrigen, tipoComercialDelProducto(producto)),
+    [tipoOrigen, producto],
+  );
+
   const entraN = Number(entra) || 0;
   const saleN = Number(sale) || 0;
   /* El reproceso no CREA madera: de lo que entra sale igual o menos. No es el
@@ -68,6 +101,11 @@ export default function CtpReprocesoModal({
   if (!(saleN > 0)) motivos.push("Poné cuánto salió del reproceso.");
   if (saleN > entraN + 0.0001) motivos.push("De un reproceso no puede salir más de lo que entró.");
   if (motivo.trim().length < 3) motivos.push("Escribí por qué se reprocesa: queda en el libro.");
+  /* Una conversión fuera de lo habitual no se bloquea, pero no pasa con «ok»:
+     lo que la sostiene ante un fiscalizador es la explicación. */
+  if (aviso && motivo.trim().length < 15) {
+    motivos.push("Esa conversión no es de las habituales: explicá en una frase por qué salió así.");
+  }
 
   async function guardar() {
     if (motivos.length > 0) return;
@@ -91,7 +129,12 @@ export default function CtpReprocesoModal({
           unit: "m3",
           lineaProduccion: "LRE",
           materiaPrimaRef: `Reproceso de la corrida N° ${origen.lineNo ?? "—"}`,
-          observations: `Reproceso: ${motivo.trim()}`,
+          /* La marca va en el asiento, no sólo en la auditoría: quien lea el
+             libro dentro de un año tiene que ver que esa conversión se declaró
+             sabiendo que no es la habitual. */
+          observations: aviso
+            ? `Reproceso (conversión no habitual: de ${tipoOrigen} a ${tipoComercialDelProducto(producto)}): ${motivo.trim()}`
+            : `Reproceso: ${motivo.trim()}`,
         }),
       });
       const jCorrida = await rCorrida.json().catch(() => ({}));
@@ -159,9 +202,24 @@ export default function CtpReprocesoModal({
           </Field>
           <Field span={6} label="Producto que sale" required>
             <select className={I} value={producto} onChange={(e) => setProducto(e.target.value)}>
-              {TIPOS_PRODUCTO_SALIDA.map((t) => (
-                <option key={t.valor} value={t.valor} title={t.label}>{t.valor}</option>
-              ))}
+              {otros.length === 0 ? (
+                habituales.map((t) => (
+                  <option key={t.valor} value={t.valor} title={t.label}>{t.valor}</option>
+                ))
+              ) : (
+                <>
+                  <optgroup label={`Lo que sale de ${tipoOrigen}`}>
+                    {habituales.map((t) => (
+                      <option key={t.valor} value={t.valor} title={t.label}>{t.valor}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="No es lo habitual — hay que explicarlo">
+                    {otros.map((t) => (
+                      <option key={t.valor} value={t.valor} title={t.label}>{t.valor}</option>
+                    ))}
+                  </optgroup>
+                </>
+              )}
             </select>
           </Field>
           <Field span={6} label="Por qué se reprocesa" required hint="Queda en el libro y es lo que se explica en una fiscalización">
@@ -175,6 +233,13 @@ export default function CtpReprocesoModal({
             />
           </Field>
         </div>
+
+        {aviso && (
+          <p className="flex items-start gap-1.5 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <span>{aviso}</span>
+          </p>
+        )}
 
         <p className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
           Se registra como una corrida nueva en la <b>línea de recuperación (LRE)</b> y el producto original deja de
