@@ -54,6 +54,7 @@ import PanelEntradaVoz from "./cubicador-entrada-voz";
 import CubicadorKpis from "./cubicador-kpis";
 import ControlLecturaFlotante from "./cubicador-lectura-flotante";
 import { useLecturaEnVoz } from "@/hooks/use-lectura-en-voz";
+import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
 
 // Web Speech API no está en lib.dom — tipado mínimo local.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -1152,76 +1153,27 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
    * toleran una fila ausente (no revientan, sólo no mueven el foco esa vez)
    * — el sobremontaje generoso hace que eso casi nunca pase en uso normal.
    */
-  const UMBRAL_VIRTUALIZACION = 150;
-  const SOBREMONTAJE = 20; // filas de más montadas arriba/abajo del área visible
-  const virtualizarTabla = filasVisibles.length > UMBRAL_VIRTUALIZACION;
-  const [altoFila, setAltoFila] = useState(ALTO_FILA_TABLA);
-  const [scrollTopTabla, setScrollTopTabla] = useState(0);
-  const primeraFilaRef = useRef<HTMLTableRowElement | null>(null);
-  /**
-   * 🐛 El scroll saltaba solo, arriba y abajo, sin parar (2026-09-08).
-   *
-   * La medición vivía en un efecto con `altoFila` en las dependencias y el ref
-   * puesto en la PRIMERA FILA DE LA VENTANA — que cambia con cada scroll. Como
-   * no todas las filas miden igual (una con aviso de medida rara, un tipo
-   * forzado, una especie que envuelve), al scrollear se medía otra fila, se
-   * escribía otro `altoFila`, eso movía los colchones Y el alto del contenedor,
-   * el navegador re-encuadraba el scroll, y la nueva posición traía otra fila
-   * a medir: un lazo que no se asienta nunca.
-   *
-   * Ahora se mide UNA vez por activación —siempre la misma referencia, la
-   * primera fila arriba de todo— y no se vuelve a medir mientras se scrollea.
-   * El alto del contenedor es una CONSTANTE, así que no queda ningún camino de
-   * vuelta desde la medición hacia el scroll.
-   */
-  const altoMedido = useRef(false);
-  const medirAltoFila = useCallback(() => {
-    const h = primeraFilaRef.current?.getBoundingClientRect().height;
-    if (!h) return;
-    altoMedido.current = true;
-    /* Se compara con el valor que está EN el DOM, no con el del estado: así el
-       `setState` sale sólo cuando el número cambia de verdad. */
-    setAltoFila((prev) => (Math.abs(h - prev) > 1 ? h : prev));
-  }, []);
-  useEffect(() => {
-    if (!virtualizarTabla) { altoMedido.current = false; return; }
-    if (altoMedido.current) return;
-    medirAltoFila();
-  }, [virtualizarTabla, filasVisibles.length, medirAltoFila]);
-  /* Se vuelve a medir cuando cambia el ancho de la ventana —una columna que se
-     apila cambia el alto de la fila—, nunca al scrollear. Un reflow ya movió
-     todo: un ajuste más no se nota. */
-  useEffect(() => {
-    if (!virtualizarTabla) return;
-    window.addEventListener("resize", medirAltoFila);
-    return () => window.removeEventListener("resize", medirAltoFila);
-  }, [virtualizarTabla, medirAltoFila]);
-  const altoContenedorTabla = virtualizarTabla ? altoVisor : null;
-  const inicioVentana = virtualizarTabla
-    ? Math.max(0, Math.floor(scrollTopTabla / altoFila) - SOBREMONTAJE)
-    : 0;
-  const finVentana = virtualizarTabla
-    ? Math.min(filasVisibles.length, Math.ceil((scrollTopTabla + (altoContenedorTabla ?? 0)) / altoFila) + SOBREMONTAJE)
-    : filasVisibles.length;
-  const filasEnVentana = virtualizarTabla ? filasVisibles.slice(inicioVentana, finVentana) : filasVisibles;
-  const colchonSuperior = virtualizarTabla ? inicioVentana * altoFila : 0;
-  const colchonInferior = virtualizarTabla ? (filasVisibles.length - finVentana) * altoFila : 0;
+  /* El ventaneo vive en `use-tabla-ventaneada`, compartido con el cubicador de
+     trozas: dos ventaneos escritos aparte es como se termina arreglando el
+     scroll en uno y no en el otro. */
+  const ventana = useTablaVentaneada(filasVisibles, { altoVisor });
+  const virtualizarTabla = ventana.virtualizar;
+  const inicioVentana = ventana.inicioVentana;
+  const filasEnVentana = ventana.filasEnVentana;
+  const colchonSuperior = ventana.colchonSuperior;
+  const colchonInferior = ventana.colchonInferior;
+  const primeraFilaRef = ventana.primeraFilaRef;
+  /* Se arma acá y no en el JSX: un `data-*` dentro de un literal tipado como
+     `HTMLAttributes` no compila por el chequeo de propiedades de más. */
+  const propsTabla = useMemo(() => {
+    /* Pasa por `Record` a propósito: un `data-*` en un literal tipado como
+       `HTMLAttributes` lo rechaza el chequeo de propiedades de más, aunque en
+       JSX sea válido. */
+    const p: Record<string, unknown> = { ...ventana.propsContenedor };
+    p["data-grilla"] = GRILLA_TABLA;
+    return p as React.HTMLAttributes<HTMLDivElement>;
+  }, [ventana.propsContenedor]);
 
-  /**
-   * El scroll se lee en el frame, no en cada evento. Un `setState` por evento
-   * de rueda encola decenas de renders de una tabla con controles en cada
-   * celda: el scroll se siente pegajoso aunque la ventana esté bien calculada.
-   */
-  const frameScroll = useRef<number | null>(null);
-  const onScrollTabla = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const y = e.currentTarget.scrollTop;
-    if (frameScroll.current != null) return;
-    frameScroll.current = requestAnimationFrame(() => {
-      frameScroll.current = null;
-      setScrollTopTabla(y);
-    });
-  }, []);
-  useEffect(() => () => { if (frameScroll.current != null) cancelAnimationFrame(frameScroll.current); }, []);
 
   /**
    * Teclado de la tabla. `data-fila` es la posición VISIBLE (no el índice del lote):
@@ -2187,13 +2139,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
             <DataTable
               className="w-full min-w-[960px] text-sm"
               wrapperClassName="rounded-xl"
-              wrapperProps={{
-                "data-grilla": GRILLA_TABLA,
-                style: virtualizarTabla
-                  ? { maxHeight: altoContenedorTabla ?? undefined, overflowY: "auto", overflowAnchor: "none" }
-                  : undefined,
-                onScroll: virtualizarTabla ? onScrollTabla : undefined,
-              } as React.HTMLAttributes<HTMLDivElement>}
+              wrapperProps={propsTabla}
             >
               <thead>
                 <tr className={`bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] ${virtualizarTabla ? "sticky top-0 z-10" : ""}`}>

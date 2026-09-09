@@ -23,6 +23,7 @@ import type { TrozaImportada } from "@/lib/forestal/cubicacion-trozas-import";
 import { loadConfig } from "@/lib/forestal/cubicador-config";
 import { useVozContinua } from "@/hooks/use-voz-continua";
 import { useLecturaEnVoz } from "@/hooks/use-lectura-en-voz";
+import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
 import ControlLecturaFlotante from "./cubicador-lectura-flotante";
 import { Kpi } from "./cubicador-kpis";
 import ImportarTrozasModal from "./ImportarTrozasModal";
@@ -49,6 +50,8 @@ const COLS_OPCIONALES_TROZA: { key: ColOpcionalTroza; label: string }[] = [
   { key: "m3", label: "m³" },
 ];
 const COLS_DEFAULT_TROZA: Record<ColOpcionalTroza, boolean> = { especie: true, m3: true };
+/** Alto del visor de la tabla del patio, en px. Constante mientras se scrollea. */
+const ALTO_VISOR_PATIO = 600;
 
 /** Repite en voz lo dictado, con la MISMA config del cubicador de aserrada. */
 function hablar(texto: string) {
@@ -231,6 +234,20 @@ export default function CubicadorTrozas() {
       largoMedio: rows.length > 0 ? largoTotal / rows.length : 0,
     };
   }, [rows, totales.m3]);
+
+  /**
+   * Ventaneo (`use-tabla-ventaneada`): el patio de un camión grande son
+   * cientos de trozas, y montarlas todas de una es el mismo cuelgue que sufrió
+   * el cubicador de aserrada con 683 filas. Debajo del umbral no cambia nada.
+   */
+  const ventana = useTablaVentaneada(rows, { altoVisor: ALTO_VISOR_PATIO });
+  const propsTabla = useMemo(() => {
+    const q: Record<string, unknown> = { ...ventana.propsContenedor };
+    q.className = "rounded-xl";
+    return q as React.HTMLAttributes<HTMLDivElement>;
+  }, [ventana.propsContenedor]);
+  /** Columnas vivas — para el colSpan de los `<tr>` colchón. */
+  const colsTotales = colSpanTotales + (colsVisibles.m3 ? 1 : 0) + 1;
 
   // Caption en vivo agrupado en tríos, como el cubicador de aserrada.
   const liveGroups = useMemo(() => {
@@ -490,8 +507,7 @@ export default function CubicadorTrozas() {
         {rows.length === 0 ? (
           <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Todavía no cubicaste trozas. Dictá o cargá la primera.</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-            <DataTable className="w-full min-w-[640px] text-sm">
+          <DataTable className="w-full min-w-[640px] text-sm" wrapperProps={propsTabla}>
               <thead>
                 <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
                   <th className="px-3 py-2">#</th><th className="px-3 py-2">Ø menor (cm)</th><th className="px-3 py-2">Ø mayor (cm)</th>
@@ -502,10 +518,23 @@ export default function CubicadorTrozas() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, i) => (
+                {/* Colchón: reserva el alto de lo que no está montado, para que
+                    el scrollbar mida lo mismo que con todas las filas. */}
+                {ventana.colchonSuperior > 0 && (
+                  <tr aria-hidden="true">
+                    <td colSpan={colsTotales} style={{ height: ventana.colchonSuperior, padding: 0, border: 0 }} />
+                  </tr>
+                )}
+                {ventana.filasEnVentana.map((r, iVentana) => {
+                  /* La posición REAL, no la de la ventana: el «#» de la fila y
+                     el rótulo de sus botones tienen que seguir siendo el número
+                     de la troza en el patio. */
+                  const i = ventana.inicioVentana + iVentana;
+                  return (
                   <tr
                     key={r.id}
                     id={`troza-row-${r.id}`}
+                    ref={iVentana === 0 ? ventana.primeraFilaRef : undefined}
                     className={`border-t border-[var(--rule-soft)] ${
                       lectura.leyendoId === r.id
                         ? "bg-primary/10 outline outline-2 -outline-offset-2 outline-[var(--accent)]"
@@ -541,7 +570,13 @@ export default function CubicadorTrozas() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
+                {ventana.colchonInferior > 0 && (
+                  <tr aria-hidden="true">
+                    <td colSpan={colsTotales} style={{ height: ventana.colchonInferior, padding: 0, border: 0 }} />
+                  </tr>
+                )}
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-[var(--rule-base)] bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
@@ -551,7 +586,6 @@ export default function CubicadorTrozas() {
                 </tr>
               </tfoot>
             </DataTable>
-          </div>
         )}
 
         {/* Contra la guía: ¿lo que llegó coincide con lo declarado? */}
