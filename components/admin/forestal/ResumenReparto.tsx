@@ -17,7 +17,7 @@
  */
 
 import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Trash2, Download, Share2, AlertTriangle, Info, Layers, ArrowDown, FileText, FileSpreadsheet, Scale, HelpCircle, ShieldCheck, SlidersHorizontal, Combine, X, Boxes, Save, FolderOpen, Check, Loader2, Ruler, TreePine } from "@buleje/design-system/icons";
+import { Trash2, Download, Share2, AlertTriangle, Info, Layers, ArrowDown, FileText, FileSpreadsheet, Scale, HelpCircle, ShieldCheck, SlidersHorizontal, Combine, X, Boxes, Save, FolderOpen, Check, Loader2, RefreshCw, Ruler, TreePine } from "@buleje/design-system/icons";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { ModuleActionMenu, type ModuleActionItem } from "@/components/admin/shared/ModuleActionMenu";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -43,6 +43,9 @@ import { BloqueEspecie } from "./reparto-vistas";
 import { DiferenciaDistribucion } from "./reparto-diferencia";
 import { AlertaDescuadre, OpcionesExportacion } from "./reparto-opciones";
 import { diagnosticarReparto } from "@/lib/forestal/cubicacion-reparto-diagnostico";
+import { resumenDeSugerencias, sugerenciasDeReproceso } from "@/lib/forestal/reproceso-sugerido";
+import { tipoComercialDelProducto } from "@/lib/forestal/loctp-catalogos";
+import ReprocesosSugeridos from "./reparto-reprocesos";
 import { FiltroLargoCelda } from "./reparto-filtro-largo";
 import { FiltroGruposCelda } from "./reparto-filtro-grupos";
 import { contarRevision, revisarDistribucion, type HallazgoRevision } from "@/lib/forestal/reparto-revision";
@@ -631,6 +634,9 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       costoM3: null,
       aprovechablePct: null,
       piezasManual: p.piezas,
+      /* El producto declarado dice de qué tipo es la madera; con eso la
+         distribución puede sugerir el reproceso (ADR-404). */
+      tipoProducto: tipoComercialDelProducto(p.producto),
     }))]);
     irAlUltimoBloque();
   };
@@ -861,6 +867,18 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
      el MISMO `dim` que la distribución: los filtros por grupo se guardan con la
      clave de la vista vigente y leerlos con otra los daría por inactivos. */
   const diagnostico = useMemo(() => diagnosticarReparto(dist, dim), [dist, dim]);
+  /**
+   * Los reprocesos sugeridos se leen SIEMPRE por tipo, mire la tabla lo que
+   * mire: «de comercial a paquetería» es una frase sobre tipos, y bajo la vista
+   * «por medida» los grupos serían 2×8×10 → 6×6×10, que no es un reproceso que
+   * alguien pueda mandar a la sierra. Con `dim` ya en tipo se reusa el cálculo.
+   */
+  const distPorTipo = useMemo(
+    () => (dim === "tipo" ? dist : distribuirPorCapacidad(bloques, rows, "tipo", precioDe)),
+    [dim, dist, bloques, rows, precioDe],
+  );
+  const reprocesos = useMemo(() => sugerenciasDeReproceso(distPorTipo), [distPorTipo]);
+  const resumenReprocesos = useMemo(() => resumenDeSugerencias(reprocesos), [reprocesos]);
   const t = dist.totales;
   /** Cada bloque YA distribuido, con su especie — para poder buscarlo por id
    *  sin importar bajo qué grupo de especie terminó cayendo. */
@@ -1356,6 +1374,24 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             tono={balance.faltaM3 > TOL_M3 ? "falta" : "ok"}
           />
         </div>
+      )}
+
+      {/* Lo que sobra de un tipo puede tapar lo que falta de otro: pasar la
+          comercial por la sierra da paquetería —más piezas, menos m³—. Va
+          pegado al balance porque es la respuesta a «¿y esto que falta?». */}
+      {reprocesos.length > 0 && (
+        <SeccionResumen
+          icon={RefreshCw}
+          titulo="Reprocesos que cuadrarían la distribución"
+          hint={
+            <span className="font-mono tabular-nums">
+              {fmtM3(resumenReprocesos.convertibleM3)} m³{" "}
+              <span className="font-sans">convertibles · {resumenReprocesos.cuantas} sugerencia{resumenReprocesos.cuantas === 1 ? "" : "s"}</span>
+            </span>
+          }
+        >
+          <ReprocesosSugeridos sugerencias={reprocesos} />
+        </SeccionResumen>
       )}
 
       {revisionAbierta && bloques.length > 0 && (

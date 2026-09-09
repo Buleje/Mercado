@@ -27,7 +27,8 @@
  * vive en `sembrar-reparto.ts`.
  */
 
-import { RENDIMIENTO_META } from "@/lib/forestal/loctp-catalogos";
+import { ESPECIES_MADERA } from "@/lib/forestal/cubicacion";
+import { RENDIMIENTO_META, tipoComercialDelProducto } from "@/lib/forestal/loctp-catalogos";
 import {
   admiteDelLote,
   corridasDeFuente,
@@ -62,11 +63,33 @@ export interface CandidatoDeCapacidad {
   piezasManual: number | null;
   /** Para no sembrar dos veces la misma corrida (mismo `ref` que el picker de paquetes). */
   paqueteId?: string;
+  /**
+   * Qué tipo comercial es esta madera («Comercial», «Paquetería larga»), cuando
+   * el producto del Libro lo dice. Viaja al bloque para que la distribución
+   * pueda sugerir el reproceso (ADR-404) — el reparto no lo mira.
+   */
+  tipoProducto?: string | null;
   /** Cuántas piezas hay detrás — informativo, para leer la línea en el modal. */
   piezas: number;
 }
 
 const PCT_TARJETA = Math.round(RENDIMIENTO_META * 100);
+
+/**
+ * La especie con la grafía del cubicador, si es la misma madera.
+ *
+ * El libro la escribe «TORNILLO» y el cubicador ofrece «Tornillo»: el reparto
+ * las cruza igual (`claveEspecie` normaliza), pero el desplegable de la tabla
+ * compara el texto exacto y mostraba **«Sin especie»** sobre un bloque que sí
+ * la tenía. Una especie que no está en el catálogo se deja tal cual: inventar
+ * una grafía sería peor que respetar la del asiento.
+ */
+function especieDelCatalogo(raw: string): string {
+  const norm = (v: string) =>
+    v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const k = norm(raw);
+  return ESPECIES_MADERA.find((e) => norm(e) === k) ?? raw;
+}
 
 /** El único de la lista, o `null` si hay varios (o ninguno): no se inventa. */
 function unicoONull(valores: readonly (string | null | undefined)[]): string | null {
@@ -119,7 +142,7 @@ export function bloquesDesdeCapacidad(
         fuente: f.clave,
         fuenteLabel: f.label,
         etiqueta: `${f.label}${g.especie ? ` · ${g.especie}` : ""}`,
-        especie: g.especie,
+        especie: especieDelCatalogo(g.especie),
         m3: g.m3,
         tipo: "rolliza",
         permiso: unicoONull(g.permisos),
@@ -141,7 +164,7 @@ export function bloquesDesdeCapacidad(
       fuente: "apartado",
       fuenteLabel: "Apartado en lotes, sin aserrar",
       etiqueta: `Lote ${l.code} · apartado`,
-      especie: txt(l.especie),
+      especie: especieDelCatalogo(txt(l.especie)),
       m3: r4(l.apartadoM3),
       tipo: "rolliza",
       permiso: unicoONull(l.permisos),
@@ -163,7 +186,7 @@ export function bloquesDesdeCapacidad(
       fuente: "lotes",
       fuenteLabel: "Lo que los lotes admiten",
       etiqueta: `Lote ${l.code} · margen`,
-      especie: txt(l.especie),
+      especie: especieDelCatalogo(txt(l.especie)),
       m3: r4(admite),
       tipo: "aserrada",
       permiso: unicoONull(l.permisos),
@@ -184,7 +207,7 @@ export function bloquesDesdeCapacidad(
       fuente: "productos",
       fuenteLabel: "Productos terminados",
       etiqueta: `${txt(c.producto) || "Producto"}${c.lote ? ` · ${c.lote}` : ""}`,
-      especie: txt(c.especie),
+      especie: especieDelCatalogo(txt(c.especie)),
       m3: r4(c.disponible),
       tipo: "aserrada",
       /* Igual que el picker de paquetes: el payload trae GTF y titular, no el
@@ -193,6 +216,10 @@ export function bloquesDesdeCapacidad(
       aprovechablePct: null,
       piezasManual: null,
       paqueteId: `corrida:${c.id}`,
+      /* El producto del libro dice qué es: «MADERA ASERRADA (COMERCIAL)» →
+         «Comercial». El genérico «MADERA ASERRADA» no dice el tipo y queda
+         null, que es la respuesta honesta. */
+      tipoProducto: tipoComercialDelProducto(c.producto),
       piezas,
     });
   }

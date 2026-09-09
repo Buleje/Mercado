@@ -89,6 +89,16 @@ export interface BloqueRolliza {
    */
   tipo?: "rolliza" | "aserrada";
   /**
+   * Qué TIPO de madera trae el bloque («Comercial», «Paquetería larga»…),
+   * cuando se sabe — lo llena quien lo siembra desde el Libro (el saldo de
+   * Capacidad, un paquete ya declarado), porque ahí el producto está
+   * declarado. No cambia CÓMO se reparte: sirve para poder decir «esto que
+   * sobra es comercial y lo que falta es paquetería», que es la sugerencia de
+   * reproceso (ADR-404). Un bloque cargado a mano puede declararlo con la
+   * columna «Lleva sólo».
+   */
+  tipoProducto?: string | null;
+  /**
    * N° de permiso (título habilitante) de origen de este bloque, si se
    * conoce (Brandon, 2026-09-01). No cambia CÓMO se reparte —la aserrada
    * sigue sin poder decir de qué permiso salió cada tabla— pero permite
@@ -401,6 +411,30 @@ const labelEspecie = (raw: string) => raw.trim() || "Sin especie";
  * este campo, y todo lo guardado en `localStorage` o en el servidor viene así.
  */
 export const esAserradaDirecta = (b: Pick<BloqueRolliza, "tipo">): boolean => b.tipo === "aserrada";
+
+/**
+ * Qué tipo comercial trae un bloque, si se puede saber sin adivinar.
+ *
+ * Dos fuentes, en este orden:
+ *  1. **«Lleva sólo»** (`gruposFiltro`) con UN tipo: el operario lo declaró en
+ *     la tabla, y es lo más explícito que hay.
+ *  2. `tipoProducto`, que llena quien siembra el bloque desde el Libro.
+ *
+ * Con dos tipos declarados devuelve `null`: un bloque que lleva comercial Y
+ * corta no es «de un tipo», y sugerir un reproceso sobre eso sería inventar de
+ * cuál de los dos sale la madera.
+ */
+export function tipoDelBloque(
+  b: Pick<BloqueRolliza, "gruposFiltro" | "tipoProducto">,
+): string | null {
+  const deFiltro = (b.gruposFiltro ?? [])
+    .filter((k) => k.startsWith("tipo|"))
+    .map((k) => k.slice("tipo|".length).trim())
+    .filter(Boolean);
+  if (deFiltro.length === 1) return deFiltro[0];
+  if (deFiltro.length > 1) return null;
+  return (b.tipoProducto ?? "").trim() || null;
+}
 
 /**
  * El aprovechamiento vigente de un bloque, acotado a algo posible.

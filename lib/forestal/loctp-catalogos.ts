@@ -122,6 +122,44 @@ const PRODUCTO_POR_TIPO_COMERCIAL: Record<string, string> = {
   corta: "MADERA ASERRADA (CORTA)",
 };
 
+/**
+ * La vuelta: del producto del libro al tipo que usa el cubicador.
+ *
+ * Hace falta cuando la madera viaja del Libro a una herramienta —un paquete ya
+ * declarado, el saldo de Capacidad— y hay que saber QUÉ es para poder
+ * compararlo con lo que se cubicó. Sin esto, un bloque traído del libro llega
+ * como «MADERA ASERRADA (COMERCIAL)» y no se puede cruzar con las piezas que
+ * el cubicador clasificó como «Comercial».
+ *
+ * Tolera la variante con y sin tilde («PAQUETERIA»/«PAQUETERÍA») y el producto
+ * genérico «MADERA ASERRADA», que no dice qué tipo es → `null`, que es la
+ * respuesta honesta.
+ */
+export function tipoComercialDelProducto(producto: string | null | undefined): string | null {
+  const norm = (v: string) =>
+    v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const p = norm(producto ?? "");
+  if (!p) return null;
+  for (const [tipo, prod] of Object.entries(PRODUCTO_POR_TIPO_COMERCIAL)) {
+    if (norm(prod) === p) {
+      /* Se devuelve el tipo con la grafía del cubicador («Paquetería larga»),
+         no la clave normalizada: es la que compara `tipoDePieza`. */
+      return TIPO_CON_TILDE[tipo] ?? tipo;
+    }
+  }
+  return null;
+}
+
+/** La clave normalizada del mapa → cómo lo escribe el cubicador. */
+const TIPO_CON_TILDE: Record<string, string> = {
+  comercial: "Comercial",
+  "paqueteria larga": "Paquetería larga",
+  "paqueteria corta": "Paquetería corta",
+  tabla: "Tabla",
+  "larga angosta": "Larga angosta",
+  corta: "Corta",
+};
+
 export function productoDelTipoComercial(tipo: string | null | undefined): string | null {
   const k = (tipo ?? "")
     .normalize("NFD")

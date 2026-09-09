@@ -77,6 +77,9 @@ export default function LlevarAlCubicadorModal({
         aprovechablePct: c.aprovechablePct,
         piezasManual: c.piezasManual,
         costoM3: null,
+        /* Qué tipo de madera es, cuando el Libro lo dice: es lo que permite
+           sugerir el reproceso del lado del cubicador (ADR-404). */
+        ...(c.tipoProducto ? { tipoProducto: c.tipoProducto } : {}),
         ...(c.paqueteId ? { paqueteId: c.paqueteId } : {}),
       })),
       "capacidad",

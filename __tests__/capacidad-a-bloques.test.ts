@@ -91,8 +91,9 @@ describe("bloquesDesdeCapacidad", () => {
 
   it("el patio agrupa por especie y trae el permiso sólo si es único", () => {
     const todo = bloquesDesdeCapacidad(ENTRADA, {});
-    const tornillo = todo.find((c) => c.fuente === "patio" && c.especie === "TORNILLO")!;
-    const capirona = todo.find((c) => c.fuente === "patio" && c.especie === "CAPIRONA")!;
+    /* La especie ya viaja con la grafía del catálogo del cubicador. */
+    const tornillo = todo.find((c) => c.fuente === "patio" && c.especie === "Tornillo")!;
+    const capirona = todo.find((c) => c.fuente === "patio" && c.especie === "Capirona")!;
     // Tornillo libre viene de P-1 y P-2: no se inventa un permiso.
     expect(tornillo.permiso).toBeNull();
     expect(capirona).toMatchObject({ permiso: "P-1", m3: 4, piezas: 1 });
@@ -127,6 +128,26 @@ describe("bloquesDesdeCapacidad", () => {
     const conP1 = bloquesDesdeCapacidad(ENTRADA, { permiso: ["P-1"] });
     expect(conP1.some((c) => c.clave === "productos:c2")).toBe(false);
     expect(conP1.some((c) => c.clave === "productos:c1")).toBe(true);
+  });
+
+  it("la especie viaja con la grafía del cubicador: «TORNILLO» → «Tornillo»", () => {
+    /* El desplegable de la tabla compara texto exacto: con la grafía del libro
+       mostraba «Sin especie» sobre un bloque que sí la tenía. */
+    const enMayusculas: EntradaCapacidad = {
+      ...ENTRADA,
+      patio: [troza({ id: "M", permiso: "P-1", especieComun: "TORNILLO", volumenM3: 2 })],
+    };
+    const patio = bloquesDesdeCapacidad(enMayusculas, {}).find((c) => c.fuente === "patio");
+    expect(patio?.especie).toBe("Tornillo");
+  });
+
+  it("una especie que el catálogo no tiene se respeta tal cual", () => {
+    const rara: EntradaCapacidad = {
+      ...ENTRADA,
+      patio: [troza({ id: "R", especieComun: "QA-ESPECIE", volumenM3: 2 })],
+    };
+    const patio = bloquesDesdeCapacidad(rara, {}).find((c) => c.fuente === "patio");
+    expect(patio?.especie).toBe("QA-ESPECIE");
   });
 
   it("sin madera bajo el recorte no hay candidatos que mandar", () => {
