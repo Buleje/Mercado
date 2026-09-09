@@ -227,6 +227,123 @@ function mismoTipo(a: string, b: string): boolean {
   return norm(a) === norm(b);
 }
 
+/** Una salida del reproceso: en qué tipo se convierte y cuánto. */
+export interface DestinoDeReproceso {
+  tipo: string;
+  m3: number;
+  piezas: number;
+  motivo: MotivoSugerencia;
+  cubreTodo: boolean;
+  /** Lo que seguiría faltando de ese tipo (sólo en las opciones). */
+  restaM3: number;
+}
+
+/**
+ * Todo lo que sale de UN producto original, junto.
+ *
+ * Brandon, 2026-09-09: «quiero el producto original con su m³ y su cantidad, y
+ * lo que se produce de él: de 1.200 de comercial, paquetería larga 1.100 y
+ * paquetería corta 0.050». Una línea suelta por par origen→destino no deja ver
+ * eso; agrupado por origen, sí — y ahí se lee de una que la suma de las salidas
+ * es MENOR que lo que entró.
+ *
+ * Las salidas van en dos grupos porque no se comportan igual:
+ *  · `amparados` **se suman**: el bloque ya está respaldando esas piezas, todas
+ *    a la vez. Es lo que hay que declarar.
+ *  · `opciones` **compiten**: cada una podría usar la misma capacidad libre, así
+ *    que se elige una. Sumarlas diría que con 0.724 m³ se tapan tres huecos.
+ */
+export interface GrupoDeReproceso {
+  clave: string;
+  especie: string;
+  /** El tipo del producto original. */
+  desdeTipo: string;
+  /** De qué bloque(s) sale. */
+  etiquetas: string[];
+  /** m³ del original — el tamaño de lo que hay. */
+  origenM3: number;
+  origenPiezas: number | null;
+  /** Capacidad del original que todavía no respalda nada. */
+  libreM3: number;
+  amparados: DestinoDeReproceso[];
+  opciones: DestinoDeReproceso[];
+  /** m³ que salen del original (sólo lo ya amparado: eso es lo que ocurre hoy). */
+  saleM3: number;
+  salePiezas: number;
+  /** Lo que quedaría del original después de esas salidas. */
+  quedaM3: number;
+  /**
+   * Lo que las salidas se pasan del original, si se pasan.
+   *
+   * No es un error de esta cuenta ni del reproceso: el reparto tiene un
+   * **cierre por diferencia de medición** (hasta 3 piezas sueltas, 50 litros y
+   * 1 % del bloque) para que las últimas tablas no queden huérfanas. Medido en
+   * un caso real: un bloque de 2.500 m³ amparando 2.520. Se muestra como lo
+   * que es en vez de decir «quedan 0.000», que taparía el detalle.
+   */
+  excedeM3: number;
+}
+
+/**
+ * Junta las sugerencias por producto original.
+ *
+ * La clave es el BLOQUE cuando la sugerencia sale de uno solo —es el producto
+ * que el operario tiene delante— y `especie|tipo` cuando varios bloques del
+ * mismo tipo ofrecen la misma madera.
+ */
+export function agruparPorOrigen(
+  sugerencias: readonly SugerenciaReproceso[],
+): GrupoDeReproceso[] {
+  const grupos = new Map<string, GrupoDeReproceso>();
+  for (const s of sugerencias) {
+    const clave =
+      s.bloques.length === 1 ? `b:${s.bloques[0].id}` : `t:${s.especie}|${s.desdeTipo}`;
+    const g =
+      grupos.get(clave) ??
+      ({
+        clave,
+        especie: s.especie,
+        desdeTipo: s.desdeTipo,
+        etiquetas: s.bloques.map((b) => b.etiqueta).filter(Boolean),
+        origenM3: s.m3Desde,
+        origenPiezas: s.piezasDesde,
+        libreM3: r4(s.bloques.reduce((a, b) => a + b.libreM3, 0)),
+        amparados: [],
+        opciones: [],
+        saleM3: 0,
+        salePiezas: 0,
+        quedaM3: 0,
+        excedeM3: 0,
+      } satisfies GrupoDeReproceso);
+    const destino: DestinoDeReproceso = {
+      tipo: s.haciaTipo,
+      m3: s.convertirM3,
+      piezas: s.faltantePiezas,
+      motivo: s.motivo,
+      cubreTodo: s.cubreTodo,
+      restaM3: s.restaM3,
+    };
+    if (s.motivo === "amparado") g.amparados.push(destino);
+    else g.opciones.push(destino);
+    grupos.set(clave, g);
+  }
+
+  for (const g of grupos.values()) {
+    g.amparados.sort((a, b) => b.m3 - a.m3);
+    g.opciones.sort((a, b) => b.m3 - a.m3);
+    /* Sólo lo YA amparado sale del original: las opciones son alternativas
+       sobre la misma capacidad libre, y sumarlas inventaría madera. */
+    g.saleM3 = r4(g.amparados.reduce((a, d) => a + d.m3, 0));
+    g.salePiezas = g.amparados.reduce((a, d) => a + d.piezas, 0);
+    g.quedaM3 = r4(Math.max(0, g.origenM3 - g.saleM3));
+    g.excedeM3 = r4(Math.max(0, g.saleM3 - g.origenM3));
+  }
+
+  return [...grupos.values()].sort(
+    (a, b) => b.saleM3 + b.libreM3 - (a.saleM3 + a.libreM3),
+  );
+}
+
 export interface CuadreDeDistribucion {
   /** Aserrada cubicada que ningún bloque respalda. */
   faltaM3: number;

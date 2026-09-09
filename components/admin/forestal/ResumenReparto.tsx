@@ -43,7 +43,12 @@ import { BloqueEspecie } from "./reparto-vistas";
 import { DiferenciaDistribucion } from "./reparto-diferencia";
 import { AlertaDescuadre, OpcionesExportacion } from "./reparto-opciones";
 import { diagnosticarReparto } from "@/lib/forestal/cubicacion-reparto-diagnostico";
-import { cuadreDeDistribucion, resumenDeSugerencias, sugerenciasDeReproceso } from "@/lib/forestal/reproceso-sugerido";
+import {
+  agruparPorOrigen,
+  cuadreDeDistribucion,
+  resumenDeSugerencias,
+  sugerenciasDeReproceso,
+} from "@/lib/forestal/reproceso-sugerido";
 import { evaluarMeta, META_DEFAULT, type MetaMix } from "@/lib/forestal/cubicacion-meta";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import { tipoComercialDelProducto } from "@/lib/forestal/loctp-catalogos";
@@ -882,6 +887,8 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
   );
   const reprocesos = useMemo(() => sugerenciasDeReproceso(distPorTipo), [distPorTipo]);
   const resumenReprocesos = useMemo(() => resumenDeSugerencias(reprocesos), [reprocesos]);
+  /** Las mismas sugerencias juntadas por PRODUCTO ORIGINAL, que es como se leen. */
+  const gruposReproceso = useMemo(() => agruparPorOrigen(reprocesos), [reprocesos]);
   /** El cierre del apartado: qué falta, qué tapan los reprocesos y qué queda. */
   const cuadre = useMemo(
     () =>
@@ -1428,11 +1435,15 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           hint={
             <span className="font-mono tabular-nums">
               {fmtM3(resumenReprocesos.m3EnJuego)} m³{" "}
-              <span className="font-sans">en juego · {resumenReprocesos.cuantas} sugerencia{resumenReprocesos.cuantas === 1 ? "" : "s"}</span>
+              <span className="font-sans">
+                en juego · {gruposReproceso.length}{" "}
+                {gruposReproceso.length === 1 ? "producto" : "productos"} ·{" "}
+                {resumenReprocesos.cuantas} conversion{resumenReprocesos.cuantas === 1 ? "" : "es"}
+              </span>
             </span>
           }
         >
-          <ReprocesosSugeridos sugerencias={reprocesos} cuadre={cuadre} meta={metaDelApartado} />
+          <ReprocesosSugeridos grupos={gruposReproceso} cuadre={cuadre} meta={metaDelApartado} />
         </SeccionResumen>
       )}
 

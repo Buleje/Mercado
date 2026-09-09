@@ -9,6 +9,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  agruparPorOrigen,
   cuadreDeDistribucion,
   resumenDeSugerencias,
   sugerenciasDeReproceso,
@@ -210,5 +211,59 @@ describe("cuadreDeDistribucion", () => {
     );
     expect(c.cubreReprocesoM3).toBe(0);
     expect(c.quedaM3).toBe(c.faltaM3);
+  });
+});
+
+describe("agruparPorOrigen — el producto original con todo lo que sale de él", () => {
+  /* Un bloque de comercial que ampara paquetería larga, corta y tabla: las tres
+     salen del MISMO producto, que es como Brandon las quiere leer. */
+  const variado: PiezaCubicada[] = [
+    pieza("v1", 10), // paquetería larga (6×6×10)
+    { ...pieza("v2", 20), espesor: 6, ancho: 6, largo: 4, ...cubicarPieza({ cantidad: 20, espesor: 6, ancho: 6, largo: 4, uEspesor: "pulg", uAncho: "pulg", uLargo: "pies" }) },
+  ];
+
+  it("junta las salidas del mismo bloque en un solo grupo", () => {
+    const comercial = bloque({ id: "g1", etiqueta: "Saldo comercial", m3: 3, tipoProducto: "Comercial", piezasOrigen: 25 });
+    const g = agruparPorOrigen(sugerenciasDeReproceso(distribuirPorCapacidad([comercial], variado, "tipo")));
+    expect(g.length).toBe(1);
+    expect(g[0]).toMatchObject({ desdeTipo: "Comercial", origenM3: 3, origenPiezas: 25 });
+    expect(g[0].amparados.length).toBeGreaterThan(1);
+  });
+
+  it("lo que sale es MENOS que lo que entró, y lo que queda cierra la resta", () => {
+    const comercial = bloque({ id: "g2", m3: 3, tipoProducto: "Comercial", piezasOrigen: 25 });
+    const [g] = agruparPorOrigen(sugerenciasDeReproceso(distribuirPorCapacidad([comercial], variado, "tipo")));
+    expect(g.saleM3).toBeLessThanOrEqual(g.origenM3);
+    expect(g.quedaM3).toBeCloseTo(g.origenM3 - g.saleM3, 4);
+    // El total de piezas es la suma de las salidas, no del original.
+    expect(g.salePiezas).toBe(g.amparados.reduce((a, d) => a + d.piezas, 0));
+  });
+
+  it("el cierre por medición se reporta como exceso, no como «quedan 0»", () => {
+    /* El reparto deja que un bloque cierre hasta 1 % por encima para que las
+       últimas piezas no queden huérfanas (medido: 2.500 → 2.520). Eso no es un
+       reproceso que fabrique madera y la cuenta tiene que decirlo. */
+    const chico = bloque({ id: "g3", m3: 0.05, tipoProducto: "Comercial" });
+    const [g] = agruparPorOrigen(
+      sugerenciasDeReproceso(distribuirPorCapacidad([chico], variado, "tipo")),
+    );
+    if (g && g.saleM3 > g.origenM3) {
+      expect(g.excedeM3).toBeCloseTo(g.saleM3 - g.origenM3, 4);
+      expect(g.quedaM3).toBe(0);
+    } else {
+      expect(g?.excedeM3 ?? 0).toBe(0);
+    }
+  });
+
+  it("las OPCIONES no suman al total: compiten por la misma capacidad libre", () => {
+    const soloComercial = comercialQueNoAmpara(3);
+    const [g] = agruparPorOrigen(
+      sugerenciasDeReproceso(distribuirPorCapacidad([soloComercial], variado, "tipo")),
+    );
+    expect(g.opciones.length).toBeGreaterThan(1);
+    expect(g.amparados).toEqual([]);
+    // Nada salió todavía: el total es 0 y el original sigue entero.
+    expect(g.saleM3).toBe(0);
+    expect(g.quedaM3).toBe(g.origenM3);
   });
 });
