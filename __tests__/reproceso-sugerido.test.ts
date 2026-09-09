@@ -8,7 +8,11 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { sugerenciasDeReproceso, resumenDeSugerencias } from "@/lib/forestal/reproceso-sugerido";
+import {
+  cuadreDeDistribucion,
+  resumenDeSugerencias,
+  sugerenciasDeReproceso,
+} from "@/lib/forestal/reproceso-sugerido";
 import { distribuirPorCapacidad, type BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 
@@ -173,6 +177,38 @@ describe("resumenDeSugerencias", () => {
     expect(s.length).toBe(2); // dos orígenes para el mismo destino
     const r = resumenDeSugerencias(s);
     expect(r.cuantas).toBe(2);
-    expect(r.convertibleM3).toBe(s[0].convertirM3);
+    expect(r.m3EnJuego).toBe(s[0].convertirM3);
+  });
+});
+
+describe("cuadreDeDistribucion", () => {
+  it("cuenta el aporte UNA vez por destino: dos orígenes no tapan el doble", () => {
+    const dos = [
+      comercialQueNoAmpara(1),
+      bloque({ id: "t1", m3: 1, tipoProducto: "Tabla", gruposFiltro: ["tipo|Tabla"] }),
+    ];
+    const d = distribuirPorCapacidad(dos, PAQUETERIA, "tipo");
+    const s = sugerenciasDeReproceso(d);
+    const c = cuadreDeDistribucion(
+      { faltanteM3: d.totales.faltanteM3, libreM3: d.totales.libreM3 },
+      40,
+      s,
+    );
+    // Los dos ofrecen 1 m³ para la MISMA paquetería: tapan 1, no 2.
+    expect(c.cubreReprocesoM3).toBe(1);
+    expect(c.faltaM3).toBeCloseTo(M3_PAQUETERIA, 3);
+    expect(c.quedaM3).toBeCloseTo(M3_PAQUETERIA - 1, 3);
+  });
+
+  it("lo que ya se ampara no cuenta como tapón: ese hueco no existe", () => {
+    const comercial = bloque({ id: "z1", m3: 3, tipoProducto: "Comercial" });
+    const d = distribuirPorCapacidad([comercial], PAQUETERIA, "tipo");
+    const c = cuadreDeDistribucion(
+      { faltanteM3: d.totales.faltanteM3, libreM3: d.totales.libreM3 },
+      40,
+      sugerenciasDeReproceso(d),
+    );
+    expect(c.cubreReprocesoM3).toBe(0);
+    expect(c.quedaM3).toBe(c.faltaM3);
   });
 });

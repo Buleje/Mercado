@@ -57,7 +57,11 @@ export const MINIMO_SUGERIBLE_M3 = 0.05;
 export interface BloqueOrigen {
   id: string;
   etiqueta: string;
+  /** m³ declarados del bloque entero — el tamaño de lo que hay, no lo que se convierte. */
+  m3: number;
   libreM3: number;
+  /** Piezas que el Libro le declara al bloque, si se saben. */
+  piezas: number | null;
 }
 
 export type MotivoSugerencia = "faltante" | "amparado";
@@ -79,6 +83,16 @@ export interface SugerenciaReproceso {
   /** Lo que falta amparar de `haciaTipo`. */
   faltanteM3: number;
   faltantePiezas: number;
+  /**
+   * Piezas del BLOQUE de origen, si el Libro las declara. Es el tamaño de lo
+   * que hay —no las piezas que se convierten, que dependen de la escuadría de
+   * salida—: por eso se muestra como contexto y no como la cantidad de la
+   * conversión. `null` cuando no se saben: mejor un guion que un número
+   * inventado.
+   */
+  piezasDesde: number | null;
+  /** m³ del bloque (o bloques) de origen, para leer de qué tamaño es lo que hay. */
+  m3Desde: number;
   /** Lo que se puede convertir: nunca más de lo que hay. */
   convertirM3: number;
   /** `true` si con eso el faltante queda cubierto. */
@@ -112,7 +126,13 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
       const tipo = tipoDelBloque(b.bloque);
       if (!tipo) continue;
       const lista = libres.get(tipo) ?? [];
-      lista.push({ id: b.bloque.id, etiqueta: b.bloque.etiqueta, libreM3: r4(b.libreM3) });
+      lista.push({
+        id: b.bloque.id,
+        etiqueta: b.bloque.etiqueta,
+        m3: r4(Number(b.bloque.m3) || 0),
+        libreM3: r4(b.libreM3),
+        piezas: b.bloque.piezasOrigen ?? b.bloque.piezasManual ?? null,
+      });
       libres.set(tipo, lista);
     }
     /* Sin capacidad libre no hay nada que ofrecer para el faltante, pero el
@@ -137,6 +157,8 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
           disponibleM3,
           faltanteM3: r4(f.m3),
           faltantePiezas: f.piezas,
+          piezasDesde: piezasDe(bloques),
+          m3Desde: r4(bloques.reduce((a, b) => a + b.m3, 0)),
           convertirM3,
           cubreTodo: disponibleM3 + EPS >= f.m3,
           restaM3: r4(Math.max(0, f.m3 - convertirM3)),
@@ -165,12 +187,22 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
           disponibleM3: r4(g.m3),
           faltanteM3: r4(g.m3),
           faltantePiezas: g.piezas,
+          piezasDesde: b.bloque.piezasOrigen ?? b.bloque.piezasManual ?? null,
+          m3Desde: r4(Number(b.bloque.m3) || 0),
           convertirM3: r4(g.m3),
           cubreTodo: true,
           restaM3: 0,
           sobraM3: 0,
           aprovechaPct: 100,
-          bloques: [{ id: b.bloque.id, etiqueta: b.bloque.etiqueta, libreM3: r4(b.libreM3) }],
+          bloques: [
+            {
+              id: b.bloque.id,
+              etiqueta: b.bloque.etiqueta,
+              m3: r4(Number(b.bloque.m3) || 0),
+              libreM3: r4(b.libreM3),
+              piezas: b.bloque.piezasOrigen ?? b.bloque.piezasManual ?? null,
+            },
+          ],
         });
       }
     }
@@ -181,6 +213,13 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
     .sort((a, b) => b.convertirM3 - a.convertirM3);
 }
 
+/** Piezas de los bloques de origen: `null` si alguno no las declara (no se estima). */
+function piezasDe(bloques: readonly BloqueOrigen[]): number | null {
+  if (bloques.some((b) => b.piezas == null)) return null;
+  const total = bloques.reduce((a, b) => a + (b.piezas ?? 0), 0);
+  return total > 0 ? total : null;
+}
+
 /** Dos etiquetas de tipo son la misma sin importar tildes ni mayúsculas. */
 function mismoTipo(a: string, b: string): boolean {
   const norm = (v: string) =>
@@ -188,17 +227,65 @@ function mismoTipo(a: string, b: string): boolean {
   return norm(a) === norm(b);
 }
 
-/** Cuántas sugerencias hay y cuánto cuadrarían — para el título del apartado. */
+export interface CuadreDeDistribucion {
+  /** Aserrada cubicada que ningún bloque respalda. */
+  faltaM3: number;
+  faltaPiezas: number;
+  /** De eso, lo que taparían los reprocesos sugeridos (sin contar dos veces un destino). */
+  cubreReprocesoM3: number;
+  /** Capacidad de bloques sin usar — la que ya está del lado correcto. */
+  libreM3: number;
+  /** Lo que quedaría sin respaldo después de reprocesar. */
+  quedaM3: number;
+}
+
+/**
+ * El cierre: qué falta, con qué se tapa y qué queda — todo en una cuenta.
+ *
+ * Es la pregunta que el operario hace al final («¿con esto cuadro?») y que
+ * hasta ahora había que armar mirando tres bloques distintos de la pantalla.
+ * El aporte de los reprocesos se cuenta **una vez por destino**: dos orígenes
+ * para la misma paquetería no tapan el doble.
+ */
+export function cuadreDeDistribucion(
+  totales: { faltanteM3: number; libreM3: number },
+  faltantePiezas: number,
+  sugerencias: readonly SugerenciaReproceso[],
+): CuadreDeDistribucion {
+  const porDestino = new Map<string, number>();
+  for (const s of sugerencias) {
+    if (s.motivo !== "faltante") continue;
+    const k = `${s.especie}|${s.haciaTipo}`;
+    /* El mejor aporte para ese destino, no la suma: los orígenes compiten por
+       tapar el mismo hueco, no se acumulan sobre él. */
+    porDestino.set(k, Math.max(porDestino.get(k) ?? 0, s.convertirM3));
+  }
+  const cubreReprocesoM3 = r4([...porDestino.values()].reduce((a, v) => a + v, 0));
+  return {
+    faltaM3: r4(totales.faltanteM3),
+    faltaPiezas: faltantePiezas,
+    cubreReprocesoM3,
+    /* Un «libre» negativo de milésimas es ruido del reparto (overrides
+       declarados a mano, redondeo de piezas enteras); mostrarlo como capacidad
+       libre negativa confunde más de lo que informa, y de un descuadre real ya
+       avisa la alerta del reparto. */
+    libreM3: r4(Math.max(0, totales.libreM3)),
+    quedaM3: r4(Math.max(0, totales.faltanteM3 - cubreReprocesoM3)),
+  };
+}
+
+/** Cuántas sugerencias hay y cuánta madera está en juego — para el título. */
 export function resumenDeSugerencias(s: readonly SugerenciaReproceso[]) {
+  /* Una vez por destino y quedándose con el MAYOR: dos orígenes que ofrecen
+     tapar el mismo hueco no lo tapan dos veces, y el último de la lista no
+     tiene por qué ser el que más aporta. */
+  const porDestino = new Map<string, number>();
+  for (const x of s) {
+    const k = `${x.especie}|${x.haciaTipo}`;
+    porDestino.set(k, Math.max(porDestino.get(k) ?? 0, x.convertirM3));
+  }
   return {
     cuantas: s.length,
-    /* Sin sumar el mismo origen dos veces: una sugerencia por destino puede
-       repetir el bloque, y sumarlas daría un total que no existe. */
-    convertibleM3: r4(
-      [...new Map(s.map((x) => [`${x.especie}|${x.haciaTipo}`, x])).values()].reduce(
-        (a, x) => a + x.convertirM3,
-        0,
-      ),
-    ),
+    m3EnJuego: r4([...porDestino.values()].reduce((a, v) => a + v, 0)),
   };
 }

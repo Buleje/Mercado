@@ -99,6 +99,13 @@ export interface BloqueRolliza {
    */
   tipoProducto?: string | null;
   /**
+   * Cuántas piezas trae el bloque según el Libro, cuando se sabe. Es
+   * **informativo**: a diferencia de `piezasManual` NO es un tope y el reparto
+   * no lo mira. Sirve para poder leer «25 piezas de comercial → 22 paquetes»
+   * en la sugerencia de reproceso, que es como se entiende la conversión.
+   */
+  piezasOrigen?: number | null;
+  /**
    * N° de permiso (título habilitante) de origen de este bloque, si se
    * conoce (Brandon, 2026-09-01). No cambia CÓMO se reparte —la aserrada
    * sigue sin poder decir de qué permiso salió cada tabla— pero permite

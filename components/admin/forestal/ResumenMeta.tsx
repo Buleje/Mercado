@@ -18,12 +18,12 @@ import {
   evaluarMeta, serieTendencia, META_DEFAULT, TIPOS_META, type MetaMix,
 } from "@/lib/forestal/cubicacion-meta";
 import { fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { slugKey } from "@/lib/forestal/sembrar-reparto";
 
-const claveMeta = () => {
-  let slug = "main";
-  try { slug = localStorage.getItem("active-tenant-slug") ?? "main"; } catch { /* ignore */ }
-  return `buleje-cubicacion-${slug}-meta`;
-};
+/* La clave sale de `slugKey`, la misma que usa la distribución para leer la
+   meta en su apartado de reprocesos: dos definiciones del mismo nombre es como
+   se termina guardando en un lado y leyendo del otro. */
+const claveMeta = () => slugKey("-meta");
 
 /**
  * Porcentajes de la meta: hasta un decimal, y sin el `.0` cuando es redondo

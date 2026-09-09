@@ -43,7 +43,9 @@ import { BloqueEspecie } from "./reparto-vistas";
 import { DiferenciaDistribucion } from "./reparto-diferencia";
 import { AlertaDescuadre, OpcionesExportacion } from "./reparto-opciones";
 import { diagnosticarReparto } from "@/lib/forestal/cubicacion-reparto-diagnostico";
-import { resumenDeSugerencias, sugerenciasDeReproceso } from "@/lib/forestal/reproceso-sugerido";
+import { cuadreDeDistribucion, resumenDeSugerencias, sugerenciasDeReproceso } from "@/lib/forestal/reproceso-sugerido";
+import { evaluarMeta, META_DEFAULT, type MetaMix } from "@/lib/forestal/cubicacion-meta";
+import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import { tipoComercialDelProducto } from "@/lib/forestal/loctp-catalogos";
 import ReprocesosSugeridos from "./reparto-reprocesos";
 import { FiltroLargoCelda } from "./reparto-filtro-largo";
@@ -637,6 +639,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       /* El producto declarado dice de qué tipo es la madera; con eso la
          distribución puede sugerir el reproceso (ADR-404). */
       tipoProducto: tipoComercialDelProducto(p.producto),
+      piezasOrigen: p.piezas,
     }))]);
     irAlUltimoBloque();
   };
@@ -879,6 +882,45 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
   );
   const reprocesos = useMemo(() => sugerenciasDeReproceso(distPorTipo), [distPorTipo]);
   const resumenReprocesos = useMemo(() => resumenDeSugerencias(reprocesos), [reprocesos]);
+  /** El cierre del apartado: qué falta, qué tapan los reprocesos y qué queda. */
+  const cuadre = useMemo(
+    () =>
+      cuadreDeDistribucion(
+        { faltanteM3: distPorTipo.totales.faltanteM3, libreM3: distPorTipo.totales.libreM3 },
+        distPorTipo.especies.reduce((a, e) => a + e.faltante.reduce((x, f) => x + f.piezas, 0), 0),
+        reprocesos,
+      ),
+    [distPorTipo, reprocesos],
+  );
+  /**
+   * La meta de mix, para cerrar la cuenta en el mismo lugar (Brandon,
+   * 2026-09-09: «una revisión para cuadrar a la meta todo junto»). Se lee la
+   * MISMA clave que escribe la vista Metas — no una copia — así el número de
+   * acá no puede contradecir al de allá.
+   */
+  const [metaMix, setMetaMix] = useState<MetaMix>(META_DEFAULT);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(slugKey("-meta"));
+      if (raw) setMetaMix({ ...META_DEFAULT, ...(JSON.parse(raw) as Partial<MetaMix>) });
+    } catch { /* json corrupto → default */ }
+  }, []);
+  const metaDelApartado = useMemo(() => {
+    const estado = evaluarMeta(rows, metaMix, precioDe);
+    if (!estado) return null;
+    /* Lo que los reprocesos aportarían AL TIPO DE LA META: sumar los que van a
+       otro tipo diría que la meta se acerca cuando no. */
+    const aporteM3 = reprocesos
+      .filter((s) => s.haciaTipo.toLowerCase() === metaMix.tipo.toLowerCase())
+      .reduce((a, s) => a + s.convertirM3, 0);
+    return {
+      tipo: metaMix.tipo,
+      pctMinimo: metaMix.pctMinimo,
+      actual: estado.actual,
+      cumple: estado.cumple,
+      aporteM3: Math.round(aporteM3 * 10000) / 10000,
+    };
+  }, [rows, metaMix, precioDe, reprocesos]);
   const t = dist.totales;
   /** Cada bloque YA distribuido, con su especie — para poder buscarlo por id
    *  sin importar bajo qué grupo de especie terminó cayendo. */
@@ -1385,12 +1427,12 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           titulo="Reprocesos que cuadrarían la distribución"
           hint={
             <span className="font-mono tabular-nums">
-              {fmtM3(resumenReprocesos.convertibleM3)} m³{" "}
-              <span className="font-sans">convertibles · {resumenReprocesos.cuantas} sugerencia{resumenReprocesos.cuantas === 1 ? "" : "s"}</span>
+              {fmtM3(resumenReprocesos.m3EnJuego)} m³{" "}
+              <span className="font-sans">en juego · {resumenReprocesos.cuantas} sugerencia{resumenReprocesos.cuantas === 1 ? "" : "s"}</span>
             </span>
           }
         >
-          <ReprocesosSugeridos sugerencias={reprocesos} />
+          <ReprocesosSugeridos sugerencias={reprocesos} cuadre={cuadre} meta={metaDelApartado} />
         </SeccionResumen>
       )}
 

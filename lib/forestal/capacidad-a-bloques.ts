@@ -69,7 +69,10 @@ export interface CandidatoDeCapacidad {
    * pueda sugerir el reproceso (ADR-404) — el reparto no lo mira.
    */
   tipoProducto?: string | null;
-  /** Cuántas piezas hay detrás — informativo, para leer la línea en el modal. */
+  /**
+   * Cuántas piezas hay detrás — informativo, para leer la línea en el modal y
+   * para que la sugerencia de reproceso pueda decir «25 piezas → 22 paquetes».
+   */
   piezas: number;
 }
 
@@ -201,7 +204,12 @@ export function bloquesDesdeCapacidad(
      corrida sembrada desde acá no se vuelve a ofrecer allá. */
   for (const c of corridasDeFuente(entrada.corridas ?? [], filtros)) {
     if (!(c.disponible > MINIMO_M3)) continue;
-    const piezas = c.paquetes.reduce((a, p) => a + (Number(p.volumenM3) > 0 ? 1 : 0), 0);
+    /* Las PIEZAS, no los paquetes: un paquete de 43 tablas es 43 piezas, y
+       contar bultos daría «1 pieza» sobre 5 m³ de madera. */
+    const piezas = c.paquetes.reduce(
+      (a, p) => a + (Number(p.volumenM3) > 0 ? Number(p.cantidad) || 0 : 0),
+      0,
+    );
     out.push({
       clave: `productos:${c.id}`,
       fuente: "productos",

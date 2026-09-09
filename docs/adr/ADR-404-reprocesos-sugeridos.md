@@ -68,6 +68,33 @@ pieza que ya no entraba—. «Reprocesá 0.010 m³» es mandar diez litros a la 
 una lista con esos renglones enseña a ignorar la lista entera. 0.05 m³ ≈ 21 pie tablar ≈ una tabla
 de 2×8×10: menos que eso no es una orden de trabajo.
 
+### 6.1 Cómo se lee cada línea (revisión 2026-09-09)
+
+La primera versión era un párrafo por sugerencia y no se entendía cuál lado era cuál («¿ese
+amarillo es para hacer reproceso a ese verdoso que sale con la flecha?»). Ahora cada línea es una
+**conversión de izquierda a derecha**, sin prosa:
+
+```
+COMERCIAL                    →   PAQUETERÍA LARGA        [Falta declararlo]
+1.203 m³                         1.203 m³ · 17 pzas
+de 2.500 m³ · 25 pzas que hay
+```
+
+Las **piezas del origen van abajo, como contexto**, no al lado del m³ convertido: son el tamaño del
+bloque, y un mismo bloque aparece en varias conversiones — leerlas arriba haría pensar que esas 25
+piezas se consumen cuatro veces.
+
+### 6.2 El cierre: qué falta, qué tapan los reprocesos, qué queda
+
+Arriba del listado va la cuenta completa —falta respaldar · tapan los reprocesos · capacidad libre ·
+queda sin respaldo— más la **meta de mix** leída de la MISMA clave que escribe la vista Metas
+(`slugKey("-meta")`, no una copia). Es la revisión «para cuadrar a la meta, todo junto» que pidió
+Brandon: rolliza, aserrada y reprocesos en la misma cuenta.
+
+Dos detalles del cierre: el aporte se cuenta **una vez por destino** (dos orígenes que ofrecen tapar
+el mismo hueco no lo tapan dos veces) y, con todo respaldado, en vez de cuatro ceros se dice en una
+línea que lo de abajo es lo que el respaldo **da por hecho**.
+
 ### 7. Es una sugerencia, no un movimiento
 
 ⛔ **No registra nada en el Libro.** El reproceso real se declara desde Productos disponibles, con

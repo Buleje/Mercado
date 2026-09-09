@@ -80,6 +80,7 @@ export default function LlevarAlCubicadorModal({
         /* Qué tipo de madera es, cuando el Libro lo dice: es lo que permite
            sugerir el reproceso del lado del cubicador (ADR-404). */
         ...(c.tipoProducto ? { tipoProducto: c.tipoProducto } : {}),
+        ...(c.piezas > 0 ? { piezasOrigen: c.piezas } : {}),
         ...(c.paqueteId ? { paqueteId: c.paqueteId } : {}),
       })),
       "capacidad",
