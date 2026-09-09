@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
+import { esCampoSinDato, marcadorDeAusencia } from "@/lib/forestal/campo-sin-dato";
 import {
   ForestCtpConsumoDB,
   CtpInvariantError,
@@ -1703,7 +1704,6 @@ export class ForestCtpDB {
       : enLote > 0 ? "es miembro de un lote de producción"
       : null;
 
-    const vacio = (v: string | null | undefined) => v == null || v.trim() === "";
     const aplicados: string[] = [];
     const omitidos: { campo: string; motivo: string }[] = [];
     const data: Record<string, string> = {};
@@ -1712,7 +1712,10 @@ export class ForestCtpDB {
       const valor = (bruto ?? "").trim();
       if (!valor) continue;
       const previo = actual[campo] as string | null;
-      if (!vacio(previo)) {
+      /* Un «—» está tan vacío como un `null`: la tabla pinta lo mismo para los
+         dos, así que bloquearlo por «ya tiene dato» dejaba al operario mirando
+         un guion que no podía completar. */
+      if (!esCampoSinDato(previo)) {
         omitidos.push({ campo, motivo: `ya dice «${previo}»` });
         continue;
       }
@@ -1721,7 +1724,10 @@ export class ForestCtpDB {
         continue;
       }
       data[campo] = valor;
-      aplicados.push(`${ETIQUETA_CAMPO[campo]} → ${valor}`);
+      /* Reemplazar un marcador NO es lo mismo que llenar un hueco: el rastro lo
+         dice, porque el campo antes ocupaba lugar con algo escrito. */
+      const marcador = marcadorDeAusencia(previo);
+      aplicados.push(`${ETIQUETA_CAMPO[campo]} ${marcador ? `«${marcador}» ` : ""}→ ${valor}`);
     }
 
     if (aplicados.length === 0) {

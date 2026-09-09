@@ -23,6 +23,7 @@ import { useState } from "react";
 import { AlertTriangle, Check, Loader2, Lock, X } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { esCampoSinDato, marcadorDeAusencia } from "@/lib/forestal/campo-sin-dato";
 
 /** Lo que el modal necesita saber de la fila. */
 export interface LineaCompletable {
@@ -53,7 +54,7 @@ const CAMPOS: { key: Campo; label: string; registro: boolean; largo?: boolean; a
   { key: "observations", label: "Observaciones", registro: false, largo: true },
 ];
 
-const vacio = (v: string | null | undefined) => v == null || v.trim() === "";
+
 
 export default function CtpCompletarLineaModal({
   linea,
@@ -68,8 +69,10 @@ export default function CtpCompletarLineaModal({
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const huecos = CAMPOS.filter((c) => vacio(linea[c.key]));
-  const conDato = CAMPOS.filter((c) => !vacio(linea[c.key]));
+  /* Un «—» cuenta como hueco: la tabla lo pinta igual que un campo sin dato, y
+     el modal no puede decir «ya cargado» de algo que no dice nada. */
+  const huecos = CAMPOS.filter((c) => esCampoSinDato(linea[c.key]));
+  const conDato = CAMPOS.filter((c) => !esCampoSinDato(linea[c.key]));
   /* Un campo del registro sobre una corrida atada no se puede completar: se
      muestra como hueco bloqueado, con el motivo. */
   const bloqueado = (c: (typeof CAMPOS)[number]) => c.registro && !!linea.atadaPorque;
@@ -147,6 +150,11 @@ export default function CtpCompletarLineaModal({
           <div className="mt-4 space-y-3">
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               En blanco ({huecos.length})
+              {huecos.some((c) => marcadorDeAusencia(linea[c.key])) && (
+                <span className="ml-1 font-normal normal-case tracking-normal">
+                  · un «—» cuenta como vacío
+                </span>
+              )}
             </p>
             {huecos.map((c) => (
               <label key={c.key} className="block">
@@ -160,7 +168,7 @@ export default function CtpCompletarLineaModal({
                     value={valores[c.key] ?? ""}
                     disabled={bloqueado(c)}
                     onChange={(e) => setValores((v) => ({ ...v, [c.key]: e.target.value }))}
-                    placeholder={bloqueado(c) ? "Bloqueado" : "Vacío"}
+                    placeholder={bloqueado(c) ? "Bloqueado" : (marcadorDeAusencia(linea[c.key]) ?? "Vacío")}
                     className="mt-1 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-50"
                   />
                 ) : (
@@ -169,7 +177,7 @@ export default function CtpCompletarLineaModal({
                     value={valores[c.key] ?? ""}
                     disabled={bloqueado(c)}
                     onChange={(e) => setValores((v) => ({ ...v, [c.key]: e.target.value }))}
-                    placeholder={bloqueado(c) ? "Bloqueado" : "Vacío"}
+                    placeholder={bloqueado(c) ? "Bloqueado" : (marcadorDeAusencia(linea[c.key]) ?? "Vacío")}
                     className="mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-50"
                   />
                 )}
