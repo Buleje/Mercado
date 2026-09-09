@@ -31,8 +31,13 @@ import { useAnexo04Salidas } from "@/hooks/use-anexo04-salidas";
 import { useAnexo04Contraste } from "@/hooks/use-anexo04-contraste";
 import { useFichaCtp } from "@/hooks/use-ficha-ctp";
 import Anexo04GtfSalida, { type DespachoParaGtf } from "./Anexo04GtfSalida";
+import Anexo04Cuadre from "./Anexo04Cuadre";
 
 const A4_PX = 794; // ancho de una hoja A4 a 96 dpi
+
+/** Tira de dato de la cabecera: el mismo alto para que la fila se lea pareja. */
+const CHIP_HEAD =
+  "inline-flex h-7 items-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 text-xs text-[var(--text-secondary)]";
 
 /** Imprime un HTML independiente vía iframe oculto (sin popup). */
 function imprimirHtml(html: string) {
@@ -286,12 +291,17 @@ export default function Anexo04Modal({
 
   return (
     <div
-      className="modal-backdrop fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 pt-[3vh]"
+      className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3"
       onClick={(e) => { if (e.target === e.currentTarget) onCerrar(); }}
     >
-      <div role="dialog" aria-modal="true" aria-label="Vista previa del Anexo N° 04" className="w-full max-w-[76rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <div>
+      {/* Alto ACOTADO y scroll adentro (Brandon 2026-09-09: «está muy
+          alargado»): antes el modal crecía con su contenido y el backdrop
+          scrolleaba la página entera, así que el pie con «Descargar PDF»
+          quedaba a dos pantallas del título. Ahora el marco entra siempre en la
+          ventana, el pie está fijo y lo que scrollea es cada columna. */}
+      <div role="dialog" aria-modal="true" aria-label="Vista previa del Anexo N° 04" className="flex max-h-[94vh] w-full max-w-[76rem] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
+        <div className="flex shrink-0 items-start justify-between gap-3">
+          <div className="min-w-0">
             <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
               <FileText className="h-5 w-5 text-[var(--accent)]" /> Vista previa · ANEXO N° 04
               {duenoFiltro !== "todos" && (
@@ -300,12 +310,16 @@ export default function Anexo04Modal({
                 </span>
               )}
             </CardTitle>
-            <p className="mt-0.5 flex flex-wrap items-center gap-x-1 text-xs text-[var(--text-tertiary)]">
-              <span>
-                Lista de productos transformados · {anexo.hojas.length} hoja{anexo.hojas.length === 1 ? "" : "s"} ·{" "}
-                {anexo.totalPiezas} piezas ·
+            {/* La cabecera, en tiras: hojas · piezas · el volumen editable · lo
+                que dice la guía. Era un párrafo corrido donde el input del
+                volumen —lo único que se toca— se perdía entre el texto. */}
+            <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
+              <span className={CHIP_HEAD}>
+                {anexo.hojas.length} hoja{anexo.hojas.length === 1 ? "" : "s"}
               </span>
-              <label className="inline-flex items-center gap-1">
+              <span className={CHIP_HEAD}>{anexo.totalPiezas} piezas</span>
+              <label className={`${CHIP_HEAD} gap-1`}>
+                <span className="font-bold uppercase tracking-wide text-[var(--text-tertiary)]">(3) Volumen</span>
                 <input
                   value={totalBuffer}
                   onChange={(e) => setTotalBuffer(e.target.value.replace(/[^\d.,]/g, ""))}
@@ -317,7 +331,7 @@ export default function Anexo04Modal({
                       ? "Se calcula sumando las piezas. Escribí el tuyo para declarar otro (ajuste mínimo, las medidas de cada pieza no cambian)."
                       : `Declarado a mano: el cálculo desde las piezas da ${fmtAnexo(anexo.totalCalculadoM3)} m³. Las hojas se reparten para sumar EXACTO este número.`
                   }
-                  className={`h-6 w-16 rounded-xl border-2 bg-[var(--surface-raised)] px-1 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${totalManual == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-secondary)]" : "border-[var(--accent)] text-[var(--accent)]"}`}
+                  className={`h-6 w-16 rounded-lg border-2 bg-[var(--surface-raised)] px-1 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${totalManual == null ? "border-dashed border-[var(--rule-base)] text-[var(--text-secondary)]" : "border-[var(--accent)] text-[var(--accent)]"}`}
                 />
                 <span>m³</span>
               </label>
@@ -331,19 +345,16 @@ export default function Anexo04Modal({
                   <X className="h-3 w-3" />
                 </button>
               )}
-              {totalManual != null && Math.abs(anexo.totalM3 - anexo.totalCalculadoM3) >= 0.0005 && (
-                <span className={Math.abs(anexo.totalM3 - anexo.totalCalculadoM3) / Math.max(anexo.totalCalculadoM3, 0.001) > 0.02
-                  ? "font-bold text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]"
-                  : "text-[var(--text-tertiary)]"}
-                >
-                  (cálculo desde las piezas: {fmtAnexo(anexo.totalCalculadoM3)} m³)
-                </span>
-              )}
+              {/* La diferencia contra el cálculo ya no se dice acá: la banda de
+                  abajo la dice CON qué medida moverla para cerrarla. */}
               {contraste && contraste.cantidad > 0 && (
-                <span className="ml-1 text-[var(--text-secondary)]">
-                  {" · "}{contraste.fuente === "corrida" ? "corrida" : "guía"}: {contraste.cantidad.toLocaleString("es-PE", { maximumFractionDigits: 3 })}{" "}
-                  {contraste.unidad === "m3" ? "m³" : contraste.unidad?.toUpperCase() ?? ""}
-                  {contraste.piezas ? ` · ${contraste.piezas} pzas` : ""}
+                <span className={CHIP_HEAD}>
+                  {contraste.fuente === "corrida" ? "corrida" : "guía"}:{" "}
+                  <span className="ml-1 font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                    {contraste.cantidad.toLocaleString("es-PE", { maximumFractionDigits: 3 })}
+                  </span>
+                  <span className="ml-1">{contraste.unidad === "m3" ? "m³" : contraste.unidad?.toUpperCase() ?? ""}</span>
+                  {contraste.piezas ? <span className="ml-1">· {contraste.piezas} pzas</span> : null}
                 </span>
               )}
             </p>
@@ -353,9 +364,17 @@ export default function Anexo04Modal({
           </button>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[19rem_1fr]">
+        {/* «Me pasé por 0,003 m³»: qué medida mover y hasta cuánto. Va pegado
+            al volumen porque es la respuesta a lo que se acaba de tipear. */}
+        {totalManual != null && filasEditadas.length > 0 && (
+          <div className="mt-3 shrink-0">
+            <Anexo04Cuadre filas={filasEditadas} objetivoM3={totalManual} onAplicar={onEditarCelda} />
+          </div>
+        )}
+
+        <div className="mt-3 grid min-h-0 flex-1 gap-4 overflow-y-auto lg:grid-cols-[19rem_1fr] lg:overflow-hidden">
           {/* Datos del formato */}
-          <div className="lg:max-h-[74vh] lg:overflow-y-auto lg:pr-1">
+          <div className="lg:min-h-0 lg:overflow-y-auto lg:pr-1">
             <Anexo04Campos datos={datos} onChange={set} ficha={ficha} onError={(msg) => onAviso?.(msg, "error")} anexo={anexo} />
             <div className="mt-3 border-t-2 border-[var(--rule-soft)] pt-3">
               <button
@@ -385,7 +404,7 @@ export default function Anexo04Modal({
           </div>
 
           {/* Preview del papel */}
-          <div ref={areaRef} className="min-w-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+          <div ref={areaRef} className="min-w-0 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
             {/* Los dos papeles del camión. La guía sólo se ofrece si el despacho
                 ya tiene número: sin GTF emitida no hay guía que mirar, y una
                 pestaña que abre un papel vacío hace pensar que se perdió algo. */}
@@ -472,14 +491,16 @@ export default function Anexo04Modal({
           </div>
         </div>
 
-        <Anexo04Acciones
-          presentable={presentable}
-          generando={generando}
-          onPdfDetallado={onPdfDetallado}
-          onExcel={descargarExcel}
-          onImprimir={imprimir}
-          onDescargar={descargarPdf}
-        />
+        <div className="shrink-0">
+          <Anexo04Acciones
+            presentable={presentable}
+            generando={generando}
+            onPdfDetallado={onPdfDetallado}
+            onExcel={descargarExcel}
+            onImprimir={imprimir}
+            onDescargar={descargarPdf}
+          />
+        </div>
       </div>
     </div>
   );

@@ -34,7 +34,7 @@
  * Es una SUGERENCIA, no un movimiento: acá no se registra nada en el Libro.
  */
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, ChevronRight, ExternalLink, Info, RefreshCw } from "@buleje/design-system/icons";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { productoDelTipoComercial } from "@/lib/forestal/loctp-catalogos";
@@ -47,6 +47,63 @@ import type {
   GrupoDeReproceso,
 } from "@/lib/forestal/reproceso-sugerido";
 
+/**
+ * Una fila de la tabla de salidas. `mismoTipo` marca la conversión del producto
+ * **en sí mismo** (comercial que ampara comercial): no pasa por la sierra, no se
+ * declara — pero sin ella la tabla no suma lo que el bloque ampara y la sección
+ * parece incoherente con la fila de arriba (Brandon, 2026-09-09).
+ */
+type FilaSalida = DestinoDeReproceso & { mismoTipo?: boolean };
+
+/** Clave por tenant: lo marcado en un negocio no es lo marcado en el hermano. */
+const claveMarcas = () => {
+  let slug = "main";
+  try { slug = localStorage.getItem("active-tenant-slug") ?? "main"; } catch { /* SSR / privado */ }
+  return `buleje-ctp-reprocesos-marcados-${slug}`;
+};
+
+/**
+ * Lo que ya se repasó, con un tilde por fila (Brandon, 2026-09-09).
+ *
+ * Se guarda en el equipo porque el repaso dura lo que dura declarar: se abre el
+ * Libro, se registra el reproceso, se vuelve — y si al volver la lista está
+ * limpia otra vez, no se sabe por dónde se iba. No es un estado del Libro: no
+ * viaja al servidor ni afecta al papel.
+ */
+function useMarcas() {
+  const [marcadas, setMarcadas] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(claveMarcas());
+      if (raw) setMarcadas(new Set(JSON.parse(raw) as string[]));
+    } catch { /* json corrupto → sin marcas */ }
+  }, []);
+  const alternar = useCallback((clave: string) => {
+    setMarcadas((prev) => {
+      const next = new Set(prev);
+      if (next.has(clave)) next.delete(clave);
+      else next.add(clave);
+      try { localStorage.setItem(claveMarcas(), JSON.stringify([...next])); } catch { /* quota */ }
+      return next;
+    });
+  }, []);
+  const limpiar = useCallback(() => {
+    setMarcadas(new Set());
+    try { localStorage.removeItem(claveMarcas()); } catch { /* quota */ }
+  }, []);
+  return { marcadas, alternar, limpiar };
+}
+
+/** Milésimas: la unidad del papel. Sumar dos m³ ya redondeados deja colas. */
+const r3 = (n: number) => Math.round(n * 1000) / 1000;
+/**
+ * Debajo de esto no hay madera: es el redondeo de repartir piezas ENTERAS
+ * contra una capacidad decimal. Un bloque lleno que dice «quedan 0.001 m³ de
+ * capacidad» enseña a ignorar el renglón — la lección de los siete rojos falsos
+ * del importador CTP. 10 litros es lo más fino que mide una cinta en el patio.
+ */
+const RUIDO_M3 = 0.01;
+
 const CHIP =
   "inline-flex items-center rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide";
 const TH =
@@ -54,7 +111,15 @@ const TH =
 const TD = "px-2 py-1.5 text-sm text-[var(--text-secondary)]";
 const NUM = `${TD} text-right font-mono tabular-nums`;
 
-/** Las filas de un grupo de salidas, con su subtotal. */
+/**
+ * Las filas de un grupo de salidas, con su subtotal.
+ *
+ * Cada fila dice la conversión ENTERA —«comercial → paquetería larga»— y no
+ * sólo el destino: en una sección que junta varios productos, un chip suelto
+ * que dice «paquetería larga» no deja ver de qué salió (Brandon, 2026-09-09).
+ * La primera columna es un tilde para ir marcando lo ya repasado: al marcarla,
+ * la fila queda subrayada.
+ */
 function TablaSalidas({
   titulo,
   ayuda,
@@ -64,10 +129,12 @@ function TablaSalidas({
   totalLabel = "Total que sale",
   tono,
   grupo,
+  marcadas,
+  onMarcar,
 }: {
   titulo: string;
   ayuda: string;
-  destinos: DestinoDeReproceso[];
+  destinos: FilaSalida[];
   /** `null` = este grupo NO se suma (las opciones no entran juntas: compiten). */
   totalM3: number | null;
   totalPiezas: number | null;
@@ -75,6 +142,9 @@ function TablaSalidas({
   tono: "amparado" | "opcion";
   /** El producto original: de ahí salen la especie, la etiqueta y el permiso del pase. */
   grupo: GrupoDeReproceso;
+  /** Filas ya repasadas (clave completa `grupo|tipo|motivo`). */
+  marcadas: ReadonlySet<string>;
+  onMarcar: (clave: string) => void;
 }) {
   const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
   const alternar = (clave: string) =>
@@ -93,8 +163,12 @@ function TablaSalidas({
       <table className="mt-1 w-full">
         <thead>
           <tr className="border-b border-[var(--rule-soft)]">
-            <th className={TH}>Se convierte en</th>
-            <th className={`${TH} text-right`}>m³</th>
+            <th className={`${TH} w-8 text-center`} title="Marcá lo que ya repasaste: la fila queda subrayada">
+              <span aria-hidden>✓</span>
+              <span className="sr-only">Marcar como repasado</span>
+            </th>
+            <th className={TH}>Reproceso · tipo</th>
+            <th className={`${TH} text-right`}>Volumen m³</th>
             <th className={`${TH} text-right`}>Piezas</th>
             <th className={`${TH} text-right`}>Falta</th>
             <th className={TH}>
@@ -104,10 +178,32 @@ function TablaSalidas({
         </thead>
         <tbody>
           {destinos.map((d) => {
-            const clave = `${d.tipo}|${d.motivo}`;
+            const clave = `${d.mismoTipo ? "=" : ""}${d.tipo}|${d.motivo}`;
+            const claveMarca = `${grupo.clave}|${clave}`;
+            const marcada = marcadas.has(claveMarca);
             const abierto = abiertos.has(clave);
             return [
-              <tr key={clave} className="border-b border-[var(--rule-soft)]">
+              <tr
+                key={clave}
+                /* El subrayado del repaso: una línea de acento bajo la fila
+                   entera. No la tacha ni la esconde — lo marcado se sigue
+                   leyendo, que es de lo que se trata al repasar un papel. */
+                className={
+                  marcada
+                    ? "border-b-2 border-[var(--accent)] bg-[var(--accent)]/8"
+                    : "border-b border-[var(--rule-soft)]"
+                }
+              >
+                <td className={`${TD} text-center`}>
+                  <input
+                    type="checkbox"
+                    checked={marcada}
+                    onChange={() => onMarcar(claveMarca)}
+                    aria-label={`Marcar como repasado: ${grupo.desdeTipo} a ${d.tipo}`}
+                    title={marcada ? "Repasado — desmarcar" : "Marcar como repasado"}
+                    className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                  />
+                </td>
                 <td className={TD}>
                   {/* El desglose de MEDIDAS va plegado, igual que en los bloques
                       distribuidos: desplegado son 4× las filas y se pierde la
@@ -117,7 +213,7 @@ function TablaSalidas({
                     onClick={() => alternar(clave)}
                     disabled={d.medidas.length === 0}
                     aria-expanded={abierto}
-                    className="inline-flex items-center gap-1 disabled:cursor-default"
+                    className={`inline-flex flex-wrap items-center gap-1 disabled:cursor-default ${marcada ? "underline decoration-[var(--accent)] decoration-2 underline-offset-4" : ""}`}
                     title={d.medidas.length > 0 ? "Ver las medidas" : "Sin medidas declaradas"}
                   >
                     {d.medidas.length > 0 && (
@@ -126,15 +222,28 @@ function TablaSalidas({
                         aria-hidden
                       />
                     )}
+                    {/* De qué sale → en qué se convierte. La conversión completa
+                        en la misma celda: es lo que se declara en el Libro. */}
+                    <span className={`${CHIP} bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]`}>
+                      {grupo.desdeTipo}
+                    </span>
+                    <span className="text-[var(--text-tertiary)]" aria-label="se convierte en">→</span>
                     <span
                       className={`${CHIP} ${
-                        tono === "amparado"
-                          ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                          : "bg-[var(--data-info-500)]/15 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
+                        d.mismoTipo
+                          ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+                          : tono === "amparado"
+                            ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                            : "bg-[var(--data-info-500)]/15 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
                       }`}
                     >
                       {d.tipo}
                     </span>
+                    {d.mismoTipo && (
+                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                        el mismo tipo · no pasa por la sierra
+                      </span>
+                    )}
                   </button>
                 </td>
                 <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(d.m3)}</td>
@@ -147,32 +256,41 @@ function TablaSalidas({
                       : `${fmtM3(d.restaM3)} m³`}
                 </td>
                 <td className={`${TD} text-right`}>
-                  {/* Del sugerido al declarado sin retipear: el Libro abre con
-                      el producto y el volumen puestos, y el operario sólo
-                      elige de qué corrida sale (eso no se adivina). */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      declararEnElLibro({
-                        desdeTipo: grupo.desdeTipo,
-                        haciaTipo: d.tipo,
-                        productoDestino: productoDelTipoComercial(d.tipo),
-                        m3: d.m3,
-                        especie: grupo.especie,
-                        etiqueta: grupo.etiquetas.join(" · "),
-                        permiso: grupo.permiso,
-                      })
-                    }
-                    className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-[var(--rule-base)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-                    title={`Declarar este reproceso en el Libro: ${fmtM3(d.m3)} m³ de ${grupo.desdeTipo} a ${d.tipo}`}
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" aria-hidden /> Declarar
-                  </button>
+                  {d.mismoTipo ? (
+                    /* Nada que declarar: el bloque ampara su propio tipo tal
+                       como está. Ofrecer «Declarar» acá sería pedir que se
+                       registre un reproceso que no ocurrió. */
+                    <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                      sin reproceso
+                    </span>
+                  ) : (
+                    /* Del sugerido al declarado sin retipear: el Libro abre con
+                       el producto y el volumen puestos, y el operario sólo
+                       elige de qué corrida sale (eso no se adivina). */
+                    <button
+                      type="button"
+                      onClick={() =>
+                        declararEnElLibro({
+                          desdeTipo: grupo.desdeTipo,
+                          haciaTipo: d.tipo,
+                          productoDestino: productoDelTipoComercial(d.tipo),
+                          m3: d.m3,
+                          especie: grupo.especie,
+                          etiqueta: grupo.etiquetas.join(" · "),
+                          permiso: grupo.permiso,
+                        })
+                      }
+                      className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-[var(--rule-base)] px-2 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                      title={`Declarar este reproceso en el Libro: ${fmtM3(d.m3)} m³ de ${grupo.desdeTipo} a ${d.tipo}`}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" aria-hidden /> Declarar
+                    </button>
+                  )}
                 </td>
               </tr>,
               abierto ? (
                 <tr key={`${clave}:medidas`} className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-                  <td colSpan={5} className="px-2 py-1.5">
+                  <td colSpan={6} className="px-2 py-1.5">
                     <table className="w-full">
                       <tbody>
                         {d.medidas.map((m) => (
@@ -200,6 +318,7 @@ function TablaSalidas({
         {totalM3 != null && (
           <tfoot>
             <tr className="border-t-2 border-[var(--rule-base)]">
+              <td />
               <td className={`${TD} font-bold text-[var(--text-primary)]`}>{totalLabel}</td>
               <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(totalM3)}</td>
               <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
@@ -294,11 +413,24 @@ export default function ReprocesosSugeridos({
   cuadre: CuadreDeDistribucion;
   imposibles?: AmparoImposible[];
 }) {
+  const { marcadas, alternar, limpiar } = useMarcas();
   if (grupos.length === 0 && imposibles.length === 0) return null;
 
   return (
     <div className="space-y-3">
       <RespaldosImposibles imposibles={imposibles} />
+      {marcadas.size > 0 && (
+        <p className="flex items-center justify-end gap-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+          {marcadas.size} {marcadas.size === 1 ? "fila repasada" : "filas repasadas"}
+          <button
+            type="button"
+            onClick={limpiar}
+            className="font-bold text-[var(--text-secondary)] underline hover:text-[var(--text-primary)]"
+          >
+            Desmarcar todo
+          </button>
+        </p>
+      )}
       {/* La cuenta de cierre: qué falta, con qué se tapa, qué queda. Con todo
           respaldado, cuatro ceros no dicen nada: se dice en una línea. */}
       {cuadre.faltaM3 <= 0 ? (
@@ -367,11 +499,21 @@ export default function ReprocesosSugeridos({
               {g.desdeTipo}
             </span>
             <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
-              {fmtM3(g.origenM3)} m³
+              {fmtM3(g.origenM3)} m³{g.esRolliza ? " (R)" : ""}
             </span>
             {g.origenPiezas != null && (
               <span className="text-xs text-[var(--text-secondary)]">
                 {fmtPiezas(g.origenPiezas)} pzas
+              </span>
+            )}
+            {/* En rolliza el m³ del bloque NO es lo que ampara: son m³ (R) de
+                troza y hay que pasarlos por el % aprovechable. Decir sólo el
+                primero hacía leer la tabla de abajo como si le faltara la mitad
+                de la madera (Brandon, 2026-09-09). */}
+            {g.esRolliza && (
+              <span className="rounded-md bg-[var(--data-info-500)]/12 px-1.5 py-0.5 text-xs font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
+                ampara <span className="font-mono tabular-nums">{fmtM3(g.capacidadM3)}</span> m³ (A)
+                {g.aprovechablePct != null && <span className="font-normal"> · al {g.aprovechablePct}%</span>}
               </span>
             )}
             <span className="text-xs text-[var(--text-tertiary)]">· {g.especie}</span>
@@ -390,14 +532,40 @@ export default function ReprocesosSugeridos({
           </div>
 
           <div className="px-3 pb-3">
+            {/* Todo lo que ESTE bloque ampara, en una sola tabla: los tipos que
+                salen por la sierra Y el suyo propio. Sin la fila del mismo tipo,
+                el total de acá no llegaba al m³ que la tabla de bloques declara
+                y la sección se leía incoherente con el bloque determinado
+                (Brandon, 2026-09-09). */}
             <TablaSalidas
-              titulo="Ya está amparando"
-              ayuda="se suman · falta declararlo en el Libro"
-              destinos={g.amparados}
-              totalM3={g.saleM3}
-              totalPiezas={g.salePiezas}
+              titulo="Lo que este bloque ampara"
+              ayuda={
+                g.mismoTipoM3 > 0
+                  ? "se suman · lo que cambia de tipo hay que declararlo en el Libro"
+                  : "se suman · falta declararlo en el Libro"
+              }
+              destinos={[
+                ...g.amparados,
+                ...(g.mismoTipoM3 > 0
+                  ? [{
+                      tipo: g.desdeTipo,
+                      m3: g.mismoTipoM3,
+                      piezas: g.mismoTipoPiezas,
+                      motivo: "amparado" as const,
+                      cubreTodo: true,
+                      restaM3: 0,
+                      medidas: g.mismoTipoMedidas,
+                      mismoTipo: true,
+                    }]
+                  : []),
+              ]}
+              totalM3={r3(g.saleM3 + g.mismoTipoM3)}
+              totalPiezas={g.salePiezas + g.mismoTipoPiezas}
+              totalLabel="Total que ampara"
               tono="amparado"
               grupo={g}
+              marcadas={marcadas}
+              onMarcar={alternar}
             />
             {/* Las opciones se suman cuando ENTRAN JUNTAS en lo libre: de
                 2.500 salen paquetería larga 1.500 y larga angosta 0.800 a la
@@ -415,6 +583,8 @@ export default function ReprocesosSugeridos({
               totalLabel="Total si las hacés todas"
               tono="opcion"
               grupo={g}
+              marcadas={marcadas}
+              onMarcar={alternar}
             />
 
             {/* La cuenta completa del producto, para que cierre contra la tabla
@@ -425,9 +595,9 @@ export default function ReprocesosSugeridos({
               <span>
                 De{" "}
                 <b className="font-mono tabular-nums text-[var(--text-secondary)]">
-                  {fmtM3(g.origenM3)} m³
+                  {fmtM3(g.capacidadM3)} m³
                 </b>{" "}
-                ampara{" "}
+                {g.esRolliza ? "que puede amparar" : ""} ampara{" "}
                 <b className="font-mono tabular-nums text-[var(--text-secondary)]">
                   {fmtM3(g.amparadoM3)} m³
                 </b>
@@ -466,7 +636,7 @@ export default function ReprocesosSugeridos({
                   <b>no pueden salir</b> — mirá el aviso de arriba
                 </span>
               )}
-              {g.excedeM3 > 0 ? (
+              {g.excedeM3 > RUIDO_M3 ? (
                 /* El reparto cierra hasta 3 piezas / 50 litros / 1 % por encima
                    del bloque para que las últimas tablas no queden huérfanas.
                    Decirlo es más honesto que mostrar «quedan 0.000». */
@@ -474,13 +644,13 @@ export default function ReprocesosSugeridos({
                   · <b className="font-mono tabular-nums">{fmtM3(g.excedeM3)} m³</b> por encima:
                   cierre por diferencia de medición
                 </span>
-              ) : g.quedaM3 > 0 ? (
+              ) : g.quedaM3 > RUIDO_M3 ? (
                 <span>
                   · quedan{" "}
                   <b className="font-mono tabular-nums text-[var(--text-secondary)]">
                     {fmtM3(g.quedaM3)} m³
                   </b>{" "}
-                  sin amparar
+                  de capacidad sin usar
                 </span>
               ) : null}
             </p>

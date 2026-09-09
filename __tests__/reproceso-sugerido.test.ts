@@ -494,6 +494,49 @@ describe("agruparPorOrigen — el producto original con todo lo que sale de él"
     expect(g.quedaM3).toBeCloseTo(Math.max(0, g.origenM3 - g.amparadoM3), 3);
   });
 
+  it("lo que ampara de su MISMO tipo trae sus escuadrías (la fila «comercial → comercial»)", () => {
+    /* Brandon 2026-09-09: «poné ahí también cuando comercial se reprocesó en sí
+       mismo». Sin las medidas, esa fila es un total que no se puede ir a buscar
+       al patio — y la tabla no cierra contra el m³ del bloque. */
+    const comercial = bloque({ id: "mismo", m3: 3.078, tipoProducto: "Comercial" });
+    /* La aserrada tiene que traer COMERCIAL para que el bloque ampare de su
+       propio tipo: con sólo paquetería, «comercial → comercial» no existe. */
+    const conComercial = [...variado, piezaComercial("vc", 5)];
+    const [g] = agruparPorOrigen(
+      sugerenciasDeReproceso(distribuirPorCapacidad([comercial], conComercial, "tipo")),
+    );
+    expect(g.mismoTipoM3).toBeGreaterThan(0);
+    expect(g.mismoTipoMedidas.length).toBeGreaterThan(0);
+    const m3 = g.mismoTipoMedidas.reduce((a, m) => a + m.m3, 0);
+    const piezas = g.mismoTipoMedidas.reduce((a, m) => a + m.piezas, 0);
+    expect(m3).toBeCloseTo(g.mismoTipoM3, 3);
+    expect(piezas).toBe(g.mismoTipoPiezas);
+    // Sin claves repetidas: una medida = una línea.
+    expect(new Set(g.mismoTipoMedidas.map((m) => m.clave)).size).toBe(g.mismoTipoMedidas.length);
+  });
+
+  it("un bloque de ROLLIZA no mezcla m³ (R) con m³ (A): la cuenta va contra la capacidad", () => {
+    /* Bug visto en pantalla (2026-09-09): un bloque de rolliza de 3 m³ al 55 %
+       amparaba sus 1.650 m³ enteros y el pie igual anunciaba «quedan 1.351 m³
+       sin amparar» — restaba troza menos aserrada. Con la capacidad de por
+       medio, un bloque lleno dice que no queda nada. */
+    const troza = bloque({
+      id: "roll", etiqueta: "TROZA 001", m3: 3, tipo: "rolliza",
+      tipoProducto: "Comercial", aprovechablePct: 55,
+    });
+    const conComercial = [...variado, piezaComercial("rc", 5)];
+    const [g] = agruparPorOrigen(
+      sugerenciasDeReproceso(distribuirPorCapacidad([troza], conComercial, "tipo")),
+    );
+    expect(g.esRolliza).toBe(true);
+    expect(g.capacidadM3).toBeCloseTo(1.65, 3);
+    expect(g.origenM3).toBe(3);
+    // Todo lo que ampara sale de la CAPACIDAD, no del m³ de troza.
+    expect(g.amparadoM3).toBeLessThanOrEqual(g.capacidadM3 + 0.001);
+    expect(g.quedaM3).toBeCloseTo(Math.max(0, g.capacidadM3 - g.amparadoM3), 3);
+    expect(g.quedaM3).toBeLessThan(3 - g.amparadoM3); // ya no es la resta contra la troza
+  });
+
   it("las OPCIONES no suman al total: compiten por la misma capacidad libre", () => {
     const soloComercial = comercialQueNoAmpara(3);
     const [g] = agruparPorOrigen(

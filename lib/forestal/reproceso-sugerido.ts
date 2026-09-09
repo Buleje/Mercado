@@ -87,8 +87,28 @@ export interface BloqueOrigen {
    */
   mismoTipoM3: number;
   mismoTipoPiezas: number;
+  /**
+   * Con qué escuadrías ampara ESO de su mismo tipo. Sin las medidas, la fila
+   * «comercial → comercial» de la tabla no se puede desplegar como las otras y
+   * queda como un total que no se puede ir a buscar al patio.
+   */
+  mismoTipoMedidas: AsignacionMedida[];
   /** m³ declarados del bloque entero — el tamaño de lo que hay, no lo que se convierte. */
   m3: number;
+  /**
+   * Lo que el bloque PUEDE amparar, en m³ de aserrada (A).
+   *
+   * En un bloque de rolliza NO es su m³: son m³ (R) de troza y hay que pasarlos
+   * por el % aprovechable. Sin esta distinción, la cuenta del pie restaba m³ de
+   * troza menos m³ de aserrada y anunciaba «quedan 1.351 m³ sin amparar» sobre
+   * un bloque que ya estaba lleno — madera que la sierra nunca va a dar
+   * (verificado en pantalla, 2026-09-09).
+   */
+  capacidadM3: number;
+  /** % de la troza que se vuelve aserrada (100 en un bloque de aserrada directa). */
+  aprovechablePct: number;
+  /** `false` = el bloque entró ya aserrado: su m³ ES lo que ampara. */
+  esRolliza: boolean;
   libreM3: number;
   /** Piezas que el Libro le declara al bloque, si se saben. */
   piezas: number | null;
@@ -159,7 +179,7 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
     /* Lo que sobra, por tipo: sólo bloques cuyo tipo se conoce. Un bloque sin
        tipo declarado no puede decir en qué se convierte. */
     /** Lo que cada bloque ampara de su PROPIO tipo: no necesita reproceso. */
-    const propio = new Map<string, { m3: number; piezas: number }>();
+    const propio = new Map<string, { m3: number; piezas: number; medidas: AsignacionMedida[] }>();
     for (const b of e.bloques) {
       const tipo = tipoDelBloque(b.bloque);
       if (!tipo) continue;
@@ -167,6 +187,7 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
       propio.set(b.bloque.id, {
         m3: r4(mias.reduce((a, g) => a + g.m3, 0)),
         piezas: mias.reduce((a, g) => a + g.piezas, 0),
+        medidas: unirMedidas(mias.flatMap((g) => g.medidas.filter((m) => m.piezas > 0))),
       });
     }
 
@@ -183,7 +204,11 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
         usadoM3: r4(b.usadoM3),
         mismoTipoM3: propio.get(b.bloque.id)?.m3 ?? 0,
         mismoTipoPiezas: propio.get(b.bloque.id)?.piezas ?? 0,
+        mismoTipoMedidas: propio.get(b.bloque.id)?.medidas ?? [],
         m3: r4(Number(b.bloque.m3) || 0),
+        capacidadM3: r4(b.capacidadM3),
+        aprovechablePct: b.aprovechablePct,
+        esRolliza: b.bloque.tipo !== "aserrada",
         libreM3: r4(b.libreM3),
         piezas: b.bloque.piezasOrigen ?? b.bloque.piezasManual ?? null,
       });
@@ -269,7 +294,11 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
               usadoM3: r4(b.usadoM3),
               mismoTipoM3: propio.get(b.bloque.id)?.m3 ?? 0,
               mismoTipoPiezas: propio.get(b.bloque.id)?.piezas ?? 0,
+              mismoTipoMedidas: propio.get(b.bloque.id)?.medidas ?? [],
               m3: r4(Number(b.bloque.m3) || 0),
+              capacidadM3: r4(b.capacidadM3),
+              aprovechablePct: b.aprovechablePct,
+              esRolliza: b.bloque.tipo !== "aserrada",
               libreM3: r4(b.libreM3),
               piezas: b.bloque.piezasOrigen ?? b.bloque.piezasManual ?? null,
             },
@@ -353,11 +382,36 @@ function unicoPermiso(bloques: readonly BloqueOrigen[]): string | null {
   return unicos.length === 1 ? unicos[0] : null;
 }
 
+/** El % aprovechable si TODOS los bloques usan el mismo; si no, `null`. */
+function unicoPct(bloques: readonly BloqueOrigen[]): number | null {
+  const unicos = [...new Set(bloques.map((b) => b.aprovechablePct))];
+  return unicos.length === 1 ? unicos[0] : null;
+}
+
 /** Piezas de los bloques de origen: `null` si alguno no las declara (no se estima). */
 function piezasDe(bloques: readonly BloqueOrigen[]): number | null {
   if (bloques.some((b) => b.piezas == null)) return null;
   const total = bloques.reduce((a, b) => a + (b.piezas ?? 0), 0);
   return total > 0 ? total : null;
+}
+
+/**
+ * Junta medidas repetidas en una sola línea, sumando piezas y volumen.
+ *
+ * Un mismo bloque puede amparar «2×8×10» desde dos grupos distintos; mostradas
+ * sueltas se leen como dos escuadrías diferentes y el operario cuenta dos veces
+ * la misma pila.
+ */
+function unirMedidas(medidas: readonly AsignacionMedida[]): AsignacionMedida[] {
+  const por = new Map<string, AsignacionMedida>();
+  for (const m of medidas) {
+    const prev = por.get(m.clave);
+    if (!prev) { por.set(m.clave, { ...m }); continue; }
+    prev.m3 = r4(prev.m3 + m.m3);
+    prev.pieTablar = r2(prev.pieTablar + m.pieTablar);
+    prev.piezas += m.piezas;
+  }
+  return [...por.values()].sort((a, b) => b.m3 - a.m3);
 }
 
 /** Dos etiquetas de tipo son la misma sin importar tildes ni mayúsculas. */
@@ -410,9 +464,20 @@ export interface GrupoDeReproceso {
    * sería decir que esa madera salió de un título que no se sabe cuál es.
    */
   permiso: string | null;
-  /** m³ del original — el tamaño de lo que hay. */
+  /** m³ del original — el tamaño de lo que hay (m³ R si es rolliza). */
   origenM3: number;
   origenPiezas: number | null;
+  /**
+   * Lo que ese original PUEDE amparar, en m³ de aserrada (A). En rolliza es
+   * `m³ × % aprovechable`; en aserrada directa es su propio m³. Todo lo demás
+   * de este grupo —lo amparado, lo que sale, lo que queda— está en (A) y se
+   * compara contra esto, nunca contra `origenM3`.
+   */
+  capacidadM3: number;
+  /** El % con el que se calculó la capacidad, si todos los bloques comparten uno. */
+  aprovechablePct: number | null;
+  /** `true` = el original es troza: su m³ y lo que ampara NO son la misma unidad. */
+  esRolliza: boolean;
   /** Capacidad del original que todavía no respalda nada. */
   libreM3: number;
   amparados: DestinoDeReproceso[];
@@ -447,6 +512,12 @@ export interface GrupoDeReproceso {
   /** De eso, lo que ampara de su MISMO tipo: no necesita reproceso. */
   mismoTipoM3: number;
   mismoTipoPiezas: number;
+  /**
+   * Las escuadrías de ESE mismo tipo (Brandon, 2026-09-09: «poné ahí también
+   * cuando comercial se reprocesó en sí mismo»). Es la fila que le faltaba a la
+   * tabla para cerrar contra el m³ que el bloque ampara.
+   */
+  mismoTipoMedidas: AsignacionMedida[];
   /**
    * Lo que las salidas se pasan del original, si se pasan.
    *
@@ -489,6 +560,9 @@ export function agruparPorOrigen(
         permiso: unicoPermiso(s.bloques),
         origenM3: s.m3Desde,
         origenPiezas: s.piezasDesde,
+        capacidadM3: r4(s.bloques.reduce((a, b) => a + b.capacidadM3, 0)),
+        aprovechablePct: unicoPct(s.bloques),
+        esRolliza: s.bloques.some((b) => b.esRolliza),
         libreM3: r4(s.bloques.reduce((a, b) => a + b.libreM3, 0)),
         amparados: [],
         opciones: [],
@@ -504,6 +578,7 @@ export function agruparPorOrigen(
         amparadoM3: r4(s.bloques.reduce((a, b) => a + b.usadoM3, 0)),
         mismoTipoM3: r4(s.bloques.reduce((a, b) => a + b.mismoTipoM3, 0)),
         mismoTipoPiezas: s.bloques.reduce((a, b) => a + b.mismoTipoPiezas, 0),
+        mismoTipoMedidas: unirMedidas(s.bloques.flatMap((b) => b.mismoTipoMedidas)),
       } satisfies GrupoDeReproceso);
     const destino: DestinoDeReproceso = {
       tipo: s.haciaTipo,
@@ -549,13 +624,16 @@ export function agruparPorOrigen(
       g.imposibleM3 = r4(imp?.m3 ?? 0);
       g.imposiblePiezas = imp?.piezas ?? 0;
     }
-    /* Lo que queda es lo que el bloque NO ampara: su m³ menos TODO lo amparado
-       —el reproceso y lo de su mismo tipo—. Restarle sólo «lo que sale» daba un
-       «quedan 0.803» sobre un bloque cuya tabla decía «ampara 3.077», y eso se
-       lee como un descuadre cuando en realidad esos 0.8 están amparando
-       comercial (su propio tipo). */
-    g.quedaM3 = r4(Math.max(0, g.origenM3 - g.amparadoM3));
-    g.excedeM3 = r4(Math.max(0, g.amparadoM3 - g.origenM3));
+    /* Lo que queda es CAPACIDAD sin usar: lo que el bloque puede amparar menos
+       TODO lo amparado —el reproceso y lo de su mismo tipo—.
+       Dos correcciones se acumulan acá:
+        · Restarle sólo «lo que sale» daba «quedan 0.803» sobre un bloque cuya
+          tabla decía «ampara 3.077»: esos 0.8 amparan su propio tipo.
+        · Restarle el m³ del BLOQUE mezclaba unidades — en rolliza son m³ (R) de
+          troza contra m³ (A) de aserrada — y anunciaba 1.351 m³ libres en un
+          bloque lleno. La capacidad ya viene en (A). */
+    g.quedaM3 = r4(Math.max(0, g.capacidadM3 - g.amparadoM3));
+    g.excedeM3 = r4(Math.max(0, g.amparadoM3 - g.capacidadM3));
   }
 
   return [...grupos.values()].sort(
