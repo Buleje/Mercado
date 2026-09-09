@@ -27,6 +27,8 @@ import ReprocesoSugeridoBanda from "./reproceso-sugerido-banda";
 import {
   leerBorradorDeReproceso,
   olvidarBorradorDeReproceso,
+  olvidarTodosLosReprocesos,
+  pendientesDeReproceso,
   type BorradorDeReproceso,
 } from "@/lib/forestal/reproceso-borrador";
 import { tipoComercialDelProducto } from "@/lib/forestal/loctp-catalogos";
@@ -172,8 +174,20 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
    * un efecto y no en el initializer: `sessionStorage` no existe en el server.
    */
   const [sugerido, setSugerido] = useState<BorradorDeReproceso | null>(null);
+  /** Cuántos quedan en la cola contando el que se muestra («2 de 3»). */
+  const [pendientes, setPendientes] = useState(0);
   useEffect(() => {
     setSugerido(leerBorradorDeReproceso());
+    setPendientes(pendientesDeReproceso());
+  }, []);
+  /**
+   * Consume el pase actual y muestra el SIGUIENTE. Antes esto limpiaba la
+   * pantalla y había que volver a la distribución por cada reproceso; con la
+   * cola, declarar uno deja el próximo arriba, listo (2026-09-09).
+   */
+  const avanzarCola = useCallback(() => {
+    setSugerido(olvidarBorradorDeReproceso());
+    setPendientes(pendientesDeReproceso());
   }, []);
   /** Fila que se está cubicando para el ANEXO N° 04. */
   const [cubicar, setCubicar] = useState<{ corrida: CorridaDisponible; paquete: PaqueteDisponible | null } | null>(null);
@@ -384,10 +398,17 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             const c = corridas.find((x) => x.id === id);
             if (c) setReprocesar(c);
           }}
-          onDescartar={() => {
-            olvidarBorradorDeReproceso();
-            setSugerido(null);
-          }}
+          pendientes={pendientes}
+          onDescartar={avanzarCola}
+          onDescartarTodos={
+            pendientes > 1
+              ? () => {
+                  olvidarTodosLosReprocesos();
+                  setSugerido(null);
+                  setPendientes(0);
+                }
+              : undefined
+          }
         />
       )}
 
@@ -945,10 +966,9 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
           onClose={() => setReprocesar(null)}
           onListo={(msg, detalle) => {
             setReprocesar(null);
-            /* El pase se consume: dejarlo colgado ofrecería declarar dos veces
-               el mismo reproceso. */
-            olvidarBorradorDeReproceso();
-            setSugerido(null);
+            /* El pase se consume y aparece el siguiente de la cola: dejarlo
+               colgado ofrecería declarar dos veces el mismo reproceso. */
+            avanzarCola();
             setNota(`${msg} — ${detalle}`);
             /* La madera dejó de estar disponible: la lista tiene que decirlo ya. */
             void recargar();

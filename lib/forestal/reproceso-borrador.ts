@@ -22,6 +22,18 @@
  * Vive en `sessionStorage` y se consume UNA vez: es un pase de una pantalla a
  * otra, no una preferencia. Si el operario cierra la pestaña sin declarar, el
  * pase se pierde y no queda un borrador viejo esperando a confundir a nadie.
+ *
+ * ## 2026-09-09: el pase es una COLA, no uno solo
+ *
+ * Un bloque casi nunca tiene un reproceso: tiene tres (paquetería larga, corta
+ * y larga angosta salidas del mismo comercial). Declararlos de a uno obligaba a
+ * volver a la distribución entre cada uno, buscar la fila y apretar «Declarar»
+ * otra vez. Ahora se tildan los que se van a declarar y viajan juntos: el Libro
+ * ofrece el primero, y al declararlo (o descartarlo) aparece el siguiente.
+ *
+ * Se guarda como ARRAY. `leerBorradorDeReproceso()` devuelve el primero
+ * pendiente y `olvidarBorradorDeReproceso()` lo saca y devuelve el que sigue —
+ * así la pantalla que ya lo consumía no cambia de contrato.
  */
 
 /** Clave del pase. Sesión, no local: no sobrevive a cerrar la pestaña. */
@@ -48,34 +60,80 @@ export interface BorradorDeReproceso {
 /** Más viejo que esto ya no se ofrece: es de otro momento de trabajo. */
 const VENCE_MS = 30 * 60 * 1000;
 
+/** Un solo pase: reemplaza la cola entera (es el botón «Declarar» de una fila). */
 export function guardarBorradorDeReproceso(b: Omit<BorradorDeReproceso, "creadoAt">): boolean {
+  return guardarColaDeReprocesos([b]) > 0;
+}
+
+/**
+ * La cola completa, en el orden en que se va a declarar. Devuelve cuántos
+ * quedaron guardados (0 = no se pudo: modo privado o cuota).
+ */
+export function guardarColaDeReprocesos(bs: readonly Omit<BorradorDeReproceso, "creadoAt">[]): number {
+  const creadoAt = new Date().toISOString();
+  const cola: BorradorDeReproceso[] = bs.map((b) => ({ ...b, creadoAt }));
   try {
-    sessionStorage.setItem(CLAVE, JSON.stringify({ ...b, creadoAt: new Date().toISOString() }));
-    return true;
+    sessionStorage.setItem(CLAVE, JSON.stringify(cola));
+    return cola.length;
   } catch {
     /* Modo privado / cuota: se navega igual, sólo que sin el pase. */
-    return false;
+    return 0;
   }
 }
 
-/** Lee el pase si hay uno y no venció. No lo borra. */
-export function leerBorradorDeReproceso(): BorradorDeReproceso | null {
+/**
+ * La cola guardada, ya filtrada por vencimiento.
+ *
+ * Acepta también el formato viejo (UN objeto): una pestaña abierta antes de
+ * este cambio podía tener un pase suelto guardado, y descartarlo en silencio
+ * sería perder el reproceso que el operario venía a declarar.
+ */
+function leerCola(): BorradorDeReproceso[] {
   try {
     const raw = sessionStorage.getItem(CLAVE);
-    if (!raw) return null;
-    const b = JSON.parse(raw) as BorradorDeReproceso;
-    if (!b || typeof b.m3 !== "number" || !b.haciaTipo) return null;
-    if (Date.now() - new Date(b.creadoAt).getTime() > VENCE_MS) {
-      olvidarBorradorDeReproceso();
-      return null;
-    }
-    return b;
+    if (!raw) return [];
+    const dato: unknown = JSON.parse(raw);
+    const lista = Array.isArray(dato) ? dato : [dato];
+    const vivos = (lista as BorradorDeReproceso[]).filter(
+      (b) =>
+        b && typeof b.m3 === "number" && !!b.haciaTipo &&
+        Date.now() - new Date(b.creadoAt).getTime() <= VENCE_MS,
+    );
+    if (vivos.length === 0) olvidarTodosLosReprocesos();
+    return vivos;
   } catch {
-    return null;
+    return [];
   }
 }
 
-export function olvidarBorradorDeReproceso(): void {
+/** Lee el pase PENDIENTE (el primero de la cola) si no venció. No lo borra. */
+export function leerBorradorDeReproceso(): BorradorDeReproceso | null {
+  return leerCola()[0] ?? null;
+}
+
+/** Cuántos pases quedan por declarar — para decir «1 de 3» y no «un pase». */
+export function pendientesDeReproceso(): number {
+  return leerCola().length;
+}
+
+/**
+ * Consume el pase actual y devuelve **el siguiente** (o `null` si era el
+ * último). Es lo mismo que hacía antes cuando la cola tenía uno solo.
+ */
+export function olvidarBorradorDeReproceso(): BorradorDeReproceso | null {
+  const cola = leerCola();
+  const resto = cola.slice(1);
+  try {
+    if (resto.length === 0) sessionStorage.removeItem(CLAVE);
+    else sessionStorage.setItem(CLAVE, JSON.stringify(resto));
+  } catch {
+    /* sin sessionStorage no hay nada que olvidar */
+  }
+  return resto[0] ?? null;
+}
+
+/** Tira la cola entera («ya no» a todos). */
+export function olvidarTodosLosReprocesos(): void {
   try {
     sessionStorage.removeItem(CLAVE);
   } catch {
@@ -93,5 +151,12 @@ export function olvidarBorradorDeReproceso(): void {
  */
 export function declararEnElLibro(b: Omit<BorradorDeReproceso, "creadoAt">): void {
   guardarBorradorDeReproceso(b);
+  window.location.href = "/admin?tab=ctp-libro-operaciones&vista=disponibles";
+}
+
+/** Lo mismo, con varios: el Libro los ofrece uno tras otro, en este orden. */
+export function declararColaEnElLibro(bs: readonly Omit<BorradorDeReproceso, "creadoAt">[]): void {
+  if (bs.length === 0) return;
+  guardarColaDeReprocesos(bs);
   window.location.href = "/admin?tab=ctp-libro-operaciones&vista=disponibles";
 }

@@ -34,12 +34,14 @@
  * Es una SUGERENCIA, no un movimiento: acá no se registra nada en el Libro.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, ChevronRight, ExternalLink, Info, RefreshCw } from "@buleje/design-system/icons";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Check, ChevronRight, ExternalLink, Info, RefreshCw } from "@buleje/design-system/icons";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { productoDelTipoComercial } from "@/lib/forestal/loctp-catalogos";
-import { declararEnElLibro } from "@/lib/forestal/reproceso-borrador";
+import { declararColaEnElLibro, declararEnElLibro } from "@/lib/forestal/reproceso-borrador";
 import { FRASE_REGLA } from "@/lib/forestal/reproceso-reglas";
+import { claveDeConversion, estadoDeclarado, type DeclaradoDelPar } from "@/lib/forestal/reproceso-cruce";
+import { useReprocesosDeclarados } from "@/hooks/use-reprocesos-declarados";
 import type {
   AmparoImposible,
   CuadreDeDistribucion,
@@ -94,6 +96,12 @@ function useMarcas() {
   return { marcadas, alternar, limpiar };
 }
 
+/** «09/09» — date-only en UTC: sin `timeZone` se corre un día en Lima. */
+const fechaCorta = (iso: string): string =>
+  new Date(`${iso.slice(0, 10)}T00:00:00Z`).toLocaleDateString("es-PE", {
+    timeZone: "UTC", day: "2-digit", month: "2-digit",
+  });
+
 /** Milésimas: la unidad del papel. Sumar dos m³ ya redondeados deja colas. */
 const r3 = (n: number) => Math.round(n * 1000) / 1000;
 /**
@@ -131,6 +139,8 @@ function TablaSalidas({
   grupo,
   marcadas,
   onMarcar,
+  declarados,
+  diasDeclarados,
 }: {
   titulo: string;
   ayuda: string;
@@ -145,6 +155,10 @@ function TablaSalidas({
   /** Filas ya repasadas (clave completa `grupo|tipo|motivo`). */
   marcadas: ReadonlySet<string>;
   onMarcar: (clave: string) => void;
+  /** Lo que el Libro ya declaró, por par especie·origen→destino. */
+  declarados: ReadonlyMap<string, DeclaradoDelPar>;
+  /** Ventana de esa búsqueda, para poder decir «en los últimos N días». */
+  diasDeclarados: number;
 }) {
   const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
   const alternar = (clave: string) =>
@@ -182,6 +196,12 @@ function TablaSalidas({
             const claveMarca = `${grupo.clave}|${clave}`;
             const marcada = marcadas.has(claveMarca);
             const abierto = abiertos.has(clave);
+            /* Lo mismo, ¿ya está en el Libro? El mismo tipo no se declara nunca,
+               así que ahí no se pregunta. */
+            const yaDeclarado = d.mismoTipo
+              ? undefined
+              : declarados.get(claveDeConversion(grupo.especie, grupo.desdeTipo, d.tipo));
+            const estado = estadoDeclarado(d.m3, yaDeclarado?.m3 ?? 0);
             return [
               <tr
                 key={clave}
@@ -245,6 +265,29 @@ function TablaSalidas({
                       </span>
                     )}
                   </button>
+                  {/* Lo que el Libro YA tiene de esta conversión. No esconde la
+                      fila ni la da por hecha: un par declarado hace semanas
+                      puede no ser el de hoy, así que se muestra con su fecha y
+                      su m³ y decide el operario (2026-09-09). */}
+                  {yaDeclarado && (
+                    <span
+                      title={`El Libro declara ${fmtM3(yaDeclarado.m3)} m³ de ${grupo.desdeTipo} → ${d.tipo} (${grupo.especie}) en ${yaDeclarado.veces} ${yaDeclarado.veces === 1 ? "asiento" : "asientos"} de los últimos ${diasDeclarados} días. Acá se sugieren ${fmtM3(d.m3)} m³.`}
+                      className={`ml-1.5 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold ${
+                        estado === "cubierto"
+                          ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                          : "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                      }`}
+                    >
+                      {estado === "cubierto" && <Check className="h-3 w-3" aria-hidden />}
+                      {estado === "cubierto" ? "ya declarado" : "declarado en parte"}{" "}
+                      <span className="font-mono tabular-nums">{fmtM3(yaDeclarado.m3)} m³</span>
+                      {yaDeclarado.ultimaFecha && (
+                        <span className="font-normal opacity-80">
+                          · {fechaCorta(yaDeclarado.ultimaFecha)}
+                        </span>
+                      )}
+                    </span>
+                  )}
                 </td>
                 <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(d.m3)}</td>
                 <td className={NUM}>{fmtPiezas(d.piezas)}</td>
@@ -414,14 +457,64 @@ export default function ReprocesosSugeridos({
   imposibles?: AmparoImposible[];
 }) {
   const { marcadas, alternar, limpiar } = useMarcas();
+  /* Lo que el Libro ya declaró en el último mes: marca las filas que ya están
+     registradas para no declararlas dos veces. Falla en silencio si el Libro
+     está apagado — esta sección es del cubicador. */
+  const { porPar, dias } = useReprocesosDeclarados();
+  /**
+   * Los tildados que SÍ se declaran, en el orden en que se leen.
+   *
+   * Las filas del mismo tipo quedan afuera por construcción: su clave lleva el
+   * prefijo `=` y acá se arma sin él. Declarar «comercial → comercial» sería
+   * registrar un reproceso que no ocurrió.
+   */
+  const marcadosParaDeclarar = useMemo(() => {
+    const out: Parameters<typeof declararColaEnElLibro>[0][number][] = [];
+    for (const g of grupos) {
+      for (const d of [...g.amparados, ...g.opciones]) {
+        if (!marcadas.has(`${g.clave}|${d.tipo}|${d.motivo}`)) continue;
+        out.push({
+          desdeTipo: g.desdeTipo,
+          haciaTipo: d.tipo,
+          productoDestino: productoDelTipoComercial(d.tipo),
+          m3: d.m3,
+          especie: g.especie,
+          etiqueta: g.etiquetas.join(" · "),
+          permiso: g.permiso,
+        });
+      }
+    }
+    return out;
+  }, [grupos, marcadas]);
+
   if (grupos.length === 0 && imposibles.length === 0) return null;
 
   return (
     <div className="space-y-3">
       <RespaldosImposibles imposibles={imposibles} />
       {marcadas.size > 0 && (
-        <p className="flex items-center justify-end gap-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-          {marcadas.size} {marcadas.size === 1 ? "fila repasada" : "filas repasadas"}
+        <div className="flex flex-wrap items-center justify-end gap-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+          {/* Declarar la TANDA: el Libro los ofrece uno tras otro y al terminar
+              cada uno aparece el siguiente, sin volver acá a buscar la fila. */}
+          {marcadosParaDeclarar.length > 0 && (
+            <button
+              type="button"
+              onClick={() => declararColaEnElLibro(marcadosParaDeclarar)}
+              title={`Abre el Libro con ${marcadosParaDeclarar.length} reproceso(s) en fila: ${marcadosParaDeclarar
+                .map((b) => `${b.desdeTipo} → ${b.haciaTipo} ${fmtM3(b.m3)} m³`)
+                .join(" · ")}`}
+              className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-2.5 py-1 text-xs font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+              Declarar {marcadosParaDeclarar.length === 1 ? "el marcado" : `los ${marcadosParaDeclarar.length} marcados`}
+              <span className="font-mono font-normal opacity-80">
+                {fmtM3(marcadosParaDeclarar.reduce((a, b) => a + b.m3, 0))} m³
+              </span>
+            </button>
+          )}
+          <span>
+            {marcadas.size} {marcadas.size === 1 ? "fila repasada" : "filas repasadas"}
+          </span>
           <button
             type="button"
             onClick={limpiar}
@@ -429,7 +522,7 @@ export default function ReprocesosSugeridos({
           >
             Desmarcar todo
           </button>
-        </p>
+        </div>
       )}
       {/* La cuenta de cierre: qué falta, con qué se tapa, qué queda. Con todo
           respaldado, cuatro ceros no dicen nada: se dice en una línea. */}
@@ -571,6 +664,8 @@ export default function ReprocesosSugeridos({
               grupo={g}
               marcadas={marcadas}
               onMarcar={alternar}
+              declarados={porPar}
+              diasDeclarados={dias}
             />
             {/* Las opciones se suman cuando ENTRAN JUNTAS en lo libre: de
                 2.500 salen paquetería larga 1.500 y larga angosta 0.800 a la
@@ -590,6 +685,8 @@ export default function ReprocesosSugeridos({
               grupo={g}
               marcadas={marcadas}
               onMarcar={alternar}
+              declarados={porPar}
+              diasDeclarados={dias}
             />
 
             {/* La cuenta completa del producto, para que cierre contra la tabla

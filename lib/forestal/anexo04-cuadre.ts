@@ -38,6 +38,23 @@ export const TOL_CUADRE_M3 = 0.0005;
 /** Cuánto se deja mover una medida antes de que deje de ser un ajuste. */
 const CAMBIO_MAX_PCT = 50;
 
+/**
+ * Con qué grilla se propone la medida nueva.
+ *
+ * · `exacta` — de a 0,01, que es lo que imprime la hoja: cierra el total al
+ *   milímetro cúbico, aunque «10,04 pies» no sea un largo que alguien pida.
+ * · `real` — como corta la sierra: **cuartos de pulgada** en escuadría y medios
+ *   pies en el largo (Brandon, 2026-09-09). Casi nunca cierra exacto —el salto
+ *   más chico de una 6×6 es ~0,03 m³, diez veces una diferencia de milésimas—
+ *   así que sirve cuando la diferencia es grande, y cuando no llega se dice.
+ */
+export type ModoCuadre = "exacta" | "real";
+
+const PASO: Record<ModoCuadre, Record<DimensionAnexo, number>> = {
+  exacta: { espesor: 0.01, ancho: 0.01, largo: 0.01 },
+  real: { espesor: 0.25, ancho: 0.25, largo: 0.5 },
+};
+
 export const DIMENSION_ANEXO: Record<DimensionAnexo, { etiqueta: string; unidad: string; corta: string }> = {
   espesor: { etiqueta: "(7) Espesor", unidad: "pulg", corta: "E" },
   ancho: { etiqueta: "(8) Ancho", unidad: "pulg", corta: "A" },
@@ -144,8 +161,9 @@ export function filasDeCuadre(filas: readonly PiezaCubicada[]): FilaCuadre[] {
 export function ajustesParaCuadrar(
   filas: readonly PiezaCubicada[],
   objetivoM3: number,
-  opts: { soloId?: string } = {},
+  opts: { soloId?: string; modo?: ModoCuadre } = {},
 ): AjusteCuadre[] {
+  const paso = PASO[opts.modo ?? "exacta"];
   const total = totalCalculado(filas);
   const delta = r3(objetivoM3 - total);
   if (!Number.isFinite(delta) || Math.abs(delta) < TOL_CUADRE_M3) return [];
@@ -169,9 +187,13 @@ export function ajustesParaCuadrar(
       const ideal = actual * ((p.m3 + delta) / p.m3);
       if (!(ideal > 0)) continue;
 
+      const grano = paso[campo];
       let mejor: AjusteCuadre | null = null;
-      for (const paso of [0, 1, -1, 2, -2]) {
-        const sugerido = r2(Math.round(ideal * 100) / 100 + paso * 0.01);
+      /* La ideal cae entre dos valores de la grilla: se prueban ésos y sus
+         vecinos, y gana el que menos resto deja. Con `grano` 0,01 es la hoja;
+         con 0,25 / 0,5 es lo que la sierra sabe cortar. */
+      for (const salto of [0, 1, -1, 2, -2]) {
+        const sugerido = r2(Math.round(ideal / grano) * grano + salto * grano);
         if (!(sugerido > 0) || sugerido === actual) continue;
         const cambioPct = Math.abs((sugerido - actual) / actual) * 100;
         if (cambioPct > CAMBIO_MAX_PCT) continue;
@@ -193,4 +215,90 @@ export function ajustesParaCuadrar(
   return out.sort(
     (a, b) => Math.abs(a.restaM3) - Math.abs(b.restaM3) || a.cambioPct - b.cambioPct,
   );
+}
+
+/**
+ * Cuánto mueve el volumen UN paso de la grilla en esa medida.
+ *
+ * Es lo que hay que decir cuando el modo «medidas reales» no llega: no es que
+ * no haya solución, es que el escalón más chico que la sierra sabe cortar
+ * (¼ de pulgada) mueve más m³ que la diferencia que se quiere tapar.
+ */
+export function saltoMinimoM3(
+  fila: PiezaCubicada,
+  campo: DimensionAnexo,
+  modo: ModoCuadre = "real",
+): number {
+  const actual = valorImpreso(fila, campo);
+  if (!(actual > 0)) return 0;
+  const grano = PASO[modo][campo];
+  return r3(Math.abs(conMedida(fila, campo, r2(actual + grano)).m3 - fila.m3));
+}
+
+/** Un plan: varias medidas movidas, en orden, hasta llegar al objetivo. */
+export interface PlanDeCuadre {
+  pasos: AjusteCuadre[];
+  /** Total del anexo con TODOS los pasos aplicados. */
+  totalM3: number;
+  /** Lo que sigue sobrando (+) o faltando (−) al final del plan. */
+  restaM3: number;
+}
+
+/**
+ * Reparte la diferencia entre varias medidas en vez de cargarla toda en una.
+ *
+ * Por qué: tapar 0,050 m³ moviendo una sola tabla la deforma más que repartirlo
+ * entre varias (Brandon, 2026-09-09).
+ *
+ * ## El reparto es PROPORCIONAL al volumen, no en partes iguales
+ *
+ * Medido al escribir el test: con partes iguales, repartir entre 3 daba un
+ * cambio máximo del **5,5 %** contra el **2,8 %** de mover una sola medida — la
+ * fila chica absorbía lo mismo que la grande y se deformaba el triple. Con cada
+ * fila absorbiendo `Δ × m³ᵢ / Σm³`, todas se mueven el MISMO porcentaje
+ * (`Δ / Σm³`), que por construcción es menor o igual al de cualquier fila sola.
+ * Repartir sólo tiene sentido si deforma menos; si no, es tocar tres medidas
+ * para nada.
+ *
+ * Cada paso se calcula sobre el anexo YA ajustado por los anteriores: por eso
+ * se re-invoca `ajustesParaCuadrar` con las filas de trabajo, y no se suman
+ * tres cálculos hechos sobre el mismo estado inicial. La última fila apunta al
+ * objetivo COMPLETO, así el redondeo de las anteriores no queda colgado.
+ */
+export function planDeCuadre(
+  filas: readonly PiezaCubicada[],
+  objetivoM3: number,
+  opts: { medidas: number; modo?: ModoCuadre } = { medidas: 2 },
+): PlanDeCuadre | null {
+  const cuantas = Math.max(1, Math.floor(opts.medidas));
+  const candidatas = filasDeCuadre(filas).slice(0, cuantas);
+  if (candidatas.length === 0) return null;
+  /* La proporción de cada fila sobre el volumen que se reparte: es lo que hace
+     que todas se muevan el mismo %. */
+  const suma = candidatas.reduce((a, c) => a + c.m3, 0);
+  if (!(suma > 0)) return null;
+
+  let trabajo = [...filas];
+  const pasos: AjusteCuadre[] = [];
+  const deltaTotal = objetivoM3 - totalCalculado(trabajo);
+  for (const [i, c] of candidatas.entries()) {
+    const ultima = i === candidatas.length - 1;
+    const total = totalCalculado(trabajo);
+    const restante = objetivoM3 - total;
+    if (Math.abs(restante) < TOL_CUADRE_M3) break;
+    /* La última apunta al objetivo entero; las anteriores a su parte proporcional. */
+    const objetivoPaso = ultima ? objetivoM3 : r3(total + deltaTotal * (c.m3 / suma));
+    const [mejor] = ajustesParaCuadrar(trabajo, objetivoPaso, { soloId: c.id, modo: opts.modo });
+    if (!mejor) continue;
+    trabajo = trabajo.map((r) => (r.id === mejor.id ? conMedida(r, mejor.campo, mejor.sugerido) : r));
+    /* El resto de cada paso se mide contra el objetivo FINAL, no contra la
+       parte que le tocaba: si no, el primer paso diría «cuadra exacto» con dos
+       medidas todavía por mover. */
+    const acumulado = totalCalculado(trabajo);
+    pasos.push({ ...mejor, totalM3: acumulado, restaM3: r3(acumulado - objetivoM3) });
+  }
+
+  if (pasos.length === 0) return null;
+  const totalM3 = totalCalculado(trabajo);
+  return { pasos, totalM3, restaM3: r3(totalM3 - objetivoM3) };
 }
