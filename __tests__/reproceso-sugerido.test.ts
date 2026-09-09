@@ -231,6 +231,27 @@ describe("agruparPorOrigen — el producto original con todo lo que sale de él"
     expect(g[0].amparados.length).toBeGreaterThan(1);
   });
 
+  it("el permiso del original es UNO solo, el que declara el bloque", () => {
+    const conPermiso = bloque({ id: "gp", m3: 3, tipoProducto: "Comercial", permiso: "CON-25-UCA-0142" });
+    const [g] = agruparPorOrigen(sugerenciasDeReproceso(distribuirPorCapacidad([conPermiso], variado, "tipo")));
+    expect(g.permiso).toBe("CON-25-UCA-0142");
+  });
+
+  it("con bloques de permisos distintos no se elige uno: queda sin permiso", () => {
+    /* Decir «CON-A» sobre madera que también salió de «CON-B» es declarar un
+       origen que no es. */
+    const a = bloque({ id: "ga", m3: 2, tipoProducto: "Comercial", permiso: "CON-A", gruposFiltro: ["tipo|Comercial"] });
+    const b = bloque({ id: "gb", m3: 2, tipoProducto: "Comercial", permiso: "CON-B", gruposFiltro: ["tipo|Comercial"] });
+    const grupos = agruparPorOrigen(
+      sugerenciasDeReproceso(distribuirPorCapacidad([a, b], variado, "tipo")),
+    );
+    /* Los dos bloques comparten tipo: la sugerencia por faltante los junta en un
+       grupo `t:` y ahí el permiso ya no es único. */
+    const juntos = grupos.find((g) => g.clave.startsWith("t:"));
+    if (juntos) expect(juntos.permiso).toBeNull();
+    else expect(grupos.every((g) => g.permiso === "CON-A" || g.permiso === "CON-B")).toBe(true);
+  });
+
   it("lo que sale es MENOS que lo que entró, y lo que queda cierra la resta", () => {
     const comercial = bloque({ id: "g2", m3: 3, tipoProducto: "Comercial", piezasOrigen: 25 });
     const [g] = agruparPorOrigen(sugerenciasDeReproceso(distribuirPorCapacidad([comercial], variado, "tipo")));

@@ -17,7 +17,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, Check, FileText } from "@buleje/design-system/icons";
+import { AlertTriangle, Check, ChevronRight, FileText } from "@buleje/design-system/icons";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { filasDelAnexo, type AnexoDePermiso } from "@/lib/forestal/anexo-por-permiso";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
@@ -36,6 +36,9 @@ export default function AnexoPorPermiso({
   onAbrir: (piezas: PiezaCubicada[], etiqueta: string, especie: string) => void;
 }) {
   const [elegido, setElegido] = useState<string | null>(null);
+  /** La tabla del detalle se puede plegar: son tantas filas como medidas, y
+   *  muchas veces sólo se quiere el total o abrir el papel (Brandon). */
+  const [abierta, setAbierta] = useState(true);
   const actual = useMemo(
     () => anexos.find((a) => (a.permiso ?? " sin") === (elegido ?? anexos[0]?.permiso ?? " sin")) ?? anexos[0],
     [anexos, elegido],
@@ -93,10 +96,23 @@ export default function AnexoPorPermiso({
             </span>
             <button
               type="button"
+              onClick={() => setAbierta((v) => !v)}
+              aria-expanded={abierta}
+              className="ml-auto inline-flex items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            >
+              <ChevronRight
+                className={`h-3.5 w-3.5 transition-transform ${abierta ? "rotate-90" : ""}`}
+                aria-hidden
+              />
+              {abierta ? "Ocultar" : "Mostrar"} las {filas.length}{" "}
+              {filas.length === 1 ? "medida" : "medidas"}
+            </button>
+            <button
+              type="button"
               onClick={() =>
                 onAbrir(actual.piezas, actual.label, actual.especies[0] ?? "")
               }
-              className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-2.5 py-1 text-xs font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 dark:text-[var(--accent)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-2.5 py-1 text-xs font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 dark:text-[var(--accent)]"
             >
               <FileText className="h-3.5 w-3.5" aria-hidden /> Anexo 04 de este permiso
             </button>
@@ -130,6 +146,7 @@ export default function AnexoPorPermiso({
             )}
           </p>
 
+          {abierta && (
           <div className="overflow-x-auto px-3 pb-3">
             <table className="w-full">
               <thead>
@@ -172,6 +189,7 @@ export default function AnexoPorPermiso({
               </tfoot>
             </table>
           </div>
+          )}
         </div>
       )}
     </div>

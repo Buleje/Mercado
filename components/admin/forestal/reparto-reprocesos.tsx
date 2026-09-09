@@ -259,6 +259,15 @@ export default function ReprocesosSugeridos({
               </span>
             )}
             <span className="text-xs text-[var(--text-tertiary)]">· {g.especie}</span>
+            {/* El N° de permiso del producto, tal como lo declara el bloque —
+                UNO solo. Con bloques de permisos distintos no se muestra
+                ninguno: elegir uno diría que la madera salió de un título que
+                no se sabe cuál es (Brandon, 2026-09-09). */}
+            {g.permiso && (
+              <span className="rounded-md bg-[var(--surface-canvas)] px-1.5 py-0.5 text-xs font-bold text-[var(--text-secondary)]">
+                N° de permiso <span className="font-mono">{g.permiso}</span>
+              </span>
+            )}
             <span className="ml-auto truncate text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               {g.etiquetas.join(" · ")}
             </span>

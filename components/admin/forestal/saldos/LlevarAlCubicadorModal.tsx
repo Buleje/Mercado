@@ -66,9 +66,12 @@ export default function LlevarAlCubicadorModal({
     setYendo(true);
     sembrarBloques(
       seleccion.map((c) => ({
-        /* El recorte va en la etiqueta: dentro de un mes, «Trozas en el patio ·
-           TORNILLO» sin decir de qué filtro salió no se puede reconstruir. */
-        etiqueta: `${c.etiqueta}${recorte ? ` (${recorte})` : ""}`,
+        /* La etiqueta va LIMPIA: es la columna «GTF / lote» del cubicador y lo
+           que después imprime el papel. Meterle el recorte del filtro —«(permisos
+           A, B · especie TORNILLO)»— la volvía ilegible y, peor, mostraba dos
+           permisos sobre un bloque que declara uno solo (Brandon, 2026-09-09).
+           El permiso viaja en su campo (`permiso`), que es donde se lee. */
+        etiqueta: c.etiqueta,
         especie: c.especie,
         m3: c.m3,
         permiso: c.permiso,

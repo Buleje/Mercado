@@ -61,6 +61,8 @@ export const MINIMO_SUGERIBLE_M3 = 0.05;
 export interface BloqueOrigen {
   id: string;
   etiqueta: string;
+  /** N° de permiso declarado del bloque (`null` si no tiene). */
+  permiso: string | null;
   /** m³ declarados del bloque entero — el tamaño de lo que hay, no lo que se convierte. */
   m3: number;
   libreM3: number;
@@ -141,6 +143,7 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
       lista.push({
         id: b.bloque.id,
         etiqueta: b.bloque.etiqueta,
+        permiso: (b.bloque.permiso ?? "").trim() || null,
         m3: r4(Number(b.bloque.m3) || 0),
         libreM3: r4(b.libreM3),
         piezas: b.bloque.piezasOrigen ?? b.bloque.piezasManual ?? null,
@@ -215,6 +218,7 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
             {
               id: b.bloque.id,
               etiqueta: b.bloque.etiqueta,
+              permiso: (b.bloque.permiso ?? "").trim() || null,
               m3: r4(Number(b.bloque.m3) || 0),
               libreM3: r4(b.libreM3),
               piezas: b.bloque.piezasOrigen ?? b.bloque.piezasManual ?? null,
@@ -228,6 +232,12 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
   return out
     .filter((s) => s.convertirM3 >= MINIMO_SUGERIBLE_M3)
     .sort((a, b) => b.convertirM3 - a.convertirM3);
+}
+
+/** El permiso de los bloques, si TODOS declaran el mismo. Si no, `null`. */
+function unicoPermiso(bloques: readonly BloqueOrigen[]): string | null {
+  const unicos = [...new Set(bloques.map((b) => b.permiso).filter((p): p is string => !!p))];
+  return unicos.length === 1 ? unicos[0] : null;
 }
 
 /** Piezas de los bloques de origen: `null` si alguno no las declara (no se estima). */
@@ -279,6 +289,14 @@ export interface GrupoDeReproceso {
   desdeTipo: string;
   /** De qué bloque(s) sale. */
   etiquetas: string[];
+  /**
+   * El N° de permiso del producto original — **uno solo**, el que declara el
+   * bloque (Brandon, 2026-09-09: «poné el permiso según el N° de permiso de
+   * Productos disponibles, y poné sólo uno porque dos no tienen sentido»). Si
+   * los bloques del grupo declaran permisos distintos queda `null`: elegir uno
+   * sería decir que esa madera salió de un título que no se sabe cuál es.
+   */
+  permiso: string | null;
   /** m³ del original — el tamaño de lo que hay. */
   origenM3: number;
   origenPiezas: number | null;
@@ -324,6 +342,7 @@ export function agruparPorOrigen(
         especie: s.especie,
         desdeTipo: s.desdeTipo,
         etiquetas: s.bloques.map((b) => b.etiqueta).filter(Boolean),
+        permiso: unicoPermiso(s.bloques),
         origenM3: s.m3Desde,
         origenPiezas: s.piezasDesde,
         libreM3: r4(s.bloques.reduce((a, b) => a + b.libreM3, 0)),
