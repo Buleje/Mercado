@@ -43,6 +43,7 @@ import {
   Search,
   Share2,
   History,
+  Scissors,
   ShieldCheck,
   TreePine,
   TrendingUp,
@@ -95,6 +96,7 @@ import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
 import CtpResumenesSerfor from "./CtpResumenesSerfor";
 import CtpConsumosView from "./CtpConsumosView";
 import CtpProductosDisponibles from "./CtpProductosDisponibles";
+import CtpReprocesosDeclarados from "./CtpReprocesosDeclarados";
 import CtpLotesView, { type LoteAProducir } from "./CtpLotesView";
 import CtpTrozasView from "./CtpTrozasView";
 import {
@@ -116,6 +118,7 @@ type CtpView =
   | "trozas"
   | "radar"
   | "historia-lote"
+  | "reprocesos"
   | "planta"
   | "tablero"
   | "saldos"
@@ -176,6 +179,11 @@ const CTP_GROUPS: LibroGroup[] = [
          hoy?». Esta contesta la que llega después, de un comprador o de un
          fiscalizador: «¿qué pasó con este lote?». */
       { key: "historia-lote", ...CTP_VISTAS_POR_KEY["historia-lote"], icon: History, tecla: "h" },
+      /* Va en Trazabilidad y no en Operación: registrar el reproceso es un
+         acto (vive en Productos disponibles); esto contesta la pregunta que
+         llega después —«¿por qué el libro dice que de una tabla salió
+         comercial?»— y es la vista que se le muestra a un fiscalizador. */
+      { key: "reprocesos", ...CTP_VISTAS_POR_KEY["reprocesos"], icon: Scissors, tecla: "o" },
       { key: "planta", ...CTP_VISTAS_POR_KEY["planta"], icon: MapPin, tecla: "m" },
       { key: "eudr", ...CTP_VISTAS_POR_KEY["eudr"], icon: Globe, tecla: "u" },
       { key: "guias", ...CTP_VISTAS_POR_KEY["guias"], icon: FileText, tecla: "e" },
@@ -594,6 +602,7 @@ export default function CTPLibroOperaciones() {
           />
         )}
         {view === "disponibles" && <CtpProductosDisponibles period={period} />}
+        {view === "reprocesos" && <CtpReprocesosDeclarados period={period} />}
         {view === "despacho" && (
           <CtpEntriesView
             key={`desp-${ingresosKey}`}

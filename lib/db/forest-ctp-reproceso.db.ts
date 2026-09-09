@@ -278,3 +278,96 @@ export async function origenesDeReproceso(tenantId: string, destinoEntryId: stri
     orderBy: { createdAt: "asc" },
   });
 }
+
+/**
+ * Los reprocesos declarados del período — el panel «qué volvió a la sierra».
+ *
+ * Se lee por DESTINO (una fila por reproceso) y no por línea de origen: dos
+ * corridas que alimentan el mismo reproceso son un hecho, no dos. La merma y
+ * las conversiones las deriva `lib/forestal/reprocesos-declarados.ts`, que es
+ * puro y se testea sin base.
+ *
+ * El período filtra por la fecha del ASIENTO destino (`entryDate`), que es la
+ * fecha con la que el reproceso figura en el libro — no por `createdAt`, que
+ * es cuándo alguien lo tipeó.
+ */
+export async function reprocesosDeclarados(
+  tenantId: string,
+  opts?: { desde?: Date; hasta?: Date; limite?: number },
+) {
+  if (!tenantId) throw new Error("tenantId is required");
+
+  const filas = await prisma.forestCtpReproceso.findMany({
+    where: {
+      tenantId,
+      destino: {
+        tenantId,
+        deletedAt: null,
+        status: "registrado",
+        ...(opts?.desde || opts?.hasta
+          ? {
+              entryDate: {
+                ...(opts.desde ? { gte: opts.desde } : {}),
+                ...(opts.hasta ? { lte: opts.hasta } : {}),
+              },
+            }
+          : {}),
+      },
+    },
+    select: {
+      quantity: true,
+      destino: {
+        select: {
+          id: true, lineNo: true, entryDate: true, productType: true, speciesCommon: true,
+          quantity: true, unit: true, observations: true, originCode: true,
+        },
+      },
+      origen: {
+        select: { id: true, lineNo: true, productType: true, speciesCommon: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: Math.min(Math.max(opts?.limite ?? 400, 1), 1000),
+  });
+
+  /* Una fila por destino: el Map preserva el orden de llegada, que ya viene
+     del más nuevo al más viejo. */
+  const porDestino = new Map<string, {
+    destinoEntryId: string;
+    lineNo: number | null;
+    fecha: string;
+    producto: string | null;
+    especie: string | null;
+    unidad: string | null;
+    salio: number;
+    observaciones: string | null;
+    permiso: string | null;
+    origenes: { entryId: string; lineNo: number | null; producto: string | null; especie: string | null; cantidad: number }[];
+  }>();
+
+  for (const f of filas) {
+    const d = f.destino;
+    const g = porDestino.get(d.id) ?? {
+      destinoEntryId: d.id,
+      lineNo: d.lineNo,
+      fecha: d.entryDate.toISOString(),
+      producto: d.productType,
+      especie: d.speciesCommon,
+      unidad: d.unit,
+      salio: Number(d.quantity ?? 0),
+      observaciones: d.observations,
+      permiso: (d.originCode ?? "").trim() || null,
+      origenes: [],
+    };
+    g.origenes.push({
+      entryId: f.origen.id,
+      lineNo: f.origen.lineNo,
+      producto: f.origen.productType,
+      especie: f.origen.speciesCommon,
+      cantidad: Number(f.quantity),
+    });
+    porDestino.set(d.id, g);
+  }
+
+  return [...porDestino.values()];
+}
