@@ -64,6 +64,16 @@ export interface BloqueOrigen {
   etiqueta: string;
   /** N° de permiso declarado del bloque (`null` si no tiene). */
   permiso: string | null;
+  /** Todo lo que el bloque ampara — el número que muestra la tabla de arriba. */
+  usadoM3: number;
+  /**
+   * De eso, lo que ampara de su MISMO tipo: madera que el respaldo cubre tal
+   * como está, sin pasar por la sierra otra vez. No es un reproceso y por eso
+   * no entra en «lo que sale» — pero sin decirlo, la resta contra el m³ del
+   * bloque parece un descuadre (Brandon, 2026-09-09).
+   */
+  mismoTipoM3: number;
+  mismoTipoPiezas: number;
   /** m³ declarados del bloque entero — el tamaño de lo que hay, no lo que se convierte. */
   m3: number;
   libreM3: number;
@@ -135,6 +145,18 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
   for (const e of d.especies) {
     /* Lo que sobra, por tipo: sólo bloques cuyo tipo se conoce. Un bloque sin
        tipo declarado no puede decir en qué se convierte. */
+    /** Lo que cada bloque ampara de su PROPIO tipo: no necesita reproceso. */
+    const propio = new Map<string, { m3: number; piezas: number }>();
+    for (const b of e.bloques) {
+      const tipo = tipoDelBloque(b.bloque);
+      if (!tipo) continue;
+      const mias = b.asignado.filter((g) => mismoTipo(tipo, g.label));
+      propio.set(b.bloque.id, {
+        m3: r4(mias.reduce((a, g) => a + g.m3, 0)),
+        piezas: mias.reduce((a, g) => a + g.piezas, 0),
+      });
+    }
+
     const libres = new Map<string, BloqueOrigen[]>();
     for (const b of e.bloques) {
       if (!(b.libreM3 > EPS)) continue;
@@ -145,6 +167,9 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
         id: b.bloque.id,
         etiqueta: etiquetaSinRecorte(b.bloque.etiqueta),
         permiso: (b.bloque.permiso ?? "").trim() || null,
+        usadoM3: r4(b.usadoM3),
+        mismoTipoM3: propio.get(b.bloque.id)?.m3 ?? 0,
+        mismoTipoPiezas: propio.get(b.bloque.id)?.piezas ?? 0,
         m3: r4(Number(b.bloque.m3) || 0),
         libreM3: r4(b.libreM3),
         piezas: b.bloque.piezasOrigen ?? b.bloque.piezasManual ?? null,
@@ -220,6 +245,9 @@ export function sugerenciasDeReproceso(d: Distribucion): SugerenciaReproceso[] {
               id: b.bloque.id,
               etiqueta: etiquetaSinRecorte(b.bloque.etiqueta),
               permiso: (b.bloque.permiso ?? "").trim() || null,
+              usadoM3: r4(b.usadoM3),
+              mismoTipoM3: propio.get(b.bloque.id)?.m3 ?? 0,
+              mismoTipoPiezas: propio.get(b.bloque.id)?.piezas ?? 0,
               m3: r4(Number(b.bloque.m3) || 0),
               libreM3: r4(b.libreM3),
               piezas: b.bloque.piezasOrigen ?? b.bloque.piezasManual ?? null,
@@ -310,6 +338,11 @@ export interface GrupoDeReproceso {
   salePiezas: number;
   /** Lo que quedaría del original después de esas salidas. */
   quedaM3: number;
+  /** Todo lo que el bloque ampara — el mismo número de la tabla de bloques. */
+  amparadoM3: number;
+  /** De eso, lo que ampara de su MISMO tipo: no necesita reproceso. */
+  mismoTipoM3: number;
+  mismoTipoPiezas: number;
   /**
    * Lo que las salidas se pasan del original, si se pasan.
    *
@@ -353,6 +386,9 @@ export function agruparPorOrigen(
         salePiezas: 0,
         quedaM3: 0,
         excedeM3: 0,
+        amparadoM3: r4(s.bloques.reduce((a, b) => a + b.usadoM3, 0)),
+        mismoTipoM3: r4(s.bloques.reduce((a, b) => a + b.mismoTipoM3, 0)),
+        mismoTipoPiezas: s.bloques.reduce((a, b) => a + b.mismoTipoPiezas, 0),
       } satisfies GrupoDeReproceso);
     const destino: DestinoDeReproceso = {
       tipo: s.haciaTipo,
@@ -375,8 +411,13 @@ export function agruparPorOrigen(
        sobre la misma capacidad libre, y sumarlas inventaría madera. */
     g.saleM3 = r4(g.amparados.reduce((a, d) => a + d.m3, 0));
     g.salePiezas = g.amparados.reduce((a, d) => a + d.piezas, 0);
-    g.quedaM3 = r4(Math.max(0, g.origenM3 - g.saleM3));
-    g.excedeM3 = r4(Math.max(0, g.saleM3 - g.origenM3));
+    /* Lo que queda es lo que el bloque NO ampara: su m³ menos TODO lo amparado
+       —el reproceso y lo de su mismo tipo—. Restarle sólo «lo que sale» daba un
+       «quedan 0.803» sobre un bloque cuya tabla decía «ampara 3.077», y eso se
+       lee como un descuadre cuando en realidad esos 0.8 están amparando
+       comercial (su propio tipo). */
+    g.quedaM3 = r4(Math.max(0, g.origenM3 - g.amparadoM3));
+    g.excedeM3 = r4(Math.max(0, g.amparadoM3 - g.origenM3));
   }
 
   return [...grupos.values()].sort(

@@ -291,20 +291,40 @@ export default function ReprocesosSugeridos({
               tono="opcion"
             />
 
-            {/* La regla, con los números de este producto: sale menos de lo que
-                entró, y queda lo que queda. */}
+            {/* La cuenta completa del producto, para que cierre contra la tabla
+                de bloques: lo que ampara de OTRO tipo (el reproceso), lo que
+                ampara de su MISMO tipo (no hace falta reproceso) y lo que
+                queda sin amparar. Las tres suman lo que el bloque ampara. */}
             <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-0.5 border-t border-[var(--rule-soft)] pt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               <span>
                 De{" "}
                 <b className="font-mono tabular-nums text-[var(--text-secondary)]">
                   {fmtM3(g.origenM3)} m³
                 </b>{" "}
-                salen{" "}
+                ampara{" "}
+                <b className="font-mono tabular-nums text-[var(--text-secondary)]">
+                  {fmtM3(g.amparadoM3)} m³
+                </b>
+                :
+              </span>
+              <span>
                 <b className="font-mono tabular-nums text-[var(--text-secondary)]">
                   {fmtM3(g.saleM3)} m³
-                </b>
-                {g.salePiezas > 0 && ` en ${fmtPiezas(g.salePiezas)} piezas`}
+                </b>{" "}
+                de otro tipo{g.salePiezas > 0 && ` (${fmtPiezas(g.salePiezas)} pzas)`} —{" "}
+                <b>reproceso a declarar</b>
               </span>
+              {g.mismoTipoM3 > 0 && (
+                <span>
+                  ·{" "}
+                  <b className="font-mono tabular-nums text-[var(--text-secondary)]">
+                    {fmtM3(g.mismoTipoM3)} m³
+                  </b>{" "}
+                  de su mismo tipo
+                  {g.mismoTipoPiezas > 0 && ` (${fmtPiezas(g.mismoTipoPiezas)} pzas)`} —{" "}
+                  <b>no hace falta reprocesar</b>
+                </span>
+              )}
               {g.excedeM3 > 0 ? (
                 /* El reparto cierra hasta 3 piezas / 50 litros / 1 % por encima
                    del bloque para que las últimas tablas no queden huérfanas.
@@ -313,14 +333,15 @@ export default function ReprocesosSugeridos({
                   · <b className="font-mono tabular-nums">{fmtM3(g.excedeM3)} m³</b> por encima:
                   cierre por diferencia de medición
                 </span>
-              ) : (
+              ) : g.quedaM3 > 0 ? (
                 <span>
                   · quedan{" "}
                   <b className="font-mono tabular-nums text-[var(--text-secondary)]">
                     {fmtM3(g.quedaM3)} m³
-                  </b>
+                  </b>{" "}
+                  sin amparar
                 </span>
-              )}
+              ) : null}
             </p>
           </div>
         </div>

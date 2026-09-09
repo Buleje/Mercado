@@ -277,6 +277,21 @@ describe("agruparPorOrigen — el producto original con todo lo que sale de él"
     }
   });
 
+  it("la cuenta CIERRA contra lo que el bloque ampara (el número de la tabla)", () => {
+    /* El descuadre que reportó Brandon: la tabla decía «ampara 3.077» y el pie
+       del reproceso «salen 2.322 · quedan 0.803». Los 0.755 que faltaban son
+       comercial amparando comercial: no es reproceso, pero se ampara igual. */
+    const comercial = bloque({ id: "cierra", m3: 3.078, tipoProducto: "Comercial" });
+    const d = distribuirPorCapacidad([comercial], variado, "tipo");
+    const [g] = agruparPorOrigen(sugerenciasDeReproceso(d));
+    const bd = d.especies[0].bloques[0];
+    expect(g.amparadoM3).toBeCloseTo(bd.usadoM3, 3);
+    // reproceso + mismo tipo = todo lo amparado
+    expect(g.saleM3 + g.mismoTipoM3).toBeCloseTo(g.amparadoM3, 3);
+    // y lo que queda es lo que el bloque NO ampara
+    expect(g.quedaM3).toBeCloseTo(Math.max(0, g.origenM3 - g.amparadoM3), 3);
+  });
+
   it("las OPCIONES no suman al total: compiten por la misma capacidad libre", () => {
     const soloComercial = comercialQueNoAmpara(3);
     const [g] = agruparPorOrigen(
