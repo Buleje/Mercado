@@ -66,9 +66,10 @@ export interface BalanceCapacidad {
 }
 
 /**
- * Filtros encadenados. Cada uno acota al siguiente: elegido un permiso, sólo se
- * ofrecen las especies que tienen madera de ESE permiso; elegida la especie,
- * sólo las guías que la traen.
+ * Los tres recortes de la capacidad, **cruzados entre sí**: cada uno acota las
+ * opciones de los otros dos, en cualquier orden. Elegida la especie, sólo se
+ * ofrecen los permisos y las guías que la traen; elegido el permiso, sólo las
+ * especies que tiene. Ver `opcionesDeCapacidad`.
  */
 export interface FiltrosCapacidad {
   permiso?: string;
@@ -233,7 +234,19 @@ const ordenar = (mapa: Map<string, OpcionFiltro>) =>
   [...mapa.values()].sort((a, b) => b.m3 - a.m3 || a.valor.localeCompare(b.valor, "es"));
 
 /**
- * Las opciones de los tres filtros, cada una acotada por las anteriores.
+ * Las opciones de los tres filtros, **cada una acotada por los OTROS DOS**.
+ *
+ * Antes la cadena era de una sola dirección —permiso → especie → guía—, así que
+ * elegir «TORNILLO» dejaba el desplegable de permisos ofreciendo los de toda la
+ * planta, incluidos los que no tienen un solo tronco de tornillo. Elegir uno de
+ * ésos daba una tarjeta en cero y no había forma de saber, antes de probarlos,
+ * cuál sí (Brandon, 2026-09-08).
+ *
+ * La regla es la de cualquier buscador con facetas: para calcular las opciones
+ * de un filtro se aplican todos los demás **menos el suyo**. Así cada filtro
+ * ofrece exactamente lo que se puede combinar con lo ya elegido, en cualquier
+ * orden —especie primero y permiso después, o al revés—, y el valor que uno ya
+ * tiene puesto no se saca a sí mismo de la lista.
  *
  * El conteo sale de TODA la madera que puede salir de la planta —libre, por
  * recepcionar y producto ya aserrado—, no sólo de la libre: si una guía entera
@@ -254,24 +267,78 @@ export function opcionesDeCapacidad(
 
   for (const t of trozas) {
     const m3 = num(t.volumenM3);
-    acumular(permisos, txt(t.permiso), m3);
-    if (!filtros.permiso || txt(t.permiso) === filtros.permiso) {
-      acumular(especies, txt(t.especieComun).toUpperCase(), m3);
-      if (!filtros.especie || mismaEspecie(t.especieComun, filtros.especie))
-        acumular(guias, txt(t.gtfNumber), m3);
-    }
+    const okPermiso = !filtros.permiso || txt(t.permiso) === filtros.permiso;
+    const okEspecie = !filtros.especie || mismaEspecie(t.especieComun, filtros.especie);
+    const okGuia = !filtros.guia || txt(t.gtfNumber) === filtros.guia;
+    if (okEspecie && okGuia) acumular(permisos, txt(t.permiso), m3);
+    if (okPermiso && okGuia) acumular(especies, txt(t.especieComun).toUpperCase(), m3);
+    if (okPermiso && okEspecie) acumular(guias, txt(t.gtfNumber), m3);
   }
   for (const c of enM3) {
+    /* Una corrida cuenta para un permiso (o una guía) sólo si TODA su madera
+       vino de ahí: repartirla sería inventar de qué título salió cada tablón. */
     const permiso = [...new Set(c.titularOrigen.map(txt).filter(Boolean))];
     const guia = [...new Set(c.gtfOrigen.map(txt).filter(Boolean))];
-    if (permiso.length === 1) acumular(permisos, permiso[0], c.disponible);
-    if (!filtros.permiso || origenUnico(c.titularOrigen, filtros.permiso)) {
-      acumular(especies, txt(c.especie).toUpperCase(), c.disponible);
-      if ((!filtros.especie || mismaEspecie(c.especie, filtros.especie)) && guia.length === 1)
-        acumular(guias, guia[0], c.disponible);
-    }
+    const okPermiso = !filtros.permiso || origenUnico(c.titularOrigen, filtros.permiso);
+    const okEspecie = !filtros.especie || mismaEspecie(c.especie, filtros.especie);
+    const okGuia = !filtros.guia || origenUnico(c.gtfOrigen, filtros.guia);
+    if (okEspecie && okGuia && permiso.length === 1) acumular(permisos, permiso[0], c.disponible);
+    if (okPermiso && okGuia) acumular(especies, txt(c.especie).toUpperCase(), c.disponible);
+    if (okPermiso && okEspecie && guia.length === 1) acumular(guias, guia[0], c.disponible);
   }
   return { permisos: ordenar(permisos), especies: ordenar(especies), guias: ordenar(guias) };
+}
+
+/**
+ * Suelta los filtros que, con los demás puestos, ya no tienen nada detrás.
+ *
+ * Con las opciones cruzadas elegir de un desplegable siempre da resultado, pero
+ * quedan dos caminos por los que se puede llegar a una combinación imposible:
+ * un link viejo («capacidad de la guía G-4 con especie CAPIRONA») y quitar un
+ * filtro que era el que hacía compatibles a los otros dos. En vez de mostrar un
+ * cero mudo —que se lee como «no hay madera»— se suelta el filtro que ya no
+ * puede cumplirse y quedan los que sí.
+ *
+ * Con el patio y las corridas todavía cargando NO toca nada: un `[]` que en
+ * realidad es «no llegó» borraría el filtro que el usuario acaba de abrir.
+ */
+export function sanearFiltros(
+  patio: readonly TrozaConsumible[],
+  corridas: readonly CorridaDisponible[],
+  filtros: FiltrosCapacidad,
+  /**
+   * El filtro que el operador **acaba de tocar**: ése no se suelta nunca, se
+   * sueltan los que ya no lo acompañan. Sin esto, elegir una especie que la
+   * guía puesta no tiene borraba las dos y la pantalla volvía a cero justo
+   * cuando el usuario estaba eligiendo. Por omisión manda la especie, que es
+   * por donde se empieza a mirar la planta.
+   */
+  prioridad?: keyof FiltrosCapacidad,
+): FiltrosCapacidad {
+  if (!hayFiltro(filtros)) return filtros;
+  if (patio.length === 0 && corridas.length === 0) return filtros;
+
+  const resto: (keyof FiltrosCapacidad)[] = (["especie", "permiso", "guia"] as const).filter(
+    (k) => k !== prioridad,
+  );
+  const orden = prioridad ? [prioridad, ...resto] : resto;
+
+  /* Se aceptan de a uno contra lo YA aceptado: así el segundo filtro se juzga
+     con el primero puesto, que es como se va a leer la tarjeta. */
+  let acc: FiltrosCapacidad = {};
+  for (const k of orden) {
+    const valor = filtros[k];
+    if (!valor) continue;
+    const o = opcionesDeCapacidad(patio, acc, corridas);
+    const lista = k === "permiso" ? o.permisos : k === "especie" ? o.especies : o.guias;
+    if (lista.some((x) => x.valor === valor)) acc = { ...acc, [k]: valor };
+  }
+
+  /* Si no cambió nada se devuelve el MISMO objeto: el estado vive en la URL y
+     un objeto nuevo por render dispararía una navegación en bucle. */
+  const igual =
+    acc.permiso === filtros.permiso && acc.especie === filtros.especie && acc.guia === filtros.guia;
+  return igual ? filtros : acc;
 }
 
 /* ── Las filas que hay detrás de cada fuente ──────────────────────────────── */

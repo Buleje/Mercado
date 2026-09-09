@@ -18,6 +18,7 @@ import {
   filaDeTroza,
   lotesDeFuente,
   opcionesDeCapacidad,
+  sanearFiltros,
   trozasDeFuente,
   type CorridaDisponible,
   type EntradaCapacidad,
@@ -415,5 +416,64 @@ describe("el CSV no ejecuta fórmulas", () => {
     expect(celdaCsv("-81,807")).toBe("-81,807");
     expect(celdaCsv("-3")).toBe("-3");
     expect(celdaCsv(-2.5)).toBe("-2.5");
+  });
+});
+
+describe("los filtros se cruzan en las dos direcciones (Brandon, 2026-09-08)", () => {
+  it("elegida la especie, los permisos son los que TIENEN esa especie", () => {
+    // CAPIRONA sólo está en P-1 (troza B). Antes se ofrecían P-1 y P-2.
+    const { permisos } = opcionesDeCapacidad(PATIO, { especie: "CAPIRONA" });
+    expect(permisos.map((p) => p.valor)).toEqual(["P-1"]);
+    expect(permisos[0]).toMatchObject({ piezas: 1, m3: 4 });
+  });
+
+  it("con TORNILLO quedan los dos permisos, cada uno con lo suyo", () => {
+    const { permisos } = opcionesDeCapacidad(PATIO, { especie: "TORNILLO" });
+    expect(permisos.map((p) => p.valor).sort()).toEqual(["P-1", "P-2"]);
+    // P-1: A(10) + D(5) sin recibir. La E ya está en un lote.
+    expect(permisos.find((p) => p.valor === "P-1")).toMatchObject({ piezas: 2, m3: 15 });
+  });
+
+  it("elegida la guía, el permiso y la especie se acotan a ella", () => {
+    const o = opcionesDeCapacidad(PATIO, { guia: "G-3" });
+    expect(o.permisos.map((p) => p.valor)).toEqual(["P-2"]);
+    expect(o.especies.map((e) => e.valor)).toEqual(["TORNILLO"]);
+  });
+
+  it("un filtro no se saca a sí mismo de su propia lista", () => {
+    const { especies } = opcionesDeCapacidad(PATIO, { especie: "CAPIRONA", permiso: "P-1" });
+    expect(especies.map((e) => e.valor).sort()).toEqual(["CAPIRONA", "TORNILLO"]);
+  });
+
+  it("las corridas con DOS permisos adentro no se reparten entre ellos", () => {
+    const mezcla = corrida({ id: "m", disponible: 3, titularOrigen: ["P-1", "P-2"], especie: "TORNILLO" });
+    const { permisos } = opcionesDeCapacidad([], { especie: "TORNILLO" }, [mezcla]);
+    expect(permisos).toEqual([]);
+  });
+});
+
+describe("sanearFiltros suelta lo que quedó sin madera", () => {
+  it("una combinación imposible pierde el filtro que no se cumple", () => {
+    // G-3 es TORNILLO de P-2: con CAPIRONA no hay nada.
+    const r = sanearFiltros(PATIO, [], { especie: "CAPIRONA", guia: "G-3" });
+    expect(r.guia).toBeUndefined();
+    expect(r.especie).toBe("CAPIRONA");
+  });
+
+  it("una combinación que existe se deja intacta", () => {
+    const f = { permiso: "P-1", especie: "TORNILLO", guia: "G-1" };
+    expect(sanearFiltros(PATIO, [], f)).toBe(f);
+  });
+
+  it("el filtro recién tocado no se suelta: se suelta el que ya no lo acompaña", () => {
+    // El operador acaba de elegir la guía G-3 (TORNILLO de P-2) teniendo CAPIRONA.
+    const r = sanearFiltros(PATIO, [], { especie: "CAPIRONA", guia: "G-3" }, "guia");
+    expect(r.guia).toBe("G-3");
+    expect(r.especie).toBeUndefined();
+  });
+
+  it("sin datos cargados no toca nada: un [] puede ser «todavía no llegó»", () => {
+    const f = { permiso: "P-9" };
+    expect(sanearFiltros([], [], f)).toBe(f);
   });
 });

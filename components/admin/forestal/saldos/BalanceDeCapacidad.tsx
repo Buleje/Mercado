@@ -13,9 +13,10 @@
  *
  * Tres cosas que esta tarjeta hace y conviene no deshacer:
  *
- *  1. **Los filtros se encadenan.** Permiso → especie → guía, y cada opción
- *     muestra cuánto hay detrás. Elegir un permiso no debería obligar a adivinar
- *     qué especies tiene.
+ *  1. **Los filtros se cruzan.** Cada desplegable ofrece sólo lo que se puede
+ *     combinar con lo ya elegido —los permisos de esa especie, las guías de ese
+ *     permiso— y cada opción muestra cuánto hay detrás. En cualquier orden:
+ *     especie primero y permiso después da lo mismo que al revés.
  *  2. **Lo que no se puede atribuir queda en cero y lo DICE.** Un cero mudo se
  *     lee como «no hay»; acá significa «no se puede saber sin recorrer la
  *     cadena», que es una respuesta distinta.
@@ -88,7 +89,8 @@ export default function BalanceDeCapacidad({
   balance: BalanceCapacidad;
   filtros: FiltrosCapacidad;
   opciones?: { permisos: OpcionFiltro[]; especies: OpcionFiltro[]; guias: OpcionFiltro[] };
-  onFiltros?: (f: FiltrosCapacidad) => void;
+  /** `prioridad` = el filtro que se acaba de tocar: ése manda si hay que soltar. */
+  onFiltros?: (f: FiltrosCapacidad, prioridad?: keyof FiltrosCapacidad) => void;
   onDetalle?: (f: FuenteDeCapacidad) => void;
 }) {
   const { fuentes, totalProducto } = balance;
@@ -115,31 +117,32 @@ export default function BalanceDeCapacidad({
 
       {onFiltros && opciones && (
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          {/* Encadenados: al cambiar el permiso se sueltan especie y guía,
-              porque la especie elegida puede no existir en el permiso nuevo y
-              un filtro que no matchea nada se ve igual que «no hay madera». */}
+          {/* Los otros filtros NO se sueltan al cambiar uno: las opciones de
+              cada desplegable ya salen cruzadas con los demás, así que lo que
+              se puede elegir siempre tiene madera detrás. Y si una combinación
+              queda imposible —un link viejo, o quitar el filtro que las hacía
+              compatibles—, `sanearFiltros` suelta el que sobra en vez de dejar
+              una tarjeta en cero. */}
           <Filtro
             etiqueta="Permiso"
             valor={filtros.permiso ?? ""}
             opciones={opciones.permisos}
             todos="Todos los permisos"
-            onChange={(permiso) => onFiltros({ permiso: permiso || undefined })}
+            onChange={(permiso) => onFiltros({ ...filtros, permiso: permiso || undefined }, "permiso")}
           />
           <Filtro
             etiqueta="Especie"
             valor={filtros.especie ?? ""}
             opciones={opciones.especies}
             todos="Todas las especies"
-            onChange={(especie) =>
-              onFiltros({ ...filtros, especie: especie || undefined, guia: undefined })
-            }
+            onChange={(especie) => onFiltros({ ...filtros, especie: especie || undefined }, "especie")}
           />
           <Filtro
             etiqueta="Guía"
             valor={filtros.guia ?? ""}
             opciones={opciones.guias}
             todos="Todas las guías"
-            onChange={(guia) => onFiltros({ ...filtros, guia: guia || undefined })}
+            onChange={(guia) => onFiltros({ ...filtros, guia: guia || undefined }, "guia")}
           />
           {conFiltro && (
             <button

@@ -35,8 +35,10 @@ import DetalleDeFuente, { textoDeFiltros } from "./saldos/DetalleDeFuente";
 import {
   armarBalance,
   opcionesDeCapacidad,
+  sanearFiltros,
   type CorridaDisponible,
   type EntradaCapacidad,
+  type FiltrosCapacidad,
   type FuenteDeCapacidad,
 } from "@/lib/forestal/capacidad-de-planta";
 import { useParamsDeSaldos } from "@/hooks/use-params-de-saldos";
@@ -337,11 +339,41 @@ export function CtpSaldosView({
     ],
   );
 
-  /** Las opciones de los tres filtros, cada una acotada por la anterior. */
+  /** Las opciones de los tres filtros, cada una cruzada con las otras dos. */
   const opcionesCapacidad = useMemo(
     () => opcionesDeCapacidad(patio, filtrosCapacidad, corridas ?? []),
     [patio, filtrosCapacidad, corridas],
   );
+
+  /**
+   * Poner un filtro suelta los que quedaron sin madera detrás.
+   *
+   * Elegir de un desplegable siempre da resultado —las opciones ya vienen
+   * cruzadas—, pero quitar uno puede dejar a los otros dos en una combinación
+   * imposible, y un link viejo puede traerla puesta de entrada. Ahí se suelta el
+   * que ya no se cumple en vez de mostrar una tarjeta en cero, que se lee como
+   * «no hay madera» cuando en realidad es «esta mezcla no existe».
+   */
+  const aplicarFiltrosCapacidad = useCallback(
+    (f: FiltrosCapacidad, prioridad?: keyof FiltrosCapacidad) =>
+      setFiltrosCapacidad(sanearFiltros(patio, corridas ?? [], f, prioridad)),
+    [patio, corridas, setFiltrosCapacidad],
+  );
+
+  /**
+   * Lo mismo para lo que llega por la URL — un link guardado con una mezcla que
+   * ya no existe («la capacidad del permiso X con especie Y», después de que
+   * esa madera se aserró). Espera a que las DOS fuentes hayan llegado: soltar
+   * un filtro mirando un `[]` que todavía se está cargando borraría justo el
+   * recorte que el link venía a mostrar.
+   */
+  useEffect(() => {
+    if (estado.patio !== "ok" || estado.corridas !== "ok") return;
+    const saneado = sanearFiltros(patio, corridas ?? [], filtrosCapacidad);
+    /* `sanearFiltros` devuelve el MISMO objeto si no hay nada que soltar, así
+       que esta comparación por identidad es la que corta el bucle con la URL. */
+    if (saneado !== filtrosCapacidad) setFiltrosCapacidad(saneado);
+  }, [estado.patio, estado.corridas, patio, corridas, filtrosCapacidad, setFiltrosCapacidad]);
 
   const balance = useMemo(
     () => armarBalance(entradaCapacidad, filtrosCapacidad),
@@ -740,7 +772,7 @@ export function CtpSaldosView({
                   balance={balance}
                   filtros={filtrosCapacidad}
                   opciones={opcionesCapacidad}
-                  onFiltros={setFiltrosCapacidad}
+                  onFiltros={aplicarFiltrosCapacidad}
                   onDetalle={setDetalleFuente}
                 />
 
