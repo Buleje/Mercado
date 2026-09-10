@@ -194,8 +194,9 @@ export default function RepartoImportarBloquesModal({
                         <th scope="col">Etiqueta</th>
                         <th scope="col">Cargado como</th>
                         <th scope="col">Especie</th>
-                        <th scope="col" className="text-right">m³</th>
+                        {/* Piezas · m³, el orden del módulo (2026-09-09). */}
                         <th scope="col" className="text-right">Piezas</th>
+                        <th scope="col" className="text-right">m³</th>
                         <th scope="col" className="text-right">% aprov.</th>
                       </tr>
                     </thead>
@@ -207,8 +208,8 @@ export default function RepartoImportarBloquesModal({
                             {b.tipo === "aserrada" ? "Aserrada directa" : "Rolliza"}
                           </td>
                           <td className="text-[var(--text-secondary)]">{b.especie || <span className="text-[var(--text-tertiary)]">sin especie</span>}</td>
-                          <td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(b.m3)}</td>
                           <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.piezasManual ?? "—"}</td>
+                          <td className="text-right font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(b.m3)}</td>
                           <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">{b.aprovechablePct ?? "—"}</td>
                         </tr>
                       ))}

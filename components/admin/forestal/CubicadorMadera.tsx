@@ -1970,9 +1970,10 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                 <thead>
                   <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
                     <th className="px-3 py-2">{ETIQUETA_DIMENSION[dimResumen].replace("Por ", "")}</th>
+                    {/* Piezas · m³ · PT, la convención del módulo (2026-09-09). */}
                     <th className="px-3 py-2 text-right">Piezas</th>
-                    <th className="px-3 py-2 text-right" title={FORMULA_PT}>Pie tablar</th>
                     <th className="px-3 py-2 text-right" title={FORMULA_M3}>m³</th>
+                    <th className="px-3 py-2 text-right" title={FORMULA_PT}>Pie tablar</th>
                     <th className="px-3 py-2">Peso del lote</th>
                     {conValor && <th className="px-3 py-2 text-right">Valor</th>}
                   </tr>
@@ -1982,8 +1983,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     <tr key={g.clave} className="border-t border-[var(--accent)]/15">
                       <td className="px-3 py-2 font-bold text-[var(--text-primary)]">{g.label}</td>
                       <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{g.cantidad}</td>
-                      <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtPt(g.pieTablar)}</td>
-                      <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(g.m3)}</td>
+                      <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(g.m3)}</td>
+                      <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtPt(g.pieTablar)}</td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-24 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
@@ -2000,8 +2001,8 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   <tr className="border-t-2 border-[var(--accent)]/40 font-bold text-[var(--text-primary)]">
                     <td className="px-3 py-2">Total · {resumen.grupos.length} {resumen.grupos.length === 1 ? "grupo" : "grupos"}</td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums">{resumen.total.cantidad}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">{fmtPt(resumen.total.pieTablar)}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtM3(resumen.total.m3)}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">{fmtM3(resumen.total.m3)}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{fmtPt(resumen.total.pieTablar)}</td>
                     <td className="px-3 py-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">100%</td>
                     {conValor && <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--accent)]">S/ {soles(resumen.total.valor)}</td>}
                   </tr>
@@ -2179,8 +2180,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                   {colsVisibles.especie && <th className="px-3 py-2">Especie</th>}
                   {colsVisibles.dueno && <th className="px-3 py-2">Dueño</th>}
                   {colsVisibles.apartado && <th className="px-3 py-2">Apartado</th>}
-                  {colsVisibles.pt && <ThCol col={TCOL.pt} sel={sel} filas={filasVisibles.length} className="text-right" hint={FORMULA_PT}>Pie tablar</ThCol>}
+                  {/* m³ antes que PT: Piezas · m³ · PT en todo el módulo (2026-09-09). */}
                   {colsVisibles.m3 && <ThCol col={TCOL.m3} sel={sel} filas={filasVisibles.length} className="text-right" hint={FORMULA_M3}>m³</ThCol>}
+                  {colsVisibles.pt && <ThCol col={TCOL.pt} sel={sel} filas={filasVisibles.length} className="text-right" hint={FORMULA_PT}>Pie tablar</ThCol>}
                   <th className="px-3 py-2" />
                 </tr>
               </thead>
@@ -2305,11 +2307,11 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                         <AsaRelleno onTomar={() => rellenoApartado.iniciar(pos)} titulo="Arrastrá hacia abajo para poner este apartado en las filas siguientes" />
                       </td>
                     )}
-                    {colsVisibles.pt && (
-                      <td {...sel.props(pos, TCOL.pt)} className={`px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)] ${sel.seleccionada(pos, TCOL.pt) ? CELDA_SELECCIONADA : ""}`}>{fmtPt(r.pieTablar)}</td>
-                    )}
                     {colsVisibles.m3 && (
-                      <td {...sel.props(pos, TCOL.m3)} className={`px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)] ${sel.seleccionada(pos, TCOL.m3) ? CELDA_SELECCIONADA : ""}`}>{fmtM3(r.m3)}</td>
+                      <td {...sel.props(pos, TCOL.m3)} className={`px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)] ${sel.seleccionada(pos, TCOL.m3) ? CELDA_SELECCIONADA : ""}`}>{fmtM3(r.m3)}</td>
+                    )}
+                    {colsVisibles.pt && (
+                      <td {...sel.props(pos, TCOL.pt)} className={`px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)] ${sel.seleccionada(pos, TCOL.pt) ? CELDA_SELECCIONADA : ""}`}>{fmtPt(r.pieTablar)}</td>
                     )}
                     <td className="px-3 py-2">
                       <div className="flex items-center justify-end gap-1.5">
@@ -2359,20 +2361,20 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
                     quien cruce las columnas con la calculadora no tiene con qué
                     verificar que le está dando bien.
                   */}
-                  {colsVisibles.pt && (
-                    <td
-                      className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]"
-                      title={`${fmtPt((filtrando ? totalesVisibles : totales).pt)} PT ÷ ${PT_POR_M3} = ${fmtM3((filtrando ? totalesVisibles : totales).pt / PT_POR_M3)} m³`}
-                    >
-                      {fmtPt((filtrando ? totalesVisibles : totales).pt)} PT
-                    </td>
-                  )}
                   {colsVisibles.m3 && (
                     <td
-                      className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--accent)]"
+                      className="px-3 py-2.5 text-right font-mono text-base tabular-nums text-[var(--accent)]"
                       title={`${fmtM3((filtrando ? totalesVisibles : totales).m3)} m³ × ${PT_POR_M3} = ${fmtPt((filtrando ? totalesVisibles : totales).m3 * PT_POR_M3)} PT. El total suma cada fila ya redondeada, así que puede moverse unas centésimas del cociente exacto.`}
                     >
                       {fmtM3((filtrando ? totalesVisibles : totales).m3)}
+                    </td>
+                  )}
+                  {colsVisibles.pt && (
+                    <td
+                      className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--accent)]"
+                      title={`${fmtPt((filtrando ? totalesVisibles : totales).pt)} PT ÷ ${PT_POR_M3} = ${fmtM3((filtrando ? totalesVisibles : totales).pt / PT_POR_M3)} m³`}
+                    >
+                      {fmtPt((filtrando ? totalesVisibles : totales).pt)} PT
                     </td>
                   )}
                   <td />

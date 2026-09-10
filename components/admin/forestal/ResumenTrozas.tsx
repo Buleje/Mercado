@@ -46,8 +46,8 @@ function FilaGrupo({ g, destacada }: { g: GrupoTrozas; destacada?: boolean }) {
         {g.label}
       </td>
       <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{g.trozas}</td>
-      <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPt(g.pt)}</td>
       <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(g.m3)}</td>
+      <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtPt(g.pt)}</td>
       <td className="px-3 py-2">
         <div className="flex items-center gap-2">
           <div className="hidden h-2 min-w-[2.5rem] flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)] sm:block">
@@ -76,9 +76,10 @@ function TablaTrozas({ primeraCol, grupos, total, caption, compacta }: {
         <thead>
           <tr className="bg-[var(--surface-sunken)]">
             <th scope="col" className={TH}>{primeraCol}</th>
+            {/* Piezas · m³ · PT, la convención del módulo (2026-09-09). */}
             <th scope="col" className={`${TH} text-right`}>Piezas</th>
-            <th scope="col" className={`${TH} text-right`}>PT</th>
             <th scope="col" className={`${TH} text-right`}>m³</th>
+            <th scope="col" className={`${TH} text-right`}>PT</th>
             <th scope="col" className={`${TH} w-[24%]`}>Participación</th>
           </tr>
         </thead>
@@ -89,8 +90,8 @@ function TablaTrozas({ primeraCol, grupos, total, caption, compacta }: {
           <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <th scope="row" className="px-3 py-2.5 text-left">Total · {grupos.length} {grupos.length === 1 ? "grupo" : "grupos"}</th>
             <td className="px-3 py-2.5 text-right font-mono tabular-nums">{total.trozas}</td>
-            <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtPt(total.pt)}</td>
             <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtM3(total.m3)}</td>
+            <td className="px-3 py-2.5 text-right font-mono tabular-nums">{fmtPt(total.pt)}</td>
             <td className="px-3 py-2.5 text-[length:var(--ts-2xs)] uppercase tracking-wide">100%</td>
           </tr>
         </tfoot>

@@ -101,12 +101,13 @@ export function DiferenciaDistribucion({ dist, dim }: { dist: Distribucion; dim?
           <thead className="border-b-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]">
             <tr>
               <th scope="col" className={TH}>Tipo</th>
+              {/* Piezas · m³ · PT en los dos tríos (2026-09-09). */}
               <th scope="col" className={`${TH} w-24 text-right`}>Piezas</th>
-              <th scope="col" className={`${TH} w-28 text-right`}>Pie tablar</th>
               <th scope="col" className={`${TH} w-24 text-right`}>m³</th>
+              <th scope="col" className={`${TH} w-28 text-right`}>Pie tablar</th>
               <th scope="col" className={`${TH} w-28 text-right`} title="Lo que ningún bloque respalda todavía">Faltan pzas</th>
-              <th scope="col" className={`${TH} w-28 text-right`}>Faltan PT</th>
               <th scope="col" className={`${TH} w-28 text-right`}>Faltan m³</th>
+              <th scope="col" className={`${TH} w-28 text-right`}>Faltan PT</th>
             </tr>
           </thead>
           <tbody>
@@ -118,16 +119,16 @@ export function DiferenciaDistribucion({ dist, dim }: { dist: Distribucion; dim?
                     {dim === "tipo" ? <TipoBadge tipo={f.tipo as TipoComercial} /> : f.tipo}
                   </td>
                   <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPiezas(f.piezas)}</td>
-                  <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPt(f.pieTablar)}</td>
                   <td className={`${TD} ${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(f.m3)}</td>
+                  <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPt(f.pieTablar)}</td>
                   <td className={`${TD} ${NUM} ${falta ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]"}`}>
                     {fmtPiezas(f.piezasFalta)}
                   </td>
-                  <td className={`${TD} ${NUM} ${falta ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]"}`}>
-                    {fmtPt(f.ptFalta)}
-                  </td>
                   <td className={`${TD} ${NUM} ${falta ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]"}`}>
                     {fmtM3(f.m3Falta)}
+                  </td>
+                  <td className={`${TD} ${NUM} ${falta ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-tertiary)]"}`}>
+                    {fmtPt(f.ptFalta)}
                   </td>
                 </tr>
               );
@@ -137,11 +138,11 @@ export function DiferenciaDistribucion({ dist, dim }: { dist: Distribucion; dim?
             <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 text-base font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <th scope="row" className={`${TD} text-left`}>Total</th>
               <td className={`${TD} ${NUM}`}>{fmtPiezas(tot.piezas)}</td>
-              <td className={`${TD} ${NUM}`}>{fmtPt(tot.pt)}</td>
               <td className={`${TD} ${NUM}`}>{fmtM3(tot.m3)}</td>
+              <td className={`${TD} ${NUM}`}>{fmtPt(tot.pt)}</td>
               <td className={`${TD} ${NUM}`}>{fmtPiezas(tot.piezasFalta)}</td>
-              <td className={`${TD} ${NUM}`}>{fmtPt(tot.ptFalta)}</td>
               <td className={`${TD} ${NUM}`}>{fmtM3(tot.m3Falta)}</td>
+              <td className={`${TD} ${NUM}`}>{fmtPt(tot.ptFalta)}</td>
             </tr>
           </tfoot>
         </DataTable>

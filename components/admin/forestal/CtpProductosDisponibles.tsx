@@ -622,10 +622,12 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             <th className="px-3 py-2 font-bold">Especie</th>
             {colsVisibles.presentacion && <th className="px-3 py-2 font-bold">Presentación</th>}
             {colsVisibles.medidas && <th className="px-3 py-2 font-bold">Medidas</th>}
+            {/* Piezas · m³ · PT, pegadas (2026-09-09): el pie tablar estaba
+                dos columnas más allá, detrás de «Corrida / lote». */}
             <th className="px-3 py-2 text-right font-bold">Piezas</th>
             <th className="px-3 py-2 text-right font-bold">Volumen</th>
-            {colsVisibles.lote && <th className="px-3 py-2 font-bold">Corrida / lote</th>}
             {colsVisibles.pieTablar && <th className="px-3 py-2 text-right font-bold">Pie tablar</th>}
+            {colsVisibles.lote && <th className="px-3 py-2 font-bold">Corrida / lote</th>}
             <th className="px-3 py-2 text-right font-bold">Saldo corrida</th>
             {colsVisibles.permiso && <th className="px-3 py-2 font-bold">N° Permiso</th>}
             <th className="px-3 py-2 text-right font-bold">Acciones</th>
@@ -717,18 +719,18 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
               <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                 {fmtM3(p?.volumenM3 ?? c.disponible)}
               </td>
-              {colsVisibles.lote && (
-                <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">
-                  <span className="font-mono">N° {c.lineNo ?? "—"}</span>
-                  {c.lote && <span className="ml-1 font-mono">· {c.lote}</span>}
-                  <div>{fmtDia(c.fecha)}</div>
-                </td>
-              )}
               {/* Pie tablar: es la unidad en la que se canta y se vende en el
                   patio; el libro guarda m³ y la conversión se hacía aparte. */}
               {colsVisibles.pieTablar && (
                 <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
                   {pieTablarDe(p?.volumenM3 ?? c.disponible).toLocaleString("es-PE")}
+                </td>
+              )}
+              {colsVisibles.lote && (
+                <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">
+                  <span className="font-mono">N° {c.lineNo ?? "—"}</span>
+                  {c.lote && <span className="ml-1 font-mono">· {c.lote}</span>}
+                  <div>{fmtDia(c.fecha)}</div>
                 </td>
               )}
               <td className="px-3 py-2 text-right">
@@ -859,12 +861,12 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
               <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                 {fmtM3(totales.volumen)}
               </td>
-              {colsVisibles.lote && <td />}
               {colsVisibles.pieTablar && (
                 <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                   {pieTablarDe(totales.volumen).toLocaleString("es-PE")}
                 </td>
               )}
+              {colsVisibles.lote && <td />}
               <td />
               {colsVisibles.permiso && <td />}
               <td />
