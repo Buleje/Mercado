@@ -1187,16 +1187,34 @@ export function CtpEntriesView({
       */}
       {section === "produccion" && !loteElegido && !corridaAbierta && ampliando.length === 0 && (
         <div className="space-y-3">
-          <CtpTrozasDelLote
-            trozas={[]}
-            soloLectura
-            fechaConsumo={hoy}
-            vacio={
-              lotesConMadera.length > 0
-                ? "Todavía no elegiste el lote. Abrí «Lotes» y elegí cuál entra hoy a la sierra: acá salen sus trozas con GTF, código de planta, diámetros y volumen."
-                : "No hay lotes con madera esperando. Armá uno en «Lotes de aserrío» y sus trozas van a salir en esta lista."
-            }
-          />
+          {/**
+           * La tabla vacía con las columnas del formato enseña dónde se empieza
+           * (Brandon, 2026-09-02) — pero eso vale sólo donde las columnas SE
+           * VEN. Medido a 400px: son nueve columnas dentro de un scroll
+           * horizontal que arranca en la primera, así que el teléfono mostraba
+           * un rectángulo blanco de ~250px de alto y nada más.
+           *
+           * Desktop conserva la tabla-guía; el teléfono recibe la misma frase
+           * sin el mueble alrededor. El CTA de abajo es el mismo para los dos.
+           */}
+          <div className="hidden sm:block">
+            <CtpTrozasDelLote
+              trozas={[]}
+              soloLectura
+              fechaConsumo={hoy}
+              vacio={
+                lotesConMadera.length > 0
+                  ? "Todavía no elegiste el lote. Abrí «Lotes» y elegí cuál entra hoy a la sierra: acá salen sus trozas con GTF, código de planta, diámetros y volumen."
+                  : "No hay lotes con madera esperando. Armá uno en «Lotes de aserrío» y sus trozas van a salir en esta lista."
+              }
+            />
+          </div>
+          <p className="flex flex-col items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-6 text-center text-sm text-[var(--text-secondary)] sm:hidden">
+            <Boxes className="h-7 w-7 text-[var(--text-tertiary)]" aria-hidden />
+            {lotesConMadera.length > 0
+              ? "Todavía no elegiste el lote. Elegí cuál entra hoy a la sierra y acá salen sus trozas."
+              : "No hay lotes con madera esperando. Armá uno en «Lotes de aserrío» y sus trozas van a salir acá."}
+          </p>
           <div className="flex justify-center">
             {lotesConMadera.length > 0 ? (
               <button
