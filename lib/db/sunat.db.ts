@@ -287,6 +287,62 @@ export const SunatDB = {
   },
 
   /**
+   * Crea o actualiza la configuración fiscal del tenant.
+   *
+   * El **token es opcional al actualizar**: el GET nunca lo devuelve (no se
+   * expone un secreto), así que la pantalla de conexión no puede reenviarlo, y
+   * sin esto cambiar una serie de B001 a B002 obligaba a pedirle al operador
+   * que fuera a Nubefact a copiar el token de nuevo. Si no viene, se conserva
+   * el guardado; al CREAR sigue siendo obligatorio y lo exige el endpoint.
+   *
+   * Los correlativos (`lastBoletaNum`/`lastFacturaNum`) NO se tocan acá: los
+   * mueve `incrementCorrelativo` dentro de la emisión. Pisarlos desde un
+   * formulario haría que dos comprobantes salieran con el mismo número.
+   */
+  async upsertConfig(
+    tenantId: string,
+    data: {
+      ruc: string;
+      razonSocial: string;
+      direccionFiscal?: string | null;
+      ubigeo?: string | null;
+      nubefactToken?: string;
+      nubefactUrl?: string;
+      boletaSeries?: string;
+      facturaSeries?: string;
+      isProduction?: boolean;
+    },
+  ): Promise<DbTenantSunatConfig> {
+    const actual = await prisma.tenantSunatConfig.findUnique({
+      where: { tenantId },
+      select: { nubefactToken: true },
+    });
+    const token = data.nubefactToken ?? actual?.nubefactToken;
+    if (!token) {
+      throw new Error("Falta el token de Nubefact para crear la configuración");
+    }
+
+    const comun = {
+      ruc: data.ruc,
+      razonSocial: data.razonSocial,
+      direccionFiscal: data.direccionFiscal ?? null,
+      ubigeo: data.ubigeo ?? null,
+      nubefactToken: token,
+      nubefactUrl: data.nubefactUrl ?? "https://api.nubefact.com/api/v1",
+      boletaSeries: data.boletaSeries ?? "B001",
+      facturaSeries: data.facturaSeries ?? "F001",
+      isProduction: data.isProduction ?? false,
+    };
+
+    const cfg = await prisma.tenantSunatConfig.upsert({
+      where: { tenantId },
+      create: { tenantId, ...comun },
+      update: comun,
+    });
+    return mapConfig(cfg);
+  },
+
+  /**
    * Incrementa el correlativo de boleta o factura de forma atómica.
    * Retorna el número a usar (pre-incrementado ya aplicado).
    */

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Receipt, FileCheck, Calculator, CreditCard, Landmark } from "@buleje/design-system/icons";
+import { Receipt, FileCheck, Calculator, CreditCard, Landmark, Cable } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -10,6 +10,10 @@ const EInvoiceTab = dynamic(() => import("@/components/admin/EInvoiceTab"), { lo
 const TaxTab = dynamic(() => import("@/components/admin/TaxTab"), { loading: S });
 const ObligacionesTab = dynamic(() => import("@/components/admin/ObligacionesTab"), { loading: S });
 const PayablesTab = dynamic(() => import("@/components/admin/PayablesTab"), { loading: S });
+/* La pantalla que conecta el negocio con SUNAT. El motor de emisión existía
+   desde ADR-045 pero `TenantSunatConfig` estaba en cero: no había dónde cargar
+   el RUC ni el token. */
+const SunatConexionTab = dynamic(() => import("@/components/admin/sunat/SunatConexionTab"), { loading: S });
 
 const MODULE_ID = "facturacion";
 
@@ -21,6 +25,7 @@ const TABS = [
   { id: "impuestos", label: "Impuestos", icon: Calculator },
   { id: "obligaciones", label: "Obligaciones", icon: Landmark },
   { id: "cxp", label: "Cuentas x Pagar", icon: CreditCard },
+  { id: "conexion", label: "Conexión SUNAT", icon: Cable },
 ];
 
 export default function FacturacionModule() {
@@ -46,6 +51,7 @@ export default function FacturacionModule() {
         {sub === "impuestos" && <TaxTab />}
         {sub === "obligaciones" && <ObligacionesTab />}
         {sub === "cxp" && <PayablesTab />}
+        {sub === "conexion" && <SunatConexionTab />}
       </AdminTabBar>
     </div>
   );
