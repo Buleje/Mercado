@@ -755,6 +755,9 @@ export function CtpSaldosView({
                   /* La trayectoria del saldo al lado del número. Sale de la curva, que
                    es un pedido aparte: si no llegó, el héroe se dibuja sin rastro. */
                   serieSaldo={curva?.puntos.map((p) => Number(p.saldo))}
+                  /* El rótulo del sparkline lleva a la curva de verdad, que
+                     vive una pestaña más allá. */
+                  onVerMovimiento={() => setSeccion("movimiento")}
                 />
 
                 {/* Lo primero que se pregunta quien abre esta pantalla: cuánta

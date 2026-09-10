@@ -31,7 +31,7 @@
  */
 
 import { useMemo } from "react";
-import { Layers, Boxes, Scale, Clock, TreePine } from "@buleje/design-system/icons";
+import { ArrowRight, Layers, Boxes, Scale, Clock, TreePine } from "@buleje/design-system/icons";
 import { BulejeSparkline } from "@/components/ui-system/charts";
 import {
   kpisDePlanta,
@@ -65,6 +65,7 @@ export default function KpisDeExistencias({
   productos,
   period,
   serieSaldo,
+  onVerMovimiento,
 }: {
   materiaPrima: MateriaPrimaTotales & { ingresosCount: number };
   porEspecie: ReadonlyArray<EspecieSaldo>;
@@ -76,6 +77,8 @@ export default function KpisDeExistencias({
    * sin serie, el héroe se dibuja igual, sólo sin el rastro.
    */
   serieSaldo?: readonly number[];
+  /** Llevar a «Cómo se movió», donde vive la curva con fechas y el valle. */
+  onVerMovimiento?: () => void;
 }) {
   const mp = materiaPrima;
 
@@ -162,9 +165,31 @@ export default function KpisDeExistencias({
             gráfico que se lee con números vive más abajo. */}
         {serieSaldo && serieSaldo.length >= 2 && (
           <div className="w-full shrink-0 sm:w-56">
-            <p className="mb-1 text-right text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              Cómo llegó hasta acá
-            </p>
+            {/**
+             * El rótulo lleva al gráfico que SÍ se lee.
+             *
+             * Fricción medida en esta misma pantalla: el sparkline promete
+             * «cómo llegó hasta acá» y no lo contesta —no tiene ejes, es forma,
+             * a propósito—. La curva con fechas, el valle y los movimientos ya
+             * existe (`CurvaDeSaldo`), pero vive en la pestaña «Cómo se movió» y
+             * desde acá nada lo decía: se lee el garabato, se concluye que eso
+             * es todo lo que hay, y el gráfico bueno no se encuentra nunca.
+             */}
+            {onVerMovimiento ? (
+              <button
+                type="button"
+                onClick={onVerMovimiento}
+                title="Ver la curva con fechas, el valle y los movimientos que la explican"
+                className="mb-1 flex w-full items-center justify-end gap-1 text-right text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+              >
+                Cómo llegó hasta acá
+                <ArrowRight className="h-3 w-3" aria-hidden />
+              </button>
+            ) : (
+              <p className="mb-1 text-right text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                Cómo llegó hasta acá
+              </p>
+            )}
             <BulejeSparkline
               data={[...serieSaldo]}
               width="100%"

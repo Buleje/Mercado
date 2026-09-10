@@ -85,9 +85,33 @@ export default function DisponiblePorTipo({
       : "detalle",
   );
 
+  /**
+   * «Sólo las que tienen algo», apagado por defecto.
+   *
+   * Apagado, no encendido: esta pantalla YA escondió una vez la única fila que
+   * había que corregir (la especie en negativo) y dejó al operador sin la tabla
+   * justo cuando más la necesitaba. Un filtro que el operador prende es otra
+   * cosa que un default que decide por él qué madera no existe.
+   */
+  const [soloConAlgo, setSoloConAlgo] = useState(false);
+
   const filas = vista === "trozas" ? filasDeTrozas(especies) : filasDeAserrada(productos);
   const r = resumir(filas);
   const grafico = paraGrafico(filas);
+
+  /**
+   * «Sin nada» es una fila sin volumen, sin trozas y sin movimiento en el
+   * período — y que además no está en rojo.
+   *
+   * El criterio mira las CUATRO cosas a propósito. La lectura fácil («disponible
+   * en cero») habría escondido las doce especies que muestran 0 m³ con trozas
+   * paradas en el patio, que es justo la contradicción que hay que mirar, y la
+   * fila en negativo, que es la única que hay que corregir.
+   */
+  const sinNada = (f: (typeof filas)[number]) =>
+    f.disponible === 0 && f.piezas === 0 && f.total === 0 && !f.negativo;
+  const ocultables = filas.filter(sinNada).length;
+  const filasDetalle = soloConAlgo ? filas.filter((f) => !sinNada(f)) : filas;
 
   const resTrozas = resumir(filasDeTrozas(especies));
   const resAserrada = resumir(filasDeAserrada(productos));
@@ -256,6 +280,23 @@ export default function DisponiblePorTipo({
 
           {/* ── El detalle, con cuánto se usó de cada una ────────────────── */}
           {panel === "detalle" && (
+            <div className="space-y-2">
+              {/* El interruptor sólo aparece si de verdad hay algo que recortar:
+                  ofrecer «ocultar 0 filas» es un control que no hace nada. */}
+              {ocultables > 0 && (
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--text-secondary)]">
+                  <input
+                    type="checkbox"
+                    checked={soloConAlgo}
+                    onChange={(e) => setSoloConAlgo(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--accent)]"
+                  />
+                  Ver sólo las que tienen volumen o trozas
+                  <span className="text-[var(--text-tertiary)]">
+                    ({ocultables} sin nada de las {filas.length})
+                  </span>
+                </label>
+              )}
             <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
               <DataTable className="w-full text-base">
                 <thead className="bg-[var(--surface-sunken)] text-sm">
@@ -284,7 +325,7 @@ export default function DisponiblePorTipo({
                   </tr>
                 </thead>
                 <tbody>
-                  {filas.map((f) => (
+                  {filasDetalle.map((f) => (
                     <tr key={f.nombre} className="border-t border-[var(--rule-base)]">
                       <td className="px-3 py-2">
                         <span className="font-semibold text-[var(--text-primary)]">{f.nombre}</span>
@@ -307,6 +348,26 @@ export default function DisponiblePorTipo({
                         }`}
                       >
                         {n3(f.disponible)}
+                        {/**
+                         * Cero al lado de piezas: dos números de la misma fila
+                         * que se contradicen a la vista.
+                         *
+                         * Medido en el patio real: doce especies muestran
+                         * «0» disponible con 2–12 trozas en la columna de al
+                         * lado. No es una fila vacía —hay madera parada— es que
+                         * su volumen todavía no entró al saldo del libro. Sin
+                         * esta línea, el operador lee un cero y concluye que no
+                         * tiene nada, mirando doce filas que dicen que sí.
+                         *
+                         * No se afirma la causa —puede ser un ingreso sin
+                         * validar o una troza sin cubicar— porque la tabla no
+                         * la sabe: se dice el hecho y dónde se resuelve.
+                         */}
+                        {f.disponible === 0 && f.piezas > 0 && (
+                          <span className="block text-sm font-normal text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                            hay trozas, sin volumen en el saldo
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums text-[var(--text-secondary)]">
                         {f.piezas > 0 ? nf(f.piezas) : "—"}
@@ -387,6 +448,7 @@ export default function DisponiblePorTipo({
                   </tr>
                 </tfoot>
               </DataTable>
+            </div>
             </div>
           )}
         </>
