@@ -2139,6 +2139,22 @@ export class ForestCtpDB {
       /* Sin cantidad declarada no hay producto: es una corrida que consumió y
          todavía no dijo qué salió (ADR-340). */
       quantity: { not: null },
+      /**
+       * Y sin ORIGEN tampoco hay producto disponible (Brandon, 2026-09-10).
+       *
+       * Las corridas de «Producir sin lote» declaran producto antes de que
+       * exista el lote: el hecho físico ocurrió y el libro lo registra, pero
+       * esa madera **no se puede despachar ni vender** hasta que diga de qué
+       * trozas salió. Ofrecerla en Productos disponibles sería ofrecer madera
+       * sin cadena de custodia, que es exactamente lo que una GTF no puede
+       * amparar.
+       *
+       * Origen = volumen de entrada declarado, o consumos atribuidos. (El lote
+       * vinculado escribe las dos cosas, así que no hace falta mirarlo aparte.)
+       * En cuanto se vincula, la corrida aparece sola: no hay nada que tocar
+       * después.
+       */
+      OR: [{ volumeInputM3: { gt: 0 } }, { consumos: { some: {} } }],
       ...(opts.incluirUsados ? {} : { usadoAt: null }),
     };
     if (opts.soloDelPeriodo && (opts.fromDate || opts.toDate)) {

@@ -324,6 +324,20 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
         saldos: await ForestCtpDB.saldos(auth.tenantId, { ...period, especie }),
       });
     }
+    /**
+     * UNA corrida con su detalle (paquetes incluidos).
+     *
+     * Hace falta desde que «Productos disponibles» dejó de listar la producción
+     * sin origen (2026-09-10): esa corrida existe, se mira y se vincula, pero ya
+     * no aparece en la foto del depósito — y sus medidas hay que poder verlas
+     * igual, que es contra lo que se decide de qué lote salió.
+     */
+    const idDeLaCorrida = url.searchParams.get("entryId")?.trim();
+    if (idDeLaCorrida) {
+      const entry = await ForestCtpDB.getById(auth.tenantId, idDeLaCorrida);
+      if (!entry) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ entry });
+    }
     /* Productos disponibles (ADR-349): lo aserrado que sigue en la planta, con
        sus paquetes. El saldo sale de la única fuente (ADR-316). */
     if (url.searchParams.get("disponibles") === "1") {
