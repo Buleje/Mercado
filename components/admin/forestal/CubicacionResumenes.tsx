@@ -24,16 +24,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import {
   RefreshCw, Download, PackageOpen, Printer, Layers, Boxes, Lightbulb, Target,
-  ArrowLeftRight, SlidersHorizontal, Share2, Compass, Table,
+  ArrowLeftRight, SlidersHorizontal, Share2, Compass, Table, FileText,
 } from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { recubicarPiezas } from "@/lib/forestal/cubicacion";
 import {
-  agruparPor, resumenPorEspecie, resumenACsv, DIMENSIONES_RESUMEN, ETIQUETA_DIMENSION,
+  agruparPor, claveYLabel, resumenPorEspecie, resumenACsv, DIMENSIONES_RESUMEN, ETIQUETA_DIMENSION,
   type DimensionResumen,
 } from "@/lib/forestal/cubicacion-resumen";
-import { fmtM3, fmtPct, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
+import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import { analizarLote } from "@/lib/forestal/cubicacion-insights";
 import { LecturaDelLote } from "./resumen-vistas";
 import { DondeEstaElVolumen, HeroResumen } from "./resumen-hero";
@@ -42,6 +42,7 @@ import ResumenComparar from "./ResumenComparar";
 import ResumenMeta from "./ResumenMeta";
 import ResumenReparto from "./ResumenReparto";
 import ResumenTrozas from "./ResumenTrozas";
+import Anexo04Modal from "./Anexo04Modal";
 import { useCubicacionesGuardadas } from "@/hooks/use-cubicaciones-guardadas";
 
 /** Botón de acción de la cabecera: mismo alto y peso que los filtros del admin. */
@@ -142,6 +143,44 @@ export default function CubicacionResumenes() {
   const porMedida = useMemo(() => agruparPor(rows, "medida", precioDe), [rows, precioDe]);
   const porDim = useMemo(() => (dim === "medida" ? porMedida : agruparPor(rows, dim, precioDe)), [porMedida, rows, dim, precioDe]);
   const bloques = useMemo(() => resumenPorEspecie(rows, precioDe), [rows, precioDe]);
+
+  /**
+   * Filas tildadas de «Por especie y tipo» para bajar SU Anexo 04 (Brandon,
+   * 2026-09-09: «que se pueda elegir una fila, o varias, y unificarlas»).
+   *
+   * La clave es `especie||claveDelTipo` y no la clave del tipo sola: la misma
+   * paquetería existe en dos maderas y tildar una marcaría las dos.
+   */
+  const [elegidas, setElegidas] = useState<Set<string>>(new Set());
+  const claveFila = useCallback((especie: string, claveTipo: string) => `${especie}||${claveTipo}`, []);
+  const alternarFila = useCallback((clave: string) => {
+    setElegidas((prev) => {
+      const next = new Set(prev);
+      if (next.has(clave)) next.delete(clave);
+      else next.add(clave);
+      return next;
+    });
+  }, []);
+  /* Las piezas que esas filas representan: es lo que va al papel. */
+  const piezasElegidas = useMemo(() => {
+    if (elegidas.size === 0) return [];
+    return rows.filter((r) =>
+      elegidas.has(claveFila(r.especie?.trim() || "Sin especie", claveYLabel(r, "tipo").clave)),
+    );
+  }, [rows, elegidas, claveFila]);
+  const totalElegido = useMemo(
+    () => piezasElegidas.reduce(
+      (a, r) => ({
+        piezas: a.piezas + r.cantidad,
+        m3: a.m3 + (r.m3 ?? 0),
+        pt: a.pt + (r.pieTablar ?? 0),
+      }),
+      { piezas: 0, m3: 0, pt: 0 },
+    ),
+    [piezasElegidas],
+  );
+  /** El anexo abierto con lo elegido (o `null`). */
+  const [anexoDeElegidas, setAnexoDeElegidas] = useState(false);
   const insights = useMemo(() => analizarLote(rows, precioDe), [rows, precioDe]);
   const total = porEspecie.total;
 
@@ -246,6 +285,7 @@ export default function CubicacionResumenes() {
         renglones={rows.length}
         porEspecie={porEspecie}
         porTipo={porTipo}
+        porMedida={porMedida}
         conValor={conValor}
         fecha={new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
         acciones={
@@ -322,7 +362,35 @@ export default function CubicacionResumenes() {
             icon={Layers}
             titulo="Por especie y tipo"
             hint="Cuánto comercial, cuánta paquetería y cuánta corta salió de cada madera."
+            ayuda={<>Tildá una fila —o varias, de cualquier especie— y bajá <b>su</b> ANEXO N° 04: las medidas de esas filas, unificadas en un solo papel. Lo que no se tilda no entra. Las columnas van en el orden del módulo: piezas · m³ · PT.</>}
           >
+            {/* La barra sólo existe cuando hay algo elegido: un botón que casi
+                siempre está deshabilitado ocupa lugar y no se aprende. */}
+            {elegidas.size > 0 && (
+              <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--accent)]/40 bg-primary/8 px-3 py-2">
+                <span className="text-sm font-bold text-[var(--text-primary)]">
+                  {elegidas.size} {elegidas.size === 1 ? "fila elegida" : "filas elegidas"}
+                </span>
+                <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
+                  {fmtPiezas(totalElegido.piezas)} pzas · {fmtM3(totalElegido.m3)} m³ · {fmtPt(totalElegido.pt)} PT
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAnexoDeElegidas(true)}
+                  title="Abre el ANEXO N° 04 con las medidas de las filas elegidas, unificadas en un solo papel"
+                  className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 text-sm font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
+                >
+                  <FileText className="h-4 w-4" aria-hidden /> Anexo 04 de lo elegido
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setElegidas(new Set())}
+                  className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] underline hover:text-[var(--text-primary)]"
+                >
+                  Limpiar
+                </button>
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               {bloques.map((b) => (
                 <div key={b.especie} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
@@ -336,13 +404,38 @@ export default function CubicacionResumenes() {
                       {conValor && <Chip acento>S/ {fmtSoles(b.total.valor)}</Chip>}
                     </span>
                   </div>
-                  <TablaGrupos grupos={b.tipos} total={b.total} primeraCol="Tipo" conValor={conValor} esTipo compacta caption={`Tipos de ${b.especie}`} />
+                  <TablaGrupos
+                    grupos={b.tipos}
+                    total={b.total}
+                    primeraCol="Tipo"
+                    conValor={conValor}
+                    esTipo
+                    compacta
+                    caption={`Tipos de ${b.especie}`}
+                    seleccion={{
+                      marcadas: elegidas,
+                      claveDe: (g) => claveFila(b.especie, g.clave),
+                      onAlternar: alternarFila,
+                      onTodas: (claves, marcar) =>
+                        setElegidas((prev) => {
+                          const next = new Set(prev);
+                          for (const k of claves) {
+                            if (marcar) next.add(k);
+                            else next.delete(k);
+                          }
+                          return next;
+                        }),
+                    }}
+                  />
                 </div>
               ))}
             </div>
           </SeccionResumen>
 
-          <div className="grid gap-5 xl:grid-cols-2">
+          {/* Dos secciones en la MISMA fila desde 1024 px y no desde 1280
+              (Brandon, 2026-09-09): en el monitor del aserradero quedaban una
+              debajo de la otra y había que scrollear para comparar. */}
+          <div className="grid gap-5 lg:grid-cols-2">
             <SeccionResumen icon={Layers} titulo="General por especie" hint="Una fila por madera, con lo que pesa en el lote.">
               <TablaGrupos grupos={porEspecie.grupos} total={porEspecie.total} primeraCol="Especie" conValor={conValor} compacta caption="Totales por especie" />
             </SeccionResumen>
@@ -414,6 +507,16 @@ export default function CubicacionResumenes() {
             <ResumenComparar rows={rows} precioDe={precioDe} conValor={conValor} dim={dim} guardadas={guardadas} cargando={cargandoGuardadas} />
           </SeccionResumen>
         </>
+      )}
+
+      {/* El ANEXO N° 04 de lo tildado: las mismas piezas, el mismo papel que
+          se emite desde el cubicador o desde el Libro. */}
+      {anexoDeElegidas && piezasElegidas.length > 0 && (
+        <Anexo04Modal
+          rows={piezasElegidas}
+          especieGlobal={bloques.length === 1 ? bloques[0].especie : undefined}
+          onCerrar={() => setAnexoDeElegidas(false)}
+        />
       )}
     </div>
   );

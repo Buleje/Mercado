@@ -15,7 +15,7 @@ import { CardTitle, DataTable } from "@buleje/design-system";
 import { Info, type LucideIcon } from "@buleje/design-system/icons";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import type { GrupoResumen, ResumenLote } from "@/lib/forestal/cubicacion-resumen";
-import { fmtM3, fmtPct, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
+import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoBadge } from "./tipo-badge";
 
@@ -123,12 +123,26 @@ const NUM = "text-right font-mono tabular-nums";
  * "¿en qué se me fue el volumen?", y eso se contesta comparando largos de barra,
  * no leyendo seis porcentajes en fila.
  */
-export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, caption, compacta }: {
+export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, caption, compacta, seleccion }: {
   grupos: GrupoResumen[];
   total: ResumenLote["total"];
   primeraCol: string;
   conValor: boolean;
   esTipo?: boolean;
+  /**
+   * Tildar filas para operar con ellas (Brandon, 2026-09-09: elegir una o
+   * varias y bajar SU Anexo 04, unificado).
+   *
+   * La clave la pone quien usa la tabla (`claveDe`), no la fila: la misma
+   * medida existe en dos especies y una clave `2×8×10` sola las juntaría.
+   */
+  seleccion?: {
+    marcadas: ReadonlySet<string>;
+    claveDe: (g: GrupoResumen) => string;
+    onAlternar: (clave: string) => void;
+    /** Marca o desmarca TODAS las de esta tabla de un saque. */
+    onTodas?: (claves: string[], marcar: boolean) => void;
+  };
   /** Nombre accesible de la tabla (va en un `<caption>` sr-only). */
   caption?: string;
   /**
@@ -147,35 +161,66 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
      el valor quedaba cortado contra el borde. Con el padding chico entra. */
   const TH = `${compacta ? "px-2" : "px-3"} ${TH_BASE}`;
   const TD = `${compacta ? "px-2" : "px-3"} ${TD_BASE}`;
+  const claves = seleccion ? grupos.map(seleccion.claveDe) : [];
+  const todasMarcadas = seleccion != null && claves.length > 0 && claves.every((k) => seleccion.marcadas.has(k));
   return (
     <div className={`overflow-x-auto rounded-xl border border-[var(--rule-base)] ${larga ? "max-h-[70vh] overflow-y-auto" : ""}`}>
       <DataTable className={`w-full text-sm ${compacta ? "min-w-[400px]" : "min-w-[480px]"}`}>
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
           <tr>
+            {seleccion && (
+              <th scope="col" className={`${TH} w-8 text-center`}>
+                <input
+                  type="checkbox"
+                  checked={todasMarcadas}
+                  onChange={() => seleccion.onTodas?.(claves, !todasMarcadas)}
+                  aria-label={todasMarcadas ? "Desmarcar todas las filas" : "Marcar todas las filas"}
+                  title={todasMarcadas ? "Desmarcar todas" : "Marcar todas"}
+                  className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                />
+              </th>
+            )}
             <th scope="col" className={TH}>{primeraCol}</th>
+            {/* Piezas · m³ · PT, la convención del módulo (2026-09-09). */}
             <th scope="col" className={`${TH} text-right`}>Piezas</th>
-            <th scope="col" className={`${TH} text-right`}>Pie tablar</th>
             <th scope="col" className={`${TH} text-right`}>Volumen m³</th>
+            <th scope="col" className={`${TH} text-right`}>Pie tablar</th>
             <th scope="col" className={`${TH} ${compacta ? "w-[22%]" : "w-[26%]"}`}>Participación</th>
             {conValor && <th scope="col" className={`${TH} text-right`}>Valor S/</th>}
             {conRendimiento && <th scope="col" className={`${TH} text-right`} title="Lo que rinde cada pie tablar de ese grupo">S/ por PT</th>}
           </tr>
         </thead>
         <tbody>
-          {grupos.map((g, i) => (
+          {grupos.map((g, i) => {
+            const clave = seleccion?.claveDe(g);
+            const marcada = clave != null && seleccion!.marcadas.has(clave);
+            return (
             <tr
               key={g.clave}
-              className="border-t border-[var(--rule-soft)] transition-colors even:bg-[var(--surface-canvas)]/50 hover:bg-primary/5"
+              className={`border-t transition-colors hover:bg-primary/5 ${marcada
+                ? "border-[var(--accent)]/40 bg-[var(--accent)]/8"
+                : "border-[var(--rule-soft)] even:bg-[var(--surface-canvas)]/50"}`}
             >
+              {seleccion && clave != null && (
+                <td className={`${TD} text-center`}>
+                  <input
+                    type="checkbox"
+                    checked={marcada}
+                    onChange={() => seleccion.onAlternar(clave)}
+                    aria-label={`Elegir ${g.label}`}
+                    className="h-4 w-4 cursor-pointer accent-[var(--accent)]"
+                  />
+                </td>
+              )}
               {/* El grupo que manda lleva la marca al costado: es el que define
                   el precio del lote y en una lista de doce se perdía. */}
               <td className={`${TD} border-l-[3px] font-bold text-[var(--text-primary)] ${i === 0 && grupos.length > 1 ? "border-l-[var(--accent)]" : "border-l-transparent"}`}>
                 {esTipo ? <TipoBadge tipo={g.label as TipoComercial} /> : g.label}
               </td>
-              <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{g.cantidad}</td>
-              <td className={`${TD} ${NUM} font-bold text-[var(--text-primary)]`}>{fmtPt(g.pieTablar)}</td>
-              <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtM3(g.m3)}</td>
+              <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPiezas(g.cantidad)}</td>
+              <td className={`${TD} ${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(g.m3)}</td>
+              <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPt(g.pieTablar)}</td>
               <td className={TD}>
                 <div className="flex items-center gap-2">
                   {/* En mobile la fila se vuelve card y la barra queda de un
@@ -193,16 +238,18 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
                 </td>
               )}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
         {/* El fondo opaco es del `tfoot` y el tinte del `tr`: pegado abajo, un
             tinte translúcido dejaba ver la fila que pasa por debajo. */}
         <tfoot className="sticky bottom-0 bg-[var(--surface-raised)]">
           <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+            {seleccion && <td className={TD} />}
             <th scope="row" className={`${TD} whitespace-nowrap text-left`}>{compacta ? "Total" : `Total · ${grupos.length} ${grupos.length === 1 ? "grupo" : "grupos"}`}</th>
-            <td className={`${TD} ${NUM}`}>{total.cantidad}</td>
-            <td className={`${TD} ${NUM}`}>{fmtPt(total.pieTablar)}</td>
+            <td className={`${TD} ${NUM}`}>{fmtPiezas(total.cantidad)}</td>
             <td className={`${TD} ${NUM}`}>{fmtM3(total.m3)}</td>
+            <td className={`${TD} ${NUM}`}>{fmtPt(total.pieTablar)}</td>
             <td className={`${TD} text-[length:var(--ts-2xs)] uppercase tracking-wide`}>100%</td>
             {conValor && <td className={`${TD} ${NUM}`}>{fmtSoles(total.valor)}</td>}
             {conRendimiento && (

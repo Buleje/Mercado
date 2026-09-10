@@ -10,12 +10,26 @@
  * cualquier tabla.
  */
 
-import type { ReactNode } from "react";
-import { BarChart3, Boxes, Coins, Layers, Ruler } from "@buleje/design-system/icons";
+import { useEffect, useState, type ReactNode } from "react";
+import {
+  BarChart3, Boxes, ChevronDown, Coins, Layers, Ruler, Scale, Sigma, TreePine, Wrench,
+} from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import type { ResumenLote } from "@/lib/forestal/cubicacion-resumen";
-import { fmtM3, fmtPct, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
+import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
+import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import { KpiResumen } from "./resumen-tabla";
+
+/**
+ * Si la cabecera arranca abierta, por equipo.
+ *
+ * La cabecera son ocho cifras y una frase: en un monitor de aserradero es media
+ * pantalla antes de la primera tabla. Quien ya sabe lo que tiene la cierra y la
+ * pantalla arranca en las tablas; quien la quiere abierta, la deja. Se recuerda
+ * (Brandon, 2026-09-09) — un panel que hay que cerrar todos los días es un
+ * panel que se cierra a mano todos los días.
+ */
+const CLAVE_ABIERTA = () => slugKey("-hero-abierto");
 
 /**
  * Una frase que resume el lote antes de la primera tabla: qué madera manda y
@@ -31,18 +45,37 @@ function lecturaCorta(porEspecie: ResumenLote, porTipo: ResumenLote): string | n
   return `${mezcla} · el grueso salió ${tipo.label.toLowerCase()} (${fmtPct(tipo.pctPt)} %).`;
 }
 
-export function HeroResumen({ total, renglones, porEspecie, porTipo, conValor, acciones, fecha }: {
+export function HeroResumen({ total, renglones, porEspecie, porTipo, porMedida, conValor, acciones, fecha }: {
   total: ResumenLote["total"];
   /** Renglones del cubicador (no piezas): dice cuánto se tipeó. */
   renglones: number;
   porEspecie: ResumenLote;
   porTipo: ResumenLote;
+  /** Las escuadrías del lote — de acá salen «medidas distintas» y la que manda. */
+  porMedida: ResumenLote;
   conValor: boolean;
   acciones: ReactNode;
   /** Fecha de emisión — sólo se ve en el papel. */
   fecha: string;
 }) {
   const frase = lecturaCorta(porEspecie, porTipo);
+  /* Arranca ABIERTA y el efecto la cierra si así quedó: leer localStorage en el
+     initializer rompe el render del server (no existe) y en dev React invoca el
+     initializer dos veces. */
+  const [abierta, setAbierta] = useState(true);
+  useEffect(() => {
+    try { setAbierta(localStorage.getItem(CLAVE_ABIERTA()) !== "0"); } catch { /* privado */ }
+  }, []);
+  const alternar = () => {
+    setAbierta((v) => {
+      try { localStorage.setItem(CLAVE_ABIERTA(), v ? "0" : "1"); } catch { /* cuota */ }
+      return !v;
+    });
+  };
+
+  const tipoManda = porTipo.grupos[0];
+  const medidaManda = porMedida.grupos[0];
+  const ptPorPieza = total.cantidad > 0 ? total.pieTablar / total.cantidad : 0;
   return (
     <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       {/* Velo de acento: da profundidad a la cabecera sin teñir el texto.
@@ -69,21 +102,87 @@ export function HeroResumen({ total, renglones, porEspecie, porTipo, conValor, a
             {/* Sólo en el papel: un resumen sin fecha no sirve para mandarlo. */}
             <p className="hidden text-sm text-[var(--text-tertiary)] print:block">Emitido el {fecha}</p>
           </div>
-          <div className="flex flex-wrap gap-2">{acciones}</div>
+          <div className="flex flex-wrap items-center gap-2">
+            {acciones}
+            {/* Abrir/cerrar la cabecera: se recuerda por equipo. */}
+            <button
+              type="button"
+              onClick={alternar}
+              aria-expanded={abierta}
+              title={abierta ? "Ocultar las cifras del lote (se recuerda)" : "Mostrar las cifras del lote"}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] print:hidden"
+            >
+              <ChevronDown className={`h-4 w-4 transition-transform ${abierta ? "" : "-rotate-90"}`} aria-hidden />
+              {abierta ? "Ocultar" : "Mostrar"}
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <KpiResumen label="Piezas" value={String(total.cantidad)} icon={Boxes} hint={`${renglones} renglones`} />
-          <KpiResumen label="Pie tablar" value={fmtPt(total.pieTablar)} unidad="PT" icon={Layers} hint="entero, como se vende" />
-          <KpiResumen label="Volumen" value={fmtM3(total.m3)} unidad="m³" icon={Ruler} hint="3 decimales, como se declara" />
-          <KpiResumen
-            label="Valor del lote"
-            value={conValor ? `S/ ${fmtSoles(total.valor)}` : "—"}
-            icon={Coins}
-            destacado={conValor}
-            hint={conValor && total.pieTablar > 0 ? `S/ ${fmtSoles(total.valor / total.pieTablar)} por PT` : "cargá el precio en el cubicador"}
-          />
-        </div>
+        {/* Cerrada, la cabecera deja una tira con lo que no se puede perder de
+            vista: piezas, PT, m³ y plata. Esconder el panel no puede esconder
+            el lote. */}
+        {!abierta && (
+          <p className="flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-2 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
+            <span>{fmtPiezas(total.cantidad)} <span className="font-sans text-xs font-normal text-[var(--text-tertiary)]">pzas</span></span>
+            <span>{fmtM3(total.m3)} <span className="font-sans text-xs font-normal text-[var(--text-tertiary)]">m³</span></span>
+            <span>{fmtPt(total.pieTablar)} <span className="font-sans text-xs font-normal text-[var(--text-tertiary)]">PT</span></span>
+            {conValor && (
+              <span className="text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                S/ {fmtSoles(total.valor)}
+              </span>
+            )}
+          </p>
+        )}
+
+        {abierta && (
+          <>
+            {/* Las cuatro que se declaran, en el orden del módulo: piezas · m³ ·
+                PT, y la plata al final. */}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <KpiResumen label="Piezas" value={fmtPiezas(total.cantidad)} icon={Boxes} hint={`${renglones} ${renglones === 1 ? "renglón" : "renglones"} del cubicador`} />
+              <KpiResumen label="Volumen" value={fmtM3(total.m3)} unidad="m³" icon={Ruler} hint="3 decimales, como se declara" />
+              <KpiResumen label="Pie tablar" value={fmtPt(total.pieTablar)} unidad="PT" icon={Layers} hint="entero, como se vende" />
+              <KpiResumen
+                label="Valor del lote"
+                value={conValor ? `S/ ${fmtSoles(total.valor)}` : "—"}
+                icon={Coins}
+                destacado={conValor}
+                hint={conValor && total.pieTablar > 0 ? `S/ ${fmtSoles(total.valor / total.pieTablar)} por PT` : "cargá el precio en el cubicador"}
+              />
+            </div>
+
+            {/* Y las cuatro que se MIRAN: con qué madera, en qué producto, en
+                cuántas escuadrías y de qué tamaño es la pieza promedio. Iban en
+                la frase de arriba o en ninguna parte. */}
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <KpiResumen
+                label="Especies"
+                value={String(porEspecie.grupos.length)}
+                icon={TreePine}
+                hint={porEspecie.grupos[0] ? `${porEspecie.grupos[0].label} · ${fmtPct(porEspecie.grupos[0].pctPt)} % del PT` : "sin especie declarada"}
+              />
+              <KpiResumen
+                label="Tipo que manda"
+                value={tipoManda ? tipoManda.label : "—"}
+                icon={Wrench}
+                hint={tipoManda ? `${fmtPct(tipoManda.pctPt)} % del pie tablar · ${porTipo.grupos.length} ${porTipo.grupos.length === 1 ? "tipo" : "tipos"} en el lote` : "sin tipo"}
+              />
+              <KpiResumen
+                label="Medidas distintas"
+                value={String(porMedida.grupos.length)}
+                icon={Sigma}
+                hint={medidaManda ? `manda ${medidaManda.label} · ${fmtPct(medidaManda.pctPt)} %` : "sin medidas"}
+              />
+              <KpiResumen
+                label="Pieza promedio"
+                value={fmtPt(ptPorPieza)}
+                unidad="PT"
+                icon={Scale}
+                hint={total.cantidad > 0 ? `${fmtM3(total.m3 / total.cantidad)} m³ por pieza` : "sin piezas"}
+              />
+            </div>
+          </>
+        )}
 
         {/* Las dos barras de «Composición por tipo / por especie» vivían acá y
             se quitaron (Brandon, 2026-09-02: «esto de la imagen quitalo porque
