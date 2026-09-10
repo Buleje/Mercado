@@ -11,7 +11,7 @@
  *    y no cerraban (el universo de la merma es un subconjunto del de la materia
  *    prima) hoy son UNA pieza que dice de qué habla cada número;
  *  - la deuda —sin declarar, a medio declarar, sin materia prima— es
- *    `CtpBarraDeuda`: un contador de trabajo pendiente no describe el período,
+ *    `BarraDeuda`: un contador de trabajo pendiente no describe el período,
  *    pide que hagas algo, y no se lee igual que un indicador.
  *
  * Reglas que los mantienen honestos:
@@ -72,7 +72,7 @@ export default function CtpSeccionKpis({
   soloVigentes: boolean;
   onSoloVigentes: () => void;
   /** Despacho: guías vivas sin su ANEXO N° 04 — sólo para el titular de una
-   *  línea. El filtro y la alerta viven en `CtpBarraDeuda`. */
+   *  línea. El filtro y la alerta viven en `BarraDeuda`. */
   sinAnexo?: number;
   /**
    * Los filtros que gobiernan estas cifras (ADR-400) y las opciones que de
@@ -114,7 +114,7 @@ export default function CtpSeccionKpis({
        que es LA cifra de la pestaña, se leía igual que un contador cualquiera.
 
        Y las tres deudas —«Sin declarar», «A medio declarar», «Sin materia
-       prima»— salieron de esta grilla a `CtpBarraDeuda`: un contador de trabajo
+       prima»— salieron de esta grilla a `BarraDeuda`: un contador de trabajo
        pendiente no describe el período, pide que hagas algo, y encima «sin
        materia prima» se repetía literal en el cartel ámbar de abajo. */
     tarjetas.push(
@@ -158,7 +158,7 @@ export default function CtpSeccionKpis({
             emphasis="neutral"
           />,
     );
-    /* «Sin anexo 04» y «Sin origen» se fueron a `CtpBarraDeuda`, igual que en
+    /* «Sin anexo 04» y «Sin origen» se fueron a `BarraDeuda`, igual que en
        Producción: son deuda, no indicadores. «Sin anexo» además estaba por
        triplicado —tarjeta, chip de filtro y pastilla— para un solo concepto. */
   }

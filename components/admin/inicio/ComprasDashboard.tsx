@@ -4,11 +4,12 @@ import { StatCard } from "@buleje/design-system";
 import { useMemo } from "react";
 import {
   Truck, DollarSign, AlertTriangle,
-  Clock, ShoppingCart, CreditCard, CalendarDays,
+  ShoppingCart, CreditCard, CalendarDays,
 } from "@buleje/design-system/icons";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
+import BarraDeuda from "@/components/admin/shared/BarraDeuda";
 
 const ComprasCharts = dynamic(() => import("./ComprasCharts"), { ssr: false });
 const ComprasAdvancedCharts = dynamic(
@@ -200,24 +201,41 @@ export default function ComprasDashboard({ dateRange, onChangeRange }: ComprasDa
       {/* Hero removido 2026-04-24: los KPI tiles ya comunican el contenido. */}
 
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard label="Total Compras" value={fmt(data.totalCompras)} icon={DollarSign} delta={data.dCompras} />
         <StatCard label="Órdenes" value={String(data.cantidadOrdenes)} icon={ShoppingCart} />
         <StatCard label="Proveedores" value={String(data.totalProveedores)} icon={Truck} />
         <StatCard label="Deuda Pendiente" value={fmt(data.deudaPendiente)} icon={CreditCard} emphasis={data.deudaPendiente > 0 ? "warning" : "success"} />
-        <StatCard label="Cuentas Vencidas" value={String(data.cuentasVencidas)} icon={AlertTriangle} emphasis={data.cuentasVencidas > 0 ? "error" : "success"} />
         <StatCard label="Prom. Orden" value={fmt(data.promedioOrden)} icon={CalendarDays} />
       </div>
 
-      {/* ── Alert bar ── */}
-      {data.cuentasVencidas > 0 && (
-        <div className="flex items-center gap-3 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 px-5 py-3">
-          <Clock className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
-          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">
-            {data.cuentasVencidas} cuenta{data.cuentasVencidas > 1 ? "s" : ""} vencida{data.cuentasVencidas > 1 ? "s" : ""} por un total de {fmt(data.deudaPendiente)}
-          </p>
-        </div>
-      )}
+      {/* Lo que pide trabajo, en una línea (`BarraDeuda`).
+          Antes esto era una tarjeta «Cuentas Vencidas» en la grilla MÁS un
+          cartel rojo debajo que repetía literal el mismo número y el mismo
+          monto que las dos tarjetas contiguas — y que ni siquiera era un
+          enlace: enteraba del problema sin ofrecer dónde resolverlo.
+          «Deuda Pendiente» se queda arriba: un saldo describe el negocio, no
+          pide que hagas algo. */}
+      <BarraDeuda
+        items={
+          data.cuentasVencidas > 0
+            ? [{
+                key: "cuentas-vencidas",
+                valor: data.cuentasVencidas,
+                label: `cuenta${data.cuentasVencidas > 1 ? "s" : ""} vencida${data.cuentasVencidas > 1 ? "s" : ""}`,
+                hint: `${fmt(data.deudaPendiente)} de deuda pendiente`,
+                tono: "error" as const,
+                /* Sin `href`: las cuentas por pagar viven en un sub-tab de
+                   Facturación cuyo estado NO está en la URL, así que cualquier
+                   enlace dejaría al operador en la pestaña equivocada. Cuando
+                   ese módulo publique su vista (como hace el Libro CTP con
+                   `?vista=`), acá va el destino. */
+                title: "Cuentas por pagar que ya pasaron su fecha — se revisan en Facturación › Cuentas por pagar",
+              }]
+            : []
+        }
+        vacio="Ninguna cuenta por pagar está vencida."
+      />
 
       {/* ── Charts base (diarias, mensual, top prov, estado cuentas, por vencer, histórico) ── */}
       <ComprasCharts data={data} />

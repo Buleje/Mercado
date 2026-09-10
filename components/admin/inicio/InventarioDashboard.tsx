@@ -10,6 +10,7 @@ import { inventoryValueAtCost, realUnitCost } from "@/lib/chart-helpers";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
+import BarraDeuda from "@/components/admin/shared/BarraDeuda";
 
 const InventarioCharts = dynamic(() => import("./InventarioCharts"), { ssr: false });
 const InventarioAdvancedCharts = dynamic(
@@ -261,7 +262,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
       {/* Hero removido 2026-04-24: los KPI tiles ya comunican el contenido. */}
 
       {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         <StatCard
           label="Valor Inventario"
           value={fmt(data.valorInventario)}
@@ -277,20 +278,6 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
           value={String(data.totalProductos)}
           subValue={`${categorias} ${categorias === 1 ? "categoría" : "categorías"}`}
           icon={Package}
-        />
-        <StatCard
-          label="Stock Crítico"
-          value={String(data.stockCritico)}
-          subValue={data.stockCritico > 0 ? "bajo el mínimo" : "todo sobre el mínimo"}
-          icon={AlertTriangle}
-          emphasis={data.stockCritico > 0 ? "error" : "success"}
-        />
-        <StatCard
-          label="Agotados"
-          value={String(data.agotados)}
-          subValue={data.agotados > 0 ? "reponer ya" : "ninguno"}
-          icon={Package}
-          emphasis={data.agotados > 0 ? "error" : "success"}
         />
         <StatCard
           label="Sin Movimiento"
@@ -309,17 +296,39 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
         />
       </div>
 
-      {/* ── Alert bar (critical) ── */}
-      {(data.agotados > 0 || data.stockCritico > 0) && (
-        <div className="flex items-center gap-3 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 px-5 py-3">
-          <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
-          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">
-            {data.agotados > 0 && <span>{data.agotados} producto{data.agotados > 1 ? "s" : ""} agotado{data.agotados > 1 ? "s" : ""}</span>}
-            {data.agotados > 0 && data.stockCritico > 0 && <span className="mx-1.5 text-[var(--data-error-500)]">·</span>}
-            {data.stockCritico > 0 && <span>{data.stockCritico} en stock crítico</span>}
-          </p>
-        </div>
-      )}
+      {/* Lo que pide reponer, en una línea (`BarraDeuda`).
+          Antes eran dos tarjetas en la grilla MÁS un cartel rojo debajo que
+          repetía los mismos dos números («N agotados · N en stock crítico»),
+          sin llevar a ninguna parte. Ahora cada pastilla es el enlace a la
+          pantalla donde se repone. «Sin Movimiento» se queda arriba: describe
+          la rotación, no pide una acción de hoy. */}
+      <BarraDeuda
+        items={[
+          ...(data.agotados > 0
+            ? [{
+                key: "agotados",
+                valor: data.agotados,
+                label: `producto${data.agotados > 1 ? "s" : ""} agotado${data.agotados > 1 ? "s" : ""}`,
+                hint: "reponer ya",
+                tono: "error" as const,
+                href: "/admin?tab=inventario",
+                title: "Productos en cero: se reponen desde Inventario",
+              }]
+            : []),
+          ...(data.stockCritico > 0
+            ? [{
+                key: "stock-critico",
+                valor: data.stockCritico,
+                label: "en stock crítico",
+                hint: "bajo el mínimo",
+                tono: "warning" as const,
+                href: "/admin?tab=inventario",
+                title: "Productos por debajo de su stock mínimo",
+              }]
+            : []),
+        ]}
+        vacio="Todo el catálogo está sobre su stock mínimo."
+      />
 
       {/* ── Charts base (valor cat, movimiento 14d, top salidas, distribución, cobertura, proyección) ── */}
       <InventarioCharts data={data} />

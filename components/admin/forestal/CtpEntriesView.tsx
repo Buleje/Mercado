@@ -30,7 +30,7 @@ import CtpProduccionPendiente from "./CtpProduccionPendiente";
 import CtpPapelesDespachoModal from "./CtpPapelesDespachoModal";
 import CtpCorridaSinDeclarar from "./CtpCorridaSinDeclarar";
 import CtpSeccionKpis from "./CtpSeccionKpis";
-import CtpBarraDeuda, { type DeudaItem } from "./CtpBarraDeuda";
+import BarraDeuda, { type DeudaItem } from "@/components/admin/shared/BarraDeuda";
 import CtpElegirLoteModal from "./CtpElegirLoteModal";
 import CtpSinCertificar, { type DespachoSinCertificar } from "./CtpSinCertificar";
 import { esLoteDeInventario, margenLote } from "@/lib/forestal/lotes-aserrio";
@@ -1004,11 +1004,11 @@ export function CtpEntriesView({
         />
       )}
 
-      {/* Toda la deuda del libro en una línea de pastillas (`CtpBarraDeuda`).
+      {/* Toda la deuda del libro en una línea de pastillas (`BarraDeuda`).
           Antes: tres tarjetas de KPI perdidas entre las cifras del proceso MÁS
           este cartel ámbar repitiendo las mismas corridas sin materia prima.
           Ahora el cartel es el detalle que se despliega desde su pastilla. */}
-      <CtpBarraDeuda items={deudas} />
+      <BarraDeuda items={deudas} />
 
       {/* Vincular: las cinco reglas se revisan ANTES de escribir. */}
       {vincularA && (() => {
