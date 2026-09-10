@@ -221,7 +221,14 @@ const CTP_MODULE_ID = "ctp-libro";
  *  Ficha (identidad). Con el selector visible parecería que no hace nada.
  *  Lotes tampoco: es el estado VIVO del patio (lo que está apartado hoy), no un
  *  asiento del período — el período de lo aserrado se mira en Consumos. */
-const SIN_PERIODO: CtpView[] = ["analisis", "cierre", "ficha", "trozas", "directorio", "lotes"];
+/* Vistas donde el selector de período NO se muestra porque no gobierna nada.
+   `disponibles` entra acá (2026-09-10): el endpoint deja explícito que «el
+   período NO acota lo disponible salvo que se pida» (`soloDelPeriodo`), o sea
+   que lo que hay en el depósito no depende del mes que esté mirando el libro.
+   Ofrecer el selector ahí mandaba a cambiar un período que no cambia el saldo,
+   y sus filtros vacíos culpaban al período de un vacío que causaba otra cosa
+   (producto marcado como usado). */
+const SIN_PERIODO: CtpView[] = ["analisis", "cierre", "ficha", "trozas", "directorio", "lotes", "disponibles"];
 
 export default function CTPLibroOperaciones() {
   /** Un solo estado de cierres para el asistente y el historial. */

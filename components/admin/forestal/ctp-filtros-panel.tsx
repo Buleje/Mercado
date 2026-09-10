@@ -535,6 +535,7 @@ export function CampoDeFiltro({
   compacto = false,
   unico = false,
   className = "",
+  textoVacio = "Sin datos en el período",
 }: {
   label: string;
   value: string | readonly string[] | undefined;
@@ -543,6 +544,15 @@ export function CampoDeFiltro({
   onChange: (v: string[]) => void;
   /** Lo que dice cuando no hay nada elegido («Todas las especies»). */
   placeholder?: string;
+  /**
+   * Qué decir cuando el filtro se queda sin opciones.
+   *
+   * El default culpa al período, y eso es cierto en Ingresos o Producción. NO
+   * lo es en «Productos disponibles», donde el período no acota el saldo del
+   * depósito (ver el endpoint: `soloDelPeriodo`): ahí un «Sin datos en el
+   * período» manda al operador a cambiar un período que no cambia nada.
+   */
+  textoVacio?: string;
   /** `true` = alto 10 y esquinas chicas (la fila de los KPIs). */
   compacto?: boolean;
   /** `true` = de a uno: el filtro viaja al servidor y sólo admite un valor. */
@@ -564,7 +574,7 @@ export function CampoDeFiltro({
         }`}
       >
         <span className="min-w-0 flex-1 truncate">
-          {vacio ? "Sin datos en el período" : rotuloDeFiltro(elegidos, placeholder, etiqueta, options)}
+          {vacio ? textoVacio : rotuloDeFiltro(elegidos, placeholder, etiqueta, options)}
         </span>
         <ChevronDown
           className={`h-4 w-4 shrink-0 ${elegidos.length > 0 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}

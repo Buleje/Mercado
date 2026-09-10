@@ -216,6 +216,16 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
    *  lo que pide la marca. */
   const [verUsados, setVerUsados] = useState(false);
   const [desmarcando, setDesmarcando] = useState<string | null>(null);
+  /**
+   * Lo que hay pero NO se está viendo por estar marcado como usado.
+   *
+   * Sin esto la pantalla vacía afirmaba «todo lo aserrado ya salió o todavía no
+   * se declaró ninguna producción» — y en el depósito real había 5 corridas con
+   * 76.45 m³, todas marcadas a mano. Ninguna de las dos causas que decía era la
+   * verdadera, y la única llave (el tilde «Ver también lo marcado como usado»)
+   * estaba abajo, sin ninguna señal de que escondiera algo.
+   */
+  const [ocultosPorUsado, setOcultosPorUsado] = useState<{ corridas: number; volumen: number } | null>(null);
 
   const recargar = useCallback(async () => {
     setCargando(true);
@@ -223,8 +233,37 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     if (verUsados) qs.set("incluirUsados", "1");
     try {
       const r = await ctpGet<{ corridas?: CorridaDisponible[] }>(`/api/admin/forestal/ctp?${qs}`);
-      setCorridas(r.corridas ?? []);
+      const lista = r.corridas ?? [];
+      setCorridas(lista);
       setError(null);
+
+      /* Si no quedó nada a la vista, preguntamos QUÉ hay detrás de la marca:
+         una pantalla vacía tiene que poder decir por qué está vacía. Sólo
+         cuando hace falta — con producto a la vista, este pedido no se hace. */
+      if (lista.length === 0 && !verUsados) {
+        const qsUsados = applyCtpPeriodParams(new URLSearchParams({ disponibles: "1" }), period);
+        qsUsados.set("incluirUsados", "1");
+        try {
+          const conUsados = await ctpGet<{ corridas?: CorridaDisponible[] }>(
+            `/api/admin/forestal/ctp?${qsUsados}`,
+          );
+          const marcadas = (conUsados.corridas ?? []).filter((c) => c.usadoAt);
+          setOcultosPorUsado(
+            marcadas.length > 0
+              ? {
+                  corridas: marcadas.length,
+                  volumen: Math.round(marcadas.reduce((a, c) => a + (Number(c.disponible) || 0), 0) * 1000) / 1000,
+                }
+              : null,
+          );
+        } catch {
+          /* El conteo es contexto, no el dato: si falla, la pantalla sigue
+             mostrando el vacío como siempre. */
+          setOcultosPorUsado(null);
+        }
+      } else {
+        setOcultosPorUsado(null);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -434,6 +473,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 key: "especie",
                 label: "Especie",
                 todos: "Todas las especies",
+                textoVacio: "Sin producto en el depósito",
                 valor: especie,
                 opciones: opciones.especies.map((e) => ({
                   value: e,
@@ -446,6 +486,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 key: "permiso",
                 label: "Permiso (título habilitante)",
                 todos: "Todos los permisos",
+                textoVacio: "Sin producto en el depósito",
                 valor: permiso,
                 opciones: opciones.permisos.map((p) => ({
                   value: p,
@@ -458,6 +499,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 key: "producto",
                 label: "Producto",
                 todos: "Todos los productos",
+                textoVacio: "Sin producto en el depósito",
                 valor: producto,
                 opciones: opciones.productos.map((p) => ({
                   value: p,
@@ -483,7 +525,9 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
         }
         resumen={
           visibles.length === 0
-            ? "Sin producto disponible en planta"
+            ? ocultosPorUsado
+              ? `Sin producto disponible · ${fmtM3(ocultosPorUsado.volumen)} m³ marcados como usados`
+              : "Sin producto disponible en planta"
             : `${fmtM3(totales.volumen)} m³ · ${nf(totales.paquetes)} paquete${totales.paquetes === 1 ? "" : "s"} · ${nf(totalPiezas)} pieza${totalPiezas === 1 ? "" : "s"} · ${nf(visibles.length)} corrida${visibles.length === 1 ? "" : "s"}`
         }
         tarjetas={[
@@ -492,7 +536,15 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             density="compact"
             label="Disponible (m³)"
             value={fmtM3(totales.volumen)}
-            subValue={`${pieTablarDe(totales.volumen).toLocaleString("es-PE")} pt · producido − despachado − reprocesado`}
+            /* La fórmula decía «producido − despachado − reprocesado» y se
+               dejaba afuera la resta que más sorprende: lo marcado a mano como
+               usado. Con 76.45 m³ marcados, el operador leía 0.000 bajo una
+               fórmula donde ningún término explicaba ese cero. */
+            subValue={
+              ocultosPorUsado
+                ? `${pieTablarDe(totales.volumen).toLocaleString("es-PE")} pt · ${fmtM3(ocultosPorUsado.volumen)} m³ más están marcados como usados`
+                : `${pieTablarDe(totales.volumen).toLocaleString("es-PE")} pt · producido − despachado − reprocesado − marcado usado`
+            }
             icon={TreePine}
             emphasis="success"
           />,
@@ -569,27 +621,43 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             className={`${CAMPO} pl-9`}
           />
         </label>
-        <CampoDeFiltro
-          label="Especie"
-          value={especie}
-          options={opciones.especies.map((e) => ({ value: e }))}
-          onChange={setEspecie}
-          placeholder="Todas las especies"
-        />
-        <CampoDeFiltro
-          label="Producto"
-          value={producto}
-          options={opciones.productos.map((p) => ({ value: p, label: productLabel(p) }))}
-          onChange={setProducto}
-          placeholder="Todos los productos"
-        />
-        <CampoDeFiltro
-          label="N° de permiso"
-          value={permiso}
-          options={opciones.permisos.map((p) => ({ value: p }))}
-          onChange={setPermiso}
-          placeholder="Todos los permisos"
-        />
+        {/* Un desplegable sin opciones no se dibuja — la misma regla que ya
+            aplica el panel de indicadores (`CtpKpiFiltros`). Acá salían los tres
+            en gris diciendo «Sin datos en el período», que además culpaba al
+            período: en esta vista el período NO acota el depósito (ver el
+            endpoint, `soloDelPeriodo`), así que mandaba a cambiar algo que no
+            cambia nada. El que está filtrando se dibuja igual, o el operador se
+            queda sin poder apagarlo. */}
+        {(opciones.especies.length > 0 || especie.length > 0) && (
+          <CampoDeFiltro
+            label="Especie"
+            value={especie}
+            options={opciones.especies.map((e) => ({ value: e }))}
+            onChange={setEspecie}
+            placeholder="Todas las especies"
+            textoVacio="Sin producto en el depósito"
+          />
+        )}
+        {(opciones.productos.length > 0 || producto.length > 0) && (
+          <CampoDeFiltro
+            label="Producto"
+            value={producto}
+            options={opciones.productos.map((p) => ({ value: p, label: productLabel(p) }))}
+            onChange={setProducto}
+            placeholder="Todos los productos"
+            textoVacio="Sin producto en el depósito"
+          />
+        )}
+        {(opciones.permisos.length > 0 || permiso.length > 0) && (
+          <CampoDeFiltro
+            label="N° de permiso"
+            value={permiso}
+            options={opciones.permisos.map((p) => ({ value: p }))}
+            onChange={setPermiso}
+            placeholder="Todos los permisos"
+            textoVacio="Sin producto en el depósito"
+          />
+        )}
         <div className="flex justify-end">
           <ColumnasMenu columnas={COLUMNAS_DISPONIBLES_OPCIONALES} visibles={colsVisibles} onChange={setColsVisibles} />
         </div>
@@ -653,11 +721,34 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
         <TbodyCtp>
           {enPagina.length === 0 && (
             <FilaVacia cols={totalCols}>
-              {cargando
-                ? "Leyendo la planta…"
-                : corridas.length === 0
-                  ? "No hay producto disponible: todo lo aserrado ya salió o todavía no se declaró ninguna producción."
-                  : "Ningún producto coincide con el filtro."}
+              {cargando ? (
+                "Leyendo la planta…"
+              ) : corridas.length > 0 ? (
+                "Ningún producto coincide con el filtro."
+              ) : ocultosPorUsado ? (
+                /* La causa REAL del vacío, con su salida. El texto viejo
+                   afirmaba «todo salió o no se declaró producción» y las dos
+                   eran falsas: el producto está, marcado a mano como usado. */
+                <span className="inline-flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1">
+                  No hay producto disponible, pero{" "}
+                  <b className="text-[var(--text-primary)]">
+                    {ocultosPorUsado.corridas} corrida{ocultosPorUsado.corridas === 1 ? "" : "s"}
+                  </b>{" "}
+                  ({fmtM3(ocultosPorUsado.volumen)} m³) est
+                  {ocultosPorUsado.corridas === 1 ? "á" : "án"} marcada
+                  {ocultosPorUsado.corridas === 1 ? "" : "s"} como usada
+                  {ocultosPorUsado.corridas === 1 ? "" : "s"}.
+                  <button
+                    type="button"
+                    onClick={() => setVerUsados(true)}
+                    className="font-bold text-[var(--accent-ink)] underline decoration-dotted underline-offset-2 dark:text-[var(--accent)]"
+                  >
+                    Verlas
+                  </button>
+                </span>
+              ) : (
+                "No hay producto disponible: todo lo aserrado ya salió o todavía no se declaró ninguna producción."
+              )}
             </FilaVacia>
           )}
           {enPagina.map(({ corrida: c, paquete: p }) => (

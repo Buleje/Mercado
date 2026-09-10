@@ -47,6 +47,8 @@ export interface CampoKpiFiltro {
   valor: ValorFiltro;
   opciones: OpcionKpiFiltro[];
   onChange: (valor: string[]) => void;
+  /** Qué decir si el campo se queda sin opciones. Default: culpa al período. */
+  textoVacio?: string;
   /**
    * `true` = de a uno. Es el caso de la bandeja de Ingresos: sus filtros viajan
    * al servidor (`?species=`) y la consulta admite un valor por campo, así que
@@ -100,6 +102,7 @@ export default function CtpKpiFiltros({
             onChange={c.onChange}
             placeholder={c.todos}
             unico={c.unico}
+            textoVacio={c.textoVacio}
             compacto
           />
         </div>
