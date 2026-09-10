@@ -1572,6 +1572,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         >
           <AnexoPorPermiso
             anexos={anexosDePermiso}
+            precioDe={precioDe}
             onAbrir={(piezas, etiqueta, especie) =>
               setAnexoDe({
                 piezas,

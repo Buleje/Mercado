@@ -25,8 +25,9 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, ChevronRight, FileText } from "@buleje/design-system/icons";
-import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { AlertTriangle, Check, ChevronRight, Download, FileText } from "@buleje/design-system/icons";
+import { fmtM3, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
+import type { PrecioPt } from "@/lib/forestal/cubicacion-resumen";
 import {
   filasDelAnexo,
   resumenPorEspecieTipo,
@@ -49,9 +50,16 @@ const CLAVE_MEDIDAS = () => slugKey("-anexo-permiso-medidas");
 
 export default function AnexoPorPermiso({
   anexos,
+  precioDe,
   onAbrir,
 }: {
   anexos: AnexoDePermiso[];
+  /**
+   * Precio por pie tablar (uno para el lote o uno por especie) — el MISMO
+   * resolvedor de los resúmenes. Con precio cargado, las tablas suman Precio e
+   * Importe (Brandon, 2026-09-09); sin él, esas columnas no existen.
+   */
+  precioDe?: PrecioPt;
   /** Abre el Anexo 04 con las piezas ya unificadas de ese permiso. */
   onAbrir: (piezas: PiezaCubicada[], etiqueta: string, especie: string) => void;
 }) {
@@ -83,9 +91,33 @@ export default function AnexoPorPermiso({
     () => anexos.find((a) => (a.permiso ?? " sin") === (elegido ?? anexos[0]?.permiso ?? " sin")) ?? anexos[0],
     [anexos, elegido],
   );
-  const filas = useMemo(() => (actual ? filasDelAnexo(actual) : []), [actual]);
+  const precio = precioDe ?? 0;
+  const filas = useMemo(() => (actual ? filasDelAnexo(actual, precio) : []), [actual, precio]);
   /** Qué sale de cada especie y tipo — la lectura de negocio del permiso. */
-  const resumen = useMemo(() => (actual ? resumenPorEspecieTipo(actual) : []), [actual]);
+  const resumen = useMemo(() => (actual ? resumenPorEspecieTipo(actual, precio) : []), [actual, precio]);
+  /* El importe del permiso: la suma de la columna, que es lo que se cobra. */
+  const importeTotal = useMemo(() => resumen.reduce((a, r) => a + r.valor, 0), [resumen]);
+  const conValor = importeTotal > 0;
+
+  /** El detalle del permiso en CSV — para el contador o para pasar el precio. */
+  const bajarCsv = () => {
+    if (!actual) return;
+    const cab = ["Especie", "Tipo", "Medida", "Piezas", "m3", "PieTablar", ...(conValor ? ["PrecioPT", "Importe"] : [])];
+    const cuerpo = filas.map((f) => [
+      f.especie, f.tipo, f.medida, f.piezas, f.m3.toFixed(4), f.pieTablar.toFixed(2),
+      ...(conValor ? [(f.pieTablar > 0 ? f.valor / f.pieTablar : 0).toFixed(2), f.valor.toFixed(2)] : []),
+    ].join(","));
+    const total = ["TOTAL", "", "", actual.totalPiezas, actual.totalM3.toFixed(4), actual.totalPt.toFixed(2),
+      ...(conValor ? ["", importeTotal.toFixed(2)] : [])].join(",");
+    /* BOM: sin él Excel abre las tildes como símbolos. */
+    const csv = "\ufeff" + [cab.join(","), ...cuerpo, total].join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `anexo04-${(actual.permiso ?? "sin-permiso").replace(/[^\w.-]+/g, "-")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (anexos.length === 0) return null;
 
@@ -158,6 +190,16 @@ export default function AnexoPorPermiso({
             >
               <FileText className="h-3.5 w-3.5" aria-hidden /> Anexo 04 de este permiso
             </button>
+            {/* El mismo detalle en CSV — se abre en Excel para pasarle el
+                precio al cliente o para el contador. */}
+            <button
+              type="button"
+              onClick={bajarCsv}
+              title="Bajar el detalle de este permiso en CSV (Excel): medidas, piezas, m³, PT y el importe si hay precio cargado"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden /> CSV
+            </button>
           </div>
 
           {/* El cuadre, antes que el detalle: si no cierra, no se imprime. */}
@@ -207,6 +249,8 @@ export default function AnexoPorPermiso({
                     <th className={`${TH} text-right`}>Piezas</th>
                     <th className={`${TH} text-right`}>m³</th>
                     <th className={`${TH} text-right`}>Pie tablar</th>
+                    {conValor && <th className={`${TH} text-right`} title="Precio unitario: importe ÷ pie tablar">Precio S/ PT</th>}
+                    {conValor && <th className={`${TH} text-right`} title="Pie tablar × precio unitario">Importe S/</th>}
                     <th className={`${TH} text-right`}>% del anexo</th>
                   </tr>
                 </thead>
@@ -223,6 +267,14 @@ export default function AnexoPorPermiso({
                       <td className={NUM}>{fmtPiezas(r.piezas)}</td>
                       <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(r.m3)}</td>
                       <td className={NUM}>{fmtPt(r.pieTablar)}</td>
+                      {conValor && (
+                        <td className={NUM}>{r.pieTablar > 0 ? fmtSoles(r.valor / r.pieTablar) : "—"}</td>
+                      )}
+                      {conValor && (
+                        <td className={`${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>
+                          {fmtSoles(r.valor)}
+                        </td>
+                      )}
                       <td className={`${NUM} text-[var(--text-tertiary)]`}>
                         {r.pctM3.toLocaleString("es-PE", { maximumFractionDigits: 1 })} %
                       </td>
@@ -243,6 +295,17 @@ export default function AnexoPorPermiso({
                     <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
                       {fmtPt(actual.totalPt)}
                     </td>
+                    {conValor && (
+                      <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                        {actual.totalPt > 0 ? fmtSoles(importeTotal / actual.totalPt) : "—"}
+                      </td>
+                    )}
+                    {/* La suma de la columna Importe: lo que vale este permiso. */}
+                    {conValor && (
+                      <td className={`${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>
+                        {fmtSoles(importeTotal)}
+                      </td>
+                    )}
                     <td className={`${NUM} text-[var(--text-tertiary)]`}>100 %</td>
                   </tr>
                 </tfoot>
@@ -261,6 +324,8 @@ export default function AnexoPorPermiso({
                   <th className={`${TH} text-right`}>Piezas</th>
                   <th className={`${TH} text-right`}>m³</th>
                   <th className={`${TH} text-right`}>Pie tablar</th>
+                  {conValor && <th className={`${TH} text-right`}>Precio S/ PT</th>}
+                  {conValor && <th className={`${TH} text-right`}>Importe S/</th>}
                 </tr>
               </thead>
               <tbody>
@@ -272,6 +337,12 @@ export default function AnexoPorPermiso({
                     <td className={NUM}>{fmtPiezas(f.piezas)}</td>
                     <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(f.m3)}</td>
                     <td className={NUM}>{fmtPt(f.pieTablar)}</td>
+                    {conValor && <td className={NUM}>{f.pieTablar > 0 ? fmtSoles(f.valor / f.pieTablar) : "—"}</td>}
+                    {conValor && (
+                      <td className={`${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>
+                        {fmtSoles(f.valor)}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -289,6 +360,16 @@ export default function AnexoPorPermiso({
                   <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
                     {fmtPt(actual.totalPt)}
                   </td>
+                  {conValor && (
+                    <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
+                      {actual.totalPt > 0 ? fmtSoles(importeTotal / actual.totalPt) : "—"}
+                    </td>
+                  )}
+                  {conValor && (
+                    <td className={`${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>
+                      {fmtSoles(importeTotal)}
+                    </td>
+                  )}
                 </tr>
               </tfoot>
             </table>

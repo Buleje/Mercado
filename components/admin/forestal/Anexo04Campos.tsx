@@ -119,11 +119,12 @@ function ImagenGuardada({ src, label, donde, onArchivo, onQuitar }: {
 }
 
 /** Pestañas del panel: se agrupan por MOMENTO de llenado, no por número de casillero. */
-type Pestana = "emision" | "firmante" | "papeleria";
+type Pestana = "emision" | "firmante" | "papeleria" | "resumen";
 const PESTANAS: { id: Pestana; label: string; ayuda: string }[] = [
   { id: "emision", label: "Emisión", ayuda: "Lo que cambia en cada guía: N°, GTF, razón social" },
   { id: "firmante", label: "Firmante", ayuda: "Quién firma el anexo (13)-(16)" },
   { id: "papeleria", label: "Papelería", ayuda: "Logo, firma y sello — se cargan una vez" },
+  { id: "resumen", label: "Resumen", ayuda: "Qué sale del anexo entero, por especie y tipo" },
 ];
 
 /**
@@ -301,7 +302,7 @@ export default function Anexo04Campos({
       <div
         role="tablist"
         aria-label="Datos del anexo"
-        className="grid grid-cols-3 gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1"
+        className="grid grid-cols-4 gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1"
       >
         {PESTANAS.map((p) => (
           <button
@@ -489,6 +490,62 @@ export default function Anexo04Campos({
             />
           </div>
         </div>
+      )}
+
+      {/* ── RESUMEN: qué sale del anexo ENTERO, por especie y tipo ───────
+          Brandon, 2026-09-09: «que se vea el resumen por tipo y especie del
+          anexo, general de todo el anexo». El papel se lee bloque por bloque
+          —35 filas cada uno— y la pregunta de negocio («de tornillo, cuánta
+          paquetería sale») se contestaba sumando a mano. */}
+      {tab === "resumen" && (
+        resumen.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-6 text-center text-sm text-[var(--text-tertiary)]">
+            El anexo todavía no tiene piezas.
+          </p>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
+            <table className="w-full text-sm">
+              <caption className="sr-only">Resumen del anexo por especie y tipo</caption>
+              <thead className="bg-[var(--surface-sunken)]">
+                <tr>
+                  <th scope="col" className={`${LABEL} px-2 py-1.5 text-left`}>Especie · tipo</th>
+                  {/* Piezas · m³ · PT, la convención del módulo. */}
+                  <th scope="col" className={`${LABEL} px-2 py-1.5 text-right`}>Pzas</th>
+                  <th scope="col" className={`${LABEL} px-2 py-1.5 text-right`}>m³</th>
+                  <th scope="col" className={`${LABEL} px-2 py-1.5 text-right`}>PT</th>
+                  <th scope="col" className={`${LABEL} px-2 py-1.5 text-right`}>%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {resumen.map((r) => (
+                  <tr key={`${r.especie}||${r.tipo}`} className="border-t border-[var(--rule-soft)]">
+                    <td className="px-2 py-1.5">
+                      <span className="font-bold text-[var(--text-primary)]">{r.tipo}</span>
+                      <span className="block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{r.especie}</span>
+                    </td>
+                    <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.piezas}</td>
+                    <td className="px-2 py-1.5 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtAnexo(r.m3)}</td>
+                    <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{fmtAnexo(r.pt, 0)}</td>
+                    <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                      {anexo.totalM3 > 0 ? Math.round((r.m3 / anexo.totalM3) * 1000) / 10 : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                  <th scope="row" className="px-2 py-1.5 text-left">
+                    Todo el anexo · {resumen.length} {resumen.length === 1 ? "línea" : "líneas"}
+                  </th>
+                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">{anexo.totalPiezas}</td>
+                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">{fmtAnexo(anexo.totalM3)}</td>
+                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">{fmtAnexo(anexo.totalPt, 0)}</td>
+                  <td className="px-2 py-1.5 text-right font-mono tabular-nums">100</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )
       )}
 
       {verObs && (

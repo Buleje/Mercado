@@ -43,6 +43,7 @@ import ResumenMeta from "./ResumenMeta";
 import ResumenReparto from "./ResumenReparto";
 import ResumenTrozas from "./ResumenTrozas";
 import Anexo04Modal from "./Anexo04Modal";
+import TablaDeTrabajo, { type FilaTrabajo } from "./resumen-tabla-trabajo";
 import { useCubicacionesGuardadas } from "@/hooks/use-cubicaciones-guardadas";
 
 /** Botón de acción de la cabecera: mismo alto y peso que los filtros del admin. */
@@ -181,6 +182,24 @@ export default function CubicacionResumenes() {
   );
   /** El anexo abierto con lo elegido (o `null`). */
   const [anexoDeElegidas, setAnexoDeElegidas] = useState(false);
+
+  /** Las mismas filas de «por especie y tipo», para la tabla de trabajo. */
+  const filasTrabajo = useMemo<FilaTrabajo[]>(
+    () => bloques.flatMap((b) =>
+      b.tipos.map((t) => ({
+        clave: `${b.especie}||${t.clave}`,
+        especie: b.especie,
+        tipo: t.label,
+        piezas: t.cantidad,
+        m3: t.m3,
+        pt: t.pieTablar,
+        /* El precio del grupo, no uno global: con precio por especie, cada
+           madera vale distinto y el borrador tiene que respetarlo. */
+        precioPt: t.pieTablar > 0 ? t.valor / t.pieTablar : 0,
+      })),
+    ),
+    [bloques],
+  );
   const insights = useMemo(() => analizarLote(rows, precioDe), [rows, precioDe]);
   const total = porEspecie.total;
 
@@ -429,6 +448,9 @@ export default function CubicacionResumenes() {
                   />
                 </div>
               ))}
+              {/* El clon manipulable, AL LADO de las especies (misma grilla):
+                  se tantea acá y no sobre el lote (Brandon, 2026-09-09). */}
+              <TablaDeTrabajo filas={filasTrabajo} conValor={conValor} />
             </div>
           </SeccionResumen>
 

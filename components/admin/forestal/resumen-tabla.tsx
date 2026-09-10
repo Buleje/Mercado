@@ -156,7 +156,17 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
   /* Con muchas filas la tabla toma su propio scroll: sin eso, `sticky` no se
      pega a nada y al llegar al final ya no se sabe qué columna era cuál. */
   const larga = grupos.length > 12;
-  const conRendimiento = conValor && !compacta;
+  /**
+   * El PRECIO por pie tablar y el IMPORTE van juntos y en TODAS las tablas con
+   * valor, también en las angostas (Brandon, 2026-09-09: «una columna de precio
+   * y otra de importe, que es la multiplicación del pie tablar por el precio
+   * unitario, y abajo el total»).
+   *
+   * Antes «S/ por PT» se escondía en las compactas porque no entraba; ahora la
+   * tabla pide un poco más de ancho y, si no hay, scrollea — esconder el precio
+   * obligaba a hacer la división a mano para saber a cuánto sale cada tipo.
+   */
+  const conRendimiento = conValor;
   /* Medido: la general por especie en dos columnas pedía 529 px sobre 510 —
      el valor quedaba cortado contra el borde. Con el padding chico entra. */
   const TH = `${compacta ? "px-2" : "px-3"} ${TH_BASE}`;
@@ -165,7 +175,7 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
   const todasMarcadas = seleccion != null && claves.length > 0 && claves.every((k) => seleccion.marcadas.has(k));
   return (
     <div className={`overflow-x-auto rounded-xl border border-[var(--rule-base)] ${larga ? "max-h-[70vh] overflow-y-auto" : ""}`}>
-      <DataTable className={`w-full text-sm ${compacta ? "min-w-[400px]" : "min-w-[480px]"}`}>
+      <DataTable className={`w-full text-sm ${compacta ? (conValor ? "min-w-[560px]" : "min-w-[400px]") : "min-w-[480px]"}`}>
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
           <tr>
@@ -187,8 +197,8 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
             <th scope="col" className={`${TH} text-right`}>Volumen m³</th>
             <th scope="col" className={`${TH} text-right`}>Pie tablar</th>
             <th scope="col" className={`${TH} ${compacta ? "w-[22%]" : "w-[26%]"}`}>Participación</th>
-            {conValor && <th scope="col" className={`${TH} text-right`}>Valor S/</th>}
-            {conRendimiento && <th scope="col" className={`${TH} text-right`} title="Lo que rinde cada pie tablar de ese grupo">S/ por PT</th>}
+            {conRendimiento && <th scope="col" className={`${TH} text-right`} title="Precio unitario del grupo: lo que sale cada pie tablar (importe ÷ PT)">Precio S/ PT</th>}
+            {conValor && <th scope="col" className={`${TH} text-right`} title="Pie tablar × precio unitario">Importe S/</th>}
           </tr>
         </thead>
         <tbody>
@@ -231,10 +241,17 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
                   <span className={`shrink-0 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)] ${compacta ? "w-11" : "w-14"}`}>{fmtPct(g.pctPt)}%</span>
                 </div>
               </td>
-              {conValor && <td className={`${TD} ${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>{fmtSoles(g.valor)}</td>}
               {conRendimiento && (
                 <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>
                   {g.pieTablar > 0 ? fmtSoles(g.valor / g.pieTablar) : "—"}
+                </td>
+              )}
+              {conValor && (
+                <td
+                  className={`${TD} ${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}
+                  title={`${fmtPt(g.pieTablar)} PT × S/ ${g.pieTablar > 0 ? fmtSoles(g.valor / g.pieTablar) : "0.00"}`}
+                >
+                  {fmtSoles(g.valor)}
                 </td>
               )}
             </tr>
@@ -251,10 +268,12 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
             <td className={`${TD} ${NUM}`}>{fmtM3(total.m3)}</td>
             <td className={`${TD} ${NUM}`}>{fmtPt(total.pieTablar)}</td>
             <td className={`${TD} text-[length:var(--ts-2xs)] uppercase tracking-wide`}>100%</td>
-            {conValor && <td className={`${TD} ${NUM}`}>{fmtSoles(total.valor)}</td>}
             {conRendimiento && (
               <td className={`${TD} ${NUM}`}>{total.pieTablar > 0 ? fmtSoles(total.valor / total.pieTablar) : "—"}</td>
             )}
+            {/* La suma de la columna Importe: el número por el que se abre esta
+                pantalla cuando hay precio cargado. */}
+            {conValor && <td className={`${TD} ${NUM}`}>{fmtSoles(total.valor)}</td>}
           </tr>
         </tfoot>
       </DataTable>
