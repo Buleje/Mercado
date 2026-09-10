@@ -285,7 +285,23 @@ const PRODUCT_LABELS: Record<string, string> = {
 };
 
 export const originLabel = (type: string): string => ORIGIN_LABELS[type] ?? type;
-export const productLabel = (type: string): string => PRODUCT_LABELS[type] ?? type;
+/**
+ * Cómo se ESCRIBE un tipo de producto. Sólo presentación: el dato no se toca.
+ *
+ * Fuera de las claves canónicas el campo es texto libre, y en el mismo libro
+ * conviven «MADERA ASERRADA» y «Madera aserrada» — la misma madera escrita de
+ * dos formas, una al lado de la otra en la tabla de Despacho. Un texto que
+ * viene TODO en mayúsculas se baja a mayúscula inicial; lo que ya viene mixto
+ * («Comercial») o es corto («PO», siglas) se deja como está, porque ahí las
+ * mayúsculas sí significan algo.
+ */
+export const productLabel = (type: string): string => {
+  const canonico = PRODUCT_LABELS[type];
+  if (canonico) return canonico;
+  const t = type?.trim() ?? "";
+  if (t.length <= 3 || t !== t.toUpperCase() || !/[A-ZÁÉÍÓÚÑ]{4,}/.test(t)) return type;
+  return t.charAt(0) + t.slice(1).toLocaleLowerCase("es-PE");
+};
 
 /**
  * `Date` además de string: el listado agrupado por guía (ADR-346) arma su

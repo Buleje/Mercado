@@ -31,7 +31,7 @@ import {
   estadoSalida,
   UNIT_LABELS,
 } from "./ctp-section-shared";
-import { IconAction } from "./ctp-shared";
+import { IconAction, productLabel } from "./ctp-shared";
 import { FiltroColumna, FiltroColumnaRango, type FacetaOpcion } from "./ctp-filtros-panel";
 import { estadoDeGuia } from "@/lib/forestal/gtf-estado";
 import { CAMPO_RANGO_META, type CampoRango, type RangoNumerico } from "@/lib/forestal/ctp-secciones-filtro";
@@ -420,6 +420,10 @@ export default function CtpEntriesTabla({
 }: CtpEntriesTablaProps) {
   const cv = colsProduccion;
   const fc = filtrosColumna ?? {};
+  /* La columna «Estado» sólo dice algo si hay dos estados. Con todo registrado
+     repetía la misma pastilla verde en las ocho filas: una columna entera para
+     un dato constante. Cuando aparece un anulado, vuelve sola. */
+  const hayAnulados = visible.some((e) => e.status === "anulado");
 
   /**
    * Lo que se hace de vez en cuando, plegado — y lo que borra, separado.
@@ -497,7 +501,7 @@ export default function CtpEntriesTabla({
                   {cv.permiso && <ThFiltro label="N° Permiso" filtro={fc.permiso} />}
                 </>
               ) : (<><SortTh label="Cantidad" by="cantidad" sort={sort} onSort={onSort} className="text-right" /><Th className="text-right">Piezas</Th><Th>GTF salida</Th><ThFiltro label="Destino" filtro={fc.destino} /></>)}
-              <Th>Estado</Th>
+              {hayAnulados && <Th>Estado</Th>}
               <Th className="text-right">Acciones</Th>
             </tr>
           </thead>
@@ -515,7 +519,7 @@ export default function CtpEntriesTabla({
                 </Td>
                 <Td>
                   <div className="flex flex-wrap items-center gap-1">
-                    <span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">{e.productType ?? "—"}</span>
+                    <span className="rounded-full bg-[var(--surface-canvas)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">{e.productType ? productLabel(e.productType) : "—"}</span>
                     <ImportadoBadge entry={e} />
                   </div>
                   {e.codigoProducto && (
@@ -566,11 +570,11 @@ export default function CtpEntriesTabla({
                     <Td className="text-[var(--text-secondary)]">{e.destino ?? "—"}</Td>
                   </>
                 )}
-                <Td>{e.status === "anulado"
+                {hayAnulados && <Td>{e.status === "anulado"
                   ? <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]"><XIcon className="h-3 w-3" />Anulado</span>
                   : <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-100)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)]">Registrado</span>}
                   {e.annulledReason && <div className="mt-1 text-xs text-[var(--data-error-700)]">{e.annulledReason}</div>}
-                </Td>
+                </Td>}
                 <Td className="text-right">
                   {e.status === "registrado" ? (
                     /**
@@ -652,20 +656,20 @@ export default function CtpEntriesTabla({
                     {cv.consumido && (
                       <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalesVista.consumido)}</td>
                     )}
-                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.cantidad.toFixed(4)}</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalesVista.cantidad)}</td>
                     {cv.piezas && (
                       <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.piezas}</td>
                     )}
                     {cv.rend && <td />}
                     {cv.salida && <td />}
                     {cv.permiso && <td />}
-                    <td colSpan={2} />
+                    <td colSpan={hayAnulados ? 2 : 1} />
                   </>
                 ) : (
                   <>
-                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.cantidad.toFixed(4)}</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(totalesVista.cantidad)}</td>
                     <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{totalesVista.piezas}</td>
-                    <td colSpan={4} />
+                    <td colSpan={hayAnulados ? 4 : 3} />
                   </>
                 )}
               </tr>

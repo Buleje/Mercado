@@ -126,6 +126,10 @@ export function CtpPaginacion({
   const numeros = useMemo(() => numerosDePagina(rango.paginas, rango.pagina), [rango.paginas, rango.pagina]);
   const primera = rango.pagina === 0;
   const ultima = rango.pagina >= rango.paginas - 1;
+  /* Elegir «cuántas por página» sólo tiene sentido si hay más de una pantalla
+     de datos. Con ocho despachos y un mínimo de 25 por página, ese desplegable
+     no puede cambiar nada de lo que se ve. */
+  const puedePaginar = rango.total > FILAS_POR_PAGINA[0];
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-1">
@@ -137,6 +141,7 @@ export function CtpPaginacion({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        {puedePaginar && (
         <label className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
           <span className="sr-only sm:not-sr-only">Filas</span>
           <select
@@ -152,6 +157,7 @@ export function CtpPaginacion({
             ))}
           </select>
         </label>
+        )}
 
         {/* Con una sola página los botones sobran: el rótulo ya lo dice todo. */}
         {rango.paginas > 1 && (

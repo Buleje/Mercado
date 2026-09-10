@@ -1298,7 +1298,11 @@ export function CtpEntriesView({
       )}
 
       {/* Filtro por estado (chips, consistente con Ingresos): oculta anulados de un clic. */}
-      {statusCounts.total > 0 && (
+      {/* La fila de estados sólo aparece cuando hay MÁS DE UNO que elegir.
+          Con todo registrado salían «Todos 8» y «Registrados 8» —el mismo
+          número dos veces— y un filtro que no puede cambiar nada: tocarlo
+          devuelve exactamente las mismas ocho filas. */}
+      {statusCounts.total > 0 && statusCounts.anulado > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <EntryChip label="Todos" count={statusCounts.total} active={statusFilter === ""} onClick={() => setStatusFilter("")} />
           <EntryChip label="Registrados" count={statusCounts.registrado} active={statusFilter === "registrado"} onClick={() => setStatusFilter((f) => (f === "registrado" ? "" : "registrado"))} />
