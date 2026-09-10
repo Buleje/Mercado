@@ -1306,10 +1306,36 @@ export class ForestLoteAserrioDB {
             "LOTE_NO_EDITABLE",
           );
         }
-        /* La puerta central del ADR-364: sólo la que todavía no declaró. */
-        if (corrida.quantity != null) {
+        /*
+         * La puerta del ADR-364, con la excepción de ADR-408.
+         *
+         * Sumarle materia prima a una corrida que YA tenía origen le BAJA el
+         * rendimiento: eso sigue prohibido, es la regla que impide maquillar un
+         * número ya declarado.
+         *
+         * Pero una corrida que declaró producción y **no tiene ningún origen**
+         * —las que nacen en «Producir sin lote»: la sierra cortó el sábado y el
+         * lote se arma el lunes— no tiene rendimiento que cambiar. No hay número
+         * que empeorar: hay un origen que falta, y dejarlo faltando es peor
+         * (el libro afirma que salió madera de la nada). Ahí vincular COMPLETA.
+         *
+         * Sin origen = sin volumen de entrada, sin consumos y sin otro lote
+         * apuntándole. Las tres cosas se miran: `volumeInputM3` solo dejaría
+         * pasar una corrida con consumos y volumen sin escribir.
+         */
+        const [consumosPrevios, lotesPrevios] = await Promise.all([
+          tx.forestCtpConsumo.count({ where: { tenantId, ctpEntryId: corridaId } }),
+          tx.forestLoteAserrio.count({
+            where: { tenantId, produccionEntryId: corridaId, deletedAt: null },
+          }),
+        ]);
+        const sinOrigen =
+          (corrida.volumeInputM3 == null || Number(corrida.volumeInputM3) <= 0) &&
+          consumosPrevios === 0 &&
+          lotesPrevios === 0;
+        if (corrida.quantity != null && !sinOrigen) {
           throw new CtpInvariantError(
-            `La corrida N° ${corrida.lineNo} ya declaró su producción: sumarle materia prima le cambiaría el rendimiento. ` +
+            `La corrida N° ${corrida.lineNo} ya declaró su producción y ya tiene materia prima: sumarle más le cambiaría el rendimiento. ` +
               "Registrá la madera nueva en una corrida aparte, o anulá esta y rehacela.",
             "LOTE_NO_EDITABLE",
           );
