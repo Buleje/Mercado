@@ -20,7 +20,8 @@
  */
 
 import { useMemo, useRef, useState } from "react";
-import { CheckCircle2, Search } from "@buleje/design-system/icons";
+import type { ReactNode } from "react";
+import { CheckCircle2, PackageOpen, Search } from "@buleje/design-system/icons";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import type { TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
@@ -83,6 +84,7 @@ export default function CtpTrozasDelLote({
    * Misma columna, dos preguntas — y el encabezado tiene que decir cuál.
    */
   etiquetaSeleccion = "Seleccionar",
+  accionVacio,
 }: {
   trozas: TrozaConsumible[];
   /** Opcionales en `soloLectura`: ahí no hay nada que tildar. */
@@ -94,6 +96,17 @@ export default function CtpTrozasDelLote({
   titulo?: string;
   soloLectura?: boolean;
   etiquetaSeleccion?: string;
+  /**
+   * Cómo se sale del vacío (un botón que lleva a apartar madera).
+   *
+   * Es opt-in a propósito: sin esto la lista vacía sigue dibujando la tabla con
+   * las columnas del formato, que es lo que enseña dónde se empieza cuando
+   * todavía no se eligió el lote (Brandon, 2026-09-02). Pero CON el lote ya
+   * elegido y cero trozas apartadas, esas diez columnas —más el buscador, el
+   * filtro de volumen y el «seleccionar todas»— son controles sobre cero filas:
+   * ahí lo que falta no es entender el formato, es ir a buscar la madera.
+   */
+  accionVacio?: ReactNode;
 }) {
   /** Buscador de la cabecera «Cod. Planta», igual que el formato. */
   const [busca, setBusca] = useState("");
@@ -108,6 +121,8 @@ export default function CtpTrozasDelLote({
    */
   const [rangoVol, setRangoVol] = useState<RangoNumerico>({ min: null, max: null });
   const marcadas = seleccion ?? SIN_SELECCION;
+  /* Vacío CON salida ofrecida: se cambia la tabla entera por el camino. */
+  const vacioRico = trozas.length === 0 && !cargando && Boolean(accionVacio);
 
   const opcionesGtf = useMemo(() => opcionesDeColumna(trozas, (t) => t.gtfNumber), [trozas]);
   const opcionesEspecie = useMemo(() => opcionesDeColumna(trozas, (t) => t.especieComun), [trozas]);
@@ -230,6 +245,20 @@ export default function CtpTrozasDelLote({
         </p>
       </header>
 
+      {/* Sin madera que mostrar y con una salida ofrecida, la tabla entera se
+          va: filtrar, buscar y tildar sobre cero filas no es información, es
+          mobiliario. Queda el porqué y el camino. */}
+      {trozas.length === 0 && !cargando && accionVacio && (
+        <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
+          <PackageOpen className="h-8 w-8 text-[var(--text-tertiary)]" aria-hidden />
+          <p className="max-w-md text-sm text-[var(--text-secondary)]">
+            {vacio ?? "Este lote no tiene trozas apartadas."}
+          </p>
+          {accionVacio}
+        </div>
+      )}
+
+      {!vacioRico && (<>
       {/**
        * Elegir por CÓDIGO y no fila por fila. Aparece sólo con suficientes
        * piezas: con cuatro trozas, dos inputs de rango son más ruido que ayuda.
@@ -416,6 +445,7 @@ export default function CtpTrozasDelLote({
           })}
         </TbodyCtp>
       </TablaCtp>
+      </>)}
     </section>
   );
 }

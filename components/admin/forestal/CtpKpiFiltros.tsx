@@ -80,8 +80,17 @@ export default function CtpKpiFiltros({
       </span>
 
       {visibles.map((c) => (
-        <div key={c.key} className="flex min-w-[11rem] flex-1 flex-col gap-1 sm:max-w-[15rem]">
-          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        <div
+          key={c.key}
+          /* `minWidth` inline y no `min-w-[11rem]`: globals.css tiene un
+             `* { min-width: 0 }` SIN capa, y lo sin-capa le gana a
+             @layer utilities — la clase no hacía nada. Sin el mínimo real, en
+             teléfono las tres columnas se aplastan en una fila y «PERMISO
+             (TÍTULO HABILITANTE)» se monta encima de «PRODUCTO». */
+          style={{ minWidth: "11rem" }}
+          className="flex flex-1 flex-col gap-1 sm:max-w-[15rem]"
+        >
+          <span className="text-[length:var(--ts-2xs)] font-bold break-words uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             {c.label}
           </span>
           <CampoDeFiltro

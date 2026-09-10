@@ -21,7 +21,7 @@
  *    en una línea en vez de mostrar un cero mudo en una tarjeta.
  */
 
-import { AlertTriangle, Boxes, FileX, PackageCheck, Truck, Warehouse } from "@buleje/design-system/icons";
+import { Boxes, PackageCheck, Truck, Warehouse } from "@buleje/design-system/icons";
 import type { ReactNode } from "react";
 import { StatCard } from "@buleje/design-system";
 import { CtpKpisPlegables, productLabel } from "./ctp-shared";
@@ -61,8 +61,6 @@ export default function CtpSeccionKpis({
   soloVigentes,
   onSoloVigentes,
   sinAnexo,
-  soloSinAnexo,
-  onSoloSinAnexo,
   facetas,
   onFacetas,
   opciones,
@@ -73,10 +71,9 @@ export default function CtpSeccionKpis({
   /** El filtro «solo registrados» está activo. */
   soloVigentes: boolean;
   onSoloVigentes: () => void;
-  /** Despacho: guías vivas sin su ANEXO N° 04. */
+  /** Despacho: guías vivas sin su ANEXO N° 04 — sólo para el titular de una
+   *  línea. El filtro y la alerta viven en `CtpBarraDeuda`. */
   sinAnexo?: number;
-  soloSinAnexo?: boolean;
-  onSoloSinAnexo?: () => void;
   /**
    * Los filtros que gobiernan estas cifras (ADR-400) y las opciones que de
    * verdad hay en el período. Opcionales: sin ellos las tarjetas se dibujan
@@ -161,32 +158,9 @@ export default function CtpSeccionKpis({
             emphasis="neutral"
           />,
     );
-    tarjetas.push(
-          <StatCard
-            key="sin-anexo"
-            density="compact"
-            label="Sin anexo 04"
-            value={String(sinAnexo ?? 0)}
-            subValue={
-              (sinAnexo ?? 0) > 0 ? "guías vivas sin su papel emitido" : "todas las guías tienen su anexo"
-            }
-            icon={FileX}
-            emphasis={(sinAnexo ?? 0) > 0 ? "warning" : "success"}
-            onClick={(sinAnexo ?? 0) > 0 ? onSoloSinAnexo : undefined}
-            className={soloSinAnexo ? ANILLO : undefined}
-          />,
-          <StatCard
-            key="sin-origen-desp"
-            density="compact"
-            label="Sin origen"
-            value={n2(kpis.sinOrigen)}
-            subValue={
-              kpis.sinOrigen > 0 ? "producto sin corrida que lo ampare" : "todo lo despachado cita su corrida"
-            }
-            icon={kpis.sinOrigen > 0 ? AlertTriangle : PackageCheck}
-            emphasis={kpis.sinOrigen > 0 ? "error" : "success"}
-          />,
-    );
+    /* «Sin anexo 04» y «Sin origen» se fueron a `CtpBarraDeuda`, igual que en
+       Producción: son deuda, no indicadores. «Sin anexo» además estaba por
+       triplicado —tarjeta, chip de filtro y pastilla— para un solo concepto. */
   }
 
   /* El titular de la pestaña en una línea: lo que se mira de reojo sin abrir el

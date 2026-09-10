@@ -62,6 +62,87 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
    al lado. Los tres de `fmtM3` son para medir una troza. */
 const n2m3 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+/**
+ * Debajo de esto, una corrida sin materia prima es polvo de aserradero.
+ *
+ * 0.05 m³ son ~21 pie tablar: menos de una tabla. En el cartel viejo una
+ * corrida de 0.001 m³ —un litro de madera— ocupaba el mismo chip, con el mismo
+ * color y el mismo tamaño, que una de 1.326 m³. Seis rojos donde uno solo
+ * importa enseñan a ignorar la lista entera.
+ */
+const M3_MENOR = 0.05;
+
+/**
+ * Las corridas sin materia prima, ordenadas y con las migajas plegadas.
+ *
+ * A nivel de módulo y no dentro del render: definido adentro se re-monta en
+ * cada tecleo del padre y el desplegable se cerraría solo.
+ */
+function ChipsSinOrigen({
+  corridas,
+  onVincular,
+}: {
+  corridas: CtpEntry[];
+  onVincular: (id: string) => void;
+}) {
+  const [verMenores, setVerMenores] = useState(false);
+  const m3 = (e: CtpEntry) => Number(e.quantity ?? 0);
+  const ordenadas = [...corridas].sort((a, b) => m3(b) - m3(a));
+  const grandes = ordenadas.filter((e) => m3(e) >= M3_MENOR);
+  const menores = ordenadas.filter((e) => m3(e) < M3_MENOR);
+  const volMenores = menores.reduce((a, e) => a + m3(e), 0);
+  /* Si TODAS son migajas no se pliega nada: un desplegable que esconde la lista
+     completa deja la pantalla diciendo «6 pendientes» y mostrando cero. */
+  const visibles = grandes.length === 0 || verMenores ? ordenadas : grandes;
+
+  const Chip = ({ e }: { e: CtpEntry }) => (
+    <li>
+      <button
+        type="button"
+        onClick={() => onVincular(e.id)}
+        title="Elegir el lote que entró a la sierra y atribuirle esta producción"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-[var(--surface-canvas)] px-2.5 py-1.5 text-xs font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
+      >
+        N° {e.lineNo} · {e.speciesCommon ?? "sin especie"} ·{" "}
+        <span className="font-mono font-normal">{Number(e.quantity ?? 0).toFixed(3)} m³</span>
+        <span className="font-normal opacity-80">— vincular</span>
+      </button>
+    </li>
+  );
+
+  return (
+    <>
+      <p className="mb-2 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+        Elegí el lote que entró a la sierra para atribuirle cada producción. De mayor a menor volumen.
+      </p>
+      <ul className="flex flex-wrap gap-2">
+        {visibles.slice(0, 12).map((e) => <Chip key={e.id} e={e} />)}
+        {visibles.length > 12 && (
+          <li className="self-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+            +{visibles.length - 12} más en la tabla
+          </li>
+        )}
+        {/* Las migajas, juntas y en gris: siguen a un clic, pero dejan de pedir
+            la misma atención que el volumen que sí mueve la aguja. */}
+        {grandes.length > 0 && menores.length > 0 && (
+          <li>
+            <button
+              type="button"
+              onClick={() => setVerMenores((v) => !v)}
+              aria-expanded={verMenores}
+              title={`Corridas de menos de ${M3_MENOR} m³ — menos de una tabla cada una`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-tertiary)] transition hover:border-[var(--accent)] hover:text-[var(--text-secondary)]"
+            >
+              {verMenores ? "Ocultar" : "Ver"} {menores.length} menor{menores.length === 1 ? "" : "es"}
+              <span className="font-mono font-normal">({volMenores.toFixed(3)} m³ en total)</span>
+            </button>
+          </li>
+        )}
+      </ul>
+    </>
+  );
+}
+
 const SECTION_META: Record<CtpSection, { label: string; icon: typeof Boxes; cta: string; empty: string }> = {
   /* El CTA de Producción ya no abre un formulario en blanco (ADR-349): la
      producción se registra DESDE UN LOTE, con sus trozas a la vista. El lote se
@@ -701,8 +782,35 @@ export function CtpEntriesView({
    * menú de declarar, abrir el modal de vincular— vive en esta vista.
    */
   const deudas = useMemo<DeudaItem[]>(() => {
-    if (section !== "produccion") return [];
     const items: DeudaItem[] = [];
+    if (section === "despacho") {
+      /* Despacho tenía el mismo problema por partida doble: «Sin anexo 04» era
+         tarjeta de KPI Y chip de filtro, y «Sin origen» una tarjeta más entre
+         las cifras. Las dos son deuda —papel que falta emitir, producto que no
+         cita su corrida— y ninguna describe el período. */
+      if ((sinAnexo ?? 0) > 0) {
+        items.push({
+          key: "sin-anexo",
+          valor: sinAnexo,
+          label: "sin anexo 04",
+          hint: soloSinAnexo ? "filtrando por éstas" : "guías vivas sin su papel emitido",
+          tono: "warning",
+          title: "Ver sólo las guías a las que les falta emitir el ANEXO N° 04",
+          onClick: () => setSoloSinAnexo((v) => !v),
+        });
+      }
+      if (kpis.sinOrigen > 0) {
+        items.push({
+          key: "sin-origen-desp",
+          valor: `${n2m3(kpis.sinOrigen)} m³`,
+          label: "sin origen",
+          hint: "producto despachado sin corrida que lo ampare",
+          tono: "error",
+          title: "Lo que salió y no puede decir de qué corrida vino: rompe la cadena de custodia",
+        });
+      }
+      return items;
+    }
     if (kpis.abiertas > 0) {
       items.push({
         key: "sin-declarar",
@@ -725,9 +833,6 @@ export function CtpEntriesView({
       });
     }
     if (sinOrigen.length > 0) {
-      /* De mayor a menor volumen: 1.326 m³ y 0.001 m³ no son la misma urgencia,
-         y en el cartel viejo se veían idénticas. */
-      const ordenadas = [...sinOrigen].sort((a, b) => Number(b.quantity ?? 0) - Number(a.quantity ?? 0));
       items.push({
         key: "sin-materia-prima",
         valor: sinOrigen.length,
@@ -735,38 +840,11 @@ export function CtpEntriesView({
         hint: kpis.sinOrigen > 0 ? `+ ${n2m3(kpis.sinOrigen)} m³ sin guía` : undefined,
         tono: "error",
         title: "Declararon producto y no dicen de qué madera salió",
-        contenido: (
-          <>
-            <p className="mb-2 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-              Elegí el lote que entró a la sierra para atribuirle cada producción. De mayor a menor volumen.
-            </p>
-            <ul className="flex flex-wrap gap-2">
-              {ordenadas.slice(0, 8).map((e) => (
-                <li key={e.id}>
-                  <button
-                    type="button"
-                    onClick={() => setVincularA(e.id)}
-                    title="Elegir el lote que entró a la sierra y atribuirle esta producción"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-[var(--surface-canvas)] px-2.5 py-1.5 text-xs font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
-                  >
-                    N° {e.lineNo} · {e.speciesCommon ?? "sin especie"} ·{" "}
-                    <span className="font-mono font-normal">{Number(e.quantity ?? 0).toFixed(3)} m³</span>
-                    <span className="font-normal opacity-80">— vincular</span>
-                  </button>
-                </li>
-              ))}
-              {ordenadas.length > 8 && (
-                <li className="self-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                  +{ordenadas.length - 8} más en la tabla
-                </li>
-              )}
-            </ul>
-          </>
-        ),
+        contenido: <ChipsSinOrigen corridas={sinOrigen} onVincular={setVincularA} />,
       });
     }
     return items;
-  }, [section, kpis.abiertas, kpis.consumidoAbierto, kpis.sinOrigen, idsAmpliables, sinOrigen, setAbrirDeclarar, setVincularA]);
+  }, [section, kpis.abiertas, kpis.consumidoAbierto, kpis.sinOrigen, idsAmpliables, sinOrigen, sinAnexo, soloSinAnexo, setSoloSinAnexo, setAbrirDeclarar, setVincularA]);
 
   const Icon = meta.icon;
   return (
@@ -780,8 +858,6 @@ export function CtpEntriesView({
         soloVigentes={statusFilter === "registrado"}
         onSoloVigentes={() => setStatusFilter((f) => (f === "registrado" ? "" : "registrado"))}
         sinAnexo={sinAnexo}
-        soloSinAnexo={soloSinAnexo}
-        onSoloSinAnexo={() => setSoloSinAnexo((v) => !v)}
         /* Los mismos filtros que recortan la tabla mandan sobre las cifras
            (ADR-400): las dos cosas salen de `filtrarSeccion`. */
         facetas={facetas}
@@ -932,7 +1008,7 @@ export function CtpEntriesView({
           Antes: tres tarjetas de KPI perdidas entre las cifras del proceso MÁS
           este cartel ámbar repitiendo las mismas corridas sin materia prima.
           Ahora el cartel es el detalle que se despliega desde su pastilla. */}
-      {section === "produccion" && <CtpBarraDeuda items={deudas} />}
+      <CtpBarraDeuda items={deudas} />
 
       {/* Vincular: las cinco reglas se revisan ANTES de escribir. */}
       {vincularA && (() => {
@@ -1058,6 +1134,7 @@ export function CtpEntriesView({
           lotes={lotesConMadera.map((x) => x.lote)}
           onLote={setLoteProd}
           estado={lotes}
+          onIrALotes={onIr ? () => onIr("lotes") : undefined}
           onCerrar={() => setLoteProd("")}
           /* Cerrar el LOTE: su madera vuelve al patio y el panel se va con él
              —ya no hay lote abierto que mostrar—, así que el aviso es un toast. */
@@ -1206,15 +1283,6 @@ export function CtpEntriesView({
       {statusCounts.total > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <EntryChip label="Todos" count={statusCounts.total} active={statusFilter === ""} onClick={() => setStatusFilter("")} />
-          {section === "despacho" && sinAnexo > 0 && (
-            <EntryChip
-              label="Sin anexo 04"
-              count={sinAnexo}
-              active={soloSinAnexo}
-              tone="muted"
-              onClick={() => setSoloSinAnexo((v) => !v)}
-            />
-          )}
           <EntryChip label="Registrados" count={statusCounts.registrado} active={statusFilter === "registrado"} onClick={() => setStatusFilter((f) => (f === "registrado" ? "" : "registrado"))} />
           {statusCounts.anulado > 0 && (
             <EntryChip label="Anulados" count={statusCounts.anulado} active={statusFilter === "anulado"} tone="muted" onClick={() => setStatusFilter((f) => (f === "anulado" ? "" : "anulado"))} />

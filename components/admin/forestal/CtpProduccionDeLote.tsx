@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Archive, Boxes, Layers, Loader2, X } from "@buleje/design-system/icons";
+import { Archive, Boxes, Layers, Loader2, PackageOpen, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { corridasAMedioDeclarar, origenesDeTrozas } from "@/lib/forestal/produccion-paquetes";
@@ -81,6 +81,7 @@ export default function CtpProduccionDeLote({
   onError,
   onCerrar,
   onCerrarLote,
+  onIrALotes,
 }: {
   lote: LoteAserrio;
   /**
@@ -102,6 +103,8 @@ export default function CtpProduccionDeLote({
    * patio. Distinto de deshacerlo — el lote y sus corridas siguen en el libro.
    */
   onCerrarLote?: (motivo: string) => Promise<{ liberadas: number; volumenM3: number }>;
+  /** Ir a apartar madera del patio: la salida del lote sin trozas. */
+  onIrALotes?: () => void;
   /** Avisa a la vista: recargar la tabla del libro y contar lo que pasó. */
   onListo: (mensaje: string, detalle: string) => void;
   /**
@@ -576,7 +579,21 @@ export default function CtpProduccionDeLote({
         onSeleccion={elegir}
         fechaConsumo={fechaConsumo}
         cargando={estado.cargando}
-        vacio="Este lote no tiene trozas apartadas. Agregale piezas del patio en «Lotes de aserrío»."
+        vacio={`El lote ${lote.code} está armado pero todavía no tiene ninguna troza apartada. La madera se elige del patio; cuando esté acá, se tilda y se declara.`}
+        /* Con cero trozas, la tabla de diez columnas con buscador y filtros era
+           mobiliario sobre cero filas: lo que falta es ir a buscar la madera. */
+        accionVacio={
+          onIrALotes ? (
+            <button
+              type="button"
+              onClick={onIrALotes}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110"
+            >
+              <PackageOpen className="h-4 w-4" aria-hidden />
+              Apartar madera para {lote.code}
+            </button>
+          ) : undefined
+        }
       />
 
       {/* Y el contador vivo de lo que va a quedar: mientras se tilda, el
