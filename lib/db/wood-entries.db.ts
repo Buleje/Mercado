@@ -208,17 +208,26 @@ export const WOOD_ENTRY_SORT_FIELDS = [
 ] as const;
 export type WoodEntrySortField = (typeof WOOD_ENTRY_SORT_FIELDS)[number];
 
+/**
+ * Los filtros del listado. Cuatro admiten VARIOS valores (Brandon, 2026-09-10:
+ * «poder seleccionar dos o más opciones de filtros»): especie, proveedor,
+ * producto y permiso. Adentro de un campo es OR, entre campos AND — el
+ * autofiltro de Excel, que es como se lee este libro.
+ *
+ * Un `string` suelto sigue valiendo: se lee como una lista de uno, así que las
+ * URLs guardadas y los llamadores viejos no cambian.
+ */
 export interface WoodEntryListFilters {
   status?: WoodEntryStatus;
-  speciesCommonName?: string;
+  speciesCommonName?: string | readonly string[];
   gtfNumber?: string;
   fromDate?: Date;
   toDate?: Date;
   search?: string; // matches provider/gtf/species
   /** Proveedor (contains, insensitive) — el chip "solo este proveedor". */
-  providerName?: string;
+  providerName?: string | readonly string[];
   /** Tipo de producto (rolliza/aserrada/…) — igualdad exacta. */
-  productType?: WoodProductType;
+  productType?: WoodProductType | readonly WoodProductType[];
   /** true = solo CITES · false = solo NO-CITES · undefined = ambos. */
   cites?: boolean;
   /** true = solo los registrados fuera del plazo SERFOR (días hábiles op→registro). */
@@ -235,7 +244,7 @@ export interface WoodEntryListFilters {
    * de otro (`CONC-25-1` dentro de `CONC-25-10`) arrastraría filas ajenas a un
    * número que después se declara.
    */
-  originCode?: string;
+  originCode?: string | readonly string[];
   /**
    * Estado de recepción (ADR-339): `pendiente` es la bandeja del patio y
    * `cerrada` el archivo de «GTF ingresadas». Sin valor = las dos.
@@ -256,29 +265,51 @@ type WoodEntryConTrozas = Prisma.WoodEntryGetPayload<object> & {
 
 const CACHE_PREFIX = "wood-entries";
 
+/** Lo elegido de un filtro, siempre como lista y sin vacíos. */
+function valoresDe<T extends string>(v: T | readonly T[] | undefined): T[] {
+  if (v == null) return [];
+  return (Array.isArray(v) ? v : [v as T]).filter(Boolean) as T[];
+}
+
 /**
  * Single source del `where` de listado: `list` y `stats` deben filtrar
  * exactamente igual, si no los KPIs describen un conjunto distinto al de la
  * tabla que están encabezando.
  */
-function buildListWhere(
+export function buildListWhere(
   tenantId: string,
   filters: WoodEntryListFilters,
 ): Prisma.WoodEntryWhereInput {
   const where: Prisma.WoodEntryWhereInput = { tenantId, deletedAt: null };
 
   if (filters.status) where.status = filters.status;
-  if (filters.speciesCommonName) {
-    where.speciesCommonName = { contains: filters.speciesCommonName, mode: "insensitive" };
+  /* Varios valores por campo = OR adentro del campo. Van por `AND` y cada uno
+     con su propio `OR`: `where.OR` de arriba ya es de la búsqueda libre, y
+     pisarlo haría que buscar + filtrar devuelva cualquier cosa. */
+  const y: Prisma.WoodEntryWhereInput[] = [];
+  const especies = valoresDe(filters.speciesCommonName);
+  if (especies.length === 1) {
+    where.speciesCommonName = { contains: especies[0], mode: "insensitive" };
+  } else if (especies.length > 1) {
+    y.push({ OR: especies.map((v) => ({ speciesCommonName: { contains: v, mode: "insensitive" as const } })) });
   }
   if (filters.gtfNumber) where.gtfNumber = filters.gtfNumber;
-  if (filters.providerName) {
-    where.providerName = { contains: filters.providerName, mode: "insensitive" };
+  const proveedores = valoresDe(filters.providerName);
+  if (proveedores.length === 1) {
+    where.providerName = { contains: proveedores[0], mode: "insensitive" };
+  } else if (proveedores.length > 1) {
+    y.push({ OR: proveedores.map((v) => ({ providerName: { contains: v, mode: "insensitive" as const } })) });
   }
-  if (filters.productType) where.productType = filters.productType;
-  if (filters.originCode) {
-    where.originCode = { equals: filters.originCode, mode: "insensitive" };
+  const productos = valoresDe(filters.productType);
+  if (productos.length === 1) where.productType = productos[0];
+  else if (productos.length > 1) where.productType = { in: [...productos] };
+  const permisos = valoresDe(filters.originCode);
+  if (permisos.length === 1) {
+    where.originCode = { equals: permisos[0], mode: "insensitive" };
+  } else if (permisos.length > 1) {
+    y.push({ OR: permisos.map((v) => ({ originCode: { equals: v, mode: "insensitive" as const } })) });
   }
+  if (y.length > 0) where.AND = y;
   if (filters.cites !== undefined) where.speciesCites = filters.cites;
   if (filters.sinOrigenCode) {
     // Va por AND y no por OR: `where.OR` ya lo usa la búsqueda libre, y
@@ -323,15 +354,26 @@ function buildLateConditions(
   filters: Omit<WoodEntryListFilters, "status" | "limit" | "offset">,
 ): Prisma.Sql[] {
   const conditions = [Prisma.sql`"tenantId" = ${tenantId}`, Prisma.sql`"deletedAt" IS NULL`];
-  if (filters.speciesCommonName) {
-    conditions.push(Prisma.sql`"speciesCommonName" ILIKE ${`%${filters.speciesCommonName}%`}`);
+  /* Un campo con varios valores es un OR entre placeholders — nunca
+     interpolación de string (regla 11: `$1 $2 $3`, jamás `${x}` crudo). */
+  const oR = (partes: Prisma.Sql[]) => Prisma.sql`(${Prisma.join(partes, " OR ")})`;
+  const especies = valoresDe(filters.speciesCommonName);
+  if (especies.length > 0) {
+    conditions.push(oR(especies.map((v) => Prisma.sql`"speciesCommonName" ILIKE ${`%${v}%`}`)));
   }
   if (filters.gtfNumber) conditions.push(Prisma.sql`"gtfNumber" = ${filters.gtfNumber}`);
-  if (filters.providerName) {
-    conditions.push(Prisma.sql`"providerName" ILIKE ${`%${filters.providerName}%`}`);
+  const proveedores = valoresDe(filters.providerName);
+  if (proveedores.length > 0) {
+    conditions.push(oR(proveedores.map((v) => Prisma.sql`"providerName" ILIKE ${`%${v}%`}`)));
   }
-  if (filters.productType) conditions.push(Prisma.sql`"productType" = ${filters.productType}`);
-  if (filters.originCode) conditions.push(Prisma.sql`LOWER("originCode") = LOWER(${filters.originCode})`);
+  const productos = valoresDe(filters.productType);
+  if (productos.length > 0) {
+    conditions.push(oR(productos.map((v) => Prisma.sql`"productType" = ${v}`)));
+  }
+  const permisos = valoresDe(filters.originCode);
+  if (permisos.length > 0) {
+    conditions.push(oR(permisos.map((v) => Prisma.sql`LOWER("originCode") = LOWER(${v})`)));
+  }
   if (filters.cites !== undefined) conditions.push(Prisma.sql`"speciesCites" = ${filters.cites}`);
   if (filters.sinOrigenCode) {
     conditions.push(Prisma.sql`("originCode" IS NULL OR "originCode" = '')`);
@@ -2914,6 +2956,42 @@ export class WoodEntriesDB {
       status: { notIn: ["rechazado", "anulado"] },
     };
 
+    /**
+     * ⭐ Cada faceta se calcula SIN su propio filtro.
+     *
+     * Desde que una columna admite varios valores (2026-09-10), calcular las
+     * opciones sobre lo ya filtrado deja el desplegable con una sola: elegida
+     * «Tornillo», «Cachimbo» desaparecía de la lista y no había forma de
+     * agregarlo. Es la misma lección que Capacidad aprendió con sus filtros
+     * cruzados — la faceta se excluye a sí misma.
+     *
+     * Las otras columnas SÍ acotan: elegido un proveedor, las especies que se
+     * ofrecen son las de ese proveedor. Eso es lo que hace que elegir no lleve
+     * nunca a una tabla vacía.
+     */
+    /* Fuera de plazo y recepción NO los pone `buildListWhere`: los agregan
+       `withLateFilter` (por `id`) y `withRecepcionFilter` (un `AND` al final).
+       Se conservan tal cual — son del período, no de la columna. */
+    const comoLista = (v: Prisma.WoodEntryWhereInput["AND"]): Prisma.WoodEntryWhereInput[] =>
+      Array.isArray(v) ? v : v ? [v] : [];
+    const andDelPeriodo = comoLista(where.AND).slice(
+      comoLista(buildListWhere(tenantId, periodFilters).AND).length,
+    );
+    const whereSin = (
+      campo: "speciesCommonName" | "providerName" | "productType" | "originCode",
+    ): Prisma.WoodEntryWhereInput => {
+      /* Se rearma con `buildListWhere` sin ese campo, para no tener que
+         deshacer a mano el `AND`/`OR` que dejó cuando trae varios valores. */
+      const base = buildListWhere(tenantId, { ...periodFilters, [campo]: undefined });
+      const and = [...comoLista(base.AND), ...andDelPeriodo];
+      return {
+        ...base,
+        ...(where.id ? { id: where.id } : {}),
+        ...(and.length > 0 ? { AND: and } : {}),
+        status: { notIn: ["rechazado", "anulado"] as WoodEntryStatus[] },
+      };
+    };
+
     // Fuera de plazo = días HÁBILES(operación → registro) > PLAZO (2, RDE
     // D000025-2023), con los mismos filtros del período. Mismo predicado que
     // usa el FILTRO de la tabla (`withLateFilter`): el KPI no puede contar 3 y
@@ -2943,7 +3021,7 @@ export class WoodEntriesDB {
       prisma.woodEntry.groupBy({ by: ["status"], where, _count: { _all: true } }),
       prisma.woodEntry.groupBy({
         by: ["speciesCommonName"],
-        where: whereVigente,
+        where: whereSin("speciesCommonName"),
         _count: { _all: true },
         _sum: { volumeM3: true },
       }),
@@ -2962,13 +3040,13 @@ export class WoodEntriesDB {
       // el mes tuvo 2 obliga a adivinar cuál trae resultados).
       prisma.woodEntry.groupBy({
         by: ["providerName"],
-        where: whereVigente,
+        where: whereSin("providerName"),
         _count: { _all: true },
         _sum: { volumeM3: true },
       }),
       prisma.woodEntry.groupBy({
         by: ["productType"],
-        where: whereVigente,
+        where: whereSin("productType"),
         _count: { _all: true },
       }),
       /* Los permisos del período, con su proveedor y su resolución (ADR-400).
@@ -2977,7 +3055,7 @@ export class WoodEntriesDB {
          tiene que elegir, y el mismo contrato puede llegar por dos proveedores. */
       prisma.woodEntry.groupBy({
         by: ["originCode", "providerName", "originSourceNumber"],
-        where: whereVigente,
+        where: whereSin("originCode"),
         _count: { _all: true },
         _sum: { volumeM3: true },
       }),

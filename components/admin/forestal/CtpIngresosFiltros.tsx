@@ -30,11 +30,19 @@ const TONE_CHIP: Record<string, { active: string; dot: string }> = {
 const BTN_ICONO = BTN_FILTRO;
 
 export interface CtpFacetasActivas {
-  species?: string;
-  provider?: string;
-  product?: string;
+  /**
+   * Los cuatro admiten VARIOS valores (Brandon, 2026-09-10). Son filtros de
+   * SERVIDOR: viajan repetidos en la URL y la consulta los cruza con OR
+   * adentro de cada campo y AND entre campos.
+   *
+   * `string` sigue valiendo —una preferencia guardada antes de este cambio lo
+   * tiene así— y se lee como una lista de uno.
+   */
+  species?: string | readonly string[];
+  provider?: string | readonly string[];
+  product?: string | readonly string[];
   /** El título habilitante que ampara la madera (ADR-400). Vacío = todos. */
-  permiso?: string;
+  permiso?: string | readonly string[];
   cites?: boolean;
   late?: boolean;
   /** Sin código de origen: los ingresos que dejan el EUDR sin parcela. */
@@ -105,10 +113,12 @@ export default function CtpIngresosFiltros({
   columnas,
   enCabecera = false,
 }: CtpIngresosFiltrosProps) {
+  /* Una COLUMNA acotada cuenta 1, tenga uno o cinco valores elegidos. */
+  const puesto = (v: string | readonly string[] | undefined) => (Array.isArray(v) ? v.length > 0 : !!v);
   const activos =
-    (facetas.species ? 1 : 0) +
-    (facetas.provider ? 1 : 0) +
-    (facetas.product ? 1 : 0) +
+    (puesto(facetas.species) ? 1 : 0) +
+    (puesto(facetas.provider) ? 1 : 0) +
+    (puesto(facetas.product) ? 1 : 0) +
     (facetas.cites !== undefined ? 1 : 0) +
     (facetas.late ? 1 : 0) +
     (facetas.sinOrigen ? 1 : 0);
@@ -256,9 +266,9 @@ export default function CtpIngresosFiltros({
           activos={activos}
           /* Producto no es una columna de la tabla por guía: se queda acá siempre. */
           selects={[
-            { id: "species", label: "Especie", value: facetas.species ?? "", options: stats?.species ?? [], soloMobile: enCabecera },
-            { id: "provider", label: "Proveedor", value: facetas.provider ?? "", options: stats?.providers ?? [], soloMobile: enCabecera },
-            { id: "product", label: "Producto", value: facetas.product ?? "", options: stats?.products ?? [], etiqueta: productLabel },
+            { id: "species", label: "Especie", value: facetas.species, options: stats?.species ?? [], soloMobile: enCabecera },
+            { id: "provider", label: "Proveedor", value: facetas.provider, options: stats?.providers ?? [], soloMobile: enCabecera },
+            { id: "product", label: "Producto", value: facetas.product, options: stats?.products ?? [], etiqueta: productLabel },
           ]}
           toggles={[
             { id: "cites", label: "CITES", on: facetas.cites === true },
@@ -269,7 +279,7 @@ export default function CtpIngresosFiltros({
               on: facetas.sinOrigen === true,
             },
           ]}
-          onSelect={(id, valor) => set({ [id]: valor || undefined })}
+          onSelect={(id, valores) => set({ [id]: valores.length > 0 ? valores : undefined })}
           onToggle={(id) =>
             id === "cites"
               ? set({ cites: facetas.cites === true ? undefined : true })

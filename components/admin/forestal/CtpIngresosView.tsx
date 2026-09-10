@@ -93,6 +93,23 @@ import {
  */
 const LEGAJO_MAX = 30;
 
+/* Las facetas admiten uno o varios valores (2026-09-10). Estos tres ayudantes
+   evitan repetir el `Array.isArray` en cada lugar que las lee. */
+/** Lo elegido, siempre como lista. */
+const listaDe = (v: string | readonly string[] | undefined): string[] =>
+  v == null ? [] : Array.isArray(v) ? [...v] : [v as string];
+/** El primero — para nombrar el archivo del CSV, que admite un solo apodo. */
+const unFiltro = (v: string | readonly string[] | undefined): string => listaDe(v)[0] ?? "";
+/** «especie tornillo o cachimbo», o vacío si esa columna no está acotada. */
+const textoDeFiltro = (
+  nombre: string,
+  v: string | readonly string[] | undefined,
+  etiqueta: (x: string) => string = (x) => x,
+): string => {
+  const vs = listaDe(v);
+  return vs.length === 0 ? "" : `${nombre} ${vs.map(etiqueta).join(" o ")}`;
+};
+
 /** La fecha de hoy como se escribe en el papel. */
 const hoyPE = () =>
   new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -645,7 +662,7 @@ export default function CtpIngresosView({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = nombreArchivoIngresos(period.label, statusFilter || facetas.provider || facetas.species);
+      a.download = nombreArchivoIngresos(period.label, statusFilter || unFiltro(facetas.provider) || unFiltro(facetas.species));
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);
       pushToast({
@@ -662,17 +679,21 @@ export default function CtpIngresosView({
     }
   }
 
-  const hayFiltro = Boolean(statusFilter || search || facetas.species || facetas.provider || facetas.product || facetas.permiso || facetas.cites !== undefined || facetas.late || facetas.sinOrigen);
+  const hayFiltro = Boolean(
+    statusFilter || search ||
+    [facetas.species, facetas.provider, facetas.product, facetas.permiso].some((v) => listaDe(v).length > 0) ||
+    facetas.cites !== undefined || facetas.late || facetas.sinOrigen,
+  );
   /** Qué está filtrando, con nombre: el vacío tiene que poder explicarse. */
   const filtrosActivos = useMemo(
     () =>
       [
         statusFilter ? `estado «${STATUS_META[statusFilter as keyof typeof STATUS_META]?.label ?? statusFilter}»` : "",
         search ? `búsqueda «${search}»` : "",
-        facetas.species ? `especie ${facetas.species}` : "",
-        facetas.provider ? `proveedor ${facetas.provider}` : "",
-        facetas.product ? `producto ${productLabel(facetas.product)}` : "",
-        facetas.permiso ? `permiso ${facetas.permiso}` : "",
+        textoDeFiltro("especie", facetas.species),
+        textoDeFiltro("proveedor", facetas.provider),
+        textoDeFiltro("producto", facetas.product, productLabel),
+        textoDeFiltro("permiso", facetas.permiso),
         facetas.cites !== undefined ? (facetas.cites ? "sólo CITES" : "sin CITES") : "",
         facetas.late ? "fuera de plazo" : "",
         facetas.sinOrigen ? "sin código de origen" : "",
@@ -952,14 +973,14 @@ export default function CtpIngresosView({
         /* Autofiltros de cabecera: mismo `facetas` que el panel (dos lugares, un filtro). */
         filtrosColumna={{
           provider: {
-            value: facetas.provider ?? "",
+            value: facetas.provider,
             options: stats?.providers ?? [],
-            onChange: (v) => setFacetas((f) => ({ ...f, provider: v || undefined })),
+            onChange: (v) => setFacetas((f) => ({ ...f, provider: v.length > 0 ? v : undefined })),
           },
           species: {
-            value: facetas.species ?? "",
+            value: facetas.species,
             options: stats?.species ?? [],
-            onChange: (v) => setFacetas((f) => ({ ...f, species: v || undefined })),
+            onChange: (v) => setFacetas((f) => ({ ...f, species: v.length > 0 ? v : undefined })),
             placeholder: "Todas",
           },
           /* El permiso, etiquetado con su resolución y su proveedor (Brandon,
@@ -967,9 +988,9 @@ export default function CtpIngresosView({
              salió de la celda del proveedor tiene que traerse esa información
              consigo. */
           permiso: {
-            value: facetas.permiso ?? "",
+            value: facetas.permiso,
             options: stats?.permisos ?? [],
-            onChange: (v) => setFacetas((f) => ({ ...f, permiso: v || undefined })),
+            onChange: (v) => setFacetas((f) => ({ ...f, permiso: v.length > 0 ? v : undefined })),
             etiqueta: (v) => {
               const p = stats?.permisos?.find((x) => x.value === v);
               if (!p) return v;

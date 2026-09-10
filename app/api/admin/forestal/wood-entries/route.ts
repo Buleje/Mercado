@@ -199,17 +199,23 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
   const url = new URL(req.url);
   const status = url.searchParams.get("status");
   const search = url.searchParams.get("search");
-  const speciesCommonName = url.searchParams.get("species");
+  /**
+   * Especie, proveedor, producto y permiso admiten VARIOS valores
+   * (Brandon, 2026-09-10). Viajan REPETIDOS —`?species=A&species=B`— y no
+   * separados por coma: un proveedor se llama «Maderera X, S.A.C.» y una coma
+   * como separador partiría el nombre en dos filtros que no existen.
+   */
+  const speciesCommonName = url.searchParams.getAll("species");
   const gtfNumber = url.searchParams.get("gtf");
   const fromDate = url.searchParams.get("from");
   const toDate = url.searchParams.get("to");
   const limit = Number(url.searchParams.get("limit") ?? "50");
   const offset = Number(url.searchParams.get("offset") ?? "0");
-  const providerName = url.searchParams.get("provider");
+  const providerName = url.searchParams.getAll("provider");
   /* El título habilitante que ampara la madera (ADR-400): el filtro que faltaba
      para poder preguntarle al libro «cuánto entró por este permiso». */
-  const permiso = url.searchParams.get("permiso");
-  const product = url.searchParams.get("product");
+  const permiso = url.searchParams.getAll("permiso");
+  const product = url.searchParams.getAll("product");
   const cites = url.searchParams.get("cites");
   const late = url.searchParams.get("late") === "1";
   const sinOrigen = url.searchParams.get("sin_origen") === "1";
@@ -222,7 +228,9 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
   // degrada al default (una URL vieja o un typo no debe romper el listado).
   const sortParsed = sortFieldEnum.safeParse(url.searchParams.get("sort"));
   const dirParsed = sortDirEnum.safeParse(url.searchParams.get("dir"));
-  const productParsed = product ? productTypeEnum.safeParse(product) : null;
+  /* Un valor desconocido no rompe el listado: se descarta y filtran los que
+     sí son productos válidos. */
+  const productos = product.map((p) => productTypeEnum.safeParse(p)).flatMap((r) => (r.success ? [r.data] : []));
 
   // Validate status if provided
   const statusParsed = status ? statusEnum.safeParse(status) : null;
@@ -239,14 +247,14 @@ export const GET = withApiHandler("forestal-wood-entries-get", async (req: NextR
 
   const filters = {
     status: statusParsed?.success ? statusParsed.data : undefined,
-    speciesCommonName: speciesCommonName ?? undefined,
+    speciesCommonName: speciesCommonName.length > 0 ? speciesCommonName : undefined,
     gtfNumber: gtfNumber ?? undefined,
     fromDate: parseDate(fromDate),
     toDate: parseDate(toDate),
     search: search ?? undefined,
-    providerName: providerName ?? undefined,
-    originCode: permiso ?? undefined,
-    productType: productParsed?.success ? productParsed.data : undefined,
+    providerName: providerName.length > 0 ? providerName : undefined,
+    originCode: permiso.length > 0 ? permiso : undefined,
+    productType: productos.length > 0 ? productos : undefined,
     cites: cites === "1" ? true : cites === "0" ? false : undefined,
     late: late || undefined,
     sinOrigenCode: sinOrigen || undefined,

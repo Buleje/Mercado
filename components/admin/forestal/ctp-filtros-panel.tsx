@@ -204,7 +204,7 @@ export default function CtpFiltrosPanel({
  * arriba cuando no entra abajo (`alto`), como el autofiltro de Excel. Se cierra
  * al click afuera y al scrollear — una posición fija quedaría colgada en el aire.
  */
-function usePopoverCabecera(alto: number) {
+function usePopoverCabecera(alto: number, ancho = 256) {
   const ref = useRef<HTMLDetailsElement>(null);
   const [pos, setPos] = useState<{ left: number; top?: number; bottom?: number } | null>(null);
 
@@ -219,9 +219,13 @@ function usePopoverCabecera(alto: number) {
     if (!r) return false;
     if (r.bottom < 0 || r.top > window.innerHeight) return false;
     const entraAbajo = r.bottom + 4 + alto <= window.innerHeight;
-    setPos(entraAbajo ? { top: r.bottom + 4, left: r.left } : { bottom: window.innerHeight - r.top + 4, left: r.left });
+    /* Y que no se corte contra el borde derecho: la última columna de una tabla
+       ancha abre su panel justo ahí, y la mitad quedaba fuera de la pantalla
+       (visto en la bandeja de Ingresos, 2026-09-10). */
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - ancho - 8));
+    setPos(entraAbajo ? { top: r.bottom + 4, left } : { bottom: window.innerHeight - r.top + 4, left });
     return true;
-  }, [alto]);
+  }, [alto, ancho]);
 
   useEffect(() => {
     const el = ref.current;
@@ -456,7 +460,7 @@ export function FiltroColumnaRango({
   onChange: (r: RangoNumerico) => void;
   placeholder?: string;
 }) {
-  const { ref, alAbrir, estilo } = usePopoverCabecera(170);
+  const { ref, alAbrir, estilo } = usePopoverCabecera(170, 240);
   const min = valor?.min ?? null;
   const max = valor?.max ?? null;
   const activo = min != null || max != null;

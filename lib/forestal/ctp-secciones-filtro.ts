@@ -51,7 +51,7 @@ export interface FacetaSeccion {
  * siguen andando sin cambiar nada, y un valor suelto se lee como una lista de
  * uno. Cambiar el tipo de golpe habría roto seis pantallas por una feature.
  */
-export type ValorFiltro = string | string[] | undefined;
+export type ValorFiltro = string | readonly string[] | undefined;
 
 /** `true` si ese filtro está puesto (una lista vacía NO filtra nada). */
 export function filtroActivo(v: ValorFiltro): boolean {
@@ -61,7 +61,7 @@ export function filtroActivo(v: ValorFiltro): boolean {
 /** Lo elegido, siempre como lista — para no repetir el `Array.isArray` en cada uso. */
 export function valoresDe(v: ValorFiltro): string[] {
   if (!v) return [];
-  return Array.isArray(v) ? v.filter(Boolean) : [v];
+  return Array.isArray(v) ? v.filter(Boolean) : [v as string];
 }
 
 /**

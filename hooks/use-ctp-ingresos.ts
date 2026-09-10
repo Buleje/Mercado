@@ -46,11 +46,19 @@ export interface CtpIngresosFiltros {
   status: string;
   /** Ya debounceado por el caller. */
   search: string;
-  species?: string;
-  provider?: string;
-  product?: string;
+  /**
+   * Los cuatro admiten VARIOS valores a la vez (Brandon, 2026-09-10): «tornillo
+   * Y cachimbo». Viajan repetidos en la URL (`?species=A&species=B`) porque un
+   * proveedor puede llamarse «Maderera X, S.A.C.» y una coma como separador le
+   * partiría el nombre. Lista vacía = sin filtro.
+   *
+   * Se acepta `string` para no romper a quien todavía pase uno solo.
+   */
+  species?: string | readonly string[];
+  provider?: string | readonly string[];
+  product?: string | readonly string[];
   /** El título habilitante que ampara la madera (ADR-400). Vacío = todos. */
-  permiso?: string;
+  permiso?: string | readonly string[];
   /** true = solo CITES · false = solo NO-CITES · undefined = ambos. */
   cites?: boolean;
   /** true = solo los registrados fuera del plazo SERFOR. */
@@ -150,10 +158,16 @@ export function useCtpIngresos({
     const params = applyCtpPeriodParams(new URLSearchParams(), period);
     if (status) params.set("status", status);
     if (search) params.set("search", search);
-    if (species) params.set("species", species);
-    if (provider) params.set("provider", provider);
-    if (product) params.set("product", product);
-    if (permiso) params.set("permiso", permiso);
+    /* `append` y no `set`: cada valor elegido va como un parámetro propio. */
+    const varios = (clave: string, v: string | readonly string[] | undefined) => {
+      for (const x of v == null ? [] : Array.isArray(v) ? v : [v as string]) {
+        if (x) params.append(clave, x);
+      }
+    };
+    varios("species", species);
+    varios("provider", provider);
+    varios("product", product);
+    varios("permiso", permiso);
     if (cites !== undefined) params.set("cites", cites ? "1" : "0");
     if (late) params.set("late", "1");
     if (sinOrigen) params.set("sin_origen", "1");

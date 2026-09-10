@@ -35,13 +35,17 @@ const claveDe = (vista: VistaPrefs) => (vista === "todas" ? KEY_BASE : `${KEY_BA
 export interface CtpIngresosPrefs {
   statusFilter: string;
   facetas: {
-    species?: string;
-    provider?: string;
-    product?: string;
+    /* Uno o varios valores (2026-09-10). Lo guardado por una versión anterior
+       es un `string` y se sigue leyendo: vale como una lista de uno. */
+    species?: string | readonly string[];
+    provider?: string | readonly string[];
+    product?: string | readonly string[];
     /** El título habilitante (ADR-400). */
-    permiso?: string;
+    permiso?: string | readonly string[];
     cites?: boolean;
     late?: boolean;
+    /** Sin código de origen: los ingresos que dejan el EUDR sin parcela. */
+    sinOrigen?: boolean;
   };
   sort: CtpSort;
 }

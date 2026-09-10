@@ -23,6 +23,14 @@ import { SlidersHorizontal, X } from "@buleje/design-system/icons";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
 import { filtroActivo, valoresDe, type ValorFiltro } from "@/lib/forestal/ctp-secciones-filtro";
 
+/** Las cuatro facetas de la bandeja de Ingresos, cada una con uno o varios valores. */
+export interface FacetasDeIngresos {
+  species?: string | readonly string[];
+  provider?: string | readonly string[];
+  product?: string | readonly string[];
+  permiso?: string | readonly string[];
+}
+
 export interface OpcionKpiFiltro {
   value: string;
   label: string;
@@ -127,8 +135,8 @@ export function camposDeIngresos({
     products?: { value: string; count: number; volumeM3: number }[];
     permisos?: { value: string; count: number; volumeM3: number; proveedores: string[]; resoluciones: string[] }[];
   } | null;
-  facetas: { species?: string; provider?: string; product?: string; permiso?: string };
-  onFacetas: (f: { species?: string; provider?: string; product?: string; permiso?: string }) => void;
+  facetas: FacetasDeIngresos;
+  onFacetas: (f: FacetasDeIngresos) => void;
   /** Cómo se escribe un tipo de producto para una persona. */
   productLabel: (v: string) => string;
 }): CampoKpiFiltro[] {
@@ -145,8 +153,7 @@ export function camposDeIngresos({
       todos: "Todas las especies",
       valor: facetas.species,
       opciones: (stats?.species ?? []).map((f) => ({ value: f.value, label: f.value, hint: peso(f) })),
-      onChange: (v) => onFacetas({ ...facetas, species: v[0] }),
-      unico: true,
+      onChange: (v) => onFacetas({ ...facetas, species: v.length > 0 ? v : undefined }),
     },
     {
       key: "permiso",
@@ -162,8 +169,7 @@ export function camposDeIngresos({
           .join(" · "),
         hint: peso(f),
       })),
-      onChange: (v) => onFacetas({ ...facetas, permiso: v[0] }),
-      unico: true,
+      onChange: (v) => onFacetas({ ...facetas, permiso: v.length > 0 ? v : undefined }),
     },
     {
       key: "provider",
@@ -171,8 +177,7 @@ export function camposDeIngresos({
       todos: "Todos los proveedores",
       valor: facetas.provider,
       opciones: (stats?.providers ?? []).map((f) => ({ value: f.value, label: f.value, hint: peso(f) })),
-      onChange: (v) => onFacetas({ ...facetas, provider: v[0] }),
-      unico: true,
+      onChange: (v) => onFacetas({ ...facetas, provider: v.length > 0 ? v : undefined }),
     },
     {
       key: "product",
@@ -184,8 +189,7 @@ export function camposDeIngresos({
         label: productLabel(f.value),
         hint: nf(f.count),
       })),
-      onChange: (v) => onFacetas({ ...facetas, product: v[0] }),
-      unico: true,
+      onChange: (v) => onFacetas({ ...facetas, product: v.length > 0 ? v : undefined }),
     },
   ];
 }
