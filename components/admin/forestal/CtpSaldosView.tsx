@@ -735,7 +735,9 @@ export function CtpSaldosView({
                       value: e,
                       label: e,
                     })),
-                    onChange: (v) => setEspecieSaldos(v ?? ""),
+                    onChange: (v) => setEspecieSaldos(v[0] ?? ""),
+                    /* Viaja a `useCtpSaldos`: la consulta admite una especie. */
+                    unico: true,
                   },
                 ]}
                 onLimpiar={() => setEspecieSaldos("")}

@@ -33,8 +33,11 @@ export default function CtpTrozasView() {
   const { trozas, meta, cargando, error, recargar } = useTrozasPatio();
   /* Los filtros viven acá porque los tocan las dos pantallas: se elige un estado
      en el panel de arriba y la lista de abajo tiene que obedecer. */
-  const [estadoFiltro, setEstadoFiltro] = useState<EstadoTroza | null>(null);
-  const [tramoFiltro, setTramoFiltro] = useState<string | null>(null);
+  /* Listas y no un valor suelto (Brandon, 2026-09-10): «libre Y apartada» es la
+     pregunta de todos los días —qué hay parado— y con uno solo había que mirar
+     el patio dos veces y sumar a mano. */
+  const [estadoFiltro, setEstadoFiltro] = useState<EstadoTroza[]>([]);
+  const [tramoFiltro, setTramoFiltro] = useState<string[]>([]);
   /**
    * Especie, guía y título suben acá con estado y tramo (ADR-400).
    *
@@ -45,9 +48,9 @@ export default function CtpTrozasView() {
    * Estado y tramo NO recortan el panorama: son su propio desglose, y filtrar
    * las tarjetas por lo que se elige EN las tarjetas las dejaría en cero.
    */
-  const [especie, setEspecie] = useState<string | null>(null);
-  const [guia, setGuia] = useState<string | null>(null);
-  const [titulo, setTitulo] = useState<string | null>(null);
+  const [especie, setEspecie] = useState<string[]>([]);
+  const [guia, setGuia] = useState<string[]>([]);
+  const [titulo, setTitulo] = useState<string[]>([]);
   const [buscadorAbierto, setBuscadorAbierto] = useState(false);
   /** La pieza cuya historia se está mirando. */
   const [ficha, setFicha] = useState<string | null>(null);

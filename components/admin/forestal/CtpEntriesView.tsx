@@ -24,7 +24,6 @@ import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
 import CtpProducirSinLoteModal from "./CtpProducirSinLoteModal";
 import CtpVincularMateriaPrimaModal from "./CtpVincularMateriaPrimaModal";
-import { largoMaxEnMetros } from "@/lib/forestal/vincular-produccion";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import CtpProduccionPendiente from "./CtpProduccionPendiente";
@@ -45,6 +44,7 @@ import {
   type CampoRango,
   type ClaveSalida,
   type RangoNumerico,
+  type ValorFiltro,
 } from "@/lib/forestal/ctp-secciones-filtro";
 import { nombreArchivoSeccion, seccionACsv } from "@/lib/forestal/ctp-secciones-csv";
 import { corridasAMedioDeclarar } from "@/lib/forestal/produccion-paquetes";
@@ -235,7 +235,13 @@ export function CtpEntriesView({
    *
    * En <640px no hay tabla (son cards), así que ahí el panel los muestra todos.
    */
-  const setFaceta = (id: string, valor: string) => setFacetas((f) => ({ ...f, [id]: valor || undefined }));
+  /**
+   * Guardar lo elegido en una columna. Una lista VACÍA se guarda como
+   * `undefined` y no como `[]`: si quedara, el badge de «Filtros» contaría un
+   * filtro que no filtra nada y el operario buscaría qué está acotando.
+   */
+  const setFaceta = (id: string, valores: string[]) =>
+    setFacetas((f) => ({ ...f, [id]: valores.length > 0 ? valores : undefined }));
   const enLaCabecera = {
     species: true,
     product: true,
@@ -245,7 +251,7 @@ export function CtpEntriesView({
   };
   const filtroCol = (id: keyof typeof enLaCabecera, options: FacetaOpcion[], extra: { etiqueta?: (v: string) => string; placeholder?: string } = {}) =>
     enLaCabecera[id]
-      ? { value: (facetas[id] as string | undefined) ?? "", options, onChange: (v: string) => setFaceta(id, v), ...extra }
+      ? { value: facetas[id] as ValorFiltro, options, onChange: (v: string[]) => setFaceta(id, v), ...extra }
       : undefined;
   /**
    * Los rangos numéricos («≥ 0.5 m³», «entre 10 y 20 piezas»): mismo `facetas`,
@@ -1148,20 +1154,20 @@ export function CtpEntriesView({
              En desktop el panel se queda con las marcas y con lo que la tabla
              no está mostrando; en móvil (sin tabla) los muestra todos. */
           selects={[
-            { id: "species", label: "Especie", value: facetas.species ?? "", options: opciones.species, soloMobile: enLaCabecera.species },
-            { id: "product", label: "Producto", value: facetas.product ?? "", options: opciones.products, soloMobile: enLaCabecera.product },
+            { id: "species", label: "Especie", value: facetas.species, options: opciones.species, soloMobile: enLaCabecera.species },
+            { id: "product", label: "Producto", value: facetas.product, options: opciones.products, soloMobile: enLaCabecera.product },
             ...(section === "despacho"
-              ? [{ id: "destino", label: "Destino", value: facetas.destino ?? "", options: opciones.destinos, soloMobile: enLaCabecera.destino }]
+              ? [{ id: "destino", label: "Destino", value: facetas.destino, options: opciones.destinos, soloMobile: enLaCabecera.destino }]
               : [
                   {
                     id: "salida",
                     label: "Salida",
-                    value: facetas.salida ?? "",
+                    value: facetas.salida,
                     options: opciones.salidas,
                     etiqueta: (v: string) => SALIDA_LABEL[v as ClaveSalida] ?? v,
                     soloMobile: enLaCabecera.salida,
                   },
-                  { id: "permiso", label: "N° Permiso", value: facetas.permiso ?? "", options: opciones.permisos, soloMobile: enLaCabecera.permiso },
+                  { id: "permiso", label: "N° Permiso", value: facetas.permiso, options: opciones.permisos, soloMobile: enLaCabecera.permiso },
                 ]),
           ]}
           toggles={[{ id: "cites", label: "CITES", on: facetas.cites === true }]}

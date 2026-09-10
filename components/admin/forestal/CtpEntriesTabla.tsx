@@ -49,9 +49,10 @@ export type OrdenCtp = { by: SortKey | null; dir: "asc" | "desc" };
  * dibuja donde el ojo ya está mirando.
  */
 export interface FiltroDeColumna {
-  value: string;
+  /** Uno o VARIOS valores: la columna se filtra por más de una opción a la vez. */
+  value: string | readonly string[] | undefined;
   options: FacetaOpcion[];
-  onChange: (v: string) => void;
+  onChange: (v: string[]) => void;
   etiqueta?: (v: string) => string;
   placeholder?: string;
 }

@@ -23,7 +23,7 @@ import { ChevronRight, FileCheck, PackageOpen, PenLine } from "@buleje/design-sy
 import { agruparTrozas, motivoBloqueo, type AgrupacionPatio, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
-import { FiltroColumna, FiltroColumnaMulti, type FacetaOpcion } from "./ctp-filtros-panel";
+import { FiltroColumna, type FacetaOpcion } from "./ctp-filtros-panel";
 
 /**
  * Los autofiltros de la cabecera (estilo Excel, Brandon 2026-09-03): Guía (varias
@@ -33,8 +33,8 @@ import { FiltroColumna, FiltroColumnaMulti, type FacetaOpcion } from "./ctp-filt
  */
 export interface FiltrosPatioColumna {
   guia?: { value: readonly string[]; options: FacetaOpcion[]; onChange: (v: string[]) => void };
-  permiso?: { value: string; options: FacetaOpcion[]; onChange: (v: string) => void };
-  especie?: { value: string; options: FacetaOpcion[]; onChange: (v: string) => void };
+  permiso?: { value: readonly string[]; options: FacetaOpcion[]; onChange: (v: string[]) => void };
+  especie?: { value: readonly string[]; options: FacetaOpcion[]; onChange: (v: string[]) => void };
 }
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
@@ -320,7 +320,7 @@ export default function CtpTrozasIngresadas({
                 ampara. */}
             <th className="px-3 py-2 font-bold">
               <span className="block">Guía</span>
-              {fc.guia && <FiltroColumnaMulti label="Guía" {...fc.guia} />}
+              {fc.guia && <FiltroColumna label="Guía" {...fc.guia} placeholder="Todas" />}
             </th>
             <th className="px-3 py-2 font-bold">
               <span className="block">Permiso</span>

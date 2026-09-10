@@ -376,3 +376,54 @@ describe("apartadas: decide si «en patio» se desdobla", () => {
     expect(r.enPatio.piezas).toBe(2);
   });
 });
+
+/**
+ * Selección MÚLTIPLE por columna (Brandon, 2026-09-10).
+ *
+ * «Libre Y apartada» es la pregunta de todos los días —qué hay parado— y con un
+ * solo valor había que mirar el patio dos veces y sumar a mano. OR adentro de un
+ * campo, AND entre campos.
+ */
+describe("filtrarPatio con varios valores por campo", () => {
+  const hoy = new Date("2026-06-01T12:00:00.000Z");
+  const base = {
+    volumenM3: 1,
+    fechaIngreso: "2026-05-20T00:00:00.000Z",
+    despachadaEnId: null,
+    noRecepcionada: false,
+    descarte: false,
+    retrozos: 0,
+    trozaOrigenId: null,
+    codificacion: null,
+    codigoPlanta: null,
+    proveedor: null,
+  };
+  const trozas = [
+    { ...base, id: "libre", especieComun: "Tornillo", gtfNumber: "G-1", permiso: "CONC-1", consumidaEnId: null, loteAserrioCode: null },
+    { ...base, id: "apartada", especieComun: "Cachimbo", gtfNumber: "G-2", permiso: "CONC-2", consumidaEnId: null, loteAserrioCode: "L-1" },
+    { ...base, id: "consumida", especieComun: "Shihuahuaco", gtfNumber: "G-3", permiso: null, consumidaEnId: "c1", loteAserrioCode: null },
+  ];
+
+  it("dos estados a la vez traen las piezas de los dos", () => {
+    const r = filtrarPatio(trozas, { estado: ["libre", "apartada"] }, hoy).map((t) => t.id);
+    expect(r.sort()).toEqual(["apartada", "libre"]);
+  });
+
+  it("dos especies a la vez (OR) y una guía (AND) se cruzan", () => {
+    const r = filtrarPatio(trozas, { especie: ["Tornillo", "Cachimbo"], guia: ["G-2"] }, hoy).map((t) => t.id);
+    expect(r).toEqual(["apartada"]);
+  });
+
+  it("una lista vacía no filtra nada", () => {
+    expect(filtrarPatio(trozas, { especie: [], estado: [] }, hoy)).toHaveLength(3);
+  });
+
+  it("un valor suelto sigue valiendo: se lee como una lista de uno", () => {
+    expect(filtrarPatio(trozas, { especie: "Tornillo" }, hoy).map((t) => t.id)).toEqual(["libre"]);
+  });
+
+  it("«Sin título» convive con títulos reales en la misma lista", () => {
+    const r = filtrarPatio(trozas, { titulo: [SIN_TITULO, "CONC-1"] }, hoy).map((t) => t.id);
+    expect(r.sort()).toEqual(["consumida", "libre"]);
+  });
+});

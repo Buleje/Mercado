@@ -356,7 +356,9 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
             todos: "Todas las especies",
             valor: especie || undefined,
             opciones: data.especiesDelPeriodo.map((e) => ({ value: e, label: e })),
-            onChange: (v) => setEspecie(v ?? ""),
+            onChange: (v) => setEspecie(v[0] ?? ""),
+            /* Viaja a los cuatro pedidos del puntaje: la consulta admite una. */
+            unico: true,
           },
         ]}
         onLimpiar={() => setEspecie("")}

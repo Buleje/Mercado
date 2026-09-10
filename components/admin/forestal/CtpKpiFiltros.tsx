@@ -20,6 +20,8 @@
  */
 
 import { SlidersHorizontal, X } from "@buleje/design-system/icons";
+import { CampoDeFiltro } from "./ctp-filtros-panel";
+import { filtroActivo, valoresDe, type ValorFiltro } from "@/lib/forestal/ctp-secciones-filtro";
 
 export interface OpcionKpiFiltro {
   value: string;
@@ -33,9 +35,17 @@ export interface CampoKpiFiltro {
   label: string;
   /** Lo que dice la opción vacía: «Todas las especies». */
   todos: string;
-  valor: string | undefined;
+  /** Uno o VARIOS valores (multi-selección, 2026-09-10). */
+  valor: ValorFiltro;
   opciones: OpcionKpiFiltro[];
-  onChange: (valor: string | undefined) => void;
+  onChange: (valor: string[]) => void;
+  /**
+   * `true` = de a uno. Es el caso de la bandeja de Ingresos: sus filtros viajan
+   * al servidor (`?species=`) y la consulta admite un valor por campo, así que
+   * la lista muestra redondeles y no casillas — prometer dos y aplicar uno sería
+   * peor que ofrecer uno.
+   */
+  unico?: boolean;
 }
 
 export default function CtpKpiFiltros({
@@ -50,9 +60,9 @@ export default function CtpKpiFiltros({
 }) {
   /* Un campo sin opciones no se dibuja: un desplegable vacío es una promesa
      que la pantalla no puede cumplir. */
-  const visibles = campos.filter((c) => c.opciones.length > 0 || c.valor);
+  const visibles = campos.filter((c) => c.opciones.length > 0 || filtroActivo(c.valor));
   if (visibles.length === 0) return null;
-  const activos = visibles.filter((c) => c.valor).length;
+  const activos = visibles.filter((c) => filtroActivo(c.valor)).length;
 
   return (
     <div className="mb-3 flex flex-wrap items-end gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
@@ -62,26 +72,20 @@ export default function CtpKpiFiltros({
       </span>
 
       {visibles.map((c) => (
-        <label key={c.key} className="flex min-w-[11rem] flex-1 flex-col gap-1 sm:max-w-[15rem]">
+        <div key={c.key} className="flex min-w-[11rem] flex-1 flex-col gap-1 sm:max-w-[15rem]">
           <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
             {c.label}
           </span>
-          <select
-            value={c.valor ?? ""}
-            onChange={(e) => c.onChange(e.target.value || undefined)}
-            className={`h-10 w-full rounded-lg border bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] ${
-              c.valor ? "border-[var(--accent)] font-bold" : "border-[var(--rule-base)]"
-            }`}
-          >
-            <option value="">{c.todos}</option>
-            {c.opciones.map((o) => (
-              <option key={o.value} value={o.value} title={o.hint}>
-                {o.label}
-                {o.hint ? ` — ${o.hint}` : ""}
-              </option>
-            ))}
-          </select>
-        </label>
+          <CampoDeFiltro
+            label={c.label}
+            value={c.valor}
+            options={c.opciones}
+            onChange={c.onChange}
+            placeholder={c.todos}
+            unico={c.unico}
+            compacto
+          />
+        </div>
       ))}
 
       {activos > 0 && (
@@ -141,7 +145,8 @@ export function camposDeIngresos({
       todos: "Todas las especies",
       valor: facetas.species,
       opciones: (stats?.species ?? []).map((f) => ({ value: f.value, label: f.value, hint: peso(f) })),
-      onChange: (v) => onFacetas({ ...facetas, species: v }),
+      onChange: (v) => onFacetas({ ...facetas, species: v[0] }),
+      unico: true,
     },
     {
       key: "permiso",
@@ -157,7 +162,8 @@ export function camposDeIngresos({
           .join(" · "),
         hint: peso(f),
       })),
-      onChange: (v) => onFacetas({ ...facetas, permiso: v }),
+      onChange: (v) => onFacetas({ ...facetas, permiso: v[0] }),
+      unico: true,
     },
     {
       key: "provider",
@@ -165,7 +171,8 @@ export function camposDeIngresos({
       todos: "Todos los proveedores",
       valor: facetas.provider,
       opciones: (stats?.providers ?? []).map((f) => ({ value: f.value, label: f.value, hint: peso(f) })),
-      onChange: (v) => onFacetas({ ...facetas, provider: v }),
+      onChange: (v) => onFacetas({ ...facetas, provider: v[0] }),
+      unico: true,
     },
     {
       key: "product",
@@ -177,16 +184,17 @@ export function camposDeIngresos({
         label: productLabel(f.value),
         hint: nf(f.count),
       })),
-      onChange: (v) => onFacetas({ ...facetas, product: v }),
+      onChange: (v) => onFacetas({ ...facetas, product: v[0] }),
+      unico: true,
     },
   ];
 }
 
 /** Lo que dice la nota del panel: qué se está mirando, en una línea. */
 export function notaDeFiltros(campos: CampoKpiFiltro[]): string | null {
-  const puestos = campos.filter((c) => c.valor);
+  const puestos = campos.filter((c) => filtroActivo(c.valor));
   if (puestos.length === 0) return null;
   return `Los indicadores muestran sólo ${puestos
-    .map((c) => `${c.label.toLowerCase()}: ${c.valor}`)
+    .map((c) => `${c.label.toLowerCase()}: ${valoresDe(c.valor).join(" o ")}`)
     .join(" · ")}`;
 }

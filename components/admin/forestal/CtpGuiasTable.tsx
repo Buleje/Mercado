@@ -80,11 +80,25 @@ const COLS_GUIAS_DEFECTO: ColsGuiasVisibles = {
   documento: true, proveedor: true, permiso: true, estado: true,
 };
 
+/**
+ * El autofiltro de una columna de la bandeja de Ingresos.
+ *
+ * De UN valor a propósito: acá el filtro viaja al servidor (`?species=`) y la
+ * consulta paginada admite uno por campo. El control lo dice mostrando
+ * redondeles en vez de casillas (`unico`) — prometer dos y aplicar uno sería
+ * peor que ofrecer uno.
+ */
 export interface FiltroColumnaGuias {
   value: string;
   options: FacetaOpcion[];
   onChange: (v: string) => void;
   placeholder?: string;
+  etiqueta?: (v: string) => string;
+}
+
+/** Adapta el filtro de a uno de esta tabla al control multi-valor compartido. */
+function filtroUnico(f: FiltroColumnaGuias) {
+  return { ...f, unico: true as const, onChange: (v: string[]) => f.onChange(v[0] ?? "") };
 }
 
 export interface CtpGuiasTableProps {
@@ -247,7 +261,7 @@ export default function CtpGuiasTable(props: CtpGuiasTableProps) {
                   <Th>
                     N° Permiso
                     {props.filtrosColumna?.permiso && (
-                      <FiltroColumna label="permiso" {...props.filtrosColumna.permiso} />
+                      <FiltroColumna label="permiso" {...filtroUnico(props.filtrosColumna.permiso)} />
                     )}
                   </Th>
                 )}
@@ -877,7 +891,7 @@ function ThSort({
         <Icono className={`h-3.5 w-3.5 ${activo ? "" : "opacity-40"}`} aria-hidden="true" />
       </button>
       {/* Título arriba, autofiltro debajo — igual que en las otras tablas del libro. */}
-      {filtro && <FiltroColumna label={String(children)} {...filtro} />}
+      {filtro && <FiltroColumna label={String(children)} {...filtroUnico(filtro)} />}
     </th>
   );
 }

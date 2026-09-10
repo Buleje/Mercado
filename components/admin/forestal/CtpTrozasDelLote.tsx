@@ -98,8 +98,8 @@ export default function CtpTrozasDelLote({
   /** Buscador de la cabecera «Cod. Planta», igual que el formato. */
   const [busca, setBusca] = useState("");
   /** Autofiltros de las otras dos columnas con valores repetidos. */
-  const [gtf, setGtf] = useState("");
-  const [especie, setEspecie] = useState("");
+  const [gtf, setGtf] = useState<string[]>([]);
+  const [especie, setEspecie] = useState<string[]>([]);
   /**
    * «Las de más de medio metro cúbico»: el rango de la columna Volumen.
    *
@@ -115,8 +115,9 @@ export default function CtpTrozasDelLote({
   const filas = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return trozas.filter((t) => {
-      if (gtf && (t.gtfNumber ?? "").trim() !== gtf) return false;
-      if (especie && (t.especieComun ?? "").trim() !== especie) return false;
+      /* OR adentro de la columna, AND entre columnas. */
+      if (gtf.length > 0 && !gtf.includes((t.gtfNumber ?? "").trim())) return false;
+      if (especie.length > 0 && !especie.includes((t.especieComun ?? "").trim())) return false;
       if (!enRango(t.volumenM3 == null ? null : Number(t.volumenM3), rangoVol)) return false;
       if (!q) return true;
       return [t.codigoPlanta, t.codificacion, t.gtfNumber].some((v) => (v ?? "").toLowerCase().includes(q));

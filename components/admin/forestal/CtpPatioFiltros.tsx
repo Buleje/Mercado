@@ -18,11 +18,17 @@
 import { useState } from "react";
 import { Search, SlidersHorizontal, X } from "@buleje/design-system/icons";
 import type { EstadoFiltroPatio } from "./hooks/use-filtro-patio";
+import { CampoDeFiltro } from "./ctp-filtros-panel";
 
 const CAMPO =
   "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 
-/** Un `<select>` que sólo aparece si hay algo que elegir. */
+/**
+ * Un campo del panel: la misma lista de tildes que la cabecera de la columna
+ * (`CampoDeFiltro`), con las opciones del patio —que son strings pelados— y sin
+ * dibujarse cuando no hay nada que elegir: un desplegable vacío es una promesa
+ * que la pantalla no puede cumplir.
+ */
 function Filtro({
   valor,
   onCambio,
@@ -30,67 +36,21 @@ function Filtro({
   todos,
   opciones,
 }: {
-  valor: string;
-  onCambio: (v: string) => void;
+  valor: readonly string[];
+  onCambio: (v: string[]) => void;
   etiqueta: string;
   todos: string;
   opciones: readonly string[];
 }) {
   if (opciones.length === 0) return null;
   return (
-    <select value={valor} onChange={(e) => onCambio(e.target.value)} aria-label={etiqueta} className={CAMPO}>
-      <option value="">{todos}</option>
-      {opciones.map((o) => (
-        <option key={o} value={o}>
-          {o}
-        </option>
-      ))}
-    </select>
-  );
-}
-
-/**
- * Guía de ingreso: checkboxes y no un `<select>` (Brandon, 2026-09-01: "de esas
- * 3 quiero filtrar 2 al mismo tiempo") — comparar dos guías a la vez es el caso
- * real, y un single-select obligaba a mirar el patio dos veces y sumar a mano.
- */
-function FiltroGuias({
-  valor,
-  onCambio,
-  opciones,
-}: {
-  valor: readonly string[];
-  onCambio: (v: string[]) => void;
-  opciones: readonly string[];
-}) {
-  if (opciones.length === 0) return null;
-  const elegidas = new Set(valor);
-  return (
-    <div
-      role="group"
-      aria-label="Filtrar por guía de ingreso"
-      className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2"
-    >
-      <p className="mb-1 px-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-        Guía de ingreso
-      </p>
-      <div className="flex max-h-32 flex-col gap-0.5 overflow-y-auto">
-        {opciones.map((g) => (
-          <label
-            key={g}
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
-          >
-            <input
-              type="checkbox"
-              checked={elegidas.has(g)}
-              onChange={(e) => onCambio(e.target.checked ? [...valor, g] : valor.filter((x) => x !== g))}
-              className="h-4 w-4 accent-[var(--accent)]"
-            />
-            {g}
-          </label>
-        ))}
-      </div>
-    </div>
+    <CampoDeFiltro
+      label={etiqueta}
+      value={valor}
+      options={opciones.map((o) => ({ value: o }))}
+      onChange={onCambio}
+      placeholder={todos}
+    />
   );
 }
 
@@ -131,14 +91,21 @@ export default function CtpPatioFiltros({
      `display:none`) le gana a partir de 640px. */
   const soloMovil = enCabecera ? "contents sm:hidden" : "contents";
 
+  /* Un chip por VALOR elegido, no por campo: con dos especies puestas, sacar
+     una no debería sacar la otra. */
+  const chipsDe = (
+    valores: readonly string[],
+    poner: (v: string[]) => void,
+    texto: (v: string) => string,
+  ) => valores.map((v) => ({ texto: texto(v), quitar: () => poner(valores.filter((x) => x !== v)) }));
+
   const puestos: { texto: string; quitar: () => void }[] = [
-    filtro.especie && { texto: filtro.especie, quitar: () => set.especie("") },
-    /* Un chip por guía elegida: sacar una no debería sacarlas todas. */
-    ...filtro.guia.map((g) => ({ texto: `Guía ${g}`, quitar: () => set.guia(filtro.guia.filter((x) => x !== g)) })),
-    filtro.permiso && { texto: `Permiso ${filtro.permiso}`, quitar: () => set.permiso("") },
-    filtro.resolucion && { texto: `Res. ${filtro.resolucion}`, quitar: () => set.resolucion("") },
-    filtro.proveedor && { texto: filtro.proveedor, quitar: () => set.proveedor("") },
-  ].filter(Boolean) as { texto: string; quitar: () => void }[];
+    ...chipsDe(filtro.especie, set.especie, (v) => v),
+    ...chipsDe(filtro.guia, set.guia, (v) => `Guía ${v}`),
+    ...chipsDe(filtro.permiso, set.permiso, (v) => `Permiso ${v}`),
+    ...chipsDe(filtro.resolucion, set.resolucion, (v) => `Res. ${v}`),
+    ...chipsDe(filtro.proveedor, set.proveedor, (v) => v),
+  ];
 
   const hayQueFiltrar =
     opciones.especies.length + opciones.guias.length + opciones.permisos.length +
@@ -208,7 +175,13 @@ export default function CtpPatioFiltros({
             />
           </div>
           <div className={soloMovil}>
-            <FiltroGuias valor={filtro.guia} onCambio={set.guia} opciones={opciones.guias} />
+            <Filtro
+              valor={filtro.guia}
+              onCambio={set.guia}
+              etiqueta="Filtrar por guía de ingreso"
+              todos="Todas las guías"
+              opciones={opciones.guias}
+            />
           </div>
           {/* El permiso y la resolución: cuando entra la carga de un título
               entero, es por ahí que el patio la busca (ADR-342/343). */}

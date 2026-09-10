@@ -39,15 +39,57 @@ export interface FacetaSeccion {
   volumeM3?: number;
 }
 
+/**
+ * Lo elegido en un filtro de columna: uno o VARIOS valores.
+ *
+ * Brandon, 2026-09-10: *«que se pueda seleccionar dos o más opciones de
+ * filtros»*. En el patio la pregunta casi nunca es de un valor solo —«mostrame
+ * comercial Y paquetería larga», «tornillo Y cachimbo»— y con un solo valor
+ * había que mirar la tabla dos veces y sumar a mano.
+ *
+ * Se admite `string` a propósito: los llamadores viejos (y las URLs guardadas)
+ * siguen andando sin cambiar nada, y un valor suelto se lee como una lista de
+ * uno. Cambiar el tipo de golpe habría roto seis pantallas por una feature.
+ */
+export type ValorFiltro = string | string[] | undefined;
+
+/** `true` si ese filtro está puesto (una lista vacía NO filtra nada). */
+export function filtroActivo(v: ValorFiltro): boolean {
+  return Array.isArray(v) ? v.length > 0 : !!v;
+}
+
+/** Lo elegido, siempre como lista — para no repetir el `Array.isArray` en cada uso. */
+export function valoresDe(v: ValorFiltro): string[] {
+  if (!v) return [];
+  return Array.isArray(v) ? v.filter(Boolean) : [v];
+}
+
+/**
+ * ¿El valor de la fila entra en lo elegido?
+ *
+ * Sin filtro puesto entra todo. Con filtro, basta que coincida con UNO de los
+ * elegidos (OR dentro de la columna, AND entre columnas — el comportamiento del
+ * autofiltro de Excel, que es de donde viene esta tabla).
+ */
+export function coincideFiltro(
+  v: ValorFiltro,
+  valorFila: string,
+  clave: (x: string) => string = (x) => x,
+): boolean {
+  if (!filtroActivo(v)) return true;
+  const k = clave(valorFila);
+  return valoresDe(v).some((x) => clave(x) === k);
+}
+
 export interface FiltrosSeccion {
-  species?: string;
-  product?: string;
-  destino?: string;
+  species?: ValorFiltro;
+  product?: ValorFiltro;
+  destino?: ValorFiltro;
   cites?: boolean;
   /** Sólo Producción. */
-  permiso?: string;
+  permiso?: ValorFiltro;
   /** Sólo Producción: en qué anda el paquete (patio / parcial / despachado). */
-  salida?: ClaveSalida;
+  salida?: ClaveSalida | ClaveSalida[];
   /** «Mayor que», «entre X e Y» por columna numérica (el otro autofiltro de Excel). */
   rangos?: Partial<Record<CampoRango, RangoNumerico>>;
 }
@@ -256,12 +298,20 @@ export function filtrarSeccion<T extends LineaCtp>(lineas: T[], f: FiltrosSeccio
   return lineas.filter((l) => {
     /* Comparación por clave, igual que la faceta: elegir «Tornillo» tiene que
        traer también los asientos que dicen «TORNILLO». */
-    if (f.species && claveEspecie(l.speciesCommon) !== claveEspecie(f.species)) return false;
-    if (f.product && (l.productType ?? "") !== f.product) return false;
-    if (f.destino && (l.destino ?? "") !== f.destino) return false;
+    /* OR dentro de la columna, AND entre columnas: el autofiltro de Excel. */
+    if (!coincideFiltro(f.species, l.speciesCommon ?? "", claveEspecie)) return false;
+    if (!coincideFiltro(f.product, l.productType ?? "")) return false;
+    if (!coincideFiltro(f.destino, l.destino ?? "")) return false;
     if (f.cites !== undefined && l.cites !== f.cites) return false;
-    if (f.permiso && !(l.permisoOrigen ?? []).includes(f.permiso)) return false;
-    if (f.salida && claveSalida(l) !== f.salida) return false;
+    /* El permiso vive en una LISTA por línea (una corrida puede traer dos):
+       entra si alguno de los elegidos está entre los suyos. */
+    if (filtroActivo(f.permiso) && !valoresDe(f.permiso).some((p) => (l.permisoOrigen ?? []).includes(p)))
+      return false;
+    /* Sin estado de salida (no es Producción, o no declaró nada todavía) NO
+       entra en un filtro de salida pedido: la tabla afirmaría de esa línea algo
+       que el libro no sabe. Es lo mismo que hace Excel con una celda vacía. */
+    const salida = claveSalida(l);
+    if (filtroActivo(f.salida) && (salida == null || !coincideFiltro(f.salida, salida))) return false;
     for (const [campo, r] of Object.entries(f.rangos ?? {})) {
       if (!enRango(VALOR_DE_RANGO[campo as CampoRango](l), r)) return false;
     }
@@ -271,13 +321,15 @@ export function filtrarSeccion<T extends LineaCtp>(lineas: T[], f: FiltrosSeccio
 
 /** Cuántos filtros están puestos (el badge del botón). */
 export function contarFiltros(f: FiltrosSeccion): number {
+  /* Una COLUMNA filtrada cuenta 1, tenga uno o cinco valores elegidos: el badge
+     dice cuántas columnas están acotando la tabla, no cuántos tildes hay. */
   return (
-    (f.species ? 1 : 0) +
-    (f.product ? 1 : 0) +
-    (f.destino ? 1 : 0) +
+    (filtroActivo(f.species) ? 1 : 0) +
+    (filtroActivo(f.product) ? 1 : 0) +
+    (filtroActivo(f.destino) ? 1 : 0) +
     (f.cites !== undefined ? 1 : 0) +
-    (f.permiso ? 1 : 0) +
-    (f.salida ? 1 : 0) +
+    (filtroActivo(f.permiso) ? 1 : 0) +
+    (filtroActivo(f.salida) ? 1 : 0) +
     Object.values(f.rangos ?? {}).filter(rangoActivo).length
   );
 }

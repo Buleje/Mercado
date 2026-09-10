@@ -72,10 +72,10 @@ export interface CtpTrozasListaProps {
   trozas: readonly TrozaPatioAPI[];
   /** Mientras se lee el patio la lista NO puede afirmar que está vacío. */
   cargando: boolean;
-  estadoFiltro: EstadoTroza | null;
-  onEstadoFiltro: (e: EstadoTroza | null) => void;
-  tramoFiltro: string | null;
-  onTramoFiltro: (k: string | null) => void;
+  estadoFiltro: readonly EstadoTroza[];
+  onEstadoFiltro: (e: EstadoTroza[]) => void;
+  tramoFiltro: readonly string[];
+  onTramoFiltro: (k: string[]) => void;
   /** Abrir la historia de una pieza. */
   onVerFicha: (id: string) => void;
   /** Mandar las elegidas a un lote de aserrío. */
@@ -83,12 +83,12 @@ export interface CtpTrozasListaProps {
    * Especie, guía y título habilitante: los gobierna el PADRE (ADR-400) para
    * que el panorama de arriba y esta lista describan el mismo conjunto.
    */
-  especie: string | null;
-  onEspecie: (v: string | null) => void;
-  guia: string | null;
-  onGuia: (v: string | null) => void;
-  titulo: string | null;
-  onTitulo: (v: string | null) => void;
+  especie: readonly string[];
+  onEspecie: (v: string[]) => void;
+  guia: readonly string[];
+  onGuia: (v: string[]) => void;
+  titulo: readonly string[];
+  onTitulo: (v: string[]) => void;
   onApartar: (piezas: { id: string; codigo: string | null; especie: string | null }[]) => void;
 }
 
@@ -142,7 +142,10 @@ export default function CtpTrozasLista({
   );
   const visibles = filtradas.slice(0, tope);
   const sumaVisible = filtradas.reduce((a, t) => a + (t.volumenM3 ?? 0), 0);
-  const hayFiltro = Boolean(texto.trim() || estadoFiltro || especie || tramoFiltro || guia || titulo);
+  const hayFiltro = Boolean(
+    texto.trim() ||
+      [estadoFiltro, especie, tramoFiltro, guia, titulo].some((v) => v.length > 0),
+  );
 
   /* Sólo lo LIBRE se puede apartar: lo apartado ya está en un lote y lo demás
      salió del patio. Ofrecer la casilla igual sería ofrecer un rechazo. */
@@ -174,8 +177,8 @@ export default function CtpTrozasLista({
     });
 
   const limpiar = () => {
-    setTexto(""); setEspecie(null); onEstadoFiltro(null); onTramoFiltro(null);
-    setGuia(null); setTitulo(null);
+    setTexto(""); setEspecie([]); onEstadoFiltro([]); onTramoFiltro([]);
+    setGuia([]); setTitulo([]);
   };
 
   /** Lo que se está viendo, para cruzarlo en Excel contra el conteo del patio. */
@@ -248,16 +251,35 @@ export default function CtpTrozasLista({
             </>
           )}
         </span>
-        {estadoFiltro && <Chip label={ESTADO_META[estadoFiltro].label} onQuitar={() => onEstadoFiltro(null)} />}
-        {tramoFiltro && <Chip label={tramoFiltro === "fresca" ? "Menos de 30 días" : tramoFiltro === "atencion" ? "30 a 59 días" : "60 días o más"} onQuitar={() => onTramoFiltro(null)} />}
-        {especie && <Chip label={especie} onQuitar={() => setEspecie(null)} />}
-        {guia && <Chip label={`Guía ${guia}`} onQuitar={() => setGuia(null)} />}
-        {titulo && (
+        {/* Un chip por VALOR elegido: con dos especies puestas, sacar una no
+            debería sacar la otra. */}
+        {estadoFiltro.map((e) => (
           <Chip
-            label={titulo === SIN_TITULO ? "Sin título declarado" : `Título ${titulo}`}
-            onQuitar={() => setTitulo(null)}
+            key={e}
+            label={ESTADO_META[e].label}
+            onQuitar={() => onEstadoFiltro(estadoFiltro.filter((x) => x !== e))}
           />
-        )}
+        ))}
+        {tramoFiltro.map((t) => (
+          <Chip
+            key={t}
+            label={t === "fresca" ? "Menos de 30 días" : t === "atencion" ? "30 a 59 días" : "60 días o más"}
+            onQuitar={() => onTramoFiltro(tramoFiltro.filter((x) => x !== t))}
+          />
+        ))}
+        {especie.map((e) => (
+          <Chip key={e} label={e} onQuitar={() => setEspecie(especie.filter((x) => x !== e))} />
+        ))}
+        {guia.map((g) => (
+          <Chip key={g} label={`Guía ${g}`} onQuitar={() => setGuia(guia.filter((x) => x !== g))} />
+        ))}
+        {titulo.map((t) => (
+          <Chip
+            key={t}
+            label={t === SIN_TITULO ? "Sin título declarado" : `Título ${t}`}
+            onQuitar={() => setTitulo(titulo.filter((x) => x !== t))}
+          />
+        ))}
         {texto.trim() && <Chip label={`«${texto.trim()}»`} onQuitar={() => setTexto("")} />}
         {hayFiltro && (
           <button type="button" onClick={limpiar} className="font-bold text-[var(--accent-ink)] underline dark:text-[var(--accent)]">
@@ -333,9 +355,9 @@ export default function CtpTrozasLista({
                     <span className="block">Especie</span>
                     <FiltroColumna
                       label="Especie"
-                      value={especie ?? ""}
+                      value={especie}
                       options={especiesFaceta}
-                      onChange={(v) => setEspecie(v || null)}
+                      onChange={setEspecie}
                       placeholder="Todas"
                     />
                   </th>
@@ -345,10 +367,10 @@ export default function CtpTrozasLista({
                         clickear la tarjeta o elegir acá es lo mismo. */}
                     <FiltroColumna
                       label="Estado"
-                      value={estadoFiltro ?? ""}
+                      value={estadoFiltro}
                       options={estadosFaceta}
                       etiqueta={(v) => ESTADO_META[v as EstadoTroza]?.label ?? v}
-                      onChange={(v) => onEstadoFiltro((v || null) as EstadoTroza | null)}
+                      onChange={(v) => onEstadoFiltro(v as EstadoTroza[])}
                       placeholder="Todos"
                     />
                   </th>
@@ -369,19 +391,19 @@ export default function CtpTrozasLista({
                       <span className="min-w-[8rem] flex-1">
                         <FiltroColumna
                           label="Guía"
-                          value={guia ?? ""}
+                          value={guia}
                           options={guiasFaceta}
-                          onChange={(v) => setGuia(v || null)}
+                          onChange={setGuia}
                           placeholder="Guía"
                         />
                       </span>
                       <span className="min-w-[8rem] flex-1">
                         <FiltroColumna
                           label="Título habilitante"
-                          value={titulo ?? ""}
+                          value={titulo}
                           options={titulosFaceta}
                           etiqueta={(v) => (v === SIN_TITULO ? "Sin título" : v)}
-                          onChange={(v) => setTitulo(v || null)}
+                          onChange={setTitulo}
                           placeholder="Título"
                         />
                       </span>

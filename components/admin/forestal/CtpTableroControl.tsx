@@ -248,7 +248,9 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
             todos: "Todas las especies",
             valor: especie || undefined,
             opciones: (mov?.especiesDelPeriodo ?? []).map((e) => ({ value: e, label: e })),
-            onChange: (v) => setEspecie(v ?? ""),
+            onChange: (v) => setEspecie(v[0] ?? ""),
+            /* Viaja al endpoint del movimiento (`?especie=`): admite una. */
+            unico: true,
           },
         ]}
         onLimpiar={() => setEspecie("")}

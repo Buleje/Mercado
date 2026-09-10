@@ -54,9 +54,10 @@ export default function CtpGuiasEmitidasView({
    * `soloIncompletas` NO entra acá: es el desglose que las propias tarjetas
    * ofrecen, y recortarlas con lo que se elige EN ellas las dejaría en cero.
    */
-  const [especie, setEspecie] = useState("");
-  const [producto, setProducto] = useState("");
-  const [destino, setDestino] = useState("");
+  /* Listas: dos especies o dos destinos a la vez (Brandon, 2026-09-10). */
+  const [especie, setEspecie] = useState<string[]>([]);
+  const [producto, setProducto] = useState<string[]>([]);
+  const [destino, setDestino] = useState<string[]>([]);
 
   useEffect(() => {
     let vivo = true;
@@ -83,11 +84,12 @@ export default function CtpGuiasEmitidasView({
    */
   const delFiltro = useMemo(
     () =>
+      /* OR adentro de cada filtro, AND entre filtros. */
       guias.filter(
         (g) =>
-          (!especie || (g.especie ?? "") === especie) &&
-          (!producto || (g.producto ?? "") === producto) &&
-          (!destino || (g.destino ?? "") === destino),
+          (especie.length === 0 || especie.includes(g.especie ?? "")) &&
+          (producto.length === 0 || producto.includes(g.producto ?? "")) &&
+          (destino.length === 0 || destino.includes(g.destino ?? "")),
       ),
     [guias, especie, producto, destino],
   );
@@ -138,34 +140,34 @@ export default function CtpGuiasEmitidasView({
             key: "especie",
             label: "Especie",
             todos: "Todas las especies",
-            valor: especie || undefined,
+            valor: especie,
             opciones: opciones.especies.map((o) => ({ value: o.value, label: o.value, hint: `${o.count} guía${o.count === 1 ? "" : "s"}` })),
-            onChange: (v) => setEspecie(v ?? ""),
+            onChange: setEspecie,
           },
           {
             key: "producto",
             label: "Producto",
             todos: "Todos los productos",
-            valor: producto || undefined,
+            valor: producto,
             opciones: opciones.productos.map((o) => ({ value: o.value, label: o.value, hint: `${o.count} guía${o.count === 1 ? "" : "s"}` })),
-            onChange: (v) => setProducto(v ?? ""),
+            onChange: setProducto,
           },
           {
             key: "destino",
             label: "Destino",
             todos: "Todos los destinos",
-            valor: destino || undefined,
+            valor: destino,
             opciones: opciones.destinos.map((o) => ({ value: o.value, label: o.value, hint: `${o.count} guía${o.count === 1 ? "" : "s"}` })),
-            onChange: (v) => setDestino(v ?? ""),
+            onChange: setDestino,
           },
         ]}
-        onLimpiar={() => { setEspecie(""); setProducto(""); setDestino(""); }}
+        onLimpiar={() => { setEspecie([]); setProducto([]); setDestino([]); }}
         nota={
-          [especie, producto, destino].some(Boolean)
+          [especie, producto, destino].some((v) => v.length > 0)
             ? `Las cifras y la lista muestran sólo ${[
-                especie ? `especie: ${especie}` : "",
-                producto ? `producto: ${producto}` : "",
-                destino ? `destino: ${destino}` : "",
+                especie.length > 0 ? `especie: ${especie.join(" o ")}` : "",
+                producto.length > 0 ? `producto: ${producto.join(" o ")}` : "",
+                destino.length > 0 ? `destino: ${destino.join(" o ")}` : "",
               ]
                 .filter(Boolean)
                 .join(" · ")}`

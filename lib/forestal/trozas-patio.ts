@@ -252,12 +252,20 @@ const plano = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").
 
 export type OrdenTrozas = "antiguedad" | "volumen" | "codigo" | "especie";
 
+/**
+ * Cada campo admite UNO o VARIOS valores (Brandon, 2026-09-10: «poder
+ * seleccionar dos o más opciones de filtros»). OR adentro de un campo, AND
+ * entre campos — el autofiltro de Excel, que es de donde viene esta tabla.
+ *
+ * Un `string` suelto sigue valiendo, leído como una lista de uno: los
+ * llamadores viejos y las URLs guardadas no cambian.
+ */
 export interface FiltroTrozas {
   texto?: string;
-  estado?: EstadoTroza | null;
-  especie?: string | null;
+  estado?: EstadoTroza | readonly EstadoTroza[] | null;
+  especie?: string | readonly string[] | null;
   /** `key` de `TRAMOS_ANTIGUEDAD`. */
-  tramo?: string | null;
+  tramo?: string | readonly string[] | null;
   /**
    * N° de GTF con la que entró la pieza.
    *
@@ -266,11 +274,15 @@ export interface FiltroTrozas {
    * también matchea proveedor y código: una guía `019-001-0000011` y una troza
    * codificada `0000011` caían juntas.
    */
-  guia?: string | null;
+  guia?: string | readonly string[] | null;
   /** Título habilitante (`permiso`). `SIN_TITULO` para las que no declaran uno. */
-  titulo?: string | null;
+  titulo?: string | readonly string[] | null;
   orden?: OrdenTrozas;
 }
+
+/** Lo elegido de un campo, siempre como lista y sin vacíos. */
+export const elegidosDe = (v: string | readonly string[] | null | undefined): string[] =>
+  v == null ? [] : Array.isArray(v) ? v.filter(Boolean) : [v as string].filter(Boolean);
 
 /**
  * La clave de las piezas sin título habilitante declarado.
@@ -331,16 +343,27 @@ export function opcionesDeOrigen(
  */
 export function filtrarPatio<T extends TrozaPatio>(trozas: readonly T[], f: FiltroTrozas, hoy: Date): T[] {
   const q = plano((f.texto ?? "").trim());
+  /* OR adentro de un campo, AND entre campos. Sin valores elegidos, entra todo. */
+  const estados = elegidosDe(f.estado);
+  const especies = elegidosDe(f.especie);
+  const tramos = elegidosDe(f.tramo);
+  const guias = elegidosDe(f.guia);
+  const titulos = elegidosDe(f.titulo);
   const salida = trozas.filter((t) => {
-    if (f.estado && estadoDeTroza(t) !== f.estado) return false;
-    if (f.especie && ((t.especieComun ?? "").trim() || "Sin especie") !== f.especie) return false;
-    if (f.tramo && tramoDe(diasParada(t, hoy)) !== f.tramo) return false;
-    if (f.guia && (t.gtfNumber ?? "").trim() !== f.guia) return false;
-    if (f.titulo) {
+    if (estados.length > 0 && !estados.includes(estadoDeTroza(t))) return false;
+    if (especies.length > 0 && !especies.includes((t.especieComun ?? "").trim() || "Sin especie")) return false;
+    /* Sin fecha no hay tramo, y una pieza sin tramo NO entra en un tramo
+       pedido: la lista afirmaría de ella algo que el libro no sabe. */
+    if (tramos.length > 0) {
+      const suyo = tramoDe(diasParada(t, hoy));
+      if (suyo == null || !tramos.includes(suyo)) return false;
+    }
+    if (guias.length > 0 && !guias.includes((t.gtfNumber ?? "").trim())) return false;
+    if (titulos.length > 0) {
       const suyo = (t.permiso ?? "").trim();
       /* Sin título es una opción de filtro con nombre propio, no la ausencia de
          filtro: buscar «las que no declaran origen» es una tarea concreta. */
-      if (f.titulo === SIN_TITULO ? suyo !== "" : suyo !== f.titulo) return false;
+      if (!titulos.some((x) => (x === SIN_TITULO ? suyo === "" : suyo === x))) return false;
     }
     if (!q) return true;
     return [t.codificacion, t.codigoPlanta, t.especieComun, t.gtfNumber, t.proveedor, t.permiso, t.loteAserrioCode]

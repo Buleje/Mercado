@@ -51,24 +51,24 @@ export interface CtpTrozasPatioProps {
   meta: PatioMeta;
   cargando: boolean;
   onRecargar: () => void;
-  /** El estado que la lista de abajo está mostrando, para marcarlo acá. */
-  estadoFiltro: EstadoTroza | null;
-  onEstadoFiltro: (e: EstadoTroza | null) => void;
-  /** El tramo de antigüedad elegido (`key` de `TRAMOS_ANTIGUEDAD`). */
-  tramoFiltro: string | null;
-  onTramoFiltro: (k: string | null) => void;
+  /** Los estados que la lista de abajo está mostrando, para marcarlos acá. */
+  estadoFiltro: readonly EstadoTroza[];
+  onEstadoFiltro: (e: EstadoTroza[]) => void;
+  /** Los tramos de antigüedad elegidos (`key` de `TRAMOS_ANTIGUEDAD`). */
+  tramoFiltro: readonly string[];
+  onTramoFiltro: (k: string[]) => void;
   /**
    * Los filtros que RECORTAN el panorama (ADR-400): especie, guía y título.
    *
    * Estado y tramo quedan afuera a propósito: son el desglose que estas mismas
    * tarjetas ofrecen, y recortarse a sí mismas las dejaría en cero.
    */
-  especie: string | null;
-  onEspecie: (v: string | null) => void;
-  guia: string | null;
-  onGuia: (v: string | null) => void;
-  titulo: string | null;
-  onTitulo: (v: string | null) => void;
+  especie: readonly string[];
+  onEspecie: (v: string[]) => void;
+  guia: readonly string[];
+  onGuia: (v: string[]) => void;
+  titulo: readonly string[];
+  onTitulo: (v: string[]) => void;
 }
 
 export default function CtpTrozasPatio({
@@ -110,7 +110,7 @@ export default function CtpTrozasPatio({
   const leyendo = cargando && trozas.length === 0;
   const cifra = (v: number | string) => (leyendo ? "…" : String(v));
 
-  const activos = [especie, guia, titulo].filter(Boolean).length;
+  const activos = [especie, guia, titulo].filter((v) => v.length > 0).length;
 
   return (
     <div className="space-y-3">
@@ -125,7 +125,7 @@ export default function CtpTrozasPatio({
               key: "especie",
               label: "Especie",
               todos: "Todas las especies",
-              valor: especie ?? undefined,
+              valor: especie as string[],
               /* «listadas» y no a secas: `porEspecie` cuenta TODA la pila
                  cargada —incluidas las que ya salieron del patio— mientras la
                  tarjeta grande cuenta sólo las paradas. El hint predice las
@@ -137,13 +137,13 @@ export default function CtpTrozasPatio({
                 label: e.especie,
                 hint: `${e.piezas} listadas · ${n2(e.m3)} m³`,
               })),
-              onChange: (v) => onEspecie(v ?? null),
+              onChange: onEspecie,
             },
             {
               key: "titulo",
               label: "Permiso (título habilitante)",
               todos: "Todos los permisos",
-              valor: titulo ?? undefined,
+              valor: titulo as string[],
               opciones: opcionesTitulo.map((o) => ({
                 value: o.valor,
                 /* «Sin título» es una opción con nombre propio, no la ausencia
@@ -151,24 +151,26 @@ export default function CtpTrozasPatio({
                 label: o.valor === SIN_TITULO ? "Sin título declarado" : o.label,
                 hint: `${o.piezas} listadas`,
               })),
-              onChange: (v) => onTitulo(v ?? null),
+              onChange: onTitulo,
             },
             {
               key: "guia",
               label: "Guía de ingreso",
               todos: "Todas las guías",
-              valor: guia ?? undefined,
+              valor: guia as string[],
               opciones: opcionesGuia.map((o) => ({ value: o.valor, label: o.label, hint: `${o.piezas} listadas` })),
-              onChange: (v) => onGuia(v ?? null),
+              onChange: onGuia,
             },
           ]}
-          onLimpiar={() => { onEspecie(null); onTitulo(null); onGuia(null); }}
+          onLimpiar={() => { onEspecie([]); onTitulo([]); onGuia([]); }}
           nota={
             activos > 0
               ? `Las cifras y la lista muestran sólo ${[
-                  especie ? `especie: ${especie}` : "",
-                  titulo ? `permiso: ${titulo === SIN_TITULO ? "sin título declarado" : titulo}` : "",
-                  guia ? `guía: ${guia}` : "",
+                  especie.length > 0 ? `especie: ${especie.join(" o ")}` : "",
+                  titulo.length > 0
+                    ? `permiso: ${titulo.map((t) => (t === SIN_TITULO ? "sin título declarado" : t)).join(" o ")}`
+                    : "",
+                  guia.length > 0 ? `guía: ${guia.join(" o ")}` : "",
                 ]
                   .filter(Boolean)
                   .join(" · ")}`
@@ -254,14 +256,18 @@ export default function CtpTrozasPatio({
           <Fila titulo="En qué anda">
             {resumen.porEstado.map(({ estado, piezas, m3 }) => {
               const m = ESTADO_META[estado];
-              const activo = estadoFiltro === estado;
+              const activo = estadoFiltro.includes(estado);
               return (
                 <Pastilla
                   key={estado}
                   activo={activo}
                   punto={TONO[m.tono].punto}
                   titulo={m.hint}
-                  onClick={() => onEstadoFiltro(activo ? null : estado)}
+                  /* Suma en vez de reemplazar: ver «libre + apartada» a la vez
+                     es la pregunta real de «qué hay parado». */
+                  onClick={() =>
+                    onEstadoFiltro(activo ? estadoFiltro.filter((x) => x !== estado) : [...estadoFiltro, estado])
+                  }
                   label={m.label}
                   piezas={piezas}
                   m3={m3}
@@ -285,14 +291,16 @@ export default function CtpTrozasPatio({
             explicacion="Cuenta desde que la pieza bajó del camión (o desde el asiento de su guía si no se sabe) y sólo mira lo que sigue parado."
           >
             {tramosConPiezas.map((t) => {
-              const activo = tramoFiltro === t.key;
+              const activo = tramoFiltro.includes(t.key);
               return (
                 <Pastilla
                   key={t.key}
                   activo={activo}
                   punto={TONO[t.tono].punto}
                   titulo="Tocá para ver sólo estas en la lista"
-                  onClick={() => onTramoFiltro(activo ? null : t.key)}
+                  onClick={() =>
+                    onTramoFiltro(activo ? tramoFiltro.filter((x) => x !== t.key) : [...tramoFiltro, t.key])
+                  }
                   label={t.label}
                   piezas={t.piezas}
                   m3={t.m3}

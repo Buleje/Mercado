@@ -26,21 +26,22 @@ import {
 
 export interface EstadoFiltroPatio {
   texto: string;
-  especie: string;
-  /** Una o más guías a la vez (Brandon, 2026-09-01). */
+  /** Cada uno admite VARIOS valores a la vez (Brandon: guías 2026-09-01, el
+   *  resto 2026-09-10). OR adentro del campo, AND entre campos. */
+  especie: string[];
   guia: string[];
-  permiso: string;
-  resolucion: string;
-  proveedor: string;
+  permiso: string[];
+  resolucion: string[];
+  proveedor: string[];
   /** Esconde lo que no se puede elegir hoy. Ayudante, no filtro de contenido. */
   soloLibres: boolean;
   set: {
     texto: (v: string) => void;
-    especie: (v: string) => void;
+    especie: (v: string[]) => void;
     guia: (v: string[]) => void;
-    permiso: (v: string) => void;
-    resolucion: (v: string) => void;
-    proveedor: (v: string) => void;
+    permiso: (v: string[]) => void;
+    resolucion: (v: string[]) => void;
+    proveedor: (v: string[]) => void;
     soloLibres: (v: boolean) => void;
   };
   limpiar: () => void;
@@ -68,11 +69,11 @@ export function useFiltroPatio(
   opts: { loteId?: string } = {},
 ): EstadoFiltroPatio {
   const [texto, setTexto] = useState("");
-  const [especie, setEspecie] = useState("");
+  const [especie, setEspecie] = useState<string[]>([]);
   const [guia, setGuia] = useState<string[]>([]);
-  const [permiso, setPermiso] = useState("");
-  const [resolucion, setResolucion] = useState("");
-  const [proveedor, setProveedor] = useState("");
+  const [permiso, setPermiso] = useState<string[]>([]);
+  const [resolucion, setResolucion] = useState<string[]>([]);
+  const [proveedor, setProveedor] = useState<string[]>([]);
   const [soloLibres, setSoloLibres] = useState(true);
 
   const delPatio = useMemo(
@@ -105,11 +106,11 @@ export function useFiltroPatio(
 
   const limpiar = useCallback(() => {
     setTexto("");
-    setEspecie("");
+    setEspecie([]);
     setGuia([]);
-    setPermiso("");
-    setResolucion("");
-    setProveedor("");
+    setPermiso([]);
+    setResolucion([]);
+    setProveedor([]);
   }, []);
 
   const set = useMemo(
@@ -129,7 +130,9 @@ export function useFiltroPatio(
     texto, especie, guia, permiso, resolucion, proveedor, soloLibres,
     set,
     limpiar,
-    hayFiltro: Boolean(texto || especie || guia.length > 0 || permiso || resolucion || proveedor),
+    hayFiltro: Boolean(
+      texto || especie.length > 0 || guia.length > 0 || permiso.length > 0 || resolucion.length > 0 || proveedor.length > 0,
+    ),
     opciones,
     delPatio,
     filtradas,

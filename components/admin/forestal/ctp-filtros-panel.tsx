@@ -13,8 +13,25 @@
  * cero es una trampa.
  */
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ChevronDown, SlidersHorizontal, X } from "@buleje/design-system/icons";
+import type { RangoNumerico } from "@/lib/forestal/ctp-secciones-filtro";
+
+/**
+ * Una opción de cualquier autofiltro — la de una columna y la de los KPIs.
+ *
+ * `FacetaOpcion` (el valor del período con su peso) encaja acá sin cambiar
+ * nada: se agrega `label`/`hint` para los KPIs, que traen su propio texto.
+ */
+export interface OpcionDeFiltro {
+  value: string;
+  /** Cómo se lee. Sin esto se muestra el valor crudo. */
+  label?: string;
+  /** El peso ya escrito («12 · 340.5 m³»). Sin esto se arma con `count`. */
+  hint?: string;
+  count?: number;
+  volumeM3?: number;
+}
 
 /** Valor presente en el período + su peso. */
 export interface FacetaOpcion {
@@ -27,7 +44,8 @@ export interface FacetaOpcion {
 export interface FiltroSelect {
   id: string;
   label: string;
-  value: string;
+  /** Uno o VARIOS valores elegidos (multi-selección, 2026-09-10). */
+  value: string | readonly string[] | undefined;
   options: FacetaOpcion[];
   /** Traduce el valor crudo a etiqueta legible (rolliza → Rolliza). */
   etiqueta?: (v: string) => string;
@@ -118,7 +136,7 @@ export default function CtpFiltrosPanel({
   selects: FiltroSelect[];
   toggles: FiltroToggle[];
   activos: number;
-  onSelect: (id: string, valor: string) => void;
+  onSelect: (id: string, valores: string[]) => void;
   onToggle: (id: string) => void;
   onLimpiar: () => void;
   tituloToggles?: string;
@@ -176,74 +194,7 @@ export default function CtpFiltrosPanel({
   );
 }
 
-/**
- * El filtro DENTRO de la cabecera de su columna — el autofiltro de Excel
- * (Brandon, 2026-09-03).
- *
- * Es el mismo estado que el panel: no hay un segundo filtro, hay un segundo
- * lugar desde donde tocarlo. Se elige mirando la columna que se quiere acotar,
- * que es como se lee una tabla — en vez de abrir un panel, buscar el select con
- * el nombre correcto y volver.
- *
- * Cada opción trae su peso (líneas y m³) por lo mismo que en el panel: se elige
- * por peso y una opción que devuelve cero es una trampa. Y hereda el `normal-case`
- * porque el `<thead>` va en versalitas: un select en mayúsculas no se lee.
- */
-export function FiltroColumna({
-  label,
-  value,
-  options,
-  etiqueta,
-  onChange,
-  placeholder = "Todos",
-}: {
-  /** Cómo se llama la columna: arma el `aria-label` del control. */
-  label: string;
-  value: string;
-  options: FacetaOpcion[];
-  etiqueta?: (v: string) => string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}) {
-  const vacio = options.length === 0;
-  return (
-    <span className="relative mt-1.5 block font-normal normal-case tracking-normal">
-      <select
-        value={value}
-        disabled={vacio}
-        aria-label={`Filtrar por ${label}`}
-        onChange={(e) => onChange(e.target.value)}
-        className={`h-9 w-full min-w-24 max-w-56 appearance-none truncate rounded-xl border-[1.5px] bg-[var(--surface-raised)] pl-2.5 pr-7 text-sm font-medium text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] disabled:opacity-50 ${
-          value ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)]"
-        }`}
-      >
-        <option value="">{vacio ? "—" : placeholder}</option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {(etiqueta ? etiqueta(o.value) : o.value)} ({o.count})
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        className={`pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 ${
-          value ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
-        }`}
-        aria-hidden
-      />
-    </span>
-  );
-}
 
-/**
- * El autofiltro de VARIOS valores a la vez — la columna «Guía» del patio
- * (Brandon, 2026-09-01: «de esas 3 quiero filtrar 2 al mismo tiempo»).
- *
- * Es la lista de casillas del autofiltro de Excel. `<details>` nativo para
- * abrir/cerrar sin librería; el panel va en `position: fixed` con la posición
- * medida al abrir, porque la tabla vive dentro de un contenedor con `overflow`
- * que recortaría cualquier `absolute`. Se cierra al hacer click afuera y al
- * scrollear (la posición fija quedaría colgada en el aire).
- */
 /**
  * La mecánica del desplegable de una cabecera, una sola vez.
  *
@@ -256,37 +207,230 @@ export function FiltroColumna({
 function usePopoverCabecera(alto: number) {
   const ref = useRef<HTMLDetailsElement>(null);
   const [pos, setPos] = useState<{ left: number; top?: number; bottom?: number } | null>(null);
+
+  /**
+   * Dónde va el panel: pegado al disparador, arriba o abajo según lo que entre.
+   *
+   * Devuelve `false` cuando el disparador ya no se ve —ahí sí hay que cerrar:
+   * un panel fijo colgado sobre una cabecera que se fue es peor que ninguno.
+   */
+  const medir = useCallback((): boolean => {
+    const r = ref.current?.querySelector("summary")?.getBoundingClientRect();
+    if (!r) return false;
+    if (r.bottom < 0 || r.top > window.innerHeight) return false;
+    const entraAbajo = r.bottom + 4 + alto <= window.innerHeight;
+    setPos(entraAbajo ? { top: r.bottom + 4, left: r.left } : { bottom: window.innerHeight - r.top + 4, left: r.left });
+    return true;
+  }, [alto]);
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const cerrar = () => {
-      if (el.open) el.open = false;
+    /**
+     * Al scrollear se REUBICA, no se cierra.
+     *
+     * Cerrar en cada scroll parecía prolijo hasta que el filtro pasó a admitir
+     * varios valores: tildar una opción cambia la cantidad de filas, la página
+     * se acomoda, eso dispara un `scroll` — y el panel se cerraba antes de
+     * poder tildar la segunda. Medido en el navegador, 2026-09-10.
+     */
+    const alScrollear = () => {
+      if (!el.open) return;
+      if (!medir()) el.open = false;
     };
     const clickAfuera = (e: MouseEvent) => {
       if (el.open && !el.contains(e.target as Node)) el.open = false;
     };
     document.addEventListener("mousedown", clickAfuera);
-    document.addEventListener("scroll", cerrar, true);
+    document.addEventListener("scroll", alScrollear, true);
+    window.addEventListener("resize", alScrollear);
     return () => {
       document.removeEventListener("mousedown", clickAfuera);
-      document.removeEventListener("scroll", cerrar, true);
+      document.removeEventListener("scroll", alScrollear, true);
+      window.removeEventListener("resize", alScrollear);
     };
-  }, []);
+  }, [medir]);
+
   const alAbrir = (e: React.SyntheticEvent<HTMLDetailsElement>) => {
-    const d = e.currentTarget;
-    if (!d.open) return;
-    const r = d.querySelector("summary")?.getBoundingClientRect();
-    if (!r) return;
-    const entraAbajo = r.bottom + 4 + alto <= window.innerHeight;
-    setPos(entraAbajo ? { top: r.bottom + 4, left: r.left } : { bottom: window.innerHeight - r.top + 4, left: r.left });
+    if (e.currentTarget.open) medir();
   };
   const estilo = pos ? { position: "fixed" as const, top: pos.top, bottom: pos.bottom, left: pos.left } : undefined;
   return { ref, alAbrir, estilo };
 }
 
-/** El disparador del desplegable: mismo alto y borde que `FiltroColumna`. */
+/** El disparador del desplegable: mismo alto y borde en todas las cabeceras. */
 const SUMMARY_CABECERA =
   "flex h-9 min-w-24 max-w-56 cursor-pointer list-none items-center justify-between gap-1 rounded-lg border-[1.5px] bg-[var(--surface-raised)] pl-2.5 pr-2 text-sm font-medium text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none [&::-webkit-details-marker]:hidden";
+
+/** Lo elegido, siempre como lista: un valor suelto se lee como una lista de uno. */
+const comoLista = (v: string | readonly string[] | undefined): string[] =>
+  v == null ? [] : Array.isArray(v) ? v.filter(Boolean) : v ? [v as string] : [];
+
+/**
+ * Qué dice el disparador sin abrirlo: el valor cuando es uno, cuántos cuando
+ * son varios. Decir «3 elegidos» y no listarlos es a propósito — la cabecera
+ * de una columna mide 12rem y tres especies no entran sin romper la tabla.
+ */
+function rotuloDeFiltro(
+  elegidos: string[],
+  placeholder: string,
+  etiqueta?: (v: string) => string,
+  options: readonly OpcionDeFiltro[] = [],
+): string {
+  if (elegidos.length === 0) return placeholder;
+  if (elegidos.length === 1) {
+    const o = options.find((x) => x.value === elegidos[0]);
+    return o?.label ?? (etiqueta ? etiqueta(elegidos[0]) : elegidos[0]);
+  }
+  return `${elegidos.length} elegidos`;
+}
+
+/**
+ * La lista de casillas del autofiltro, compartida por la cabecera y el panel.
+ *
+ * Cada opción trae su peso (líneas y m³) porque se elige por peso, no por
+ * nombre — y porque una opción que devuelve cero es una trampa.
+ */
+function ListaDeCasillas({
+  label,
+  elegidos,
+  options,
+  etiqueta,
+  onChange,
+  unico = false,
+}: {
+  label: string;
+  elegidos: string[];
+  options: readonly OpcionDeFiltro[];
+  etiqueta?: (v: string) => string;
+  onChange: (v: string[]) => void;
+  /** `true` = de a uno (el filtro viaja al servidor y sólo admite un valor). */
+  unico?: boolean;
+}) {
+  const marcadas = new Set(elegidos);
+  const textoDe = (o: OpcionDeFiltro) => o.label ?? (etiqueta ? etiqueta(o.value) : o.value);
+  const pesoDe = (o: OpcionDeFiltro) =>
+    o.hint ?? (o.count == null ? "" : `${o.count}${o.volumeM3 != null ? ` · ${Number(o.volumeM3).toFixed(2)}` : ""}`);
+  return (
+    <>
+      {options.length === 0 && <p className="px-2 py-1.5 text-sm text-[var(--text-tertiary)]">Sin valores</p>}
+      {elegidos.length > 0 && (
+        <button
+          type="button"
+          onClick={() => onChange([])}
+          className="mb-1 block w-full rounded-lg px-2 py-1 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+        >
+          Limpiar ({elegidos.length})
+        </button>
+      )}
+      {options.map((o) => {
+        const marcado = marcadas.has(o.value);
+        return (
+          <label
+            key={o.value}
+            className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-[var(--surface-sunken)] ${
+              marcado ? "bg-primary/10 font-bold text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
+            }`}
+          >
+            <input
+              type={unico ? "radio" : "checkbox"}
+              name={unico ? `filtro-${label}` : undefined}
+              checked={marcado}
+              aria-label={`${label}: ${textoDe(o)}`}
+              onChange={() =>
+                onChange(unico ? [o.value] : marcado ? elegidos.filter((x) => x !== o.value) : [...elegidos, o.value])
+              }
+              className="h-4 w-4 shrink-0 cursor-pointer accent-[var(--accent)]"
+            />
+            <span className="min-w-0 flex-1 truncate" title={textoDe(o)}>{textoDe(o)}</span>
+            <span className="shrink-0 font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">
+              {pesoDe(o)}
+            </span>
+          </label>
+        );
+      })}
+    </>
+  );
+}
+
+/**
+ * El filtro DENTRO de la cabecera de su columna — el autofiltro de Excel
+ * (Brandon, 2026-09-03), con selección MÚLTIPLE desde 2026-09-10.
+ *
+ * Es el mismo estado que el panel: no hay un segundo filtro, hay un segundo
+ * lugar desde donde tocarlo. Se elige mirando la columna que se quiere acotar,
+ * que es como se lee una tabla — en vez de abrir un panel, buscar el select con
+ * el nombre correcto y volver.
+ *
+ * **Por qué dejó de ser un `<select>`:** en el patio la pregunta casi nunca es
+ * de un valor —«comercial Y paquetería larga», «tornillo Y cachimbo»— y con uno
+ * solo había que mirar la tabla dos veces y sumar a mano. Ahora cada opción se
+ * tilda o se destilda: OR adentro de la columna, AND entre columnas.
+ *
+ * Acepta `string` o `string[]` para no romper a quien todavía pase uno solo, y
+ * siempre devuelve la lista completa: el que llama decide si guarda `[]` o
+ * `undefined`. Hereda `normal-case` porque el `<thead>` va en versalitas.
+ */
+export function FiltroColumna({
+  label,
+  value,
+  options,
+  etiqueta,
+  onChange,
+  placeholder = "Todos",
+  unico = false,
+}: {
+  /** Cómo se llama la columna: arma el `aria-label` del control. */
+  label: string;
+  value: string | readonly string[] | undefined;
+  options: readonly OpcionDeFiltro[];
+  etiqueta?: (v: string) => string;
+  onChange: (v: string[]) => void;
+  placeholder?: string;
+  /**
+   * `true` = de a uno. Es el caso de las columnas cuyo filtro viaja al servidor
+   * (la bandeja de Ingresos): la consulta admite un valor por campo, así que la
+   * lista muestra redondeles y no casillas — prometer dos y aplicar uno sería
+   * peor que ofrecer uno.
+   */
+  unico?: boolean;
+}) {
+  const { ref, alAbrir, estilo } = usePopoverCabecera(288);
+  const elegidos = comoLista(value);
+  const vacio = options.length === 0;
+  return (
+    <details ref={ref} onToggle={alAbrir} className="mt-1.5 block font-normal normal-case tracking-normal">
+      <summary
+        aria-label={`Filtrar por ${label}${elegidos.length > 0 ? `: ${elegidos.join(", ")}` : ""}`}
+        title={elegidos.length > 0 ? elegidos.join(" · ") : `Filtrar por ${label}`}
+        className={`${SUMMARY_CABECERA} ${vacio ? "pointer-events-none opacity-50" : ""} ${
+          elegidos.length > 0 ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)]"
+        }`}
+      >
+        <span className="truncate">{vacio ? "—" : rotuloDeFiltro(elegidos, placeholder, etiqueta, options)}</span>
+        <ChevronDown
+          className={`h-3.5 w-3.5 shrink-0 ${elegidos.length > 0 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
+          aria-hidden
+        />
+      </summary>
+      <div
+        role="group"
+        aria-label={`Valores de ${label}`}
+        style={estilo}
+        className="z-50 max-h-72 w-64 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
+      >
+        <ListaDeCasillas
+          label={label}
+          elegidos={elegidos}
+          options={options}
+          etiqueta={etiqueta}
+          onChange={onChange}
+          unico={unico}
+        />
+      </div>
+    </details>
+  );
+}
 
 /**
  * «Mayor que», «entre X e Y» en la cabecera de una columna de números — el otro
@@ -308,8 +452,8 @@ export function FiltroColumnaRango({
   /** m³, %, pz — se dice al lado de cada input y en el resumen. */
   unidad?: string;
   paso?: number;
-  valor: { min: number | null; max: number | null } | undefined;
-  onChange: (r: { min: number | null; max: number | null }) => void;
+  valor: RangoNumerico | undefined;
+  onChange: (r: RangoNumerico) => void;
   placeholder?: string;
 }) {
   const { ref, alAbrir, estilo } = usePopoverCabecera(170);
@@ -358,7 +502,7 @@ export function FiltroColumnaRango({
             aria-label={`${label} desde`}
             className={campo}
           />
-          <span className="text-sm text-[var(--text-tertiary)]">a</span>
+          <span className="text-sm text-[var(--text-tertiary)]">–</span>
           <input
             type="number"
             inputMode="decimal"
@@ -374,7 +518,7 @@ export function FiltroColumnaRango({
           <button
             type="button"
             onClick={() => onChange({ min: null, max: null })}
-            className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-[var(--text-secondary)] underline-offset-2 hover:text-[var(--text-primary)] hover:underline"
+            className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           >
             <X className="h-3.5 w-3.5" aria-hidden /> Quitar el rango
           </button>
@@ -384,33 +528,57 @@ export function FiltroColumnaRango({
   );
 }
 
-export function FiltroColumnaMulti({
+/**
+ * El mismo autofiltro, con forma de CAMPO — el panel «Filtros» y la fila que
+ * gobierna los KPIs.
+ *
+ * Misma lista de tildes que la cabecera: elegir dos especies se hace igual en
+ * los tres lugares. Lo único que cambia es el disparador, porque acá vive en un
+ * formulario y no en un `<thead>`: alto de campo, esquinas de campo.
+ */
+export function CampoDeFiltro({
   label,
   value,
   options,
+  etiqueta,
   onChange,
-  placeholder = "Todas",
+  placeholder = "Todos",
+  compacto = false,
+  unico = false,
+  className = "",
 }: {
   label: string;
-  value: readonly string[];
-  options: FacetaOpcion[];
+  value: string | readonly string[] | undefined;
+  options: readonly OpcionDeFiltro[];
+  etiqueta?: (v: string) => string;
   onChange: (v: string[]) => void;
+  /** Lo que dice cuando no hay nada elegido («Todas las especies»). */
   placeholder?: string;
+  /** `true` = alto 10 y esquinas chicas (la fila de los KPIs). */
+  compacto?: boolean;
+  /** `true` = de a uno: el filtro viaja al servidor y sólo admite un valor. */
+  unico?: boolean;
+  className?: string;
 }) {
-  const { ref, alAbrir, estilo } = usePopoverCabecera(256);
-  const elegidas = new Set(value);
-  const resumen = value.length === 0 ? placeholder : value.length === 1 ? value[0] : `${value.length} elegidas`;
+  const { ref, alAbrir, estilo } = usePopoverCabecera(288);
+  const elegidos = comoLista(value);
+  const vacio = options.length === 0;
   return (
-    <details ref={ref} onToggle={alAbrir} className="mt-1.5 block font-normal normal-case tracking-normal">
+    <details ref={ref} onToggle={alAbrir} className={`block ${className}`}>
       <summary
-        aria-label={`Filtrar por ${label}`}
-        className={`${SUMMARY_CABECERA} ${
-          value.length > 0 ? "border-[var(--accent)] bg-primary/10" : "border-[var(--rule-base)]"
+        aria-label={`Filtrar por ${label}${elegidos.length > 0 ? `: ${elegidos.join(", ")}` : ""}`}
+        title={elegidos.length > 0 ? elegidos.join(" · ") : `Filtrar por ${label}`}
+        className={`flex w-full cursor-pointer list-none items-center justify-between gap-2 bg-[var(--surface-canvas)] font-medium text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none [&::-webkit-details-marker]:hidden ${
+          compacto ? "h-10 rounded-lg border px-2 text-sm" : "h-12 rounded-2xl border-2 px-4 text-sm"
+        } ${vacio ? "pointer-events-none opacity-50" : ""} ${
+          elegidos.length > 0 ? "border-[var(--accent)] font-bold" : "border-[var(--rule-base)]"
         }`}
       >
-        <span className="truncate">{resumen}</span>
+        <span className="min-w-0 flex-1 truncate">
+          {vacio ? "Sin datos en el período" : rotuloDeFiltro(elegidos, placeholder, etiqueta, options)}
+        </span>
         <ChevronDown
-          className={`h-3.5 w-3.5 shrink-0 ${value.length > 0 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
+          className={`h-4 w-4 shrink-0 ${elegidos.length > 0 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
           aria-hidden
         />
       </summary>
@@ -418,64 +586,34 @@ export function FiltroColumnaMulti({
         role="group"
         aria-label={`Valores de ${label}`}
         style={estilo}
-        className="z-50 max-h-64 w-64 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
+        className="z-50 max-h-72 w-64 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
       >
-        {options.length === 0 && <p className="px-2 py-1.5 text-sm text-[var(--text-tertiary)]">Sin valores</p>}
-        {options.map((o) => (
-          <label
-            key={o.value}
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
-          >
-            <input
-              type="checkbox"
-              checked={elegidas.has(o.value)}
-              onChange={(e) => onChange(e.target.checked ? [...value, o.value] : value.filter((x) => x !== o.value))}
-              className="h-4 w-4 accent-[var(--accent)]"
-            />
-            <span className="flex-1 truncate">{o.value}</span>
-            <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{o.count}</span>
-          </label>
-        ))}
-        {value.length > 0 && (
-          <button
-            type="button"
-            onClick={() => onChange([])}
-            className="mt-1 w-full rounded-lg px-2 py-1.5 text-left text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-          >
-            {placeholder}
-          </button>
-        )}
+        <ListaDeCasillas
+          label={label}
+          elegidos={elegidos}
+          options={options}
+          etiqueta={etiqueta}
+          onChange={onChange}
+          unico={unico}
+        />
       </div>
     </details>
   );
 }
 
-function SelectFaceta({ filtro, onChange }: { filtro: FiltroSelect; onChange: (v: string) => void }) {
-  const id = useId();
-  const vacio = filtro.options.length === 0;
+/** El campo del panel «Filtros»: `CampoDeFiltro` con el rótulo arriba. */
+function SelectFaceta({ filtro, onChange }: { filtro: FiltroSelect; onChange: (v: string[]) => void }) {
   return (
-    <label htmlFor={id} className={`flex flex-col gap-2 ${filtro.soloMobile ? "sm:hidden" : ""}`}>
+    <div className={`flex flex-col gap-2 ${filtro.soloMobile ? "sm:hidden" : ""}`}>
       <span className="text-sm font-bold text-[var(--text-primary)]">{filtro.label}</span>
-      <div className="relative">
-        <select
-          id={id}
-          value={filtro.value}
-          disabled={vacio}
-          onChange={(e) => onChange(e.target.value)}
-          className={`h-12 w-full appearance-none rounded-2xl border-2 bg-[var(--surface-canvas)] px-4 pr-10 text-sm font-medium text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--accent)] disabled:opacity-50 ${
-            filtro.value ? "border-[var(--accent)]" : "border-[var(--rule-base)]"
-          }`}
-        >
-          <option value="">{vacio ? "Sin datos en el período" : `Todos (${filtro.options.length})`}</option>
-          {filtro.options.map((o) => (
-            <option key={o.value} value={o.value}>
-              {(filtro.etiqueta ? filtro.etiqueta(o.value) : o.value)} — {o.count}
-              {o.volumeM3 != null ? ` · ${Number(o.volumeM3).toFixed(2)} m³` : ""}
-            </option>
-          ))}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
-      </div>
-    </label>
+      <CampoDeFiltro
+        label={filtro.label}
+        value={filtro.value}
+        options={filtro.options}
+        etiqueta={filtro.etiqueta}
+        onChange={onChange}
+        placeholder={`Todos (${filtro.options.length})`}
+      />
+    </div>
   );
 }

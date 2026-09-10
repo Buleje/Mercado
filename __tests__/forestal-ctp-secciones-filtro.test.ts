@@ -308,3 +308,63 @@ describe("facetas y filtro de especie — dos grafías, una especie", () => {
     expect(filtrarSeccion(lineas, { species: "Shihuahuaco" }).map((l) => l.id)).toEqual(["c"]);
   });
 });
+
+/**
+ * Selección MÚLTIPLE por columna (Brandon, 2026-09-10).
+ *
+ * «Mostrame comercial Y paquetería larga» es la pregunta del patio: con un solo
+ * valor había que mirar la tabla dos veces y sumar a mano. La regla es la del
+ * autofiltro de Excel: **OR adentro de una columna, AND entre columnas**.
+ */
+describe("filtros de columna con varios valores", () => {
+  const lineas = [
+    linea({ id: "a", speciesCommon: "Tornillo", productType: "aserrada", destino: "Lima" }),
+    linea({ id: "b", speciesCommon: "Cachimbo", productType: "aserrada", destino: "Pucallpa" }),
+    linea({ id: "c", speciesCommon: "Shihuahuaco", productType: "rolliza", destino: "Lima" }),
+  ];
+
+  it("una lista trae los asientos de CUALQUIERA de los valores (OR)", () => {
+    expect(filtrarSeccion(lineas, { species: ["Tornillo", "Cachimbo"] }).map((l) => l.id)).toEqual(["a", "b"]);
+  });
+
+  it("dos columnas se cruzan (AND): especie ∈ lista Y destino ∈ lista", () => {
+    expect(
+      filtrarSeccion(lineas, { species: ["Tornillo", "Cachimbo"], destino: ["Lima"] }).map((l) => l.id),
+    ).toEqual(["a"]);
+  });
+
+  it("una lista VACÍA no filtra nada — no es «ninguno»", () => {
+    expect(filtrarSeccion(lineas, { species: [] })).toHaveLength(3);
+  });
+
+  it("un valor suelto sigue funcionando: se lee como una lista de uno", () => {
+    expect(filtrarSeccion(lineas, { species: "Tornillo" }).map((l) => l.id)).toEqual(["a"]);
+  });
+
+  it("respeta la clave de especie dentro de la lista (dos grafías, una especie)", () => {
+    const conGrafias = [...lineas, linea({ id: "d", speciesCommon: "TORNILLO" })];
+    expect(filtrarSeccion(conGrafias, { species: ["tornillo", "Cachimbo"] }).map((l) => l.id)).toEqual([
+      "a",
+      "b",
+      "d",
+    ]);
+  });
+
+  it("el badge cuenta COLUMNAS acotadas, no tildes: 3 especies en una columna es 1", () => {
+    expect(contarFiltros({ species: ["Tornillo", "Cachimbo", "Shihuahuaco"] })).toBe(1);
+    expect(contarFiltros({ species: ["Tornillo"], destino: ["Lima"] })).toBe(2);
+    expect(contarFiltros({ species: [] })).toBe(0);
+  });
+
+  it("el permiso vive en una lista por línea: entra si comparten alguno", () => {
+    const conPermiso = [
+      linea({ id: "p1", permisoOrigen: ["CONC-25-1"] }),
+      linea({ id: "p2", permisoOrigen: ["CONC-25-2", "CONC-25-3"] }),
+      linea({ id: "p3", permisoOrigen: [] }),
+    ];
+    expect(filtrarSeccion(conPermiso, { permiso: ["CONC-25-1", "CONC-25-3"] }).map((l) => l.id)).toEqual([
+      "p1",
+      "p2",
+    ]);
+  });
+});

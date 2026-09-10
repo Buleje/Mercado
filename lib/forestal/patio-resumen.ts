@@ -116,20 +116,31 @@ export function libresDelPatio(
   return trozas.filter((t) => estaLibreEnPatio(t, opts));
 }
 
-/** Cómo se acota la pila desde la pantalla. */
+/**
+ * Cómo se acota la pila desde la pantalla.
+ *
+ * Cada campo admite UNO o VARIOS valores (Brandon, 2026-09-01 para las guías;
+ * el resto, 2026-09-10): «de esas 3 quiero 2». Sin esto, comparar dos especies
+ * obligaba a mirar el patio dos veces y sumar a mano.
+ *
+ * `string` sigue valiendo —se lee como una lista de uno— para no romper a quien
+ * ya llamaba con un valor suelto.
+ */
 export interface FiltroPatio {
   /** Busca por código de planta, codificación, parcela, especie, guía… */
   texto?: string;
-  especie?: string;
-  /** Una o más guías a la vez (Brandon, 2026-09-01): "de esas 3 quiero 2" — sin
-   *  esto, comparar dos guías obligaba a mirar el patio dos veces y sumar a mano. */
-  guia?: readonly string[];
+  especie?: string | readonly string[];
+  guia?: string | readonly string[];
   /** N° del título habilitante. */
-  permiso?: string;
+  permiso?: string | readonly string[];
   /** N° de resolución que aprueba el plan de manejo. */
-  resolucion?: string;
-  proveedor?: string;
+  resolucion?: string | readonly string[];
+  proveedor?: string | readonly string[];
 }
+
+/** Los valores elegidos de un campo, normalizados y sin vacíos. */
+const elegidos = (v: string | readonly string[] | undefined): string[] =>
+  (v == null ? [] : Array.isArray(v) ? v : [v as string]).map(norm).filter(Boolean);
 
 const norm = (v: string | null | undefined) =>
   (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -141,18 +152,22 @@ const norm = (v: string | null | undefined) =>
  */
 export function filtrarPatio(trozas: readonly TrozaConsumible[], f: FiltroPatio): TrozaConsumible[] {
   const texto = norm(f.texto);
-  const especie = norm(f.especie);
-  const guias = (f.guia ?? []).map(norm).filter(Boolean);
-  const permiso = norm(f.permiso);
-  const resolucion = norm(f.resolucion);
-  const proveedor = norm(f.proveedor);
+  const especies = elegidos(f.especie);
+  const guias = elegidos(f.guia);
+  const permisos = elegidos(f.permiso);
+  const resoluciones = elegidos(f.resolucion);
+  const proveedores = elegidos(f.proveedor);
+
+  /* OR adentro de un campo, AND entre campos: el autofiltro de Excel. */
+  const entra = (valores: string[], suyo: string | null | undefined) =>
+    valores.length === 0 || valores.includes(norm(suyo));
 
   return trozas.filter((t) => {
-    if (especie && norm(t.especieComun) !== especie) return false;
-    if (guias.length > 0 && !guias.includes(norm(t.gtfNumber))) return false;
-    if (permiso && norm(t.permiso) !== permiso) return false;
-    if (resolucion && norm(t.resolucion) !== resolucion) return false;
-    if (proveedor && norm(t.proveedor) !== proveedor) return false;
+    if (!entra(especies, t.especieComun)) return false;
+    if (!entra(guias, t.gtfNumber)) return false;
+    if (!entra(permisos, t.permiso)) return false;
+    if (!entra(resoluciones, t.resolucion)) return false;
+    if (!entra(proveedores, t.proveedor)) return false;
     if (texto) {
       const campos = [
         t.codigoPlanta, t.codificacion, t.parcela, t.especieComun,

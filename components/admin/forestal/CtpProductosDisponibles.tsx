@@ -43,6 +43,7 @@ import type { FilaDeclarada } from "@/lib/forestal/cubicacion-cuadre";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { esInventarioDeApertura } from "@/lib/forestal/lotes-aserrio";
+import { CampoDeFiltro } from "./ctp-filtros-panel";
 
 interface PaqueteDisponible {
   id: string;
@@ -160,9 +161,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [texto, setTexto] = useState("");
-  const [especie, setEspecie] = useState("");
-  const [producto, setProducto] = useState("");
-  const [permiso, setPermiso] = useState("");
+  /* Listas: «tornillo Y cachimbo» es la pregunta de todos los días y con un
+     valor solo había que mirar la pantalla dos veces (Brandon, 2026-09-10). */
+  const [especie, setEspecie] = useState<string[]>([]);
+  const [producto, setProducto] = useState<string[]>([]);
+  const [permiso, setPermiso] = useState<string[]>([]);
   /** Columnas opcionales de esta tabla, elegibles y persistidas por dispositivo. */
   const [colsVisibles, setColsVisibles] = useColumnasVisibles("ctp-disponibles-cols", COLUMNAS_DISPONIBLES_OPCIONALES);
   /** Ficha del paquete abierta desde su código (ADR-366). */
@@ -295,9 +298,14 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     return corridas.filter((c) => {
       /* La misma clave con la que se arman las opciones: filtrar con otra regla
          es como se llega a un desplegable que ofrece algo y no trae nada. */
-      if (especie && claveEspecie(c.especie ?? "") !== claveEspecie(especie)) return false;
-      if (producto && claveEspecie(c.producto ?? "") !== claveEspecie(producto)) return false;
-      if (permiso && !(c.titularOrigen ?? []).some((p) => clavePermiso(p) === clavePermiso(permiso))) return false;
+      /* OR adentro de cada filtro, AND entre filtros: el autofiltro de Excel. */
+      if (especie.length > 0 && !especie.some((e) => claveEspecie(c.especie ?? "") === claveEspecie(e))) return false;
+      if (producto.length > 0 && !producto.some((p) => claveEspecie(c.producto ?? "") === claveEspecie(p))) return false;
+      if (
+        permiso.length > 0 &&
+        !(c.titularOrigen ?? []).some((t) => permiso.some((p) => clavePermiso(t) === clavePermiso(p)))
+      )
+        return false;
       if (q) {
         const campos = [c.especie, c.producto, c.lote, ...c.paquetes.map((p) => p.codigo)];
         if (!campos.some((x) => norm(x).includes(q))) return false;
@@ -418,7 +426,7 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
         claveMemoria="disponibles"
         /* Los filtros que gobiernan estas cifras (ADR-400): son los MISMOS que
            recortan la tabla de abajo — `visibles` alimenta a las dos. */
-        filtrosActivos={[especie, producto, permiso].filter(Boolean).length}
+        filtrosActivos={[especie, producto, permiso].filter((v) => v.length > 0).length}
         filtros={
           <CtpKpiFiltros
             campos={[
@@ -426,46 +434,46 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 key: "especie",
                 label: "Especie",
                 todos: "Todas las especies",
-                valor: especie || undefined,
+                valor: especie,
                 opciones: opciones.especies.map((e) => ({
                   value: e,
                   label: e,
                   hint: `${fmtM3(pesos.especies.get(claveEspecie(e)) ?? 0)} m³`,
                 })),
-                onChange: (v) => setEspecie(v ?? ""),
+                onChange: setEspecie,
               },
               {
                 key: "permiso",
                 label: "Permiso (título habilitante)",
                 todos: "Todos los permisos",
-                valor: permiso || undefined,
+                valor: permiso,
                 opciones: opciones.permisos.map((p) => ({
                   value: p,
                   label: p,
                   hint: `${fmtM3(pesos.permisos.get(clavePermiso(p)) ?? 0)} m³`,
                 })),
-                onChange: (v) => setPermiso(v ?? ""),
+                onChange: setPermiso,
               },
               {
                 key: "producto",
                 label: "Producto",
                 todos: "Todos los productos",
-                valor: producto || undefined,
+                valor: producto,
                 opciones: opciones.productos.map((p) => ({
                   value: p,
                   label: productLabel(p),
                   hint: `${fmtM3(pesos.productos.get(claveEspecie(p)) ?? 0)} m³`,
                 })),
-                onChange: (v) => setProducto(v ?? ""),
+                onChange: setProducto,
               },
             ]}
-            onLimpiar={() => { setEspecie(""); setPermiso(""); setProducto(""); }}
+            onLimpiar={() => { setEspecie([]); setPermiso([]); setProducto([]); }}
             nota={
-              [especie, permiso, producto].some(Boolean)
+              [especie, permiso, producto].some((v) => v.length > 0)
                 ? `Los indicadores muestran sólo ${[
-                    especie ? `especie: ${especie}` : "",
-                    permiso ? `permiso: ${permiso}` : "",
-                    producto ? `producto: ${productLabel(producto)}` : "",
+                    especie.length > 0 ? `especie: ${especie.join(" o ")}` : "",
+                    permiso.length > 0 ? `permiso: ${permiso.join(" o ")}` : "",
+                    producto.length > 0 ? `producto: ${producto.map(productLabel).join(" o ")}` : "",
                   ]
                     .filter(Boolean)
                     .join(" · ")}`
@@ -561,18 +569,27 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             className={`${CAMPO} pl-9`}
           />
         </label>
-        <select value={especie} onChange={(e) => setEspecie(e.target.value)} aria-label="Filtrar por especie" className={CAMPO}>
-          <option value="">Todas las especies</option>
-          {opciones.especies.map((e) => <option key={e} value={e}>{e}</option>)}
-        </select>
-        <select value={producto} onChange={(e) => setProducto(e.target.value)} aria-label="Filtrar por producto" className={CAMPO}>
-          <option value="">Todos los productos</option>
-          {opciones.productos.map((p) => <option key={p} value={p}>{productLabel(p)}</option>)}
-        </select>
-        <select value={permiso} onChange={(e) => setPermiso(e.target.value)} aria-label="Filtrar por N° de permiso" className={CAMPO}>
-          <option value="">Todos los permisos</option>
-          {opciones.permisos.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
+        <CampoDeFiltro
+          label="Especie"
+          value={especie}
+          options={opciones.especies.map((e) => ({ value: e }))}
+          onChange={setEspecie}
+          placeholder="Todas las especies"
+        />
+        <CampoDeFiltro
+          label="Producto"
+          value={producto}
+          options={opciones.productos.map((p) => ({ value: p, label: productLabel(p) }))}
+          onChange={setProducto}
+          placeholder="Todos los productos"
+        />
+        <CampoDeFiltro
+          label="N° de permiso"
+          value={permiso}
+          options={opciones.permisos.map((p) => ({ value: p }))}
+          onChange={setPermiso}
+          placeholder="Todos los permisos"
+        />
         <div className="flex justify-end">
           <ColumnasMenu columnas={COLUMNAS_DISPONIBLES_OPCIONALES} visibles={colsVisibles} onChange={setColsVisibles} />
         </div>

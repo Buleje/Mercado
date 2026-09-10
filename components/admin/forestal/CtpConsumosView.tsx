@@ -72,11 +72,16 @@ import {
 } from "@/lib/forestal/loctp-consumos-analisis";
 import type { AgrupacionPatio } from "@/lib/forestal/consumo-trozas";
 import { Celda, Cuadro, SinDatos, Texto, Th } from "./ctp-cuadro-shared";
+import { CampoDeFiltro } from "./ctp-filtros-panel";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /** Sin tildes ni mayúsculas: se busca como se tipea, no como se escribió. */
 const norm = (v: string | null | undefined) =>
   (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+/** ¿La fila entra en lo elegido? Sin nada elegido entra todo (OR adentro). */
+const entraEn = (elegidos: readonly string[], valor: string | null | undefined) =>
+  elegidos.length === 0 || elegidos.some((e) => norm(e) === norm(valor));
 
 const nf = (n: number) => n.toLocaleString("es-PE");
 
@@ -151,12 +156,12 @@ export default function CtpConsumosView({
   const [error, setError] = useState<string | null>(null);
   const [filas, setFilas] = useState<FilaConsumo[]>([]);
   const [texto, setTexto] = useState("");
-  const [especie, setEspecie] = useState("");
-  const [gtf, setGtf] = useState("");
+  const [especie, setEspecie] = useState<string[]>([]);
+  const [gtf, setGtf] = useState<string[]>([]);
   /* El título habilitante que ampara la madera consumida (ADR-400). Es la
      pregunta del fiscalizador —«¿cuánto se aserró de este permiso?»— y el
      cuadro tenía el dato (`codigoOrigen`) sin forma de filtrarlo. */
-  const [permiso, setPermiso] = useState("");
+  const [permiso, setPermiso] = useState<string[]>([]);
   /** El grafo se guarda entero: el rendimiento y los huecos salen de él. */
   const [grafo, setGrafo] = useState<GrafoConsumos | null>(null);
   const [agrupar, setAgrupar] = useState<AgrupacionConsumo>("ninguna");
@@ -328,9 +333,10 @@ export default function CtpConsumosView({
   const visibles = useMemo(() => {
     const t = norm(texto);
     return filas.filter((f) => {
-      if (especie && norm(f.especieComun) !== norm(especie)) return false;
-      if (gtf && norm(f.gtf) !== norm(gtf)) return false;
-      if (permiso && norm(f.codigoOrigen) !== norm(permiso)) return false;
+      /* OR adentro de cada filtro, AND entre filtros: el autofiltro de Excel. */
+      if (!entraEn(especie, f.especieComun)) return false;
+      if (!entraEn(gtf, f.gtf)) return false;
+      if (!entraEn(permiso, f.codigoOrigen)) return false;
       if (t) {
         const campos = [f.gtf, f.especieComun, f.especieCientifica, f.codigoOrigen, f.fuenteOrigen, f.observaciones];
         if (!campos.some((c) => norm(c).includes(t))) return false;
@@ -410,13 +416,13 @@ export default function CtpConsumosView({
       disabled: visibles.length === 0,
       onSelect: descargarCsv,
     });
-    if (texto || especie || gtf) {
+    if (texto || especie.length > 0 || gtf.length > 0) {
       lista.push({
         id: "limpiar",
         label: "Limpiar el filtro",
         hint: "Volver a ver los consumos de todo el período",
         icon: X,
-        onSelect: () => { setTexto(""); setEspecie(""); setGtf(""); },
+        onSelect: () => { setTexto(""); setEspecie([]); setGtf([]); },
       });
     }
     return lista;
@@ -625,7 +631,7 @@ export default function CtpConsumosView({
           /* Los filtros que gobiernan estas cifras (ADR-400): son los MISMOS que
              recortan el cuadro de abajo, así que el número y las filas no se
              pueden contradecir. */
-          filtrosActivos={[especie, gtf, permiso].filter(Boolean).length}
+          filtrosActivos={[especie, gtf, permiso].filter((v) => v.length > 0).length}
           filtros={
             <CtpKpiFiltros
               campos={[
@@ -633,38 +639,38 @@ export default function CtpConsumosView({
                   key: "especie",
                   label: "Especie",
                   todos: "Todas las especies",
-                  valor: especie || undefined,
+                  valor: especie,
                   opciones: opcionesEspecie.map((e) => ({ value: e, label: e })),
-                  onChange: (v) => setEspecie(v ?? ""),
+                  onChange: setEspecie,
                 },
                 {
                   key: "permiso",
                   label: "Permiso (título habilitante)",
                   todos: "Todos los permisos",
-                  valor: permiso || undefined,
+                  valor: permiso,
                   opciones: opcionesPermiso.map((p) => ({
                     value: p.value,
                     label: p.value,
                     hint: `${fmtM3(p.m3)} m³`,
                   })),
-                  onChange: (v) => setPermiso(v ?? ""),
+                  onChange: setPermiso,
                 },
                 {
                   key: "gtf",
                   label: "Guía de ingreso",
                   todos: "Todas las guías",
-                  valor: gtf || undefined,
+                  valor: gtf,
                   opciones: opcionesGtf.map((g) => ({ value: g, label: g })),
-                  onChange: (v) => setGtf(v ?? ""),
+                  onChange: setGtf,
                 },
               ]}
-              onLimpiar={() => { setEspecie(""); setPermiso(""); setGtf(""); }}
+              onLimpiar={() => { setEspecie([]); setPermiso([]); setGtf([]); }}
               nota={
-                [especie, permiso, gtf].some(Boolean)
+                [especie, permiso, gtf].some((v) => v.length > 0)
                   ? `Los indicadores muestran sólo ${[
-                      especie ? `especie: ${especie}` : "",
-                      permiso ? `permiso: ${permiso}` : "",
-                      gtf ? `guía: ${gtf}` : "",
+                      especie.length > 0 ? `especie: ${especie.join(" o ")}` : "",
+                      permiso.length > 0 ? `permiso: ${permiso.join(" o ")}` : "",
+                      gtf.length > 0 ? `guía: ${gtf.join(" o ")}` : "",
                     ]
                       .filter(Boolean)
                       .join(" · ")}`
@@ -760,7 +766,7 @@ export default function CtpConsumosView({
         <CtpPatioKpis
           resumen={patio.resumen}
           totalSinFiltrar={patio.delPatio.length}
-          filtrosActivos={[patio.especie, patio.permiso, patio.proveedor].filter(Boolean).length}
+          filtrosActivos={[patio.especie, patio.permiso, patio.proveedor].filter((v) => v.length > 0).length}
           filtros={
             <CtpKpiFiltros
               campos={[
@@ -768,46 +774,46 @@ export default function CtpConsumosView({
                   key: "especie",
                   label: "Especie",
                   todos: "Todas las especies",
-                  valor: patio.especie || undefined,
+                  valor: patio.especie,
                   opciones: facetasPatio.especies.map((f) => ({
                     value: f.value,
                     label: f.value,
                     hint: `${f.count} pza`,
                   })),
-                  onChange: (v) => patio.set.especie(v ?? ""),
+                  onChange: patio.set.especie,
                 },
                 {
                   key: "permiso",
                   label: "Permiso (título habilitante)",
                   todos: "Todos los permisos",
-                  valor: patio.permiso || undefined,
+                  valor: patio.permiso,
                   opciones: facetasPatio.permisos.map((f) => ({
                     value: f.value,
                     label: f.value,
                     hint: `${f.count} pza`,
                   })),
-                  onChange: (v) => patio.set.permiso(v ?? ""),
+                  onChange: patio.set.permiso,
                 },
                 {
                   key: "proveedor",
                   label: "Proveedor",
                   todos: "Todos los proveedores",
-                  valor: patio.proveedor || undefined,
+                  valor: patio.proveedor,
                   opciones: facetasPatio.proveedores.map((f) => ({
                     value: f.value,
                     label: f.value,
                     hint: `${f.count} pza`,
                   })),
-                  onChange: (v) => patio.set.proveedor(v ?? ""),
+                  onChange: patio.set.proveedor,
                 },
               ]}
-              onLimpiar={() => { patio.set.especie(""); patio.set.permiso(""); patio.set.proveedor(""); }}
+              onLimpiar={() => { patio.set.especie([]); patio.set.permiso([]); patio.set.proveedor([]); }}
               nota={
-                [patio.especie, patio.permiso, patio.proveedor].some(Boolean)
+                [patio.especie, patio.permiso, patio.proveedor].some((v) => v.length > 0)
                   ? `Los indicadores muestran sólo ${[
-                      patio.especie ? `especie: ${patio.especie}` : "",
-                      patio.permiso ? `permiso: ${patio.permiso}` : "",
-                      patio.proveedor ? `proveedor: ${patio.proveedor}` : "",
+                      patio.especie.length > 0 ? `especie: ${patio.especie.join(" o ")}` : "",
+                      patio.permiso.length > 0 ? `permiso: ${patio.permiso.join(" o ")}` : "",
+                      patio.proveedor.length > 0 ? `proveedor: ${patio.proveedor.join(" o ")}` : "",
                     ]
                       .filter(Boolean)
                       .join(" · ")}`
@@ -936,24 +942,22 @@ export default function CtpConsumosView({
               className={`${CAMPO} w-full pl-9 pr-3`}
             />
           </label>
-          <select
+          {/* Dos o más valores por campo (Brandon, 2026-09-10): comparar dos
+              especies era mirar el cuadro dos veces y sumar a mano. */}
+          <CampoDeFiltro
+            label="Especie"
             value={especie}
-            onChange={(e) => setEspecie(e.target.value)}
-            aria-label="Filtrar por especie"
-            className={`${CAMPO} w-full px-3`}
-          >
-            <option value="">Todas las especies</option>
-            {opcionesEspecie.map((e) => <option key={e} value={e}>{e}</option>)}
-          </select>
-          <select
+            options={opcionesEspecie.map((e) => ({ value: e }))}
+            onChange={setEspecie}
+            placeholder="Todas las especies"
+          />
+          <CampoDeFiltro
+            label="Guía de ingreso"
             value={gtf}
-            onChange={(e) => setGtf(e.target.value)}
-            aria-label="Filtrar por guía de ingreso"
-            className={`${CAMPO} w-full px-3`}
-          >
-            <option value="">Todas las guías</option>
-            {opcionesGtf.map((g) => <option key={g} value={g}>{g}</option>)}
-          </select>
+            options={opcionesGtf.map((g) => ({ value: g }))}
+            onChange={setGtf}
+            placeholder="Todas las guías"
+          />
           {/* Cómo leer el cuadro y qué llevarse, en un solo botón (ADR-360): el
               agrupado eran cuatro opciones en un `<select>` que no se usan todos
               los días, y descargar/limpiar dos cuadraditos sin explicación. */}
