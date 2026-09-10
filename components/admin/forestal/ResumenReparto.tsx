@@ -35,7 +35,7 @@ import { exportarDistribucionExcel, exportarDistribucionPDF, filtrarPorEspecies,
 import { hoyISO, nombreSugeridoDistribucion, type DistribucionRegistro } from "@/lib/forestal/distribucion-registro";
 // Pie tablar entero y m³ con 3 decimales: la misma regla que el resto de Resúmenes.
 import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
-import { ESPECIES_MADERA, toFeet, unificarPorMedida } from "@/lib/forestal/cubicacion";
+import { ESPECIES_MADERA, ptDesdeM3, toFeet, unificarPorMedida } from "@/lib/forestal/cubicacion";
 import { margenLote, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { KpiResumen, SeccionResumen } from "./resumen-tabla";
@@ -63,7 +63,7 @@ import MetaConMedidas from "./reparto-meta";
 import { evaluarMeta, medidasDeMeta, META_DEFAULT, type MetaMix } from "@/lib/forestal/cubicacion-meta";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import { tipoComercialDelProducto } from "@/lib/forestal/loctp-catalogos";
-import ReprocesosSugeridos from "./reparto-reprocesos";
+import ReprocesosSugeridos, { AYUDA_REPROCESOS } from "./reparto-reprocesos";
 import { FiltroLargoCelda } from "./reparto-filtro-largo";
 import { FiltroGruposCelda } from "./reparto-filtro-grupos";
 import { contarRevision, revisarDistribucion, type HallazgoRevision } from "@/lib/forestal/reparto-revision";
@@ -174,8 +174,11 @@ const COLUMNAS_REPARTO = [
   { key: "fecha", label: "Fecha", ancho: 176 },
   { key: "aprovechable", label: "% aprovechable", ancho: 104 },
   { key: "pctReal", label: "% real", ancho: 96 },
-  { key: "ampara", label: "Ampara m³ (A)", ancho: 136 },
+  /* Piezas · m³ · PT, siempre en ese orden (Brandon, 2026-09-09). El PT no se
+     edita: sale del m³ amparado × 424, que es como se compra y se vende. */
   { key: "piezas", label: "Piezas", ancho: 104 },
+  { key: "ampara", label: "Ampara m³ (A)", ancho: 136 },
+  { key: "pt", label: "PT (A)", ancho: 104 },
   { key: "costo", label: "S/ por m³", ancho: 120 },
   { key: "grupos", label: "Lleva sólo", ancho: 180 },
   { key: "largo", label: "Largo (pies)", ancho: 180 },
@@ -1224,6 +1227,14 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       ),
     },
     {
+      key: "piezas",
+      node: (
+        <ThAyuda ayuda={<>Cuántas piezas aserradas salieron de este bloque. Vacío = entran todas las que alcancen por volumen. En un bloque de aserrada directa es donde se declaran las piezas que se contaron. Debajo, en chico, va lo <b>real</b>: las piezas que el reparto le asignó de verdad.</>}>
+          Piezas
+        </ThAyuda>
+      ),
+    },
+{
       key: "ampara",
       node: (
         <ThAyuda ayuda={<>Metros cúbicos de madera ASERRADA (A) que este bloque respalda — lo que declarás como salido de esta rolliza. Se calcula solo (m³ × % aprovechable) salvo que lo escribas a mano. En un bloque de aserrada directa es el mismo m³ (A) de la columna anterior, así que no se edita dos veces. Debajo, en chico, va lo <b>real</b>: los m³ que el reparto le asignó de verdad. Si es menos, a ese bloque le sobra respaldo sin usar.</>}>
@@ -1232,10 +1243,10 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       ),
     },
     {
-      key: "piezas",
+      key: "pt",
       node: (
-        <ThAyuda ayuda={<>Cuántas piezas aserradas salieron de este bloque. Vacío = entran todas las que alcancen por volumen. En un bloque de aserrada directa es donde se declaran las piezas que se contaron. Debajo, en chico, va lo <b>real</b>: las piezas que el reparto le asignó de verdad.</>}>
-          Piezas
+        <ThAyuda ayuda={<>El <b>pie tablar</b> de lo que el bloque ampara: m³ × 424, la conversión con la que se compra y se vende la madera en la plaza. No se edita — sale del m³ de la izquierda.</>}>
+          PT (A)
         </ThAyuda>
       ),
     },
@@ -1326,6 +1337,16 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       ),
     },
     {
+      key: "piezas",
+      node: (
+        <td className="px-3 py-3 text-right font-mono tabular-nums" title="Las piezas que el reparto asignó de verdad a los bloques">
+          <span className="block text-lg font-extrabold leading-none">
+            {fmtPiezas(dist.especies.reduce((a, e) => a + e.bloques.reduce((x, b) => x + b.asignado.reduce((y, g) => y + g.piezas, 0), 0), 0))}
+          </span>
+        </td>
+      ),
+    },
+{
       key: "ampara",
       /**
        * El total dice lo REALMENTE distribuido (`amparadaM3` = suma de los
@@ -1346,12 +1367,10 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
       ),
     },
     {
-      key: "piezas",
+      key: "pt",
       node: (
-        <td className="px-3 py-3 text-right font-mono tabular-nums" title="Las piezas que el reparto asignó de verdad a los bloques">
-          <span className="block text-lg font-extrabold leading-none">
-            {fmtPiezas(dist.especies.reduce((a, e) => a + e.bloques.reduce((x, b) => x + b.asignado.reduce((y, g) => y + g.piezas, 0), 0), 0))}
-          </span>
+        <td className="px-3 py-3 text-right font-mono tabular-nums" title="Pie tablar de lo distribuido: los m³ amparados × 424">
+          <span className="block text-lg font-extrabold leading-none">{fmtPt(ptDesdeM3(t.amparadaM3))}</span>
         </td>
       ),
     },
@@ -1497,6 +1516,9 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
         <SeccionResumen
           icon={RefreshCw}
           titulo="Reprocesos que cuadrarían la distribución"
+          /* La regla —qué se puede reprocesar, cómo se leen las columnas— detrás
+             del ⓘ: se lee una vez y después estorba (Brandon, 2026-09-09). */
+          ayuda={AYUDA_REPROCESOS}
           hint={
             <span className="font-mono tabular-nums">
               {fmtM3(resumenReprocesos.m3EnJuego)} m³{" "}
@@ -1945,6 +1967,40 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                       ),
                     },
                     {
+                      key: "piezas",
+                      node: (
+                        <td className="px-3 py-2.5">
+                          {/* Las piezas REALES son las que se van a imprimir,
+                              una por una, en el Anexo 04: van grandes. */}
+                          <RealDeBloque
+                            valor={realPiezas == null ? "—" : fmtPiezas(realPiezas)}
+                            unidad={realPiezas == null ? undefined : "pzas"}
+                            /* Sólo es un aviso cuando se pidió un tope y el
+                               reparto no lo alcanzó: sin tope («todas»), que
+                               entren menos piezas no es un descuadre. */
+                            alerta={realPiezas != null && b.piezasManual != null && realPiezas < b.piezasManual}
+                            titulo={realPiezas != null && b.piezasManual != null && realPiezas < b.piezasManual
+                              ? `Pediste ${fmtPiezas(b.piezasManual)} piezas y el reparto sólo encontró ${fmtPiezas(realPiezas)} de esa especie.`
+                              : "Las piezas que el reparto le asignó de verdad a este bloque — una por una, las que salen en el Anexo 04."}
+                          />
+                          <TopeDeBloque titulo={directa
+                            ? "Máximo de piezas: cuántas contaste en esta madera ya aserrada. Vacío = las que entren por volumen."
+                            : "Máximo de piezas que se lleva este bloque. Vacío = las que entren por volumen. Las que realmente le tocaron son el número de arriba."}>
+                            <input
+                              value={b.piezasManual ?? ""}
+                              onChange={(e) => editar(b.id, "piezasManual", e.target.value)}
+                              inputMode="numeric"
+                              placeholder="todas"
+                              aria-label={directa ? "Piezas de la madera ya aserrada" : "Tope de piezas del bloque"}
+                              className={`h-7 w-16 rounded-xl border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.piezasManual == null
+                                ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]"
+                                : "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
+                            />
+                          </TopeDeBloque>
+                        </td>
+                      ),
+                    },
+{
                       key: "ampara",
                       /* Editable: lo MEDIDO le gana al porcentaje supuesto. El
                          placeholder muestra lo que calcularía el sistema.
@@ -1986,36 +2042,12 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                       ),
                     },
                     {
-                      key: "piezas",
+                      key: "pt",
+                      /* Derivado del m³ REAL de la izquierda (× 424): la misma
+                         madera dicha en la unidad con la que se vende. */
                       node: (
-                        <td className="px-3 py-2.5">
-                          {/* Las piezas REALES son las que se van a imprimir,
-                              una por una, en el Anexo 04: van grandes. */}
-                          <RealDeBloque
-                            valor={realPiezas == null ? "—" : fmtPiezas(realPiezas)}
-                            unidad={realPiezas == null ? undefined : "pzas"}
-                            /* Sólo es un aviso cuando se pidió un tope y el
-                               reparto no lo alcanzó: sin tope («todas»), que
-                               entren menos piezas no es un descuadre. */
-                            alerta={realPiezas != null && b.piezasManual != null && realPiezas < b.piezasManual}
-                            titulo={realPiezas != null && b.piezasManual != null && realPiezas < b.piezasManual
-                              ? `Pediste ${fmtPiezas(b.piezasManual)} piezas y el reparto sólo encontró ${fmtPiezas(realPiezas)} de esa especie.`
-                              : "Las piezas que el reparto le asignó de verdad a este bloque — una por una, las que salen en el Anexo 04."}
-                          />
-                          <TopeDeBloque titulo={directa
-                            ? "Máximo de piezas: cuántas contaste en esta madera ya aserrada. Vacío = las que entren por volumen."
-                            : "Máximo de piezas que se lleva este bloque. Vacío = las que entren por volumen. Las que realmente le tocaron son el número de arriba."}>
-                            <input
-                              value={b.piezasManual ?? ""}
-                              onChange={(e) => editar(b.id, "piezasManual", e.target.value)}
-                              inputMode="numeric"
-                              placeholder="todas"
-                              aria-label={directa ? "Piezas de la madera ya aserrada" : "Tope de piezas del bloque"}
-                              className={`h-7 w-16 rounded-xl border bg-[var(--surface-raised)] px-1.5 text-right font-mono text-xs font-bold tabular-nums outline-none focus:border-[var(--accent)] ${b.piezasManual == null
-                                ? "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)]"
-                                : "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
-                            />
-                          </TopeDeBloque>
+                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                          {realM3 == null ? "—" : fmtPt(ptDesdeM3(realM3))}
                         </td>
                       ),
                     },

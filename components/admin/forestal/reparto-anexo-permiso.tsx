@@ -205,8 +205,8 @@ export default function AnexoPorPermiso({
                     <th className={TH}>Especie</th>
                     <th className={TH}>Tipo</th>
                     <th className={`${TH} text-right`}>Piezas</th>
-                    <th className={`${TH} text-right`}>Pie tablar</th>
                     <th className={`${TH} text-right`}>m³</th>
+                    <th className={`${TH} text-right`}>Pie tablar</th>
                     <th className={`${TH} text-right`}>% del anexo</th>
                   </tr>
                 </thead>
@@ -221,8 +221,8 @@ export default function AnexoPorPermiso({
                         </span>
                       </td>
                       <td className={NUM}>{fmtPiezas(r.piezas)}</td>
-                      <td className={NUM}>{fmtPt(r.pieTablar)}</td>
                       <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(r.m3)}</td>
+                      <td className={NUM}>{fmtPt(r.pieTablar)}</td>
                       <td className={`${NUM} text-[var(--text-tertiary)]`}>
                         {r.pctM3.toLocaleString("es-PE", { maximumFractionDigits: 1 })} %
                       </td>
@@ -238,10 +238,10 @@ export default function AnexoPorPermiso({
                       {fmtPiezas(actual.totalPiezas)}
                     </td>
                     <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
-                      {fmtPt(actual.totalPt)}
+                      {fmtM3(actual.totalM3)}
                     </td>
                     <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
-                      {fmtM3(actual.totalM3)}
+                      {fmtPt(actual.totalPt)}
                     </td>
                     <td className={`${NUM} text-[var(--text-tertiary)]`}>100 %</td>
                   </tr>
@@ -259,8 +259,8 @@ export default function AnexoPorPermiso({
                   <th className={TH}>Tipo</th>
                   <th className={TH}>Medida</th>
                   <th className={`${TH} text-right`}>Piezas</th>
-                  <th className={`${TH} text-right`}>Pie tablar</th>
                   <th className={`${TH} text-right`}>m³</th>
+                  <th className={`${TH} text-right`}>Pie tablar</th>
                 </tr>
               </thead>
               <tbody>
@@ -270,8 +270,8 @@ export default function AnexoPorPermiso({
                     <td className={TD}>{f.tipo}</td>
                     <td className={`${TD} font-mono`}>{f.medida}</td>
                     <td className={NUM}>{fmtPiezas(f.piezas)}</td>
-                    <td className={NUM}>{fmtPt(f.pieTablar)}</td>
                     <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(f.m3)}</td>
+                    <td className={NUM}>{fmtPt(f.pieTablar)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -284,10 +284,10 @@ export default function AnexoPorPermiso({
                     {fmtPiezas(actual.totalPiezas)}
                   </td>
                   <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
-                    {fmtPt(actual.totalPt)}
+                    {fmtM3(actual.totalM3)}
                   </td>
                   <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
-                    {fmtM3(actual.totalM3)}
+                    {fmtPt(actual.totalPt)}
                   </td>
                 </tr>
               </tfoot>

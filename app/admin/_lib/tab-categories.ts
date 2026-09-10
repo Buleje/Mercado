@@ -145,7 +145,7 @@ export const MODULE_INFO: Partial<
   },
   config: {
     icon: SlidersHorizontal,
-    iconColor: "text-slate-500 dark:text-slate-400",
+    iconColor: "text-[var(--text-secondary)]",
     priority: "core",
     desc: "Usuarios, permisos, plan y configuración de la página web.",
     tip: "Configura esto primero para que todo funcione correctamente.",
@@ -159,7 +159,7 @@ export const MODULE_INFO: Partial<
   },
   plan: {
     icon: Zap,
-    iconColor: "text-slate-500 dark:text-slate-400",
+    iconColor: "text-[var(--text-secondary)]",
     priority: "medium",
     desc: "Tu plan actual, límites y opciones de mejora.",
     tip: "Revisa tu plan para aprovechar al máximo la plataforma.",
@@ -201,14 +201,14 @@ export const MODULE_INFO: Partial<
   },
   rendimiento: {
     icon: Gauge,
-    iconColor: "text-slate-400 dark:text-slate-300",
+    iconColor: "text-[var(--text-tertiary)]",
     priority: "medium",
     desc: "Salud técnica, velocidad web, navegador y recursos del sistema.",
     tip: "Útil cuando quieres revisar si el sistema está corriendo fino o pesado.",
   },
   auditoria: {
     icon: Gauge,
-    iconColor: "text-slate-400 dark:text-slate-300",
+    iconColor: "text-[var(--text-tertiary)]",
     priority: "medium",
     desc: "Registro de actividad y trazabilidad de cambios dentro del panel.",
     tip: "Te ayuda a saber quién hizo qué y cuándo.",
@@ -565,7 +565,14 @@ export const FORESTAL_MODULE: TabCategory = {
   icon: TreePine,
   alwaysGroup: true,
   // Cuando gtf-emisor entre al Tab union (ADR-124 Fase futura) se suma acá.
-  tabs: ["ctp-libro-operaciones", "forestal-lotes", "loth-libro-operaciones", "forestal-herramientas", "forestal-tramites"],
+  //
+  // «Lotes de Producción» salió del menú (Brandon, 2026-09-09: «no tiene ningún
+  // contenido»). NO se borró nada: el módulo, sus endpoints, sus lotes y su
+  // certificado QR siguen enteros y la pantalla se abre por URL
+  // (`/admin?tab=forestal-lotes`) y desde la búsqueda global. Para devolverlo al
+  // sidebar alcanza con sumarlo de nuevo a esta lista — un módulo vacío ocupa
+  // un renglón del menú todos los días; borrarlo costaría una migración.
+  tabs: ["ctp-libro-operaciones", "loth-libro-operaciones", "forestal-herramientas", "forestal-tramites"],
 };
 
 export const AGRICULTURA_MODULE: TabCategory = {

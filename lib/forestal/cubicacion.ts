@@ -84,6 +84,7 @@ export const toFeet = (v: number, u: Unidad): number =>
   u === "pies" ? v : u === "pulg" ? v / 12 : u === "m" ? v * 3.2808399 : v / 30.48;
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+const r3 = (n: number) => Math.round(n * 1000) / 1000;
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 
 /**
@@ -124,6 +125,26 @@ export function cubicarPieza(p: {
 
 /** m³ a partir del pie tablar — la conversión comercial, en un solo lugar. */
 export const m3DesdePt = (pt: number): number => r4(pt / PT_POR_M3);
+
+/**
+ * Pie tablar a partir del m³ — la vuelta exacta de `m3DesdePt`.
+ *
+ * Se usa donde la pantalla sólo tiene el volumen (los agregados del reparto: lo
+ * que un bloque ampara, lo que sale de un reproceso) y la madera igual se lee
+ * en pie tablar, que es como se compra y se vende (Brandon, 2026-09-09: «PT es
+ * la multiplicación del volumen m³ por 424»).
+ *
+ * Redondea el m³ a TRES decimales antes de multiplicar, que es como se imprime
+ * (`fmtM3`): así el PT de la pantalla es exactamente el que da la cuenta hecha a
+ * mano con el número de al lado. Sin eso, un bloque con 1.6495 m³ mostraba
+ * «1.650 m³» y «699 PT», y 1.650 × 424 da 700 — un PT de diferencia que no se
+ * puede explicar mirando la fila (medido 2026-09-09).
+ *
+ * ⚠️ Donde EXISTA el pie tablar medido (`PiezaCubicada.pieTablar`,
+ * `AsignacionMedida.pieTablar`) se usa ESE: el m³ sale del PT, no al revés, y
+ * derivarlo de vuelta arrastraría el redondeo de tres decimales del volumen.
+ */
+export const ptDesdeM3 = (m3: number): number => r2(r3(m3) * PT_POR_M3);
 
 /**
  * Vuelve a cubicar una lista de piezas GUARDADAS, desde sus medidas.

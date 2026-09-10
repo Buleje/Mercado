@@ -96,8 +96,8 @@ export default function MetaConMedidas({ meta }: { meta: MetaConMedidasProps | n
                   <tr className="border-b border-[var(--rule-soft)]">
                     <th className={TH}>Medida de {meta.tipo.toLowerCase()}</th>
                     <th className={`${TH} text-right`}>Piezas</th>
-                    <th className={`${TH} text-right`}>Pie tablar</th>
                     <th className={`${TH} text-right`}>m³</th>
+                    <th className={`${TH} text-right`}>Pie tablar</th>
                     <th className={`${TH} text-right`}>% del tipo</th>
                   </tr>
                 </thead>
@@ -106,8 +106,8 @@ export default function MetaConMedidas({ meta }: { meta: MetaConMedidasProps | n
                     <tr key={m.clave} className="border-b border-[var(--rule-soft)] last:border-0">
                       <td className={`${TD} font-mono`}>{m.medida}</td>
                       <td className={NUM}>{fmtPiezas(m.piezas)}</td>
-                      <td className={NUM}>{fmtPt(m.pieTablar)}</td>
                       <td className={NUM}>{fmtM3(m.m3)}</td>
+                      <td className={NUM}>{fmtPt(m.pieTablar)}</td>
                       <td className={`${NUM} text-[var(--text-tertiary)]`}>{m.pctDelTipo} %</td>
                     </tr>
                   ))}
@@ -121,10 +121,10 @@ export default function MetaConMedidas({ meta }: { meta: MetaConMedidasProps | n
                       {fmtPiezas(meta.medidasPiezas)}
                     </td>
                     <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
-                      {fmtPt(meta.medidasPt)}
+                      {fmtM3(meta.medidasM3)}
                     </td>
                     <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
-                      {fmtM3(meta.medidasM3)}
+                      {fmtPt(meta.medidasPt)}
                     </td>
                     <td className={NUM}>100 %</td>
                   </tr>

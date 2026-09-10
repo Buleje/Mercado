@@ -8,7 +8,7 @@
  * probar el camino del usuario.
  */
 import { describe, expect, it } from "vitest";
-import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { cubicarPieza, m3DesdePt, ptDesdeM3, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { construirAnexo04 } from "@/lib/forestal/anexo04-serfor";
 import {
   ajustesParaCuadrar, filasDeCuadre, planDeCuadre, saltoMinimoM3, totalCalculado, TOL_CUADRE_M3,
@@ -149,5 +149,21 @@ describe("modo «medidas reales» (¼ de pulgada)", () => {
     expect(ajustesParaCuadrar(LOTE, objetivo, { modo: "real" })).toEqual([]);
     // El escalón más chico de esa escuadría es MAYOR que la diferencia buscada.
     expect(saltoMinimoM3(LOTE[0], "ancho", "real")).toBeGreaterThan(0.003);
+  });
+});
+
+describe("ptDesdeM3 — el PT que se lee al lado del m³ que se lee", () => {
+  it("multiplica el m³ IMPRESO (3 decimales) por 424, no el crudo", () => {
+    // Caso real de la tabla del reparto: 1.6495 se imprime «1.650» y la cuenta
+    // a mano da 700; derivar del crudo mostraba 699 y no había forma de
+    // explicar la diferencia mirando la fila.
+    expect(Math.round(ptDesdeM3(1.6495))).toBe(700);
+    expect(Math.round(ptDesdeM3(1.65))).toBe(700);
+    expect(Math.round(ptDesdeM3(0.6368))).toBe(270);
+  });
+
+  it("es la vuelta exacta de m3DesdePt en los valores redondos", () => {
+    expect(ptDesdeM3(m3DesdePt(424))).toBeCloseTo(424, 0);
+    expect(ptDesdeM3(1)).toBe(424);
   });
 });

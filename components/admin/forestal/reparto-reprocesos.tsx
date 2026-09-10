@@ -37,6 +37,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, ChevronRight, ExternalLink, Info, RefreshCw } from "@buleje/design-system/icons";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { ptDesdeM3 } from "@/lib/forestal/cubicacion";
+import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { productoDelTipoComercial } from "@/lib/forestal/loctp-catalogos";
 import { declararColaEnElLibro, declararEnElLibro } from "@/lib/forestal/reproceso-borrador";
 import { FRASE_REGLA } from "@/lib/forestal/reproceso-reglas";
@@ -188,8 +190,23 @@ function TablaSalidas({
   if (destinos.length === 0) return null;
   return (
     <div className="mt-2">
-      <p className="px-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-        {titulo} <span className="font-normal normal-case tracking-normal">· {ayuda}</span>
+      {/* La explicación va detrás del ⓘ y no colgando del título: son dos
+          renglones por tabla × dos tablas × N productos, y eso es la mitad de
+          la pantalla en texto que se lee una vez (Brandon, 2026-09-09). */}
+      <p className="flex items-center gap-1 px-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        {titulo}
+        <AdminTooltip
+          content={ayuda}
+          className="max-w-[300px] text-sm font-normal normal-case leading-relaxed tracking-normal"
+        >
+          <button
+            type="button"
+            aria-label={`Qué es «${titulo}»`}
+            className="shrink-0 rounded-full text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] print:hidden"
+          >
+            <Info className="h-3.5 w-3.5" aria-hidden />
+          </button>
+        </AdminTooltip>
       </p>
       <table className="mt-1 w-full">
         <thead>
@@ -199,8 +216,12 @@ function TablaSalidas({
               <span className="sr-only">Marcar como repasado</span>
             </th>
             <th className={TH}>Reproceso · tipo</th>
-            <th className={`${TH} text-right`}>Volumen m³</th>
+            {/* Siempre en este orden (Brandon, 2026-09-09): PIEZAS · m³ · PT.
+                El pie tablar es como se compra y se vende la madera, así que
+                ninguna tabla de volumen puede no tenerlo. */}
             <th className={`${TH} text-right`}>Piezas</th>
+            <th className={`${TH} text-right`}>Volumen m³</th>
+            <th className={`${TH} text-right`}>PT</th>
             <th className={`${TH} text-right`}>Falta</th>
             <th className={TH}>
               <span className="sr-only">Declarar en el Libro</span>
@@ -329,8 +350,9 @@ function TablaSalidas({
                     </span>
                   )}
                 </td>
-                <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(d.m3)}</td>
                 <td className={NUM}>{fmtPiezas(d.piezas)}</td>
+                <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(d.m3)}</td>
+                <td className={NUM} title={`${fmtM3(d.m3)} m³ × 424`}>{fmtPt(ptDesdeM3(d.m3))}</td>
                 <td className={`${NUM} text-[var(--text-tertiary)]`}>
                   {d.motivo === "amparado"
                     ? "—"
@@ -363,18 +385,20 @@ function TablaSalidas({
               </tr>,
               abierto ? (
                 <tr key={`${clave}:medidas`} className="border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-                  <td colSpan={6} className="px-2 py-1.5">
+                  <td colSpan={7} className="px-2 py-1.5">
                     <table className="w-full">
                       <tbody>
                         {d.medidas.map((m) => (
                           <tr key={m.clave}>
                             <td className="py-0.5 pl-6 text-xs text-[var(--text-secondary)]">{m.medida}</td>
                             <td className="py-0.5 text-right font-mono text-xs tabular-nums text-[var(--text-secondary)]">
-                              {fmtM3(m.m3)} m³
-                            </td>
-                            <td className="py-0.5 text-right font-mono text-xs tabular-nums text-[var(--text-secondary)]">
                               {fmtPiezas(m.piezas)} pzas
                             </td>
+                            <td className="py-0.5 text-right font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+                              {fmtM3(m.m3)} m³
+                            </td>
+                            {/* Acá el PT es el MEDIDO de la escuadría, no el
+                                derivado: el m³ salió de él. */}
                             <td className="py-0.5 pr-2 text-right font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
                               {fmtPt(m.pieTablar)} PT
                             </td>
@@ -393,10 +417,11 @@ function TablaSalidas({
             <tr className="border-t-2 border-[var(--rule-base)]">
               <td />
               <td className={`${TD} font-bold text-[var(--text-primary)]`}>{totalLabel}</td>
-              <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(totalM3)}</td>
               <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
                 {totalPiezas != null ? fmtPiezas(totalPiezas) : "—"}
               </td>
+              <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(totalM3)}</td>
+              <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtPt(ptDesdeM3(totalM3))}</td>
               <td />
               <td />
             </tr>
@@ -599,12 +624,12 @@ export default function ReprocesosSugeridos({
           <b className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
             Todo lo cubicado tiene respaldo.
           </b>{" "}
-          Lo de abajo es lo que ese respaldo <b>da por hecho</b>: reprocesos que el Libro todavía no
-          tiene.
+          Abajo, lo que ese respaldo <b>da por hecho</b>.
           {cuadre.libreM3 > 0 && (
             <span className="text-[var(--text-tertiary)]">
               {" "}
-              Quedan {fmtM3(cuadre.libreM3)} m³ de capacidad sin usar.
+              · Quedan <span className="font-mono tabular-nums">{fmtM3(cuadre.libreM3)}</span> m³ de
+              capacidad sin usar.
             </span>
           )}
         </p>
@@ -911,20 +936,35 @@ export default function ReprocesosSugeridos({
         />
       )}
 
-      <p className="flex items-start gap-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-        <span>
-          Al recortar suben las piezas y <b>baja</b> el volumen: el reproceso nunca convierte más de
-          lo que hay. <b>Qué se puede reprocesar:</b> {FRASE_REGLA} Si el respaldo cierra unos
-          litros por encima del bloque, es el cierre por diferencia de medición del reparto (hasta 3
-          piezas y 1 % del bloque). <b>Declarar</b> registra el reproceso en el Libro (hay que decir
-          de qué corrida sale); mientras no lo hagas, acá no se mueve nada.
-        </span>
-      </p>
-    </div>
+</div>
   );
 }
 
 /** El ícono del apartado: el MISMO que «Reprocesar» en Productos disponibles —
  *  la misma acción no puede tener dos símbolos en el mismo módulo. */
 export const ICONO_REPROCESOS = RefreshCw;
+
+/**
+ * Cómo se lee esta sección — vive detrás del ⓘ del título, no en la pantalla.
+ *
+ * Era un párrafo de seis renglones al pie que se lee UNA vez y después estorba
+ * todos los días (Brandon, 2026-09-09: «es muy tedioso ver mucha información
+ * suelta»). Lo que cambia dato a dato se queda a la vista; la regla, no.
+ */
+export const AYUDA_REPROCESOS = (
+  <>
+    <b>Al recortar suben las piezas y baja el volumen:</b> el reproceso nunca convierte más de lo
+    que hay.
+    <br />
+    <b className="mt-1 inline-block">Qué se puede reprocesar:</b> {FRASE_REGLA}
+    <br />
+    <b className="mt-1 inline-block">Columnas:</b> piezas, m³ y PT (el pie tablar sale de m³ × 424;
+    en el desglose de medidas es el medido de cada escuadría).
+    <br />
+    <b className="mt-1 inline-block">Si el respaldo cierra unos litros por encima</b> del bloque, es
+    el cierre por diferencia de medición del reparto (hasta 3 piezas y 1 % del bloque).
+    <br />
+    <b className="mt-1 inline-block">Declarar</b> registra el reproceso en el Libro —hay que decir de
+    qué corrida sale—; mientras no lo hagas, acá no se mueve nada.
+  </>
+);
