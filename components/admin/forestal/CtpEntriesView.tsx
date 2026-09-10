@@ -8,10 +8,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Plus, Search, Boxes, Truck, AlertCircle, PackagePlus, Calculator, Calendar, Table, X } from "@buleje/design-system/icons";
+import { Plus, Search, Boxes, Truck, AlertCircle, HelpCircle, PackagePlus, Calculator, Calendar, Table, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
-import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
-import { accionesDeLotes, accionesDeSeccion, accionesPorDeclarar } from "./ctp-entries-acciones";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { accionesDeSeccion, accionesPorDeclarar } from "./ctp-entries-acciones";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useDebounce } from "@/hooks/use-debounce";
 import { type CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -30,6 +30,8 @@ import CtpProduccionPendiente from "./CtpProduccionPendiente";
 import CtpPapelesDespachoModal from "./CtpPapelesDespachoModal";
 import CtpCorridaSinDeclarar from "./CtpCorridaSinDeclarar";
 import CtpSeccionKpis from "./CtpSeccionKpis";
+import CtpBarraDeuda, { type DeudaItem } from "./CtpBarraDeuda";
+import CtpElegirLoteModal from "./CtpElegirLoteModal";
 import CtpSinCertificar, { type DespachoSinCertificar } from "./CtpSinCertificar";
 import { esLoteDeInventario, margenLote } from "@/lib/forestal/lotes-aserrio";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
@@ -56,10 +58,14 @@ import { ColumnasMenu, TablaSkeleton, useColumnasVisibles } from "./ctp-shared";
 import { CtpPaginacion, usePaginacion } from "./ctp-tabla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
+/* Totales de período: dos decimales, como el resumen y las tarjetas que viven
+   al lado. Los tres de `fmtM3` son para medir una troza. */
+const n2m3 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 const SECTION_META: Record<CtpSection, { label: string; icon: typeof Boxes; cta: string; empty: string }> = {
   /* El CTA de Producción ya no abre un formulario en blanco (ADR-349): la
-     producción se registra DESDE UN LOTE, con sus trozas a la vista. Ver
-     `accionesDeLotes` en `ctp-entries-acciones`. */
+     producción se registra DESDE UN LOTE, con sus trozas a la vista. El lote se
+     elige en `CtpElegirLoteModal`. */
   produccion: { label: "Producción", icon: Boxes, cta: "Declarar producción", empty: "Sin transformaciones registradas. Elegí un lote en «Declarar producción»: salen sus trozas para elegir cuáles entran a la sierra." },
   despacho: { label: "Despacho", icon: Truck, cta: "Nuevo despacho", empty: "Sin despachos registrados. Registrá la salida de producto con su GTF." },
 };
@@ -516,10 +522,18 @@ export function CtpEntriesView({
     onPresetUsado?.();
   }, [presetLoteAserrioId, onPresetUsado]);
   const [showSim, setShowSim] = useState(false);
-  /** Cada incremento abre el menú de lotes (lo dispara la tecla `N`). */
+  /** Cada incremento abre el selector de lotes (lo dispara la tecla `N`). */
   const [abrirLotes, setAbrirLotes] = useState(0);
-  /** Ídem para el de corridas sin declarar: lo dispara su KPI. */
+  /** Ídem desde la pastilla de deuda «sin declarar». */
   const [abrirDeclarar, setAbrirDeclarar] = useState(0);
+  /** El selector de lote (modal). Reemplazó al desplegable que cortaba la pantalla. */
+  const [elegirLote, setElegirLote] = useState(false);
+  /* Las dos señales —tecla `N` y la pastilla de deuda— abren el mismo selector:
+     son la misma pregunta y antes cada una abría su propio menú. Arranca en 0,
+     así que el modal no se abre solo al montar. */
+  useEffect(() => {
+    if (abrirLotes + abrirDeclarar > 0) setElegirLote(true);
+  }, [abrirLotes, abrirDeclarar]);
   const [annulId, setAnnulId] = useState<string | null>(null);
   const [annulReason, setAnnulReason] = useState("");
   const [pending, setPending] = useState(false);
@@ -662,30 +676,6 @@ export function CtpEntriesView({
     [section, visible.length, loading, totalAnexos, load],
   );
 
-  const lotesMenu = useMemo(
-    () =>
-      accionesDeLotes({
-        lotes: lotesConMadera,
-        loteAbierto: loteProd,
-        /* Volver a elegir el lote abierto cierra su panel: el mismo gesto que
-           lo abrió, que es lo que se espera de una opción marcada. */
-        onElegir: (id) => {
-          /* Elegir a mano parte de cero: arrastrar una preselección de otra
-             pantalla haría que el lote se abra con tres tildadas sin motivo. */
-          setPreseleccion(undefined);
-          setAmpliarId(null);
-          return setLoteProd((actual) => {
-            /* Dos paneles distintos sobre la misma tabla se pisarían: abrir uno
-               cierra el otro. */
-            if (actual !== id) setCorridaAbiertaId(null);
-            return actual === id ? "" : id;
-          });
-        },
-        onIr,
-      }),
-    [lotesConMadera, loteProd, onIr],
-  );
-
   const declararMenu = useMemo(
     () =>
       accionesPorDeclarar(
@@ -701,23 +691,82 @@ export function CtpEntriesView({
       ),
     [enProceso, corridaAbiertaId],
   );
+
   /**
-   * Los dos grupos juntos, en el orden del trabajo: primero lo que se puede
-   * meter a la sierra, después lo que ya salió de ella y falta declarar.
+   * La deuda del libro, en el orden en que duele.
    *
-   * El separador es lo que impide que se lean como una sola lista: elegir un
-   * lote abre sus trozas para tildar; elegir una corrida abre el panel para
-   * decir qué salió. Son dos actos distintos.
+   * Las tres salían antes de tres lugares distintos (dos tarjetas de KPI y un
+   * cartel), lo que hacía imposible contestar de un vistazo «¿qué me falta?».
+   * Se arman acá y no en `CtpSeccionKpis` porque quien las resuelve —abrir el
+   * menú de declarar, abrir el modal de vincular— vive en esta vista.
    */
-  const menuLotes: MenuAccion[] = useMemo(() => {
-    if (declararMenu.length === 0) return lotesMenu;
-    const [primeroPorDeclarar, ...restoPorDeclarar] = declararMenu;
-    return [
-      ...lotesMenu,
-      { ...primeroPorDeclarar, dividerBefore: true },
-      ...restoPorDeclarar,
-    ];
-  }, [lotesMenu, declararMenu]);
+  const deudas = useMemo<DeudaItem[]>(() => {
+    if (section !== "produccion") return [];
+    const items: DeudaItem[] = [];
+    if (kpis.abiertas > 0) {
+      items.push({
+        key: "sin-declarar",
+        valor: kpis.abiertas,
+        label: "sin declarar",
+        hint: `${n2m3(kpis.consumidoAbierto)} m³ en la sierra`,
+        tono: "warning",
+        title: "Corridas que consumieron madera y todavía no dicen qué salió",
+        onClick: () => setAbrirDeclarar((n) => n + 1),
+      });
+    }
+    if (idsAmpliables.size > 0) {
+      items.push({
+        key: "a-medio-declarar",
+        valor: idsAmpliables.size,
+        label: "a medio declarar",
+        hint: "admiten más producción bajo el techo",
+        tono: "warning",
+        title: "Ya declararon, pero de la misma madera puede salir más (ADR-365). Se agrega desde la fila del libro.",
+      });
+    }
+    if (sinOrigen.length > 0) {
+      /* De mayor a menor volumen: 1.326 m³ y 0.001 m³ no son la misma urgencia,
+         y en el cartel viejo se veían idénticas. */
+      const ordenadas = [...sinOrigen].sort((a, b) => Number(b.quantity ?? 0) - Number(a.quantity ?? 0));
+      items.push({
+        key: "sin-materia-prima",
+        valor: sinOrigen.length,
+        label: "sin materia prima",
+        hint: kpis.sinOrigen > 0 ? `+ ${n2m3(kpis.sinOrigen)} m³ sin guía` : undefined,
+        tono: "error",
+        title: "Declararon producto y no dicen de qué madera salió",
+        contenido: (
+          <>
+            <p className="mb-2 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+              Elegí el lote que entró a la sierra para atribuirle cada producción. De mayor a menor volumen.
+            </p>
+            <ul className="flex flex-wrap gap-2">
+              {ordenadas.slice(0, 8).map((e) => (
+                <li key={e.id}>
+                  <button
+                    type="button"
+                    onClick={() => setVincularA(e.id)}
+                    title="Elegir el lote que entró a la sierra y atribuirle esta producción"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-[var(--surface-canvas)] px-2.5 py-1.5 text-xs font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
+                  >
+                    N° {e.lineNo} · {e.speciesCommon ?? "sin especie"} ·{" "}
+                    <span className="font-mono font-normal">{Number(e.quantity ?? 0).toFixed(3)} m³</span>
+                    <span className="font-normal opacity-80">— vincular</span>
+                  </button>
+                </li>
+              ))}
+              {ordenadas.length > 8 && (
+                <li className="self-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                  +{ordenadas.length - 8} más en la tabla
+                </li>
+              )}
+            </ul>
+          </>
+        ),
+      });
+    }
+    return items;
+  }, [section, kpis.abiertas, kpis.consumidoAbierto, kpis.sinOrigen, idsAmpliables, sinOrigen, setAbrirDeclarar, setVincularA]);
 
   const Icon = meta.icon;
   return (
@@ -733,16 +782,15 @@ export function CtpEntriesView({
         sinAnexo={sinAnexo}
         soloSinAnexo={soloSinAnexo}
         onSoloSinAnexo={() => setSoloSinAnexo((v) => !v)}
-        /* La deuda lleva a resolverla: la tarjeta abre el mismo menú del botón. */
-        onVerPendientes={() => setAbrirDeclarar((n) => n + 1)}
-        /* La misma cuenta que dibuja el atajo de la fila (ADR-365): si la
-           tarjeta la calculara aparte, podría decir 3 con 2 íconos en la tabla. */
-        ampliables={idsAmpliables.size}
         /* Los mismos filtros que recortan la tabla mandan sobre las cifras
            (ADR-400): las dos cosas salen de `filtrarSeccion`. */
         facetas={facetas}
         onFacetas={setFacetas}
         opciones={opciones}
+        /* Con el lote sobre la mesa, los indicadores se repliegan solos: medido
+           en pantalla, abiertos empujaban la lista de trozas al píxel 1247 de
+           un viewport de 1000 — el trabajo nacía fuera de cuadro. */
+        trabajoActivo={Boolean(loteElegido || corridaAbierta)}
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -751,13 +799,22 @@ export function CtpEntriesView({
             dónde quedó lo ya declarado. Un input que no filtra nada de lo que
             se ve es peor que ninguno. */}
         {section === "produccion" ? (
-          <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
-            Elegí en <b className="text-[var(--text-primary)]">Lotes</b> la madera que entra hoy a la sierra: abajo
-            sale su lista de trozas. Lo ya declarado está en{" "}
-            <b className="text-[var(--text-primary)]">Opciones → Producción · Todos y registrados</b>.{" "}
-            ¿La sierra ya cortó y el lote todavía no está armado? Usá{" "}
-            <b className="text-[var(--text-primary)]">Producir sin lote</b>.
-          </p>
+          /* El manual de tres líneas se lee UNA vez y estorba las otras
+             doscientas: se pliega. El estado vacío de la mesa de abajo ya dice
+             qué hacer justo donde hay que hacerlo, que es donde sirve. */
+          <details className="group min-w-0 flex-1">
+            <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-sm text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-secondary)]">
+              <HelpCircle className="h-4 w-4 shrink-0" aria-hidden />
+              ¿Cómo funciona esta pestaña?
+            </summary>
+            <p className="mt-2 text-sm leading-snug text-[var(--text-secondary)]">
+              Elegí en <b className="text-[var(--text-primary)]">Lotes</b> la madera que entra hoy a la sierra: abajo
+              sale su lista de trozas. Lo ya declarado está en{" "}
+              <b className="text-[var(--text-primary)]">Opciones → Producción · Todos y registrados</b>.{" "}
+              ¿La sierra ya cortó y el lote todavía no está armado? Usá{" "}
+              <b className="text-[var(--text-primary)]">Producir sin lote</b>.
+            </p>
+          </details>
         ) : (
           <BuscadorSeccion section={section} label={meta.label} value={searchInput} onChange={setSearchInput} />
         )}
@@ -796,24 +853,34 @@ export function CtpEntriesView({
               type="button"
               onClick={() => setProducirSinLote(true)}
               title="Abrir el cubicador acá adentro, cargar las medidas y declarar la producción sin lote ni consumo"
-              className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 text-sm font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
+              /* Secundario, no un segundo primario: el camino normal es elegir
+                 el lote. Dos botones con el mismo peso obligan a leer los dos
+                 cada vez para acordarse de cuál era el de todos los días. */
+              className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
             >
               <Calculator className="h-4 w-4" aria-hidden /> Producir sin lote
             </button>
           )}
           {section === "produccion" ? (
-            <ActionMenu
-              label="Lotes"
-              title="Los lotes con madera para aserrar y los ya aserrados a los que falta declararles lo que salió (atajo: N)"
-              actions={menuLotes}
-              badge={declararMenu.length > 0 ? declararMenu.length : undefined}
-              icon={Boxes}
-              variant="primary"
-              size="md"
-              className="max-sm:flex-1"
-              abrirSignal={abrirLotes + abrirDeclarar}
-              vacio="No hay lotes con madera ni corridas por declarar. Armá uno en la pestaña Lotes."
-            />
+            /* Un botón que abre el SELECTOR, no un desplegable.
+               Elegir el lote es la decisión de la que cuelga toda la pestaña, y
+               vivía en un menú de 300 px que el borde de la pantalla cortaba,
+               terminado en «Hay más opciones»: para decidir hay que comparar
+               madera libre, volumen y antigüedad, y nada de eso entraba ahí. */
+            <button
+              type="button"
+              onClick={() => setElegirLote(true)}
+              title="Elegir el lote que entra a la sierra, o la corrida a la que falta declararle lo que salió (atajo: N)"
+              className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-3.5 text-sm font-bold text-white shadow-sm transition hover:brightness-110 max-sm:flex-1"
+            >
+              <Boxes className="h-4 w-4" aria-hidden />
+              Lotes
+              {declararMenu.length > 0 && (
+                <span className="rounded-full bg-white/25 px-1.5 font-mono text-xs tabular-nums">
+                  {declararMenu.length}
+                </span>
+              )}
+            </button>
           ) : (
             <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white shadow-sm transition hover:brightness-110 sm:flex-none">
               <Plus className="h-5 w-5" /> {meta.cta}
@@ -823,40 +890,49 @@ export function CtpEntriesView({
       </div>
       {showSim && section === "produccion" && <CtpSimuladorModal onClose={() => setShowSim(false)} />}
 
-      {/* Lo que declaró producto y todavía no dice de qué madera salió. Va
-          arriba porque es deuda de trazabilidad, no una opción. */}
-      {section === "produccion" && sinOrigen.length > 0 && (
-        <div className="rounded-2xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-3">
-          <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
-            {sinOrigen.length}{" "}
-            {sinOrigen.length === 1
-              ? "corrida declaró producto y no dice de qué madera salió"
-              : "corridas declararon producto y no dicen de qué madera salieron"}
-          </p>
-          <ul className="mt-2 flex flex-wrap gap-2">
-            {sinOrigen.slice(0, 8).map((e) => (
-              <li key={e.id}>
-                <button
-                  type="button"
-                  onClick={() => setVincularA(e.id)}
-                  title="Elegir el lote que entró a la sierra y atribuirle esta producción"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-[var(--surface-canvas)] px-2.5 py-1.5 text-xs font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
-                >
-                  N° {e.lineNo} · {e.speciesCommon ?? "sin especie"} ·{" "}
-                  <span className="font-mono font-normal">{Number(e.quantity ?? 0).toFixed(3)} m³</span>
-                  <span className="font-normal opacity-80">— vincular</span>
-                </button>
-              </li>
-            ))}
-            {sinOrigen.length > 8 && (
-              <li className="self-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                +{sinOrigen.length - 8} más en la tabla
-              </li>
-            )}
-          </ul>
-        </div>
+      {/* El selector de lote: buscar, comparar y elegir sobre qué se trabaja.
+          Reusa las MISMAS acciones que armaba el menú (`lotesConMadera`,
+          `enProceso`) — no es una segunda lista que pueda divergir. */}
+      {elegirLote && section === "produccion" && (
+        <CtpElegirLoteModal
+          lotes={lotesConMadera}
+          corridas={enProceso.map((c) => ({
+            id: c.id,
+            lineNo: c.lineNo,
+            materiaPrimaRef: c.materiaPrimaRef,
+            volumenM3: Number(c.volumeInputM3 ?? 0),
+          }))}
+          loteAbierto={loteProd}
+          corridaAbierta={corridaAbiertaId}
+          onCerrar={() => setElegirLote(false)}
+          onElegir={(id) => {
+            /* Elegir a mano parte de cero: arrastrar una preselección de otra
+               pantalla abriría el lote con trozas tildadas sin motivo. */
+            setPreseleccion(undefined);
+            setAmpliarId(null);
+            setLoteProd((actual) => {
+              /* Dos paneles sobre la misma tabla se pisarían: abrir uno cierra
+                 el otro. */
+              if (actual !== id) setCorridaAbiertaId(null);
+              return actual === id ? "" : id;
+            });
+          }}
+          onElegirCorrida={(id) => {
+            setAmpliarId(null);
+            setCorridaAbiertaId((actual) => {
+              if (actual !== id) setLoteProd("");
+              return actual === id ? null : id;
+            });
+          }}
+          onArmarLote={onIr ? () => onIr("lotes") : undefined}
+        />
       )}
+
+      {/* Toda la deuda del libro en una línea de pastillas (`CtpBarraDeuda`).
+          Antes: tres tarjetas de KPI perdidas entre las cifras del proceso MÁS
+          este cartel ámbar repitiendo las mismas corridas sin materia prima.
+          Ahora el cartel es el detalle que se despliega desde su pastilla. */}
+      {section === "produccion" && <CtpBarraDeuda items={deudas} />}
 
       {/* Vincular: las cinco reglas se revisan ANTES de escribir. */}
       {vincularA && (() => {

@@ -451,22 +451,18 @@ export default function CtpProduccionDeLote({
               sufijo="pt"
             />
           </div>
-          <Btn
-            variant="primary"
-            disabled={alConsumo.length === 0 || excesos.length > 0}
-            title={alConsumo.length === 0 ? "Elegí las trozas que entran a la sierra" : undefined}
-            onClick={() => { setError(null); setAbierto(true); }}
-          >
-            <Boxes className="h-4 w-4" />
-            Declarar producción
-            {/* El número también EN el botón: es lo que se está por escribir en
-                el libro, y el que lo aprieta mira el botón, no el bloque. */}
-            {alConsumo.length > 0 && (
-              <span className="rounded-full bg-white/20 px-1.5 font-mono text-xs tabular-nums">
-                {alConsumo.length}
-              </span>
-            )}
-          </Btn>
+          {/* UN solo «Declarar producción» a la vez.
+              Con trozas tildadas manda la barra del pie, que es `fixed` —está
+              siempre en pantalla, con la cuenta acumulada al lado— así que este
+              botón sería un segundo primario idéntico a dos centímetros del
+              otro. Sin selección la barra no existe, y entonces el único botón
+              es éste: apagado, diciendo qué falta hacer. */}
+          {alConsumo.length === 0 && (
+            <Btn variant="primary" disabled title="Elegí las trozas que entran a la sierra">
+              <Boxes className="h-4 w-4" />
+              Declarar producción
+            </Btn>
+          )}
           {/* Cerrar el LOTE (no el panel): lo que queda no va a entrar a la
               sierra y vuelve al patio. Sólo tiene sentido con madera libre. */}
           {onCerrarLote && yaEnElLote.length > 0 && (
@@ -596,19 +592,12 @@ export default function CtpProduccionDeLote({
         </p>
       )}
 
-      {/* Sin nada tildado, el botón apagado dice qué falta hacer. Con selección
-          manda la barra del pie, que lleva la cuenta acumulada —piezas, m³, pie
-          tablar— al lado de la acción: se decide por volumen mientras se tilda,
-          y el total vivía a doscientas filas de scroll de donde está el ojo. */}
-      {alConsumo.length === 0 && (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Btn variant="primary" disabled>
-            <Boxes className="h-4 w-4" />
-            Declarar producción
-          </Btn>
-        </div>
-      )}
-
+      {/* El botón apagado de este pie se fue: era el TERCERO en pantalla con el
+          mismo rótulo (el del encabezado ya lo dice, y con selección aparece el
+          de la barra fija). Con selección manda la barra del pie, que lleva la
+          cuenta acumulada —piezas, m³, pie tablar— al lado de la acción: se
+          decide por volumen mientras se tilda, y el total vivía a doscientas
+          filas de scroll de donde está el ojo. */}
       {alConsumo.length > 0 && (
         <CtpBarraSeleccion
           cifras={[

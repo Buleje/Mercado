@@ -806,11 +806,37 @@ export function CtpKpisPlegables({
   claveMemoria,
   tarjetas,
   resumen,
+  resumenExtra,
+  encabezado,
   filtros,
   filtrosActivos = 0,
+  trabajoActivo = false,
 }: {
   claveMemoria: string;
   tarjetas: ReactNode[];
+  /**
+   * El bloque ancho que va ARRIBA de las tarjetas dentro del panel: en
+   * Producción, el balance físico del período (entró → salió → rendimiento).
+   * No es una tarjeta más — es lo que las tarjetas resumen.
+   */
+  encabezado?: ReactNode;
+  /**
+   * Lo que acompaña al titular con el panel CERRADO (el mini-gauge de
+   * rendimiento). Va al lado del texto porque la cifra que gobierna la
+   * producción no puede vivir sólo detrás de un botón.
+   */
+  resumenExtra?: ReactNode;
+  /**
+   * Hay trabajo abierto abajo (un lote elegido, una corrida en curso).
+   *
+   * Medido en la pantalla real: con los indicadores abiertos, la mesa de
+   * trabajo —la lista de trozas que se tildan— empezaba en el píxel 1247 de un
+   * viewport de 1000. El trabajo nacía fuera de pantalla. Cuando se elige el
+   * lote, el panel se repliega solo y le devuelve esa mitad de pantalla a lo
+   * que se vino a hacer. Si el operador lo reabre, se queda abierto: esto
+   * decide en el momento del cambio, no en cada render.
+   */
+  trabajoActivo?: boolean;
   /**
    * La fila que gobierna estas cifras (ADR-400): va DENTRO del panel, arriba
    * de las tarjetas, porque filtra justo lo que se está mirando.
@@ -847,6 +873,20 @@ export function CtpKpisPlegables({
       return next;
     });
   };
+
+  /* Al ARRANCAR el trabajo el panel se repliega; la preferencia guardada no se
+     pisa, así que al soltar el lote vuelve a abrirse si así estaba. El efecto
+     depende sólo de `trabajoActivo`: si dependiera de `abierto`, reabrirlo a
+     mano lo volvería a cerrar en el render siguiente. */
+  const trabajoPrevio = useRef(trabajoActivo);
+  useEffect(() => {
+    if (trabajoActivo && !trabajoPrevio.current) setAbierto(false);
+    if (!trabajoActivo && trabajoPrevio.current) {
+      try { setAbierto(localStorage.getItem(`ctp-kpis-v2:${claveMemoria}`) === "1"); } catch { /* modo privado */ }
+    }
+    trabajoPrevio.current = trabajoActivo;
+  }, [trabajoActivo, claveMemoria]);
+
   if (tarjetas.length === 0) return null;
   return (
     <div className="space-y-2">
@@ -881,13 +921,18 @@ export function CtpKpisPlegables({
         )}
         {/* El titular sólo mientras están escondidas: con el panel abierto, las
             tarjetas ya lo dicen mejor y repetirlo es ruido. */}
+        {/* El indicador va PEGADO al titular, no al borde opuesto de la fila:
+            son la misma frase («esto produjo, a este rendimiento») y separados
+            por medio metro de pantalla se leen como dos cosas sin relación. */}
         {!abierto && resumen && (
-          <p className="min-w-0 flex-1 truncate font-mono text-sm tabular-nums text-[var(--text-secondary)]">{resumen}</p>
+          <p className="min-w-0 truncate font-mono text-sm tabular-nums text-[var(--text-secondary)]">{resumen}</p>
         )}
+        {!abierto && resumenExtra}
       </div>
       {abierto && (
         <>
           {filtros}
+          {encabezado}
           <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-3">
             {tarjetas.map((k, i) => <Fragment key={i}>{k}</Fragment>)}
           </div>

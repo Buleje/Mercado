@@ -3,41 +3,31 @@
 /**
  * Los KPIs de Producción y Despacho del Libro CTP.
  *
- * Antes eran tres tarjetas y una de ellas escondía un número de primera: los m³
- * de materia prima consumida vivían como subtítulo del rendimiento. Estos ocho
- * responden lo que se pregunta el aserradero mirando el período:
+ * En Producción quedaron DOS tarjetas, no nueve. Las otras siete se fueron a
+ * donde de verdad pertenecen:
  *
- *   ¿cuánto entró? ¿cuánto salió? ¿a qué rendimiento? ¿cuánto se perdió?
- *   ¿qué queda en planta? ¿qué me falta declarar? ¿qué no tiene origen?
+ *  - la física del período —entró, salió, rendimiento, merma— es
+ *    `CtpBalanceProduccion`: cuatro tarjetas contiguas que invitaban a restarse
+ *    y no cerraban (el universo de la merma es un subconjunto del de la materia
+ *    prima) hoy son UNA pieza que dice de qué habla cada número;
+ *  - la deuda —sin declarar, a medio declarar, sin materia prima— es
+ *    `CtpBarraDeuda`: un contador de trabajo pendiente no describe el período,
+ *    pide que hagas algo, y no se lee igual que un indicador.
  *
  * Reglas que los mantienen honestos:
  *  - la MERMA sólo sobre corridas ya declaradas **en m³** (restar `pt` a `m³`
  *    sería sumar peras con manzanas, y una corrida abierta daría merma del 100 %);
- *  - lo que es DEUDA o AGUJERO se pinta de warning/error y lleva a arreglarlo,
- *    no es decorado;
- *  - cero no se disfraza: si no hay corridas abiertas, la tarjeta lo dice en
- *    verde en vez de mostrar un cero mudo.
+ *  - cero no se disfraza: si no hay corridas abiertas, la barra de deuda lo dice
+ *    en una línea en vez de mostrar un cero mudo en una tarjeta.
  */
 
-import {
-  AlertTriangle,
-  Boxes,
-  FileX,
-  Layers,
-  PackageCheck,
-  PackageOpen,
-  PackagePlus,
-  Scale,
-  Scissors,
-  Truck,
-  Warehouse,
-} from "@buleje/design-system/icons";
+import { AlertTriangle, Boxes, FileX, PackageCheck, Truck, Warehouse } from "@buleje/design-system/icons";
 import type { ReactNode } from "react";
 import { StatCard } from "@buleje/design-system";
 import { CtpKpisPlegables, productLabel } from "./ctp-shared";
+import CtpBalanceProduccion, { GaugeRendimiento } from "./CtpBalanceProduccion";
 import CtpKpiFiltros, { type CampoKpiFiltro } from "./CtpKpiFiltros";
 import type { FiltrosSeccion, facetasDeSeccion } from "@/lib/forestal/ctp-secciones-filtro";
-import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { juzgarRendimientoLote } from "@/lib/forestal/lotes-aserrio";
 import type { CtpSection } from "./ctp-section-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -61,14 +51,6 @@ export interface KpisSeccion {
   piezas: number;
 }
 
-/** El veredicto del rendimiento habla en sus tonos; la tarjeta, en los suyos. */
-const TONO_A_EMPHASIS = {
-  ok: "success",
-  aviso: "warning",
-  malo: "error",
-  neutro: "neutral",
-} as const;
-
 const n2 = (v: number) => v.toFixed(2);
 /** Anillo de la tarjeta que está filtrando: si no, nadie sabe por qué la tabla tiene menos filas. */
 const ANILLO = "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]";
@@ -81,11 +63,10 @@ export default function CtpSeccionKpis({
   sinAnexo,
   soloSinAnexo,
   onSoloSinAnexo,
-  onVerPendientes,
-  ampliables = 0,
   facetas,
   onFacetas,
   opciones,
+  trabajoActivo = false,
 }: {
   section: CtpSection;
   kpis: KpisSeccion;
@@ -96,15 +77,6 @@ export default function CtpSeccionKpis({
   sinAnexo?: number;
   soloSinAnexo?: boolean;
   onSoloSinAnexo?: () => void;
-  /** Producción: abrir el menú de corridas sin declarar. */
-  onVerPendientes?: () => void;
-  /**
-   * Producción: corridas que YA declararon y todavía admiten más bajo el tope
-   * (ADR-365). Es deuda del libro igual que las abiertas —salió más madera de
-   * la misma corrida y falta anotarla— y hasta ahora sólo se veía como un
-   * ícono en la fila.
-   */
-  ampliables?: number;
   /**
    * Los filtros que gobiernan estas cifras (ADR-400) y las opciones que de
    * verdad hay en el período. Opcionales: sin ellos las tarjetas se dibujan
@@ -113,6 +85,8 @@ export default function CtpSeccionKpis({
   facetas?: FiltrosSeccion;
   onFacetas?: (f: FiltrosSeccion) => void;
   opciones?: ReturnType<typeof facetasDeSeccion>;
+  /** Hay un lote elegido abajo: el panel se repliega para dejarle la pantalla. */
+  trabajoActivo?: boolean;
 }) {
   const veredicto = juzgarRendimientoLote(kpis.avgRend > 0 ? kpis.avgRend : null);
 
@@ -136,54 +110,17 @@ export default function CtpSeccionKpis({
   );
 
   if (section === "produccion") {
+    /* Materia prima, Producido, Rendimiento y Merma YA NO son tarjetas: son
+       `CtpBalanceProduccion`, el bloque ancho de arriba. Como tarjetas sueltas
+       y contiguas invitaban a restarse entre sí y no cerraban —el universo de
+       la merma es un subconjunto del de la materia prima—, y el rendimiento,
+       que es LA cifra de la pestaña, se leía igual que un contador cualquiera.
+
+       Y las tres deudas —«Sin declarar», «A medio declarar», «Sin materia
+       prima»— salieron de esta grilla a `CtpBarraDeuda`: un contador de trabajo
+       pendiente no describe el período, pide que hagas algo, y encima «sin
+       materia prima» se repetía literal en el cartel ámbar de abajo. */
     tarjetas.push(
-          <StatCard
-            key="materia"
-            density="compact"
-            label="Materia prima"
-            value={`${n2(kpis.consumido)} m³`}
-            subValue={`${pieTablarDe(kpis.consumido).toLocaleString("es-PE")} pt a la sierra`}
-            icon={Layers}
-            emphasis="neutral"
-          />,
-          <StatCard
-            key="producido"
-            density="compact"
-            label="Producido"
-            value={`${n2(kpis.totalQty)} m³`}
-            subValue={kpis.piezas > 0 ? `${kpis.piezas.toLocaleString("es-PE")} piezas declaradas` : "suma de lo declarado"}
-            icon={PackageCheck}
-            emphasis="success"
-          />,
-          <StatCard
-            key="rendimiento"
-            density="compact"
-            label="Rendimiento prom."
-            value={`${kpis.avgRend.toFixed(1)}%`}
-            /* El veredicto y no sólo el número: 48 % es normal en un aserradero
-               y 72 % es una alarma, y eso no se lee de la cifra sola. */
-            subValue={kpis.avgRend > 0 ? `ponderado por m³ · ${veredicto.texto}` : "sin corridas declaradas"}
-            icon={Scale}
-            emphasis={TONO_A_EMPHASIS[veredicto.tono]}
-          />,
-    );
-    tarjetas.push(
-          /* Sin corridas comparables NO se dice «0.00 m³»: un cero ahí se lee
-             como «no se pierde nada», que es una afirmación distinta de «no
-             hay con qué compararlo». */
-          <StatCard
-            key="merma"
-            density="compact"
-            label="Merma"
-            value={kpis.mermaSobre > 0 ? `${n2(kpis.merma)} m³` : "—"}
-            subValue={
-              kpis.mermaSobre > 0
-                ? `${kpis.mermaPct.toFixed(1)} % · sobre ${kpis.mermaSobre} corrida${kpis.mermaSobre === 1 ? "" : "s"} con entrada y salida en m³`
-                : "ninguna corrida declara entrada y salida en m³"
-            }
-            icon={Scissors}
-            emphasis="neutral"
-          />,
           <StatCard
             key="en-planta"
             density="compact"
@@ -192,59 +129,6 @@ export default function CtpSeccionKpis({
             subValue="producido que todavía no salió"
             icon={Warehouse}
             emphasis={kpis.enPatio > 0 ? "success" : "neutral"}
-          />,
-          <StatCard
-            key="sin-declarar"
-            density="compact"
-            label="Sin declarar"
-            value={String(kpis.abiertas)}
-            subValue={
-              kpis.abiertas > 0
-                ? `${fmtM3(kpis.consumidoAbierto)} m³ en la sierra — declaralas`
-                : "todas las corridas dijeron qué salió"
-            }
-            icon={PackageOpen}
-            emphasis={kpis.abiertas > 0 ? "warning" : "success"}
-            onClick={kpis.abiertas > 0 ? onVerPendientes : undefined}
-          />,
-          /* Dos agujeros distintos y una sola tarjeta: manda el que domina.
-              Una corrida que declara SIN materia prima no aporta m³ a «sin
-              guía» —no hay nada que atribuir— así que mostrar «0.00 m³» en rojo
-             con un subtítulo que habla de corridas era el número grande
-             diciendo una cosa y la letra chica otra. */
-          /* Deuda gemela de «Sin declarar», y distinta: acá la corrida SÍ
-             declaró, pero salió más de la misma madera y el tope todavía lo
-             permite (ADR-365). Sin la tarjeta, ese saldo sólo se veía abriendo
-             cada fila. */
-          <StatCard
-            key="a-medio-declarar"
-            density="compact"
-            label="A medio declarar"
-            value={String(ampliables)}
-            subValue={
-              ampliables > 0
-                ? "corridas que admiten más producción — agregala desde la fila"
-                : "ninguna corrida quedó a medias"
-            }
-            icon={PackagePlus}
-            emphasis={ampliables > 0 ? "warning" : "success"}
-          />,
-          <StatCard
-            key="sin-origen-prod"
-            density="compact"
-            label={kpis.sinMateriaPrima > 0 ? "Sin materia prima" : "Sin origen"}
-            value={kpis.sinMateriaPrima > 0 ? String(kpis.sinMateriaPrima) : `${n2(kpis.sinOrigen)} m³`}
-            subValue={
-              kpis.sinMateriaPrima > 0
-                ? kpis.sinOrigen > 0
-                  ? `corridas sin decir de qué madera salieron · + ${n2(kpis.sinOrigen)} m³ sin guía`
-                  : "corridas declaran producto sin decir de qué madera salió"
-                : kpis.sinOrigen > 0
-                  ? "materia prima sin guía que la ampare"
-                  : "toda la materia prima tiene su GTF"
-            }
-            icon={kpis.sinOrigen > 0 || kpis.sinMateriaPrima > 0 ? AlertTriangle : PackageCheck}
-            emphasis={kpis.sinOrigen > 0 || kpis.sinMateriaPrima > 0 ? "error" : "success"}
           />,
     );
   } else {
@@ -382,6 +266,32 @@ export default function CtpSeccionKpis({
       claveMemoria={`seccion-${section}`}
       tarjetas={tarjetas}
       resumen={resumen}
+      trabajoActivo={trabajoActivo}
+      /* El rendimiento contra su techo, visible con el panel cerrado: es la
+         cifra que decide si la corrida se puede declarar (ADR-358), y estaba
+         escondida detrás del botón «Indicadores» como una más. */
+      resumenExtra={
+        section === "produccion" && kpis.avgRend > 0 ? (
+          <GaugeRendimiento pct={kpis.avgRend} tono={veredicto.tono} veredicto={veredicto.texto} compacto />
+        ) : undefined
+      }
+      /* El balance físico manda sobre las tarjetas: es de dónde salen. */
+      encabezado={
+        section === "produccion" ? (
+          <CtpBalanceProduccion
+            consumido={kpis.consumido}
+            producido={kpis.totalQty}
+            piezas={kpis.piezas}
+            merma={kpis.merma}
+            mermaPct={kpis.mermaPct}
+            mermaSobre={kpis.mermaSobre}
+            corridas={kpis.count}
+            avgRend={kpis.avgRend}
+            tono={veredicto.tono}
+            veredicto={veredicto.texto}
+          />
+        ) : undefined
+      }
       filtrosActivos={activos}
       filtros={
         campos.length > 0 && facetas && onFacetas ? (
