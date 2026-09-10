@@ -32,11 +32,24 @@ export default function CtpIngresosPaginacion({
   /** Aclaración a la derecha del total (los asientos que hay detrás). */
   detalle?: string;
 }) {
-  if (total === 0) return null;
-
   const lastPage = Math.max(0, Math.ceil(total / pageSize) - 1);
   const rangeFrom = page * pageSize + 1;
   const rangeTo = Math.min((page + 1) * pageSize, total);
+
+  /**
+   * Con TODO en una sola página este pie no dice nada nuevo.
+   *
+   * Medido en pantalla con 3 guías: la tabla ya cierra con su propia fila de
+   * total —«3 guías en pantalla · 3 asientos del libro», más los m³ y las
+   * piezas—, y acá abajo aparecía «Mostrando 1–3 de 3 guías» diciendo el mismo
+   * número por segunda vez, seguido de una botonera de cuatro flechas y un
+   * «1 / 1» con todo deshabilitado. Un control que nunca se puede usar enseña
+   * a no mirar los controles.
+   *
+   * Desde la segunda página vuelve entero: ahí «1–50 de 213» sí dice algo que
+   * la tabla no puede saber.
+   */
+  if (total === 0 || lastPage === 0) return null;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">

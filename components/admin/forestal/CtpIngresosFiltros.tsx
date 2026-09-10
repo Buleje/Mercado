@@ -242,7 +242,14 @@ export default function CtpIngresosFiltros({
           cada carga de la vista. */}
       <div className="flex flex-wrap items-center gap-2">
         <StatusChip label="Todos" count={stats?.totalCount} active={statusFilter === ""} tone="accent" onClick={() => onStatus("")} />
-        {STATUS_ORDER.map((s) => (
+        {/* Sólo los estados que EXISTEN en el período.
+            Medido en pantalla: con 3 guías pendientes salían igual «Validado 0»,
+            «Procesado 0», «Rechazado 0» y «Anulado 0» — cuatro chips que ocupan
+            la fila entera y que al tocarlos dejan la tabla vacía. Un filtro que
+            sólo puede devolver cero no es un filtro, es un cartel.
+            El activo se dibuja siempre, aunque su cuenta caiga a cero: si no,
+            el chip por el que estás filtrando desaparecería bajo el dedo. */}
+        {STATUS_ORDER.filter((s) => (stats?.byStatus[s] ?? 0) > 0 || statusFilter === s).map((s) => (
           <StatusChip
             key={s}
             label={STATUS_META[s].label}
@@ -270,14 +277,29 @@ export default function CtpIngresosFiltros({
             { id: "provider", label: "Proveedor", value: facetas.provider, options: stats?.providers ?? [], soloMobile: enCabecera },
             { id: "product", label: "Producto", value: facetas.product, options: stats?.products ?? [], etiqueta: productLabel },
           ]}
+          /* Una marca sólo se ofrece si HAY qué marcar en el período.
+             Las tres viven además como pastilla arriba (`BarraDeuda`) y como
+             tarjeta —CITES—, así que dibujarlas siempre significaba ofrecer el
+             mismo filtro por tercera vez y, encima, apagado: tocar «Fuera de
+             plazo» con cero fuera de plazo vacía la tabla y parece que la
+             pantalla se rompió. La que está puesta se dibuja igual, o el filtro
+             activo desaparecería sin poder apagarlo. */
           toggles={[
-            { id: "cites", label: "CITES", on: facetas.cites === true },
-            { id: "late", label: "Fuera de plazo", on: facetas.late === true },
-            {
-              id: "sinOrigen",
-              label: stats?.sinOrigenCount ? `Sin código de origen (${stats.sinOrigenCount})` : "Sin código de origen",
-              on: facetas.sinOrigen === true,
-            },
+            ...((stats?.citesCount ?? 0) > 0 || facetas.cites === true
+              ? [{ id: "cites", label: "CITES", on: facetas.cites === true }]
+              : []),
+            ...((stats?.lateCount ?? 0) > 0 || facetas.late === true
+              ? [{ id: "late", label: "Fuera de plazo", on: facetas.late === true }]
+              : []),
+            ...((stats?.sinOrigenCount ?? 0) > 0 || facetas.sinOrigen === true
+              ? [{
+                  id: "sinOrigen",
+                  label: stats?.sinOrigenCount
+                    ? `Sin código de origen (${stats.sinOrigenCount})`
+                    : "Sin código de origen",
+                  on: facetas.sinOrigen === true,
+                }]
+              : []),
           ]}
           onSelect={(id, valores) => set({ [id]: valores.length > 0 ? valores : undefined })}
           onToggle={(id) =>

@@ -11,10 +11,22 @@
  * "Fuera de plazo" es nueva: el dato (`stats.lateCount`) se calculaba en DB
  * desde siempre pero sólo aparecía en la tira de pendientes del shell y en el
  * Excel; acá vive al lado de las otras cifras del período y filtra la tabla.
+ *
+ * **Por qué se parte en dos** (medido 2026-09-10, período real): de seis
+ * tarjetas, CUATRO estaban en cero —«Fuera de plazo 0», «Sin código de origen
+ * 0», «CITES 0»— ocupando el mismo tamaño que el volumen del período. Lo que
+ * pide trabajo (validar, registro tardío, origen faltante) baja a `BarraDeuda`,
+ * que sólo dibuja lo que es > 0 y sigue filtrando la tabla igual que la tarjeta;
+ * arriba quedan las dos cifras que describen el período pase lo que pase.
+ *
+ * CITES NO es deuda: una especie protegida con su permiso es legal y no resta
+ * en el score de cumplimiento (`ctp-compliance.ts`). Por eso, cuando aparece,
+ * es una tarjeta informativa y nunca una pastilla roja.
  */
 
-import { AlertCircle, Boxes, Clock, CalendarClock, MapPin, TreePine } from "@buleje/design-system/icons";
+import { AlertCircle, Boxes, TreePine } from "@buleje/design-system/icons";
 import { StatCard } from "@buleje/design-system";
+import BarraDeuda, { type DeudaItem } from "@/components/admin/shared/BarraDeuda";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { CtpKpisPlegables, type WoodEntryStats } from "./ctp-shared";
 import CtpKpiFiltros, { camposDeIngresos, notaDeFiltros } from "./CtpKpiFiltros";
@@ -86,7 +98,49 @@ export default function CtpIngresosKpis({
   const activos = campos.filter((c) => c.valor).length;
   const nota = notaDeFiltros(campos);
 
-  return (
+  /**
+   * Lo que pide trabajo, fuera de la grilla y sólo si existe.
+   *
+   * Cada pastilla hace EXACTAMENTE lo que hacía su tarjeta: pone el filtro y se
+   * marca cuando está puesto. Lo que cambia es que un cero ya no ocupa una
+   * tarjeta entera diciendo «todo al día» — eso lo dice la barra en una línea.
+   */
+  const deudas: DeudaItem[] = [];
+  if (stats?.byStatus.pendiente) {
+    deudas.push({
+      key: "pendientes",
+      valor: nf(stats.byStatus.pendiente),
+      label: "por validar",
+      hint: statusFilter === "pendiente" ? "filtrando por estos" : "no computan como existencia",
+      tono: "warning",
+      title: "Ingresos cargados que todavía no entraron al saldo. Tocá para ver sólo estos.",
+      onClick: () => onStatus(statusFilter === "pendiente" ? "" : "pendiente"),
+    });
+  }
+  if (stats?.lateCount) {
+    deudas.push({
+      key: "plazo",
+      valor: nf(stats.lateCount),
+      label: "fuera de plazo",
+      hint: lateOn ? "filtrando por estos" : "registro tardío",
+      tono: "warning",
+      title: "Se registraron después de los 2 días hábiles que pide la RDE D000025-2023",
+      onClick: onLate,
+    });
+  }
+  if (stats?.sinOrigenCount) {
+    deudas.push({
+      key: "sin-origen",
+      valor: nf(stats.sinOrigenCount),
+      label: "sin código de origen",
+      hint: sinOrigenOn ? "filtrando por estos" : "sin parcela, EUDR queda inerte",
+      tono: "error",
+      title: "Sin código de origen no se puede armar la trazabilidad EUDR",
+      onClick: onSinOrigen,
+    });
+  }
+
+  const panel = (
     /* Todas detrás del botón «Indicadores» (Brandon, 2026-09-03). El carrusel
        mobile que tenían acá dejó de hacer falta: escondidas no empujan la lista,
        y abiertas usan la misma grilla que el resto del libro. */
@@ -137,65 +191,32 @@ export default function CtpIngresosKpis({
           onClick={onVolumen}
           className={dashboardOn ? activa : undefined}
         />,
-        <StatCard
-          key="pendientes"
-          density="compact"
-          label="Pendientes validar"
-          value={stats ? nf(stats.byStatus.pendiente) : "—"}
-          subValue={
-            stats?.byStatus.pendiente
-              ? statusFilter === "pendiente"
-                ? "Filtrando por estos"
-                : "Ver solo estos"
-              : "Todo al día"
-          }
-          icon={Clock}
-          emphasis={stats?.byStatus.pendiente ? "warning" : "neutral"}
-          onClick={stats?.byStatus.pendiente ? () => onStatus(statusFilter === "pendiente" ? "" : "pendiente") : undefined}
-          className={statusFilter === "pendiente" ? activa : undefined}
-        />,
-        <StatCard
-          key="plazo"
-          density="compact"
-          label="Fuera de plazo"
-          value={stats ? nf(stats.lateCount) : "—"}
-          subValue={
-            stats?.lateCount ? (lateOn ? "Filtrando por estos" : "Registro tardío · ver") : "Todos a tiempo"
-          }
-          icon={CalendarClock}
-          emphasis={stats?.lateCount ? "warning" : "neutral"}
-          onClick={stats?.lateCount ? onLate : undefined}
-          className={lateOn ? activa : undefined}
-        />,
-        <StatCard
-          key="sin-origen"
-          density="compact"
-          label="Sin código de origen"
-          value={stats ? nf(stats.sinOrigenCount) : "—"}
-          subValue={
-            stats?.sinOrigenCount
-              ? sinOrigenOn
-                ? "Filtrando por estos"
-                : "sin parcela: EUDR queda inerte · ver"
-              : "todos declaran su origen"
-          }
-          icon={MapPin}
-          emphasis={stats?.sinOrigenCount ? "warning" : "success"}
-          onClick={stats?.sinOrigenCount ? onSinOrigen : undefined}
-          className={sinOrigenOn ? activa : undefined}
-        />,
-        <StatCard
-          key="cites"
-          density="compact"
-          label="Especies CITES"
-          value={stats ? nf(stats.citesCount) : "—"}
-          subValue={stats ? `${Number(stats.citesVolumeM3).toFixed(2)} m³ protegidos` : undefined}
-          icon={AlertCircle}
-          emphasis={stats?.citesCount ? "error" : "neutral"}
-          onClick={stats?.citesCount ? onCites : undefined}
-          className={citesOn ? activa : undefined}
-        />,
+        /* Las tarjetas de deuda —pendientes, fuera de plazo, sin código de
+           origen— se fueron a la barra de abajo. CITES se queda arriba, y sólo
+           cuando hay: es un dato del período, no una falta. */
+        ...(stats?.citesCount
+          ? [
+              <StatCard
+                key="cites"
+                density="compact"
+                label="Especies CITES"
+                value={nf(stats.citesCount)}
+                subValue={`${Number(stats.citesVolumeM3).toFixed(2)} m³ protegidos · ${citesOn ? "filtrando" : "ver"}`}
+                icon={AlertCircle}
+                emphasis="neutral"
+                onClick={onCites}
+                className={citesOn ? activa : undefined}
+              />,
+            ]
+          : []),
       ]}
     />
+  );
+
+  return (
+    <div className="space-y-2">
+      {panel}
+      <BarraDeuda items={deudas} vacio="Todo el período está validado, a tiempo y con su origen declarado." />
+    </div>
   );
 }
