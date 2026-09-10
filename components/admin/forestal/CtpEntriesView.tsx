@@ -23,6 +23,8 @@ import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
 import CtpProducirSinLoteModal from "./CtpProducirSinLoteModal";
+import CtpVincularMateriaPrimaModal from "./CtpVincularMateriaPrimaModal";
+import { largoMaxEnMetros } from "@/lib/forestal/vincular-produccion";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import CtpProduccionPendiente from "./CtpProduccionPendiente";
@@ -197,6 +199,8 @@ export function CtpEntriesView({
   const [verLibro, setVerLibro] = useState(false);
   /** El cubicador del Libro: producir sin lote ni consumo (ADR-408). */
   const [producirSinLote, setProducirSinLote] = useState(false);
+  /** La corrida a la que se le va a vincular su materia prima. */
+  const [vincularA, setVincularA] = useState<string | null>(null);
   /** Hoy, para la columna «Fecha consumo» de la lista vacía (no se re-calcula). */
   const hoy = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -412,6 +416,23 @@ export function CtpEntriesView({
   /* La sección se pagina del lado del cliente sobre el set del período, con la
      MISMA barra que el resto de las tablas del libro (ADR-344). */
   const { visibles: filasEnPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(visible);
+  /**
+   * Producción declarada SIN materia prima (ADR-408): las de «Producir sin
+   * lote» — y cualquier corrida vieja a la que nunca se le atribuyó origen.
+   *
+   * La detección de acá es de PANTALLA (declaró y no tiene volumen de entrada);
+   * el servidor mira además consumos y lote antes de dejar vincular. Ofrecer de
+   * más es un click perdido; esconder una corrida sin origen es dejar el libro
+   * afirmando que salió madera de la nada.
+   */
+  const sinOrigen = useMemo(
+    () => (section === "produccion"
+      ? entries.filter((e) =>
+          e.status === "registrado" && e.quantity != null &&
+          (e.volumeInputM3 == null || Number(e.volumeInputM3) <= 0))
+      : []),
+    [section, entries],
+  );
   const enProceso = useMemo(
     () => (section === "produccion" ? entries.filter((e) => e.status === "registrado" && e.quantity == null) : []),
     [entries, section],
@@ -795,6 +816,70 @@ export function CtpEntriesView({
         </div>
       </div>
       {showSim && section === "produccion" && <CtpSimuladorModal onClose={() => setShowSim(false)} />}
+
+      {/* Lo que declaró producto y todavía no dice de qué madera salió. Va
+          arriba porque es deuda de trazabilidad, no una opción. */}
+      {section === "produccion" && sinOrigen.length > 0 && (
+        <div className="rounded-2xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-3">
+          <p className="flex items-center gap-1.5 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
+            {sinOrigen.length}{" "}
+            {sinOrigen.length === 1
+              ? "corrida declaró producto y no dice de qué madera salió"
+              : "corridas declararon producto y no dicen de qué madera salieron"}
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {sinOrigen.slice(0, 8).map((e) => (
+              <li key={e.id}>
+                <button
+                  type="button"
+                  onClick={() => setVincularA(e.id)}
+                  title="Elegir el lote que entró a la sierra y atribuirle esta producción"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-[var(--surface-canvas)] px-2.5 py-1.5 text-xs font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
+                >
+                  N° {e.lineNo} · {e.speciesCommon ?? "sin especie"} ·{" "}
+                  <span className="font-mono font-normal">{Number(e.quantity ?? 0).toFixed(3)} m³</span>
+                  <span className="font-normal opacity-80">— vincular</span>
+                </button>
+              </li>
+            ))}
+            {sinOrigen.length > 8 && (
+              <li className="self-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                +{sinOrigen.length - 8} más en la tabla
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
+
+      {/* Vincular: las cinco reglas se revisan ANTES de escribir. */}
+      {vincularA && (() => {
+        const e = entries.find((x) => x.id === vincularA);
+        if (!e) return null;
+        return (
+          <CtpVincularMateriaPrimaModal
+            corrida={{
+              id: e.id,
+              lineNo: e.lineNo,
+              especie: e.speciesCommon,
+              producidoM3: Number(e.quantity ?? 0),
+              /* El listado del libro no trae los paquetes: sin ellos la regla
+                 del largo AVISA («no se puede comprobar») en vez de callarse. */
+              largoMaxPiezaM: null,
+              fecha: e.entryDate,
+              /* Lo que la pantalla sabe; el servidor mira además consumos y lote. */
+              tieneMateriaPrima: e.volumeInputM3 != null && Number(e.volumeInputM3) > 0,
+            }}
+            lotes={lotes.lotes}
+            onCerrar={() => setVincularA(null)}
+            onListo={(msg) => {
+              setVincularA(null);
+              setToProductMsg(msg);
+              void load();
+            }}
+          />
+        );
+      })()}
 
       {/* El cubicador del Libro: cubicar y declarar sin lote ni consumo. */}
       {producirSinLote && (

@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
+import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import {
   contarFiltros,
   facetasDeSeccion,
@@ -55,9 +56,17 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
     try {
       const p = applyCtpPeriodParams(new URLSearchParams({ section }), period);
       if (search.trim()) p.set("search", search.trim());
-      const r = await fetch(`/api/admin/forestal/ctp?${p}`, { credentials: "include" });
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
-      const j: { entries?: CtpEntry[]; totalSinFiltro?: number } = await r.json();
+      /**
+       * `ctpGet` y no `fetch` crudo (medido 2026-09-09): abrir Producción
+       * pedía la MISMA url tres veces —hasta siete con re-renders— porque cada
+       * identidad nueva de `load` disparaba su propia llamada. `ctpGet`
+       * devuelve la misma promesa a quien pida la misma url y la cachea unos
+       * segundos; lo que escribe llama `invalidarCtp()`, así que fresco sigue
+       * siendo fresco.
+       */
+      const j = await ctpGet<{ entries?: CtpEntry[]; totalSinFiltro?: number }>(
+        `/api/admin/forestal/ctp?${p}`,
+      );
       setEntries(j.entries ?? []);
       setTotalSinFiltro(j.totalSinFiltro);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }

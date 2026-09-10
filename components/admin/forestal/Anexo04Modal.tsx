@@ -18,6 +18,7 @@ import { cubicarPieza, type PiezaCubicada } from "@/lib/forestal/cubicacion";
 import { construirAnexo04, fmtAnexo } from "@/lib/forestal/anexo04-serfor";
 import { validarAnexo04, avisosDeProcedencia, anexoPresentable, type DeclaradoEnLibro, type ProcedenciaBloques } from "@/lib/forestal/anexo04-validacion";
 import { useAnexo04Datos } from "@/hooks/use-anexo04-datos";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import Anexo04Campos from "./Anexo04Campos";
 import Anexo04Origen, { ORIGEN_ACTUAL } from "./Anexo04Origen";
 import Anexo04Historial, { ICONO_HISTORIAL } from "./Anexo04Historial";
@@ -119,6 +120,11 @@ export default function Anexo04Modal({
 
   const areaRef = useRef<HTMLDivElement>(null);
   const hojasRef = useRef<HTMLDivElement>(null);
+  /* Accesibilidad del diálogo: foco adentro, Tab atrapado y foco devuelto. El
+     Escape ya lo maneja el efecto de abajo (hay un modal hijo que lo intercepta
+     para no cerrar el anexo entero mientras se escriben las observaciones). */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { cerrarConEscape: false });
 
   /**
    * El anexo abre EN BLANCO (Brandon, 2026-08). Nada se rellena solo: ni el N°
@@ -302,7 +308,7 @@ export default function Anexo04Modal({
           scrolleaba la página entera, así que el pie con «Descargar PDF»
           quedaba a dos pantallas del título. Ahora el marco entra siempre en la
           ventana, el pie está fijo y lo que scrollea es cada columna. */}
-      <div role="dialog" aria-modal="true" aria-label="Vista previa del Anexo N° 04" className="flex max-h-[94vh] w-full max-w-[76rem] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
+      <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Vista previa del Anexo N° 04" className="flex max-h-[94vh] w-full max-w-[76rem] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
         <div className="flex shrink-0 items-start justify-between gap-3">
           <div className="min-w-0">
             <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">

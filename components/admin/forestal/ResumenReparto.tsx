@@ -64,6 +64,7 @@ import { evaluarMeta, medidasDeMeta, META_DEFAULT, type MetaMix } from "@/lib/fo
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import { tipoComercialDelProducto } from "@/lib/forestal/loctp-catalogos";
 import ReprocesosSugeridos, { AYUDA_REPROCESOS } from "./reparto-reprocesos";
+import CifraExplicada, { type FilaDeCuenta } from "./cifra-explicada";
 import { FiltroLargoCelda } from "./reparto-filtro-largo";
 import { FiltroGruposCelda } from "./reparto-filtro-grupos";
 import { contarRevision, revisarDistribucion, type HallazgoRevision } from "@/lib/forestal/reparto-revision";
@@ -223,13 +224,15 @@ function RealDeBloque({ valor, unidad, alerta, titulo }: { valor: string; unidad
  * que va a cubrir el faltante necesita saber CUÁNTAS piezas le faltan, no sólo
  * cuánto volumen.
  */
-function CifraBalance({ titulo, ayuda, m3, pt, piezas, tono }: {
+function CifraBalance({ titulo, ayuda, m3, pt, piezas, tono, cuenta }: {
   titulo: string;
   ayuda: string;
   m3: number;
   pt: number;
   piezas: number;
   tono: "ok" | "falta";
+  /** De qué está hecho este número — el «¿por qué dice esto?» (2026-09-09). */
+  cuenta?: { formula: string; filas: FilaDeCuenta[]; vacio?: string };
 }) {
   const alerta = tono === "falta";
   return (
@@ -244,6 +247,16 @@ function CifraBalance({ titulo, ayuda, m3, pt, piezas, tono }: {
             <Info className="h-3.5 w-3.5" aria-hidden />
           </button>
         </AdminTooltip>
+        {/* El ⓘ dice QUÉ es; la calculadora dice DE QUÉ ESTÁ HECHO. */}
+        {cuenta && (
+          <CifraExplicada
+            titulo={titulo}
+            formula={cuenta.formula}
+            filas={cuenta.filas}
+            total={`${fmtM3(m3)} m³`}
+            vacio={cuenta.vacio}
+          />
+        )}
       </div>
       <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono tabular-nums">
         <span className={`flex items-baseline gap-1 text-xl font-extrabold leading-none ${alerta
@@ -1495,6 +1508,20 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             pt={balance.hechoPt}
             piezas={balance.hechoPiezas}
             tono="ok"
+            /* De qué está hecho: bloque por bloque, lo que cada uno ampara. */
+            cuenta={{
+              formula: "Suma de lo que cada bloque ampara de verdad (m³ A)",
+              filas: dist.especies.flatMap((e) =>
+                e.bloques
+                  .filter((b) => b.usadoM3 > 0)
+                  .map((b) => ({
+                    etiqueta: b.bloque.etiqueta || "Sin etiqueta",
+                    nota: `${e.especie}${b.bloque.permiso ? ` · ${b.bloque.permiso}` : ""}`,
+                    valor: `${fmtM3(b.usadoM3)} m³`,
+                  })),
+              ).sort((a, b) => Number(b.valor.replace(/[^\d.]/g, "")) - Number(a.valor.replace(/[^\d.]/g, ""))),
+              vacio: "Ningún bloque ampara nada todavía.",
+            }}
           />
           <CifraBalance
             titulo="Falta por distribuir"
@@ -1504,6 +1531,20 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             m3={balance.faltaM3}
             pt={balance.faltaPt}
             piezas={balance.faltaPiezas}
+            /* Y acá, qué grupo de aserrada quedó sin respaldo. */
+            cuenta={{
+              formula: "Aserrada cubicada que ningún bloque alcanzó a amparar",
+              filas: dist.especies.flatMap((e) =>
+                e.faltante
+                  .filter((f) => f.m3 > 0)
+                  .map((f) => ({
+                    etiqueta: f.label,
+                    nota: `${e.especie} · ${fmtPiezas(f.piezas)} pzas`,
+                    valor: `${fmtM3(f.m3)} m³`,
+                  })),
+              ),
+              vacio: "Todo lo cubicado tiene respaldo.",
+            }}
             tono={balance.faltaM3 > TOL_M3 ? "falta" : "ok"}
           />
         </div>

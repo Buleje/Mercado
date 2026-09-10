@@ -26,7 +26,7 @@
  * es: producción declarada sin materia prima atribuida. Declararle un origen
  * que nadie eligió sería fabricar trazabilidad.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Boxes, Calculator, Loader2, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
@@ -34,6 +34,7 @@ import { unificarPorMedida, type PiezaCubicada } from "@/lib/forestal/cubicacion
 import { tipoDePieza } from "@/lib/forestal/cubicacion-tipo";
 import { productoDelTipoComercial } from "@/lib/forestal/loctp-catalogos";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { guardarProduccionDeCorrida } from "./hooks/guardar-produccion-corrida";
 import CubicadorMadera from "./CubicadorMadera";
 import { Btn } from "./ctp-shared";
@@ -102,6 +103,9 @@ export default function CtpProducirSinLoteModal({ onCerrar, onListo }: {
   const [observaciones, setObservaciones] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /* Foco adentro, Tab que no se escapa, Escape que cierra y foco devuelto. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onCerrar });
 
   const paquetes = useMemo(() => paquetesDeLoCubicado(piezas), [piezas]);
   const total = useMemo(
@@ -176,6 +180,8 @@ export default function CtpProducirSinLoteModal({ onCerrar, onListo }: {
   return (
     <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2">
       <div
+        ref={cajaRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Producir sin lote"
