@@ -17,7 +17,8 @@
  */
 
 import { DataTable } from "@buleje/design-system";
-import { AlertTriangle, AlertCircle, RefreshCw, ArrowUp, ArrowDown, ArrowUpDown, Boxes, Download, FileText, Link2, PackagePlus, Paperclip, Truck, X as XIcon } from "@buleje/design-system/icons";
+import { AlertTriangle, AlertCircle, RefreshCw, ArrowUp, ArrowDown, ArrowUpDown, Boxes, Download, FileText, Link2, MoreHorizontal, PackagePlus, Paperclip, Truck, X as XIcon } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import CtpSeccionCardMobile from "./CtpSeccionCardMobile";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import { atribucionDeDespacho, faltaAtribuir, origenDeCorrida } from "@/lib/forestal/atribucion-despacho";
@@ -359,6 +360,45 @@ function SortTh({ label, by, sort, onSort, className, campoRango, rango }: {
   );
 }
 
+/**
+ * Una acción frecuente de la fila, con su nombre a la vista.
+ *
+ * El ícono solo obliga a pasar el mouse por seis botones para encontrar el que
+ * hace falta; con el rótulo, «Anexo 04» se lee de una — que es justo lo que la
+ * barra de deuda de arriba está pidiendo emitir. El punto verde marca lo ya
+ * hecho, para distinguir «emitir» de «volver a imprimir» sin abrir nada.
+ */
+function BotonAccion({
+  icon: Icono,
+  hecho,
+  onClick,
+  title,
+  children,
+}: {
+  icon: typeof Truck;
+  hecho?: boolean;
+  onClick: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg border px-2 text-xs font-bold transition-colors ${
+        hecho
+          ? "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+          : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+      }`}
+    >
+      <Icono className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      {children}
+      {hecho && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--data-success-500)]" aria-hidden />}
+    </button>
+  );
+}
+
 export default function CtpEntriesTabla({
   section,
   visible,
@@ -380,6 +420,57 @@ export default function CtpEntriesTabla({
 }: CtpEntriesTablaProps) {
   const cv = colsProduccion;
   const fc = filtrosColumna ?? {};
+
+  /**
+   * Lo que se hace de vez en cuando, plegado — y lo que borra, separado.
+   *
+   * Sale de un helper y no del JSX de la fila porque son las MISMAS cuatro
+   * acciones para las ocho filas: escritas adentro del `map` se releen ocho
+   * veces y se desincronizan a la primera que cambie.
+   */
+  const accionesDeLinea = (e: CtpEntry): MenuAccion[] => {
+    const lista: MenuAccion[] = [
+      {
+        id: "cadena",
+        label: section === "despacho" ? "Cadena de custodia" : "Ver la corrida",
+        hint: section === "despacho"
+          ? "De qué corrida salió esta madera, su costo y su certificado"
+          : "Materia prima consumida, costo y congelado",
+        icon: Link2,
+        onSelect: () => onChain(e),
+      },
+      {
+        id: "producto",
+        label: toProductId === e.id ? "Creando el producto…" : "Crear producto de esta línea",
+        hint: "Queda oculto en el catálogo hasta que lo actives",
+        icon: PackagePlus,
+        busy: toProductId === e.id,
+        disabled: toProductId === e.id,
+        onSelect: () => onSendInventory(e.id),
+      },
+    ];
+    if (section === "despacho" && onPapeles) {
+      lista.push({
+        id: "papeles",
+        label: "Papeles del despacho",
+        hint: "Subir GTF, factura y guías de origen, archivadas con su etiqueta",
+        icon: Paperclip,
+        onSelect: () => onPapeles(e),
+      });
+    }
+    /* Última y en rojo: borra una línea del libro. Estaba en el riel, del mismo
+       tamaño y a un centímetro de «ver la guía». */
+    lista.push({
+      id: "anular",
+      label: "Anular la línea",
+      hint: "Se va del libro con su motivo. No se puede deshacer.",
+      icon: XIcon,
+      tone: "danger",
+      onSelect: () => onAnnul(e.id),
+    });
+    return lista;
+  };
+
   return (
     <>
       {/* ── Desktop: tabla (≥640px). El `hidden` a <640px gana sobre la
@@ -482,18 +573,50 @@ export default function CtpEntriesTabla({
                 </Td>
                 <Td className="text-right">
                   {e.status === "registrado" ? (
-                    <div className="inline-flex items-center gap-1">
-                      <IconAction
-                        icon={Link2}
-                        tone="success"
-                        onClick={() => onChain(e)}
-                        label={section === "despacho"
-                          ? "Cadena de custodia: origen, costo y certificado"
-                          : "Corrida: materia prima consumida, costo y congelado"}
-                      />
-                      {/* Agregar producción a ESTA corrida (ADR-365): lo que
-                          salió después de la misma madera no abre una corrida
-                          nueva — se suma acá, sin volver a elegir trozas. */}
+                    /**
+                     * Dos acciones con NOMBRE y el resto en un menú.
+                     *
+                     * Eran seis iconos sin etiqueta, distinguibles sólo por
+                     * tooltip: con ocho despachos en pantalla son 48 botones
+                     * anónimos. Y la barra de arriba pide «8 sin anexo 04»
+                     * mientras la acción que lo resuelve era uno de esos
+                     * iconos, imposible de encontrar sin pasar el mouse por
+                     * cada uno.
+                     *
+                     * «Anular» sale del riel a propósito: destruye una línea
+                     * del libro y estaba pegada —mismo tamaño, mismo gesto— a
+                     * «ver la guía». En el menú va con `tone: "danger"`, que la
+                     * pinta distinta y la separa del resto.
+                     */
+                    <div className="inline-flex items-center justify-end gap-1.5">
+                      {section === "despacho" && onGuia && (
+                        <BotonAccion
+                          icon={Truck}
+                          hecho={estadoDeGuia(e.gtfNumber) === "emitida"}
+                          onClick={() => onGuia(e)}
+                          title={
+                            estadoDeGuia(e.gtfNumber) === "emitida"
+                              ? `Guía ${e.gtfNumber} emitida — abrir para verla o imprimirla`
+                              : "Guía de transporte: borrador — abrir para completarla y emitirla"
+                          }
+                        >
+                          Guía
+                        </BotonAccion>
+                      )}
+                      {section === "despacho" && (
+                        <BotonAccion
+                          icon={FileText}
+                          hecho={conAnexo.has(e.id)}
+                          onClick={() => onAnexo(e)}
+                          title={conAnexo.has(e.id)
+                            ? "ANEXO N° 04 emitido — abrir para re-imprimir o corregir"
+                            : "Emitir el ANEXO N° 04 de esta GTF"}
+                        >
+                          Anexo 04
+                        </BotonAccion>
+                      )}
+                      {/* Producción conserva su atajo propio: sumar a la corrida
+                          (ADR-365) es el gesto de todos los días de esa vista. */}
                       {onAmpliar && ampliables?.has(e.id) && (
                         <IconAction
                           icon={Boxes}
@@ -502,55 +625,13 @@ export default function CtpEntriesTabla({
                           label="Agregar producción a esta corrida (salió más de la misma materia prima)"
                         />
                       )}
-                      <IconAction
-                        icon={PackagePlus}
-                        tone="info"
-                        disabled={toProductId === e.id}
-                        busy={toProductId === e.id}
-                        onClick={() => onSendInventory(e.id)}
-                        label={
-                          toProductId === e.id
-                            ? "Creando el producto…"
-                            : "Crear producto de esta línea (queda oculto hasta que lo actives)"
-                        }
-                      />
-                      {section === "despacho" && onGuia && (
-                        <IconAction
-                          icon={Truck}
-                          tone={estadoDeGuia(e.gtfNumber) === "emitida" ? "accent" : "muted"}
-                          done={estadoDeGuia(e.gtfNumber) === "emitida"}
-                          onClick={() => onGuia(e)}
-                          label={
-                            estadoDeGuia(e.gtfNumber) === "emitida"
-                              ? `Guía ${e.gtfNumber} emitida — abrir para verla o imprimirla`
-                              : "Guía de transporte: borrador — abrir para completarla y emitirla"
-                          }
-                        />
-                      )}
-                      {section === "despacho" && onPapeles && (
-                        <IconAction
-                          icon={Paperclip}
-                          tone="muted"
-                          onClick={() => onPapeles(e)}
-                          label="Papeles del despacho: subir GTF, factura, guías de origen… y archivarlos etiquetados"
-                        />
-                      )}
-                      {section === "despacho" && (
-                        <IconAction
-                          icon={FileText}
-                          tone={conAnexo.has(e.id) ? "accent" : "muted"}
-                          done={conAnexo.has(e.id)}
-                          onClick={() => onAnexo(e)}
-                          label={conAnexo.has(e.id)
-                            ? "ANEXO N° 04 emitido — abrir para re-imprimir o corregir"
-                            : "Emitir el ANEXO N° 04 de esta GTF"}
-                        />
-                      )}
-                      <IconAction
-                        icon={XIcon}
-                        tone="danger"
-                        onClick={() => onAnnul(e.id)}
-                        label="Anular la línea"
+                      <ActionMenu
+                        label=""
+                        title="Más acciones de esta línea"
+                        icon={MoreHorizontal}
+                        variant="outline"
+                        size="sm"
+                        actions={accionesDeLinea(e)}
                       />
                     </div>
                   ) : (
