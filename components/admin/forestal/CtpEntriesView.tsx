@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { Plus, Search, Boxes, Truck, AlertCircle, PackagePlus, Calendar, Table, X } from "@buleje/design-system/icons";
+import { Plus, Search, Boxes, Truck, AlertCircle, PackagePlus, Calculator, Calendar, Table, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { accionesDeLotes, accionesDeSeccion, accionesPorDeclarar } from "./ctp-entries-acciones";
@@ -22,6 +22,7 @@ import CtpDespachoDetalleModal from "./CtpDespachoDetalleModal";
 import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
+import CtpProducirSinLoteModal from "./CtpProducirSinLoteModal";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import CtpProduccionPendiente from "./CtpProduccionPendiente";
@@ -194,6 +195,8 @@ export function CtpEntriesView({
    * como CONSULTA — se abre desde «Opciones» cuando se lo busca.
    */
   const [verLibro, setVerLibro] = useState(false);
+  /** El cubicador del Libro: producir sin lote ni consumo (ADR-408). */
+  const [producirSinLote, setProducirSinLote] = useState(false);
   /** Hoy, para la columna «Fecha consumo» de la lista vacía (no se re-calcula). */
   const hoy = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -724,7 +727,9 @@ export function CtpEntriesView({
           <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
             Elegí en <b className="text-[var(--text-primary)]">Lotes</b> la madera que entra hoy a la sierra: abajo
             sale su lista de trozas. Lo ya declarado está en{" "}
-            <b className="text-[var(--text-primary)]">Opciones → Producción · Todos y registrados</b>.
+            <b className="text-[var(--text-primary)]">Opciones → Producción · Todos y registrados</b>.{" "}
+            ¿La sierra ya cortó y el lote todavía no está armado? Usá{" "}
+            <b className="text-[var(--text-primary)]">Producir sin lote</b>.
           </p>
         ) : (
           <BuscadorSeccion section={section} label={meta.label} value={searchInput} onChange={setSearchInput} />
@@ -756,6 +761,19 @@ export function CtpEntriesView({
             ya aserrados a los que hay que sacarles la producción (la
             recuperación de ADR-340/365).
           */}
+          {/* Producir SIN lote: cubicar acá mismo y declarar la corrida. La
+              materia prima se vincula después — la sierra corta antes de que el
+              papel exista (Brandon, 2026-09-09). */}
+          {section === "produccion" && (
+            <button
+              type="button"
+              onClick={() => setProducirSinLote(true)}
+              title="Abrir el cubicador acá adentro, cargar las medidas y declarar la producción sin lote ni consumo"
+              className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 text-sm font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
+            >
+              <Calculator className="h-4 w-4" aria-hidden /> Producir sin lote
+            </button>
+          )}
           {section === "produccion" ? (
             <ActionMenu
               label="Lotes"
@@ -777,6 +795,18 @@ export function CtpEntriesView({
         </div>
       </div>
       {showSim && section === "produccion" && <CtpSimuladorModal onClose={() => setShowSim(false)} />}
+
+      {/* El cubicador del Libro: cubicar y declarar sin lote ni consumo. */}
+      {producirSinLote && (
+        <CtpProducirSinLoteModal
+          onCerrar={() => setProducirSinLote(false)}
+          onListo={(msg) => {
+            setProducirSinLote(false);
+            setToProductMsg(msg);
+            void load();
+          }}
+        />
+      )}
 
       {/* Con el libro cerrado sus carteles no tienen dónde salir: se muestran
           acá. Nunca aparecen dos veces — `ZonaLibro` sólo existe abierta. */}

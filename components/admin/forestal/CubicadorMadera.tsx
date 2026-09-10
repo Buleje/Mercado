@@ -157,16 +157,27 @@ const ERR_MSG: Record<string, string> = {
 
 const fmtPt = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtM3 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-const storageKey = () => {
+/**
+ * Dónde guarda este cubicador su lote.
+ *
+ * El `espacio` lo pone quien lo monta (Brandon, 2026-09-09): el cubicador de
+ * Herramientas usa el de siempre (`""`) y el que se abre DENTRO del Libro para
+ * declarar una producción usa el suyo, así lo que se cubica ahí no pisa el lote
+ * del cubicador ni aparece en Resúmenes, en el reparto ni en el papel. Es la
+ * misma pantalla con otra libreta.
+ */
+const storageKey = (espacio = "") => {
   let slug = "main";
   try { slug = localStorage.getItem("active-tenant-slug") ?? "main"; } catch { /* ignore */ }
-  return `buleje-cubicacion-${slug}`;
+  return `buleje-cubicacion-${slug}${espacio}`;
 };
-const saveLocal = (next: PiezaCubicada[]) => { try { localStorage.setItem(storageKey(), JSON.stringify(next)); } catch { /* quota */ } };
+const saveLocal = (next: PiezaCubicada[], espacio = "") => {
+  try { localStorage.setItem(storageKey(espacio), JSON.stringify(next)); } catch { /* quota */ }
+};
 /** Lee un derivado del lote (`-precio`, `-precios-especie`) sin explotar en SSR. */
-const leerGuardado = (sufijo: string): string | null => {
+const leerGuardado = (sufijo: string, espacio = ""): string | null => {
   if (typeof window === "undefined") return null;
-  try { return localStorage.getItem(`${storageKey()}${sufijo}`); } catch { return null; }
+  try { return localStorage.getItem(`${storageKey(espacio)}${sufijo}`); } catch { return null; }
 };
 const sinAcentos = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 /** Cuánto tiempo el micrófono debe desconfiar de lo que escucha tras hablar. */
@@ -206,8 +217,23 @@ function decir(texto: string, rate = 1.5, voiceURI = "", onEco?: (hasta: number,
   }, 0);
 }
 
-export default function CubicadorMadera({ onPresent }: { onPresent?: () => void }) {
+export default function CubicadorMadera({ onPresent, espacio = "", onLote }: {
+  onPresent?: () => void;
+  /**
+   * Sufijo de la clave de almacenamiento. `""` = el lote de siempre (la pestaña
+   * Herramientas). Cualquier otro valor monta un cubicador AISLADO: las mismas
+   * funciones, otra libreta — lo que se cubica ahí no toca el lote del
+   * cubicador, ni Resúmenes, ni el reparto, ni el papel.
+   */
+  espacio?: string;
+  /** Avisa hacia afuera qué hay cubicado, para los flujos que lo montan adentro
+   *  (declarar una producción sin lote, por ejemplo). */
+  onLote?: (piezas: PiezaCubicada[]) => void;
+}) {
   const [rows, setRows] = useState<PiezaCubicada[]>([]);
+  /* Lo cubicado, hacia afuera: quien monta el cubicador dentro de otro flujo
+     necesita saber qué hay sin volver a leer localStorage. */
+  useEffect(() => { onLote?.(rows); }, [rows, onLote]);
   const [listening, setListening] = useState(false);
   const [liveText, setLiveText] = useState("");        // caption en vivo (interim)
   const [lastAdded, setLastAdded] = useState<PiezaCubicada | null>(null);
@@ -222,7 +248,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
    *  lista crece sola con cada nombre nuevo, así el select/datalist ofrece
    *  el mismo dueño de ayer sin re-tipearlo. */
   const [duenosConocidos, setDuenosConocidos] = useState<string[]>(() => {
-    try { return JSON.parse(leerGuardado("-duenos") ?? "[]") as string[]; } catch { return []; }
+    try { return JSON.parse(leerGuardado("-duenos", espacio) ?? "[]") as string[]; } catch { return []; }
   });
   const recordarDueno = useCallback((nombre: string) => {
     const limpio = nombre.trim();
@@ -230,7 +256,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     setDuenosConocidos((prev) => {
       if (prev.some((d) => d.toLowerCase() === limpio.toLowerCase())) return prev;
       const next = [...prev, limpio].slice(-50); // tope: no crece sin límite
-      try { localStorage.setItem(`${storageKey()}-duenos`, JSON.stringify(next)); } catch { /* quota */ }
+      try { localStorage.setItem(`${storageKey(espacio)}-duenos`, JSON.stringify(next)); } catch { /* quota */ }
       return next;
     });
   }, []);
@@ -243,7 +269,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const olvidarDueno = useCallback((nombre: string) => {
     setDuenosConocidos((prev) => {
       const next = prev.filter((d) => d !== nombre);
-      try { localStorage.setItem(`${storageKey()}-duenos`, JSON.stringify(next)); } catch { /* quota */ }
+      try { localStorage.setItem(`${storageKey(espacio)}-duenos`, JSON.stringify(next)); } catch { /* quota */ }
       return next;
     });
   }, []);
@@ -279,9 +305,9 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
    * acá no puede llegar tarde — y el componente es `ssr:false`, así que
    * localStorage existe.
    */
-  const [precioPt, setPrecioPt] = useState(() => leerGuardado("-precio") ?? ""); // S/ por pie tablar → valor del lote
+  const [precioPt, setPrecioPt] = useState(() => leerGuardado("-precio", espacio) ?? ""); // S/ por pie tablar → valor del lote
   const [preciosEspecie] = useState<Record<string, string>>(() => {
-    const raw = leerGuardado("-precios-especie");
+    const raw = leerGuardado("-precios-especie", espacio);
     if (!raw) return {};
     try {
       const v = JSON.parse(raw) as unknown;
@@ -312,7 +338,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
    * sigue exactamente igual, esto es sólo una anotación de sesión encima.
    */
   const [asignados, setAsignados] = useState<ApartadosAsignados>(() => {
-    const raw = leerGuardado("-apartados");
+    const raw = leerGuardado("-apartados", espacio);
     if (!raw) return {};
     try {
       const v = JSON.parse(raw) as unknown;
@@ -321,7 +347,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   });
   /** Nombre puesto a mano por apartado ("Camión A", "Cliente López"). */
   const [nombresApartado, setNombresApartado] = useState<NombresApartado>(() => {
-    const raw = leerGuardado("-apartados-nombres");
+    const raw = leerGuardado("-apartados-nombres", espacio);
     if (!raw) return {};
     try {
       const v = JSON.parse(raw) as unknown;
@@ -365,18 +391,18 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   const [busqueda, setBusqueda] = useState("");             // medidas / texto libre
   /** Columnas opcionales ocultas/mostradas — por tenant, hasta que se cambie. */
   const [colsVisibles, setColsVisibles] = useState<Record<ColOpcional, boolean>>(() => {
-    const raw = leerGuardado("-cols");
+    const raw = leerGuardado("-cols", espacio);
     if (!raw) return COLS_DEFAULT;
     try { return { ...COLS_DEFAULT, ...(JSON.parse(raw) as Partial<Record<ColOpcional, boolean>>) }; } catch { return COLS_DEFAULT; }
   });
-  useEffect(() => { try { localStorage.setItem(`${storageKey()}-cols`, JSON.stringify(colsVisibles)); } catch { /* quota */ } }, [colsVisibles]);
+  useEffect(() => { try { localStorage.setItem(`${storageKey(espacio)}-cols`, JSON.stringify(colsVisibles)); } catch { /* quota */ } }, [colsVisibles]);
   /**
    * Qué paneles están plegados. Es una preferencia de trabajo, no un estado de
    * la sesión: quien revisa un lote ya medido no quiere el micrófono ocupando
    * media pantalla cada vez que entra. Se guarda por tenant, como las columnas.
    */
   const [plegados, setPlegados] = useState<{ kpis: boolean; voz: boolean }>(() => {
-    const raw = leerGuardado("-plegados");
+    const raw = leerGuardado("-plegados", espacio);
     if (!raw) return { kpis: false, voz: false };
     try {
       return { kpis: false, voz: false, ...(JSON.parse(raw) as Partial<{ kpis: boolean; voz: boolean }>) };
@@ -385,7 +411,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     }
   });
   useEffect(() => {
-    try { localStorage.setItem(`${storageKey()}-plegados`, JSON.stringify(plegados)); } catch { /* quota */ }
+    try { localStorage.setItem(`${storageKey(espacio)}-plegados`, JSON.stringify(plegados)); } catch { /* quota */ }
   }, [plegados]);
   /** La tabla ocupando la pantalla entera, para leer un lote largo. */
   const [tablaExpandida, setTablaExpandida] = useState(false);
@@ -460,14 +486,14 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   useEffect(() => { fijasRef.current = fijas; }, [fijas]);
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(`${storageKey()}-fijas`);
+      const raw = localStorage.getItem(`${storageKey(espacio)}-fijas`);
       if (raw) setFijas(JSON.parse(raw) as MedidasFijas);
     } catch { /* ignore */ }
   }, []);
   const aplicarFijas = useCallback((next: MedidasFijas) => {
     fijasRef.current = next;
     setFijas(next);
-    try { localStorage.setItem(`${storageKey()}-fijas`, JSON.stringify(next)); } catch { /* quota */ }
+    try { localStorage.setItem(`${storageKey(espacio)}-fijas`, JSON.stringify(next)); } catch { /* quota */ }
   }, []);
   useEffect(() => { configRef.current = config; }, [config]);
   // Cargar config + voces disponibles (getVoices puede llegar async).
@@ -492,7 +518,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   // (se guardan a mano en `persist`), así que no compiten por el mismo lugar.
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(storageKey());
+      const raw = localStorage.getItem(storageKey(espacio));
       /* Se RE-CUBICA al hidratar: un lote guardado antes de que el m³ saliera
          del pie tablar trae el volumen geométrico y el total lo arrastraría
          (13.026 PT mostraban 30,738 m³ en vez de 30,722). */
@@ -502,7 +528,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
 
   const nuevoId = () => `p-${Date.now()}-${idRef.current++}`;
 
-  const persist = useCallback((next: PiezaCubicada[]) => { setRows(next); saveLocal(next); }, []);
+  const persist = useCallback((next: PiezaCubicada[]) => { setRows(next); saveLocal(next, espacio); }, []);
 
   // addPieza estable (functional update) — lo llama el closure del reconocedor
   // con las filas frescas, sin depender de `rows` (que estaría stale).
@@ -512,7 +538,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   }) => {
     const { pieTablar, m3 } = cubicarPieza(p);
     const row: PiezaCubicada = { id: nuevoId(), ...p, pieTablar, m3 };
-    setRows((prev) => { const next = [...prev, row]; saveLocal(next); return next; });
+    setRows((prev) => { const next = [...prev, row]; saveLocal(next, espacio); return next; });
     setLastAdded(row);
   }, []);
 
@@ -523,7 +549,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
     // El Excel importado trae su propio pieTablar/m³: se re-cubica desde las
     // medidas para que ninguna planilla ajena imponga otra fórmula.
     const conId = recubicarPiezas(nuevas).map((p) => ({ ...p, id: nuevoId() }));
-    setRows((prev) => { const next = [...prev, ...conId]; saveLocal(next); return next; });
+    setRows((prev) => { const next = [...prev, ...conId]; saveLocal(next, espacio); return next; });
     setLastAdded(conId[conId.length - 1]);
     const piezas = nuevas.reduce((a, p) => a + p.cantidad, 0);
     pushToast({ tono: "success", msg: `${conId.length} ${conId.length === 1 ? "fila importada" : "filas importadas"}`, detail: `${piezas} piezas al lote` });
@@ -531,7 +557,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
 
   // Borra la última fila (comando de voz "elimina el último"). Estable.
   const borrarUltimo = useCallback(() => {
-    setRows((prev) => { if (!prev.length) return prev; const next = prev.slice(0, -1); saveLocal(next); return next; });
+    setRows((prev) => { if (!prev.length) return prev; const next = prev.slice(0, -1); saveLocal(next, espacio); return next; });
     setLastAdded(null);
     carryRef.current = { nums: [], ts: 0 };
   }, []);
@@ -545,7 +571,7 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
         const { pieTablar, m3 } = cubicarPieza(upd);
         return { ...upd, pieTablar, m3 };
       });
-      saveLocal(next);
+      saveLocal(next, espacio);
       return next;
     });
   }, []);
@@ -1017,10 +1043,10 @@ export default function CubicadorMadera({ onPresent }: { onPresent?: () => void 
   };
 
   // Persistir el precio por PT (por tenant) y los precios por especie.
-  useEffect(() => { try { localStorage.setItem(`${storageKey()}-precio`, precioPt); } catch { /* ignore */ } }, [precioPt]);
-  useEffect(() => { try { localStorage.setItem(`${storageKey()}-precios-especie`, JSON.stringify(preciosEspecie)); } catch { /* ignore */ } }, [preciosEspecie]);
-  useEffect(() => { try { localStorage.setItem(`${storageKey()}-apartados`, JSON.stringify(asignados)); } catch { /* ignore */ } }, [asignados]);
-  useEffect(() => { try { localStorage.setItem(`${storageKey()}-apartados-nombres`, JSON.stringify(nombresApartado)); } catch { /* ignore */ } }, [nombresApartado]);
+  useEffect(() => { try { localStorage.setItem(`${storageKey(espacio)}-precio`, precioPt); } catch { /* ignore */ } }, [precioPt]);
+  useEffect(() => { try { localStorage.setItem(`${storageKey(espacio)}-precios-especie`, JSON.stringify(preciosEspecie)); } catch { /* ignore */ } }, [preciosEspecie]);
+  useEffect(() => { try { localStorage.setItem(`${storageKey(espacio)}-apartados`, JSON.stringify(asignados)); } catch { /* ignore */ } }, [asignados]);
+  useEffect(() => { try { localStorage.setItem(`${storageKey(espacio)}-apartados-nombres`, JSON.stringify(nombresApartado)); } catch { /* ignore */ } }, [nombresApartado]);
   /**
    * Fila borrada, lote vaciado o reemplazado (nueva/guardada) → sus
    * asignaciones de apartado no pueden seguir señalando a un id que ya no
