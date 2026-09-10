@@ -10,7 +10,7 @@
  * pie tablar entero y el m³ con tres decimales, siempre, en todas.
  */
 
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { Info, type LucideIcon } from "@buleje/design-system/icons";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
@@ -18,6 +18,7 @@ import type { GrupoResumen, ResumenLote } from "@/lib/forestal/cubicacion-resume
 import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import type { TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { TipoBadge } from "./tipo-badge";
+import { FiltroColumna } from "./ctp-filtros-panel";
 
 /**
  * Tarjeta de sección: misma caja para las siete lecturas del lote.
@@ -171,7 +172,47 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
      el valor quedaba cortado contra el borde. Con el padding chico entra. */
   const TH = `${compacta ? "px-2" : "px-3"} ${TH_BASE}`;
   const TD = `${compacta ? "px-2" : "px-3"} ${TD_BASE}`;
-  const claves = seleccion ? grupos.map(seleccion.claveDe) : [];
+  /**
+   * El autofiltro de la primera columna, adentro de su `<th>` (Brandon,
+   * 2026-09-10: los filtros van en el encabezado y admiten dos o más opciones).
+   *
+   * Con dos filas no se ofrece: un desplegable para elegir entre «las dos o
+   * una» es ruido en una tabla que se lee de un vistazo.
+   */
+  const [elegidos, setElegidos] = useState<string[]>([]);
+  const opcionesCol = useMemo(
+    () => grupos.map((g) => ({ value: g.clave, label: g.label, count: g.cantidad })),
+    [grupos],
+  );
+  const visibles = useMemo(
+    () => (elegidos.length === 0 ? grupos : grupos.filter((g) => elegidos.includes(g.clave))),
+    [grupos, elegidos],
+  );
+  const filtrada = visibles.length !== grupos.length;
+  /**
+   * Con la tabla acotada el pie suma LO QUE SE VE.
+   *
+   * Dejar el total del lote debajo de tres filas filtradas es la forma más
+   * barata de que alguien copie a un papel un número que no corresponde a lo
+   * que tiene delante. La participación sigue siendo sobre el lote entero —es
+   * lo que la columna promete—, así que filtrada no llega a 100 % y el pie
+   * muestra cuánto suma.
+   */
+  const totalVisible = useMemo(() => {
+    if (!filtrada) return { ...total, pct: 100 };
+    const acum = visibles.reduce(
+      (a, g) => ({
+        cantidad: a.cantidad + g.cantidad,
+        m3: a.m3 + g.m3,
+        pieTablar: a.pieTablar + g.pieTablar,
+        valor: a.valor + g.valor,
+        pct: a.pct + g.pctPt,
+      }),
+      { cantidad: 0, m3: 0, pieTablar: 0, valor: 0, pct: 0 },
+    );
+    return acum;
+  }, [filtrada, visibles, total]);
+  const claves = seleccion ? visibles.map(seleccion.claveDe) : [];
   const todasMarcadas = seleccion != null && claves.length > 0 && claves.every((k) => seleccion.marcadas.has(k));
   return (
     <div className={`overflow-x-auto rounded-xl border border-[var(--rule-base)] ${larga ? "max-h-[70vh] overflow-y-auto" : ""}`}>
@@ -191,7 +232,18 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
                 />
               </th>
             )}
-            <th scope="col" className={TH}>{primeraCol}</th>
+            <th scope="col" className={TH}>
+              <span className="block">{primeraCol}</span>
+              {grupos.length > 2 && (
+                <FiltroColumna
+                  label={primeraCol}
+                  value={elegidos}
+                  options={opcionesCol}
+                  onChange={setElegidos}
+                  placeholder="Todos"
+                />
+              )}
+            </th>
             {/* Piezas · m³ · PT, la convención del módulo (2026-09-09). */}
             <th scope="col" className={`${TH} text-right`}>Piezas</th>
             <th scope="col" className={`${TH} text-right`}>Volumen m³</th>
@@ -202,7 +254,7 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
           </tr>
         </thead>
         <tbody>
-          {grupos.map((g, i) => {
+          {visibles.map((g, i) => {
             const clave = seleccion?.claveDe(g);
             const marcada = clave != null && seleccion!.marcadas.has(clave);
             return (
@@ -225,7 +277,7 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
               )}
               {/* El grupo que manda lleva la marca al costado: es el que define
                   el precio del lote y en una lista de doce se perdía. */}
-              <td className={`${TD} border-l-[3px] font-bold text-[var(--text-primary)] ${i === 0 && grupos.length > 1 ? "border-l-[var(--accent)]" : "border-l-transparent"}`}>
+              <td className={`${TD} border-l-[3px] font-bold text-[var(--text-primary)] ${i === 0 && visibles.length > 1 ? "border-l-[var(--accent)]" : "border-l-transparent"}`}>
                 {esTipo ? <TipoBadge tipo={g.label as TipoComercial} /> : g.label}
               </td>
               <td className={`${TD} ${NUM} text-[var(--text-secondary)]`}>{fmtPiezas(g.cantidad)}</td>
@@ -263,17 +315,25 @@ export function TablaGrupos({ grupos, total, primeraCol, conValor, esTipo, capti
         <tfoot className="sticky bottom-0 bg-[var(--surface-raised)]">
           <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
             {seleccion && <td className={TD} />}
-            <th scope="row" className={`${TD} whitespace-nowrap text-left`}>{compacta ? "Total" : `Total · ${grupos.length} ${grupos.length === 1 ? "grupo" : "grupos"}`}</th>
-            <td className={`${TD} ${NUM}`}>{fmtPiezas(total.cantidad)}</td>
-            <td className={`${TD} ${NUM}`}>{fmtM3(total.m3)}</td>
-            <td className={`${TD} ${NUM}`}>{fmtPt(total.pieTablar)}</td>
-            <td className={`${TD} text-[length:var(--ts-2xs)] uppercase tracking-wide`}>100%</td>
+            <th scope="row" className={`${TD} whitespace-nowrap text-left`}>
+              {filtrada
+                ? `Filtrado · ${visibles.length} de ${grupos.length}`
+                : compacta
+                  ? "Total"
+                  : `Total · ${grupos.length} ${grupos.length === 1 ? "grupo" : "grupos"}`}
+            </th>
+            <td className={`${TD} ${NUM}`}>{fmtPiezas(totalVisible.cantidad)}</td>
+            <td className={`${TD} ${NUM}`}>{fmtM3(totalVisible.m3)}</td>
+            <td className={`${TD} ${NUM}`}>{fmtPt(totalVisible.pieTablar)}</td>
+            <td className={`${TD} text-[length:var(--ts-2xs)] uppercase tracking-wide`}>{fmtPct(totalVisible.pct)}%</td>
             {conRendimiento && (
-              <td className={`${TD} ${NUM}`}>{total.pieTablar > 0 ? fmtSoles(total.valor / total.pieTablar) : "—"}</td>
+              <td className={`${TD} ${NUM}`}>
+                {totalVisible.pieTablar > 0 ? fmtSoles(totalVisible.valor / totalVisible.pieTablar) : "—"}
+              </td>
             )}
             {/* La suma de la columna Importe: el número por el que se abre esta
                 pantalla cuando hay precio cargado. */}
-            {conValor && <td className={`${TD} ${NUM}`}>{fmtSoles(total.valor)}</td>}
+            {conValor && <td className={`${TD} ${NUM}`}>{fmtSoles(totalVisible.valor)}</td>}
           </tr>
         </tfoot>
       </DataTable>

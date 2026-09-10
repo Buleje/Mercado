@@ -382,7 +382,6 @@ export function FiltroColumna({
   etiqueta,
   onChange,
   placeholder = "Todos",
-  unico = false,
 }: {
   /** Cómo se llama la columna: arma el `aria-label` del control. */
   label: string;
@@ -391,13 +390,6 @@ export function FiltroColumna({
   etiqueta?: (v: string) => string;
   onChange: (v: string[]) => void;
   placeholder?: string;
-  /**
-   * `true` = de a uno. Es el caso de las columnas cuyo filtro viaja al servidor
-   * (la bandeja de Ingresos): la consulta admite un valor por campo, así que la
-   * lista muestra redondeles y no casillas — prometer dos y aplicar uno sería
-   * peor que ofrecer uno.
-   */
-  unico?: boolean;
 }) {
   const { ref, alAbrir, estilo } = usePopoverCabecera(288);
   const elegidos = comoLista(value);
@@ -423,14 +415,7 @@ export function FiltroColumna({
         style={estilo}
         className="z-50 max-h-72 w-64 overflow-y-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1.5 shadow-[var(--shadow-lg)]"
       >
-        <ListaDeCasillas
-          label={label}
-          elegidos={elegidos}
-          options={options}
-          etiqueta={etiqueta}
-          onChange={onChange}
-          unico={unico}
-        />
+        <ListaDeCasillas label={label} elegidos={elegidos} options={options} etiqueta={etiqueta} onChange={onChange} />
       </div>
     </details>
   );

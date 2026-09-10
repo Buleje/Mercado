@@ -35,6 +35,7 @@ import {
 } from "@/lib/forestal/anexo-por-permiso";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
+import { FiltroColumna } from "./ctp-filtros-panel";
 
 const TH =
   "px-2 py-1 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
@@ -136,6 +137,42 @@ export default function AnexoPorPermiso({
   }, [precios, precioDe]);
 
   const filas = useMemo(() => (actual ? filasDelAnexo(actual, precio) : []), [actual, precio]);
+  /**
+   * Los autofiltros de la tabla de medidas, adentro de sus encabezados
+   * (Brandon, 2026-09-10). Un anexo real trae cuarenta filas y la pregunta es
+   * siempre acotada: «las de tornillo», «las de 2×8 y 2×10».
+   *
+   * Sólo recorta lo que se MIRA: el total que va al papel es el del anexo
+   * entero y se sigue diciendo abajo con todas las letras.
+   */
+  const [fEspecie, setFEspecie] = useState<string[]>([]);
+  const [fTipo, setFTipo] = useState<string[]>([]);
+  const [fMedida, setFMedida] = useState<string[]>([]);
+  const opcionesDe = (valores: string[]) => {
+    const por = new Map<string, number>();
+    for (const v of valores) por.set(v, (por.get(v) ?? 0) + 1);
+    return [...por.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es-PE"))
+      .map(([value, count]) => ({ value, count }));
+  };
+  const opciones = useMemo(
+    () => ({
+      especies: opcionesDe(filas.map((f) => f.especie)),
+      tipos: opcionesDe(filas.map((f) => f.tipo)),
+      medidas: opcionesDe(filas.map((f) => f.medida)),
+    }),
+    [filas],
+  );
+  const filasVisibles = useMemo(
+    () =>
+      filas.filter(
+        (f) =>
+          (fEspecie.length === 0 || fEspecie.includes(f.especie)) &&
+          (fTipo.length === 0 || fTipo.includes(f.tipo)) &&
+          (fMedida.length === 0 || fMedida.includes(f.medida)),
+      ),
+    [filas, fEspecie, fTipo, fMedida],
+  );
+  const acotada = filasVisibles.length !== filas.length;
   /** Qué sale de cada especie y tipo — la lectura de negocio del permiso. */
   const resumen = useMemo(() => (actual ? resumenPorEspecieTipo(actual, precio) : []), [actual, precio]);
   /* El importe del permiso: la suma de la columna, que es lo que se cobra. */
@@ -381,9 +418,30 @@ export default function AnexoPorPermiso({
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[var(--rule-soft)]">
-                  <th className={TH}>Especie</th>
-                  <th className={TH}>Tipo</th>
-                  <th className={TH}>Medida</th>
+                  <th className={TH}>
+                    <span className="block">Especie</span>
+                    <FiltroColumna
+                      label="Especie"
+                      value={fEspecie}
+                      options={opciones.especies}
+                      onChange={setFEspecie}
+                      placeholder="Todas"
+                    />
+                  </th>
+                  <th className={TH}>
+                    <span className="block">Tipo</span>
+                    <FiltroColumna label="Tipo" value={fTipo} options={opciones.tipos} onChange={setFTipo} />
+                  </th>
+                  <th className={TH}>
+                    <span className="block">Medida</span>
+                    <FiltroColumna
+                      label="Medida"
+                      value={fMedida}
+                      options={opciones.medidas}
+                      onChange={setFMedida}
+                      placeholder="Todas"
+                    />
+                  </th>
                   <th className={`${TH} text-right`}>Piezas</th>
                   <th className={`${TH} text-right`}>m³</th>
                   <th className={`${TH} text-right`}>Pie tablar</th>
@@ -392,7 +450,7 @@ export default function AnexoPorPermiso({
                 </tr>
               </thead>
               <tbody>
-                {filas.map((f) => (
+                {filasVisibles.map((f) => (
                   <tr key={f.clave} className="border-b border-[var(--rule-soft)] last:border-0">
                     <td className={TD}>{f.especie}</td>
                     <td className={TD}>{f.tipo}</td>
@@ -419,7 +477,15 @@ export default function AnexoPorPermiso({
               <tfoot>
                 <tr className="border-t-2 border-[var(--rule-base)]">
                   <td className={`${TD} font-bold text-[var(--text-primary)]`} colSpan={3}>
+                    {/* El total es SIEMPRE el del anexo entero: es lo que va al
+                        papel. Si la tabla está acotada se dice, para que nadie
+                        copie el número de arriba creyendo que es lo que ve. */}
                     Total del anexo
+                    {acotada && (
+                      <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">
+                        · mostrando {filasVisibles.length} de {filas.length} medidas
+                      </span>
+                    )}
                   </td>
                   <td className={`${NUM} font-bold text-[var(--text-primary)]`}>
                     {fmtPiezas(actual.totalPiezas)}
