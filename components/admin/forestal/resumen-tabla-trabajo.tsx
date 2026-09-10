@@ -38,8 +38,15 @@ export interface FilaTrabajo {
   precioPt: number;
 }
 
-/** Lo tipeado por celda — texto crudo: convertirlo en cada tecla come el «.». */
-type Tocado = Partial<Record<"piezas" | "m3" | "pt", string>>;
+/**
+ * Lo tipeado por celda — texto crudo: convertirlo en cada tecla come el «.».
+ *
+ * `precio` es el precio por PIE TABLAR y se escribe a mano (Brandon,
+ * 2026-09-09): en el patio el precio se negocia por lote y por cliente, y
+ * muchas veces el lote del cubicador no lo trae cargado. El importe sale de
+ * multiplicarlo por el pie tablar de la fila.
+ */
+type Tocado = Partial<Record<"piezas" | "m3" | "pt" | "precio", string>>;
 
 const CLAVE = () => slugKey("-tabla-trabajo");
 const TH = "px-2 py-1.5 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
@@ -55,9 +62,8 @@ const leer = (txt: string | undefined, real: number): number => {
   return Number.isFinite(n) && n >= 0 ? n : real;
 };
 
-export default function TablaDeTrabajo({ filas, conValor }: {
+export default function TablaDeTrabajo({ filas }: {
   filas: FilaTrabajo[];
-  conValor: boolean;
 }) {
   const [tocado, setTocado] = useState<Record<string, Tocado>>({});
 
@@ -90,10 +96,12 @@ export default function TablaDeTrabajo({ filas, conValor }: {
       const piezas = leer(t.piezas, f.piezas);
       const m3 = leer(t.m3, f.m3);
       const pt = leer(t.pt, f.pt);
+      /* El precio del lote es el default; lo tipeado manda. */
+      const precio = leer(t.precio, f.precioPt);
       return {
-        ...f, piezas, m3, pt,
-        importe: pt * f.precioPt,
-        cambiada: piezas !== f.piezas || m3 !== f.m3 || pt !== f.pt,
+        ...f, piezas, m3, pt, precio,
+        importe: pt * precio,
+        cambiada: piezas !== f.piezas || m3 !== f.m3 || pt !== f.pt || precio !== f.precioPt,
       };
     }),
     [filas, tocado],
@@ -140,12 +148,13 @@ export default function TablaDeTrabajo({ filas, conValor }: {
         )}
       </div>
       <p className="mb-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
-        Tantea acá: cambiá piezas, m³ o pie tablar y mirá el total. <b>No toca nada</b> — ni el lote
-        del cubicador, ni el reparto, ni el papel. Se guarda en este equipo hasta que lo reinicies.
+        Tantea acá: cambiá piezas, m³, pie tablar o el <b>precio por pie</b> y mirá el importe.{" "}
+        <b>No toca nada</b> — ni el lote del cubicador, ni el reparto, ni el papel. Se guarda en este
+        equipo hasta que lo reinicies.
       </p>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-        <DataTable className={`w-full text-sm ${conValor ? "min-w-[520px]" : "min-w-[420px]"}`}>
+        <DataTable className="w-full min-w-[600px] text-sm">
           <caption className="sr-only">Tabla de trabajo por especie y tipo (borrador, no afecta al lote)</caption>
           <thead className="bg-[var(--surface-sunken)]">
             <tr>
@@ -153,7 +162,9 @@ export default function TablaDeTrabajo({ filas, conValor }: {
               <th scope="col" className={`${TH} text-right`}>Piezas</th>
               <th scope="col" className={`${TH} text-right`}>Volumen m³</th>
               <th scope="col" className={`${TH} text-right`}>Pie tablar</th>
-              {conValor && <th scope="col" className={`${TH} text-right`}>Importe S/</th>}
+              {/* El precio se escribe a mano; el importe es PT × precio. */}
+              <th scope="col" className={`${TH} text-right`}>Precio S/ PT</th>
+              <th scope="col" className={`${TH} text-right`}>Importe S/</th>
             </tr>
           </thead>
           <tbody>
@@ -179,11 +190,15 @@ export default function TablaDeTrabajo({ filas, conValor }: {
                   <td className={TD}>{celda("piezas", f.piezas, fmtPiezas(filas.find((x) => x.clave === f.clave)!.piezas))}</td>
                   <td className={TD}>{celda("m3", f.m3, fmtM3(filas.find((x) => x.clave === f.clave)!.m3))}</td>
                   <td className={TD}>{celda("pt", f.pt, fmtPt(filas.find((x) => x.clave === f.clave)!.pt))}</td>
-                  {conValor && (
-                    <td className={`${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>
-                      {fmtSoles(f.importe)}
-                    </td>
-                  )}
+                  <td className={TD}>
+                    {celda("precio", f.precio, f.precioPt > 0 ? fmtSoles(f.precioPt) : "0.00")}
+                  </td>
+                  <td
+                    className={`${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}
+                    title={`${fmtPt(f.pt)} PT × S/ ${fmtSoles(f.precio)}`}
+                  >
+                    {fmtSoles(f.importe)}
+                  </td>
                 </tr>
               );
             })}
@@ -194,7 +209,10 @@ export default function TablaDeTrabajo({ filas, conValor }: {
               <td className={NUM}>{fmtPiezas(total.piezas)}</td>
               <td className={NUM}>{fmtM3(total.m3)}</td>
               <td className={NUM}>{fmtPt(total.pt)}</td>
-              {conValor && <td className={NUM}>{fmtSoles(total.importe)}</td>}
+              {/* Promedio ponderado: el precio del conjunto, no la media de
+                  los precios (una fila de 20 PT no pesa como una de 2.000). */}
+              <td className={NUM}>{total.pt > 0 ? fmtSoles(total.importe / total.pt) : "—"}</td>
+              <td className={NUM}>{fmtSoles(total.importe)}</td>
             </tr>
             {cambiadas > 0 && (
               /* Contra lo REAL: sin esta fila, el borrador se lee como el lote. */
@@ -203,7 +221,8 @@ export default function TablaDeTrabajo({ filas, conValor }: {
                 <td className={NUM}>{fmtPiezas(real.piezas)}</td>
                 <td className={NUM}>{fmtM3(real.m3)}</td>
                 <td className={NUM}>{fmtPt(real.pt)}</td>
-                {conValor && <td className={NUM} />}
+                <td className={NUM} />
+                <td className={NUM} />
               </tr>
             )}
           </tfoot>

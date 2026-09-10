@@ -450,7 +450,7 @@ export default function CubicacionResumenes() {
               ))}
               {/* El clon manipulable, AL LADO de las especies (misma grilla):
                   se tantea acá y no sobre el lote (Brandon, 2026-09-09). */}
-              <TablaDeTrabajo filas={filasTrabajo} conValor={conValor} />
+              <TablaDeTrabajo filas={filasTrabajo} />
             </div>
           </SeccionResumen>
 

@@ -24,7 +24,7 @@
  *    `localStorage`, como el resto de los plegados del cubicador.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, ChevronRight, Download, FileText } from "@buleje/design-system/icons";
 import { fmtM3, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
 import type { PrecioPt } from "@/lib/forestal/cubicacion-resumen";
@@ -47,6 +47,21 @@ const NUM = `${TD} text-right font-mono tabular-nums`;
  * por tenant y no se mezcla entre negocios.
  */
 const CLAVE_MEDIDAS = () => slugKey("-anexo-permiso-medidas");
+/**
+ * Dónde se guarda el PRECIO POR PIE que se escribe a mano.
+ *
+ * Brandon, 2026-09-09: el precio se pone acá porque el lote del cubicador
+ * muchas veces no lo trae —se negocia por cliente y por permiso—. Se guarda por
+ * **especie · tipo** y no por permiso: el precio es del producto, así que la
+ * paquetería larga de tornillo vale lo mismo en los dos papeles.
+ */
+const CLAVE_PRECIOS = () => slugKey("-anexo-permiso-precios");
+
+/** Sin tildes ni mayúsculas: «TORNILLO» y «Tornillo» son la misma madera. */
+const norma = (v: string | null | undefined): string =>
+  (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+const clavePrecio = (especie: string | null | undefined, tipo: string | null | undefined): string =>
+  `${norma(especie) || "sin especie"}||${norma(tipo) || "sin tipo"}`;
 
 export default function AnexoPorPermiso({
   anexos,
@@ -91,13 +106,43 @@ export default function AnexoPorPermiso({
     () => anexos.find((a) => (a.permiso ?? " sin") === (elegido ?? anexos[0]?.permiso ?? " sin")) ?? anexos[0],
     [anexos, elegido],
   );
-  const precio = precioDe ?? 0;
+  /** Precios por pie escritos a mano, por especie · tipo. */
+  const [precios, setPrecios] = useState<Record<string, string>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CLAVE_PRECIOS());
+      if (raw) setPrecios(JSON.parse(raw) as Record<string, string>);
+    } catch { /* json corrupto → sin precios */ }
+  }, []);
+  const escribirPrecio = useCallback((clave: string, valor: string) => {
+    setPrecios((prev) => {
+      const next = { ...prev };
+      if (valor.trim() === "") delete next[clave];
+      else next[clave] = valor;
+      try { localStorage.setItem(CLAVE_PRECIOS(), JSON.stringify(next)); } catch { /* quota */ }
+      return next;
+    });
+  }, []);
+
+  /**
+   * El precio de una pieza: lo tipeado para su especie·tipo y, si no hay, el
+   * del lote del cubicador. Va como resolvedor al módulo puro para que las DOS
+   * tablas (resumen y detalle) calculen el importe con el mismo criterio.
+   */
+  const precio = useCallback<(p: PiezaCubicada) => number>((p) => {
+    const manual = Number((precios[clavePrecio(p.especie, p.tipo)] ?? "").replace(",", "."));
+    if (Number.isFinite(manual) && manual > 0) return manual;
+    return typeof precioDe === "function" ? precioDe(p) : (precioDe ?? 0);
+  }, [precios, precioDe]);
+
   const filas = useMemo(() => (actual ? filasDelAnexo(actual, precio) : []), [actual, precio]);
   /** Qué sale de cada especie y tipo — la lectura de negocio del permiso. */
   const resumen = useMemo(() => (actual ? resumenPorEspecieTipo(actual, precio) : []), [actual, precio]);
   /* El importe del permiso: la suma de la columna, que es lo que se cobra. */
   const importeTotal = useMemo(() => resumen.reduce((a, r) => a + r.valor, 0), [resumen]);
-  const conValor = importeTotal > 0;
+  /* Las columnas de plata se ven SIEMPRE: si sólo aparecieran con precio
+     cargado, no habría dónde escribirlo. */
+  const conValor = true;
 
   /** El detalle del permiso en CSV — para el contador o para pasar el precio. */
   const bajarCsv = () => {
@@ -268,7 +313,25 @@ export default function AnexoPorPermiso({
                       <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(r.m3)}</td>
                       <td className={NUM}>{fmtPt(r.pieTablar)}</td>
                       {conValor && (
-                        <td className={NUM}>{r.pieTablar > 0 ? fmtSoles(r.valor / r.pieTablar) : "—"}</td>
+                        <td className={`${TD} text-right`}>
+                          {/* El precio se escribe acá: el importe de la fila y
+                              el total del permiso salen de este número. */}
+                          <input
+                            value={precios[clavePrecio(r.especie, r.tipo)] ?? ""}
+                            onChange={(e) =>
+                              escribirPrecio(clavePrecio(r.especie, r.tipo), e.target.value.replace(/[^\d.,]/g, ""))
+                            }
+                            inputMode="decimal"
+                            placeholder={r.pieTablar > 0 && r.valor > 0 ? fmtSoles(r.valor / r.pieTablar) : "0.00"}
+                            aria-label={`Precio por pie tablar de ${r.tipo} (${r.especie})`}
+                            title="Precio por PIE TABLAR. Se guarda en este equipo, por especie y tipo — vale para todos los permisos."
+                            className={`h-8 w-24 rounded-lg border bg-[var(--surface-canvas)] px-1.5 text-right font-mono text-sm tabular-nums outline-none focus:border-[var(--accent)] ${
+                              precios[clavePrecio(r.especie, r.tipo)]
+                                ? "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                                : "border-[var(--rule-base)] text-[var(--text-primary)]"
+                            }`}
+                          />
+                        </td>
                       )}
                       {conValor && (
                         <td className={`${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>
@@ -337,7 +400,14 @@ export default function AnexoPorPermiso({
                     <td className={NUM}>{fmtPiezas(f.piezas)}</td>
                     <td className={`${NUM} font-bold text-[var(--text-primary)]`}>{fmtM3(f.m3)}</td>
                     <td className={NUM}>{fmtPt(f.pieTablar)}</td>
-                    {conValor && <td className={NUM}>{f.pieTablar > 0 ? fmtSoles(f.valor / f.pieTablar) : "—"}</td>}
+                    {/* Acá el precio NO se edita: es el de su especie·tipo, que
+                        se pone arriba. Dos casillas para el mismo número son dos
+                        formas de contradecirse. */}
+                    {conValor && (
+                      <td className={`${NUM} text-[var(--text-tertiary)]`}>
+                        {f.pieTablar > 0 && f.valor > 0 ? fmtSoles(f.valor / f.pieTablar) : "—"}
+                      </td>
+                    )}
                     {conValor && (
                       <td className={`${NUM} font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]`}>
                         {fmtSoles(f.valor)}
