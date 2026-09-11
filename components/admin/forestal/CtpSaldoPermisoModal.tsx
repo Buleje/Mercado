@@ -25,14 +25,27 @@
  */
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, Layers, Loader2, RefreshCw } from "@buleje/design-system/icons";
+import {
+  AlertTriangle,
+  FileSpreadsheet,
+  Layers,
+  Loader2,
+  Printer,
+  RefreshCw,
+} from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn } from "./ctp-shared";
 import { useSaldoPermisos } from "./hooks/use-saldo-permisos";
 import AsignarPermisoMasivo from "./ctp-saldo-asignar-permiso";
 import SaldoPermisoTabla from "./ctp-saldo-tabla";
-import { SIN_PERMISO, saldoPorPermiso, type BaseDeSaldo } from "@/lib/forestal/saldo-por-permiso";
+import {
+  SIN_PERMISO,
+  saldoPorPermiso,
+  type BaseDeSaldo,
+  type CorridaSinOrigen,
+} from "@/lib/forestal/saldo-por-permiso";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { exportarSaldoPorPermiso, printSaldoPorPermiso } from "@/lib/forestal/saldo-permiso-export";
 
 // date-only en UTC: sin eso, en Lima la fecha se corre un día.
 const fmtFecha = (f: string) =>
@@ -81,13 +94,21 @@ function Kpi({
 export default function CtpSaldoPermisoModal({
   open,
   onClose,
+  onVincular,
 }: {
   open: boolean;
   onClose: () => void;
+  /**
+   * Cerrar el hueco desde acá: la corrida que se está restando es justo la que
+   * no dice de qué madera salió. Lo hace el MISMO vinculador de la pestaña
+   * (ADR-408) —con sus cinco reglas—, no una segunda forma de vincular.
+   */
+  onVincular?: (corrida: CorridaSinOrigen) => void;
 }) {
   const { datos, cargando, error, recargar } = useSaldoPermisos(open);
   const [base, setBase] = useState<BaseDeSaldo>("patio");
   const [elegido, setElegido] = useState<string>("");
+  const [bajando, setBajando] = useState(false);
 
   const saldos = useMemo(
     () => (datos ? saldoPorPermiso(datos.rolliza, datos.corridas, { base }) : []),
@@ -98,6 +119,10 @@ export default function CtpSaldoPermisoModal({
     () => saldos.find((s) => (s.permiso ?? "") === elegido) ?? saldos[0] ?? null,
     [saldos, elegido],
   );
+  /* Las dos salidas llevan TODOS los permisos, no sólo el que está a la vista:
+     quien baja el cuadro lo baja para mirarlo entero. La base sí viaja — es lo
+     que define qué rolliza se está midiendo. */
+  const datosExport = { saldos, base, patioTruncado: datos?.patio.truncado ? datos.patio : null };
 
   return (
     <AdminModal
@@ -112,6 +137,28 @@ export default function CtpSaldoPermisoModal({
           <span className="mr-auto text-xs text-[var(--text-tertiary)]">
             Simulación: no mueve saldos ni consume trozas.
           </span>
+          <Btn
+            onClick={() => printSaldoPorPermiso(datosExport)}
+            disabled={saldos.length === 0}
+            title="Abrir el cuadro en papel (A4) para imprimir o guardar como PDF"
+          >
+            <Printer className="h-4 w-4" aria-hidden /> Papel
+          </Btn>
+          <Btn
+            onClick={() => {
+              setBajando(true);
+              void exportarSaldoPorPermiso(datosExport).finally(() => setBajando(false));
+            }}
+            disabled={saldos.length === 0 || bajando}
+            title="Bajar el cuadro en Excel, con la hoja de las producciones que lo sostienen"
+          >
+            {bajando ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <FileSpreadsheet className="h-4 w-4" aria-hidden />
+            )}
+            Excel
+          </Btn>
           <Btn onClick={() => void recargar()} disabled={cargando}>
             {cargando ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -287,6 +334,16 @@ export default function CtpSaldoPermisoModal({
                               ? `${fmtM3(c.cantidad)} m³`
                               : `${c.cantidad} ${c.unidad ?? "—"}`}
                           </span>
+                          {onVincular && (
+                            <button
+                              type="button"
+                              onClick={() => onVincular(c)}
+                              title="Decir de qué trozas salió esta producción"
+                              className="shrink-0 rounded-lg border border-[var(--rule-base)] px-2 py-1 text-xs font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                            >
+                              Vincular
+                            </button>
+                          )}
                         </li>
                       ))}
                     </ul>

@@ -8,7 +8,20 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { Plus, Search, Boxes, Truck, AlertCircle, HelpCircle, PackagePlus, Calculator, Calendar, Layers, Table, X } from "@buleje/design-system/icons";
+import {
+  Plus,
+  Search,
+  Boxes,
+  Truck,
+  AlertCircle,
+  HelpCircle,
+  PackagePlus,
+  Calculator,
+  Calendar,
+  Layers,
+  Table,
+  X,
+} from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { accionesDeSeccion, accionesPorDeclarar } from "./ctp-entries-acciones";
@@ -25,6 +38,7 @@ import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
 import CtpProducirSinLoteModal from "./CtpProducirSinLoteModal";
 import CtpSaldoPermisoModal from "./CtpSaldoPermisoModal";
+import type { CorridaSinOrigen } from "@/lib/forestal/saldo-por-permiso";
 import CtpVincularMateriaPrimaModal from "./CtpVincularMateriaPrimaModal";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -55,14 +69,19 @@ import { corridasAMedioDeclarar } from "@/lib/forestal/produccion-paquetes";
 
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
-import { COLUMNAS_PRODUCCION_OPCIONALES, type CtpEntry, type CtpSection } from "./ctp-section-shared";
+import {
+  COLUMNAS_PRODUCCION_OPCIONALES,
+  type CtpEntry,
+  type CtpSection,
+} from "./ctp-section-shared";
 import { ColumnasMenu, TablaSkeleton, useColumnasVisibles } from "./ctp-shared";
 import { CtpPaginacion, usePaginacion } from "./ctp-tabla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /* Totales de período: dos decimales, como el resumen y las tarjetas que viven
    al lado. Los tres de `fmtM3` son para medir una troza. */
-const n2m3 = (v: number) => v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const n2m3 = (v: number) =>
+  v.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /**
  * Debajo de esto, una corrida sin materia prima es polvo de aserradero.
@@ -115,10 +134,13 @@ function ChipsSinOrigen({
   return (
     <>
       <p className="mb-2 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-        Elegí el lote que entró a la sierra para atribuirle cada producción. De mayor a menor volumen.
+        Elegí el lote que entró a la sierra para atribuirle cada producción. De mayor a menor
+        volumen.
       </p>
       <ul className="flex flex-wrap gap-2">
-        {visibles.slice(0, 12).map((e) => <Chip key={e.id} e={e} />)}
+        {visibles.slice(0, 12).map((e) => (
+          <Chip key={e.id} e={e} />
+        ))}
         {visibles.length > 12 && (
           <li className="self-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
             +{visibles.length - 12} más en la tabla
@@ -135,7 +157,8 @@ function ChipsSinOrigen({
               title={`Corridas de menos de ${M3_MENOR} m³ — menos de una tabla cada una`}
               className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-tertiary)] transition hover:border-[var(--accent)] hover:text-[var(--text-secondary)]"
             >
-              {verMenores ? "Ocultar" : "Ver"} {menores.length} menor{menores.length === 1 ? "" : "es"}
+              {verMenores ? "Ocultar" : "Ver"} {menores.length} menor
+              {menores.length === 1 ? "" : "es"}
               <span className="font-mono font-normal">({volMenores.toFixed(3)} m³ en total)</span>
             </button>
           </li>
@@ -145,17 +168,36 @@ function ChipsSinOrigen({
   );
 }
 
-const SECTION_META: Record<CtpSection, { label: string; icon: typeof Boxes; cta: string; empty: string }> = {
+const SECTION_META: Record<
+  CtpSection,
+  { label: string; icon: typeof Boxes; cta: string; empty: string }
+> = {
   /* El CTA de Producción ya no abre un formulario en blanco (ADR-349): la
      producción se registra DESDE UN LOTE, con sus trozas a la vista. El lote se
      elige en `CtpElegirLoteModal`. */
-  produccion: { label: "Producción", icon: Boxes, cta: "Declarar producción", empty: "Sin transformaciones registradas. Elegí un lote en «Declarar producción»: salen sus trozas para elegir cuáles entran a la sierra." },
-  despacho: { label: "Despacho", icon: Truck, cta: "Nuevo despacho", empty: "Sin despachos registrados. Registrá la salida de producto con su GTF." },
+  produccion: {
+    label: "Producción",
+    icon: Boxes,
+    cta: "Declarar producción",
+    empty:
+      "Sin transformaciones registradas. Elegí un lote en «Declarar producción»: salen sus trozas para elegir cuáles entran a la sierra.",
+  },
+  despacho: {
+    label: "Despacho",
+    icon: Truck,
+    cta: "Nuevo despacho",
+    empty: "Sin despachos registrados. Registrá la salida de producto con su GTF.",
+  },
 };
 
 /** El buscador de la sección. Vive con la tabla: en la pantalla en Despacho,
  *  dentro del modal del libro en Producción — por eso está acá y no inline. */
-function BuscadorSeccion({ section, label, value, onChange }: {
+function BuscadorSeccion({
+  section,
+  label,
+  value,
+  onChange,
+}: {
   section: CtpSection;
   label: string;
   value: string;
@@ -164,7 +206,9 @@ function BuscadorSeccion({ section, label, value, onChange }: {
   return (
     <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
       <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-      <label htmlFor={`ctp-search-${section}`} className="sr-only">Buscar en {label}</label>
+      <label htmlFor={`ctp-search-${section}`} className="sr-only">
+        Buscar en {label}
+      </label>
       <input
         id={`ctp-search-${section}`}
         value={value}
@@ -184,7 +228,11 @@ function BuscadorSeccion({ section, label, value, onChange }: {
  * del libro (que en Producción es un modal) y, cuando el libro está cerrado, en
  * la pantalla — un error que sólo se ve abriendo un modal no se ve.
  */
-function AvisosDelLibro({ error, mensaje, onCerrarMensaje }: {
+function AvisosDelLibro({
+  error,
+  mensaje,
+  onCerrarMensaje,
+}: {
   error: string | null;
   mensaje: string | null;
   onCerrarMensaje: () => void;
@@ -194,13 +242,26 @@ function AvisosDelLibro({ error, mensaje, onCerrarMensaje }: {
       {error && (
         <div className="flex items-start gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]">
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
-          <div><strong>Error:</strong> {error}</div>
+          <div>
+            <strong>Error:</strong> {error}
+          </div>
         </div>
       )}
       {mensaje && (
-        <div className={`flex items-start justify-between gap-3 rounded-xl border-2 p-4 text-sm ${mensaje.startsWith("Error") ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"}`}>
-          <div className="flex items-start gap-2"><PackagePlus className="mt-0.5 h-5 w-5 shrink-0" /><span>{mensaje}</span></div>
-          <button type="button" onClick={onCerrarMensaje} className="shrink-0 text-xs font-bold underline opacity-70 hover:opacity-100">Cerrar</button>
+        <div
+          className={`flex items-start justify-between gap-3 rounded-xl border-2 p-4 text-sm ${mensaje.startsWith("Error") ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)]" : "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"}`}
+        >
+          <div className="flex items-start gap-2">
+            <PackagePlus className="mt-0.5 h-5 w-5 shrink-0" />
+            <span>{mensaje}</span>
+          </div>
+          <button
+            type="button"
+            onClick={onCerrarMensaje}
+            className="shrink-0 text-xs font-bold underline opacity-70 hover:opacity-100"
+          >
+            Cerrar
+          </button>
         </div>
       )}
     </>
@@ -219,7 +280,13 @@ function AvisosDelLibro({ error, mensaje, onCerrarMensaje }: {
  * lote, y el libro pasa a ser una CONSULTA que se abre desde «Opciones». No es
  * una copia: es la misma tabla, con el mismo estado, movida de sitio.
  */
-function ZonaLibro({ enModal, abierto, onCerrar, subtitulo, children }: {
+function ZonaLibro({
+  enModal,
+  abierto,
+  onCerrar,
+  subtitulo,
+  children,
+}: {
   enModal: boolean;
   abierto: boolean;
   onCerrar: () => void;
@@ -243,8 +310,6 @@ function ZonaLibro({ enModal, abierto, onCerrar, subtitulo, children }: {
     </AdminModal>
   );
 }
-
-
 
 export function CtpEntriesView({
   section,
@@ -273,7 +338,10 @@ export function CtpEntriesView({
 }) {
   const meta = SECTION_META[section];
   /** Columnas opcionales de Producción, elegibles y persistidas por dispositivo. */
-  const [colsProduccion, setColsProduccion] = useColumnasVisibles("ctp-produccion-cols", COLUMNAS_PRODUCCION_OPCIONALES);
+  const [colsProduccion, setColsProduccion] = useColumnasVisibles(
+    "ctp-produccion-cols",
+    COLUMNAS_PRODUCCION_OPCIONALES,
+  );
   /** Bandeja de anexos emitidos abierta desde la barra (consulta, sin despacho). */
   const [verBandeja, setVerBandeja] = useState(false);
   /**
@@ -291,6 +359,10 @@ export function CtpEntriesView({
   /* El apartado de simulación por permiso (ADR-409): no toca ninguna cifra de
      esta pestaña ni de las otras, así que su lectura se paga sólo al abrirlo. */
   const [saldoPermiso, setSaldoPermiso] = useState(false);
+  /* La corrida que el apartado manda a vincular. Va aparte de `vincularA` —que
+     busca en `entries`— porque el saldo no mira el período: una producción de
+     hace tres meses no está en el listado y el click quedaría muerto. */
+  const [vincularDelSaldo, setVincularDelSaldo] = useState<CorridaSinOrigen | null>(null);
   /** La corrida a la que se le va a vincular su materia prima. */
   const [vincularA, setVincularA] = useState<string | null>(null);
   /** Hoy, para la columna «Fecha consumo» de la lista vacía (no se re-calcula). */
@@ -302,16 +374,41 @@ export function CtpEntriesView({
 
   /** Todo lo que se SABE de la sección: fetch, filtros, orden y derivados. */
   const {
-    entries, loading, error, setError, recargar: load, totalSinFiltro,
-    conAnexo, totalAnexos, recargarAnexos: cargarAnexos, sinAnexo,
-    statusFilter, setStatusFilter, soloSinAnexo, setSoloSinAnexo,
-    sort, setSort, facetas, setFacetas, activos, panelId, abierto, alternar, opciones,
-    visible, totalesVista, kpis, statusCounts, kpisPrevios, etiquetaPrevio,
+    entries,
+    loading,
+    error,
+    setError,
+    recargar: load,
+    totalSinFiltro,
+    conAnexo,
+    totalAnexos,
+    recargarAnexos: cargarAnexos,
+    sinAnexo,
+    statusFilter,
+    setStatusFilter,
+    soloSinAnexo,
+    setSoloSinAnexo,
+    sort,
+    setSort,
+    facetas,
+    setFacetas,
+    activos,
+    panelId,
+    abierto,
+    alternar,
+    opciones,
+    visible,
+    totalesVista,
+    kpis,
+    statusCounts,
+    kpisPrevios,
+    etiquetaPrevio,
   } = useCtpSeccion(section, period, search);
   /** Corridas que existen pero el período activo no muestra — "Productos
    *  disponibles" no filtra por fecha, así que ya las cuenta. Sin este aviso
    *  se lee como que el import "se comió" un registro. */
-  const escondidasPorPeriodo = totalSinFiltro != null ? Math.max(0, totalSinFiltro - entries.length) : 0;
+  const escondidasPorPeriodo =
+    totalSinFiltro != null ? Math.max(0, totalSinFiltro - entries.length) : 0;
 
   /**
    * Los filtros: en la CABECERA de su columna, estilo Excel (Brandon, 2026-09-03).
@@ -341,9 +438,18 @@ export function CtpEntriesView({
     salida: section === "produccion" && colsProduccion.salida,
     permiso: section === "produccion" && colsProduccion.permiso,
   };
-  const filtroCol = (id: keyof typeof enLaCabecera, options: FacetaOpcion[], extra: { etiqueta?: (v: string) => string; placeholder?: string } = {}) =>
+  const filtroCol = (
+    id: keyof typeof enLaCabecera,
+    options: FacetaOpcion[],
+    extra: { etiqueta?: (v: string) => string; placeholder?: string } = {},
+  ) =>
     enLaCabecera[id]
-      ? { value: facetas[id] as ValorFiltro, options, onChange: (v: string[]) => setFaceta(id, v), ...extra }
+      ? {
+          value: facetas[id] as ValorFiltro,
+          options,
+          onChange: (v: string[]) => setFaceta(id, v),
+          ...extra,
+        }
       : undefined;
   /**
    * Los rangos numéricos («≥ 0.5 m³», «entre 10 y 20 piezas»): mismo `facetas`,
@@ -366,7 +472,10 @@ export function CtpEntriesView({
     species: filtroCol("species", opciones.species, { placeholder: "Todas" }),
     product: filtroCol("product", opciones.products),
     destino: filtroCol("destino", opciones.destinos),
-    salida: filtroCol("salida", opciones.salidas, { etiqueta: (v: string) => SALIDA_LABEL[v as ClaveSalida] ?? v, placeholder: "Todas" }),
+    salida: filtroCol("salida", opciones.salidas, {
+      etiqueta: (v: string) => SALIDA_LABEL[v as ClaveSalida] ?? v,
+      placeholder: "Todas",
+    }),
     permiso: filtroCol("permiso", opciones.permisos),
     /* Sólo en Producción: son sus columnas. Despacho no tiene consumido ni rend. */
     rangos:
@@ -383,7 +492,10 @@ export function CtpEntriesView({
   /** Carga masiva del parte de turno (ADR-323), sólo en Producción. */
   const [importarParte, setImportarParte] = useState(false);
   /** Con qué producto abrir el formulario (viene de Saldos; se consume una vez). */
-  const [productoDelStock, setProductoDelStock] = useState<{ producto: string; especie: string | null } | null>(null);
+  const [productoDelStock, setProductoDelStock] = useState<{
+    producto: string;
+    especie: string | null;
+  } | null>(null);
 
   // El producto que llega desde el stock abre el formulario una sola vez: se
   // avisa al padre para que lo limpie y volver a Saldos → Despacho no reabra
@@ -428,8 +540,12 @@ export function CtpEntriesView({
       })
       /* Es un aviso, no un bloqueo: sin la traza la pantalla sigue sirviendo
          para despachar, sólo que sin el resumen de lo que falta. */
-      .catch(() => { if (vivo) setSinCertificar(null); });
-    return () => { vivo = false; };
+      .catch(() => {
+        if (vivo) setSinCertificar(null);
+      });
+    return () => {
+      vivo = false;
+    };
   }, [section, period.from, period.to, entries.length]);
   const lotes = useLotesAserrio();
   /** Los lotes que se pueden aserrar hoy, con lo que tienen esperando: se elige
@@ -466,7 +582,8 @@ export function CtpEntriesView({
           return {
             lote: l,
             piezas: suyas.length,
-            volumenM3: Math.round(suyas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
+            volumenM3:
+              Math.round(suyas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
             /* Las que YA se aserraron (ADR-356): con esto la tarjeta puede
                decir que lo que se ve es el RESTO de un lote a medias, y no un
                lote nuevo esperando su primera corrida. */
@@ -524,15 +641,22 @@ export function CtpEntriesView({
    * afirmando que salió madera de la nada.
    */
   const sinOrigen = useMemo(
-    () => (section === "produccion"
-      ? entries.filter((e) =>
-          e.status === "registrado" && e.quantity != null &&
-          (e.volumeInputM3 == null || Number(e.volumeInputM3) <= 0))
-      : []),
+    () =>
+      section === "produccion"
+        ? entries.filter(
+            (e) =>
+              e.status === "registrado" &&
+              e.quantity != null &&
+              (e.volumeInputM3 == null || Number(e.volumeInputM3) <= 0),
+          )
+        : [],
     [section, entries],
   );
   const enProceso = useMemo(
-    () => (section === "produccion" ? entries.filter((e) => e.status === "registrado" && e.quantity == null) : []),
+    () =>
+      section === "produccion"
+        ? entries.filter((e) => e.status === "registrado" && e.quantity == null)
+        : [],
     [entries, section],
   );
   /** La corrida del panel, releída de la lista: si ya se declaró, desaparece. */
@@ -570,7 +694,8 @@ export function CtpEntriesView({
    * hay una segunda lectura de la misma madera que pueda decir otra cosa.
    */
   const trozasDeLaCorrida = useMemo(
-    () => (corridaAbiertaId ? lotes.trozas.filter((t) => t.consumidaEnId === corridaAbiertaId) : []),
+    () =>
+      corridaAbiertaId ? lotes.trozas.filter((t) => t.consumidaEnId === corridaAbiertaId) : [],
     [lotes.trozas, corridaAbiertaId],
   );
   /** El lote del que salió, si todavía existe: le da sus fechas al formulario. */
@@ -587,13 +712,16 @@ export function CtpEntriesView({
    */
   const restoDelLote = useMemo(() => {
     if (!loteDeLaCorrida || loteDeLaCorrida.status !== "abierto") return null;
-    const libres = lotes.trozas.filter((t) => t.loteAserrioId === loteDeLaCorrida.id && !t.consumidaEnId);
+    const libres = lotes.trozas.filter(
+      (t) => t.loteAserrioId === loteDeLaCorrida.id && !t.consumidaEnId,
+    );
     if (libres.length === 0) return null;
     return {
       loteId: loteDeLaCorrida.id,
       code: loteDeLaCorrida.code,
       trozas: libres,
-      volumenM3: Math.round(libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
+      volumenM3:
+        Math.round(libres.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0) * 10000) / 10000,
     };
   }, [loteDeLaCorrida, lotes.trozas]);
   /* «Producir este lote» abre el panel del lote, no un formulario en blanco: es
@@ -660,7 +788,10 @@ export function CtpEntriesView({
         tono: "info",
         msg: `Queda${pendientes === 1 ? "" : "n"} ${pendientes} guía${pendientes === 1 ? "" : "s"} sin anexo`,
         detail: `La siguiente es la N° ${siguiente.lineNo}${siguiente.gtfNumber ? ` · GTF ${siguiente.gtfNumber}` : ""}`,
-        accion: { label: `Emitir la N° ${siguiente.lineNo}`, onClick: () => setAnexoEntry(siguiente) },
+        accion: {
+          label: `Emitir la N° ${siguiente.lineNo}`,
+          onClick: () => setAnexoEntry(siguiente),
+        },
       });
     },
     [section, entries, pushToast],
@@ -684,9 +815,16 @@ export function CtpEntriesView({
     if (!annulId || annulReason.trim().length < 3) return;
     setPending(true);
     try {
-      const r = await fetch("/api/admin/forestal/ctp", { method: "PATCH", headers: csrfHeaders({ "Content-Type": "application/json" }), credentials: "include", body: JSON.stringify({ id: annulId, action: "annul", reason: annulReason.trim() }) });
+      const r = await fetch("/api/admin/forestal/ctp", {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        credentials: "include",
+        body: JSON.stringify({ id: annulId, action: "annul", reason: annulReason.trim() }),
+      });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
-      setAnnulId(null); setAnnulReason(""); await load();
+      setAnnulId(null);
+      setAnnulReason("");
+      await load();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setError(msg);
@@ -694,8 +832,9 @@ export function CtpEntriesView({
          dentro del modal del libro: el cartel de arriba quedaría tapado. El
          toast (z-70) sale por encima de cualquiera de los dos. */
       pushToast({ tono: "warning", msg: "No se pudo anular la línea", detail: msg });
+    } finally {
+      setPending(false);
     }
-    finally { setPending(false); }
   }
 
   async function sendToInventory(entryId: string) {
@@ -708,7 +847,9 @@ export function CtpEntriesView({
         credentials: "include",
         body: JSON.stringify({ entryId }),
       });
-      const json: { ok?: boolean; message?: string; error?: string } = await r.json().catch(() => ({}));
+      const json: { ok?: boolean; message?: string; error?: string } = await r
+        .json()
+        .catch(() => ({}));
       if (!r.ok) throw new Error(json.message ?? `HTTP ${r.status}`);
       setToProductMsg(json.message ?? "Creado como borrador en inventario.");
     } catch (e) {
@@ -717,7 +858,6 @@ export function CtpEntriesView({
       setToProductId(null);
     }
   }
-
 
   /**
    * Atajos de la vista, los mismos que en Ingresos para no tener que aprender
@@ -780,7 +920,9 @@ export function CtpEntriesView({
   }
 
   const toggleSort = (by: SortKey) =>
-    setSort((s) => (s.by === by ? { by, dir: s.dir === "asc" ? "desc" : "asc" } : { by, dir: "desc" }));
+    setSort((s) =>
+      s.by === by ? { by, dir: s.dir === "asc" ? "desc" : "asc" } : { by, dir: "desc" },
+    );
 
   /**
    * Los tres menús de la barra (ADR-360). Su contenido vive en
@@ -862,7 +1004,8 @@ export function CtpEntriesView({
           label: "sin origen",
           hint: "producto despachado sin corrida que lo ampare",
           tono: "error",
-          title: "Lo que salió y no puede decir de qué corrida vino: rompe la cadena de custodia. Tocá para ver cuál.",
+          title:
+            "Lo que salió y no puede decir de qué corrida vino: rompe la cadena de custodia. Tocá para ver cuál.",
           /* Lleva el foco al cartel, NO lo pliega adentro: ese aviso bloquea la
              emisión de un certificado ante SERFOR y tiene que seguir a la vista
              (decisión de Brandon). La pastilla dice el total, el cartel dice
@@ -893,7 +1036,8 @@ export function CtpEntriesView({
         label: "a medio declarar",
         hint: "admiten más producción bajo el techo",
         tono: "warning",
-        title: "Ya declararon, pero de la misma madera puede salir más (ADR-365). Se agrega desde la fila del libro.",
+        title:
+          "Ya declararon, pero de la misma madera puede salir más (ADR-365). Se agrega desde la fila del libro.",
       });
     }
     if (sinOrigen.length > 0) {
@@ -908,7 +1052,21 @@ export function CtpEntriesView({
       });
     }
     return items;
-  }, [section, kpis.abiertas, kpis.consumidoAbierto, kpis.sinOrigen, idsAmpliables, sinOrigen, sinAnexo, soloSinAnexo, setSoloSinAnexo, setAbrirDeclarar, setVincularA, sinCertificar, irAlCertificado]);
+  }, [
+    section,
+    kpis.abiertas,
+    kpis.consumidoAbierto,
+    kpis.sinOrigen,
+    idsAmpliables,
+    sinOrigen,
+    sinAnexo,
+    soloSinAnexo,
+    setSoloSinAnexo,
+    setAbrirDeclarar,
+    setVincularA,
+    sinCertificar,
+    irAlCertificado,
+  ]);
 
   const Icon = meta.icon;
   return (
@@ -952,16 +1110,24 @@ export function CtpEntriesView({
               ¿Cómo funciona esta pestaña?
             </summary>
             <p className="mt-2 text-sm leading-snug text-[var(--text-secondary)]">
-              Elegí en <b className="text-[var(--text-primary)]">Lotes</b> la madera que entra hoy a la sierra: abajo
-              sale su lista de trozas. Lo ya declarado está en{" "}
-              <b className="text-[var(--text-primary)]">Opciones → Producción · Todos y registrados</b>.{" "}
-              ¿La sierra ya cortó y el lote todavía no está armado? Usá{" "}
-              <b className="text-[var(--text-primary)]">Producir sin lote</b>.{" "}
-              Para ver cuánto puede dar todavía cada título habilitante, <b className="text-[var(--text-primary)]">Saldo por permiso</b>.
+              Elegí en <b className="text-[var(--text-primary)]">Lotes</b> la madera que entra hoy a
+              la sierra: abajo sale su lista de trozas. Lo ya declarado está en{" "}
+              <b className="text-[var(--text-primary)]">
+                Opciones → Producción · Todos y registrados
+              </b>
+              . ¿La sierra ya cortó y el lote todavía no está armado? Usá{" "}
+              <b className="text-[var(--text-primary)]">Producir sin lote</b>. Para ver cuánto puede
+              dar todavía cada título habilitante,{" "}
+              <b className="text-[var(--text-primary)]">Saldo por permiso</b>.
             </p>
           </details>
         ) : (
-          <BuscadorSeccion section={section} label={meta.label} value={searchInput} onChange={setSearchInput} />
+          <BuscadorSeccion
+            section={section}
+            label={meta.label}
+            value={searchInput}
+            onChange={setSearchInput}
+          />
         )}
         {/* Tres controles y no nueve (ADR-360): filtrar, el resto plegado en
             «Opciones», y el CTA. Lo pendiente —declarar una corrida abierta—
@@ -970,7 +1136,12 @@ export function CtpEntriesView({
           {/* Filtrar y elegir columnas son de la TABLA: en Producción viajan
               con ella adentro del modal del libro. */}
           {section === "despacho" && (
-            <BotonFiltros activos={activos} abierto={abierto} panelId={panelId} onToggle={alternar} />
+            <BotonFiltros
+              activos={activos}
+              abierto={abierto}
+              panelId={panelId}
+              onToggle={alternar}
+            />
           )}
           <ActionMenu
             label="Opciones"
@@ -1041,13 +1212,19 @@ export function CtpEntriesView({
               )}
             </button>
           ) : (
-            <button type="button" onClick={() => setShowForm(true)} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white shadow-sm transition hover:brightness-110 sm:flex-none">
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white shadow-sm transition hover:brightness-110 sm:flex-none"
+            >
               <Plus className="h-5 w-5" /> {meta.cta}
             </button>
           )}
         </div>
       </div>
-      {showSim && section === "produccion" && <CtpSimuladorModal onClose={() => setShowSim(false)} />}
+      {showSim && section === "produccion" && (
+        <CtpSimuladorModal onClose={() => setShowSim(false)} />
+      )}
 
       {/* El selector de lote: buscar, comparar y elegir sobre qué se trabaja.
           Reusa las MISMAS acciones que armaba el menú (`lotesConMadera`,
@@ -1094,37 +1271,71 @@ export function CtpEntriesView({
       <BarraDeuda items={deudas} />
 
       {/* Vincular: las cinco reglas se revisan ANTES de escribir. */}
-      {vincularA && (() => {
-        const e = entries.find((x) => x.id === vincularA);
-        if (!e) return null;
-        return (
-          <CtpVincularMateriaPrimaModal
-            corrida={{
-              id: e.id,
-              lineNo: e.lineNo,
-              especie: e.speciesCommon,
-              producidoM3: Number(e.quantity ?? 0),
-              /* El listado del libro no trae los paquetes: sin ellos la regla
+      {vincularA &&
+        (() => {
+          const e = entries.find((x) => x.id === vincularA);
+          if (!e) return null;
+          return (
+            <CtpVincularMateriaPrimaModal
+              corrida={{
+                id: e.id,
+                lineNo: e.lineNo,
+                especie: e.speciesCommon,
+                producidoM3: Number(e.quantity ?? 0),
+                /* El listado del libro no trae los paquetes: sin ellos la regla
                  del largo AVISA («no se puede comprobar») en vez de callarse. */
-              largoMaxPiezaM: null,
-              fecha: e.entryDate,
-              /* Lo que la pantalla sabe; el servidor mira además consumos y lote. */
-              tieneMateriaPrima: e.volumeInputM3 != null && Number(e.volumeInputM3) > 0,
-            }}
-            lotes={lotes.lotes}
-            onCerrar={() => setVincularA(null)}
-            onListo={(msg) => {
-              setVincularA(null);
-              setToProductMsg(msg);
-              void load();
-            }}
-          />
-        );
-      })()}
+                largoMaxPiezaM: null,
+                fecha: e.entryDate,
+                /* Lo que la pantalla sabe; el servidor mira además consumos y lote. */
+                tieneMateriaPrima: e.volumeInputM3 != null && Number(e.volumeInputM3) > 0,
+              }}
+              lotes={lotes.lotes}
+              onCerrar={() => setVincularA(null)}
+              onListo={(msg) => {
+                setVincularA(null);
+                setToProductMsg(msg);
+                void load();
+              }}
+            />
+          );
+        })()}
 
       {/* El apartado de simulación por permiso — sólo lee (ADR-409). */}
       {section === "produccion" && (
-        <CtpSaldoPermisoModal open={saldoPermiso} onClose={() => setSaldoPermiso(false)} />
+        <CtpSaldoPermisoModal
+          open={saldoPermiso}
+          onClose={() => setSaldoPermiso(false)}
+          onVincular={(c) => {
+            setSaldoPermiso(false);
+            setVincularDelSaldo(c);
+          }}
+        />
+      )}
+
+      {/* Vincular una corrida que llegó desde el apartado «Saldo por permiso»:
+          los datos vienen con ella, no del listado del período. */}
+      {vincularDelSaldo && (
+        <CtpVincularMateriaPrimaModal
+          corrida={{
+            id: vincularDelSaldo.id,
+            lineNo: vincularDelSaldo.lineNo,
+            especie: vincularDelSaldo.especie,
+            producidoM3: vincularDelSaldo.unidad === "m3" ? Number(vincularDelSaldo.cantidad) : 0,
+            /* Sin los paquetes a mano, la regla del largo AVISA en vez de callarse. */
+            largoMaxPiezaM: null,
+            fecha: vincularDelSaldo.fecha.slice(0, 10),
+            /* Por definición de lo que el saldo resta: son las corridas sin
+               materia prima atribuida (ADR-409). */
+            tieneMateriaPrima: false,
+          }}
+          lotes={lotes.lotes}
+          onCerrar={() => setVincularDelSaldo(null)}
+          onListo={(msg) => {
+            setVincularDelSaldo(null);
+            setToProductMsg(msg);
+            void load();
+          }}
+        />
       )}
 
       {/* El cubicador del Libro: cubicar y declarar sin lote ni consumo. */}
@@ -1142,7 +1353,11 @@ export function CtpEntriesView({
       {/* Con el libro cerrado sus carteles no tienen dónde salir: se muestran
           acá. Nunca aparecen dos veces — `ZonaLibro` sólo existe abierta. */}
       {section === "produccion" && !verLibro && (
-        <AvisosDelLibro error={error} mensaje={toProductMsg} onCerrarMensaje={() => setToProductMsg(null)} />
+        <AvisosDelLibro
+          error={error}
+          mensaje={toProductMsg}
+          onCerrarMensaje={() => setToProductMsg(null)}
+        />
       )}
 
       {/* La corrida que ya consumió, con SUS TROZAS arriba de la tabla del
@@ -1335,7 +1550,9 @@ export function CtpEntriesView({
         <div
           ref={refSinCertificar}
           className={`rounded-2xl transition-shadow duration-[var(--dur-slow)] ${
-            resaltarCertificado ? "ring-2 ring-[var(--data-error-500)] ring-offset-2 ring-offset-[var(--surface-canvas)]" : ""
+            resaltarCertificado
+              ? "ring-2 ring-[var(--data-error-500)] ring-offset-2 ring-offset-[var(--surface-canvas)]"
+              : ""
           }`}
         >
           <CtpSinCertificar
@@ -1360,177 +1577,256 @@ export function CtpEntriesView({
         onCerrar={() => setVerLibro(false)}
         subtitulo={`${visible.length} ${visible.length === 1 ? "línea" : "líneas"} en ${period.label}`}
       >
-      {/* En el modal el buscador y los filtros van con la tabla: adentro se
+        {/* En el modal el buscador y los filtros van con la tabla: adentro se
           consulta el libro entero sin tener que cerrarlo para buscar. */}
-      {section === "produccion" && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <BuscadorSeccion section={section} label={meta.label} value={searchInput} onChange={setSearchInput} />
-          <div className="flex items-center gap-2">
-            <BotonFiltros activos={activos} abierto={abierto} panelId={panelId} onToggle={alternar} />
-            <ColumnasMenu columnas={COLUMNAS_PRODUCCION_OPCIONALES} visibles={colsProduccion} onChange={setColsProduccion} />
+        {section === "produccion" && (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <BuscadorSeccion
+              section={section}
+              label={meta.label}
+              value={searchInput}
+              onChange={setSearchInput}
+            />
+            <div className="flex items-center gap-2">
+              <BotonFiltros
+                activos={activos}
+                abierto={abierto}
+                panelId={panelId}
+                onToggle={alternar}
+              />
+              <ColumnasMenu
+                columnas={COLUMNAS_PRODUCCION_OPCIONALES}
+                visibles={colsProduccion}
+                onChange={setColsProduccion}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* "Importé 17 m³ y acá sale menos": no se perdió nada — el período
+        {/* "Importé 17 m³ y acá sale menos": no se perdió nada — el período
           activo (por fecha) esconde corridas que SÍ existen. "Productos
           disponibles" no filtra por fecha y ya las cuenta; acá se avisa y se
           ofrece el mismo atajo en vez de mandar a buscarlo en el selector. */}
-      {escondidasPorPeriodo > 0 && (
-        <p className="flex flex-wrap items-center gap-2 rounded-xl bg-[var(--data-info-500)]/10 px-4 py-2.5 text-sm font-semibold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
-          <Calendar className="h-4 w-4 shrink-0" aria-hidden />
-          <span>
-            {escondidasPorPeriodo} {escondidasPorPeriodo === 1 ? "corrida más existe" : "corridas más existen"} fuera
-            de «{period.label}» — Productos disponibles ya {escondidasPorPeriodo === 1 ? "la cuenta" : "las cuenta"}.
-          </span>
-          {onVerTodoElHistorico && (
-            <button
-              type="button"
-              onClick={onVerTodoElHistorico}
-              className="font-bold underline decoration-dotted underline-offset-2 hover:text-[var(--text-primary)]"
-            >
-              Ver todo el histórico
-            </button>
-          )}
-        </p>
-      )}
+        {escondidasPorPeriodo > 0 && (
+          <p className="flex flex-wrap items-center gap-2 rounded-xl bg-[var(--data-info-500)]/10 px-4 py-2.5 text-sm font-semibold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
+            <Calendar className="h-4 w-4 shrink-0" aria-hidden />
+            <span>
+              {escondidasPorPeriodo}{" "}
+              {escondidasPorPeriodo === 1 ? "corrida más existe" : "corridas más existen"} fuera de
+              «{period.label}» — Productos disponibles ya{" "}
+              {escondidasPorPeriodo === 1 ? "la cuenta" : "las cuenta"}.
+            </span>
+            {onVerTodoElHistorico && (
+              <button
+                type="button"
+                onClick={onVerTodoElHistorico}
+                className="font-bold underline decoration-dotted underline-offset-2 hover:text-[var(--text-primary)]"
+              >
+                Ver todo el histórico
+              </button>
+            )}
+          </p>
+        )}
 
-      {/* Filtro por estado (chips, consistente con Ingresos): oculta anulados de un clic. */}
-      {/* La fila de estados sólo aparece cuando hay MÁS DE UNO que elegir.
+        {/* Filtro por estado (chips, consistente con Ingresos): oculta anulados de un clic. */}
+        {/* La fila de estados sólo aparece cuando hay MÁS DE UNO que elegir.
           Con todo registrado salían «Todos 8» y «Registrados 8» —el mismo
           número dos veces— y un filtro que no puede cambiar nada: tocarlo
           devuelve exactamente las mismas ocho filas. */}
-      {statusCounts.total > 0 && statusCounts.anulado > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <EntryChip label="Todos" count={statusCounts.total} active={statusFilter === ""} onClick={() => setStatusFilter("")} />
-          <EntryChip label="Registrados" count={statusCounts.registrado} active={statusFilter === "registrado"} onClick={() => setStatusFilter((f) => (f === "registrado" ? "" : "registrado"))} />
-          {statusCounts.anulado > 0 && (
-            <EntryChip label="Anulados" count={statusCounts.anulado} active={statusFilter === "anulado"} tone="muted" onClick={() => setStatusFilter((f) => (f === "anulado" ? "" : "anulado"))} />
-          )}
-        </div>
-      )}
+        {statusCounts.total > 0 && statusCounts.anulado > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <EntryChip
+              label="Todos"
+              count={statusCounts.total}
+              active={statusFilter === ""}
+              onClick={() => setStatusFilter("")}
+            />
+            <EntryChip
+              label="Registrados"
+              count={statusCounts.registrado}
+              active={statusFilter === "registrado"}
+              onClick={() => setStatusFilter((f) => (f === "registrado" ? "" : "registrado"))}
+            />
+            {statusCounts.anulado > 0 && (
+              <EntryChip
+                label="Anulados"
+                count={statusCounts.anulado}
+                active={statusFilter === "anulado"}
+                tone="muted"
+                onClick={() => setStatusFilter((f) => (f === "anulado" ? "" : "anulado"))}
+              />
+            )}
+          </div>
+        )}
 
-      {abierto && (
-        <CtpFiltrosPanel
-          id={panelId}
-          activos={activos}
-          /* `soloMobile` = «esta columna ya tiene su filtro en la cabecera».
+        {abierto && (
+          <CtpFiltrosPanel
+            id={panelId}
+            activos={activos}
+            /* `soloMobile` = «esta columna ya tiene su filtro en la cabecera».
              En desktop el panel se queda con las marcas y con lo que la tabla
              no está mostrando; en móvil (sin tabla) los muestra todos. */
-          selects={[
-            { id: "species", label: "Especie", value: facetas.species, options: opciones.species, soloMobile: enLaCabecera.species },
-            { id: "product", label: "Producto", value: facetas.product, options: opciones.products, soloMobile: enLaCabecera.product },
-            ...(section === "despacho"
-              ? [{ id: "destino", label: "Destino", value: facetas.destino, options: opciones.destinos, soloMobile: enLaCabecera.destino }]
-              : [
-                  {
-                    id: "salida",
-                    label: "Salida",
-                    value: facetas.salida,
-                    options: opciones.salidas,
-                    etiqueta: (v: string) => SALIDA_LABEL[v as ClaveSalida] ?? v,
-                    soloMobile: enLaCabecera.salida,
-                  },
-                  { id: "permiso", label: "N° Permiso", value: facetas.permiso, options: opciones.permisos, soloMobile: enLaCabecera.permiso },
-                ]),
-          ]}
-          toggles={[{ id: "cites", label: "CITES", on: facetas.cites === true }]}
-          onSelect={setFaceta}
-          onToggle={() => setFacetas((f) => ({ ...f, cites: f.cites === true ? undefined : true }))}
-          onLimpiar={() => setFacetas({})}
+            selects={[
+              {
+                id: "species",
+                label: "Especie",
+                value: facetas.species,
+                options: opciones.species,
+                soloMobile: enLaCabecera.species,
+              },
+              {
+                id: "product",
+                label: "Producto",
+                value: facetas.product,
+                options: opciones.products,
+                soloMobile: enLaCabecera.product,
+              },
+              ...(section === "despacho"
+                ? [
+                    {
+                      id: "destino",
+                      label: "Destino",
+                      value: facetas.destino,
+                      options: opciones.destinos,
+                      soloMobile: enLaCabecera.destino,
+                    },
+                  ]
+                : [
+                    {
+                      id: "salida",
+                      label: "Salida",
+                      value: facetas.salida,
+                      options: opciones.salidas,
+                      etiqueta: (v: string) => SALIDA_LABEL[v as ClaveSalida] ?? v,
+                      soloMobile: enLaCabecera.salida,
+                    },
+                    {
+                      id: "permiso",
+                      label: "N° Permiso",
+                      value: facetas.permiso,
+                      options: opciones.permisos,
+                      soloMobile: enLaCabecera.permiso,
+                    },
+                  ]),
+            ]}
+            toggles={[{ id: "cites", label: "CITES", on: facetas.cites === true }]}
+            onSelect={setFaceta}
+            onToggle={() =>
+              setFacetas((f) => ({ ...f, cites: f.cites === true ? undefined : true }))
+            }
+            onLimpiar={() => setFacetas({})}
+          />
+        )}
+
+        {/**
+         * Los rangos puestos, a la vista y con su cruz.
+         *
+         * Un rango vive en la cabecera de su columna, y esa columna se puede
+         * APAGAR desde «Columnas»: sin este renglón quedaría la tabla acotada y
+         * ningún control para desacotarla. Misma regla que los chips del patio —
+         * un filtro escondido que explica por qué falta madera es peor que un
+         * renglón de más.
+         */}
+        {rangosPuestos(facetas).length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {rangosPuestos(facetas).map(({ campo, texto }) => (
+              <button
+                key={campo}
+                type="button"
+                onClick={() => setRango(campo, { min: null, max: null })}
+                title="Quitar este rango"
+                className="inline-flex items-center gap-1 rounded-full border-2 border-[var(--accent)] bg-primary/10 px-2.5 py-1 text-sm font-bold tabular-nums text-[var(--accent-ink)] transition-colors hover:bg-primary/20 dark:text-[var(--accent)]"
+              >
+                {texto}
+                <X className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            ))}
+          </div>
+        )}
+
+        <AvisosDelLibro
+          error={error}
+          mensaje={toProductMsg}
+          onCerrarMensaje={() => setToProductMsg(null)}
         />
-      )}
 
-      {/**
-       * Los rangos puestos, a la vista y con su cruz.
-       *
-       * Un rango vive en la cabecera de su columna, y esa columna se puede
-       * APAGAR desde «Columnas»: sin este renglón quedaría la tabla acotada y
-       * ningún control para desacotarla. Misma regla que los chips del patio —
-       * un filtro escondido que explica por qué falta madera es peor que un
-       * renglón de más.
-       */}
-      {rangosPuestos(facetas).length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          {rangosPuestos(facetas).map(({ campo, texto }) => (
-            <button
-              key={campo}
-              type="button"
-              onClick={() => setRango(campo, { min: null, max: null })}
-              title="Quitar este rango"
-              className="inline-flex items-center gap-1 rounded-full border-2 border-[var(--accent)] bg-primary/10 px-2.5 py-1 text-sm font-bold tabular-nums text-[var(--accent-ink)] transition-colors hover:bg-primary/20 dark:text-[var(--accent)]"
-            >
-              {texto}
-              <X className="h-3.5 w-3.5" aria-hidden />
-            </button>
-          ))}
-        </div>
-      )}
-
-      <AvisosDelLibro error={error} mensaje={toProductMsg} onCerrarMensaje={() => setToProductMsg(null)} />
-
-      {/* Las filas viven aparte (CtpEntriesTabla): acá quedan el estado, los
+        {/* Las filas viven aparte (CtpEntriesTabla): acá quedan el estado, los
           KPIs, los filtros y los modales. */}
-      <CtpEntriesTabla
-        section={section}
-        visible={filasEnPagina}
-        sort={sort}
-        onSort={toggleSort}
-        conAnexo={conAnexo}
-        toProductId={toProductId}
-        onChain={setChainEntry}
-        onAnexo={setAnexoEntry}
-        onSendInventory={sendToInventory}
-        onAnnul={(id) => { setAnnulId(id); setAnnulReason(""); }}
-        ampliables={idsAmpliables}
-        onPapeles={setPapelesEntry}
-        onGuia={setGuiaEntry}
-        onAmpliar={(id) => {
-          /* Un solo panel arriba de la tabla: abrir éste cierra el del lote y el
+        <CtpEntriesTabla
+          section={section}
+          visible={filasEnPagina}
+          sort={sort}
+          onSort={toggleSort}
+          conAnexo={conAnexo}
+          toProductId={toProductId}
+          onChain={setChainEntry}
+          onAnexo={setAnexoEntry}
+          onSendInventory={sendToInventory}
+          onAnnul={(id) => {
+            setAnnulId(id);
+            setAnnulReason("");
+          }}
+          ampliables={idsAmpliables}
+          onPapeles={setPapelesEntry}
+          onGuia={setGuiaEntry}
+          onAmpliar={(id) => {
+            /* Un solo panel arriba de la tabla: abrir éste cierra el del lote y el
              de la corrida sin declarar, como entre ellos dos. */
-          setLoteProd("");
-          setCorridaAbiertaId(null);
-          setAmpliarId((actual) => (actual === id ? null : id));
-        }}
-        totalesVista={totalesVista}
-        colsProduccion={colsProduccion}
-        filtrosColumna={filtrosColumna}
-      />
-
-      {visible.length > 0 && (
-        <CtpPaginacion
-          rango={rango}
-          porPagina={porPagina}
-          onPorPagina={setPorPagina}
-          onIr={ir}
-          sustantivo={section === "produccion" ? "corrida" : "despacho"}
-          plural={section === "produccion" ? "corridas" : "despachos"}
+            setLoteProd("");
+            setCorridaAbiertaId(null);
+            setAmpliarId((actual) => (actual === id ? null : id));
+          }}
+          totalesVista={totalesVista}
+          colsProduccion={colsProduccion}
+          filtrosColumna={filtrosColumna}
         />
-      )}
 
-      {/* Filtro activo sin resultados (pero sí hay datos): distinto de "sin datos". */}
-      {!loading && entries.length > 0 && visible.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-          Ninguna línea {statusFilter === "anulado" ? "anulada" : statusFilter === "registrado" ? "registrada" : ""} en {period.label}.
-        </div>
-      )}
+        {visible.length > 0 && (
+          <CtpPaginacion
+            rango={rango}
+            porPagina={porPagina}
+            onPorPagina={setPorPagina}
+            onIr={ir}
+            sustantivo={section === "produccion" ? "corrida" : "despacho"}
+            plural={section === "produccion" ? "corridas" : "despachos"}
+          />
+        )}
 
-      {/* ── Estados compartidos (vacío / cargando) ── */}
-      {!loading && entries.length === 0 && (
-        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
-          <Icon className="mx-auto mb-3 h-10 w-10 opacity-30" />
-          <p className="text-base font-medium">{search.trim() ? "Ninguna línea coincide con la búsqueda." : meta.empty}</p>
-          {!search.trim() && period.from && (
-            <p className="mt-1 text-sm">Mostrando {period.label} — puede haber líneas fuera de este período.</p>
-          )}
-        </div>
-      )}
-      {loading && <TablaSkeleton filas={4} columnas={9} />}
+        {/* Filtro activo sin resultados (pero sí hay datos): distinto de "sin datos". */}
+        {!loading && entries.length > 0 && visible.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
+            Ninguna línea{" "}
+            {statusFilter === "anulado"
+              ? "anulada"
+              : statusFilter === "registrado"
+                ? "registrada"
+                : ""}{" "}
+            en {period.label}.
+          </div>
+        )}
+
+        {/* ── Estados compartidos (vacío / cargando) ── */}
+        {!loading && entries.length === 0 && (
+          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-12 text-center text-[var(--text-tertiary)]">
+            <Icon className="mx-auto mb-3 h-10 w-10 opacity-30" />
+            <p className="text-base font-medium">
+              {search.trim() ? "Ninguna línea coincide con la búsqueda." : meta.empty}
+            </p>
+            {!search.trim() && period.from && (
+              <p className="mt-1 text-sm">
+                Mostrando {period.label} — puede haber líneas fuera de este período.
+              </p>
+            )}
+          </div>
+        )}
+        {loading && <TablaSkeleton filas={4} columnas={9} />}
       </ZonaLibro>
 
       {importarParte && (
         <CtpProduccionImportModal
-          onListo={() => { void load(); }}
+          onListo={() => {
+            void load();
+          }}
           onClose={() => setImportarParte(false)}
         />
       )}
@@ -1542,7 +1838,10 @@ export function CtpEntriesView({
         <CtpDespachoGuiaModal
           presetProducto={productoDelStock?.producto ?? null}
           presetEspecie={productoDelStock?.especie ?? null}
-          onClose={() => { setShowForm(false); setProductoDelStock(null); }}
+          onClose={() => {
+            setShowForm(false);
+            setProductoDelStock(null);
+          }}
           onSaved={({ lineas, offline }) => {
             setShowForm(false);
             setProductoDelStock(null);
@@ -1557,7 +1856,8 @@ export function CtpEntriesView({
               pushToast({
                 tono: "success",
                 msg: `Guía registrada · ${lineas} ${lineas === 1 ? "línea" : "líneas"}`,
-                detail: "Ya se puede emitir el anexo 04 y el certificado desde la ficha del despacho.",
+                detail:
+                  "Ya se puede emitir el anexo 04 y el certificado desde la ficha del despacho.",
               });
             }
           }}
@@ -1568,7 +1868,10 @@ export function CtpEntriesView({
           rows={[]}
           abrirHistorial
           onAviso={(msg, tono) => pushToast({ tono, msg })}
-          onCerrar={() => { setVerBandeja(false); void cargarAnexos(); }}
+          onCerrar={() => {
+            setVerBandeja(false);
+            void cargarAnexos();
+          }}
         />
       )}
 
@@ -1577,7 +1880,11 @@ export function CtpEntriesView({
           rows={[]}
           especieGlobal={anexoEntry.speciesCommon ?? undefined}
           ctpEntryId={anexoEntry.id}
-          declarado={{ cantidad: Number(anexoEntry.quantity ?? 0), unidad: anexoEntry.unit, piezas: anexoEntry.pieces }}
+          declarado={{
+            cantidad: Number(anexoEntry.quantity ?? 0),
+            unidad: anexoEntry.unit,
+            piezas: anexoEntry.pieces,
+          }}
           // El anexo y la guía son los dos papeles del mismo camión: se miran
           // en el mismo modal en vez de en dos pantallas.
           despacho={anexoEntry.section === "despacho" ? anexoEntry : undefined}
@@ -1595,7 +1902,13 @@ export function CtpEntriesView({
       {/* Al cerrar se recarga: en la ficha se emite la GTF y se edita la atribución,
           y sin esto la fila seguía mostrando el número y el origen viejos. */}
       {chainEntry && section === "despacho" && (
-        <CtpDespachoDetalleModal entry={chainEntry} onClose={() => { setChainEntry(null); void load(); }} />
+        <CtpDespachoDetalleModal
+          entry={chainEntry}
+          onClose={() => {
+            setChainEntry(null);
+            void load();
+          }}
+        />
       )}
       {/* Los papeles que viajan con el camión, archivados y etiquetados. */}
       {guiaEntry && (
@@ -1620,22 +1933,57 @@ export function CtpEntriesView({
           onClose={() => setPapelesEntry(null)}
           onListo={(msg) => {
             setPapelesEntry(null);
-            pushToast({ tono: "success", msg, detail: "Están en el Drive, en «Papeles de despacho (CTP)»." });
+            pushToast({
+              tono: "success",
+              msg,
+              detail: "Están en el Drive, en «Papeles de despacho (CTP)».",
+            });
           }}
         />
       )}
 
-      {chainEntry && section === "produccion" && <CtpProduccionDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />}
+      {chainEntry && section === "produccion" && (
+        <CtpProduccionDetalleModal entry={chainEntry} onClose={() => setChainEntry(null)} />
+      )}
 
       {annulId && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => setAnnulId(null)}>
-          <div className="w-full max-w-md rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Anular línea</CardTitle>
-            <p className="mt-1 text-sm text-[var(--text-tertiary)]">Indicá el motivo (queda en el historial, no se borra).</p>
-            <input autoFocus value={annulReason} onChange={(e) => setAnnulReason(e.target.value)} placeholder="Motivo (min 3 caracteres)" className="mt-3 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm outline-none focus:border-[var(--data-error-500)]" />
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setAnnulId(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+              Anular línea
+            </CardTitle>
+            <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+              Indicá el motivo (queda en el historial, no se borra).
+            </p>
+            <input
+              autoFocus
+              value={annulReason}
+              onChange={(e) => setAnnulReason(e.target.value)}
+              placeholder="Motivo (min 3 caracteres)"
+              className="mt-3 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm outline-none focus:border-[var(--data-error-500)]"
+            />
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setAnnulId(null)} className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]">Cancelar</button>
-              <button type="button" disabled={annulReason.trim().length < 3 || pending} onClick={annul} className="inline-flex h-10 items-center rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">Confirmar anulación</button>
+              <button
+                type="button"
+                onClick={() => setAnnulId(null)}
+                className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={annulReason.trim().length < 3 || pending}
+                onClick={annul}
+                className="inline-flex h-10 items-center rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              >
+                Confirmar anulación
+              </button>
             </div>
           </div>
         </div>
@@ -1649,8 +1997,18 @@ export function CtpEntriesView({
 /** Encabezado de columna ordenable: click alterna asc/desc; indica el estado con flecha. */
 
 /** Chip de filtro por estado (mismo lenguaje que los de Ingresos). */
-function EntryChip({ label, count, active, onClick, tone = "accent" }: {
-  label: string; count: number; active: boolean; onClick: () => void; tone?: "accent" | "muted";
+function EntryChip({
+  label,
+  count,
+  active,
+  onClick,
+  tone = "accent",
+}: {
+  label: string;
+  count: number;
+  active: boolean;
+  onClick: () => void;
+  tone?: "accent" | "muted";
 }) {
   return (
     <button
@@ -1666,7 +2024,11 @@ function EntryChip({ label, count, active, onClick, tone = "accent" }: {
       }`}
     >
       {label}
-      <span className={`rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] tabular-nums ${active ? "bg-[var(--surface-raised)]/70" : "bg-[var(--surface-sunken)]"}`}>{count}</span>
+      <span
+        className={`rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] tabular-nums ${active ? "bg-[var(--surface-raised)]/70" : "bg-[var(--surface-sunken)]"}`}
+      >
+        {count}
+      </span>
     </button>
   );
 }

@@ -72,6 +72,21 @@ pantalla cambia de base sin volver a pedir nada, y el 56 % vive en un solo lugar
 `ForestCtpDB.produccionSinMateriaPrima` define «sin lote» de forma literal: sin consumos y sin
 `volumeInputM3`. **Sin período**: el saldo de un título habilitante no empieza el día 1 del mes.
 
+### 5. Lo que el apartado deja hacer, además de mirar
+
+Un cuadro que sólo mira no cambia nada. Las tres cosas que se pueden hacer desde ahí salen del
+mismo hecho: **el libro que ya venía cargando sin lote llega con todo bajo «Sin permiso declarado»**
+(ocho de ocho corridas, en el tenant de pruebas).
+
+| Acción | Qué reusa | Por qué ahí |
+|---|---|---|
+| **Asignar un permiso a varias corridas** | `corregirLinea` (ADR-401/402), una por una | Es donde se ve el montón. Se eligen cuáles, se dice cuántos m³ se mueven y el resultado se detalla línea por línea: el servidor rechaza las que ya tienen materia prima y las de un mes cerrado |
+| **Vincular la materia prima** | el MISMO `CtpVincularMateriaPrimaModal` de la pestaña, con sus cinco reglas | La corrida que el cuadro resta es justo la que no dice de qué madera salió. Los datos viajan con la corrida y no del listado del período: el saldo no mira período, y una producción de hace tres meses dejaría el click muerto |
+| **Bajarlo en Excel o en papel** | `ctp-print-shared` y el patrón de `ctp-export` | Las dos salidas repiten la nota metodológica. Un Excel sin esas cuatro líneas se lee como un informe de capacidad, y es una simulación. El Excel trae además la hoja de las producciones que sostienen cada resta: sin ella el número no se puede auditar contra el libro |
+
+El relleno masivo es **sólo de `originCode`**: es el campo que hoy es un hueco (ADR-402 §3), no una
+afirmación que algo esté citando. Extenderlo a otros campos necesita su propio ADR.
+
 ## Consecuencias
 
 - Aparece una lectura cara (el patio entero agregado): se paga **sólo al abrir el apartado**, nunca
@@ -79,6 +94,9 @@ pantalla cambia de base sin volver a pedir nada, y el 56 % vive en un solo lugar
 - El apartado hereda el tope de la lectura del patio (5.000 piezas). Cuando trunca, lo **dice**.
 - Una corrida sin lote sigue sin trozas atribuidas: el permiso declarado **no es** cadena de
   custodia. Vincular la materia prima real sigue siendo el acto aparte de ADR-408.
+- El apartado no es sólo lectura: desde ahí se asigna permiso en tanda, se vincula la materia prima
+  y se baja el cuadro. Ninguna de las tres inventa un camino nuevo — todas entran por el que ya
+  existía.
 - Se arreglaron dos cosas de ADR-408 que este camino destapó al usarlo de verdad:
   1. el código de paquete era `SL-1`, `SL-2`… y es **único en toda la planta**: la segunda
      producción sin lote chocaba. Ahora sigue la serie de la planta (`sugerirCodigoPaquete`);
