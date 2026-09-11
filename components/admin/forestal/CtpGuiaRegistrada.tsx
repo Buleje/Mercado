@@ -19,6 +19,7 @@ import { documentoGtfSalida } from "@/lib/forestal/ctp-gtf-print";
 import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { cadenaDeGuia, despachoDeGuia, lineasDeGuia } from "@/lib/forestal/guia-desde-lista";
 import { useEspeciesConCatalogo } from "./ctp-especie-campo";
+import CtpVentaDeLaGuia from "./CtpVentaDeLaGuia";
 import { faltantesGtf, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { volumenTotal, type FilaDespacho } from "@/lib/forestal/despacho-lista";
 import { hayNovedades } from "@/lib/forestal/ctp-cola-archivado";
@@ -104,6 +105,11 @@ export default function CtpGuiaRegistrada({
 
   return (
     <div className="space-y-3">
+      {/* La plata de la guía, acá: es el único momento en que el operador tiene
+          junto el total, el cliente y la guía recién registrada. Se dibuja sola
+          sólo si la lista salió con precio (ADR-322 + ADR-141). */}
+      <CtpVentaDeLaGuia filas={filas} datos={datos} gtfNumber={gtfNumber} fecha={emision} />
+
       <div className="rounded-2xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-5 dark:bg-[var(--data-success-500)]/10">
         <p className="flex items-center gap-2 text-base font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
           <Check className="h-5 w-5 shrink-0" />
