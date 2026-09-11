@@ -15,7 +15,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Check, X, AlertTriangle, Info, RotateCcw } from "@buleje/design-system/icons";
+import { Check, X, AlertTriangle, Info, RotateCcw, ChevronRight } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 export type ToastTono = "success" | "info" | "warning" | "error";
@@ -27,6 +27,13 @@ export interface ActionToast {
   detail?: string;
   /** Si viene, se muestra "Deshacer" y el toast dura un poco más. */
   undo?: () => void;
+  /**
+   * El paso siguiente, con su nombre puesto. Es hermano de `undo` —también
+   * alarga el toast— pero mira para adelante: «Emitir el N° 15» después de
+   * cerrar el anexo del N° 12. Sin esto, encadenar un trabajo repetitivo
+   * obligaba a volver a buscar la fila a mano cada vez.
+   */
+  accion?: { label: string; onClick: () => void };
   exiting?: boolean;
 }
 
@@ -53,7 +60,7 @@ export function useActionToasts() {
   const push = useCallback((t: Omit<ActionToast, "id" | "exiting">) => {
     const id = seq++;
     setToasts((prev) => [...prev.slice(-2), { ...t, id }]); // máx 3 en pantalla
-    const timer = setTimeout(() => { quitar(id); timers.current.delete(id); }, t.undo ? DUR_UNDO : DUR);
+    const timer = setTimeout(() => { quitar(id); timers.current.delete(id); }, t.undo || t.accion ? DUR_UNDO : DUR);
     timers.current.set(id, timer);
     return id;
   }, [quitar]);
@@ -121,6 +128,15 @@ function ToastItem({ t, onDismiss }: { t: ActionToast; onDismiss: (id: number) =
           className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
           <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Deshacer
+        </button>
+      )}
+      {t.accion && (
+        <button
+          type="button"
+          onClick={() => { t.accion?.onClick(); onDismiss(t.id); }}
+          className="inline-flex shrink-0 items-center gap-1 rounded-lg border-2 border-[var(--accent)] px-2.5 py-1 text-xs font-bold text-[var(--accent-ink)] transition hover:bg-[var(--accent-soft)] dark:text-[var(--accent)]"
+        >
+          {t.accion.label} <ChevronRight className="h-3.5 w-3.5" aria-hidden />
         </button>
       )}
       <button type="button" onClick={() => onDismiss(t.id)} aria-label="Cerrar aviso" className="shrink-0 rounded-xl p-1 text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]">

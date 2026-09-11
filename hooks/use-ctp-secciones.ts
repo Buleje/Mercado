@@ -79,19 +79,31 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
    * papel como hecho — si no, el operario no tiene forma de saber cuál falta y
    * termina emitiendo dos veces el mismo.
    */
-  const cargarAnexos = useCallback(() => {
-    if (section !== "despacho") return;
-    fetch("/api/admin/forestal/anexos", { credentials: "include", cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : { anexos: [] }))
-      .then((j: { anexos?: { ctpEntryId?: string }[] }) => {
-        const lista = j.anexos ?? [];
-        setConAnexo(new Set(lista.map((a) => a.ctpEntryId).filter(Boolean) as string[]));
-        setTotalAnexos(lista.length);
-      })
+  /**
+   * Devuelve el conjunto recién leído además de guardarlo: quien acaba de
+   * cerrar el modal del anexo necesita saber, en ESE momento, si el papel
+   * quedó emitido y cuál sigue. El `conAnexo` del estado todavía es el viejo
+   * (el re-render llega después), así que leerlo ahí contestaría la pregunta
+   * anterior.
+   */
+  const cargarAnexos = useCallback(async (): Promise<Set<string>> => {
+    if (section !== "despacho") return new Set<string>();
+    try {
+      const r = await fetch("/api/admin/forestal/anexos", { credentials: "include", cache: "no-store" });
+      const j: { anexos?: { ctpEntryId?: string }[] } = r.ok ? await r.json() : { anexos: [] };
+      const lista = j.anexos ?? [];
+      const emitidos = new Set(lista.map((a) => a.ctpEntryId).filter(Boolean) as string[]);
+      setConAnexo(emitidos);
+      setTotalAnexos(lista.length);
+      return emitidos;
+    } catch {
       // Sin bandeja no se marca nada: es un indicador, no un bloqueo.
-      .catch(() => { setConAnexo(new Set()); setTotalAnexos(0); });
+      setConAnexo(new Set());
+      setTotalAnexos(0);
+      return new Set<string>();
+    }
   }, [section]);
-  useEffect(cargarAnexos, [cargarAnexos]);
+  useEffect(() => { void cargarAnexos(); }, [cargarAnexos]);
 
   /**
    * Las líneas que gobiernan los KPIs (ADR-400).

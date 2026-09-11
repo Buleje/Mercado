@@ -6,7 +6,7 @@
  * Saldos (balance de planta) vive en CtpSaldosView, componente hermano.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { Plus, Search, Boxes, Truck, AlertCircle, HelpCircle, PackagePlus, Calculator, Calendar, Table, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
@@ -15,6 +15,7 @@ import { accionesDeSeccion, accionesPorDeclarar } from "./ctp-entries-acciones";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useDebounce } from "@/hooks/use-debounce";
 import { type CtpPeriod } from "@/lib/forestal/ctp-period";
+import { siguienteSinAnexo } from "@/lib/forestal/anexo-encadenado";
 import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
 import CtpGuiaDeLineaModal from "./CtpGuiaDeLineaModal";
 import CtpProduccionImportModal from "./CtpProduccionImportModal";
@@ -609,6 +610,57 @@ export function CtpEntriesView({
   const [abrirDeclarar, setAbrirDeclarar] = useState(0);
   /** El selector de lote (modal). Reemplazó al desplegable que cortaba la pantalla. */
   const [elegirLote, setElegirLote] = useState(false);
+  /**
+   * El puente entre la pastilla «sin origen» y el cartel que dice CUÁL despacho.
+   *
+   * Los dos hablaban del mismo problema en la misma pantalla —la pastilla con el
+   * total, el cartel con el N° y su botón— sin ninguna relación visible. En vez
+   * de plegar el cartel adentro de la pastilla (ese aviso frena una emisión ante
+   * SERFOR y no puede vivir detrás de un clic), la pastilla lo señala: scrollea
+   * hasta él y lo enmarca un momento.
+   */
+  const refSinCertificar = useRef<HTMLDivElement>(null);
+  const [resaltarCertificado, setResaltarCertificado] = useState(false);
+  const irAlCertificado = useCallback(() => {
+    refSinCertificar.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setResaltarCertificado(true);
+    /* El marco se apaga solo: es un «mirá acá», no un estado nuevo que haya que
+       venir a limpiar después. */
+    window.setTimeout(() => setResaltarCertificado(false), 2200);
+  }, []);
+
+  /**
+   * Al cerrar un ANEXO N° 04, ofrecer el siguiente que falta — de a UNO.
+   *
+   * Emitir los ocho de una tanda fue lo que se descartó a propósito: el anexo
+   * es una declaración jurada ante SERFOR, y lo que dice lo escribe quien lo
+   * firma. Encadenar es lo contrario de automatizar — sigue habiendo un humano
+   * por hoja, pero deja de tener que volver a buscar la fila cada vez.
+   *
+   * Sólo avisa si el que se cerró QUEDÓ emitido: cerrar sin emitir es una
+   * decisión, no un trabajo a medio hacer al que haya que empujar.
+   */
+  const encadenarAnexo = useCallback(
+    (cerrado: CtpEntry | null, emitidos: Set<string>) => {
+      if (!cerrado || section !== "despacho" || !emitidos.has(cerrado.id)) return;
+      const { pendientes, siguiente } = siguienteSinAnexo(entries, cerrado, emitidos);
+      if (!siguiente) {
+        pushToast({
+          tono: "success",
+          msg: "Todo el período tiene su anexo",
+          detail: "No queda ninguna guía del período sin su ANEXO N° 04 emitido.",
+        });
+        return;
+      }
+      pushToast({
+        tono: "info",
+        msg: `Queda${pendientes === 1 ? "" : "n"} ${pendientes} guía${pendientes === 1 ? "" : "s"} sin anexo`,
+        detail: `La siguiente es la N° ${siguiente.lineNo}${siguiente.gtfNumber ? ` · GTF ${siguiente.gtfNumber}` : ""}`,
+        accion: { label: `Emitir la N° ${siguiente.lineNo}`, onClick: () => setAnexoEntry(siguiente) },
+      });
+    },
+    [section, entries, pushToast],
+  );
   /* Las dos señales —tecla `N` y la pastilla de deuda— abren el mismo selector:
      son la misma pregunta y antes cada una abría su propio menú. Arranca en 0,
      así que el modal no se abre solo al montar. */
@@ -806,7 +858,15 @@ export function CtpEntriesView({
           label: "sin origen",
           hint: "producto despachado sin corrida que lo ampare",
           tono: "error",
-          title: "Lo que salió y no puede decir de qué corrida vino: rompe la cadena de custodia",
+          title: "Lo que salió y no puede decir de qué corrida vino: rompe la cadena de custodia. Tocá para ver cuál.",
+          /* Lleva el foco al cartel, NO lo pliega adentro: ese aviso bloquea la
+             emisión de un certificado ante SERFOR y tiene que seguir a la vista
+             (decisión de Brandon). La pastilla dice el total, el cartel dice
+             cuál despacho es — unirlos es señalar, no esconder.
+
+             Sólo si HAY cartel rojo: con la lista todavía cargando, o en verde,
+             el clic llevaría a un aviso que afirma lo contrario. */
+          onClick: (sinCertificar?.length ?? 0) > 0 ? irAlCertificado : undefined,
         });
       }
       return items;
@@ -844,7 +904,7 @@ export function CtpEntriesView({
       });
     }
     return items;
-  }, [section, kpis.abiertas, kpis.consumidoAbierto, kpis.sinOrigen, idsAmpliables, sinOrigen, sinAnexo, soloSinAnexo, setSoloSinAnexo, setAbrirDeclarar, setVincularA]);
+  }, [section, kpis.abiertas, kpis.consumidoAbierto, kpis.sinOrigen, idsAmpliables, sinOrigen, sinAnexo, soloSinAnexo, setSoloSinAnexo, setAbrirDeclarar, setVincularA, sinCertificar, irAlCertificado]);
 
   const Icon = meta.icon;
   return (
@@ -1244,10 +1304,20 @@ export function CtpEntriesView({
       {/* Lo que impide certificar, arriba de la tabla y no escondido en otra
           pestaña: es deuda que se paga antes de que salga el próximo camión. */}
       {section === "despacho" && sinCertificar !== null && (
-        <CtpSinCertificar despachos={sinCertificar} onAbrir={(id) => {
-          const d = entries.find((e) => e.id === id);
-          if (d) setChainEntry(d);
-        }} />
+        <div
+          ref={refSinCertificar}
+          className={`rounded-2xl transition-shadow duration-[var(--dur-slow)] ${
+            resaltarCertificado ? "ring-2 ring-[var(--data-error-500)] ring-offset-2 ring-offset-[var(--surface-canvas)]" : ""
+          }`}
+        >
+          <CtpSinCertificar
+            despachos={sinCertificar}
+            onAbrir={(id) => {
+              const d = entries.find((e) => e.id === id);
+              if (d) setChainEntry(d);
+            }}
+          />
+        </div>
       )}
 
       {/*
@@ -1470,7 +1540,7 @@ export function CtpEntriesView({
           rows={[]}
           abrirHistorial
           onAviso={(msg, tono) => pushToast({ tono, msg })}
-          onCerrar={() => { setVerBandeja(false); cargarAnexos(); }}
+          onCerrar={() => { setVerBandeja(false); void cargarAnexos(); }}
         />
       )}
 
@@ -1484,7 +1554,11 @@ export function CtpEntriesView({
           // en el mismo modal en vez de en dos pantallas.
           despacho={anexoEntry.section === "despacho" ? anexoEntry : undefined}
           onAviso={(msg, tono) => pushToast({ tono, msg })}
-          onCerrar={() => { setAnexoEntry(null); cargarAnexos(); }}
+          onCerrar={() => {
+            const cerrado = anexoEntry;
+            setAnexoEntry(null);
+            void cargarAnexos().then((emitidos) => encadenarAnexo(cerrado, emitidos));
+          }}
         />
       )}
 
