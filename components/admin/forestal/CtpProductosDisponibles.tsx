@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Boxes, CheckCircle2, Download, Layers, PackageOpen, Pencil, RefreshCw, RotateCcw, Ruler, Search, TreePine, Truck } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import CtpKpi, { DesgloseSimple, type FilaDesglose } from "./CtpKpi";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -410,6 +410,41 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
   const totalPiezas = useMemo(() => filas.reduce((a, f) => a + (f.paquete?.cantidad ?? 0), 0), [filas]);
 
   /**
+   * De qué está hecho el stock, para abrirlo desde la propia tarjeta.
+   *
+   * Acá NO hay comparación contra el período anterior y no es un olvido: esta
+   * pestaña no tiene período (`SIN_PERIODO`), porque un depósito es lo que hay
+   * HOY y no un flujo entre dos fechas. Un «+12 % vs el mes pasado» sobre un
+   * stock sin fecha sería un número inventado. Lo que sí se puede contestar
+   * —y no se podía sin filtrar de a una— es de qué se compone.
+   *
+   * Se agrupa por CLAVE (`claveEspecie` / `norm`) y no por el texto: el libro
+   * tiene «Tornillo» y «TORNILLO» escritos por dos personas, y separarlos
+   * partiría el mismo stock en dos mitades.
+   */
+  const repartir = useCallback(
+    (clave: (c: CorridaDisponible) => string, etiqueta: (c: CorridaDisponible) => string): FilaDesglose[] => {
+      const map = new Map<string, { value: string; count: number; peso: number }>();
+      for (const c of visibles) {
+        const k = clave(c);
+        if (!k) continue;
+        const prev = map.get(k) ?? { value: etiqueta(c), count: 0, peso: 0 };
+        map.set(k, { value: prev.value, count: prev.count + 1, peso: prev.peso + c.disponible });
+      }
+      return [...map.values()].map((v) => ({ value: v.value, count: v.count, volumeM3: v.peso }));
+    },
+    [visibles],
+  );
+  const porEspecie = useMemo(
+    () => repartir((c) => claveEspecie(c.especie ?? ""), (c) => c.especie ?? "Sin especie"),
+    [repartir],
+  );
+  const porProducto = useMemo(
+    () => repartir((c) => norm(c.producto), (c) => productLabel(c.producto ?? "") || "Sin producto"),
+    [repartir],
+  );
+
+  /**
    * Las corridas que podrían alimentar el reproceso sugerido: las que declaran
    * el MISMO tipo comercial que la sugerencia dice reprocesar y tienen saldo.
    * Se compara por tipo y no por el texto del producto: «MADERA ASERRADA
@@ -531,9 +566,8 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             : `${fmtM3(totales.volumen)} m³ · ${nf(totales.paquetes)} paquete${totales.paquetes === 1 ? "" : "s"} · ${nf(totalPiezas)} pieza${totalPiezas === 1 ? "" : "s"} · ${nf(visibles.length)} corrida${visibles.length === 1 ? "" : "s"}`
         }
         tarjetas={[
-          <StatCard
+          <CtpKpi
             key="volumen"
-            density="compact"
             label="Disponible (m³)"
             value={fmtM3(totales.volumen)}
             /* La fórmula decía «producido − despachado − reprocesado» y se
@@ -546,16 +580,15 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 : `${pieTablarDe(totales.volumen).toLocaleString("es-PE")} pt · producido − despachado − reprocesado − marcado usado`
             }
             icon={TreePine}
-            emphasis="success"
+            desglose={porEspecie.length > 0 ? <DesgloseSimple filas={porEspecie} onElegir={(v) => setEspecie([v])} /> : undefined}
+            desgloseLabel="Por especie"
           />,
-          <StatCard
+          <CtpKpi
             key="paquetes"
-            density="compact"
             label="Paquetes en planta"
             value={nf(totales.paquetes)}
             subValue={totales.paquetes === 0 ? "Sin paquetes cargados" : "Con su código y sus medidas"}
             icon={Boxes}
-            emphasis="neutral"
           />,
           /**
            * Las PIEZAS, que es como se carga un camión.
@@ -564,9 +597,8 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
            * pero no estaba en ninguna tarjeta: el cliente pide «200 tablas», no
            * «4 m³», y el vendedor tenía que sumarlas fila por fila.
            */
-          <StatCard
+          <CtpKpi
             key="piezas"
-            density="compact"
             label="Piezas disponibles"
             value={nf(totalPiezas)}
             subValue={
@@ -575,37 +607,34 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 : "de todo lo filtrado, no sólo de esta página"
             }
             icon={Layers}
-            emphasis="neutral"
           />,
-          <StatCard
+          <CtpKpi
             key="especies"
-            density="compact"
             label="Especies"
             value={nf(totales.especies)}
             subValue="Distintas en stock"
             icon={TreePine}
-            emphasis="neutral"
+            desglose={porEspecie.length > 0 ? <DesgloseSimple filas={porEspecie} onElegir={(v) => setEspecie([v])} /> : undefined}
+            desgloseLabel="Cuánto hay de cada una"
           />,
           /* `totales.productos` también venía calculado y sin mostrarse: dos
              especies pueden dar seis productos distintos (aserrada, tablillas,
              comercial…) y es lo que decide qué se le puede ofrecer al cliente. */
-          <StatCard
+          <CtpKpi
             key="productos"
-            density="compact"
             label="Tipos de producto"
             value={nf(totales.productos)}
             subValue={totales.productos === 1 ? "Un solo tipo en stock" : "Distintos en stock"}
             icon={Boxes}
-            emphasis="neutral"
+            desglose={porProducto.length > 0 ? <DesgloseSimple filas={porProducto} onElegir={(v) => setProducto([v])} /> : undefined}
+            desgloseLabel="Cuánto hay de cada uno"
           />,
-          <StatCard
+          <CtpKpi
             key="corridas"
-            density="compact"
             label="Corridas con saldo"
             value={nf(visibles.length)}
             subValue="Producción que todavía no salió"
             icon={PackageOpen}
-            emphasis="neutral"
           />,
         ]}
       />

@@ -18,7 +18,7 @@
  */
 
 import { Boxes, CalendarClock, FileStack, Layers, PackageCheck, Scale, TreePine } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import CtpKpi, { DesgloseSimple, type FilaDesglose } from "./CtpKpi";
 
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
@@ -67,7 +67,38 @@ export default function CtpGtfIngresadasKpis({
     guias.map((g) => (g.originCode ?? "").trim()).filter(Boolean),
   ).size;
 
-  const activa = "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]";
+  /**
+   * Los repartos que hay detrás de cada cifra.
+   *
+   * Salen de las MISMAS guías que ya están en pantalla: no hay una consulta
+   * nueva ni una cuenta paralela, sólo se muestra lo que la tarjeta resume y
+   * que antes había que ir a buscar filtrando de a una.
+   */
+  const juntar = (clave: (g: GuiaIngreso<WoodEntry>) => string | null, peso: (g: GuiaIngreso<WoodEntry>) => number): FilaDesglose[] => {
+    const map = new Map<string, { count: number; peso: number }>();
+    for (const g of guias) {
+      const k = (clave(g) ?? "").trim();
+      if (!k) continue;
+      const prev = map.get(k) ?? { count: 0, peso: 0 };
+      map.set(k, { count: prev.count + 1, peso: prev.peso + peso(g) });
+    }
+    return [...map].map(([value, v]) => ({ value, count: v.count, volumeM3: v.peso }));
+  };
+  const porProveedor = juntar((g) => g.providerName, (g) => g.volumenM3);
+  const porTitulo = juntar((g) => g.originCode, (g) => g.volumenM3);
+  const porEspecie: FilaDesglose[] = (() => {
+    const map = new Map<string, { count: number; peso: number }>();
+    for (const g of guias) {
+      for (const e of g.especies) {
+        const k = e.comun.trim();
+        if (!k) continue;
+        const prev = map.get(k) ?? { count: 0, peso: 0 };
+        map.set(k, { count: prev.count + e.piezas, peso: prev.peso + e.volumenM3 });
+      }
+    }
+    return [...map].map(([value, v]) => ({ value, count: v.count, volumeM3: v.peso }));
+  })();
+
 
   return (
     /* Todas detrás del botón «Indicadores» (Brandon, 2026-09-03); el titular va
@@ -84,25 +115,25 @@ export default function CtpGtfIngresadasKpis({
             (tarde > 0 ? ` · ${nf(tarde)} fuera de plazo` : "")
       }
       tarjetas={[
-        <StatCard
+        <CtpKpi
           key="guias"
-          density="compact"
           label="Guías ingresadas"
           value={nf(guias.length)}
           subValue={`${nf(guias.reduce((a, g) => a + g.lineas.length, 0))} asientos del libro`}
           icon={PackageCheck}
-          emphasis="neutral"
+          desglose={porProveedor.length > 0 ? <DesgloseSimple filas={porProveedor} /> : undefined}
+          desgloseLabel="Por proveedor"
         />,
-        <StatCard
+        <CtpKpi
           key="volumen"
-          density="compact"
           label="Volumen recibido"
           value={`${volumen.toFixed(2)} m³`}
           subValue={`${nf(pieTablarDe(volumen))} pt`}
           icon={Boxes}
-          emphasis="neutral"
+          desglose={porEspecie.length > 0 ? <DesgloseSimple filas={porEspecie} /> : undefined}
+          desgloseLabel="Por especie"
         />,
-        <StatCard
+        <CtpKpi
           key="piezas"
           density="compact"
           label="Piezas del archivo"
@@ -111,20 +142,18 @@ export default function CtpGtfIngresadasKpis({
              ocho (ADR-325). El hueco se ve acá, no en la fila. */
           subValue={piezas > 0 ? `${nf(recibidas)} con recepción cerrada` : "sin lista de piezas"}
           icon={Layers}
-          emphasis={piezas > 0 && recibidas < piezas ? "warning" : "neutral"}
         />,
-        <StatCard
+        <CtpKpi
           key="especies"
-          density="compact"
           label="Especies en el archivo"
           value={nf(especies)}
           subValue="distintas en estas guías"
           icon={TreePine}
-          emphasis="neutral"
+          desglose={porEspecie.length > 0 ? <DesgloseSimple filas={porEspecie} /> : undefined}
+          desgloseLabel="Cuánto trajo cada una"
         />,
-        <StatCard
+        <CtpKpi
           key="titulos"
-          density="compact"
           label="Títulos habilitantes"
           value={nf(titulos)}
           subValue={
@@ -133,11 +162,11 @@ export default function CtpGtfIngresadasKpis({
               : `predios o concesiones de origen${titulos < guias.length ? ` · ${nf(guias.length - titulos)} guía(s) sin código` : ""}`
           }
           icon={FileStack}
-          emphasis={titulos === 0 && guias.length > 0 ? "warning" : "neutral"}
+          desglose={porTitulo.length > 0 ? <DesgloseSimple filas={porTitulo} /> : undefined}
+          desgloseLabel="Cuánto vino de cada uno"
         />,
-        <StatCard
+        <CtpKpi
           key="plazo"
-          density="compact"
           label="Fuera de plazo"
           value={nf(tarde)}
           subValue={
@@ -148,18 +177,19 @@ export default function CtpGtfIngresadasKpis({
               : "todas se registraron a tiempo"
           }
           icon={CalendarClock}
-          emphasis={tarde > 0 ? "warning" : "success"}
+          /* Registrar más guías tarde es peor, no mejor: el día que esta cifra
+             tenga contra qué compararse, el color tiene que decir eso. */
+          tono="inverso"
           onClick={tarde > 0 ? onLate : undefined}
-          className={lateOn ? activa : undefined}
+          filtrando={lateOn}
         />,
-        <StatCard
+        <CtpKpi
           key="cuadre"
-          density="compact"
           label="Guías sin cuadrar"
           value={nf(sinCuadrar)}
           subValue={sinCuadrar > 0 ? "no se pueden consumir" : "todas cuadran"}
           icon={Scale}
-          emphasis={sinCuadrar > 0 ? "warning" : "success"}
+          tono="inverso"
         />,
       ]}
     />
