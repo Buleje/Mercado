@@ -18,6 +18,7 @@ import { Check, FileText, Loader2, Printer } from "@buleje/design-system/icons";
 import { documentoGtfSalida } from "@/lib/forestal/ctp-gtf-print";
 import { documentoHtml } from "@/lib/forestal/ctp-documento-print";
 import { cadenaDeGuia, despachoDeGuia, lineasDeGuia } from "@/lib/forestal/guia-desde-lista";
+import { useEspeciesConCatalogo } from "./ctp-especie-campo";
 import { faltantesGtf, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import { volumenTotal, type FilaDespacho } from "@/lib/forestal/despacho-lista";
 import { hayNovedades } from "@/lib/forestal/ctp-cola-archivado";
@@ -55,6 +56,10 @@ export default function CtpGuiaRegistrada({
   const [generando, setGenerando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /* El catálogo de especies de la planta: completa el binomio que el asiento no
+     trae, al imprimir (ADR-410). */
+  const catalogoEspecies = useEspeciesConCatalogo();
+
   const faltan = faltantesGtf(datos);
   const total = volumenTotal(filas);
 
@@ -64,11 +69,17 @@ export default function CtpGuiaRegistrada({
     setError(null);
     try {
       const d = await documentoGtfSalida(
-        despachoDeGuia(filas, { ...cabecera, entryDate: emision, gtfNumber, destino: datos.destinatario.nombre || null }),
+        despachoDeGuia(
+          filas,
+          { ...cabecera, entryDate: emision, gtfNumber, destino: datos.destinatario.nombre || null },
+          catalogoEspecies.cientificoDe,
+        ),
         ficha ?? {},
         cadenaDeGuia(filas),
         datos,
-        lineasDeGuia(filas),
+        /* El binomio que falte en el asiento sale del catálogo de la planta: el
+           casillero (37) lo pide y una guía a medio llenar la para el control. */
+        lineasDeGuia(filas, catalogoEspecies.cientificoDe),
       );
       const html = documentoHtml({ titulo: d.titulo, css: d.css, cuerpo: d.cuerpos, pieCorrido: d.pieCorrido });
       /* No se dispara la impresión: se abre el visor. Original + 2 copias son

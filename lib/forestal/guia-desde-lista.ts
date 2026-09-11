@@ -18,10 +18,21 @@ import { piezasTotales, volumenTotal, type FilaDespacho } from "@/lib/forestal/d
 
 const UNIDAD: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "unidad" };
 
-/** El detalle (37) del formato: un renglón por producto que viaja. */
-export function lineasDeGuia(filas: readonly FilaDespacho[]): LineaProducto[] {
+/**
+ * El detalle (37) del formato: un renglón por producto que viaja.
+ *
+ * `cientificoDe` es el catálogo de especies de la planta (ADR-410): cuando el
+ * asiento no trae el binomio —los viejos, cargados antes de que el libro lo
+ * completara solo— sale de ahí. El casillero vacío no es neutro: el (37) pide
+ * nombre científico, y el que lo mira en un puesto de control ve una guía
+ * incompleta. Lo que NO se hace es inventarlo: sin catálogo queda vacío.
+ */
+export function lineasDeGuia(
+  filas: readonly FilaDespacho[],
+  cientificoDe?: (comun: string) => string | null,
+): LineaProducto[] {
   return filas.map((f) => ({
-    cientifico: f.especieCientifica ?? "",
+    cientifico: f.especieCientifica?.trim() || cientificoDe?.((f.especie ?? "").trim()) || "",
     comun: f.especie ?? "",
     tipoProducto: f.producto ?? "",
     /* El formato pide la forma de presentación (PIEZAS, PAQUETES…). Si el
@@ -80,7 +91,11 @@ export interface CabeceraGuia {
  * en vez de la primera — poner una sola cuando viajan tres es la clase de dato
  * que en un control se lee como declaración falsa.
  */
-export function despachoDeGuia(filas: readonly FilaDespacho[], cab: CabeceraGuia): GtfDespacho {
+export function despachoDeGuia(
+  filas: readonly FilaDespacho[],
+  cab: CabeceraGuia,
+  cientificoDe?: (comun: string) => string | null,
+): GtfDespacho {
   const especies = [...new Set(filas.map((f) => (f.especie ?? "").trim()).filter(Boolean))];
   const productos = [...new Set(filas.map((f) => (f.producto ?? "").trim()).filter(Boolean))];
   const unidad = filas[0]?.unidad ?? "m3";
@@ -91,7 +106,10 @@ export function despachoDeGuia(filas: readonly FilaDespacho[], cab: CabeceraGuia
     speciesCommon: especies.length === 1 ? especies[0]! : especies.length > 1 ? `Varias especies (${especies.length})` : null,
     /* El nombre científico sólo tiene sentido con UNA especie: el detalle (37)
        lleva el de cada renglón. */
-    speciesScientific: especies.length === 1 ? (filas[0]?.especieCientifica ?? null) : null,
+    speciesScientific:
+      especies.length === 1
+        ? filas[0]?.especieCientifica?.trim() || cientificoDe?.(especies[0]!) || null
+        : null,
     cites: filas.some((f) => f.cites),
     productType: productos.length === 1 ? productos[0]! : productos.length > 1 ? `Varios productos (${productos.length})` : null,
     quantity: String(volumenTotal(filas)),

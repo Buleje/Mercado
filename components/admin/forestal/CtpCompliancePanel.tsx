@@ -37,6 +37,8 @@ import {
 import { CardTitle, WarningAlert, ErrorAlert, LoadingState } from "@buleje/design-system";
 import { BulejeGaugeChart } from "@/components/ui-system/charts";
 import CtpComplianceHistoria from "./CtpComplianceHistoria";
+import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import CtpKpiFiltros from "./CtpKpiFiltros";
 import CtpCuadreSniffs from "./CtpCuadreSniffs";
 import CtpDescuadresPanel from "./CtpDescuadresPanel";
@@ -72,6 +74,9 @@ interface CheckDescriptor {
   /** Filtro que deja puesto en el destino (sólo Ingresos lo entiende hoy). */
   navFiltro?: CtpIngresosFiltroRapido;
   navigateLabel: string;
+  /** Se resuelve ACÁ y no en otra pestaña (el catálogo de especies es un modal):
+   *  cuando está, el botón la llama en vez de navegar. */
+  onAction?: () => void;
 }
 
 const TONE_LABEL: Record<CtpComplianceTone, string> = {
@@ -97,6 +102,19 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
   const [especie, setEspecie] = useState("");
   const { data, loading, error, reload } = useCtpCompliance(period, especie || undefined);
   const [reportError, setReportError] = useState<string | null>(null);
+  /* Las grafías del libro (ADR-410). Va acá y no en el score: escribir
+     «Tornillo» y «TORNILLO» no incumple ninguna norma —el libro no se cae por
+     eso—, pero parte los totales por especie y el saldo por permiso en dos, que
+     es lo que un fiscalizador mira. Advertencia, no bloqueo.
+
+     ⚠️ ARRIBA de los `return` tempranos: este componente devuelve antes de
+     tiempo mientras carga y ante un error, y un hook debajo de eso cambia la
+     cantidad de hooks entre renders — «Rendered more hooks than during the
+     previous render», la pantalla en blanco (encontrado en el navegador; ni
+     tsc ni lint lo ven). */
+  const especies = useEspeciesCatalogo({ conLibro: true });
+  const dosFormas = especies.duplicadas;
+  const [verEspecies, setVerEspecies] = useState(false);
 
   if (loading && !data) return <LoadingState message="Calculando cumplimiento del período..." />;
 
@@ -127,7 +145,7 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
   const docsVenc = data.documentosVencidosLabels;
   const docsPorVenc = data.documentosPorVencerLabels;
 
-  // ── Los 9 chequeos como datos: se ordenan (bloqueos → advertencias) y se
+  // ── Los chequeos como datos: se ordenan (bloqueos → advertencias) y se
   //    agrupan (problemas vs. en orden) antes de renderizar. ──
   const checks: CheckDescriptor[] = [
     {
@@ -277,6 +295,25 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
       action: "Empezá el trámite de renovación antes de que caduque.",
       navTarget: "ficha",
       navigateLabel: "Ir a Ficha CTP",
+    },
+    {
+      key: "especiesDosFormas",
+      count: dosFormas.length,
+      icon: TreePine,
+      severity: "warning",
+      title: `${dosFormas.length} ${plural(dosFormas.length, "especie está escrita", "especies están escritas")} de más de una forma`,
+      okTitle: "Cada especie se escribe de una sola forma",
+      description:
+        dosFormas.length > 0
+          ? `Para el libro son dos maderas distintas y los totales por especie se parten: ${dosFormas
+              .slice(0, 3)
+              .map((e) => e.grafias.map((g) => `«${g.texto}» ${g.usos}`).join(" vs "))
+              .join(" · ")}${dosFormas.length > 3 ? ` y ${dosFormas.length - 3} más` : ""}.`
+          : "«Tornillo» y «TORNILLO» serían dos especies en el mismo libro.",
+      action: "Elegí una forma en el catálogo de especies: el libro entero pasa a decirla.",
+      navTarget: "ingresos",
+      navigateLabel: "Abrir el catálogo",
+      onAction: () => setVerEspecies(true),
     },
   ];
 
@@ -441,7 +478,11 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {problemas.map((c) => (
-              <ProblemCard key={c.key} check={c} onNavigate={() => onNavigate(c.navTarget, c.navFiltro)} />
+              <ProblemCard
+                key={c.key}
+                check={c}
+                onNavigate={() => (c.onAction ? c.onAction() : onNavigate(c.navTarget, c.navFiltro))}
+              />
             ))}
           </div>
         </section>
@@ -468,6 +509,16 @@ export default function CtpCompliancePanel({ period, onNavigate }: CtpCompliance
             ))}
           </ul>
         </details>
+      )}
+
+      {/* El catálogo se abre ACÁ: la advertencia y donde se arregla son la misma
+          pantalla — mandar a buscarlo a Herramientas es perder el hilo. */}
+      {verEspecies && (
+        <CtpEspeciesCatalogoModal
+          open
+          onClose={() => setVerEspecies(false)}
+          onCambio={() => void especies.recargar()}
+        />
       )}
     </div>
   );

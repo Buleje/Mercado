@@ -30,6 +30,8 @@ import { estadoVencimiento, permisoParaEspecie, type LothCitesPermiso } from "@/
 import { fromUtm, parseUtmZone } from "@/lib/forestal/loth-utm";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import LothGpsField from "./LothGpsField";
+import { cientificoDeEspecie } from "@/lib/forestal/especies-catalogo";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 
 interface Props {
   section: LothSection;
@@ -92,7 +94,42 @@ function smalian(dMayor: number, dMenor: number, len: number): number {
 }
 
 export default function LothEntryForm({ section, caratulaId, onClose, onSaved, plantilla, corrigeLineNo }: Props) {
-  const speciesOptions = useMemo(() => listSpecies(), []);
+  /**
+   * Qué especies ofrece este libro.
+   *
+   * **NO el catálogo del aserradero** (ADR-410): ahí manda lo que el CTP
+   * trabaja, y acá manda lo que la resolución AUTORIZA. Ofrecer una especie que
+   * el plan no aprobó es ofrecer una infracción — para eso está el aviso de
+   * «fuera del plan» y el guard T7 al despachar.
+   *
+   * Lo que sí faltaba: las del PROPIO plan. Si la resolución autoriza
+   * «Panguana» y el catálogo del código no la trae, había que elegir «Otro» y
+   * tipearla cada vez — con su nombre científico de memoria.
+   */
+  const [especiesDelPlanState, setEspeciesDelPlanState] = useState<
+    { speciesCommon: string; speciesScientific?: string | null }[]
+  >([]);
+  const speciesOptions = useMemo(() => {
+    const base = listSpecies({ includeOther: false });
+    const vistas = new Set(base.map((s) => claveEspecie(s.commonName)));
+    const delPlan: typeof base = [];
+    for (const e of especiesDelPlanState) {
+      const clave = claveEspecie(e.speciesCommon);
+      if (!clave || vistas.has(clave)) continue;
+      vistas.add(clave);
+      delPlan.push({
+        slug: `plan:${clave}`,
+        commonName: e.speciesCommon.trim(),
+        scientificName: (e.speciesScientific ?? "").trim(),
+        cites: false,
+        protectionLevel: "controlada",
+        regions: [],
+      });
+    }
+    /* Las del plan primero: son las autorizadas, y el que carga busca ésas. */
+    const otro = listSpecies({ includeOther: true }).find((s) => s.slug === "otro");
+    return [...delPlan, ...base, ...(otro ? [otro] : [])];
+  }, [especiesDelPlanState]);
   /** Slug de la especie de la plantilla; «otro» si no está en el catálogo. */
   const slugDePlantilla = useMemo(() => {
     if (!plantilla?.speciesCommon) return null;
@@ -128,6 +165,8 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   const [correctionNote, setCorrectionNote] = useState("");
 
   const [speciesQuery, setSpeciesQuery] = useState("");
+  /* Sólo para completar el nombre científico de una especie tipeada a mano. */
+  const catalogoEspecies = useEspeciesCatalogo();
   const [showPicker, setShowPicker] = useState(false);
 
   // ── GPS + foto de evidencia ───────────────────────────────────────────
@@ -151,6 +190,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
   // Especies autorizadas del plan (normalizadas) — para avisar en vivo si la
   // especie elegida cae fuera del POA antes de que T7 rechace el despacho/GTF.
   const [authorizedSpecies, setAuthorizedSpecies] = useState<Set<string>>(new Set());
+
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [loadingSrc, setLoadingSrc] = useState(false);
   const [srcQuery, setSrcQuery] = useState("");
@@ -202,13 +242,14 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
 
   // Cargar las especies autorizadas del plan seleccionado (para el aviso en vivo).
   useEffect(() => {
-    if (!planId) { setAuthorizedSpecies(new Set()); return; }
+    if (!planId) { setAuthorizedSpecies(new Set()); setEspeciesDelPlanState([]); return; }
     let cancel = false;
     fetch(`/api/admin/forestal/plan?planId=${planId}`, { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (cancel) return;
-        const rows = (j?.species ?? []) as Array<{ speciesCommon: string }>;
+        const rows = (j?.species ?? []) as Array<{ speciesCommon: string; speciesScientific?: string | null }>;
+        setEspeciesDelPlanState(rows.filter((r) => (r.speciesCommon ?? "").trim()));
         // Misma clave canónica que usa el motor: el plan escribe «Tornillo
         // (Cedrelinga catenaeformis)» y acá se elige «Tornillo». Comparar los
         // strings crudos avisaba «no autorizada» sobre una especie que sí lo está.
@@ -342,7 +383,12 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
     authorizedSpecies.size > 0 &&
     !authorizedSpecies.has(claveEspecie(speciesName));
   const matched = isCustom ? findSpeciesByCommonName(customSpecies) : null;
-  const scientific = isCustom ? matched?.scientificName ?? null : selected?.scientificName ?? null;
+  /* Tipeada a mano: el binomio sale del código o, si no lo conoce, del catálogo
+     de la planta (ADR-410). El catálogo NO decide qué especie se puede declarar
+     —eso lo dice el plan— pero sí sabe cómo se llama en latín. */
+  const scientific = isCustom
+    ? (matched?.scientificName ?? cientificoDeEspecie(customSpecies, catalogoEspecies.catalogo))
+    : selected?.scientificName || null;
   const cites = isCustom ? matched?.cites ?? false : selected?.cites ?? false;
 
   const autoVolume = useMemo(() => {

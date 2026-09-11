@@ -25,6 +25,7 @@ import { documentoGtfSalida, type GtfCadena, type GtfDespacho } from "@/lib/fore
 import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { CtpFicha } from "@/lib/forestal/ctp-ficha-types";
 import { logger } from "@/lib/logger";
+import { useEspeciesConCatalogo } from "./ctp-especie-campo";
 
 export interface DespachoParaGtf {
   id: string;
@@ -56,6 +57,8 @@ export default function Anexo04GtfSalida({
   const marco = useRef<HTMLIFrameElement>(null);
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /* El catálogo de la planta completa el binomio que el asiento no trae. */
+  const catalogoEspecies = useEspeciesConCatalogo();
 
   useEffect(() => {
     let vivo = true;
@@ -82,7 +85,12 @@ export default function Anexo04GtfSalida({
           entryDate: despacho.entryDate,
           productType: despacho.productType,
           speciesCommon: despacho.speciesCommon,
-          speciesScientific: despacho.speciesScientific,
+          /* Si el asiento no trae el binomio, sale del catálogo de la planta
+             (ADR-410): el anexo lo imprime al lado del nombre común y dejarlo
+             vacío es entregar un papel a medio llenar. */
+          speciesScientific:
+            despacho.speciesScientific?.trim() ||
+            catalogoEspecies.cientificoDe(despacho.speciesCommon ?? ""),
           cites: despacho.cites,
           quantity: despacho.quantity,
           unitLabel: despacho.unit ?? "m3",
@@ -112,7 +120,10 @@ export default function Anexo04GtfSalida({
       vivo = false;
       onHtml(null);
     };
-  }, [despacho, ficha, onHtml]);
+    /* `cientificoDe` entra en las deps a propósito: el catálogo llega DESPUÉS
+       del primer render (es un fetch), y sin esto el anexo se armaría con el
+       casillero del binomio vacío y no se volvería a armar nunca. */
+  }, [despacho, ficha, onHtml, catalogoEspecies.cientificoDe]);
 
   if (error) {
     return (

@@ -210,3 +210,31 @@ En el tenant real eso dejó **1 especie sin binomio** (Copaiba, que en Perú se 
 *Copaifera paupera* o *C. officinalis* según el árbol — la elige el CTP, no el sistema).
 
 La biblioteca de fotos ordena igual: las que más entran primero, con el número de filas al lado.
+
+---
+
+## El libro avisa, el papel se completa, y el LO-TH se queda con su plan (2026-09-11)
+
+**Un chequeo más en Cumplimiento.** «N especies están escritas de más de una forma», con el reparto
+(«TORNILLO» 125 vs «Tornillo» 10) y un botón que abre el catálogo ahí mismo — la advertencia y donde
+se arregla, en la misma pantalla. Es **advertencia, no bloqueo, y no toca el score**: escribir una
+especie de dos formas no incumple ninguna norma, pero parte los totales por especie y el saldo por
+permiso, que es lo que un fiscalizador cruza. El score sigue saliendo de `CATEGORIAS_QUE_RESTAN`,
+intacto.
+
+> ⚠️ El hook del catálogo va **arriba de los `return` tempranos** del panel (carga y error). Puesto
+> abajo, React cambia la cantidad de hooks entre renders: *«Rendered more hooks than during the
+> previous render»* y pantalla en blanco. Lo atrapó el navegador — `tsc` y `lint` lo dan por bueno.
+
+**El binomio llega al papel.** `lineasDeGuia` y `despachoDeGuia` aceptan un resolvedor opcional, y la
+guía de salida y el Anexo 04 le pasan el catálogo: si el asiento viejo no trae el nombre científico,
+el casillero (37) sale completo igual. No se inventa nada — sin catálogo queda vacío, que es la regla
+del módulo.
+
+**El LO-TH NO comparte el catálogo, y es a propósito.** En el CTP manda lo que el aserradero
+trabaja; en el LO-TH manda lo que la resolución **autoriza**. Ofrecer ahí el catálogo del aserradero
+sería ofrecer una infracción —para eso están el aviso de «fuera del plan» y el guard T7 al
+despachar—. Lo que sí faltaba era lo contrario: el picker del LO-TH ahora ofrece **las especies del
+propio plan**, primero y con su binomio (antes, si la resolución autorizaba «Panguana», había que
+elegir «Otro» y tipearla con su nombre científico de memoria). Del catálogo del aserradero toma una
+sola cosa: el binomio de una especie tipeada a mano, que es un dato de la especie y no un permiso.
