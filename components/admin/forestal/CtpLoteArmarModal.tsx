@@ -34,6 +34,7 @@ import { TIPOS_PRODUCTO_SALIDA } from "@/lib/forestal/loctp-catalogos";
 import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import CtpPegarSniffsLote from "./CtpPegarSniffsLote";
+import { CtpEspecieInput, CtpEspecieSelect, useEspeciesConCatalogo } from "./ctp-especie-campo";
 import type { DetalleProduccionSniffs } from "@/lib/forestal/sniffs-produccion-parse";
 
 export interface LoteProgramado {
@@ -138,6 +139,18 @@ export default function CtpLoteArmarModal({
    */
   const permisos = useMemo(() => disponiblePorPermiso(trozas), [trozas]);
   const especies = useMemo(() => disponiblePorEspecie(trozas, permiso || null), [trozas, permiso]);
+  /* El catálogo de la planta (ADR-410): el patio dice qué madera HAY; el
+     catálogo, qué especies trabaja este aserradero. Un lote se programa para
+     la guía que todavía no llegó, así que las dos fuentes tienen que estar. */
+  const catalogoEspecies = useEspeciesConCatalogo();
+  const opcionesDelPatio = useMemo(
+    () =>
+      especies.map((e) => ({
+        nombre: e.nombre,
+        meta: `${e.piezas} pza · ${fmtM3(e.volumen)} m³`,
+      })),
+    [especies],
+  );
 
   /* Si la especie elegida no tiene madera del permiso nuevo, se suelta: dejarla
      puesta arma un lote que nace sin nada que tomar.
@@ -148,8 +161,15 @@ export default function CtpLoteArmarModal({
      (Brandon 2026-09-07: «no me permite poner el nombre de la especie»). */
   useEffect(() => {
     if (modo !== "trozas") return;
-    if (especie && !especies.some((e) => e.nombre === especie)) setEspecie("");
-  }, [modo, especies, especie]);
+    if (!especie) return;
+    if (especies.some((e) => e.nombre === especie)) return;
+    /* Del catálogo NO se suelta (ADR-410): programar el lote de una especie que
+       todavía no llegó al patio es el caso normal —la guía llega mañana— y el
+       pie del modal ya avisa que no hay madera de esa especie todavía. Lo que
+       se suelta es lo que no está en ninguna de las dos listas. */
+    if (catalogoEspecies.nombres.includes(especie)) return;
+    setEspecie("");
+  }, [modo, especies, especie, catalogoEspecies.nombres]);
 
   const elegida = especies.find((e) => e.nombre === especie) ?? null;
   const fechasAlReves = Boolean(inicio && fin && fin < inicio);
@@ -166,7 +186,7 @@ export default function CtpLoteArmarModal({
          armar si el operador cierra el modal siguiente sin guardar. */
       onIniciarInventario({
         speciesCommon: especie.trim(),
-        speciesScientific: elegida?.cientifico ?? null,
+        speciesScientific: elegida?.cientifico ?? catalogoEspecies.cientificoDe(especie),
         volumenConsumidoM3: Number(volumenConsumido),
         fecha: inicio,
         finProceso: fin || null,
@@ -183,7 +203,7 @@ export default function CtpLoteArmarModal({
     try {
       const r = await crear({
         speciesCommon: especie.trim(),
-        speciesScientific: elegida?.cientifico ?? null,
+        speciesScientific: elegida?.cientifico ?? catalogoEspecies.cientificoDe(especie),
         notes: descripcion.trim() || null,
         ordenProduccion: orden.trim() || null,
         tipoProductoConsumir: tipo,
@@ -227,7 +247,12 @@ export default function CtpLoteArmarModal({
               ? "El siguiente paso pide los paquetes que produjo esta madera"
               : elegida
                 ? `Disponible de ${elegida.nombre}: ${elegida.piezas} pza · ${fmtM3(elegida.volumen)} m³ · ${pieTablarDe(elegida.volumen).toLocaleString("es-PE")} pt`
-                : "Elegí la especie que va a aserrarse en este lote"
+                : especie.trim()
+                  /* Especie del catálogo sin madera en el patio: se puede
+                     programar igual —la guía llega mañana— pero se dice, o el
+                     lote nace vacío y nadie sabe por qué. */
+                  ? `No hay ${especie.trim()} libre en el patio todavía: el lote queda programado esperando la guía`
+                  : "Elegí la especie que va a aserrarse en este lote"
           }
         >
           <Btn variant="secondary" onClick={onClose} disabled={guardando}>
@@ -278,19 +303,19 @@ export default function CtpLoteArmarModal({
 
         {modo === "inventario" && (
           <Seccion numero={1} title="El material" hint="Lo que ya se sabe de esta madera, sin ir pieza por pieza">
-            <Field span={6} label="Especie" required hint="Escribí la especie aunque el patio no tenga stock de ella">
-              <input
-                list="ctp-lote-inventario-especies"
+            <Field
+              span={6}
+              label="Especie"
+              required
+              hint="Escribí la especie aunque el patio no tenga stock de ella · el botón abre el catálogo de la planta"
+            >
+              <CtpEspecieInput
+                id="ctp-lote-inventario-especies"
                 value={especie}
-                onChange={(e) => setEspecie(e.target.value)}
-                placeholder="Tornillo, Capirona…"
-                className={I}
+                onChange={setEspecie}
+                catalogo={catalogoEspecies}
+                opciones={opcionesDelPatio}
               />
-              <datalist id="ctp-lote-inventario-especies">
-                {especies.map((e) => (
-                  <option key={e.nombre} value={e.nombre} />
-                ))}
-              </datalist>
             </Field>
             <Field span={6} label="Volumen consumido en trozas (m³)" required hint="Lo que entró a la sierra, de una vez">
               <input
@@ -394,16 +419,18 @@ export default function CtpLoteArmarModal({
             span={6}
             label="Especie"
             required
-            hint={especies.length > 0 ? "Sólo se listan las que hay en el patio" : "El patio no tiene piezas libres todavía"}
+            hint={
+              especies.length > 0
+                ? "Arriba, las que hay en el patio con su stock; abajo, el resto del catálogo de la planta"
+                : "El patio no tiene piezas libres todavía: se ofrece el catálogo de la planta"
+            }
           >
-            <select value={especie} onChange={(e) => setEspecie(e.target.value)} className={I}>
-              <option value="">Seleccione…</option>
-              {especies.map((e) => (
-                <option key={e.nombre} value={e.nombre}>
-                  {e.nombre} — {e.piezas} pza · {fmtM3(e.volumen)} m³
-                </option>
-              ))}
-            </select>
+            <CtpEspecieSelect
+              value={especie}
+              onChange={setEspecie}
+              catalogo={catalogoEspecies}
+              opciones={opcionesDelPatio}
+            />
           </Field>
           <Field span={6} label="Inicio del proceso">
             <input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} className={I} />
@@ -435,6 +462,7 @@ export default function CtpLoteArmarModal({
           </p>
         )}
       </ModalBody>
+      {catalogoEspecies.modal}
     </AdminModal>
   );
 }

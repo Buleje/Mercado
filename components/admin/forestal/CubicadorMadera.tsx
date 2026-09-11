@@ -2324,6 +2324,13 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote }: {
                         >
                           <option value="">—</option>
                           {especiesOfrecidas.map((s) => <option key={s} value={s}>{s}</option>)}
+                          {/* Una pieza cargada con una especie que el catálogo ya
+                              no ofrece conserva la suya: sin esta opción el
+                              <select> se vería vacío y el primer toque en la
+                              fila la borraría sin que nadie lo pidiera. */}
+                          {r.especie && !(especiesOfrecidas as readonly string[]).includes(r.especie) && (
+                            <option value={r.especie}>{r.especie}</option>
+                          )}
                         </select>
                         <AsaRelleno onTomar={() => rellenoEspecie.iniciar(pos)} titulo="Arrastrá hacia abajo para poner esta especie en las filas siguientes" />
                       </td>

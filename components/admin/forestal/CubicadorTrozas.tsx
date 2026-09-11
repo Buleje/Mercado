@@ -12,10 +12,10 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Boxes, Check, Columns3, Layers, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Sigma, Square, Table, Trash2, AlertTriangle, Upload, Volume2,
+  Boxes, Check, Columns3, Layers, Mic, MicOff, Plus, RotateCcw, Ruler, Scale, Settings2, Sigma, Square, Table, Trash2, AlertTriangle, Upload, Volume2,
 } from "@buleje/design-system/icons";
 import { CardTitle, DataTable } from "@buleje/design-system";
-import { detectarComando, ESPECIES_MADERA, mejoresNumeros, PT_POR_M3 } from "@/lib/forestal/cubicacion";
+import { detectarComando, mejoresNumeros, PT_POR_M3 } from "@/lib/forestal/cubicacion";
 import {
   compararConGtf, cubicarTroza, partirEnTrozas, totalesTrozas, type TrozaCubicada,
 } from "@/lib/forestal/cubicacion-trozas";
@@ -27,6 +27,7 @@ import { useTablaVentaneada } from "@/hooks/use-tabla-ventaneada";
 import ControlLecturaFlotante from "./cubicador-lectura-flotante";
 import { Kpi } from "./cubicador-kpis";
 import ImportarTrozasModal from "./ImportarTrozasModal";
+import { CtpEspeciesBoton, useEspeciesConCatalogo } from "./ctp-especie-campo";
 
 interface Fila extends TrozaCubicada {
   sospechosa?: boolean;
@@ -112,6 +113,12 @@ export default function CubicadorTrozas() {
   const pausedRef = useRef(false);
   const especieRef = useRef(especie);
   useEffect(() => { especieRef.current = especie; }, [especie]);
+  /* El catálogo de la planta (ADR-410), el mismo que el cubicador de aserrada.
+     Por REF porque el reconocedor de voz se arma una vez: con la lista capturada
+     en el closure, una especie recién creada no se reconocería al dictarla. */
+  const catalogoEspecies = useEspeciesConCatalogo();
+  const especiesRef = useRef<readonly string[]>(catalogoEspecies.nombres);
+  useEffect(() => { especiesRef.current = catalogoEspecies.nombres; }, [catalogoEspecies.nombres]);
 
   useEffect(() => {
     try {
@@ -146,7 +153,7 @@ export default function CubicadorTrozas() {
         setRows((prev) => { if (!prev.length) return prev; const next = prev.slice(0, -1); saveLocal(next); return next; });
         setLastAdded(null); carryRef.current = []; hablar("borrado");
       } else if (cmd.tipo === "especie") {
-        const found = ESPECIES_MADERA.find((s) => sinAcentos(s).startsWith(cmd.palabra));
+        const found = especiesRef.current.find((s) => sinAcentos(s).startsWith(cmd.palabra));
         if (found) { setEspecie(found); hablar(found); }
       }
       return;
@@ -407,8 +414,21 @@ export default function CubicadorTrozas() {
                 <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Especie</span>
                 <select value={especie} onChange={(ev) => setEspecie(ev.target.value)} className="bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none">
                   <option value="">Sin especie</option>
-                  {ESPECIES_MADERA.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {catalogoEspecies.nombres.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {/* Lo ya elegido no se pierde si el catálogo dejó de ofrecerlo. */}
+                  {especie && !catalogoEspecies.nombres.includes(especie) && <option value={especie}>{especie}</option>}
                 </select>
+                {/* El catálogo se edita acá: la troza rara aparece en el patio,
+                    no en otra pantalla. */}
+                <button
+                  type="button"
+                  onClick={catalogoEspecies.abrir}
+                  aria-label="Especies del aserradero: crear, renombrar, quitar"
+                  title="Especies del aserradero: crear, renombrar, quitar"
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                >
+                  <Settings2 className="h-4 w-4" aria-hidden />
+                </button>
               </label>
               {voz.listening && (
                 <div className="mt-2 min-h-[2.75rem] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
@@ -477,6 +497,7 @@ export default function CubicadorTrozas() {
             <button type="button" onClick={() => setImportando(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
               <Upload className="h-3.5 w-3.5" /> Importar
             </button>
+            <CtpEspeciesBoton onClick={catalogoEspecies.abrir} />
             {/* Columnas opcionales: ocultar/mostrar Especie y m³ — queda
                 guardado por tenant hasta que se vuelva a tocar. */}
             <div className="relative">
@@ -711,6 +732,8 @@ export default function CubicadorTrozas() {
         onCerrar={lectura.detener}
         etiqueta="Leyendo el patio"
       />
+
+      {catalogoEspecies.modal}
 
       {importando && (
         <ImportarTrozasModal

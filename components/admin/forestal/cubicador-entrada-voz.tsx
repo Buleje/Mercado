@@ -15,7 +15,7 @@
  */
 import {
   Calculator, FileSpreadsheet, Settings, Mic, MicOff, Volume2, VolumeX,
-  AlertTriangle, Lock, Unlock, X, Check, RotateCcw, Plus, Settings2,
+  AlertTriangle, Lock, Unlock, X, Check, RotateCcw, Plus, Settings2, Trees,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -112,6 +112,14 @@ export default function PanelEntradaVoz({
           <button type="button" onClick={onImportar} title="Importar un Excel/CSV de piezas al lote" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]">
             <FileSpreadsheet className="h-3.5 w-3.5" /> Importar Excel
           </button>
+          {/* El catálogo, con nombre y todo, en la barra: el engranaje pegado al
+              selector se ve recién cuando se busca la especie — y la pregunta
+              «¿dónde doy de alta una madera nueva?» llega antes que eso. */}
+          {onAbrirEspecies && (
+            <button type="button" onClick={onAbrirEspecies} title="Especies del aserradero: crear, renombrar, quitar" className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)] transition hover:text-[var(--text-primary)]">
+              <Trees className="h-3.5 w-3.5" /> Especies
+            </button>
+          )}
           <button type="button" onClick={onToggleAjustes} aria-pressed={showAjustes} title="Ajustes de voz y comandos" className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition ${showAjustes ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
             <Settings className="h-3.5 w-3.5" /> Ajustes
           </button>

@@ -25,6 +25,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { filasDesdeTexto, interpretarProduccion } from "@/lib/forestal/produccion-import";
 import { Btn, Field, I, ModalBody, ModalFooter } from "./ctp-shared";
+import { CtpEspecieInput, useEspeciesConCatalogo } from "./ctp-especie-campo";
 
 const hoy = () => new Date().toISOString().slice(0, 10);
 
@@ -39,6 +40,10 @@ export default function CtpProduccionImportModal({
   const [texto, setTexto] = useState("");
   const [fechaTurno, setFechaTurno] = useState(hoy());
   const [especieTurno, setEspecieTurno] = useState("");
+  /* La misma lista que el cubicador y el resto del libro (ADR-410): la planilla
+     del turno se pega con la especie escrita a mano, y ahí es donde nacían las
+     dos filas «Tornillo» y «TORNILLO». */
+  const catalogoEspecies = useEspeciesConCatalogo();
   const [progreso, setProgreso] = useState<{ hechas: number; total: number } | null>(null);
   const [fallo, setFallo] = useState<{ fila: number; motivo: string } | null>(null);
   const [creadas, setCreadas] = useState(0);
@@ -136,8 +141,13 @@ export default function CtpProduccionImportModal({
           <Field label="Fecha del turno" hint="Se usa en las filas que no traen fecha">
             <input type="date" className={I} value={fechaTurno} onChange={(e) => setFechaTurno(e.target.value)} />
           </Field>
-          <Field label="Especie del turno" hint="Para las filas sin columna de especie">
-            <input type="text" className={I} value={especieTurno} onChange={(e) => setEspecieTurno(e.target.value)} />
+          <Field label="Especie del turno" hint="Para las filas sin columna de especie · el botón abre el catálogo">
+            <CtpEspecieInput
+              id="ctp-import-especie-turno"
+              value={especieTurno}
+              onChange={setEspecieTurno}
+              catalogo={catalogoEspecies}
+            />
           </Field>
         </div>
 
@@ -203,6 +213,7 @@ export default function CtpProduccionImportModal({
           </p>
         )}
       </ModalBody>
+      {catalogoEspecies.modal}
     </AdminModal>
   );
 }

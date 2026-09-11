@@ -71,8 +71,9 @@ a dar de alta una especie en medio de una carga es perder la carga.
   almacenero. Es lo que se quiere de un catálogo, y hay que decirlo en la pantalla.
 - Los rechazos por regla del catálogo (nombre vacío, especie repetida) viajan como **422 con el
   motivo tal cual**: están escritos para quien está cargando, no para un log.
-- Quedan usando la constante los lugares que todavía no pasaron por acá (`CubicadorTrozas`,
-  `ResumenReparto`, el import de Excel). Ven las de fábrica; migrarlos es pasarles la misma lista.
+- ~~Quedan usando la constante los lugares que todavía no pasaron por acá (`CubicadorTrozas`,
+  `ResumenReparto`, el import de Excel).~~ **Cerrado el 2026-09-11** — ver «Alcance: todas las
+  pantallas donde se escribe una especie», abajo.
 
 ## Alternativas
 
@@ -82,3 +83,44 @@ a dar de alta una especie en medio de una carga es perder la carga.
   (CITES, densidad, equivalencias). Hoy es un nombre y una migración de más.
 - **Dejar el campo libre sin catálogo.** Es lo que ya pasaba, y es de donde salen «Tornillo» y
   «TORNILLO» como dos especies distintas en el mismo libro.
+
+---
+
+## Alcance: todas las pantallas donde se escribe una especie (2026-09-11)
+
+Pedido de Brandon: *«en modal de producir lote quiero que se pueda crear nuevas especies,
+eliminarlas, editarlas — también en herramientas, en cubicador de madera»*. El catálogo existía a
+medias: se editaba en el cubicador de aserrada y **en ningún otro lado**. Quien daba de alta
+«Cachimbo» la veía al cubicar y no al programar el lote de cachimbo — que es justo donde arranca la
+corrida que lo declara.
+
+La lista es una sola; lo que faltaba era una pieza compartida. Vive en
+`components/admin/forestal/ctp-especie-campo.tsx`:
+
+| Pieza | Qué es |
+|---|---|
+| `useEspeciesConCatalogo()` | Un solo pedido por pantalla: lista, `cientificoDe()`, `abrir()` y el modal listo para dibujar. **Nunca uno por fila** — en una grilla de veinte filas serían veinte pedidos de la misma lista. |
+| `CtpEspecieSelect` | El selector, con el engranaje del catálogo pegado. Agrupa «En el patio» (lo que la pantalla ya ofrecía, con su stock) y «Del catálogo». |
+| `CtpEspecieInput` | La versión escribible (input + datalist), donde la especie puede ser una que ninguna lista tiene todavía. |
+| `CtpEspeciesBoton` | El botón con nombre, para las barras de herramientas. |
+
+Pantallas migradas: `CtpLoteArmarModal` (programar el lote, en sus dos modos) · `CtpLoteDetalleModal`
+(editar el lote) · `CtpCubicarProductoModal` (cubicar lo que salió) · `CubicadorTrozas` (rolliza, con
+el mismo patrón de *ref* para el dictado) · `ResumenReparto` (la especie de cada bloque) ·
+`CtpProduccionImportModal` (la especie del turno pegado).
+
+Tres reglas que la pieza fija, porque cada una fue un bug posible:
+
+1. **Lo ya guardado nunca desaparece del selector.** Si un lote dice «Moena amarilla» y hoy el
+   catálogo no la ofrece, la opción se agrega igual: si no, el `<select>` abriría vacío y el primer
+   guardado borraría la especie sin que nadie lo pidiera.
+2. **El catálogo no pisa lo que hay en el patio.** Donde las opciones salen de la madera existente,
+   esas van primero con su stock. Elegir una del catálogo sin stock se puede —la guía llega mañana—
+   y el pie del modal lo dice en vez de callarlo.
+3. **El nombre científico viaja con la especie.** Al elegir una que el catálogo conoce, el campo
+   científico del lote se completa solo **si está vacío**: es la columna que el LO-CTP exige y nunca
+   pisa lo que el operador escribió.
+
+Y el botón dejó de esconderse: el engranaje pegado al selector se ve recién cuando ya se está
+buscando la especie, así que el cubicador (madera y trozas), los Resúmenes y el modal de cubicar
+tienen además un **«Especies»** con todas las letras en su barra de herramientas.

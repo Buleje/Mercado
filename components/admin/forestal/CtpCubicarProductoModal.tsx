@@ -20,7 +20,8 @@ import { useMemo, useState } from "react";
 import { AlertTriangle, Check, FileText, Loader2, Plus, Save, Trash2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { ESPECIES_MADERA, cubicarPieza, type PiezaCubicada, type Unidad } from "@/lib/forestal/cubicacion";
+import { cubicarPieza, type PiezaCubicada, type Unidad } from "@/lib/forestal/cubicacion";
+import { CtpEspecieSelect, CtpEspeciesBoton, useEspeciesConCatalogo } from "./ctp-especie-campo";
 import { ORDEN_TIPO, tipoDePieza, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import {
   cuadrarConLibro,
@@ -117,6 +118,10 @@ export default function CtpCubicarProductoModal({
   const especiesElegidas = [...new Set(declaradas.map((d) => (d.especie ?? "").trim()).filter(Boolean))];
   const especieBase = especiesElegidas.length === 1 ? especiesElegidas[0] : "";
   const [filas, setFilas] = useState<FilaCubicada[]>(() => [nuevaFila({ especie: especieBase })]);
+  /* La lista de especies es la de la planta (ADR-410), no la constante del
+     código: la especie se elige acá fila por fila y el que trabaja una madera
+     que el sistema no trae la tipeaba mal cada vez. */
+  const catalogoEspecies = useEspeciesConCatalogo();
   const [nombre, setNombre] = useState(() =>
     declaradas.length === 1 ? `${declaradas[0].etiqueta} · ${declaradas[0].especie ?? ""}`.trim() : titulo,
   );
@@ -400,6 +405,10 @@ export default function CtpCubicarProductoModal({
           <Btn variant="secondary" onClick={() => setFilas((p) => [...p, nuevaFila({ especie: especieBase })])}>
             <Plus className="h-4 w-4" /> Agregar fila
           </Btn>
+          {/* El catálogo se edita DONDE se usa: si la especie que salió de la
+              sierra no está en la lista, darla de alta no puede costar salir de
+              la cubicación a medio cargar. */}
+          <CtpEspeciesBoton onClick={catalogoEspecies.abrir} className="h-11 rounded-xl px-3 text-sm" />
         </div>
 
         {/* La grilla: las mismas celdas del cubicador — Enter agrega, ↑↓ y ←→
@@ -470,17 +479,15 @@ export default function CtpCubicarProductoModal({
                       />
                     </td>
                     <td className="px-2 py-1.5">
-                      <select
-                        aria-label={`Especie fila ${i + 1}`}
+                      <CtpEspecieSelect
+                        ariaLabel={`Especie fila ${i + 1}`}
                         value={f.especie}
-                        onChange={(e) => set(f.id, { especie: e.target.value })}
+                        onChange={(v) => set(f.id, { especie: v })}
+                        catalogo={catalogoEspecies}
+                        vacio="Sin especie"
+                        conBoton={false}
                         className="h-10 w-32 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 text-sm text-[var(--text-primary)]"
-                      >
-                        <option value="">Sin especie</option>
-                        {ESPECIES_MADERA.map((e) => (
-                          <option key={e} value={e}>{e}</option>
-                        ))}
-                      </select>
+                      />
                     </td>
                     <td className="px-2 py-1.5 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
                       {p ? fmtPt(p.pieTablar) : "—"}
@@ -510,6 +517,8 @@ export default function CtpCubicarProductoModal({
           <b>Ctrl+Supr</b> borra. El dictado por voz y la importación de Excel están en Herramientas → Cubicador.
         </p>
       </ModalBody>
+
+      {catalogoEspecies.modal}
 
       {verAnexo && (
         <Anexo04Modal

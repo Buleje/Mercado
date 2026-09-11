@@ -41,6 +41,7 @@ import { Btn, Field, I, ModalBody, ModalFooter, Seccion, productLabel } from "./
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 import { IconAction } from "@/components/admin/shared/module-primitives";
 import CtpMarcarUsadoModal from "./CtpMarcarUsadoModal";
+import { CtpEspecieSelect, useEspeciesConCatalogo } from "./ctp-especie-campo";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 
@@ -154,6 +155,11 @@ export default function CtpLoteDetalleModal({
   const { visibles: piezasEnPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(lote.trozas);
 
   const especieBloqueada = lote.trozas.length > 0;
+  /* La misma lista editable que el resto del libro (ADR-410). Acá además paga
+     doble: al elegir una especie que el catálogo conoce, su nombre científico
+     —la columna que el LO-CTP exige— se completa solo si está vacío. Nunca
+     pisa uno ya escrito: lo que el operador tipeó manda. */
+  const catalogoEspecies = useEspeciesConCatalogo();
   const cambios: CambiosLote = {
     ...(codigo.trim() !== lote.code ? { code: codigo.trim() } : {}),
     ...(!especieBloqueada && especie.trim() !== lote.speciesCommon ? { speciesCommon: especie.trim() } : {}),
@@ -510,9 +516,14 @@ export default function CtpLoteDetalleModal({
             label="Especie"
             hint={especieBloqueada ? `Ya tiene ${lote.trozas.length} pieza(s): no se puede cambiar` : undefined}
           >
-            <input
+            <CtpEspecieSelect
               value={especie}
-              onChange={(e) => setEspecie(e.target.value)}
+              onChange={(v) => {
+                setEspecie(v);
+                const cientifico = catalogoEspecies.cientificoDe(v);
+                if (cientifico && !especieCientifica.trim()) setEspecieCientifica(cientifico);
+              }}
+              catalogo={catalogoEspecies}
               disabled={especieBloqueada}
               className={`${I} disabled:cursor-not-allowed disabled:opacity-60`}
             />
@@ -660,6 +671,8 @@ export default function CtpLoteDetalleModal({
           }}
         />
       )}
+
+      {catalogoEspecies.modal}
     </AdminModal>
   );
 }

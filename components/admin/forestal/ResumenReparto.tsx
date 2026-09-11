@@ -35,7 +35,7 @@ import { exportarDistribucionExcel, exportarDistribucionPDF, filtrarPorEspecies,
 import { hoyISO, nombreSugeridoDistribucion, type DistribucionRegistro } from "@/lib/forestal/distribucion-registro";
 // Pie tablar entero y m³ con 3 decimales: la misma regla que el resto de Resúmenes.
 import { fmtM3, fmtPct, fmtPiezas, fmtPt, fmtSoles } from "@/lib/forestal/cubicacion-formato";
-import { ESPECIES_MADERA, ptDesdeM3, toFeet, unificarPorMedida } from "@/lib/forestal/cubicacion";
+import { ptDesdeM3, toFeet, unificarPorMedida } from "@/lib/forestal/cubicacion";
 import { margenLote, volumenLibre, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
 import { KpiResumen, SeccionResumen } from "./resumen-tabla";
@@ -60,6 +60,7 @@ import {
 import { anexosPorPermiso } from "@/lib/forestal/anexo-por-permiso";
 import AnexoPorPermiso from "./reparto-anexo-permiso";
 import MetaConMedidas from "./reparto-meta";
+import { CtpEspecieSelect, useEspeciesConCatalogo } from "./ctp-especie-campo";
 import { evaluarMeta, medidasDeMeta, META_DEFAULT, type MetaMix } from "@/lib/forestal/cubicacion-meta";
 import { slugKey } from "@/lib/forestal/sembrar-reparto";
 import { tipoComercialDelProducto } from "@/lib/forestal/loctp-catalogos";
@@ -371,6 +372,10 @@ function permisoDelLote(lote: LoteAserrio): string | null {
 }
 
 export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada[]; precioDe: PrecioPt }) {
+  /* La especie de cada bloque sale del catálogo de la planta (ADR-410), el
+     mismo que el cubicador: si acá ofreciera otra lista, el reparto propondría
+     especies que el libro no conoce. */
+  const catalogoEspecies = useEspeciesConCatalogo();
   const [bloques, setBloques] = useState<BloqueRolliza[]>([]);
   const [dim, setDim] = useState<DimensionResumen>("tipo");
   const [hayTrozas, setHayTrozas] = useState(0);
@@ -1678,6 +1683,9 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             )}
           </span>
           <div className="flex flex-wrap gap-2 print:hidden">
+            <button type="button" onClick={catalogoEspecies.abrir} title="Especies del aserradero: crear, renombrar, quitar" className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+              <TreePine className="h-3.5 w-3.5" /> Especies
+            </button>
             <button type="button" onClick={traerDeTrozas} disabled={hayTrozas === 0} title={hayTrozas === 0 ? "No hay trozas cubicadas en este dispositivo" : `Traer ${hayTrozas} trozas ya cubicadas`} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-40">
               <Layers className="h-3.5 w-3.5" /> Traer del cubicador de trozas{hayTrozas > 0 ? ` (${hayTrozas})` : ""}
             </button>
@@ -1931,10 +1939,15 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                       key: "especie",
                       node: (
                         <td className="px-3 py-2.5">
-                          <select value={b.especie} onChange={(e) => editar(b.id, "especie", e.target.value)} aria-label="Especie del bloque" className="h-10 w-full min-w-[110px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]">
-                            <option value="">Sin especie</option>
-                            {ESPECIES_MADERA.map((s) => <option key={s} value={s}>{s}</option>)}
-                          </select>
+                          <CtpEspecieSelect
+                            value={b.especie}
+                            onChange={(v) => editar(b.id, "especie", v)}
+                            catalogo={catalogoEspecies}
+                            ariaLabel="Especie del bloque"
+                            vacio="Sin especie"
+                            conBoton={false}
+                            className="h-10 w-full min-w-[110px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                          />
                         </td>
                       ),
                     },
@@ -2417,6 +2430,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
           onCerrar={() => setAnexoDe(null)}
         />
       )}
+      {catalogoEspecies.modal}
     </SeccionResumen>
   );
 }
