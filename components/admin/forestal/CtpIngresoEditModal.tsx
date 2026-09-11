@@ -17,7 +17,9 @@ import { useState } from "react";
 import { AlertCircle, Pencil } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { findSpeciesByCommonName, listSpecies } from "@/data/forestry-species";
+import { findSpeciesByCommonName } from "@/data/forestry-species";
+import { cientificoDeEspecie, opcionesDeEspecie } from "@/lib/forestal/especies-catalogo";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import {
   Btn,
   Field,
@@ -124,6 +126,9 @@ export default function CtpIngresoEditModal({
   onSaved: () => void;
 }) {
   const [data, setData] = useState<Borrador>(() => desde(entry));
+  /* El catálogo de especies de esta planta: alimenta el datalist y el
+     autocompletado del nombre científico (ADR-410). */
+  const catalogoEspecies = useEspeciesCatalogo();
   /** Casilleros (13) a (34): propietario, destinatario, transporte. */
   const gtfBase = leerGtfDatos((entry as { gtfDatos?: unknown }).gtfDatos);
   const [gtfDatos, setGtfDatos] = useState<GtfDatos>(gtfBase);
@@ -145,7 +150,20 @@ export default function CtpIngresoEditModal({
    */
   function onEspecieBlur() {
     const match = findSpeciesByCommonName(data.speciesCommonName);
-    if (!match) return;
+    /* Sin match en el catálogo del código, el científico puede venir igual del
+       catálogo de ESTA planta (ADR-410): «Cachimbo» no está en las dieciocho de
+       fábrica y su binomio lo cargó el aserradero una vez. El CITES NO se toca
+       en ese caso — decir que no es CITES porque el catálogo local no lo dice
+       sería inventar un dato legal. */
+    if (!match) {
+      const cientifico = cientificoDeEspecie(data.speciesCommonName, catalogoEspecies.catalogo);
+      if (!cientifico) return;
+      setData((p) => ({
+        ...p,
+        speciesScientificName: p.speciesScientificName.trim() || cientifico,
+      }));
+      return;
+    }
     setData((p) => ({
       ...p,
       speciesScientificName: p.speciesScientificName.trim() || match.scientificName,
@@ -468,7 +486,7 @@ export default function CtpIngresoEditModal({
                   list="ctp-ingreso-especies"
                 />
                 <datalist id="ctp-ingreso-especies">
-                  {listSpecies().map((s) => (
+                  {opcionesDeEspecie(catalogoEspecies.catalogo).map((s) => (
                     <option key={s.slug} value={s.commonName} />
                   ))}
                 </datalist>

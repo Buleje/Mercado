@@ -124,3 +124,53 @@ Tres reglas que la pieza fija, porque cada una fue un bug posible:
 Y el botón dejó de esconderse: el engranaje pegado al selector se ve recién cuando ya se está
 buscando la especie, así que el cubicador (madera y trozas), los Resúmenes y el modal de cubicar
 tienen además un **«Especies»** con todas las letras en su barra de herramientas.
+
+---
+
+## El catálogo se llena solo, y dice cuándo el libro se contradice (2026-09-11)
+
+Con el catálogo ya en todas las pantallas quedaba el problema de arranque: **empieza vacío y la
+planta lleva media temporada cargando**. Medido en el tenant real el mismo día: el libro usaba
+**10 especies que el catálogo no ofrecía** —Ana Caspi, Azucar huayo, Cachimbo (16 filas), Copal,
+Huayruro, Mashonaste, Panguana (9), Pashaco, Shimbillo, Yacuchapana— ninguna de las catorce de
+fábrica. Pedirle a Brandon que las tipee de nuevo es pedirle el trabajo dos veces.
+
+`GET …/especies?libro=1` agrupa por clave normalizada lo que nombran las cuatro tablas que escriben
+una especie (`WoodEntry`, `WoodEntryTroza`, `ForestCtpEntry`, `ForestLoteAserrio`) y responde dos
+listas. El cálculo es puro (`resumirEspeciesDelLibro`) y con tests; la consulta va **aparte del GET
+normal** porque son cuatro `groupBy` y un `<select>` de especie no los necesita para dibujarse.
+
+**1 · Sembrar.** «Tu libro ya usa N especies que no están en la lista» → un botón las da de alta
+todas, con el nombre científico que el propio libro ya traía. Se aplican una por una sobre el
+catálogo en memoria y se guarda al final: la segunda ve a la primera, y el tope y los repetidos se
+respetan igual que agregando a mano. Lo rechazado no aborta el resto — sembrar 9 de 11 diciendo por
+qué es mejor que no sembrar ninguna.
+
+**2 · Unificar.** Para el libro, «Tornillo» y «TORNILLO» **son dos maderas**: se separan en los
+totales por especie y en el saldo por permiso. En el tenant real eran 125 filas contra 10. El gestor
+las muestra juntas con su reparto y deja elegir una. Como esto **reescribe filas de un acta que se
+declara ante SERFOR**:
+
+- no es automático — dos clics, el segundo dice exactamente qué va a pasar;
+- el cuerpo del POST lleva `confirmar: true`, para que un pedido suelto no pueda hacerlo de costado;
+- sólo reemplaza las grafías EXACTAS que el resumen encontró bajo la misma clave, nunca por
+  aproximación, y la forma elegida tiene que ser la misma especie (si no, el libro pasaría a
+  declarar una madera distinta de la que entró);
+- no toca volúmenes, fechas ni atribuciones, y queda auditado (`ctp_especie_unificar`) con el conteo
+  por tabla y las formas reemplazadas.
+
+**3 · El científico deja de depender de la memoria.** `cientificoDeEspecie()` resuelve primero por
+el catálogo de la planta y después por `data/forestry-species.ts` (las 18 de SERFOR con su CITES).
+Con eso: el picker del alta de ingreso ofrece las especies propias como cualquier otra, editar un
+ingreso o un lote completa el binomio al salir del campo —sólo si estaba vacío—, y **el asiento que
+nace sin científico lo toma del catálogo en `ForestCtpDB.create`**, antes de la transacción. El
+CITES nunca se deduce del catálogo local: es un dato legal, no una preferencia de la planta.
+
+**4 · Las fotos y el catálogo son la misma lista.** «Fotos de especies» armaba su lista trayendo
+5.000 ingresos y todas las corridas para mirarles una columna; ahora sale del mismo endpoint, la
+lista incluye las del catálogo todavía sin cargar madera, y el botón para crear o corregir una
+especie está en esa pantalla.
+
+Verificado contra el tenant real (sembrado de las 10, con el selector siguiendo el cambio) y la
+unificación end-to-end en un tenant QA con dos lotes de prueba: `TORNILLO` → `Tornillo`, una fila
+reescrita, duplicados en cero, y los lotes de prueba borrados después.

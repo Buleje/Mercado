@@ -25,6 +25,7 @@ import { Check, Loader2, Pencil, Plus, RotateCcw, Trash2, X } from "@buleje/desi
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn } from "./ctp-shared";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
+import { EspeciesDuplicadas, EspeciesQueFaltan } from "./ctp-especies-del-libro";
 import { especiesDisponibles } from "@/lib/forestal/especies-catalogo";
 
 const CAMPO =
@@ -42,7 +43,10 @@ export default function CtpEspeciesCatalogoModal({
   onClose: () => void;
   onCambio?: () => void;
 }) {
-  const cat = useEspeciesCatalogo();
+  /* `conLibro`: el gestor —y sólo el gestor— pregunta además qué especies ya
+     están escritas en el libro. Es lo que permite sembrar el catálogo con lo
+     que la planta usa hace meses, en vez de pedirle que lo tipee de nuevo. */
+  const cat = useEspeciesCatalogo({ conLibro: true });
   const [nombre, setNombre] = useState("");
   const [cientifico, setCientifico] = useState("");
   const [editando, setEditando] = useState<string | null>(null);
@@ -131,6 +135,20 @@ export default function CtpEspeciesCatalogoModal({
             Agregar
           </button>
         </div>
+
+        {/* Lo que el libro ya dice: sembrar lo que falta y unificar lo escrito
+            de dos formas. Va ARRIBA de la lista porque es lo que hay que
+            resolver; la lista de abajo es el estado, no la tarea. */}
+        <EspeciesQueFaltan
+          faltan={cat.faltan}
+          guardando={cat.guardando}
+          onSembrar={(especies) => void cat.sembrar(especies).then(tras)}
+        />
+        <EspeciesDuplicadas
+          duplicadas={cat.duplicadas}
+          guardando={cat.guardando}
+          onUnificar={(clave, nombre) => void cat.unificar(clave, nombre).then(tras)}
+        />
 
         {cat.error && (
           <p className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-3 py-2 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">

@@ -198,6 +198,10 @@ export type CtpAuditAction =
    *  La especie es lo que el libro declara ante SERFOR — quién cambió la lista
    *  que se ofrece al cargar tiene que quedar registrado. */
   | "ctp_especie_catalogo"
+  /** Unificar las grafías de una especie REESCRIBE filas del libro («TORNILLO»
+   *  pasa a decir «Tornillo»). No cambia volúmenes ni atribuciones, pero toca
+   *  un acta: queda con el conteo por tabla y las formas que se reemplazaron. */
+  | "ctp_especie_unificar"
   // GTF de salida formal (serie autorizada ARFFS + correlativo auto)
   | "ctp_gtf_emitir"
   /** Se completaron los datos de la guía (propietario/destinatario/transportista). */

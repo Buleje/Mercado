@@ -16,6 +16,7 @@ import {
 } from "./forest-ctp-consumo.db";
 import { ORIGEN_VIGENTE, ForestCtpDespachoDB } from "./forest-ctp-despacho.db";
 import { ForestCtpCierreDB } from "./forest-ctp-cierre.db";
+import { ForestEspeciesDB } from "./forest-especies.db";
 import { saldosDeCorridas } from "./forest-ctp-saldo-corrida";
 /* Las trozas de una corrida se leen SIEMPRE por acá (ADR-326 §6: las tres
    lecturas dicen lo mismo). `wood-entries.db` no importa este archivo, así que
@@ -563,6 +564,16 @@ export class ForestCtpDB {
       rendimiento = Math.round((outQty / inVol) * 10000) / 100;
     }
 
+    /* El nombre científico es una columna del LO-CTP, y el que carga una
+       corrida rara vez se acuerda del binomio. Si el asiento no lo trae, sale
+       del catálogo de la planta (ADR-410) — es el dato que el propio aserradero
+       declaró para esa especie. Se resuelve ACÁ, antes de la transacción: es un
+       KV, no tiene por qué estirar el lock del insert. */
+    let cientifico = input.speciesScientific?.trim() || null;
+    if (!cientifico && input.speciesCommon?.trim()) {
+      cientifico = await ForestEspeciesDB.cientificoDe(tenantId, input.speciesCommon);
+    }
+
     // La validación de stock y el INSERT van en UNA transacción: si se valida
     // fuera, entre el chequeo y el insert entra otro despacho y el guard no sirve.
     const entry = await prisma.$transaction(async (tx) => {
@@ -590,7 +601,7 @@ export class ForestCtpDB {
           materiaPrimaRef: input.materiaPrimaRef?.trim() || null,
           originCode: input.originCode?.trim() || null,
           speciesCommon: input.speciesCommon?.trim() || null,
-          speciesScientific: input.speciesScientific?.trim() || null,
+          speciesScientific: cientifico,
           cites: input.cites ?? false,
           productType: input.productType?.trim() || null,
           volumeInputM3: dec(input.volumeInputM3),

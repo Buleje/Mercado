@@ -23,6 +23,8 @@ import CtpParteBarra from "./CtpParteBarra";
 import CtpTrozasImportModal from "./CtpTrozasImportModal";
 import type { TrozaImportada } from "@/lib/forestal/trozas-import";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
+import { cientificoDeEspecie, opcionesDeEspecie } from "@/lib/forestal/especies-catalogo";
 import type { DocTipo } from "@/lib/forestal/directorio";
 import { useActionToasts, ActionToasts } from "./cubicador-toasts";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
@@ -32,7 +34,6 @@ import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpFichaFaltantes, type CtpFicha } from "@/lib/forestal/ctp-ficha-types";
 import {
-  listSpecies,
   findSpeciesByCommonName,
 } from "@/data/forestry-species";
 import { TIPOS_DOCUMENTO_LOCTP, UNIDADES_LOCTP } from "@/lib/forestal/loctp-campos";
@@ -224,7 +225,15 @@ const INITIAL: DraftData = {
 // ═════════════════════════════════════════════════════════════════════════
 
 export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, preset }: Props) {
-  const speciesOptions = useMemo(() => listSpecies(), []);
+  /* El picker ofrece las de fábrica MÁS las del catálogo de esta planta
+     (ADR-410): «Panguana» y «Yacuchapana» entran por la GTF todas las semanas y
+     el código no las conoce — sin esto hay que elegir «Otro» y tipearlas cada
+     vez, que es de donde salen las grafías que después no coinciden. */
+  const catalogoEspecies = useEspeciesCatalogo();
+  const speciesOptions = useMemo(
+    () => opcionesDeEspecie(catalogoEspecies.catalogo),
+    [catalogoEspecies.catalogo],
+  );
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -641,8 +650,12 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
     ? findSpeciesByCommonName(data.customSpeciesName)
     : null;
   const finalScientificName = isCustomSpecies
-    ? customMatched?.scientificName ?? null
-    : selectedSpecies?.scientificName ?? null;
+    ? /* Tipeada a mano: el científico sale del catálogo de la planta o del de
+         fábrica — la columna que el LO-CTP exige no puede depender de que el
+         operador se acuerde del binomio. */
+      (customMatched?.scientificName ??
+        cientificoDeEspecie(data.customSpeciesName, catalogoEspecies.catalogo))
+    : selectedSpecies?.scientificName || null;
   const finalCites = isCustomSpecies
     ? customMatched?.cites ?? false
     : selectedSpecies?.cites ?? false;

@@ -9,66 +9,50 @@
  * desconocido al lado de un nombre científico en un libro oficial es peor que no
  * tener foto.
  *
- * La lista de "especies sin foto" sale de los ingresos del propio libro: la
- * biblioteca dice qué falta en vez de esperar que uno se acuerde.
+ * La lista de "especies sin foto" sale del propio libro Y del catálogo de la
+ * planta (ADR-410): la biblioteca dice qué falta en vez de esperar que uno se
+ * acuerde. Son la MISMA lista de especies vista desde otro lado — por eso la
+ * foto se pide contra el catálogo, el científico sale de ahí, y el botón para
+ * crear o corregir una especie está en esta pantalla y no en otra.
+ *
+ * Antes esto se armaba trayendo 5.000 ingresos y todas las corridas sólo para
+ * mirarles la columna «especie»: media biblioteca de datos para catorce
+ * nombres. Ahora lo resuelve el endpoint del catálogo, que ya los agrupa.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, Loader2, Trash2, Trees, Upload } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { especiesSinFoto } from "@/lib/forestal/especies-fotos";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
-
-interface IngresoEspecie {
-  speciesCommonName?: string | null;
-  speciesScientificName?: string | null;
-  status?: string;
-}
+import { CtpEspeciesBoton, useEspeciesConCatalogo } from "./ctp-especie-campo";
 
 export default function EspeciesFotosBiblioteca() {
   const { fotos, indice, cargando, recargar } = useEspeciesFotos();
-  const [delLibro, setDelLibro] = useState<IngresoEspecie[]>([]);
+  /* Una sola fuente para las dos listas: el catálogo de la planta y lo que el
+     libro ya tiene escrito, con su científico. */
+  const catalogo = useEspeciesConCatalogo({ conLibro: true });
   const [subiendo, setSubiendo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [nueva, setNueva] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const objetivo = useRef<{ nombre: string; cientifico: string } | null>(null);
 
-  useEffect(() => {
-    void (async () => {
-      try {
-        // Ingresos Y corridas: una especie puede entrar como troza y salir como
-        // producto, y la foto sirve en las dos puntas. Mirar sólo los ingresos
-        // dejaba fuera lo que se asierra de stock viejo.
-        const [ri, rp] = await Promise.all([
-          fetch("/api/admin/forestal/wood-entries?limit=5000", { credentials: "include" }),
-          fetch("/api/admin/forestal/ctp?section=produccion", { credentials: "include" }),
-        ]);
-        const ingresos = ri.ok ? (((await ri.json()) as { entries?: IngresoEspecie[] }).entries ?? []) : [];
-        const corridas = rp.ok
-          ? (((await rp.json()) as { entries?: { speciesCommon?: string | null; speciesScientific?: string | null; status?: string }[] }).entries ?? [])
-          : [];
-        setDelLibro([
-          ...ingresos.filter((e) => e.status !== "anulado" && e.status !== "rechazado"),
-          ...corridas
-            .filter((e) => e.status !== "anulado")
-            .map((e) => ({ speciesCommonName: e.speciesCommon, speciesScientificName: e.speciesScientific })),
-        ]);
-      } catch {
-        // Sin el libro la biblioteca sigue sirviendo: sólo no propone qué falta.
-      }
-    })();
-  }, []);
-
+  /* Qué falta: las del catálogo Y las que el libro nombra. Una especie que la
+     planta dio de alta pero todavía no cargó merece su foto igual —es la que
+     va a llegar mañana— y una que está en el libro y no en el catálogo también:
+     la foto sirve en el patio aunque la lista esté incompleta. */
   const faltan = useMemo(
-    () => especiesSinFoto(indice, delLibro.map((e) => e.speciesCommonName)),
-    [indice, delLibro],
+    () => especiesSinFoto(indice, [...catalogo.nombres, ...catalogo.delLibro.map((e) => e.nombre)]),
+    [indice, catalogo.nombres, catalogo.delLibro],
   );
   const cientificoDe = useCallback(
     (comun: string) =>
-      delLibro.find((e) => (e.speciesCommonName ?? "").trim() === comun)?.speciesScientificName ?? "",
-    [delLibro],
+      catalogo.cientificoDe(comun) ??
+      catalogo.delLibro.find((e) => e.nombre === comun)?.cientifico ??
+      "",
+    [catalogo],
   );
 
   const pedirArchivo = (nombre: string, cientifico: string) => {
@@ -171,8 +155,13 @@ export default function EspeciesFotosBiblioteca() {
           >
             <Upload className="h-4 w-4" aria-hidden /> Subir
           </button>
+          {/* El catálogo, desde acá: la foto y el nombre son la misma especie,
+              y corregir uno no puede costar cambiar de pantalla. */}
+          <CtpEspeciesBoton onClick={catalogo.abrir} className="h-12 rounded-2xl px-4 text-sm" />
         </div>
       </div>
+
+      {catalogo.modal}
 
       {error && (
         <div className="flex items-start gap-2 rounded-2xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] dark:bg-transparent dark:text-[var(--data-error-500)]">
@@ -184,7 +173,9 @@ export default function EspeciesFotosBiblioteca() {
       {faltan.length > 0 && (
         <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
           <p className="mb-2 text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            Especies del libro sin foto ({faltan.length})
+            {/* Dice «y del catálogo» porque la lista dejó de ser sólo lo cargado:
+                una especie dada de alta y todavía sin madera también va acá. */}
+            Especies sin foto ({faltan.length}) · del libro y del catálogo
           </p>
           <div className="flex flex-wrap gap-2">
             {faltan.map((e) => (

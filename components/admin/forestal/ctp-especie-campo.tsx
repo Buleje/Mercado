@@ -32,7 +32,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Settings2, Trees } from "@buleje/design-system/icons";
 import { ESPECIES_MADERA } from "@/lib/forestal/cubicacion";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
-import { especiesDisponibles } from "@/lib/forestal/especies-catalogo";
+import { especiesDisponibles, type EspecieEnElLibro } from "@/lib/forestal/especies-catalogo";
 import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { I } from "./ctp-shared";
@@ -47,6 +47,8 @@ export interface OpcionEspecie {
 export interface CatalogoUI {
   /** Los nombres a ofrecer (catálogo del tenant, o las de fábrica si no cargó). */
   nombres: string[];
+  /** Lo que el libro ya tiene escrito. Vacío salvo que se pida `conLibro`. */
+  delLibro: EspecieEnElLibro[];
   /** El científico que el catálogo sabe de esa especie, si sabe alguno. */
   cientificoDe: (nombre: string) => string | null;
   /** Abre el catálogo para crear / renombrar / quitar. */
@@ -63,8 +65,8 @@ export interface CatalogoUI {
  * grilla de veinte filas, veinte hooks son veinte pedidos al servidor de la
  * misma lista.
  */
-export function useEspeciesConCatalogo(): CatalogoUI {
-  const cat = useEspeciesCatalogo();
+export function useEspeciesConCatalogo({ conLibro = false }: { conLibro?: boolean } = {}): CatalogoUI {
+  const cat = useEspeciesCatalogo({ conLibro });
   const [abierto, setAbierto] = useState(false);
 
   const nombres = useMemo(
@@ -89,6 +91,7 @@ export function useEspeciesConCatalogo(): CatalogoUI {
 
   return {
     nombres,
+    delLibro: cat.delLibro,
     cientificoDe,
     abrir: useCallback(() => setAbierto(true), []),
     recargar: cat.recargar,

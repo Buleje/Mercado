@@ -33,6 +33,7 @@
 
 import { ESPECIES_MADERA } from "./cubicacion";
 import { claveEspecie } from "./loth-constants";
+import { findSpeciesByCommonName, listSpecies, type ForestrySpecies } from "@/data/forestry-species";
 
 /** Tope por tenant: es un JSON en el KV, no una tabla. */
 export const MAX_ESPECIES = 300;
@@ -295,4 +296,177 @@ export function restaurarEspecie(catalogo: CatalogoEspecies, clave: string): Res
 export function especiesOcultas(catalogo: CatalogoEspecies): EspecieDisponible[] {
   const ocultas = new Set(catalogo.ocultas);
   return especiesDeFabrica().filter((f) => ocultas.has(f.clave));
+}
+
+// ─── Lo que el libro ya tiene escrito ────────────────────────────────────────
+//
+// El catálogo empieza vacío y la planta ya lleva meses cargando. Pedirle que
+// tipee de nuevo las especies que su propio libro repite todos los días es
+// pedirle el trabajo dos veces — y es donde nacen las grafías que después no
+// coinciden. Estas funciones son PURAS: leen lo que ya se escribió (el conteo
+// sale de la DB) y dicen dos cosas: qué falta en el catálogo, y qué está
+// escrito de más de una forma.
+
+/** Una forma de escribir una especie, tal cual figura en el libro. */
+export interface GrafiaEnElLibro {
+  texto: string;
+  usos: number;
+}
+
+/** Una especie del libro, con todas sus grafías juntas bajo la misma clave. */
+export interface EspecieEnElLibro {
+  clave: string;
+  /** La grafía que se propone como la buena: la más usada. */
+  nombre: string;
+  /** El científico más usado de los que trae el libro, si alguno. */
+  cientifico: string | null;
+  /** Filas del libro que la nombran, sumando todas sus grafías. */
+  usos: number;
+  grafias: GrafiaEnElLibro[];
+  /** `true` si el catálogo del tenant ya la ofrece. */
+  enCatalogo: boolean;
+}
+
+/** Una fila cruda: un nombre escrito en el libro y cuántas veces aparece. */
+export interface FilaDelLibro {
+  nombre: string | null | undefined;
+  cientifico?: string | null;
+  usos: number;
+}
+
+/**
+ * Entre dos grafías igual de usadas gana la que está escrita como se escribe un
+ * nombre propio: «Tornillo» antes que «TORNILLO» o «tornillo». No es cosmética
+ * —es la que va a quedar impresa en la guía— y es la que el operador reconoce.
+ */
+function mejorGrafia(a: GrafiaEnElLibro, b: GrafiaEnElLibro): number {
+  if (a.usos !== b.usos) return b.usos - a.usos;
+  const puntaje = (t: string) => {
+    const primera = t.slice(0, 1);
+    const resto = t.slice(1);
+    if (primera === primera.toLocaleUpperCase("es") && resto !== resto.toLocaleUpperCase("es")) return 0;
+    return 1;
+  };
+  const pa = puntaje(a.texto);
+  const pb = puntaje(b.texto);
+  if (pa !== pb) return pa - pb;
+  return a.texto.localeCompare(b.texto, "es");
+}
+
+/**
+ * Junta las filas del libro por clave normalizada y las contrasta con el
+ * catálogo. Devuelve alfabético por el nombre propuesto.
+ */
+export function resumirEspeciesDelLibro(
+  filas: readonly FilaDelLibro[],
+  catalogo: CatalogoEspecies,
+): EspecieEnElLibro[] {
+  const enCatalogo = new Set(especiesDisponibles(catalogo).map((e) => e.clave));
+  const porClave = new Map<
+    string,
+    { grafias: Map<string, number>; cientificos: Map<string, number>; usos: number }
+  >();
+
+  for (const f of filas) {
+    const texto = txt(f.nombre);
+    const clave = claveEspecie(texto);
+    /* Sin nombre no hay especie. Las filas con la columna vacía existen —el
+       libro admite huecos— pero no son una especie que dar de alta. */
+    if (!clave) continue;
+    const usos = Number.isFinite(f.usos) ? Math.max(0, Math.trunc(f.usos)) : 0;
+    const acc = porClave.get(clave) ?? { grafias: new Map(), cientificos: new Map(), usos: 0 };
+    acc.grafias.set(texto, (acc.grafias.get(texto) ?? 0) + usos);
+    acc.usos += usos;
+    const cientifico = txt(f.cientifico);
+    if (cientifico) acc.cientificos.set(cientifico, (acc.cientificos.get(cientifico) ?? 0) + usos);
+    porClave.set(clave, acc);
+  }
+
+  const salida: EspecieEnElLibro[] = [];
+  for (const [clave, acc] of porClave) {
+    const grafias = [...acc.grafias.entries()]
+      .map(([texto, usos]) => ({ texto, usos }))
+      .sort(mejorGrafia);
+    const cientifico =
+      [...acc.cientificos.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es"))[0]?.[0] ??
+      null;
+    salida.push({
+      clave,
+      nombre: grafias[0]?.texto ?? clave,
+      cientifico,
+      usos: acc.usos,
+      grafias,
+      enCatalogo: enCatalogo.has(clave),
+    });
+  }
+  return salida.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+}
+
+/** Las que el libro usa y el catálogo todavía no ofrece — las que hay que sembrar. */
+export const especiesQueFaltan = (delLibro: readonly EspecieEnElLibro[]): EspecieEnElLibro[] =>
+  delLibro.filter((e) => !e.enCatalogo);
+
+/**
+ * Las escritas de más de una forma: «Tornillo» y «TORNILLO» son dos filas
+ * distintas en el mismo libro y una sola madera en el patio.
+ */
+export const especiesConVariasGrafias = (delLibro: readonly EspecieEnElLibro[]): EspecieEnElLibro[] =>
+  delLibro.filter((e) => e.grafias.length > 1);
+
+// ─── El catálogo de la planta, en los formularios del libro ──────────────────
+
+/**
+ * El nombre científico de una especie: primero lo que declaró ESTA planta,
+ * después el catálogo del código.
+ *
+ * El orden importa. `data/forestry-species.ts` trae dieciocho especies con su
+ * binomio y su CITES —dato de SERFOR, confiable—, pero no sabe qué es una
+ * «Panguana» ni una «Yacuchapana», que es lo que entra por la GTF en esta
+ * planta. Lo que el aserradero cargó a mano en su catálogo es una declaración
+ * explícita suya: manda sobre la lista de fábrica y tapa el hueco de las que
+ * ni siquiera están.
+ */
+export function cientificoDeEspecie(
+  nombre: string,
+  catalogo: CatalogoEspecies,
+): string | null {
+  const clave = claveEspecie(nombre);
+  if (!clave) return null;
+  const propia = especiesDisponibles(catalogo).find((e) => e.clave === clave);
+  if (propia?.cientifico) return propia.cientifico;
+  return findSpeciesByCommonName(nombre)?.scientificName ?? null;
+}
+
+/**
+ * Las opciones del picker de especies: las de fábrica con su CITES, más las que
+ * el aserradero agregó y el código no conoce.
+ *
+ * Las del código van con su ficha intacta —CITES y nivel de protección son
+ * datos legales, no preferencias de la planta— y las propias entran detrás,
+ * alfabéticas, con `cites: false`: decir que una especie NO es CITES porque el
+ * catálogo local no lo dice sería inventarlo; lo que se evita es que el
+ * operador tenga que elegir «Otro» y tipear el nombre cada vez.
+ */
+export function opcionesDeEspecie(catalogo: CatalogoEspecies): ForestrySpecies[] {
+  const delCodigo = listSpecies({ includeOther: false });
+  const conocidas = new Set(delCodigo.map((s) => claveEspecie(s.commonName)));
+  const propias: ForestrySpecies[] = [];
+  for (const e of especiesDisponibles(catalogo)) {
+    if (conocidas.has(e.clave)) continue;
+    conocidas.add(e.clave);
+    propias.push({
+      slug: `planta:${e.clave}`,
+      commonName: e.nombre,
+      scientificName: e.cientifico ?? "",
+      cites: false,
+      protectionLevel: "sin_restriccion",
+      regions: [],
+    });
+  }
+  const salida = [...delCodigo, ...propias].sort((a, b) =>
+    a.commonName.localeCompare(b.commonName, "es"),
+  );
+  /* «Otro» siempre al final: es la salida de emergencia, no una especie. */
+  const otro = listSpecies({ includeOther: true }).find((s) => s.slug === "otro");
+  return otro ? [...salida, otro] : salida;
 }

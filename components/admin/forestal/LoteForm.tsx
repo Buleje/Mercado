@@ -11,7 +11,9 @@ import { useState } from "react";
 import { Layers, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { findSpeciesByCommonName, listSpecies } from "@/data/forestry-species";
+import { findSpeciesByCommonName } from "@/data/forestry-species";
+import { cientificoDeEspecie, opcionesDeEspecie } from "@/lib/forestal/especies-catalogo";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { Btn, Field, I, ModalBody, ModalFooter, Seccion } from "./ctp-shared";
 import { avisosVentana } from "@/lib/forestal/lote-ventana";
 import LoteMiembrosEditor, { loteRowsValidas, type LoteRow } from "./LoteMiembrosEditor";
@@ -37,12 +39,21 @@ export default function LoteForm({ onClose, onSaved }: { onClose: () => void; on
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /* El catálogo de especies de esta planta (ADR-410): las que el aserradero
+     agregó también sugieren y también completan el científico. */
+  const catalogoEspecies = useEspeciesCatalogo();
+
   function onSpeciesBlur() {
     const match = findSpeciesByCommonName(speciesCommon);
     if (match) {
       if (!speciesScientific) setSpeciesScientific(match.scientificName);
       setCites(match.cites);
+      return;
     }
+    /* Fuera del catálogo del código el científico puede venir del de la planta;
+       el CITES no se toca — es un dato legal, no una preferencia local. */
+    const cientifico = cientificoDeEspecie(speciesCommon, catalogoEspecies.catalogo);
+    if (cientifico && !speciesScientific) setSpeciesScientific(cientifico);
   }
 
   async function save() {
@@ -134,7 +145,7 @@ export default function LoteForm({ onClose, onSaved }: { onClose: () => void; on
                     esto era invisible hasta soltar el campo: un typo no
                     matcheaba y nada avisaba. */}
                 <datalist id="lote-especies">
-                  {listSpecies().map((s) => (
+                  {opcionesDeEspecie(catalogoEspecies.catalogo).map((s) => (
                     <option key={s.slug} value={s.commonName} />
                   ))}
                 </datalist>

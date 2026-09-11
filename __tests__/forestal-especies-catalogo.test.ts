@@ -9,6 +9,11 @@ import {
   normalizarCatalogo,
   quitarEspecie,
   restaurarEspecie,
+  cientificoDeEspecie,
+  especiesConVariasGrafias,
+  especiesQueFaltan,
+  opcionesDeEspecie,
+  resumirEspeciesDelLibro,
 } from "@/lib/forestal/especies-catalogo";
 import { ESPECIES_MADERA } from "@/lib/forestal/cubicacion";
 
@@ -107,5 +112,78 @@ describe("el catálogo de especies del aserradero", () => {
     const con = ok(agregarEspecie(CATALOGO_VACIO, { nombre: "Añuje caspi" }));
     const nombres = nombresDisponibles(con.catalogo);
     expect(nombres).toEqual([...nombres].sort((a, b) => a.localeCompare(b, "es")));
+  });
+
+  // ── Lo que el libro ya tiene escrito ──────────────────────────────────────
+
+  it("junta las grafías de la misma especie y propone la mejor escrita", () => {
+    const r = resumirEspeciesDelLibro(
+      [
+        { nombre: "TORNILLO", usos: 125 },
+        { nombre: "Tornillo", usos: 10, cientifico: "Cedrelinga cateniformis" },
+        { nombre: "  tornillo  ", usos: 1 },
+        { nombre: "Cachimbo", usos: 16 },
+      ],
+      CATALOGO_VACIO,
+    );
+    const tornillo = r.find((e) => e.clave === "tornillo")!;
+    expect(tornillo.usos).toBe(136);
+    expect(tornillo.grafias).toHaveLength(3);
+    /* La más usada manda: 125 contra 10, aunque esté en mayúsculas. */
+    expect(tornillo.nombre).toBe("TORNILLO");
+    /* El científico viaja aunque lo traiga la grafía menos usada. */
+    expect(tornillo.cientifico).toBe("Cedrelinga cateniformis");
+    expect(especiesConVariasGrafias(r).map((e) => e.clave)).toEqual(["tornillo"]);
+  });
+
+  it("a igualdad de uso gana la escrita como nombre propio", () => {
+    const r = resumirEspeciesDelLibro(
+      [
+        { nombre: "CAPIRONA", usos: 7 },
+        { nombre: "Capirona", usos: 7 },
+      ],
+      CATALOGO_VACIO,
+    );
+    expect(r[0].nombre).toBe("Capirona");
+  });
+
+  it("las filas sin especie no inventan una especie", () => {
+    const r = resumirEspeciesDelLibro(
+      [{ nombre: null, usos: 9 }, { nombre: "   ", usos: 4 }, { nombre: "Copal", usos: 8 }],
+      CATALOGO_VACIO,
+    );
+    expect(r.map((e) => e.nombre)).toEqual(["Copal"]);
+  });
+
+  it("dice cuáles faltan en el catálogo, por clave y no por texto", () => {
+    const con = ok(agregarEspecie(CATALOGO_VACIO, { nombre: "Cachimbo" }));
+    const r = resumirEspeciesDelLibro(
+      [{ nombre: "CACHIMBO", usos: 3 }, { nombre: "Panguana", usos: 9 }, { nombre: "Tornillo", usos: 2 }],
+      con.catalogo,
+    );
+    /* «CACHIMBO» ya está (misma clave) y «Tornillo» es de fábrica. */
+    expect(especiesQueFaltan(r).map((e) => e.nombre)).toEqual(["Panguana"]);
+  });
+
+  it("el científico sale primero del catálogo de la planta y después del código", () => {
+    const con = ok(
+      agregarEspecie(CATALOGO_VACIO, { nombre: "Panguana", cientifico: "Brosimum utile" }),
+    );
+    expect(cientificoDeEspecie("panguana", con.catalogo)).toBe("Brosimum utile");
+    /* Sin nada propio, el binomio de fábrica (SERFOR) sigue valiendo. */
+    expect(cientificoDeEspecie("Tornillo", CATALOGO_VACIO)).toBeTruthy();
+    expect(cientificoDeEspecie("Madera que no existe", CATALOGO_VACIO)).toBeNull();
+  });
+
+  it("el picker ofrece las de fábrica y las propias, sin repetir y con «Otro» al final", () => {
+    const con = ok(agregarEspecie(CATALOGO_VACIO, { nombre: "Panguana" }));
+    const ops = opcionesDeEspecie(con.catalogo);
+    expect(ops.filter((s) => s.commonName === "Panguana")).toHaveLength(1);
+    expect(ops.at(-1)?.slug).toBe("otro");
+    /* Y una que ya viene de fábrica no se puede duplicar desde el catálogo: el
+       alta la rechaza, así que el picker nunca ve dos «Tornillo». */
+    expect(agregarEspecie(con.catalogo, { nombre: "TORNILLO" }).ok).toBe(false);
+    const claves = ops.map((x) => x.commonName.toLowerCase());
+    expect(claves.filter((n) => n === "tornillo")).toHaveLength(1);
   });
 });
