@@ -302,7 +302,7 @@ export function CtpEntriesView({
     conAnexo, totalAnexos, recargarAnexos: cargarAnexos, sinAnexo,
     statusFilter, setStatusFilter, soloSinAnexo, setSoloSinAnexo,
     sort, setSort, facetas, setFacetas, activos, panelId, abierto, alternar, opciones,
-    visible, totalesVista, kpis, statusCounts,
+    visible, totalesVista, kpis, statusCounts, kpisPrevios, etiquetaPrevio,
   } = useCtpSeccion(section, period, search);
   /** Corridas que existen pero el período activo no muestra — "Productos
    *  disponibles" no filtra por fecha, así que ya las cuenta. Sin este aviso
@@ -915,6 +915,10 @@ export function CtpEntriesView({
       <CtpSeccionKpis
         section={section}
         kpis={kpis}
+        /* Las mismas cuentas una ventana atrás: sin esto cada tarjeta dice un
+           número que nadie puede juzgar. */
+        kpisPrevios={kpisPrevios}
+        etiquetaPrevio={etiquetaPrevio}
         soloVigentes={statusFilter === "registrado"}
         onSoloVigentes={() => setStatusFilter((f) => (f === "registrado" ? "" : "registrado"))}
         sinAnexo={sinAnexo}

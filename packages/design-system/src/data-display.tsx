@@ -55,6 +55,20 @@ export interface StatCardProps {
   deltaLabel?: string;
   /** Trend explícito. Si no se da, se infiere del signo de delta. */
   trend?: StatCardTrend;
+  /**
+   * Qué significa que el número SUBA.
+   *
+   * - `normal` (default) — subir es bueno: verde arriba, rojo abajo (ventas, producción).
+   * - `inverse` — subir es malo: rojo arriba, verde abajo (merma, gastos, atrasos, devoluciones).
+   * - `neutral` — ni bueno ni malo, el delta se dice en gris (un rendimiento con
+   *   tope, la cantidad de especies distintas).
+   *
+   * La FLECHA siempre sigue el signo del número; lo único que cambia es el
+   * color. Pintar de rojo una flecha que apunta para arriba es exactamente lo
+   * que hay que hacer cuando subir es la mala noticia — dibujarla para abajo
+   * sería mentir sobre el número para acomodar el color.
+   */
+  deltaPolarity?: "normal" | "inverse" | "neutral";
   /** Ícono a la derecha del label. */
   icon?: LucideIcon;
   /** Intent semántico. Default neutral (monocromo). */
@@ -140,6 +154,7 @@ export function StatCard({
   delta,
   deltaLabel,
   trend: trendProp,
+  deltaPolarity = "normal",
   icon: Icon,
   emphasis = "neutral",
   subValue,
@@ -158,6 +173,8 @@ export function StatCard({
           : "neutral"
       : "neutral");
 
+  /* La flecha lee el NÚMERO; el color lee si eso es buena o mala noticia. Son
+     dos preguntas distintas y por eso salen de dos variables distintas. */
   const TrendIcon =
     inferredTrend === "up"
       ? ArrowUpRight
@@ -165,10 +182,21 @@ export function StatCard({
         ? ArrowDownRight
         : Minus;
 
+  const trendSemantico: StatCardTrend =
+    deltaPolarity === "neutral"
+      ? "neutral"
+      : deltaPolarity === "inverse"
+        ? inferredTrend === "up"
+          ? "down"
+          : inferredTrend === "down"
+            ? "up"
+            : "neutral"
+        : inferredTrend;
+
   const trendColor =
-    inferredTrend === "up"
+    trendSemantico === "up"
       ? "var(--data-success)"
-      : inferredTrend === "down"
+      : trendSemantico === "down"
         ? "var(--data-error)"
         : "var(--text-tertiary)";
 

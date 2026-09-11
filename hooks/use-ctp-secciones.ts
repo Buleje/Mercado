@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
+import { applyCtpPeriodParams, ctpPeriodShortLabel, periodoAnterior, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import {
   contarFiltros,
@@ -23,6 +23,7 @@ import {
   totalesDeSeccion,
   type FiltrosSeccion,
 } from "@/lib/forestal/ctp-secciones-filtro";
+import { calcularKpisSeccion } from "@/lib/forestal/ctp-kpis-seccion";
 import { usePanelFiltros } from "@/components/admin/forestal/ctp-filtros-panel";
 import type { CtpEntry, CtpSection } from "@/components/admin/forestal/ctp-section-shared";
 import type { SortKey } from "@/components/admin/forestal/CtpEntriesTabla";
@@ -120,101 +121,41 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
    */
   const entriesDeKpis = useMemo(() => filtrarSeccion(entries, facetas), [entries, facetas]);
 
-  const kpis = useMemo(() => {
-    const reg = entriesDeKpis.filter((e) => e.status === "registrado");
-    const totalQty = reg.reduce((a, e) => a + Number(e.quantity ?? 0), 0);
-    const consumido = reg.reduce((a, e) => a + Number(e.volumeInputM3 ?? 0), 0);
-    // Rendimiento PONDERADO por volumen consumido: la media simple hacía pesar
-    // igual una línea de 0.5 m³ que una de 50 m³, y el promedio de planta no es eso.
-    let pesoTotal = 0;
-    let sumaPonderada = 0;
-    for (const e of reg) {
-      const rend = Number(e.rendimientoPct ?? 0);
-      const vol = Number(e.volumeInputM3 ?? 0);
-      if (rend > 0 && vol > 0) {
-        sumaPonderada += rend * vol;
-        pesoTotal += vol;
-      }
-    }
-    const avgRend = pesoTotal > 0 ? sumaPonderada / pesoTotal : 0;
+  const kpis = useMemo(() => calcularKpisSeccion(entriesDeKpis, section), [entriesDeKpis, section]);
 
-    /**
-     * Las corridas ABIERTAS (ADR-340): consumieron y no dijeron qué salió.
-     * Es deuda del libro y también la explicación de por qué el rendimiento del
-     * período puede verse bajo: esos m³ ya cuentan como entrada.
-     */
-    const abiertas = reg.filter((e) => e.quantity == null);
-    const consumidoAbierto = abiertas.reduce((a, e) => a + Number(e.volumeInputM3 ?? 0), 0);
+  /**
+   * Las MISMAS filas, una ventana atrás: con eso cada cifra puede contestar
+   * «¿es mucho?», que es la única pregunta que se hace quien la lee.
+   *
+   * Se piden aparte y se pasan por `calcularKpisSeccion` —la misma función, no
+   * una cuenta del servidor— y por las MISMAS facetas: si la pantalla está
+   * filtrando Tornillo, el mes pasado también tiene que ser el de Tornillo, o
+   * el delta compara dos universos distintos y miente con cara de dato.
+   *
+   * Sin período anterior (histórico completo, o un custom sin los dos bordes)
+   * `periodoAnterior` devuelve `null` y acá no se inventa nada: la tarjeta se
+   * dibuja sin comparación.
+   */
+  const previo = useMemo(() => periodoAnterior(period), [period]);
+  const [entriesPrevias, setEntriesPrevias] = useState<CtpEntry[] | null>(null);
+  useEffect(() => {
+    if (!previo) { setEntriesPrevias(null); return; }
+    let vivo = true;
+    const p = applyCtpPeriodParams(new URLSearchParams({ section }), previo);
+    if (search.trim()) p.set("search", search.trim());
+    ctpGet<{ entries?: CtpEntry[] }>(`/api/admin/forestal/ctp?${p}`)
+      .then((j) => { if (vivo) setEntriesPrevias(j.entries ?? []); })
+      /* La comparación es un lujo, no el dato: si el período anterior no carga,
+         las cifras del período actual siguen siendo correctas y se muestran
+         solas. Lo que no se hace es dibujar un delta contra un cero inventado. */
+      .catch(() => { if (vivo) setEntriesPrevias(null); });
+    return () => { vivo = false; };
+  }, [section, previo, search]);
 
-    /**
-     * La MERMA sólo sobre corridas COMPARABLES: declaradas, en m³ y **con
-     * materia prima registrada**.
-     *
-     * Los tres filtros se ganaron con datos reales:
-     *  - `pt`/`kg` restados a m³ sería restar peras a manzanas;
-     *  - una corrida abierta daría merma del 100 % por madera que sigue en la
-     *    sierra;
-     *  - y una corrida que declara producción **sin entrada** (las viejas
-     *    importadas) empuja la resta a negativo. Con `Math.max(0, …)` eso salía
-     *    como «merma 0.00 · 0.0 %», que es exactamente el número que un
-     *    fiscalizador querría creer y que acá era mentira: no hay merma cero,
-     *    hay corridas que no dicen de qué madera salieron.
-     */
-    const cerradasM3 = reg.filter(
-      (e) => e.quantity != null && (e.unit ?? "m3") === "m3" && Number(e.volumeInputM3 ?? 0) > 0,
-    );
-    const entradaCerrada = cerradasM3.reduce((a, e) => a + Number(e.volumeInputM3 ?? 0), 0);
-    const salidaCerrada = cerradasM3.reduce((a, e) => a + Number(e.quantity ?? 0), 0);
-    const merma = Math.max(0, entradaCerrada - salidaCerrada);
-    /** Declararon producto y no declararon de qué madera salió: rompe el certificado. */
-    const sinMateriaPrima = reg.filter(
-      (e) => e.quantity != null && !(Number(e.volumeInputM3 ?? 0) > 0),
-    ).length;
-
-    /**
-     * Lo producido que TODAVÍA está en planta: producido − despachado −
-     * reprocesado. Es el stock real de la sección, no la suma histórica.
-     */
-    const enPatio = reg.reduce(
-      (a, e) =>
-        a +
-        Math.max(0, Number(e.quantity ?? 0) - Number(e.despachadoQty ?? 0) - Number(e.reprocesadoQty ?? 0)),
-      0,
-    );
-
-    /**
-     * Materia prima SIN GUÍA de origen (producción) o producto sin corrida que
-     * lo ampare (despacho): el agujero de la cadena de custodia. Es lo primero
-     * que rompe un certificado, así que va como número, no escondido en la fila.
-     */
-    const sinOrigen =
-      section === "produccion"
-        ? reg.reduce((a, e) => a + Math.max(0, Number(e.volumeInputM3 ?? 0) - Number(e.mpAtribuidaM3 ?? 0)), 0)
-        : reg.reduce((a, e) => a + Math.max(0, Number(e.quantity ?? 0) - Number(e.atribuidoQty ?? 0)), 0);
-
-    /** Despacho: cuántas guías y cuántos destinos distintos movió el período. */
-    const guias = new Set(reg.map((e) => e.gtfNumber).filter(Boolean)).size;
-    const destinos = new Set(reg.map((e) => (e.destino ?? "").trim()).filter(Boolean)).size;
-    const piezas = reg.reduce((a, e) => a + Number(e.pieces ?? 0), 0);
-
-    return {
-      count: reg.length,
-      totalQty,
-      consumido,
-      avgRend,
-      abiertas: abiertas.length,
-      consumidoAbierto,
-      merma,
-      mermaSobre: cerradasM3.length,
-      mermaPct: entradaCerrada > 0 ? (merma / entradaCerrada) * 100 : 0,
-      sinMateriaPrima,
-      enPatio,
-      sinOrigen,
-      guias,
-      destinos,
-      piezas,
-    };
-  }, [entriesDeKpis, section]);
+  const kpisPrevios = useMemo(
+    () => (entriesPrevias ? calcularKpisSeccion(filtrarSeccion(entriesPrevias, facetas), section) : null),
+    [entriesPrevias, facetas, section],
+  );
 
   const statusCounts = useMemo(() => ({
     total: entries.length,
@@ -263,5 +204,10 @@ export function useCtpSeccion(section: CtpSection, period: CtpPeriod, search: st
     facetas, setFacetas, activos, panelId, abierto, alternar, opciones,
     // derivados de lo que se está viendo
     visible, totalesVista, kpis, statusCounts,
+    // la misma cuenta, una ventana atrás (y cómo se llama ese lapso)
+    /* Etiqueta CORTA («abr–jun 2026»): el label largo del período ocupa dos
+       renglones al lado del delta y parte la tarjeta en cuatro líneas. El largo
+       sigue siendo el de los informes. */
+    kpisPrevios, etiquetaPrevio: previo ? ctpPeriodShortLabel(previo) : null,
   };
 }

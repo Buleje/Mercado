@@ -12,6 +12,19 @@
 
 import { claveEspecie } from "./loth-constants";
 
+/**
+ * Dos productos (o dos destinos) son EL MISMO si se escriben igual salvo
+ * mayúsculas y espacios de más.
+ *
+ * Es la misma lección que ya se había aprendido con las especies y que no se
+ * había llevado a estas dos columnas: el libro tiene «Madera aserrada» y
+ * «MADERA ASERRADA» cargados por dos personas distintas. Lo destapó el
+ * desglose de la tarjeta de Despacho, que mostraba el mismo producto dos
+ * veces —4.59 m³ y 0.63 m³— como si fueran cosas distintas. Sin esto, además,
+ * elegir uno de los dos en el filtro esconde el volumen del otro.
+ */
+export const claveProducto = (v: string) => v.trim().replace(/\s+/g, " ").toLocaleUpperCase("es-PE");
+
 export interface LineaCtp {
   id: string;
   entryDate: string;
@@ -283,8 +296,8 @@ export function facetasDeSeccion(lineas: LineaCtp[]): {
   return {
     /* Una sola entrada por especie aunque el libro la escriba de dos formas. */
     species: agrupar(vivas, (l) => l.speciesCommon, (l) => num(l.quantity), claveEspecie),
-    products: agrupar(vivas, (l) => l.productType, (l) => num(l.quantity)),
-    destinos: agrupar(vivas, (l) => l.destino, (l) => num(l.quantity)),
+    products: agrupar(vivas, (l) => l.productType, (l) => num(l.quantity), claveProducto),
+    destinos: agrupar(vivas, (l) => l.destino, (l) => num(l.quantity), claveProducto),
     permisos: agruparMultiple(vivas, (l) => l.permisoOrigen, (l) => num(l.quantity)),
     salidas: (["stock", "parcial", "salido"] as const).flatMap((k) => {
       const v = porSalida.get(k);
@@ -300,8 +313,8 @@ export function filtrarSeccion<T extends LineaCtp>(lineas: T[], f: FiltrosSeccio
        traer también los asientos que dicen «TORNILLO». */
     /* OR dentro de la columna, AND entre columnas: el autofiltro de Excel. */
     if (!coincideFiltro(f.species, l.speciesCommon ?? "", claveEspecie)) return false;
-    if (!coincideFiltro(f.product, l.productType ?? "")) return false;
-    if (!coincideFiltro(f.destino, l.destino ?? "")) return false;
+    if (!coincideFiltro(f.product, l.productType ?? "", claveProducto)) return false;
+    if (!coincideFiltro(f.destino, l.destino ?? "", claveProducto)) return false;
     if (f.cites !== undefined && l.cites !== f.cites) return false;
     /* El permiso vive en una LISTA por línea (una corrida puede traer dos):
        entra si alguno de los elegidos está entre los suyos. */

@@ -23,41 +23,27 @@
 
 import { Boxes, PackageCheck, Truck, Warehouse } from "@buleje/design-system/icons";
 import type { ReactNode } from "react";
-import { StatCard } from "@buleje/design-system";
+import CtpKpi, { DesgloseSimple } from "./CtpKpi";
 import { CtpKpisPlegables, productLabel } from "./ctp-shared";
 import CtpBalanceProduccion, { GaugeRendimiento } from "./CtpBalanceProduccion";
 import CtpKpiFiltros, { type CampoKpiFiltro } from "./CtpKpiFiltros";
 import type { FiltrosSeccion, facetasDeSeccion } from "@/lib/forestal/ctp-secciones-filtro";
 import { juzgarRendimientoLote } from "@/lib/forestal/lotes-aserrio";
 import type { CtpSection } from "./ctp-section-shared";
+import type { KpisSeccion } from "@/lib/forestal/ctp-kpis-seccion";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
-/** Lo que la vista ya calculó del período (ver `use-ctp-secciones`). */
-export interface KpisSeccion {
-  count: number;
-  totalQty: number;
-  consumido: number;
-  avgRend: number;
-  abiertas: number;
-  consumidoAbierto: number;
-  merma: number;
-  mermaSobre: number;
-  mermaPct: number;
-  sinMateriaPrima: number;
-  enPatio: number;
-  sinOrigen: number;
-  guias: number;
-  destinos: number;
-  piezas: number;
-}
+/* `KpisSeccion` vive donde vive su fórmula (`lib/forestal/ctp-kpis-seccion`):
+   dos definiciones del mismo contrato se desincronizan a la primera cifra
+   nueva, y acá el tipo es literalmente la lista de lo que la cuenta devuelve. */
+export type { KpisSeccion } from "@/lib/forestal/ctp-kpis-seccion";
 
 const n2 = (v: number) => v.toFixed(2);
-/** Anillo de la tarjeta que está filtrando: si no, nadie sabe por qué la tabla tiene menos filas. */
-const ANILLO = "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]";
-
 export default function CtpSeccionKpis({
   section,
   kpis,
+  kpisPrevios,
+  etiquetaPrevio,
   soloVigentes,
   onSoloVigentes,
   sinAnexo,
@@ -84,6 +70,15 @@ export default function CtpSeccionKpis({
   opciones?: ReturnType<typeof facetasDeSeccion>;
   /** Hay un lote elegido abajo: el panel se repliega para dejarle la pantalla. */
   trabajoActivo?: boolean;
+  /**
+   * Las MISMAS cifras del período anterior y cómo se llama ese lapso.
+   *
+   * Sin esto cada tarjeta decía un número que nadie puede juzgar: «8 despachos»
+   * no contesta si el mes viene bien o mal. Vienen del hook, calculadas con la
+   * misma función sobre la ventana corrida — nunca de una cuenta paralela.
+   */
+  kpisPrevios?: KpisSeccion | null;
+  etiquetaPrevio?: string | null;
 }) {
   const veredicto = juzgarRendimientoLote(kpis.avgRend > 0 ? kpis.avgRend : null);
 
@@ -91,18 +86,28 @@ export default function CtpSeccionKpis({
      2026-09-03). Antes la primera fila quedaba fija y la segunda se pedía; con
      ocho tarjetas eso seguía empujando la tabla —que es el trabajo— media
      pantalla abajo en cada carga. El titular viaja en la línea de `resumen`. */
+  /* Tocar una fila del desglose filtra por ella: el reparto contesta «¿de qué
+     se compone?» y el clic contesta la que sigue, «¿cuáles son?». Sin las
+     facetas cableadas el desglose sigue sirviendo, sólo que no se puede tocar. */
+  const elegirEspecie = facetas && onFacetas ? (v: string) => onFacetas({ ...facetas, species: [v] }) : undefined;
+  const elegirProducto = facetas && onFacetas ? (v: string) => onFacetas({ ...facetas, product: [v] }) : undefined;
+  const elegirDestino = facetas && onFacetas ? (v: string) => onFacetas({ ...facetas, destino: [v] }) : undefined;
+
   const tarjetas: ReactNode[] = [];
   tarjetas.push(
-      <StatCard
+      <CtpKpi
         key="count"
-        density="compact"
         label={section === "produccion" ? "Corridas" : "Despachos"}
         value={String(kpis.count)}
         subValue={soloVigentes ? "Filtrando por vigentes" : "Ver solo las vigentes"}
         icon={section === "produccion" ? Boxes : Truck}
-        emphasis="neutral"
+        actual={kpis.count}
+        previo={kpisPrevios ? kpisPrevios.count : undefined}
+        etiquetaPrevio={etiquetaPrevio}
         onClick={onSoloVigentes}
-        className={soloVigentes ? ANILLO : undefined}
+        filtrando={soloVigentes}
+        desglose={opciones ? <DesgloseSimple filas={opciones.species} onElegir={elegirEspecie} /> : undefined}
+        desgloseLabel="Por especie"
       />,
   );
 
@@ -118,44 +123,61 @@ export default function CtpSeccionKpis({
        pendiente no describe el período, pide que hagas algo, y encima «sin
        materia prima» se repetía literal en el cartel ámbar de abajo. */
     tarjetas.push(
-          <StatCard
+          <CtpKpi
             key="en-planta"
-            density="compact"
             label="En planta"
             value={`${n2(kpis.enPatio)} m³`}
             subValue="producido que todavía no salió"
             icon={Warehouse}
-            emphasis={kpis.enPatio > 0 ? "success" : "neutral"}
+            actual={kpis.enPatio}
+            previo={kpisPrevios ? kpisPrevios.enPatio : undefined}
+            etiquetaPrevio={etiquetaPrevio}
+            /* Más stock parado no es buena noticia por sí solo: es madera
+               produciendo costo y sin vender. Tampoco es mala — puede ser un
+               pedido armado. Gris. */
+            tono="neutral"
+            desglose={opciones ? <DesgloseSimple filas={opciones.products} onElegir={elegirProducto} /> : undefined}
+            desgloseLabel="Por producto"
           />,
     );
   } else {
     tarjetas.push(
-          <StatCard
+          <CtpKpi
             key="despachado"
-            density="compact"
             label="Despachado"
             value={n2(kpis.totalQty)}
             subValue={kpis.piezas > 0 ? `${kpis.piezas.toLocaleString("es-PE")} piezas` : "suma de cantidades"}
             icon={PackageCheck}
-            emphasis="success"
+            actual={kpis.totalQty}
+            previo={kpisPrevios ? kpisPrevios.totalQty : undefined}
+            etiquetaPrevio={etiquetaPrevio}
+            desglose={opciones ? <DesgloseSimple filas={opciones.products} onElegir={elegirProducto} /> : undefined}
+            desgloseLabel="Por producto"
           />,
-          <StatCard
+          <CtpKpi
             key="guias"
-            density="compact"
             label="Guías de salida"
             value={String(kpis.guias)}
             subValue="GTF distintas emitidas"
             icon={Truck}
-            emphasis="neutral"
+            actual={kpis.guias}
+            previo={kpisPrevios ? kpisPrevios.guias : undefined}
+            etiquetaPrevio={etiquetaPrevio}
+            tono="neutral"
           />,
-          <StatCard
+          <CtpKpi
             key="destinos"
-            density="compact"
             label="Destinos"
             value={String(kpis.destinos)}
             subValue="clientes o plantas distintas"
             icon={Warehouse}
-            emphasis="neutral"
+            actual={kpis.destinos}
+            previo={kpisPrevios ? kpisPrevios.destinos : undefined}
+            etiquetaPrevio={etiquetaPrevio}
+            /* Más clientes distintos es mejor que menos: concentrar toda la
+               salida en un solo destino es riesgo comercial, no eficiencia. */
+            desglose={opciones ? <DesgloseSimple filas={opciones.destinos} onElegir={elegirDestino} /> : undefined}
+            desgloseLabel="Por destino"
           />,
     );
     /* «Sin anexo 04» y «Sin origen» se fueron a `BarraDeuda`, igual que en
