@@ -121,3 +121,29 @@ describe("catálogo de producto a consumir", () => {
     expect(labelProductoConsumible("inventado")).toBe("—");
   });
 });
+
+describe("el stock por especie no se parte por cómo esté escrita", () => {
+  /* Con «Tornillo» y «TORNILLO» en el patio, el modal ofrecía DOS especies con
+     la mitad del stock cada una — y el lote nacía con la mitad de la madera
+     que en realidad hay. */
+  it("junta las grafías bajo una sola fila, con todo su volumen", () => {
+    const patio = [
+      troza("a", { especieComun: "TORNILLO", volumenM3: 2 }),
+      troza("b", { especieComun: "Tornillo", volumenM3: 3 }),
+      troza("c", { especieComun: "tornillo ", volumenM3: 1 }),
+    ];
+    const r = disponiblePorEspecie(patio);
+    expect(r).toHaveLength(1);
+    expect(r[0].piezas).toBe(3);
+    expect(r[0].volumen).toBe(6);
+  });
+
+  it("el nombre que muestra es el de la grafía con más piezas", () => {
+    const patio = [
+      troza("a", { especieComun: "TORNILLO" }),
+      troza("b", { especieComun: "TORNILLO" }),
+      troza("c", { especieComun: "Tornillo" }),
+    ];
+    expect(disponiblePorEspecie(patio)[0].nombre).toBe("TORNILLO");
+  });
+});

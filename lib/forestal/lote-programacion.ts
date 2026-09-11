@@ -10,6 +10,8 @@
 
 import type { TrozaConsumible } from "./consumo-trozas";
 import { motivoBloqueo } from "./consumo-trozas";
+import { claveEspecie } from "./loth-constants";
+import { grafiaPreferida } from "./especies-catalogo";
 
 /**
  * «Tipo de producto a consumir» del formulario oficial.
@@ -133,7 +135,7 @@ export function disponiblePorEspecie(
   trozas: readonly TrozaConsumible[],
   permiso?: string | null,
 ): DisponibleEspecie[] {
-  const mapa = new Map<string, DisponibleEspecie>();
+  const mapa = new Map<string, DisponibleEspecie & { grafias: Map<string, number> }>();
   for (const t of trozas) {
     /* Mismo criterio que `trozasDelLote`: si acá se contara la madera sin
        recibir, el modal ofrecería una especie que después no aparece. */
@@ -141,14 +143,25 @@ export function disponiblePorEspecie(
     if (t.loteAserrioId || t.consumidaEnId || motivoBloqueo(t) !== null) continue;
     if (permiso && (t.permiso ?? "").trim() !== permiso) continue;
     const nombre = (t.especieComun ?? "").trim();
-    if (!nombre) continue;
-    const acc = mapa.get(nombre) ?? { nombre, cientifico: t.especieCientifica ?? null, piezas: 0, volumen: 0 };
+    /* Por CLAVE, no por texto: con «Tornillo» y «TORNILLO» en el patio, la
+       lista ofrecía dos especies con el stock partido y el lote nacía con la
+       mitad de la madera que en realidad hay. El nombre que se muestra es el
+       de la grafía con más piezas. */
+    const clave = claveEspecie(nombre);
+    if (!clave) continue;
+    const acc =
+      mapa.get(clave) ?? { nombre, cientifico: t.especieCientifica ?? null, piezas: 0, volumen: 0, grafias: new Map<string, number>() };
     acc.piezas += 1;
     acc.volumen += Number(t.volumenM3 ?? 0);
+    acc.grafias.set(nombre, (acc.grafias.get(nombre) ?? 0) + 1);
     if (!acc.cientifico && t.especieCientifica) acc.cientifico = t.especieCientifica;
-    mapa.set(nombre, acc);
+    mapa.set(clave, acc);
   }
   return [...mapa.values()]
+    .map(({ grafias, ...e }) => ({
+      ...e,
+      nombre: grafiaPreferida([...grafias.entries()].map(([texto, usos]) => ({ texto, usos }))),
+    }))
     .map((e) => ({ ...e, volumen: Math.round(e.volumen * 10000) / 10000 }))
     .sort((a, b) => b.volumen - a.volumen);
 }

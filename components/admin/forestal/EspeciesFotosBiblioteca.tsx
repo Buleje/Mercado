@@ -43,10 +43,24 @@ export default function EspeciesFotosBiblioteca() {
      planta dio de alta pero todavía no cargó merece su foto igual —es la que
      va a llegar mañana— y una que está en el libro y no en el catálogo también:
      la foto sirve en el patio aunque la lista esté incompleta. */
-  const faltan = useMemo(
-    () => especiesSinFoto(indice, [...catalogo.nombres, ...catalogo.delLibro.map((e) => e.nombre)]),
-    [indice, catalogo.nombres, catalogo.delLibro],
-  );
+  /**
+   * Qué falta, **ordenado por cuánto entra de cada una**.
+   *
+   * Alfabético mandaba a empezar por «Ana Caspi» (4 filas en el libro) y dejaba
+   * «Cachimbo» —16 filas, la que de verdad baja del camión— para el final. La
+   * foto sirve en el patio, y el patio no está ordenado alfabéticamente.
+   */
+  const faltan = useMemo(() => {
+    const nombres = especiesSinFoto(indice, [
+      ...catalogo.nombres,
+      ...catalogo.delLibro.map((e) => e.nombre),
+    ]);
+    const usosDe = (n: string) =>
+      catalogo.delLibro.find((e) => e.nombre === n)?.usos ?? 0;
+    return nombres
+      .map((nombre) => ({ nombre, usos: usosDe(nombre) }))
+      .sort((a, b) => b.usos - a.usos || a.nombre.localeCompare(b.nombre, "es"));
+  }, [indice, catalogo.nombres, catalogo.delLibro]);
   const cientificoDe = useCallback(
     (comun: string) =>
       catalogo.cientificoDe(comun) ??
@@ -175,23 +189,35 @@ export default function EspeciesFotosBiblioteca() {
           <p className="mb-2 text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
             {/* Dice «y del catálogo» porque la lista dejó de ser sólo lo cargado:
                 una especie dada de alta y todavía sin madera también va acá. */}
-            Especies sin foto ({faltan.length}) · del libro y del catálogo
+            Especies sin foto ({faltan.length}) · primero las que más recibís
           </p>
           <div className="flex flex-wrap gap-2">
             {faltan.map((e) => (
               <button
-                key={e}
+                key={e.nombre}
                 type="button"
                 disabled={subiendo !== null}
-                onClick={() => pedirArchivo(e, cientificoDe(e))}
+                onClick={() => pedirArchivo(e.nombre, cientificoDe(e.nombre))}
+                title={
+                  e.usos > 0
+                    ? `${e.nombre} aparece en ${e.usos} fila${e.usos === 1 ? "" : "s"} del libro`
+                    : `${e.nombre} está en el catálogo y todavía no entró al libro`
+                }
                 className="flex items-center gap-1.5 rounded-xl border border-dashed border-[var(--rule-base)] px-3 min-h-10 text-sm text-[var(--text-secondary)] hover:border-primary hover:text-[var(--text-primary)] disabled:opacity-40"
               >
-                {subiendo === e ? (
+                {subiendo === e.nombre ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 ) : (
                   <Upload className="h-4 w-4" aria-hidden />
                 )}
-                {e}
+                {e.nombre}
+                {/* El número dice por dónde empezar: es cuántas filas del libro
+                    la nombran, no un adorno. */}
+                {e.usos > 0 && (
+                  <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
+                    {e.usos}
+                  </span>
+                )}
               </button>
             ))}
           </div>

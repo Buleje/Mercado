@@ -101,7 +101,15 @@ export function normalizarCatalogo(raw: unknown): CatalogoEspecies {
 
 /** Las de fábrica, con su clave. */
 export function especiesDeFabrica(): EspecieDisponible[] {
-  return ESPECIES_MADERA.map((n) => ({ nombre: n, clave: claveEspecie(n), deFabrica: true }));
+  return ESPECIES_MADERA.map((n) => ({
+    nombre: n,
+    clave: claveEspecie(n),
+    /* El binomio de las de fábrica ya lo sabe el código (`data/forestry-species.ts`,
+       datos de SERFOR): no mostrarlo obligaba a tipear a mano un dato que el
+       sistema tenía, y dejaba el LO-CTP con la columna vacía por pereza nuestra. */
+    cientifico: findSpeciesByCommonName(n)?.scientificName ?? null,
+    deFabrica: true,
+  }));
 }
 
 /**
@@ -351,6 +359,18 @@ function mejorGrafia(a: GrafiaEnElLibro, b: GrafiaEnElLibro): number {
   const pb = puntaje(b.texto);
   if (pa !== pb) return pa - pb;
   return a.texto.localeCompare(b.texto, "es");
+}
+
+/**
+ * Entre varias formas de escribir la misma especie, con cuánto pesa cada una,
+ * cuál mostrar. La usan el resumen del libro y las listas que agrupan especies
+ * (el patio, el stock por especie): una sola respuesta para «¿cómo se llama
+ * esta madera?», o cada pantalla elegiría distinto.
+ */
+export function grafiaPreferida(
+  candidatas: readonly GrafiaEnElLibro[],
+): string {
+  return [...candidatas].sort(mejorGrafia)[0]?.texto ?? "";
 }
 
 /**

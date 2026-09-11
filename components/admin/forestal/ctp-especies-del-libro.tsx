@@ -20,7 +20,7 @@
  */
 
 import { useState } from "react";
-import { AlertTriangle, Combine, Loader2, TreePine } from "@buleje/design-system/icons";
+import { AlertTriangle, Check, Combine, Loader2, TreePine } from "@buleje/design-system/icons";
 import type { EspecieEnElLibro } from "@/lib/forestal/especies-catalogo";
 
 const CAJA =
@@ -187,5 +187,88 @@ export function EspeciesDuplicadas({
         —sólo el texto del nombre, nunca volúmenes, fechas ni de qué guía salió— y queda auditado.
       </p>
     </div>
+  );
+}
+
+/**
+ * Las que están en la lista **sin nombre científico**.
+ *
+ * El binomio es una columna del LO-CTP y de la GTF: una especie sin él deja el
+ * casillero vacío en cada asiento que la nombre. Las de fábrica lo traen del
+ * código (datos de SERFOR); las que agregó la planta lo tienen sólo si alguien
+ * lo escribió — y nadie vuelve a una pantalla de catálogo a completarlo.
+ *
+ * Por eso se piden acá, juntas, con el uso de cada una al lado: primero la que
+ * aparece en 125 asientos, no la que se cargó por las dudas.
+ */
+export function EspeciesSinCientifico({
+  faltantes,
+  guardando,
+  onGuardar,
+}: {
+  /** Las de la lista sin binomio, con cuántas filas del libro las nombran. */
+  faltantes: readonly { clave: string; nombre: string; usos: number }[];
+  guardando: boolean;
+  onGuardar: (clave: string, cientifico: string) => void;
+}) {
+  const [borradores, setBorradores] = useState<Record<string, string>>({});
+  if (faltantes.length === 0) return null;
+
+  const guardar = (clave: string) => {
+    const v = (borradores[clave] ?? "").trim();
+    if (!v) return;
+    onGuardar(clave, v);
+    setBorradores((b) => ({ ...b, [clave]: "" }));
+  };
+
+  return (
+    <details className={CAJA}>
+      <summary className={`cursor-pointer list-none ${TITULO}`}>
+        {faltantes.length} especie{faltantes.length === 1 ? "" : "s"} sin nombre científico — es una
+        columna del LO-CTP
+      </summary>
+      <ul className="mt-2 max-h-52 space-y-1.5 overflow-y-auto pr-1">
+        {faltantes.map((e) => (
+          <li key={e.clave} className="flex flex-wrap items-center gap-2">
+            <span className="min-w-[7rem] flex-1 truncate text-sm font-bold text-[var(--text-primary)]">
+              {e.nombre}
+              {e.usos > 0 && (
+                <span className="ml-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
+                  {usos(e.usos)}
+                </span>
+              )}
+            </span>
+            <input
+              value={borradores[e.clave] ?? ""}
+              onChange={(ev) => setBorradores((b) => ({ ...b, [e.clave]: ev.target.value }))}
+              onKeyDown={(ev) => {
+                if (ev.key === "Enter") guardar(e.clave);
+              }}
+              placeholder="Cedrelinga cateniformis"
+              aria-label={`Nombre científico de ${e.nombre}`}
+              className="h-9 min-w-0 flex-[2] rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm italic text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            />
+            <button
+              type="button"
+              onClick={() => guardar(e.clave)}
+              disabled={guardando || !(borradores[e.clave] ?? "").trim()}
+              aria-label={`Guardar el científico de ${e.nombre}`}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--accent)] text-white transition hover:brightness-95 disabled:opacity-40"
+            >
+              {guardando ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <Check className="h-4 w-4" aria-hidden />
+              )}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
+        Lo que se escriba acá va a la columna «nombre científico» de los asientos que se abran de
+        ahora en adelante, y al Anexo 04 y la guía que salgan de ellos. <b>No reescribe</b> los que
+        ya están cargados.
+      </p>
+    </details>
   );
 }

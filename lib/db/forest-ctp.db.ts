@@ -564,15 +564,13 @@ export class ForestCtpDB {
       rendimiento = Math.round((outQty / inVol) * 10000) / 100;
     }
 
-    /* El nombre científico es una columna del LO-CTP, y el que carga una
-       corrida rara vez se acuerda del binomio. Si el asiento no lo trae, sale
-       del catálogo de la planta (ADR-410) — es el dato que el propio aserradero
-       declaró para esa especie. Se resuelve ACÁ, antes de la transacción: es un
-       KV, no tiene por qué estirar el lock del insert. */
-    let cientifico = input.speciesScientific?.trim() || null;
-    if (!cientifico && input.speciesCommon?.trim()) {
-      cientifico = await ForestEspeciesDB.cientificoDe(tenantId, input.speciesCommon);
-    }
+    /* La especie del asiento, contra el catálogo de la planta (ADR-410): se
+       escribe como la escribe esta planta y, si el asiento no trae el binomio,
+       sale de ahí —es una columna del LO-CTP y el que carga una corrida rara
+       vez se lo acuerda—. Se resuelve ACÁ, antes de la transacción: es un KV
+       cacheado, no tiene por qué estirar el lock del insert. */
+    const especie = await ForestEspeciesDB.resolverEspecie(tenantId, input.speciesCommon);
+    const cientifico = input.speciesScientific?.trim() || especie.cientifico;
 
     // La validación de stock y el INSERT van en UNA transacción: si se valida
     // fuera, entre el chequeo y el insert entra otro despacho y el guard no sirve.
@@ -600,7 +598,7 @@ export class ForestCtpDB {
           gtfIngreso: input.gtfIngreso?.trim() || null,
           materiaPrimaRef: input.materiaPrimaRef?.trim() || null,
           originCode: input.originCode?.trim() || null,
-          speciesCommon: input.speciesCommon?.trim() || null,
+          speciesCommon: especie.nombre || null,
           speciesScientific: cientifico,
           cites: input.cites ?? false,
           productType: input.productType?.trim() || null,

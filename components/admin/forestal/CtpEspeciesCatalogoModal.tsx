@@ -25,7 +25,7 @@ import { Check, Loader2, Pencil, Plus, RotateCcw, Trash2, X } from "@buleje/desi
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn } from "./ctp-shared";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
-import { EspeciesDuplicadas, EspeciesQueFaltan } from "./ctp-especies-del-libro";
+import { EspeciesDuplicadas, EspeciesQueFaltan, EspeciesSinCientifico } from "./ctp-especies-del-libro";
 import { especiesDisponibles } from "@/lib/forestal/especies-catalogo";
 
 const CAMPO =
@@ -54,6 +54,16 @@ export default function CtpEspeciesCatalogoModal({
   const [aviso, setAviso] = useState<string | null>(null);
 
   const lista = especiesDisponibles(cat.catalogo);
+  /* Las que no tienen binomio, ordenadas por cuánto las usa el libro: primero la
+     que aparece en 125 asientos, no la que se cargó por las dudas. */
+  const sinCientifico = lista
+    .filter((e) => !e.cientifico?.trim())
+    .map((e) => ({
+      clave: e.clave,
+      nombre: e.nombre,
+      usos: cat.delLibro.find((l) => l.clave === e.clave)?.usos ?? 0,
+    }))
+    .sort((a, b) => b.usos - a.usos || a.nombre.localeCompare(b.nombre, "es"));
 
   const tras = (mensaje: string | null) => {
     if (mensaje) {
@@ -148,6 +158,11 @@ export default function CtpEspeciesCatalogoModal({
           duplicadas={cat.duplicadas}
           guardando={cat.guardando}
           onUnificar={(clave, nombre) => void cat.unificar(clave, nombre).then(tras)}
+        />
+        <EspeciesSinCientifico
+          faltantes={sinCientifico}
+          guardando={cat.guardando}
+          onGuardar={(clave, cientifico) => void cat.editar(clave, { cientifico }).then(tras)}
         />
 
         {cat.error && (

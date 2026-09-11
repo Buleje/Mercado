@@ -19,6 +19,7 @@ import type {
   DocumentType,
 } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
+import { ForestEspeciesDB } from "./forest-especies.db";
 import { PLAZO_REGISTRO_DIAS, estaFueraDePlazo } from "@/lib/forestal/ctp-compliance";
 import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
 import { calcularRetrozado, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
@@ -757,6 +758,13 @@ export class WoodEntriesDB {
     }
 
     // El folio del libro (columna 1 del formato oficial) y el INSERT van en la
+    /* La especie se escribe como la escribe esta planta (ADR-410): si el
+       catálogo conoce la clave, manda su grafía y su binomio. Una guía que dice
+       «TORNILLO» y un lote que dice «Tornillo» son la misma madera, y si entran
+       escritas distinto el libro las cuenta como dos. Va antes de la
+       transacción: es un KV cacheado. */
+    const especie = await ForestEspeciesDB.resolverEspecie(tenantId, input.speciesCommonName);
+
     // MISMA transacción: si se calcula fuera, dos ingresos simultáneos se llevan
     // el mismo número y el libro queda con folios repetidos — lo primero que
     // mira un fiscalizador. Mismo patrón que `lineNo` de ForestCtpEntry.
@@ -790,8 +798,8 @@ export class WoodEntriesDB {
           ctpProductCode: input.ctpProductCode?.trim() || null,
           originRegion: input.originRegion ?? null,
           originDistrict: input.originDistrict ?? null,
-          speciesCommonName: input.speciesCommonName.trim(),
-          speciesScientificName: input.speciesScientificName ?? null,
+          speciesCommonName: especie.nombre,
+          speciesScientificName: input.speciesScientificName?.trim() || especie.cientifico,
           speciesCites: input.speciesCites ?? false,
           productType: input.productType ?? "rolliza",
           unit: input.unit?.trim() || "m3",

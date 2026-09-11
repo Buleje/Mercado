@@ -8,6 +8,7 @@ import {
   CATALOGO_VACIO,
   agregarEspecie,
   editarEspecie,
+  especiesDisponibles,
   normalizarCatalogo,
   resumirEspeciesDelLibro,
   quitarEspecie,
@@ -72,6 +73,34 @@ export const ForestEspeciesDB = {
     if (!tenantId) throw new Error("tenantId is required");
     const raw = await PlatformSettingsDB.get<unknown>(clave(tenantId));
     return raw ? normalizarCatalogo(raw) : CATALOGO_VACIO;
+  },
+
+  /**
+   * Cómo escribe ESTA planta esa especie, y con qué binomio.
+   *
+   * Es lo que se usa al ABRIR una fila del libro: si el catálogo conoce la
+   * clave, manda su grafía. Así una guía que dice «TORNILLO» y un lote que dice
+   * «Tornillo» entran al libro escritos igual, y los totales por especie no se
+   * parten en dos — que es el problema que había que ir a arreglar después con
+   * «unificar» (125 filas contra 10 en el tenant real).
+   *
+   * Es hacia ADELANTE y sólo sobre la grafía: no reescribe nada de lo cargado
+   * y no cambia de especie —la clave normalizada tiene que ser la misma—. Si el
+   * catálogo no la conoce, se guarda tal cual vino: el libro admite una especie
+   * que la lista todavía no tiene.
+   */
+  async resolverEspecie(
+    tenantId: string,
+    nombre: string | null | undefined,
+  ): Promise<{ nombre: string; cientifico: string | null }> {
+    const original = (nombre ?? "").trim();
+    const objetivo = claveEspecie(original);
+    if (!tenantId || !objetivo) return { nombre: original, cientifico: null };
+    const catalogo = await this.get(tenantId);
+    const enLista = especiesDisponibles(catalogo).find((e) => e.clave === objetivo);
+    return enLista
+      ? { nombre: enLista.nombre, cientifico: enLista.cientifico?.trim() || null }
+      : { nombre: original, cientifico: null };
   },
 
   /**

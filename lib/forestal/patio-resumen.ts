@@ -15,6 +15,8 @@
 
 import { PT_POR_M3 } from "./cubicacion";
 import { motivoBloqueo, type TrozaConsumible } from "./consumo-trozas";
+import { claveEspecie } from "./loth-constants";
+import { grafiaPreferida } from "./especies-catalogo";
 
 const r4 = (n: number) => Math.round(n * 10_000) / 10_000;
 
@@ -196,12 +198,31 @@ export function opcionesDePatio(trozas: readonly TrozaConsumible[]): OpcionesPat
   const unicos = (get: (t: TrozaConsumible) => string | null | undefined) =>
     [...new Set(trozas.map((t) => (get(t) ?? "").trim()).filter(Boolean))].sort();
   return {
-    especies: unicos((t) => t.especieComun),
+    /* La especie va por CLAVE: «Tornillo» y «TORNILLO» son una sola madera y
+       ofrecerlas como dos opciones parte la pila en el selector (el filtro ya
+       compara normalizado, así que la de más piezas las trae a las dos). */
+    especies: especiesUnicas(trozas),
     guias: unicos((t) => t.gtfNumber),
     permisos: unicos((t) => t.permiso),
     resoluciones: unicos((t) => t.resolucion),
     proveedores: unicos((t) => t.proveedor),
   };
+}
+
+/** Las especies de la pila, una por clave, escritas con su mejor grafía. */
+function especiesUnicas(trozas: readonly TrozaConsumible[]): string[] {
+  const m = new Map<string, Map<string, number>>();
+  for (const t of trozas) {
+    const texto = (t.especieComun ?? "").trim();
+    const clave = claveEspecie(texto);
+    if (!clave) continue;
+    const g = m.get(clave) ?? new Map<string, number>();
+    g.set(texto, (g.get(texto) ?? 0) + 1);
+    m.set(clave, g);
+  }
+  return [...m.values()]
+    .map((g) => grafiaPreferida([...g.entries()].map(([texto, usos]) => ({ texto, usos }))))
+    .sort((a, b) => a.localeCompare(b, "es"));
 }
 
 /** Un valor de una columna con cuántas piezas lo tienen. */
@@ -217,6 +238,24 @@ export interface FacetaPatio {
  * arriba. Orden: más piezas primero, empate por nombre.
  */
 export function facetasDePatio(trozas: readonly TrozaConsumible[]): Record<keyof OpcionesPatio, FacetaPatio[]> {
+  const contarEspecies = (): FacetaPatio[] => {
+    const m = new Map<string, { grafias: Map<string, number>; count: number }>();
+    for (const t of trozas) {
+      const texto = (t.especieComun ?? "").trim();
+      const clave = claveEspecie(texto);
+      if (!clave) continue;
+      const acc = m.get(clave) ?? { grafias: new Map<string, number>(), count: 0 };
+      acc.grafias.set(texto, (acc.grafias.get(texto) ?? 0) + 1);
+      acc.count += 1;
+      m.set(clave, acc);
+    }
+    return [...m.values()]
+      .map((v) => ({
+        value: grafiaPreferida([...v.grafias.entries()].map(([texto, usos]) => ({ texto, usos }))),
+        count: v.count,
+      }))
+      .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+  };
   const contar = (get: (t: TrozaConsumible) => string | null | undefined): FacetaPatio[] => {
     const m = new Map<string, number>();
     for (const t of trozas) {
@@ -229,7 +268,7 @@ export function facetasDePatio(trozas: readonly TrozaConsumible[]): Record<keyof
       .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
   };
   return {
-    especies: contar((t) => t.especieComun),
+    especies: contarEspecies(),
     guias: contar((t) => t.gtfNumber),
     permisos: contar((t) => t.permiso),
     resoluciones: contar((t) => t.resolucion),

@@ -174,3 +174,39 @@ especie está en esa pantalla.
 Verificado contra el tenant real (sembrado de las 10, con el selector siguiendo el cambio) y la
 unificación end-to-end en un tenant QA con dos lotes de prueba: `TORNILLO` → `Tornillo`, una fila
 reescrita, duplicados en cero, y los lotes de prueba borrados después.
+
+---
+
+## La grafía se canoniza al escribir, y ninguna lista la parte en dos (2026-09-11)
+
+Unificar arregla lo viejo; lo que hacía falta era que no volviera a pasar. Tres cambios:
+
+**Al ESCRIBIR, la especie se guarda como la escribe esta planta.**
+`ForestEspeciesDB.resolverEspecie()` resuelve la grafía —y el binomio— contra el catálogo, y lo
+usan `WoodEntriesDB.create` y `ForestCtpDB.create` antes de su transacción (es un KV cacheado, no
+estira el lock). Una guía que dice «TORNILLO» y un lote que dice «Tornillo» entran al libro escritos
+igual. Es **hacia adelante y sólo sobre la grafía**: la clave normalizada tiene que ser la misma, así
+que nunca cambia de especie, y no toca nada de lo ya cargado. Si el catálogo no conoce la especie,
+se guarda tal cual vino — el libro admite una especie que la lista todavía no tiene.
+
+**Al LEER, las listas agrupan por clave.** `facetasDeSeccion` y los saldos ya lo hacían
+(`speciesKey`); faltaban dos, y eran las que más duelen:
+
+| Dónde | Qué pasaba |
+|---|---|
+| `opcionesDePatio` / `facetasDePatio` | El autofiltro del patio ofrecía «Tornillo» y «TORNILLO» como dos columnas, con la pila partida |
+| `disponiblePorEspecie` (armar lote) | Ofrecía dos especies con la mitad del stock cada una — el lote nacía con la mitad de la madera que hay |
+
+Ahora las dos agrupan por `claveEspecie` y muestran la grafía con más piezas detrás
+(`grafiaPreferida`, con el desempate a favor del nombre propio). El filtro ya comparaba
+normalizado, así que elegir la opción sigue trayendo las escritas distinto.
+
+**Y el binomio dejó de faltar por pereza nuestra:** `especiesDeFabrica()` toma el científico de
+`data/forestry-species.ts` (datos de SERFOR), así que las de fábrica ya no aparecen vacías. Para las
+que quedan, el gestor tiene un bloque «N especies sin nombre científico», ordenado por cuánto las
+usa el libro: primero la de 125 asientos, no la que se cargó por las dudas.
+
+En el tenant real eso dejó **1 especie sin binomio** (Copaiba, que en Perú se declara como
+*Copaifera paupera* o *C. officinalis* según el árbol — la elige el CTP, no el sistema).
+
+La biblioteca de fotos ordena igual: las que más entran primero, con el número de filas al lado.

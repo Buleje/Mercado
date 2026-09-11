@@ -257,3 +257,34 @@ describe("facetasDePatio — opciones con conteo para la cabecera", () => {
     expect(facetasDePatio(pila).especies.map((e) => e.value).sort()).toEqual(opcionesDePatio(pila).especies);
   });
 });
+
+describe("una especie, una opción — aunque el libro la escriba de dos formas", () => {
+  /* El bug que esto previene: «Tornillo» y «TORNILLO» aparecían como dos
+     opciones en el autofiltro del patio, con la pila partida en dos, y el que
+     filtraba por una creía tener la mitad de la madera que tiene. */
+  const pila = [
+    troza({ id: "a", especieComun: "TORNILLO" }),
+    troza({ id: "b", especieComun: "TORNILLO" }),
+    troza({ id: "c", especieComun: "Tornillo" }),
+    troza({ id: "d", especieComun: "Capirona" }),
+  ];
+
+  it("el selector ofrece una sola entrada por especie", () => {
+    /* Gana la grafía con más piezas detrás («TORNILLO», 2 contra 1): es la que
+       el operador reconoce de la pila que tiene adelante. A igualdad de piezas
+       ganaría la escrita como nombre propio. */
+    expect(opcionesDePatio(pila).especies).toEqual(["Capirona", "TORNILLO"]);
+  });
+
+  it("la faceta suma TODAS sus piezas y muestra la mejor grafía", () => {
+    const especies = facetasDePatio(pila).especies;
+    expect(especies).toEqual([
+      { value: "TORNILLO", count: 3 },
+      { value: "Capirona", count: 1 },
+    ]);
+  });
+
+  it("elegir la opción trae también las escritas distinto", () => {
+    expect(filtrarPatio(pila, { especie: "Tornillo" }).map((t) => t.id)).toEqual(["a", "b", "c"]);
+  });
+});
