@@ -89,26 +89,31 @@ export default function CtpSeccionKpis({
   /* Tocar una fila del desglose filtra por ella: el reparto contesta «¿de qué
      se compone?» y el clic contesta la que sigue, «¿cuáles son?». Sin las
      facetas cableadas el desglose sigue sirviendo, sólo que no se puede tocar. */
-  const elegirEspecie = facetas && onFacetas ? (v: string) => onFacetas({ ...facetas, species: [v] }) : undefined;
-  const elegirProducto = facetas && onFacetas ? (v: string) => onFacetas({ ...facetas, product: [v] }) : undefined;
-  const elegirDestino = facetas && onFacetas ? (v: string) => onFacetas({ ...facetas, destino: [v] }) : undefined;
+  const elegirEspecie =
+    facetas && onFacetas ? (v: string) => onFacetas({ ...facetas, species: [v] }) : undefined;
+  const elegirProducto =
+    facetas && onFacetas ? (v: string) => onFacetas({ ...facetas, product: [v] }) : undefined;
+  const elegirDestino =
+    facetas && onFacetas ? (v: string) => onFacetas({ ...facetas, destino: [v] }) : undefined;
 
   const tarjetas: ReactNode[] = [];
   tarjetas.push(
-      <CtpKpi
-        key="count"
-        label={section === "produccion" ? "Corridas" : "Despachos"}
-        value={String(kpis.count)}
-        subValue={soloVigentes ? "Filtrando por vigentes" : "Ver solo las vigentes"}
-        icon={section === "produccion" ? Boxes : Truck}
-        actual={kpis.count}
-        previo={kpisPrevios ? kpisPrevios.count : undefined}
-        etiquetaPrevio={etiquetaPrevio}
-        onClick={onSoloVigentes}
-        filtrando={soloVigentes}
-        desglose={opciones ? <DesgloseSimple filas={opciones.species} onElegir={elegirEspecie} /> : undefined}
-        desgloseLabel="Por especie"
-      />,
+    <CtpKpi
+      key="count"
+      label={section === "produccion" ? "Corridas" : "Despachos"}
+      value={String(kpis.count)}
+      subValue={soloVigentes ? "Filtrando por vigentes" : "Ver solo las vigentes"}
+      icon={section === "produccion" ? Boxes : Truck}
+      actual={kpis.count}
+      previo={kpisPrevios ? kpisPrevios.count : undefined}
+      etiquetaPrevio={etiquetaPrevio}
+      onClick={onSoloVigentes}
+      filtrando={soloVigentes}
+      desglose={
+        opciones ? <DesgloseSimple filas={opciones.species} onElegir={elegirEspecie} /> : undefined
+      }
+      desgloseLabel="Por especie"
+    />,
   );
 
   if (section === "produccion") {
@@ -123,62 +128,78 @@ export default function CtpSeccionKpis({
        pendiente no describe el período, pide que hagas algo, y encima «sin
        materia prima» se repetía literal en el cartel ámbar de abajo. */
     tarjetas.push(
-          <CtpKpi
-            key="en-planta"
-            label="En planta"
-            value={`${n2(kpis.enPatio)} m³`}
-            subValue="producido que todavía no salió"
-            icon={Warehouse}
-            actual={kpis.enPatio}
-            previo={kpisPrevios ? kpisPrevios.enPatio : undefined}
-            etiquetaPrevio={etiquetaPrevio}
-            /* Más stock parado no es buena noticia por sí solo: es madera
+      <CtpKpi
+        key="en-planta"
+        label="En planta"
+        value={`${n2(kpis.enPatio)} m³`}
+        subValue="producido que todavía no salió"
+        icon={Warehouse}
+        actual={kpis.enPatio}
+        previo={kpisPrevios ? kpisPrevios.enPatio : undefined}
+        etiquetaPrevio={etiquetaPrevio}
+        /* Más stock parado no es buena noticia por sí solo: es madera
                produciendo costo y sin vender. Tampoco es mala — puede ser un
                pedido armado. Gris. */
-            tono="neutral"
-            desglose={opciones ? <DesgloseSimple filas={opciones.products} onElegir={elegirProducto} /> : undefined}
-            desgloseLabel="Por producto"
-          />,
+        tono="neutral"
+        desglose={
+          opciones ? (
+            <DesgloseSimple filas={opciones.products} onElegir={elegirProducto} />
+          ) : undefined
+        }
+        desgloseLabel="Por producto"
+        emphasis={kpis.enPatio > 0 ? "success" : "neutral"}
+      />,
     );
   } else {
     tarjetas.push(
-          <CtpKpi
-            key="despachado"
-            label="Despachado"
-            value={n2(kpis.totalQty)}
-            subValue={kpis.piezas > 0 ? `${kpis.piezas.toLocaleString("es-PE")} piezas` : "suma de cantidades"}
-            icon={PackageCheck}
-            actual={kpis.totalQty}
-            previo={kpisPrevios ? kpisPrevios.totalQty : undefined}
-            etiquetaPrevio={etiquetaPrevio}
-            desglose={opciones ? <DesgloseSimple filas={opciones.products} onElegir={elegirProducto} /> : undefined}
-            desgloseLabel="Por producto"
-          />,
-          <CtpKpi
-            key="guias"
-            label="Guías de salida"
-            value={String(kpis.guias)}
-            subValue="GTF distintas emitidas"
-            icon={Truck}
-            actual={kpis.guias}
-            previo={kpisPrevios ? kpisPrevios.guias : undefined}
-            etiquetaPrevio={etiquetaPrevio}
-            tono="neutral"
-          />,
-          <CtpKpi
-            key="destinos"
-            label="Destinos"
-            value={String(kpis.destinos)}
-            subValue="clientes o plantas distintas"
-            icon={Warehouse}
-            actual={kpis.destinos}
-            previo={kpisPrevios ? kpisPrevios.destinos : undefined}
-            etiquetaPrevio={etiquetaPrevio}
-            /* Más clientes distintos es mejor que menos: concentrar toda la
+      <CtpKpi
+        key="despachado"
+        label="Despachado"
+        value={n2(kpis.totalQty)}
+        subValue={
+          kpis.piezas > 0 ? `${kpis.piezas.toLocaleString("es-PE")} piezas` : "suma de cantidades"
+        }
+        icon={PackageCheck}
+        actual={kpis.totalQty}
+        previo={kpisPrevios ? kpisPrevios.totalQty : undefined}
+        etiquetaPrevio={etiquetaPrevio}
+        desglose={
+          opciones ? (
+            <DesgloseSimple filas={opciones.products} onElegir={elegirProducto} />
+          ) : undefined
+        }
+        desgloseLabel="Por producto"
+        emphasis="success"
+      />,
+      <CtpKpi
+        key="guias"
+        label="Guías de salida"
+        value={String(kpis.guias)}
+        subValue="GTF distintas emitidas"
+        icon={Truck}
+        actual={kpis.guias}
+        previo={kpisPrevios ? kpisPrevios.guias : undefined}
+        etiquetaPrevio={etiquetaPrevio}
+        tono="neutral"
+      />,
+      <CtpKpi
+        key="destinos"
+        label="Destinos"
+        value={String(kpis.destinos)}
+        subValue="clientes o plantas distintas"
+        icon={Warehouse}
+        actual={kpis.destinos}
+        previo={kpisPrevios ? kpisPrevios.destinos : undefined}
+        etiquetaPrevio={etiquetaPrevio}
+        /* Más clientes distintos es mejor que menos: concentrar toda la
                salida en un solo destino es riesgo comercial, no eficiencia. */
-            desglose={opciones ? <DesgloseSimple filas={opciones.destinos} onElegir={elegirDestino} /> : undefined}
-            desgloseLabel="Por destino"
-          />,
+        desglose={
+          opciones ? (
+            <DesgloseSimple filas={opciones.destinos} onElegir={elegirDestino} />
+          ) : undefined
+        }
+        desgloseLabel="Por destino"
+      />,
     );
     /* «Sin anexo 04» y «Sin origen» se fueron a `BarraDeuda`, igual que en
        Producción: son deuda, no indicadores. «Sin anexo» además estaba por
@@ -203,58 +224,59 @@ export default function CtpSeccionKpis({
    * sola vez para las dos cosas—, así que el número de arriba y las filas de
    * abajo no se pueden contradecir.
    */
-  const campos: CampoKpiFiltro[] = !opciones || !facetas || !onFacetas
-    ? []
-    : [
-        {
-          key: "species",
-          label: "Especie",
-          todos: "Todas las especies",
-          valor: facetas.species,
-          opciones: opciones.species.map((f) => ({
-            value: f.value,
-            label: f.value,
-            hint: f.volumeM3 != null ? `${f.count} · ${fmtM3(f.volumeM3)} m³` : `${f.count}`,
-          })),
-          onChange: (v) => onFacetas({ ...facetas, species: v }),
-        },
-        {
-          key: "permiso",
-          label: "Permiso (título habilitante)",
-          todos: "Todos los permisos",
-          valor: facetas.permiso,
-          opciones: opciones.permisos.map((f) => ({
-            value: f.value,
-            label: f.value,
-            hint: f.volumeM3 != null ? `${f.count} · ${fmtM3(f.volumeM3)} m³` : `${f.count}`,
-          })),
-          onChange: (v) => onFacetas({ ...facetas, permiso: v }),
-        },
-        {
-          key: "product",
-          label: "Producto",
-          todos: "Todos los productos",
-          valor: facetas.product,
-          opciones: opciones.products.map((f) => ({
-            value: f.value,
-            label: productLabel(f.value),
-            hint: f.volumeM3 != null ? `${f.count} · ${fmtM3(f.volumeM3)} m³` : `${f.count}`,
-          })),
-          onChange: (v) => onFacetas({ ...facetas, product: v }),
-        },
-        {
-          key: "destino",
-          label: "Destino",
-          todos: "Todos los destinos",
-          valor: facetas.destino,
-          opciones: opciones.destinos.map((f) => ({
-            value: f.value,
-            label: f.value,
-            hint: f.volumeM3 != null ? `${f.count} · ${fmtM3(f.volumeM3)} m³` : `${f.count}`,
-          })),
-          onChange: (v) => onFacetas({ ...facetas, destino: v }),
-        },
-      ];
+  const campos: CampoKpiFiltro[] =
+    !opciones || !facetas || !onFacetas
+      ? []
+      : [
+          {
+            key: "species",
+            label: "Especie",
+            todos: "Todas las especies",
+            valor: facetas.species,
+            opciones: opciones.species.map((f) => ({
+              value: f.value,
+              label: f.value,
+              hint: f.volumeM3 != null ? `${f.count} · ${fmtM3(f.volumeM3)} m³` : `${f.count}`,
+            })),
+            onChange: (v) => onFacetas({ ...facetas, species: v }),
+          },
+          {
+            key: "permiso",
+            label: "Permiso (título habilitante)",
+            todos: "Todos los permisos",
+            valor: facetas.permiso,
+            opciones: opciones.permisos.map((f) => ({
+              value: f.value,
+              label: f.value,
+              hint: f.volumeM3 != null ? `${f.count} · ${fmtM3(f.volumeM3)} m³` : `${f.count}`,
+            })),
+            onChange: (v) => onFacetas({ ...facetas, permiso: v }),
+          },
+          {
+            key: "product",
+            label: "Producto",
+            todos: "Todos los productos",
+            valor: facetas.product,
+            opciones: opciones.products.map((f) => ({
+              value: f.value,
+              label: productLabel(f.value),
+              hint: f.volumeM3 != null ? `${f.count} · ${fmtM3(f.volumeM3)} m³` : `${f.count}`,
+            })),
+            onChange: (v) => onFacetas({ ...facetas, product: v }),
+          },
+          {
+            key: "destino",
+            label: "Destino",
+            todos: "Todos los destinos",
+            valor: facetas.destino,
+            opciones: opciones.destinos.map((f) => ({
+              value: f.value,
+              label: f.value,
+              hint: f.volumeM3 != null ? `${f.count} · ${fmtM3(f.volumeM3)} m³` : `${f.count}`,
+            })),
+            onChange: (v) => onFacetas({ ...facetas, destino: v }),
+          },
+        ];
   const activos = campos.filter((c) => c.valor).length;
 
   return (
@@ -268,7 +290,12 @@ export default function CtpSeccionKpis({
          escondida detrás del botón «Indicadores» como una más. */
       resumenExtra={
         section === "produccion" && kpis.avgRend > 0 ? (
-          <GaugeRendimiento pct={kpis.avgRend} tono={veredicto.tono} veredicto={veredicto.texto} compacto />
+          <GaugeRendimiento
+            pct={kpis.avgRend}
+            tono={veredicto.tono}
+            veredicto={veredicto.texto}
+            compacto
+          />
         ) : undefined
       }
       /* El balance físico manda sobre las tarjetas: es de dónde salen. */
@@ -294,7 +321,13 @@ export default function CtpSeccionKpis({
           <CtpKpiFiltros
             campos={campos}
             onLimpiar={() =>
-              onFacetas({ ...facetas, species: undefined, permiso: undefined, product: undefined, destino: undefined })
+              onFacetas({
+                ...facetas,
+                species: undefined,
+                permiso: undefined,
+                product: undefined,
+                destino: undefined,
+              })
             }
             nota={
               activos > 0

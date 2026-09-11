@@ -13,8 +13,15 @@
  * la misma madera que no coinciden enseñan a no mirar ninguna.
  */
 
-import { Clock, FileStack, Layers, PackageOpen, Ruler, TreePine } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import {
+  Clock,
+  FileStack,
+  Layers,
+  PackageOpen,
+  Ruler,
+  TreePine,
+} from "@buleje/design-system/icons";
+import CtpKpi, { DesgloseSimple } from "./CtpKpi";
 import { CtpKpisPlegables } from "./ctp-shared";
 import { DIAS_PATIO_ANEJO, type ResumenPatio } from "@/lib/forestal/patio-resumen";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -45,6 +52,23 @@ export default function CtpPatioKpis({
   const r = resumen;
   const lider = r.porEspecie[0] ?? null;
 
+  /**
+   * De qué está hecha la pila, para abrirlo desde la tarjeta.
+   *
+   * `porEspecie` ya venía calculado y ordenado por volumen —lo usaba sólo la
+   * línea de «la que manda»—, así que acá no hay ninguna cuenta nueva: se
+   * muestra entero lo que hasta ahora se resumía en un nombre.
+   *
+   * Sin comparación contra el mes pasado a propósito: el patio es lo que hay
+   * parado HOY. Compararlo contra «el período anterior» de una pila que no
+   * tiene fecha sería inventar una lectura.
+   */
+  const reparto = r.porEspecie.map((e) => ({
+    value: e.especie,
+    count: e.piezas,
+    volumeM3: e.volumenM3,
+  }));
+
   return (
     /* Todas detrás del botón «Indicadores» (Brandon, 2026-09-03); el titular
        —cuántas trozas y cuántos m³— viaja en la línea de resumen. */
@@ -59,9 +83,8 @@ export default function CtpPatioKpis({
             (r.anejas > 0 ? ` · ${nf(r.anejas)} añejas` : "")
       }
       tarjetas={[
-        <StatCard
+        <CtpKpi
           key="piezas"
-          density="compact"
           label="Trozas en el patio"
           value={nf(r.piezas)}
           subValue={
@@ -71,35 +94,36 @@ export default function CtpPatioKpis({
                 (r.bloqueadas > 0 ? ` · ${nf(r.bloqueadas)} bloqueadas` : "")
           }
           icon={PackageOpen}
-          emphasis="neutral"
+          desglose={reparto.length > 0 ? <DesgloseSimple filas={reparto} /> : undefined}
+          desgloseLabel="Por especie"
         />,
         /* La unidad va en el rótulo: con «m³» pegado, los tres decimales del
            libro parten el número en dos renglones y estiran toda la fila. */
-        <StatCard
+        <CtpKpi
           key="volumen"
-          density="compact"
           label="Volumen en patio (m³)"
           value={fmtM3(r.volumenM3)}
           subValue={`≈${nf(pieTablarAserrableDe(r.volumenM3, RENDIMIENTO_META))} pt aserrables (56%) · ${fmtM3(r.volumenLibreM3)} libres hoy`}
           icon={TreePine}
+          desglose={reparto.length > 0 ? <DesgloseSimple filas={reparto} /> : undefined}
+          desgloseLabel="Cuánto hay de cada una"
           emphasis="success"
         />,
-        <StatCard
+        <CtpKpi
           key="especies"
-          density="compact"
           label="Especies en la pila"
           value={nf(r.especies)}
           subValue={
             lider ? `${lider.especie} · ${lider.pctVolumen}% del volumen` : "Sin especie declarada"
           }
           icon={Layers}
-          emphasis="neutral"
+          desglose={reparto.length > 0 ? <DesgloseSimple filas={reparto} /> : undefined}
+          desgloseLabel="Cuánto pesa cada una"
         />,
         /* La pregunta que nadie hace hasta que la madera se manchó: ¿hace cuánto
            que está parada? El promedio escondería justo la pieza vieja. */
-        <StatCard
+        <CtpKpi
           key="espera"
-          density="compact"
           label="Espera en el patio"
           value={r.esperaMaxDias != null ? `${nf(r.esperaMaxDias)} d` : "—"}
           subValue={
@@ -120,9 +144,8 @@ export default function CtpPatioKpis({
          * cuántos títulos sostienen la madera que hay parada?— y la que dice si
          * el patio es de una sola carga o de diez guías mezcladas.
          */
-        <StatCard
+        <CtpKpi
           key="papeles"
-          density="compact"
           label="Guías en la pila"
           value={nf(r.guias)}
           subValue={
@@ -138,9 +161,8 @@ export default function CtpPatioKpis({
          * qué sierra conviene. `promedioM3`/`mayorM3` también venían calculados
          * y sin usar.
          */
-        <StatCard
+        <CtpKpi
           key="calibre"
-          density="compact"
           label="Calibre de la pila"
           value={r.promedioM3 != null ? `${fmtM3(r.promedioM3)} m³` : "—"}
           subValue={
@@ -149,7 +171,6 @@ export default function CtpPatioKpis({
               : `promedio por troza · la mayor ${fmtM3(r.mayorM3 ?? 0)} m³`
           }
           icon={Ruler}
-          emphasis="neutral"
         />,
       ]}
     />

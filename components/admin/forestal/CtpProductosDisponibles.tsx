@@ -13,12 +13,31 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Boxes, CheckCircle2, Download, Layers, PackageOpen, Pencil, RefreshCw, RotateCcw, Ruler, Search, TreePine, Truck } from "@buleje/design-system/icons";
+import {
+  Boxes,
+  CheckCircle2,
+  Download,
+  Layers,
+  PackageOpen,
+  Pencil,
+  RefreshCw,
+  RotateCcw,
+  Ruler,
+  Search,
+  TreePine,
+  Truck,
+} from "@buleje/design-system/icons";
 import CtpKpi, { DesgloseSimple, type FilaDesglose } from "./CtpKpi";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { ColumnasMenu, CtpKpisPlegables, IconAction, productLabel, useColumnasVisibles } from "./ctp-shared";
+import {
+  ColumnasMenu,
+  CtpKpisPlegables,
+  IconAction,
+  productLabel,
+  useColumnasVisibles,
+} from "./ctp-shared";
 import CtpKpiFiltros from "./CtpKpiFiltros";
 import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, TheadCtp, usePaginacion } from "./ctp-tabla";
 import CtpPaqueteFicha from "./CtpPaqueteFicha";
@@ -133,12 +152,22 @@ function agruparPorClave(valores: string[], clave: (v: string) => string): strin
     grupos.set(k, cuenta);
   }
   return [...grupos.values()]
-    .map((cuenta) => [...cuenta.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es-PE"))[0][0])
+    .map(
+      (cuenta) =>
+        [...cuenta.entries()].sort(
+          (a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es-PE"),
+        )[0][0],
+    )
     .sort((a, b) => a.localeCompare(b, "es-PE"));
 }
 
 const fmtDia = (iso: string) =>
-  new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+  new Date(iso).toLocaleDateString("es-PE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 
 /**
  * Columnas OPCIONALES de esta tabla (mismo patrón que Producción/Documentos):
@@ -167,7 +196,10 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
   const [producto, setProducto] = useState<string[]>([]);
   const [permiso, setPermiso] = useState<string[]>([]);
   /** Columnas opcionales de esta tabla, elegibles y persistidas por dispositivo. */
-  const [colsVisibles, setColsVisibles] = useColumnasVisibles("ctp-disponibles-cols", COLUMNAS_DISPONIBLES_OPCIONALES);
+  const [colsVisibles, setColsVisibles] = useColumnasVisibles(
+    "ctp-disponibles-cols",
+    COLUMNAS_DISPONIBLES_OPCIONALES,
+  );
   /** Ficha del paquete abierta desde su código (ADR-366). */
   const [fichaPaquete, setFichaPaquete] = useState<string | null>(null);
   /** Producto que vuelve a la sierra (ADR-316). */
@@ -193,7 +225,10 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     setPendientes(pendientesDeReproceso());
   }, []);
   /** Fila que se está cubicando para el ANEXO N° 04. */
-  const [cubicar, setCubicar] = useState<{ corrida: CorridaDisponible; paquete: PaqueteDisponible | null } | null>(null);
+  const [cubicar, setCubicar] = useState<{
+    corrida: CorridaDisponible;
+    paquete: PaqueteDisponible | null;
+  } | null>(null);
   /**
    * Filas tildadas para cubicar en conjunto (ADR-369).
    *
@@ -225,7 +260,10 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
    * verdadera, y la única llave (el tilde «Ver también lo marcado como usado»)
    * estaba abajo, sin ninguna señal de que escondiera algo.
    */
-  const [ocultosPorUsado, setOcultosPorUsado] = useState<{ corridas: number; volumen: number } | null>(null);
+  const [ocultosPorUsado, setOcultosPorUsado] = useState<{
+    corridas: number;
+    volumen: number;
+  } | null>(null);
 
   const recargar = useCallback(async () => {
     setCargando(true);
@@ -252,7 +290,10 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             marcadas.length > 0
               ? {
                   corridas: marcadas.length,
-                  volumen: Math.round(marcadas.reduce((a, c) => a + (Number(c.disponible) || 0), 0) * 1000) / 1000,
+                  volumen:
+                    Math.round(
+                      marcadas.reduce((a, c) => a + (Number(c.disponible) || 0), 0) * 1000,
+                    ) / 1000,
                 }
               : null,
           );
@@ -271,38 +312,58 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     }
   }, [period, verUsados]);
 
-  useEffect(() => { void recargar(); }, [recargar]);
+  useEffect(() => {
+    void recargar();
+  }, [recargar]);
 
   /** Desmarcar no pide motivo (sólo marcar lo pide): volver a mostrar algo que
    *  se sacó por error no necesita justificarse igual que sacarlo. */
-  const desmarcar = useCallback(async (c: CorridaDisponible) => {
-    setDesmarcando(c.id);
-    try {
-      const r = await fetch("/api/admin/forestal/ctp", {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        credentials: "include",
-        body: JSON.stringify({ id: c.id, action: "marcar_usado", usado: false }),
-      });
-      if (!r.ok) {
-        const data = (await r.json().catch(() => null)) as { message?: string; error?: string } | null;
-        throw new Error(data?.message ?? data?.error ?? `El servidor respondió ${r.status}`);
+  const desmarcar = useCallback(
+    async (c: CorridaDisponible) => {
+      setDesmarcando(c.id);
+      try {
+        const r = await fetch("/api/admin/forestal/ctp", {
+          method: "PATCH",
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
+          credentials: "include",
+          body: JSON.stringify({ id: c.id, action: "marcar_usado", usado: false }),
+        });
+        if (!r.ok) {
+          const data = (await r.json().catch(() => null)) as {
+            message?: string;
+            error?: string;
+          } | null;
+          throw new Error(data?.message ?? data?.error ?? `El servidor respondió ${r.status}`);
+        }
+        invalidarCtp("/forestal/ctp");
+        setNota(`Corrida N° ${c.lineNo ?? "—"} vuelve a Productos disponibles.`);
+        await recargar();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setDesmarcando(null);
       }
-      invalidarCtp("/forestal/ctp");
-      setNota(`Corrida N° ${c.lineNo ?? "—"} vuelve a Productos disponibles.`);
-      await recargar();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setDesmarcando(null);
-    }
-  }, [recargar]);
+    },
+    [recargar],
+  );
 
-  const opciones = useMemo(() => ({
-    especies: agruparPorClave(corridas.map((c) => c.especie ?? ""), claveEspecie),
-    productos: agruparPorClave(corridas.map((c) => c.producto ?? ""), claveEspecie),
-    permisos: agruparPorClave(corridas.flatMap((c) => c.titularOrigen ?? []), clavePermiso),
-  }), [corridas]);
+  const opciones = useMemo(
+    () => ({
+      especies: agruparPorClave(
+        corridas.map((c) => c.especie ?? ""),
+        claveEspecie,
+      ),
+      productos: agruparPorClave(
+        corridas.map((c) => c.producto ?? ""),
+        claveEspecie,
+      ),
+      permisos: agruparPorClave(
+        corridas.flatMap((c) => c.titularOrigen ?? []),
+        clavePermiso,
+      ),
+    }),
+    [corridas],
+  );
 
   /**
    * Cuánto m³ DISPONIBLE hay detrás de cada valor (ADR-400).
@@ -338,11 +399,21 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
       /* La misma clave con la que se arman las opciones: filtrar con otra regla
          es como se llega a un desplegable que ofrece algo y no trae nada. */
       /* OR adentro de cada filtro, AND entre filtros: el autofiltro de Excel. */
-      if (especie.length > 0 && !especie.some((e) => claveEspecie(c.especie ?? "") === claveEspecie(e))) return false;
-      if (producto.length > 0 && !producto.some((p) => claveEspecie(c.producto ?? "") === claveEspecie(p))) return false;
+      if (
+        especie.length > 0 &&
+        !especie.some((e) => claveEspecie(c.especie ?? "") === claveEspecie(e))
+      )
+        return false;
+      if (
+        producto.length > 0 &&
+        !producto.some((p) => claveEspecie(c.producto ?? "") === claveEspecie(p))
+      )
+        return false;
       if (
         permiso.length > 0 &&
-        !(c.titularOrigen ?? []).some((t) => permiso.some((p) => clavePermiso(t) === clavePermiso(p)))
+        !(c.titularOrigen ?? []).some((t) =>
+          permiso.some((p) => clavePermiso(t) === clavePermiso(p)),
+        )
       )
         return false;
       if (q) {
@@ -391,7 +462,9 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     () => ({
       piezas: elegidas.reduce((a, f) => a + (f.piezas ?? 0), 0),
       m3: Math.round(elegidas.reduce((a, f) => a + (f.volumenM3 ?? 0), 0) * 10_000) / 10_000,
-      corridas: [...new Set(filas.filter((f) => seleccion.has(claveFila(f))).map((f) => f.corrida.id))],
+      corridas: [
+        ...new Set(filas.filter((f) => seleccion.has(claveFila(f))).map((f) => f.corrida.id)),
+      ],
     }),
     [elegidas, filas, seleccion],
   );
@@ -407,7 +480,10 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
   );
   /** Piezas de TODO lo filtrado (no sólo la página): una fila es un paquete o
    *  una corrida sin paquetes, así que sumar acá no repite ninguna corrida. */
-  const totalPiezas = useMemo(() => filas.reduce((a, f) => a + (f.paquete?.cantidad ?? 0), 0), [filas]);
+  const totalPiezas = useMemo(
+    () => filas.reduce((a, f) => a + (f.paquete?.cantidad ?? 0), 0),
+    [filas],
+  );
 
   /**
    * De qué está hecho el stock, para abrirlo desde la propia tarjeta.
@@ -423,7 +499,10 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
    * partiría el mismo stock en dos mitades.
    */
   const repartir = useCallback(
-    (clave: (c: CorridaDisponible) => string, etiqueta: (c: CorridaDisponible) => string): FilaDesglose[] => {
+    (
+      clave: (c: CorridaDisponible) => string,
+      etiqueta: (c: CorridaDisponible) => string,
+    ): FilaDesglose[] => {
       const map = new Map<string, { value: string; count: number; peso: number }>();
       for (const c of visibles) {
         const k = clave(c);
@@ -436,11 +515,19 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
     [visibles],
   );
   const porEspecie = useMemo(
-    () => repartir((c) => claveEspecie(c.especie ?? ""), (c) => c.especie ?? "Sin especie"),
+    () =>
+      repartir(
+        (c) => claveEspecie(c.especie ?? ""),
+        (c) => c.especie ?? "Sin especie",
+      ),
     [repartir],
   );
   const porProducto = useMemo(
-    () => repartir((c) => norm(c.producto), (c) => productLabel(c.producto ?? "") || "Sin producto"),
+    () =>
+      repartir(
+        (c) => norm(c.producto),
+        (c) => productLabel(c.producto ?? "") || "Sin producto",
+      ),
     [repartir],
   );
 
@@ -453,7 +540,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
   const candidatasSugeridas = useMemo(() => {
     if (!sugerido) return [];
     const norma = (v: string | null | undefined) =>
-      (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+      (v ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
     const buscado = norma(sugerido.desdeTipo);
     return corridas
       .filter((c) => c.disponible > 0 && norma(tipoComercialDelProducto(c.producto)) === buscado)
@@ -544,13 +635,19 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 onChange: setProducto,
               },
             ]}
-            onLimpiar={() => { setEspecie([]); setPermiso([]); setProducto([]); }}
+            onLimpiar={() => {
+              setEspecie([]);
+              setPermiso([]);
+              setProducto([]);
+            }}
             nota={
               [especie, permiso, producto].some((v) => v.length > 0)
                 ? `Los indicadores muestran sólo ${[
                     especie.length > 0 ? `especie: ${especie.join(" o ")}` : "",
                     permiso.length > 0 ? `permiso: ${permiso.join(" o ")}` : "",
-                    producto.length > 0 ? `producto: ${producto.map(productLabel).join(" o ")}` : "",
+                    producto.length > 0
+                      ? `producto: ${producto.map(productLabel).join(" o ")}`
+                      : "",
                   ]
                     .filter(Boolean)
                     .join(" · ")}`
@@ -580,14 +677,21 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 : `${pieTablarDe(totales.volumen).toLocaleString("es-PE")} pt · producido − despachado − reprocesado − marcado usado`
             }
             icon={TreePine}
-            desglose={porEspecie.length > 0 ? <DesgloseSimple filas={porEspecie} onElegir={(v) => setEspecie([v])} /> : undefined}
+            desglose={
+              porEspecie.length > 0 ? (
+                <DesgloseSimple filas={porEspecie} onElegir={(v) => setEspecie([v])} />
+              ) : undefined
+            }
             desgloseLabel="Por especie"
+            emphasis="success"
           />,
           <CtpKpi
             key="paquetes"
             label="Paquetes en planta"
             value={nf(totales.paquetes)}
-            subValue={totales.paquetes === 0 ? "Sin paquetes cargados" : "Con su código y sus medidas"}
+            subValue={
+              totales.paquetes === 0 ? "Sin paquetes cargados" : "Con su código y sus medidas"
+            }
             icon={Boxes}
           />,
           /**
@@ -614,7 +718,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             value={nf(totales.especies)}
             subValue="Distintas en stock"
             icon={TreePine}
-            desglose={porEspecie.length > 0 ? <DesgloseSimple filas={porEspecie} onElegir={(v) => setEspecie([v])} /> : undefined}
+            desglose={
+              porEspecie.length > 0 ? (
+                <DesgloseSimple filas={porEspecie} onElegir={(v) => setEspecie([v])} />
+              ) : undefined
+            }
             desgloseLabel="Cuánto hay de cada una"
           />,
           /* `totales.productos` también venía calculado y sin mostrarse: dos
@@ -626,7 +734,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             value={nf(totales.productos)}
             subValue={totales.productos === 1 ? "Un solo tipo en stock" : "Distintos en stock"}
             icon={Boxes}
-            desglose={porProducto.length > 0 ? <DesgloseSimple filas={porProducto} onElegir={(v) => setProducto([v])} /> : undefined}
+            desglose={
+              porProducto.length > 0 ? (
+                <DesgloseSimple filas={porProducto} onElegir={(v) => setProducto([v])} />
+              ) : undefined
+            }
             desgloseLabel="Cuánto hay de cada uno"
           />,
           <CtpKpi
@@ -641,7 +753,10 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-6">
         <label className="relative sm:col-span-2">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
+            aria-hidden
+          />
           <input
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
@@ -688,7 +803,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
           />
         )}
         <div className="flex justify-end">
-          <ColumnasMenu columnas={COLUMNAS_DISPONIBLES_OPCIONALES} visibles={colsVisibles} onChange={setColsVisibles} />
+          <ColumnasMenu
+            columnas={COLUMNAS_DISPONIBLES_OPCIONALES}
+            visibles={colsVisibles}
+            onChange={setColsVisibles}
+          />
         </div>
       </div>
 
@@ -703,7 +822,10 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
       </label>
 
       {nota && (
-        <p role="status" className="rounded-xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 px-3 py-2 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+        <p
+          role="status"
+          className="rounded-xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 px-3 py-2 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+        >
           {nota}
         </p>
       )}
@@ -740,7 +862,9 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                 dos columnas más allá, detrás de «Corrida / lote». */}
             <th className="px-3 py-2 text-right font-bold">Piezas</th>
             <th className="px-3 py-2 text-right font-bold">Volumen</th>
-            {colsVisibles.pieTablar && <th className="px-3 py-2 text-right font-bold">Pie tablar</th>}
+            {colsVisibles.pieTablar && (
+              <th className="px-3 py-2 text-right font-bold">Pie tablar</th>
+            )}
             {colsVisibles.lote && <th className="px-3 py-2 font-bold">Corrida / lote</th>}
             <th className="px-3 py-2 text-right font-bold">Saldo corrida</th>
             {colsVisibles.permiso && <th className="px-3 py-2 font-bold">N° Permiso</th>}
@@ -792,7 +916,8 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                     setSeleccion((prev) => {
                       const s = new Set(prev);
                       const k = claveFila({ corrida: c, paquete: p });
-                      if (e.target.checked) s.add(k); else s.delete(k);
+                      if (e.target.checked) s.add(k);
+                      else s.delete(k);
                       return s;
                     })
                   }
@@ -831,7 +956,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                   )}
                   {c.usadoAt && (
                     <span
-                      title={c.usadoMotivo ? `Marcado como usado: ${c.usadoMotivo}` : "Marcado como usado"}
+                      title={
+                        c.usadoMotivo
+                          ? `Marcado como usado: ${c.usadoMotivo}`
+                          : "Marcado como usado"
+                      }
                       className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-warning-500)]/15 px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                     >
                       <CheckCircle2 className="h-3 w-3 shrink-0" aria-hidden /> Usado
@@ -841,7 +970,9 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
               </td>
               <td className="px-3 py-2 text-[var(--text-secondary)]">{c.especie ?? "—"}</td>
               {colsVisibles.presentacion && (
-                <td className="px-3 py-2 text-[var(--text-tertiary)]">{p?.presentacion ?? c.presentacion ?? "—"}</td>
+                <td className="px-3 py-2 text-[var(--text-tertiary)]">
+                  {p?.presentacion ?? c.presentacion ?? "—"}
+                </td>
               )}
               {colsVisibles.medidas && (
                 <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">
@@ -917,9 +1048,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                            ya sabe de las ataduras: alcanza para avisar antes de
                            abrir. El servidor vuelve a decidir con la verdad. */
                         atadaPorque:
-                          c.despachado > 0 ? "ya tiene madera despachada"
-                          : c.reprocesado > 0 ? "ya alimentó un reproceso"
-                          : null,
+                          c.despachado > 0
+                            ? "ya tiene madera despachada"
+                            : c.reprocesado > 0
+                              ? "ya alimentó un reproceso"
+                              : null,
                         permisos: c.titularOrigen,
                         gtfOrigen: c.gtfOrigen,
                         /* Las especies que este libro ya escribió: sugerencia
@@ -935,7 +1068,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
                     tone="muted"
                     disabled={!p?.codigo}
                     onClick={() => p?.codigo && setFichaPaquete(p.codigo)}
-                    label={p?.codigo ? `Ficha de ${p.codigo}: de qué corrida y de qué madera salió` : "Sin paquete: no hay ficha"}
+                    label={
+                      p?.codigo
+                        ? `Ficha de ${p.codigo}: de qué corrida y de qué madera salió`
+                        : "Sin paquete: no hay ficha"
+                    }
                   />
                   <IconAction
                     icon={Ruler}
@@ -1018,10 +1155,14 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
         onPorPagina={setPorPagina}
         onIr={ir}
         sustantivo="paquete"
-        extra={<span className="font-mono tabular-nums">{fmtM3(totales.volumen)} m³ disponibles</span>}
+        extra={
+          <span className="font-mono tabular-nums">{fmtM3(totales.volumen)} m³ disponibles</span>
+        }
       />
-    {/* De un código de la pila a su corrida y a la madera con la que se hizo. */}
-      {fichaPaquete && <CtpPaqueteFicha codigo={fichaPaquete} onClose={() => setFichaPaquete(null)} />}
+      {/* De un código de la pila a su corrida y a la madera con la que se hizo. */}
+      {fichaPaquete && (
+        <CtpPaqueteFicha codigo={fichaPaquete} onClose={() => setFichaPaquete(null)} />
+      )}
 
       {/**
        * Cubicar el camión entero (ADR-369): se mide una vez y se cuadra contra
@@ -1034,7 +1175,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
           titulo={`Cubicar ${elegidas.length} registro(s) · ${fmtM3(totalElegido.m3)} m³`}
           filas={elegidas}
           onClose={() => setCubicarConjunto(false)}
-          onGuardada={(msg) => { setCubicarConjunto(false); setSeleccion(new Set()); setNota(msg); }}
+          onGuardada={(msg) => {
+            setCubicarConjunto(false);
+            setSeleccion(new Set());
+            setNota(msg);
+          }}
         />
       )}
 
@@ -1042,7 +1187,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
         <CtpEditarLineaModal
           linea={editar}
           onCerrar={() => setEditar(null)}
-          onListo={(resumen) => { setNota(resumen); invalidarCtp(); void recargar(); }}
+          onListo={(resumen) => {
+            setNota(resumen);
+            invalidarCtp();
+            void recargar();
+          }}
         />
       )}
 
@@ -1052,7 +1201,10 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             { label: "Registros", valor: `${elegidas.length}` },
             { label: "Piezas", valor: `${totalElegido.piezas}` },
             { label: "Volumen", valor: `${fmtM3(totalElegido.m3)} m³`, fuerte: true },
-            { label: "Pie tablar", valor: `${pieTablarDe(totalElegido.m3).toLocaleString("es-PE")} pt` },
+            {
+              label: "Pie tablar",
+              valor: `${pieTablarDe(totalElegido.m3).toLocaleString("es-PE")} pt`,
+            },
           ]}
           onLimpiar={() => setSeleccion(new Set())}
           accionLabel="Cubicar madera"
@@ -1099,7 +1251,11 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
              y m³ llegan puestos y el operario confirma. */
           sugerencia={
             sugerido
-              ? { producto: sugerido.productoDestino, m3: sugerido.m3, desdeTipo: sugerido.desdeTipo }
+              ? {
+                  producto: sugerido.productoDestino,
+                  m3: sugerido.m3,
+                  desdeTipo: sugerido.desdeTipo,
+                }
               : undefined
           }
           onClose={() => setReprocesar(null)}
@@ -1149,7 +1305,10 @@ export default function CtpProductosDisponibles({ period }: { period: CtpPeriod 
             },
           ]}
           onClose={() => setCubicar(null)}
-          onGuardada={(msg) => { setCubicar(null); setNota(msg); }}
+          onGuardada={(msg) => {
+            setCubicar(null);
+            setNota(msg);
+          }}
         />
       )}
     </div>

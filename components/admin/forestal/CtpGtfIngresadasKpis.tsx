@@ -17,13 +17,26 @@
  * sin poder contradecir a la tabla de abajo, que es de donde salen.
  */
 
-import { Boxes, CalendarClock, FileStack, Layers, PackageCheck, Scale, TreePine } from "@buleje/design-system/icons";
+import {
+  Boxes,
+  CalendarClock,
+  FileStack,
+  Layers,
+  PackageCheck,
+  Scale,
+  TreePine,
+} from "@buleje/design-system/icons";
 import CtpKpi, { DesgloseSimple, type FilaDesglose } from "./CtpKpi";
 
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
-import { CtpKpisPlegables, estaFueraDePlazo, PLAZO_REGISTRO_DIAS, type WoodEntry } from "./ctp-shared";
+import {
+  CtpKpisPlegables,
+  estaFueraDePlazo,
+  PLAZO_REGISTRO_DIAS,
+  type WoodEntry,
+} from "./ctp-shared";
 
 const nf = (n: number) => n.toLocaleString("es-PE");
 
@@ -63,9 +76,7 @@ export default function CtpGtfIngresadasKpis({
    */
   const tarde = guias.filter((g) => g.lineas.some((l) => estaFueraDePlazo(l))).length;
   /** De cuántos títulos habilitantes / predios vino esta madera. */
-  const titulos = new Set(
-    guias.map((g) => (g.originCode ?? "").trim()).filter(Boolean),
-  ).size;
+  const titulos = new Set(guias.map((g) => (g.originCode ?? "").trim()).filter(Boolean)).size;
 
   /**
    * Los repartos que hay detrás de cada cifra.
@@ -74,7 +85,10 @@ export default function CtpGtfIngresadasKpis({
    * nueva ni una cuenta paralela, sólo se muestra lo que la tarjeta resume y
    * que antes había que ir a buscar filtrando de a una.
    */
-  const juntar = (clave: (g: GuiaIngreso<WoodEntry>) => string | null, peso: (g: GuiaIngreso<WoodEntry>) => number): FilaDesglose[] => {
+  const juntar = (
+    clave: (g: GuiaIngreso<WoodEntry>) => string | null,
+    peso: (g: GuiaIngreso<WoodEntry>) => number,
+  ): FilaDesglose[] => {
     const map = new Map<string, { count: number; peso: number }>();
     for (const g of guias) {
       const k = (clave(g) ?? "").trim();
@@ -84,8 +98,14 @@ export default function CtpGtfIngresadasKpis({
     }
     return [...map].map(([value, v]) => ({ value, count: v.count, volumeM3: v.peso }));
   };
-  const porProveedor = juntar((g) => g.providerName, (g) => g.volumenM3);
-  const porTitulo = juntar((g) => g.originCode, (g) => g.volumenM3);
+  const porProveedor = juntar(
+    (g) => g.providerName,
+    (g) => g.volumenM3,
+  );
+  const porTitulo = juntar(
+    (g) => g.originCode,
+    (g) => g.volumenM3,
+  );
   const porEspecie: FilaDesglose[] = (() => {
     const map = new Map<string, { count: number; peso: number }>();
     for (const g of guias) {
@@ -98,7 +118,6 @@ export default function CtpGtfIngresadasKpis({
     }
     return [...map].map(([value, v]) => ({ value, count: v.count, volumeM3: v.peso }));
   })();
-
 
   return (
     /* Todas detrás del botón «Indicadores» (Brandon, 2026-09-03); el titular va
@@ -142,6 +161,7 @@ export default function CtpGtfIngresadasKpis({
              ocho (ADR-325). El hueco se ve acá, no en la fila. */
           subValue={piezas > 0 ? `${nf(recibidas)} con recepción cerrada` : "sin lista de piezas"}
           icon={Layers}
+          emphasis={piezas > 0 && recibidas < piezas ? "warning" : "neutral"}
         />,
         <CtpKpi
           key="especies"
@@ -164,6 +184,7 @@ export default function CtpGtfIngresadasKpis({
           icon={FileStack}
           desglose={porTitulo.length > 0 ? <DesgloseSimple filas={porTitulo} /> : undefined}
           desgloseLabel="Cuánto vino de cada uno"
+          emphasis={titulos === 0 && guias.length > 0 ? "warning" : "neutral"}
         />,
         <CtpKpi
           key="plazo"
@@ -182,6 +203,7 @@ export default function CtpGtfIngresadasKpis({
           tono="inverso"
           onClick={tarde > 0 ? onLate : undefined}
           filtrando={lateOn}
+          emphasis={tarde > 0 ? "warning" : "success"}
         />,
         <CtpKpi
           key="cuadre"
@@ -190,6 +212,7 @@ export default function CtpGtfIngresadasKpis({
           subValue={sinCuadrar > 0 ? "no se pueden consumir" : "todas cuadran"}
           icon={Scale}
           tono="inverso"
+          emphasis={sinCuadrar > 0 ? "warning" : "success"}
         />,
       ]}
     />

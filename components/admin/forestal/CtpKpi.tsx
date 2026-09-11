@@ -29,7 +29,7 @@
  */
 
 import { useId, useState, type ReactNode } from "react";
-import { StatCard } from "@buleje/design-system";
+import { StatCard, type StatCardEmphasis } from "@buleje/design-system";
 import { ChevronDown } from "@buleje/design-system/icons";
 import type { LucideIcon } from "@buleje/design-system/icons";
 import { variacionPct } from "@/lib/forestal/movimiento-libro";
@@ -79,6 +79,13 @@ export interface CtpKpiProps {
   onClick?: () => void;
   /** Esta tarjeta está filtrando la tabla: se le pone el anillo del acento. */
   filtrando?: boolean;
+  /**
+   * Qué color lleva el NÚMERO (no el delta): verde cuando la cifra en sí es la
+   * buena noticia, ámbar cuando algo no cierra. Es el `emphasis` del DS y se
+   * pasa tal cual — son dos señales distintas y conviven: «0.00 m³ disponible»
+   * en ámbar con un delta rojo dice dos cosas verdaderas a la vez.
+   */
+  emphasis?: StatCardEmphasis;
   /**
    * `compact` por default y no `default`: en el Libro CTP las tarjetas viven
    * arriba de la tabla, que es a lo que se entra. Medido en su momento: cuatro
@@ -132,6 +139,7 @@ export default function CtpKpi({
   desgloseLabel = "Ver el desglose",
   onClick,
   filtrando = false,
+  emphasis,
   density = "compact",
   className,
 }: CtpKpiProps) {
@@ -161,6 +169,7 @@ export default function CtpKpi({
       value={value}
       subValue={subValue}
       icon={icon}
+      emphasis={emphasis}
       delta={delta ?? undefined}
       deltaLabel={etiqueta}
       deltaPolarity={POLARIDAD[tono]}
@@ -192,7 +201,10 @@ export default function CtpKpi({
         className="flex items-center justify-between gap-2 border border-t-0 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-2 text-left text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] print:hidden"
       >
         {abierto ? "Ocultar el desglose" : desgloseLabel}
-        <ChevronDown className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />
+        <ChevronDown
+          className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`}
+          aria-hidden
+        />
       </button>
       {abierto && (
         <div
@@ -282,7 +294,8 @@ export function DesgloseSimple({
       })}
       {resto > 0 && (
         <p className="pt-0.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-          y {resto} más, por debajo de {Number(porPeso(mostradas[mostradas.length - 1])).toFixed(2)} {hayVolumen ? unidad : ""}
+          y {resto} más, por debajo de {Number(porPeso(mostradas[mostradas.length - 1])).toFixed(2)}{" "}
+          {hayVolumen ? unidad : ""}
         </p>
       )}
     </div>

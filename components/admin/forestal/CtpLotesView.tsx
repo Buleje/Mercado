@@ -15,8 +15,21 @@
  */
 
 import { useMemo, useState } from "react";
-import { Boxes, Gauge, Layers, Loader2, PackageOpen, Plus, RefreshCw, ScanText, Search, TreePine, Upload, X } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import {
+  Boxes,
+  Gauge,
+  Layers,
+  Loader2,
+  PackageOpen,
+  Plus,
+  RefreshCw,
+  ScanText,
+  Search,
+  TreePine,
+  Upload,
+  X,
+} from "@buleje/design-system/icons";
+import CtpKpi from "./CtpKpi";
 import { libresDelPatio } from "@/lib/forestal/patio-resumen";
 import {
   ESTADO_LOTE,
@@ -35,14 +48,15 @@ import CtpLoteDetalleModal from "./CtpLoteDetalleModal";
 import CtpImportarProgramacionesModal from "./CtpImportarProgramacionesModal";
 import CtpCuadreSniffsModal, { lotesQueNoCuadran } from "./CtpCuadreSniffsModal";
 import CtpDeclararDesdeSniffs from "./CtpDeclararDesdeSniffs";
-import CtpRegistrarProduccionModal, { type ProduccionRegistrada } from "./CtpRegistrarProduccionModal";
+import CtpRegistrarProduccionModal, {
+  type ProduccionRegistrada,
+} from "./CtpRegistrarProduccionModal";
 import { Btn, CtpKpisPlegables, PanelSkeleton, VistaHeader } from "./ctp-shared";
 import { sniffsRefDesdeDetalle } from "@/lib/forestal/sniffs-produccion-parse";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 const CAMPO =
   "h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
-const ANILLO_ACTIVO = "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]";
 
 /** El lote elegido para producir viaja al formulario de la pestaña Producción. */
 export interface LoteAProducir {
@@ -60,8 +74,17 @@ export default function CtpLotesView({
   onCargar: (lote: LoteAProducir) => void;
 }) {
   const {
-    lotes, trozas, cargando, error, recargar, crearConTrozas, crearInventario, quitarTroza,
-    editarLote, deshacer, deshacerForzado,
+    lotes,
+    trozas,
+    cargando,
+    error,
+    recargar,
+    crearConTrozas,
+    crearInventario,
+    quitarTroza,
+    editarLote,
+    deshacer,
+    deshacerForzado,
   } = useLotesAserrio();
   const { indice: fotos } = useEspeciesFotos();
 
@@ -140,7 +163,10 @@ export default function CtpLotesView({
     () => [...new Set(lotes.map((l) => l.speciesCommon).filter(Boolean))].sort(),
     [lotes],
   );
-  const visibles = useMemo(() => filtrarLotes(lotes, { texto, especie, estado }), [lotes, texto, especie, estado]);
+  const visibles = useMemo(
+    () => filtrarLotes(lotes, { texto, especie, estado }),
+    [lotes, texto, especie, estado],
+  );
   /** Lo que queda en el patio sin apartar: es la materia prima de un lote nuevo.
    *  Mismo predicado que la pestaña Consumos (`estaLibreEnPatio`): contaba
    *  también las piezas de guías sin recepcionar y prometía madera que el
@@ -196,7 +222,9 @@ export default function CtpLotesView({
             {descuadres.length} lote{descuadres.length === 1 ? "" : "s"} del SNIFFS pide
             {descuadres.length === 1 ? "" : "n"} atención
             {(() => {
-              const pend = descuadres.filter((d) => d.cuadre.estado === "pendiente" || d.cuadre.produccionPendiente);
+              const pend = descuadres.filter(
+                (d) => d.cuadre.estado === "pendiente" || d.cuadre.produccionPendiente,
+              );
               const m3 = Math.round(pend.reduce((a, d) => a + d.peso, 0) * 10_000) / 10_000;
               return pend.length > 0 ? ` · ${pend.length} sin declarar acá (${fmtM3(m3)} m³)` : "";
             })()}
@@ -214,98 +242,96 @@ export default function CtpLotesView({
           (resumen.margenTotalM3 > 0 ? ` · ${fmtM3(resumen.margenTotalM3)} m³ por declarar` : "")
         }
         tarjetas={[
-        <StatCard
-          key="abiertos"
-          density="compact"
-          label="Lotes abiertos"
-          value={String(resumen.abiertos)}
-          subValue={
-            estado === "abierto"
-              ? "Filtrando por estos"
-              : /* Los vacíos se DICEN aparte (ADR-357): un lote sin piezas es un
+          <CtpKpi
+            key="abiertos"
+            label="Lotes abiertos"
+            value={String(resumen.abiertos)}
+            subValue={
+              estado === "abierto"
+                ? "Filtrando por estos"
+                : /* Los vacíos se DICEN aparte (ADR-357): un lote sin piezas es un
                    rótulo esperando madera, no una pila en el patio. */
-                `${resumen.piezasApartadas} piezas esperando la sierra${
-                  resumen.vacios > 0 ? ` · ${resumen.vacios} rótulo(s) sin cargar` : ""
-                }`
-          }
-          icon={Boxes}
-          emphasis="neutral"
-          onClick={() => setEstado((e) => (e === "abierto" ? "" : "abierto"))}
-          className={estado === "abierto" ? ANILLO_ACTIVO : undefined}
-        />,
-        <StatCard
-          key="volumen"
-          density="compact"
-          label="Volumen apartado"
-          value={`${fmtM3(resumen.volumenApartado)} m³`}
-          subValue={`${resumen.pieTablarApartado.toLocaleString("es-PE")} pt · listos para el carro`}
-          icon={TreePine}
-          emphasis="success"
-        />,
-        <StatCard
-          key="libres"
-          density="compact"
-          label="Libres en el patio"
-          value={String(libresEnPatio)}
-          subValue="Piezas sin apartar — armá un lote"
-          icon={PackageOpen}
-          emphasis={libresEnPatio > 0 ? "neutral" : "warning"}
-          onClick={() => setArmar(true)}
-        />,
-        <StatCard
-          key="rendimiento"
-          density="compact"
-          label="Rendimiento aserrado"
-          value={resumen.rendimientoPct != null ? `${resumen.rendimientoPct}%` : "—"}
-          subValue={
-            resumen.rendimientoPct != null
-              ? `${resumen.consumidos} lote(s) aserrados · ${veredicto.texto}`
-              : resumen.sinRendimiento > 0
-                ? `${resumen.sinRendimiento} corrida(s) en otra unidad`
-                : "Sin lotes aserrados todavía"
-          }
-          icon={Gauge}
-          emphasis={veredicto.tono === "ok" ? "success" : veredicto.tono === "neutro" ? "neutral" : "warning"}
-        />,
-        <StatCard
-          key="sobrante"
-          density="compact"
-          label="Volumen sobrante"
-          value={`${fmtM3(resumen.margenTotalM3)} m³`}
-          subValue={`${pieTablarDe(resumen.margenTotalM3).toLocaleString("es-PE")} pt · declarable desde Producción`}
-          icon={Boxes}
-          emphasis={resumen.margenTotalM3 > 0 ? "success" : "neutral"}
-        />,
-        /**
-         * Lo que esta planta YA aserró, que no estaba en ninguna cifra de la
-         * pestaña: `volumenAserrado` y `consumidos` los devolvía `resumenLotes`
-         * desde siempre y sólo se usaban para el rendimiento. Es el otro lado
-         * del «volumen apartado» — cuánto pasó por el carro y cuánto espera.
-         */
-        <StatCard
-          key="aserrado"
-          density="compact"
-          label="Ya aserrado"
-          value={`${fmtM3(resumen.volumenAserrado)} m³`}
-          subValue={
-            resumen.consumidos === 0
-              ? "Ningún lote entró a la sierra todavía"
-              : `${resumen.consumidos} lote${resumen.consumidos === 1 ? "" : "s"} consumido${resumen.consumidos === 1 ? "" : "s"}`
-          }
-          icon={Layers}
-          emphasis="neutral"
-        />,
-        /* Un lote es de UNA especie (ADR-337): cuántas hay dice de cuántas
+                  `${resumen.piezasApartadas} piezas esperando la sierra${
+                    resumen.vacios > 0 ? ` · ${resumen.vacios} rótulo(s) sin cargar` : ""
+                  }`
+            }
+            icon={Boxes}
+            onClick={() => setEstado((e) => (e === "abierto" ? "" : "abierto"))}
+            filtrando={estado === "abierto"}
+          />,
+          <CtpKpi
+            key="volumen"
+            label="Volumen apartado"
+            value={`${fmtM3(resumen.volumenApartado)} m³`}
+            subValue={`${resumen.pieTablarApartado.toLocaleString("es-PE")} pt · listos para el carro`}
+            icon={TreePine}
+            emphasis="success"
+          />,
+          <CtpKpi
+            key="libres"
+            label="Libres en el patio"
+            value={String(libresEnPatio)}
+            subValue="Piezas sin apartar — armá un lote"
+            icon={PackageOpen}
+            onClick={() => setArmar(true)}
+            emphasis={libresEnPatio > 0 ? "neutral" : "warning"}
+          />,
+          <CtpKpi
+            key="rendimiento"
+            label="Rendimiento aserrado"
+            value={resumen.rendimientoPct != null ? `${resumen.rendimientoPct}%` : "—"}
+            subValue={
+              resumen.rendimientoPct != null
+                ? `${resumen.consumidos} lote(s) aserrados · ${veredicto.texto}`
+                : resumen.sinRendimiento > 0
+                  ? `${resumen.sinRendimiento} corrida(s) en otra unidad`
+                  : "Sin lotes aserrados todavía"
+            }
+            icon={Gauge}
+            emphasis={
+              veredicto.tono === "ok"
+                ? "success"
+                : veredicto.tono === "neutro"
+                  ? "neutral"
+                  : "warning"
+            }
+          />,
+          <CtpKpi
+            key="sobrante"
+            label="Volumen sobrante"
+            value={`${fmtM3(resumen.margenTotalM3)} m³`}
+            subValue={`${pieTablarDe(resumen.margenTotalM3).toLocaleString("es-PE")} pt · declarable desde Producción`}
+            icon={Boxes}
+            emphasis={resumen.margenTotalM3 > 0 ? "success" : "neutral"}
+          />,
+          /**
+           * Lo que esta planta YA aserró, que no estaba en ninguna cifra de la
+           * pestaña: `volumenAserrado` y `consumidos` los devolvía `resumenLotes`
+           * desde siempre y sólo se usaban para el rendimiento. Es el otro lado
+           * del «volumen apartado» — cuánto pasó por el carro y cuánto espera.
+           */
+          <CtpKpi
+            key="aserrado"
+            label="Ya aserrado"
+            value={`${fmtM3(resumen.volumenAserrado)} m³`}
+            subValue={
+              resumen.consumidos === 0
+                ? "Ningún lote entró a la sierra todavía"
+                : `${resumen.consumidos} lote${resumen.consumidos === 1 ? "" : "s"} consumido${resumen.consumidos === 1 ? "" : "s"}`
+            }
+            icon={Layers}
+          />,
+          /* Un lote es de UNA especie (ADR-337): cuántas hay dice de cuántas
            maderas distintas se está trabajando a la vez. */
-        <StatCard
-          key="especies"
-          density="compact"
-          label="Especies en lotes"
-          value={String(resumen.especies)}
-          subValue={resumen.especies === 1 ? "Una sola especie en el patio" : "Distintas entre los lotes"}
-          icon={TreePine}
-          emphasis="neutral"
-        />,
+          <CtpKpi
+            key="especies"
+            label="Especies en lotes"
+            value={String(resumen.especies)}
+            subValue={
+              resumen.especies === 1 ? "Una sola especie en el patio" : "Distintas entre los lotes"
+            }
+            icon={TreePine}
+          />,
         ]}
       />
 
@@ -324,7 +350,12 @@ export default function CtpLotesView({
           }`}
         >
           <span className="flex-1">{aviso.texto}</span>
-          <button type="button" onClick={() => setAviso(null)} aria-label="Cerrar el aviso" className="shrink-0">
+          <button
+            type="button"
+            onClick={() => setAviso(null)}
+            aria-label="Cerrar el aviso"
+            className="shrink-0"
+          >
             <X className="h-4 w-4" />
           </button>
         </p>
@@ -334,7 +365,10 @@ export default function CtpLotesView({
         {/* `w-full` en chico y `flex-1` desde sm: `min-w-*` no emite CSS en este
             proyecto (medido), así que un mínimo declarado ahí no protege nada. */}
         <label className="relative w-full sm:w-auto sm:flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
+            aria-hidden
+          />
           <input
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
@@ -343,7 +377,12 @@ export default function CtpLotesView({
             className={`${CAMPO} w-full pl-9 pr-3`}
           />
         </label>
-        <select value={especie} onChange={(e) => setEspecie(e.target.value)} aria-label="Filtrar por especie" className={`${CAMPO} px-3`}>
+        <select
+          value={especie}
+          onChange={(e) => setEspecie(e.target.value)}
+          aria-label="Filtrar por especie"
+          className={`${CAMPO} px-3`}
+        >
           <option value="">Todas las especies</option>
           {opcionesEspecie.map((e) => (
             <option key={e} value={e}>
@@ -365,7 +404,11 @@ export default function CtpLotesView({
         {filtrando && (
           <button
             type="button"
-            onClick={() => { setTexto(""); setEspecie(""); setEstado(""); }}
+            onClick={() => {
+              setTexto("");
+              setEspecie("");
+              setEstado("");
+            }}
             className="h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
           >
             Limpiar
@@ -375,8 +418,8 @@ export default function CtpLotesView({
 
       {conAlerta > 0 && !filtrando && (
         <p className="rounded-2xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm font-bold text-[var(--data-warning-700)] dark:bg-transparent dark:text-[var(--data-warning-500)]">
-          {conAlerta} lote{conAlerta === 1 ? "" : "s"} para mirar: madera apartada hace días, piezas consumidas por fuera
-          o corridas anuladas. El detalle está en cada tarjeta.
+          {conAlerta} lote{conAlerta === 1 ? "" : "s"} para mirar: madera apartada hace días, piezas
+          consumidas por fuera o corridas anuladas. El detalle está en cada tarjeta.
         </p>
       )}
 
@@ -385,9 +428,14 @@ export default function CtpLotesView({
         <PanelSkeleton kpis={3} />
       ) : visibles.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-10 text-center">
-          <Boxes className="mx-auto mb-3 h-10 w-10 text-[var(--text-tertiary)] opacity-40" aria-hidden />
+          <Boxes
+            className="mx-auto mb-3 h-10 w-10 text-[var(--text-tertiary)] opacity-40"
+            aria-hidden
+          />
           <p className="text-base font-bold text-[var(--text-primary)]">
-            {lotes.length === 0 ? "Todavía no hay lotes de aserrío" : "Ningún lote coincide con el filtro"}
+            {lotes.length === 0
+              ? "Todavía no hay lotes de aserrío"
+              : "Ningún lote coincide con el filtro"}
           </p>
           <p className="mx-auto mt-1 max-w-lg text-sm text-[var(--text-secondary)]">
             {lotes.length === 0
@@ -431,8 +479,14 @@ export default function CtpLotesView({
       {verCuadre && (
         <CtpCuadreSniffsModal
           lotes={lotes}
-          onResolver={(l) => { setVerCuadre(false); setResolviendoId(l.id); }}
-          onVer={(l) => { setVerCuadre(false); setDetalleId(l.id); }}
+          onResolver={(l) => {
+            setVerCuadre(false);
+            setResolviendoId(l.id);
+          }}
+          onVer={(l) => {
+            setVerCuadre(false);
+            setDetalleId(l.id);
+          }}
           onClose={() => setVerCuadre(false)}
         />
       )}
@@ -441,7 +495,10 @@ export default function CtpLotesView({
         <CtpDeclararDesdeSniffs
           lote={resolviendo}
           trozas={trozas}
-          onListo={(texto) => { setAviso({ tono: "ok", texto }); void recargar(); }}
+          onListo={(texto) => {
+            setAviso({ tono: "ok", texto });
+            void recargar();
+          }}
           onError={(texto) => setAviso({ tono: "aviso", texto })}
           onClose={() => setResolviendoId(null)}
         />
@@ -498,7 +555,10 @@ export default function CtpLotesView({
             const r = await crearConTrozas({ ...input, trozaIds: [] });
             return { code: r.code };
           }}
-          onIniciarInventario={(material) => { setMaterialInventario(material); setArmar(false); }}
+          onIniciarInventario={(material) => {
+            setMaterialInventario(material);
+            setArmar(false);
+          }}
           onListo={(texto, tono) => setAviso({ texto, tono })}
           onClose={() => setArmar(false)}
         />
@@ -529,7 +589,10 @@ export default function CtpLotesView({
           error={errorInventario}
           ctaLabel="Declarar el inventario"
           onConfirmar={(datos) => void confirmarInventario(datos)}
-          onClose={() => { setMaterialInventario(null); setErrorInventario(null); }}
+          onClose={() => {
+            setMaterialInventario(null);
+            setErrorInventario(null);
+          }}
         />
       )}
 
@@ -541,7 +604,10 @@ export default function CtpLotesView({
           onEditar={(cambios) => editarLote(detalle.id, cambios)}
           onDeshacer={async () => {
             await deshacer(detalle.id);
-            setAviso({ tono: "ok", texto: `Lote ${detalle.code} deshecho: sus piezas volvieron al patio.` });
+            setAviso({
+              tono: "ok",
+              texto: `Lote ${detalle.code} deshecho: sus piezas volvieron al patio.`,
+            });
             setDetalleId(null);
           }}
           onDeshacerForzado={async (motivo, forzar) => {
