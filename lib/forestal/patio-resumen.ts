@@ -148,6 +148,14 @@ const norm = (v: string | null | undefined) =>
   (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 /**
+ * La ESPECIE se compara con `claveEspecie`, que es como la agrupan las facetas
+ * y como el libro decide qué grafía guarda. Con `norm` a secas, la faceta decía
+ * «3 piezas» (agrupadas por clave) y la tabla mostraba 2, porque el filtro no
+ * sacaba el binomio entre paréntesis (auditoría 2026-09-11).
+ */
+const normEspecie = (v: string | null | undefined) => claveEspecie(v);
+
+/**
  * Acota la pila. **Sin «sólo las libres»**: ése es un ayudante para elegir, no
  * un filtro de contenido, y si entrara acá los KPI dirían siempre «0 apartadas»
  * (ver `resumenPatio`).
@@ -163,9 +171,12 @@ export function filtrarPatio(trozas: readonly TrozaConsumible[], f: FiltroPatio)
   /* OR adentro de un campo, AND entre campos: el autofiltro de Excel. */
   const entra = (valores: string[], suyo: string | null | undefined) =>
     valores.length === 0 || valores.includes(norm(suyo));
+  /* La especie por su clave, a los dos lados de la comparación. */
+  const entraEspecie = (valores: string[], suyo: string | null | undefined) =>
+    valores.length === 0 || valores.map(normEspecie).includes(normEspecie(suyo));
 
   return trozas.filter((t) => {
-    if (!entra(especies, t.especieComun)) return false;
+    if (!entraEspecie(especies, t.especieComun)) return false;
     if (!entra(guias, t.gtfNumber)) return false;
     if (!entra(permisos, t.permiso)) return false;
     if (!entra(resoluciones, t.resolucion)) return false;

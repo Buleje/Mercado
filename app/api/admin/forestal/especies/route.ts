@@ -90,7 +90,7 @@ const patchSchema = z.union([
 /** Las tres escrituras comparten guardas, parseo del cuerpo y traducción de errores. */
 async function escribir(
   req: NextRequest,
-  correr: (tenantId: string, user: string, body: unknown) => Promise<unknown>,
+  correr: (tenantId: string, user: string, body: unknown, rol: string) => Promise<unknown>,
 ) {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
   if (auth instanceof NextResponse) return auth;
@@ -111,7 +111,9 @@ async function escribir(
   }
 
   try {
-    return NextResponse.json(await correr(auth.tenantId, auth.username ?? "unknown", body));
+    return NextResponse.json(
+      await correr(auth.tenantId, auth.username ?? "unknown", body, auth.role ?? ""),
+    );
   } catch (err) {
     if (err instanceof EspecieCatalogoError) {
       return NextResponse.json(
@@ -159,7 +161,7 @@ export const GET = withApiHandler("forestal-especies-get", async (req: NextReque
 });
 
 export const POST = withApiHandler("forestal-especies-post", (req: NextRequest) =>
-  escribir(req, async (tenantId, user, body) => {
+  escribir(req, async (tenantId, user, body, rol) => {
     const parsed = postSchema.safeParse(body);
     if (!parsed.success) throw new EspecieCatalogoError("Escribí el nombre de la especie.");
     const d = parsed.data;
@@ -167,9 +169,21 @@ export const POST = withApiHandler("forestal-especies-post", (req: NextRequest) 
     if ("accion" in d && d.accion === "sembrar") {
       const { mensaje } = await ForestEspeciesDB.agregarVarias(tenantId, d.especies, user);
       return { ...(await respuesta(tenantId, mensaje)), ...(await delLibro(tenantId)) };
+      /* `delLibro` lee de caché, que `agregarVarias` acaba de invalidar: es UNA
+         recalculada, no tres (auditoría 2026-09-11). */
     }
 
     if ("accion" in d && d.accion === "unificar") {
+      /* Unificar REESCRIBE filas del acta (hasta cuatro tablas). Editar UNA
+         línea del libro ya exige admin/owner, así que esto no puede pedir
+         menos: el almacenero puede armar el catálogo, no reescribir lo
+         declarado (auditoría 2026-09-11). El guard va acá y no en `escribir`
+         porque las otras tres acciones sí son del almacenero. */
+      if (!["admin", "owner"].includes(rol)) {
+        throw new EspecieCatalogoError(
+          "Unificar reescribe filas del libro: sólo el administrador o el dueño pueden hacerlo.",
+        );
+      }
       const r = await ForestEspeciesDB.unificarEnElLibro(
         tenantId,
         { clave: d.clave, nombre: d.nombre },

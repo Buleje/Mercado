@@ -5,7 +5,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
-import { ForestCuentaDB, FleteYaCargadoError } from "@/lib/db/forest-cuenta.db";
+import { ForestCuentaDB, FleteYaCargadoError, GuiaYaAnotadaError } from "@/lib/db/forest-cuenta.db";
 import { movimientoInputSchema } from "@/lib/forestal/cuenta-corriente";
 
 /**
@@ -44,6 +44,18 @@ export const GET = withApiHandler("forestal-cuenta-get", async (req: NextRequest
 
 const postSchema = movimientoInputSchema.extend({ id: z.string().trim().max(40).optional() });
 
+/** La venta de una guía: dos movimientos en un acto, idempotente por N° de guía. */
+const ventaGuiaSchema = z.object({
+  accion: z.literal("venta_guia"),
+  parteId: z.string().trim().min(1).max(40),
+  parteNombre: z.string().trim().min(1).max(200),
+  fecha: z.string().trim().min(10).max(10),
+  gtfNumber: z.string().trim().min(1).max(80),
+  total: z.number().positive().max(9_999_999),
+  cobrado: z.number().min(0).max(9_999_999).optional(),
+  notas: z.string().trim().max(500).optional(),
+});
+
 export const POST = withApiHandler("forestal-cuenta-post", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
@@ -58,6 +70,25 @@ export const POST = withApiHandler("forestal-cuenta-post", async (req: NextReque
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
+  /* La venta de una guía entra por el mismo POST: es un movimiento de la misma
+     cuenta, sólo que el servidor arma las dos patas y las hace idempotentes. */
+  const venta = ventaGuiaSchema.safeParse(body);
+  if (venta.success) {
+    try {
+      const r = await ForestCuentaDB.anotarVentaDeGuia(auth.tenantId, venta.data, auth.username ?? "unknown");
+      return NextResponse.json(r);
+    } catch (err) {
+      if (err instanceof GuiaYaAnotadaError) {
+        return NextResponse.json({ error: "guia_ya_anotada", message: err.message }, { status: 409 });
+      }
+      if (err instanceof Error && /tiene que|obligatoria/.test(err.message)) {
+        return NextResponse.json({ error: "validation_error", message: err.message }, { status: 422 });
+      }
+      logger.error("[cuenta.POST.venta] failed", { error: String(err), tenantId: auth.tenantId });
+      return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    }
+  }
+
   const parsed = postSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(

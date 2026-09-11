@@ -52,6 +52,8 @@ export default function CtpEspeciesCatalogoModal({
   const [editando, setEditando] = useState<string | null>(null);
   const [borrador, setBorrador] = useState({ nombre: "", cientifico: "" });
   const [aviso, setAviso] = useState<string | null>(null);
+  /** La especie propia que espera el segundo clic para borrarse. */
+  const [porQuitar, setPorQuitar] = useState<string | null>(null);
 
   const lista = especiesDisponibles(cat.catalogo);
   /* Las que no tienen binomio, ordenadas por cuánto las usa el libro: primero la
@@ -252,15 +254,33 @@ export default function CtpEspeciesCatalogoModal({
                       </button>
                       <button
                         type="button"
-                        onClick={() => void cat.quitar(e.clave).then(tras)}
+                        onClick={() => {
+                          /* Una de fábrica se OCULTA y se devuelve de un clic:
+                             no hace falta confirmar. Una propia se borra y no
+                             hay deshacer — y unificar, que es menos grave, pide
+                             dos clics (auditoría 2026-09-11). */
+                          if (e.deFabrica || porQuitar === e.clave) {
+                            setPorQuitar(null);
+                            void cat.quitar(e.clave).then(tras);
+                          } else {
+                            setPorQuitar(e.clave);
+                          }
+                        }}
+                        onBlur={() => setPorQuitar((k) => (k === e.clave ? null : k))}
                         disabled={cat.guardando}
-                        aria-label={`Quitar ${e.nombre}`}
+                        aria-label={porQuitar === e.clave ? `Confirmar que se quita ${e.nombre}` : `Quitar ${e.nombre}`}
                         title={
                           e.deFabrica
                             ? "Dejar de ofrecerla en esta planta (se puede devolver)"
-                            : "Sacarla del catálogo"
+                            : porQuitar === e.clave
+                              ? `Tocá de nuevo para sacar «${e.nombre}» del catálogo`
+                              : "Sacarla del catálogo (pide confirmar)"
                         }
-                        className="grid h-9 w-9 place-items-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)] disabled:opacity-50"
+                        className={`grid h-9 w-9 place-items-center rounded-lg transition disabled:opacity-50 ${
+                          porQuitar === e.clave
+                            ? "bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                            : "text-[var(--text-tertiary)] hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-500)]"
+                        }`}
                       >
                         <Trash2 className="h-4 w-4" aria-hidden />
                       </button>

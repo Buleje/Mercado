@@ -11,7 +11,7 @@
 import { describe, expect, it } from "vitest";
 import { aCuerpoDelLibro } from "@/lib/forestal/ctp-serfor-a-libro";
 import { convencionDeColumna, detectarColumnas, leerNumero, parsearFilas } from "@/lib/forestal/ctp-formatos-serfor";
-import { produccionKey } from "@/lib/db/forest-ctp.db";
+import { despachoKey, produccionKey, produccionKeyBase } from "@/lib/db/forest-ctp.db";
 import type { FilaParseada } from "@/lib/forestal/ctp-formatos-serfor";
 
 const fila = (n: number, datos: Record<string, string | number | null>): FilaParseada => ({
@@ -210,5 +210,48 @@ describe("⭐ la coma decimal del archivo real", () => {
     expect(cuerpo).toHaveLength(1);
     expect(cuerpo[0].trozas).toHaveLength(21);
     expect(cuerpo[0].volumeM3).toBeCloseTo(21 * 0.174, 4);
+  });
+});
+
+describe("la clave de dedup mide la especie como la mide el libro al guardarla", () => {
+  /**
+   * Regresión encontrada por auditoría el 2026-09-11.
+   *
+   * El libro pasó a guardar la especie con la grafía del catálogo (ADR-410):
+   * «Ishpíngo» entra y queda «Ishpingo». La clave de dedup normalizaba sólo con
+   * `trim().toLowerCase()`, así que al reimportar el MISMO archivo la clave del
+   * archivo («ishpíngo») no matcheaba con la de la base («ishpingo») y la
+   * corrida entraba DOS VECES — producción declarada de más, que es lo único
+   * que el libro no puede hacer.
+   */
+  const delArchivo = (especie: string) => produccionKey("2026-09-01", "tablones", especie, 12.5);
+
+  it("la tilde no parte la clave en dos", () => {
+    expect(delArchivo("Ishpíngo")).toBe(delArchivo("Ishpingo"));
+  });
+
+  it("el binomio entre paréntesis tampoco", () => {
+    expect(delArchivo("Tornillo (Cedrelinga cateniformis)")).toBe(delArchivo("Tornillo"));
+  });
+
+  it("las mayúsculas y los espacios de más siguen sin partirla", () => {
+    expect(delArchivo("  TORNILLO ")).toBe(delArchivo("Tornillo"));
+  });
+
+  it("dos especies DISTINTAS siguen teniendo claves distintas", () => {
+    expect(delArchivo("Tornillo")).not.toBe(delArchivo("Capirona"));
+  });
+
+  it("la clave vieja (sin paquete) mide igual: las corridas de antes siguen matcheando", () => {
+    const base = (e: string) => produccionKeyBase("2026-09-01", "tablones", e, 12.5);
+    expect(base("Marupa")).toBe(base("Marupá"));
+  });
+
+  it("el despacho sin GTF mide igual; con GTF manda el número", () => {
+    const sinGtf = (e: string) => despachoKey(null, "2026-09-01", "tablones", e, 3, "Satipo");
+    expect(sinGtf("Ishpíngo")).toBe(sinGtf("Ishpingo"));
+    expect(despachoKey("0001234", "2026-09-01", "tablones", "Ishpíngo", 3, "Satipo")).toBe(
+      despachoKey("0001234", "2026-09-02", "otro", "Capirona", 9, "Otro destino"),
+    );
   });
 });

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
-import { invalidateByPrefix } from "@/lib/cache";
+import { getOrSet, invalidate, invalidateByPrefix } from "@/lib/cache";
 import {
   CATALOGO_VACIO,
   agregarEspecie,
@@ -34,6 +34,8 @@ import {
 const KEY_PREFIX = "ctp-especies-catalogo:";
 
 const clave = (tenantId: string) => `${KEY_PREFIX}${tenantId}`;
+/** Caché de lo que el LIBRO tiene escrito (no del catálogo: eso ya lo cachea el KV). */
+const claveLibro = (tenantId: string) => `ctp-especies-libro:${tenantId}`;
 
 /**
  * Lo que el catálogo rechaza por sus propias reglas —una especie repetida, un
@@ -171,6 +173,17 @@ export const ForestEspeciesDB = {
    */
   async usadasEnElLibro(tenantId: string): Promise<EspecieEnElLibro[]> {
     if (!tenantId) throw new Error("tenantId is required");
+    /* Cuatro `groupBy` sobre las tablas grandes del tenant. Lo piden el gestor,
+       la biblioteca de fotos, Cumplimiento y la pastilla de Producción — y esta
+       última en CADA montaje de la pestaña. Sin caché eran cuatro consultas por
+       entrar a Producción (auditoría 2026-09-11). 60 s: es un aviso de higiene,
+       no un saldo; y las dos escrituras que lo cambian (sembrar, unificar) lo
+       invalidan a mano. */
+    return getOrSet(claveLibro(tenantId), 60, () => this.leerDelLibro(tenantId));
+  },
+
+  /** La lectura de verdad — sin caché, para que las escrituras la usen fresca. */
+  async leerDelLibro(tenantId: string): Promise<EspecieEnElLibro[]> {
     const [catalogo, ingresos, trozas, asientos, lotes] = await Promise.all([
       this.get(tenantId),
       prisma.woodEntry.groupBy({
@@ -253,6 +266,8 @@ export const ForestEspeciesDB = {
       );
     }
     await PlatformSettingsDB.set(clave(tenantId), catalogo, user);
+    /* Lo sembrado cambia qué especies «faltan»: el aviso tiene que recalcularse. */
+    invalidate(claveLibro(tenantId));
     auditCtp({
       tenantId,
       action: "ctp_especie_catalogo",
@@ -300,7 +315,10 @@ export const ForestEspeciesDB = {
       );
     }
 
-    const delLibro = await this.usadasEnElLibro(tenantId);
+    /* Fresca a propósito: unificar decide qué filas reescribe a partir de las
+       grafías que hay AHORA. Con la cacheada podría dejar afuera una que entró
+       hace un minuto. */
+    const delLibro = await this.leerDelLibro(tenantId);
     const especie = delLibro.find((e) => e.clave === objetivo);
     const otras = (especie?.grafias ?? []).map((g) => g.texto).filter((t) => t !== nombre);
     if (otras.length === 0) {
@@ -344,9 +362,16 @@ export const ForestEspeciesDB = {
         porTabla.map((x) => `${x.tabla}: ${x.filas}`).join(" · "),
       user,
     });
-    /* El libro entero cambió de texto en esas filas: lo cacheado lo dice viejo. */
-    await invalidateByPrefix(`ctp:${tenantId}`);
-    await invalidateByPrefix(`wood-entries:${tenantId}`);
+    /* El libro entero cambió de texto en esas filas: lo cacheado lo dice viejo.
+       Los prefijos salen de `ctp-fetch`/`wood-entries.db` — se invalidan los dos
+       lados porque la especie viaja en las dos familias de lectura. */
+    /* Los prefijos son los que usan de verdad las DB classes (`forest-ctp` y
+       `wood-entries`): `ctp:` no existía y la invalidación no tocaba nada —la
+       tabla seguía mostrando la grafía vieja (auditoría 2026-09-11). Son
+       síncronas, no devuelven promesa. */
+    invalidate(claveLibro(tenantId));
+    invalidateByPrefix(`forest-ctp:${tenantId}`);
+    invalidateByPrefix(`wood-entries:${tenantId}`);
 
     return {
       porTabla,

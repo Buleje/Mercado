@@ -19,6 +19,14 @@ import type { Concepto, MovimientoCuenta, MovimientoInput, TipoMov } from "@/lib
 const CACHE_PREFIX = "forest-cuenta";
 
 /** Se intentó cargar dos veces el mismo flete. */
+/** La guía ya está anotada en la cuenta: anotarla de nuevo duplicaría la deuda. */
+export class GuiaYaAnotadaError extends Error {
+  constructor(gtfNumber: string, parteNombre: string) {
+    super(`La guía ${gtfNumber} ya está anotada en la cuenta de ${parteNombre}.`);
+    this.name = "GuiaYaAnotadaError";
+  }
+}
+
 export class FleteYaCargadoError extends Error {
   constructor(readonly fleteId: string) {
     super("Ese flete ya está cargado en una cuenta corriente. No se puede cobrar dos veces.");
@@ -52,6 +60,80 @@ function fechaUtc(v: string): Date | null {
 }
 
 export const ForestCuentaDB = {
+  /**
+   * Anota en la cuenta del cliente la venta de UNA guía de salida, y lo que se
+   * cobró en el acto.
+   *
+   * Por qué acá y no como una venta del POS: la madera despachada **no es un
+   * producto del catálogo** —su stock lo lleva el Libro CTP, pieza por pieza y
+   * contra su GTF—. Crear un `Sale` descontaría un inventario que no existe y
+   * dejaría la misma madera contada dos veces (el bug de `record()` que ya
+   * pasó una vez). La guía ES la venta; lo que faltaba era la plata.
+   *
+   * Son hasta DOS movimientos, que es como se lee una cuenta corriente:
+   *   · `cargo` concepto `venta` por el total de la guía → el cliente debe.
+   *   · `abono` concepto `pago` por lo que entregó → lo que ya no debe.
+   * Si pagó todo, los dos se anulan y el saldo queda en cero **mostrando las
+   * dos patas**: un solo asiento por el neto escondería cuánto se vendió.
+   *
+   * **Idempotente por número de guía.** El operador toca «anotar», no ve
+   * respuesta y vuelve a tocar: sin este guard la deuda se duplica. Se mira por
+   * `referencia` —el campo que existe para eso— en vez de una columna nueva con
+   * su migración; el número de guía es único en el talonario.
+   */
+  async anotarVentaDeGuia(
+    tenantId: string,
+    v: {
+      parteId: string;
+      parteNombre: string;
+      fecha: string;
+      gtfNumber: string;
+      /** Lo que vale la guía entera. */
+      total: number;
+      /** Lo que entregó en el acto (0 = todo a cuenta). */
+      cobrado?: number;
+      notas?: string | null;
+    },
+    usuario: string,
+  ): Promise<{ movimientos: MovimientoCuenta[]; saldoDeLaGuia: number }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const gtf = v.gtfNumber.trim();
+    if (!gtf) throw new Error("La guía tiene que tener número para anotarse en la cuenta.");
+    if (!(v.total > 0)) throw new Error("El total de la venta tiene que ser mayor a cero.");
+    const cobrado = Math.max(0, Math.min(v.cobrado ?? 0, v.total));
+
+    const ya = await prisma.forestCuentaMov.findFirst({
+      where: { tenantId, deletedAt: null, concepto: "venta", referencia: gtf },
+      select: { id: true, parteNombre: true },
+    });
+    if (ya) throw new GuiaYaAnotadaError(gtf, ya.parteNombre);
+
+    const base = {
+      parteId: v.parteId,
+      parteNombre: v.parteNombre,
+      fecha: v.fecha,
+      referencia: gtf,
+      moneda: "PEN",
+    };
+    const movimientos: MovimientoCuenta[] = [
+      await this.guardar(
+        tenantId,
+        { ...base, tipo: "cargo", concepto: "venta", monto: v.total, notas: v.notas ?? `Guía ${gtf}` },
+        usuario,
+      ),
+    ];
+    if (cobrado > 0) {
+      movimientos.push(
+        await this.guardar(
+          tenantId,
+          { ...base, tipo: "abono", concepto: "pago", monto: cobrado, notas: `Cobrado de la guía ${gtf}` },
+          usuario,
+        ),
+      );
+    }
+    return { movimientos, saldoDeLaGuia: Math.round((v.total - cobrado) * 100) / 100 };
+  },
+
   /** Movimientos del tenant, o de una parte. Sin tope de fecha: una deuda no
    *  entiende de períodos y filtrarla por mes la haría desaparecer. */
   async listar(tenantId: string, opts: { parteId?: string } = {}): Promise<MovimientoCuenta[]> {

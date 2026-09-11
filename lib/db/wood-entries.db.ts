@@ -20,6 +20,7 @@ import type {
 } from "@/lib/generated/prisma/client";
 import { invalidateByPrefix } from "@/lib/cache";
 import { ForestEspeciesDB } from "./forest-especies.db";
+import { mismaEspecie } from "@/lib/forestal/loth-constants";
 import { PLAZO_REGISTRO_DIAS, estaFueraDePlazo } from "@/lib/forestal/ctp-compliance";
 import { auditCtp, m3 } from "@/lib/forestal/ctp-audit";
 import { calcularRetrozado, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
@@ -835,8 +836,18 @@ export class WoodEntriesDB {
             woodEntryId: creado.id,
             orden: t.orden,
             codificacion: t.codificacion,
-            especieComun: t.especieComun,
-            especieCientifica: t.especieCientifica,
+            /* La troza se escribe como la cabecera: la especie del ingreso ya
+               pasó por el catálogo (ADR-410) y si la pieza guardaba el texto
+               crudo, la MISMA guía quedaba escrita de dos formas —y el patio la
+               contaba como dos maderas— (auditoría 2026-09-11). Sólo se canoniza
+               cuando es la especie del ingreso: una troza de otra especie
+               conserva la suya, que es un dato del documento. */
+            especieComun: mismaEspecie(t.especieComun, input.speciesCommonName)
+              ? especie.nombre
+              : t.especieComun,
+            especieCientifica:
+              t.especieCientifica ??
+              (mismaEspecie(t.especieComun, input.speciesCommonName) ? especie.cientifico : null),
             dimensiones: t.dimensiones,
             largoM: t.largoM != null ? new Prisma.Decimal(t.largoM) : null,
             diametroCm: t.diametroCm != null ? new Prisma.Decimal(t.diametroCm) : null,

@@ -33,8 +33,16 @@ export function labelProductoConsumible(valor: string | null | undefined): strin
   return PRODUCTOS_CONSUMIBLES_LOTE.find((p) => p.valor === valor)?.label ?? "—";
 }
 
-const norm = (v: string | null | undefined) =>
-  (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+/**
+ * Comparar especies: una sola normalización en todo el archivo.
+ *
+ * Era NFD+lowercase mientras `disponiblePorEspecie` agrupaba con
+ * `claveEspecie` —que además saca el binomio entre paréntesis y colapsa dobles
+ * espacios—. Con «Tornillo (Cedrelinga cateniformis)» en el patio, el selector
+ * ofrecía N piezas y el lote se quedaba con menos: la lista sumaba una pieza
+ * que el filtro después descartaba (auditoría 2026-09-11).
+ */
+const norm = (v: string | null | undefined) => claveEspecie(v);
 
 /**
  * Las piezas del patio que corresponden a un lote programado.

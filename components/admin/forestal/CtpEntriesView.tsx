@@ -1369,7 +1369,13 @@ export function CtpEntriesView({
         <CtpEspeciesCatalogoModal
           open
           onClose={() => setVerEspecies(false)}
-          onCambio={() => void catalogoEspecies.recargar()}
+          /* Unificar REESCRIBE filas del libro: sin recargar la tabla, la
+             pantalla seguía diciendo «TORNILLO» debajo de un aviso que ya no
+             existía (auditoría 2026-09-11). */
+          onCambio={() => {
+            void catalogoEspecies.recargar();
+            void load();
+          }}
         />
       )}
 

@@ -365,7 +365,13 @@ export function produccionKeyBase(
   return [
     d,
     (productType ?? "").trim().toLowerCase(),
-    (speciesCommon ?? "").trim().toLowerCase(),
+    /* La especie va por `claveEspecie`, la MISMA con la que el libro decide qué
+       grafía guardar (ADR-410). Con `toLowerCase()` a secas, un archivo que dice
+       «Ishpíngo» o «Tornillo (Cedrelinga cateniformis)» se guardaba como
+       «Ishpingo» / «Tornillo» y al reimportar la clave ya no matcheaba: la misma
+       corrida entraba DOS VECES. Declarar de más es exactamente lo que el libro
+       no puede hacer (encontrado por auditoría, 2026-09-11). */
+    claveEspecie(speciesCommon),
     q,
   ].join("|");
 }
@@ -395,7 +401,8 @@ export function produccionKey(
   return [
     d,
     norm(productType),
-    norm(speciesCommon),
+    /* Misma normalización que el guardado (ver `produccionKeyBase`). */
+    claveEspecie(speciesCommon),
     q,
     norm(codigoProducto),
     norm(materiaPrimaRef),
@@ -425,7 +432,9 @@ export function despachoKey(
   return [
     d,
     (productType ?? "").trim().toLowerCase(),
-    (speciesCommon ?? "").trim().toLowerCase(),
+    /* Misma normalización que el guardado (ver `produccionKeyBase`). Acá pega
+       sólo en los despachos SIN GTF: con guía, la clave es el número. */
+    claveEspecie(speciesCommon),
     q,
     (destino ?? "").trim().toLowerCase(),
   ].join("|");

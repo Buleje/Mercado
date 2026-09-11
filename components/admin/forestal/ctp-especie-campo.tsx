@@ -153,18 +153,30 @@ function unir(
 ): { nombre: string; meta?: string; delCatalogo: boolean }[] {
   const vistas = new Set<string>();
   const salida: { nombre: string; meta?: string; delCatalogo: boolean }[] = [];
+  const actual = value.trim();
+  /**
+   * La grafía GUARDADA manda sobre la del catálogo.
+   *
+   * Bug encontrado por auditoría (2026-09-11): una fila que decía «TORNILLO»
+   * con el catálogo ofreciendo «Tornillo» compartía clave, así que la opción
+   * del valor se descartaba por repetida — y el `<select value="TORNILLO">` se
+   * dibujaba **vacío**. El primer guardado borraba la especie. Por eso, cuando
+   * la clave es la del valor actual, la opción se escribe con SU texto: la
+   * lista sigue mostrando una sola entrada por especie, pero el selector
+   * encuentra la suya.
+   */
+  const claveActual = claveEspecie(actual);
   const push = (nombre: string, meta: string | undefined, delCatalogo: boolean) => {
     const clave = claveEspecie(nombre);
     if (!clave || vistas.has(clave)) return;
     vistas.add(clave);
-    salida.push({ nombre, meta, delCatalogo });
+    salida.push({ nombre: clave === claveActual ? actual : nombre, meta, delCatalogo });
   };
   for (const o of opciones) push(o.nombre, o.meta, false);
   for (const n of nombres) push(n, undefined, true);
-  /* Lo que ya está guardado va sí o sí —y sin cartel: el selector no puede
-     perder el valor que muestra sólo porque el catálogo ya no lo ofrece, y en
-     una celda de grilla el aclaratorio sólo le come el ancho al nombre. */
-  if (value.trim()) push(value.trim(), undefined, true);
+  /* Y si no estaba en ninguna lista, entra igual —sin cartel: en una celda de
+     grilla el aclaratorio sólo le come el ancho al nombre. */
+  if (actual) push(actual, undefined, true);
   return salida;
 }
 
@@ -200,9 +212,13 @@ export function CtpEspecieSelect({
   conBoton?: boolean;
   altoBoton?: string;
 }) {
+  /* `opciones` llega con default `[]`, que es un array NUEVO en cada render: el
+     memo nunca acertaba. Se compara por su contenido (son pocas y cortas). */
+  const claveOpciones = opciones.map((o) => `${o.nombre}|${o.meta ?? ""}`).join("§");
   const lista = useMemo(
     () => unir(opciones, catalogo.nombres, value),
-    [opciones, catalogo.nombres, value],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `claveOpciones` representa a `opciones`
+    [claveOpciones, catalogo.nombres, value],
   );
   const delPatio = lista.filter((e) => !e.delCatalogo);
   const delCatalogo = lista.filter((e) => e.delCatalogo);

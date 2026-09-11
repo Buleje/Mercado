@@ -34,6 +34,11 @@ export const CONCEPTOS = [
   "aserrio_recibido",
   "pago",
   "madera",
+  /* La madera que SALE vendida. Va aparte de «madera» —que es la que entra— y
+     por eso su tipo natural es el contrario: el cliente queda debiendo. Sin
+     este concepto, anotar una venta obligaba a elegir «otro» y el saldo de la
+     cuenta no distinguía una compra de una venta. */
+  "venta",
   "otro",
 ] as const;
 export type Concepto = (typeof CONCEPTOS)[number];
@@ -45,6 +50,7 @@ export const CONCEPTO_LABEL: Record<Concepto, string> = {
   aserrio_recibido: "Aserrío recibido",
   pago: "Pago recibido",
   madera: "Madera recibida",
+  venta: "Venta de madera",
   otro: "Otro",
 };
 
@@ -60,6 +66,8 @@ export const TIPO_SUGERIDO: Record<Concepto, TipoMov> = {
   aserrio_recibido: "abono",
   pago: "abono",
   madera: "abono",
+  /* Le vendimos: queda debiendo hasta que pague. */
+  venta: "cargo",
   otro: "cargo",
 };
 
