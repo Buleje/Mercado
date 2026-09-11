@@ -37,6 +37,8 @@ import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
 import CtpProducirSinLoteModal from "./CtpProducirSinLoteModal";
+import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import CtpSaldoPermisoModal from "./CtpSaldoPermisoModal";
 import type { CorridaSinOrigen } from "@/lib/forestal/saldo-por-permiso";
 import CtpVincularMateriaPrimaModal from "./CtpVincularMateriaPrimaModal";
@@ -356,6 +358,11 @@ export function CtpEntriesView({
   const [verLibro, setVerLibro] = useState(false);
   /** El cubicador del Libro: producir sin lote ni consumo (ADR-408). */
   const [producirSinLote, setProducirSinLote] = useState(false);
+  /* El catálogo de especies (ADR-410): acá sólo para avisar cuando el libro
+     escribe una especie de dos formas, y para abrirlo desde esa pastilla. */
+  const catalogoEspecies = useEspeciesCatalogo({ conLibro: section === "produccion" });
+  const especiesDosFormas = catalogoEspecies.duplicadas;
+  const [verEspecies, setVerEspecies] = useState(false);
   /* El apartado de simulación por permiso (ADR-409): no toca ninguna cifra de
      esta pestaña ni de las otras, así que su lectura se paga sólo al abrirlo. */
   const [saldoPermiso, setSaldoPermiso] = useState(false);
@@ -1040,6 +1047,23 @@ export function CtpEntriesView({
           "Ya declararon, pero de la misma madera puede salir más (ADR-365). Se agrega desde la fila del libro.",
       });
     }
+    /* Una especie escrita de dos formas PIDE TRABAJO (hay que elegir cuál
+       queda), así que es deuda y no indicador — y va acá, una sola vez, en la
+       pestaña donde se vive. En Cumplimiento aparece como verificación, que es
+       otra cosa: ahí se mira antes de cerrar el período. */
+    if (section === "produccion" && especiesDosFormas.length > 0) {
+      const e = especiesDosFormas[0]!;
+      items.push({
+        key: "especies-dos-formas",
+        valor: especiesDosFormas.length,
+        label: especiesDosFormas.length === 1 ? "especie escrita de dos formas" : "especies escritas de dos formas",
+        hint: e.grafias.map((g) => `«${g.texto}» ${g.usos}`).join(" vs "),
+        tono: "warning",
+        title:
+          "Para el libro son dos maderas: los totales por especie y el saldo por permiso se parten. Tocá para elegir una forma.",
+        onClick: () => setVerEspecies(true),
+      });
+    }
     if (sinOrigen.length > 0) {
       items.push({
         key: "sin-materia-prima",
@@ -1066,6 +1090,8 @@ export function CtpEntriesView({
     setVincularA,
     sinCertificar,
     irAlCertificado,
+    especiesDosFormas,
+    setVerEspecies,
   ]);
 
   const Icon = meta.icon;
@@ -1339,6 +1365,14 @@ export function CtpEntriesView({
       )}
 
       {/* El cubicador del Libro: cubicar y declarar sin lote ni consumo. */}
+      {verEspecies && (
+        <CtpEspeciesCatalogoModal
+          open
+          onClose={() => setVerEspecies(false)}
+          onCambio={() => void catalogoEspecies.recargar()}
+        />
+      )}
+
       {producirSinLote && (
         <CtpProducirSinLoteModal
           onCerrar={() => setProducirSinLote(false)}

@@ -238,3 +238,17 @@ despachar—. Lo que sí faltaba era lo contrario: el picker del LO-TH ahora ofr
 propio plan**, primero y con su binomio (antes, si la resolución autorizaba «Panguana», había que
 elegir «Otro» y tipearla con su nombre científico de memoria). Del catálogo del aserradero toma una
 sola cosa: el binomio de una especie tipeada a mano, que es un dato de la especie y no un permiso.
+
+### Dónde vive el aviso (y dónde NO)
+
+El pedido fue «llevalo también al chip de salud y a la banda de pendientes». La banda sí: una
+especie escrita de dos formas **pide trabajo** (hay que elegir cuál queda), así que es deuda y va
+como pastilla accionable en `BarraDeuda` de Producción, sólo cuando es > 0, y al tocarla abre el
+catálogo.
+
+El chip de salud **no**, y es la regla de [[deuda-no-es-indicador]] aplicada: el chip dice el score
+de cumplimiento SERFOR, que esto no mueve —escribir «TORNILLO» no incumple ninguna norma—. Sumarlo
+ahí sería el mismo concepto en tres lugares (chip + verificación + pastilla), que es exactamente el
+vicio del que salió `BarraDeuda`. Quedan dos superficies con papeles distintos: la **pastilla** en
+Producción, donde se trabaja; la **verificación** en Cumplimiento, que se mira antes de cerrar el
+período.
