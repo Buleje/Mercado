@@ -8,7 +8,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { Plus, Search, Boxes, Truck, AlertCircle, HelpCircle, PackagePlus, Calculator, Calendar, Table, X } from "@buleje/design-system/icons";
+import { Plus, Search, Boxes, Truck, AlertCircle, HelpCircle, PackagePlus, Calculator, Calendar, Layers, Table, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { accionesDeSeccion, accionesPorDeclarar } from "./ctp-entries-acciones";
@@ -24,6 +24,7 @@ import CtpProduccionDetalleModal from "./CtpProduccionDetalleModal";
 import CtpEntriesTabla, { type SortKey } from "./CtpEntriesTabla";
 import CtpProduccionDeLote from "./CtpProduccionDeLote";
 import CtpProducirSinLoteModal from "./CtpProducirSinLoteModal";
+import CtpSaldoPermisoModal from "./CtpSaldoPermisoModal";
 import CtpVincularMateriaPrimaModal from "./CtpVincularMateriaPrimaModal";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import AdminModal from "@/components/admin/shared/AdminModal";
@@ -287,6 +288,9 @@ export function CtpEntriesView({
   const [verLibro, setVerLibro] = useState(false);
   /** El cubicador del Libro: producir sin lote ni consumo (ADR-408). */
   const [producirSinLote, setProducirSinLote] = useState(false);
+  /* El apartado de simulación por permiso (ADR-409): no toca ninguna cifra de
+     esta pestaña ni de las otras, así que su lectura se paga sólo al abrirlo. */
+  const [saldoPermiso, setSaldoPermiso] = useState(false);
   /** La corrida a la que se le va a vincular su materia prima. */
   const [vincularA, setVincularA] = useState<string | null>(null);
   /** Hoy, para la columna «Fecha consumo» de la lista vacía (no se re-calcula). */
@@ -952,7 +956,8 @@ export function CtpEntriesView({
               sale su lista de trozas. Lo ya declarado está en{" "}
               <b className="text-[var(--text-primary)]">Opciones → Producción · Todos y registrados</b>.{" "}
               ¿La sierra ya cortó y el lote todavía no está armado? Usá{" "}
-              <b className="text-[var(--text-primary)]">Producir sin lote</b>.
+              <b className="text-[var(--text-primary)]">Producir sin lote</b>.{" "}
+              Para ver cuánto puede dar todavía cada título habilitante, <b className="text-[var(--text-primary)]">Saldo por permiso</b>.
             </p>
           </details>
         ) : (
@@ -988,6 +993,20 @@ export function CtpEntriesView({
           {/* Producir SIN lote: cubicar acá mismo y declarar la corrida. La
               materia prima se vincula después — la sierra corta antes de que el
               papel exista (Brandon, 2026-09-09). */}
+          {/* Saldo por permiso: cuánto puede dar cada título habilitante al 56 %
+              y cuánto ya se declaró sin lote contra él (ADR-409). Es consulta,
+              no una acción del libro: mismo peso visual que «Producir sin
+              lote», nunca el del CTA. */}
+          {section === "produccion" && (
+            <button
+              type="button"
+              onClick={() => setSaldoPermiso(true)}
+              title="Ver, permiso por permiso: rolliza por especie, su equivalente en pies al 56 %, lo ya declarado sin lote y lo que queda"
+              className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            >
+              <Layers className="h-4 w-4" aria-hidden /> Saldo por permiso
+            </button>
+          )}
           {section === "produccion" && (
             <button
               type="button"
@@ -1102,6 +1121,11 @@ export function CtpEntriesView({
           />
         );
       })()}
+
+      {/* El apartado de simulación por permiso — sólo lee (ADR-409). */}
+      {section === "produccion" && (
+        <CtpSaldoPermisoModal open={saldoPermiso} onClose={() => setSaldoPermiso(false)} />
+      )}
 
       {/* El cubicador del Libro: cubicar y declarar sin lote ni consumo. */}
       {producirSinLote && (

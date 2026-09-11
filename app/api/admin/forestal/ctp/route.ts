@@ -14,6 +14,7 @@ import { withApiHandler } from "@/lib/api-handler";
 import { TIPOS_DOCUMENTO_LOCTP } from "@/lib/forestal/loctp-campos";
 import { LINEAS_PRODUCCION } from "@/lib/forestal/loctp-resumenes";
 import { sincronizarPartesDeGuia } from "@/lib/forestal/ctp-sincronizar-partes";
+import { agregarRolliza } from "@/lib/forestal/saldo-por-permiso";
 
 /**
  * /api/admin/forestal/ctp — Libro CTP: producción + despacho + saldos (ADR-127)
@@ -33,6 +34,13 @@ const createSchema = z.object({
   // La VERDAD de la trazabilidad vive en ForestCtpConsumo; esto es el acta legible.
   gtfIngreso: z.string().trim().max(1000).nullable().optional(),
   materiaPrimaRef: z.string().trim().max(120).nullable().optional(),
+  /**
+   * El permiso DECLARADO del asiento (ADR-402). Lo manda «Producir sin lote»
+   * (ADR-408/409): esa corrida no consume ninguna guía, así que no hay
+   * `originCode` que heredar y sin esto su título habilitante no tenía dónde
+   * escribirse. Donde hay consumos, la guía sigue mandando.
+   */
+  originCode: z.string().trim().max(120).nullable().optional(),
   /**
    * El LOTE DE ASERRÍO que produjo esta corrida (ADR-334).
    *
@@ -400,6 +408,29 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
        corrida — proponer el de al lado es un 422 asegurado). */
     if (url.searchParams.get("codigosPaquete") === "1") {
       return NextResponse.json({ codigos: await ForestCtpDB.codigosDePaquete(auth.tenantId) });
+    }
+    /* Saldo por permiso (ADR-409): la rolliza de cada título habilitante, su
+       techo al 56 % y lo ya declarado SIN LOTE contra él. Es una simulación y
+       vive en su propio apartado: no mueve ningún saldo del libro.
+
+       Se devuelven los INSUMOS agregados —no las filas finales— porque la
+       pantalla elige la base (rolliza en patio o todo lo ingresado) y con esto
+       cambia de base sin volver a pedir nada; la aritmética del 56 % vive en
+       `lib/forestal/saldo-por-permiso.ts`, una sola vez.
+
+       `patio.truncado` viaja a propósito: la lectura del patio tiene tope y
+       mostrar de menos en silencio hace creer que se perdió madera. */
+    if (url.searchParams.get("saldoPermisos") === "1") {
+      const [trozas, totalPatio, corridas] = await Promise.all([
+        WoodEntriesDB.trozasComoConsumibles(auth.tenantId),
+        WoodEntriesDB.contarTrozasDelPatio(auth.tenantId),
+        ForestCtpDB.produccionSinMateriaPrima(auth.tenantId),
+      ]);
+      return NextResponse.json({
+        rolliza: agregarRolliza(trozas),
+        corridas,
+        patio: { total: totalPatio, leidas: trozas.length, truncado: trozas.length < totalPatio },
+      });
     }
     /* «Tengo este atado delante: ¿de dónde salió?» (ADR-366). Sin período: el
        que lee un cartel en la pila no sabe de qué mes es la corrida. */

@@ -255,6 +255,13 @@ export interface CtpEntryInput {
   entryDate?: Date;
   gtfIngreso?: string | null;
   materiaPrimaRef?: string | null;
+  /**
+   * El permiso DECLARADO del asiento (ADR-402): sólo vale para la corrida que
+   * no consumió ninguna guía de la que heredarlo —una existencia de apertura o
+   * una producción sin lote (ADR-408)—. Donde hay consumos manda el
+   * `originCode` del ingreso; acá no se pisa nada, se llena un hueco.
+   */
+  originCode?: string | null;
   speciesCommon?: string | null;
   speciesScientific?: string | null;
   cites?: boolean;
@@ -581,6 +588,7 @@ export class ForestCtpDB {
           entryDate: input.entryDate ?? new Date(),
           gtfIngreso: input.gtfIngreso?.trim() || null,
           materiaPrimaRef: input.materiaPrimaRef?.trim() || null,
+          originCode: input.originCode?.trim() || null,
           speciesCommon: input.speciesCommon?.trim() || null,
           speciesScientific: input.speciesScientific?.trim() || null,
           cites: input.cites ?? false,
@@ -1373,6 +1381,58 @@ export class ForestCtpDB {
       select: { codigo: true },
     });
     return new Set(filas.map((f) => f.codigo.trim().toLowerCase()));
+  }
+
+  /**
+   * Las corridas de producción SIN materia prima atribuida — lo que el saldo
+   * por permiso resta (ADR-409).
+   *
+   * «Sin materia prima» es literal: ni consumos (`ForestCtpConsumo`) ni volumen
+   * de entrada declarado. Es exactamente la corrida que nace de «Producir sin
+   * lote» (ADR-408) y la existencia de apertura (ADR-394). Una corrida que SÍ
+   * consumió trozas queda afuera a propósito: su madera ya salió del patio
+   * —la pieza figura consumida— y restarla otra vez contaría dos veces la
+   * misma madera.
+   *
+   * Sin período: el saldo de un título habilitante no empieza el día 1 del mes.
+   * El permiso declarado del asiento (ADR-402) viaja tal cual; las que no
+   * declararon ninguno vuelven con `permiso: null` para que la pantalla las
+   * pueda señalar en vez de esconderlas.
+   */
+  static async produccionSinMateriaPrima(tenantId: string, limite = 1000) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.forestCtpEntry.findMany({
+      where: {
+        tenantId,
+        section: "produccion",
+        status: "registrado",
+        deletedAt: null,
+        consumos: { none: {} },
+        OR: [{ volumeInputM3: null }, { volumeInputM3: 0 }],
+      },
+      orderBy: [{ entryDate: "desc" }, { lineNo: "desc" }],
+      take: Math.min(Math.max(limite, 1), 2000),
+      select: {
+        id: true,
+        lineNo: true,
+        entryDate: true,
+        speciesCommon: true,
+        originCode: true,
+        quantity: true,
+        unit: true,
+        materiaPrimaRef: true,
+      },
+    });
+    return filas.map((f) => ({
+      id: f.id,
+      lineNo: f.lineNo,
+      fecha: f.entryDate.toISOString(),
+      especie: f.speciesCommon,
+      permiso: (f.originCode ?? "").trim() || null,
+      cantidad: f.quantity != null ? Number(f.quantity) : 0,
+      unidad: f.unit,
+      referencia: f.materiaPrimaRef,
+    }));
   }
 
   static async codigosDePaquete(tenantId: string, limite = 200): Promise<string[]> {
