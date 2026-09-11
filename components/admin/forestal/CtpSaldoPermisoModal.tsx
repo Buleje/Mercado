@@ -29,19 +29,10 @@ import { AlertTriangle, Layers, Loader2, RefreshCw } from "@buleje/design-system
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Btn } from "./ctp-shared";
 import { useSaldoPermisos } from "./hooks/use-saldo-permisos";
-import {
-  SIN_PERMISO,
-  saldoPorPermiso,
-  type BaseDeSaldo,
-  type FilaEspecieDePermiso,
-} from "@/lib/forestal/saldo-por-permiso";
+import AsignarPermisoMasivo from "./ctp-saldo-asignar-permiso";
+import SaldoPermisoTabla from "./ctp-saldo-tabla";
+import { SIN_PERMISO, saldoPorPermiso, type BaseDeSaldo } from "@/lib/forestal/saldo-por-permiso";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
-
-const TH =
-  "px-2.5 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
-const TD = "px-2.5 py-2 font-mono text-sm tabular-nums";
-/** El gris de las celdas que no dicen nada por su color. */
-const TD_GRIS = "text-[var(--text-secondary)]";
 
 // date-only en UTC: sin eso, en Lima la fecha se corre un día.
 const fmtFecha = (f: string) =>
@@ -51,19 +42,6 @@ const fmtFecha = (f: string) =>
     year: "2-digit",
     timeZone: "UTC",
   });
-
-/** Verde si queda madera, rojo si se declaró de más. El cero no es ninguno. */
-const tono = (v: number) =>
-  v < -0.001
-    ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
-    : v > 0.001
-      ? "text-[var(--text-primary)]"
-      : "text-[var(--text-tertiary)]";
-
-/** Igual, pero callado cuando no hay alerta: en la fila de totales el color
- *  lo pone el acento y pisarlo con el gris de una celda normal la desarma. */
-const tonoAlerta = (v: number) =>
-  v < -0.001 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "";
 
 function Kpi({
   label,
@@ -120,8 +98,6 @@ export default function CtpSaldoPermisoModal({
     () => saldos.find((s) => (s.permiso ?? "") === elegido) ?? saldos[0] ?? null,
     [saldos, elegido],
   );
-
-  const filas: FilaEspecieDePermiso[] = saldo?.especies ?? [];
 
   return (
     <AdminModal
@@ -274,100 +250,19 @@ export default function CtpSaldoPermisoModal({
                   </p>
                 )}
 
-                <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
-                  <table className="w-full min-w-[46rem] text-sm">
-                    <caption className="sr-only">
-                      Especies del permiso {saldo.etiqueta}: rolliza, aserrable al 56 %, declarado
-                      sin lote y sobrante
-                    </caption>
-                    <thead className="bg-[var(--surface-sunken)]">
-                      <tr>
-                        <th scope="col" className={`${TH} text-left`}>
-                          Especie
-                        </th>
-                        <th scope="col" className={`${TH} text-right`}>
-                          Trozas
-                        </th>
-                        <th scope="col" className={`${TH} text-right`}>
-                          Rolliza m³
-                        </th>
-                        <th scope="col" className={`${TH} text-right`}>
-                          Aserrable 56 % (pt)
-                        </th>
-                        <th scope="col" className={`${TH} text-right`}>
-                          Aserrable 56 % (m³)
-                        </th>
-                        <th scope="col" className={`${TH} text-right`}>
-                          Sin lote (m³)
-                        </th>
-                        <th scope="col" className={`${TH} text-right`}>
-                          Sobrante (m³)
-                        </th>
-                        <th scope="col" className={`${TH} text-right`}>
-                          Sobrante (pt)
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filas.map((f) => (
-                        <tr
-                          key={f.clave || f.especie}
-                          className="border-t border-[var(--rule-soft)]"
-                        >
-                          <th
-                            scope="row"
-                            className="px-2.5 py-2 text-left text-sm font-bold text-[var(--text-primary)]"
-                          >
-                            {f.especie}
-                          </th>
-                          <td className={`${TD} ${TD_GRIS} text-right`}>{fmtPiezas(f.piezas)}</td>
-                          <td className={`${TD} text-right font-bold text-[var(--text-primary)]`}>
-                            {fmtM3(f.rollizaM3)}
-                          </td>
-                          <td className={`${TD} ${TD_GRIS} text-right`}>{fmtPt(f.aserrablePt)}</td>
-                          <td className={`${TD} ${TD_GRIS} text-right`}>{fmtM3(f.aserrableM3)}</td>
-                          <td className={`${TD} ${TD_GRIS} text-right`}>
-                            {f.producidoM3 > 0 ? `− ${fmtM3(f.producidoM3)}` : "—"}
-                            {f.corridas > 0 && (
-                              <span className="block text-[length:var(--ts-2xs)] font-sans text-[var(--text-tertiary)]">
-                                {f.corridas} corrida(s) · {fmtM3(f.rollizaEquivalenteM3)} m³ de
-                                troza
-                              </span>
-                            )}
-                          </td>
-                          <td className={`${TD} text-right font-bold ${tono(f.sobranteM3)}`}>
-                            {fmtM3(f.sobranteM3)}
-                          </td>
-                          <td className={`${TD} text-right ${tono(f.sobranteM3)}`}>
-                            {fmtPt(f.sobrantePt)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                        <th scope="row" className="px-2.5 py-2 text-left">
-                          {filas.length} especie(s)
-                        </th>
-                        <td className={`${TD} text-right`}>{fmtPiezas(saldo.totales.piezas)}</td>
-                        <td className={`${TD} text-right`}>{fmtM3(saldo.totales.rollizaM3)}</td>
-                        <td className={`${TD} text-right`}>{fmtPt(saldo.totales.aserrablePt)}</td>
-                        <td className={`${TD} text-right`}>{fmtM3(saldo.totales.aserrableM3)}</td>
-                        <td className={`${TD} text-right`}>
-                          {saldo.totales.producidoM3 > 0
-                            ? `− ${fmtM3(saldo.totales.producidoM3)}`
-                            : "—"}
-                        </td>
-                        <td className={`${TD} text-right ${tonoAlerta(saldo.totales.sobranteM3)}`}>
-                          {fmtM3(saldo.totales.sobranteM3)}
-                        </td>
-                        <td className={`${TD} text-right ${tonoAlerta(saldo.totales.sobranteM3)}`}>
-                          {fmtPt(saldo.totales.sobrantePt)}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
+                <SaldoPermisoTabla saldo={saldo} />
+
+                {/* El montón sin permiso es el estado inicial de cualquier libro
+                    que ya venía cargando sin lote: se puede repartir acá mismo. */}
+                {saldo.permiso === null && saldo.corridas.length > 0 && (
+                  <AsignarPermisoMasivo
+                    corridas={saldo.corridas}
+                    permisosSugeridos={saldos
+                      .map((s) => s.permiso)
+                      .filter((p): p is string => Boolean(p))}
+                    onAplicado={() => void recargar()}
+                  />
+                )}
 
                 {/* Qué hay detrás de la resta: las corridas, una por una. */}
                 {saldo.corridas.length > 0 && (

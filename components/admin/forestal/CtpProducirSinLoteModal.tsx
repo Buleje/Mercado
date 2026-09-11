@@ -38,6 +38,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Boxes, Calculator, Loader2, X } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { logger } from "@/lib/logger";
@@ -348,7 +349,9 @@ export default function CtpProducirSinLoteModal({
             <Calculator className="h-5 w-5" aria-hidden />
           </span>
           <div className="min-w-0">
-            <h3 className="font-display text-lg text-[var(--text-primary)]">Producir sin lote</h3>
+            <CardTitle as="h3" className="font-display text-lg text-[var(--text-primary)]">
+              Producir sin lote
+            </CardTitle>
             <p className="text-xs text-[var(--text-tertiary)]">
               Cubicá acá y declaralo en el Libro. La materia prima se vincula después —
               <b> lo que cubiques acá no toca el lote del cubicador</b>.

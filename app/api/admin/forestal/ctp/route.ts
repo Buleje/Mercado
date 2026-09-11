@@ -277,6 +277,16 @@ const patchSchema = z.discriminatedUnion("action", [
       }),
   }),
   /**
+   * Asigna el mismo permiso declarado a VARIAS corridas sin materia prima
+   * (ADR-409). El relleno masivo que ADR-401 dejó pendiente, acotado a un solo
+   * campo: es lo que vuelve usable el saldo por permiso sobre lo ya cargado.
+   */
+  z.object({
+    action: z.literal("asignar_permiso_masivo"),
+    ids: z.array(z.string().trim().min(1)).min(1).max(200),
+    originCode: z.string().trim().min(1).max(120),
+  }),
+  /**
    * Declara una corrida como EXISTENCIA DE APERTURA (ADR-394): madera anterior
    * al libro, sin nada que atar. No toca números; el certificado sigue
    * bloqueado. Reversible.
@@ -774,6 +784,16 @@ export const PATCH = withApiHandler("forestal-ctp-patch", async (req: NextReques
         auth.username ?? "unknown",
       );
       return NextResponse.json(r);
+    }
+    if (parsed.data.action === "asignar_permiso_masivo") {
+      return NextResponse.json(
+        await ForestCtpDB.asignarPermisoMasivo(
+          auth.tenantId,
+          parsed.data.ids,
+          parsed.data.originCode,
+          auth.username ?? "unknown",
+        ),
+      );
     }
     if (parsed.data.action === "marcar_usado") {
       const entry = await ForestCtpDB.marcarUsado(auth.tenantId, parsed.data.id, {

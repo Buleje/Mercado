@@ -1399,6 +1399,94 @@ export class ForestCtpDB {
    * declararon ninguno vuelven con `permiso: null` para que la pantalla las
    * pueda señalar en vez de esconderlas.
    */
+  /**
+   * Asigna el MISMO permiso declarado a varias corridas de una vez (ADR-409).
+   *
+   * Es el relleno masivo que ADR-401 dejó pendiente, acotado a un solo campo:
+   * el `originCode` del asiento. Nace de un hecho medido — en el libro de
+   * pruebas, ocho de ocho producciones sin lote no tenían permiso, porque hasta
+   * ADR-409 no había dónde escribirlo—: asignarlas de a una es la clase de
+   * trabajo que nadie hace, y sin eso el saldo por permiso muestra todo junto
+   * bajo «Sin permiso declarado».
+   *
+   * **Sólo corridas SIN materia prima atribuida.** Donde hay consumos, el
+   * permiso lo pone la guía (ADR-402) y escribir el del asiento no cambiaría
+   * nada: se rechaza con el motivo, en vez de simular que se aplicó.
+   *
+   * Línea por línea y no en una transacción: cada asiento vale por sí mismo y
+   * un mes cerrado en la quinta no puede tirar abajo las cuatro anteriores. El
+   * resultado dice exactamente qué entró y qué no —mismo criterio que las
+   * trozas rechazadas de un lote.
+   */
+  static async asignarPermisoMasivo(
+    tenantId: string,
+    ids: readonly string[],
+    originCode: string,
+    user = "unknown",
+  ) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const permiso = originCode.trim();
+    if (!permiso) throw new CtpInvariantError("Falta el N° de permiso.", "VALIDACION");
+
+    const corridas = await prisma.forestCtpEntry.findMany({
+      where: { id: { in: [...ids] }, tenantId, deletedAt: null },
+      select: {
+        id: true,
+        lineNo: true,
+        section: true,
+        originCode: true,
+        volumeInputM3: true,
+        _count: { select: { consumos: true } },
+      },
+    });
+    const porId = new Map(corridas.map((c) => [c.id, c]));
+
+    const aplicados: { id: string; lineNo: number | null }[] = [];
+    const rechazados: { id: string; lineNo: number | null; motivo: string }[] = [];
+
+    for (const id of ids) {
+      const c = porId.get(id);
+      if (!c) {
+        rechazados.push({ id, lineNo: null, motivo: "esa línea ya no está en el libro" });
+        continue;
+      }
+      if (c.section !== "produccion") {
+        rechazados.push({ id, lineNo: c.lineNo, motivo: "no es una línea de producción" });
+        continue;
+      }
+      if (c._count.consumos > 0 || Number(c.volumeInputM3 ?? 0) > 0) {
+        rechazados.push({
+          id,
+          lineNo: c.lineNo,
+          motivo: "ya tiene materia prima: su permiso sale de la guía, no del asiento",
+        });
+        continue;
+      }
+      if ((c.originCode ?? "").trim() === permiso) {
+        rechazados.push({ id, lineNo: c.lineNo, motivo: "ya declaraba ese permiso" });
+        continue;
+      }
+      try {
+        const r = await ForestCtpDB.corregirLinea(tenantId, id, { originCode: permiso }, user);
+        if (r.ok) aplicados.push({ id, lineNo: c.lineNo });
+        else {
+          rechazados.push({
+            id,
+            lineNo: c.lineNo,
+            motivo: r.rechazados[0]?.motivo ?? "el libro no aceptó el cambio",
+          });
+        }
+      } catch (e) {
+        rechazados.push({
+          id,
+          lineNo: c.lineNo,
+          motivo: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+    return { permiso, aplicados, rechazados };
+  }
+
   static async produccionSinMateriaPrima(tenantId: string, limite = 1000) {
     if (!tenantId) throw new Error("tenantId is required");
     const filas = await prisma.forestCtpEntry.findMany({
