@@ -14,7 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
+import { applyCtpPeriodParams, ctpPeriodShortLabel, periodoAnterior, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { WoodEntry, WoodEntryStats } from "@/components/admin/forestal/ctp-shared";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 
@@ -88,6 +88,10 @@ interface UseCtpIngresosResult {
   guias: GuiaIngreso<WoodEntry>[];
   lineas: number;
   stats: WoodEntryStats | null;
+  /** Los mismos agregados del período anterior, con los mismos filtros. */
+  statsPrevios: WoodEntryStats | null;
+  /** Cómo se llama ese lapso, corto: «Abr–Jun 2026». */
+  etiquetaPrevio: string | null;
   total: number;
   loading: boolean;
   error: string | null;
@@ -154,8 +158,8 @@ export function useCtpIngresos({
 
   /** Los parámetros del conjunto (sin paginación): los comparten la tabla y la
    *  descarga, así que "exportar" baja EXACTAMENTE lo que se está viendo. */
-  const baseParams = useMemo(() => {
-    const params = applyCtpPeriodParams(new URLSearchParams(), period);
+  const armarParams = useCallback((ventana: CtpPeriod) => {
+    const params = applyCtpPeriodParams(new URLSearchParams(), ventana);
     if (status) params.set("status", status);
     if (search) params.set("search", search);
     /* `append` y no `set`: cada valor elegido va como un parámetro propio. */
@@ -175,7 +179,42 @@ export function useCtpIngresos({
     params.set("sort", sort.by);
     params.set("dir", sort.dir);
     return params;
-  }, [period, status, search, species, provider, product, permiso, cites, late, sinOrigen, recepcion, sort.by, sort.dir]);
+  }, [status, search, species, provider, product, permiso, cites, late, sinOrigen, recepcion, sort.by, sort.dir]);
+
+  const baseParams = useMemo(() => armarParams(period), [armarParams, period]);
+
+  /**
+   * Los MISMOS agregados, una ventana atrás — para que cada cifra pueda decir
+   * si el período viene mejor o peor.
+   *
+   * Se piden con `armarParams` y por lo tanto con los MISMOS filtros: si la
+   * pantalla está mirando una especie, el mes pasado también tiene que ser el
+   * de esa especie, o el delta compara dos universos y miente con cara de dato.
+   *
+   * `limit=1` porque de esta llamada sólo interesa `stats`: traer las 50 filas
+   * del mes pasado sería pagar el ancho de banda de una tabla que nadie mira.
+   * Y va en su propio efecto, atado al conjunto y NO a la paginación: pasar de
+   * página no cambia el mes anterior, y este endpoint tiene bucket STRICT.
+   */
+  const previo = useMemo(() => periodoAnterior(period), [period]);
+  const [statsPrevios, setStatsPrevios] = useState<WoodEntryStats | null>(null);
+  useEffect(() => {
+    if (!previo) { setStatsPrevios(null); return; }
+    let vivo = true;
+    const params = armarParams(previo);
+    params.set("limit", "1");
+    params.set("offset", "0");
+    params.set("stats", "1");
+    params.set("agrupar", "guia");
+    fetch(`/api/admin/forestal/wood-entries?${params}`, { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { stats?: WoodEntryStats } | null) => { if (vivo) setStatsPrevios(d?.stats ?? null); })
+      /* La comparación es un lujo; el dato del período no. Si el mes anterior
+         no carga, las cifras de arriba siguen siendo correctas y se muestran
+         sin delta — nunca contra un cero inventado. */
+      .catch(() => { if (vivo) setStatsPrevios(null); });
+    return () => { vivo = false; };
+  }, [armarParams, previo]);
 
   const load = useCallback(async () => {
     const seq = ++requestSeq.current;
@@ -339,6 +378,8 @@ export function useCtpIngresos({
     guias,
     lineas,
     stats,
+    statsPrevios,
+    etiquetaPrevio: previo ? ctpPeriodShortLabel(previo) : null,
     total,
     loading,
     error,

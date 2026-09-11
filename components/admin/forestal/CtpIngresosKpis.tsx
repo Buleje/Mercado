@@ -25,7 +25,7 @@
  */
 
 import { AlertCircle, Boxes, TreePine } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import CtpKpi, { DesgloseSimple } from "./CtpKpi";
 import BarraDeuda, { type DeudaItem } from "@/components/admin/shared/BarraDeuda";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { CtpKpisPlegables, type WoodEntryStats } from "./ctp-shared";
@@ -35,6 +35,12 @@ import { productLabel } from "./ctp-shared";
 
 export interface CtpIngresosKpisProps {
   stats: WoodEntryStats | null;
+  /**
+   * Los MISMOS agregados del período anterior, con los mismos filtros.
+   * Sin ellos las tarjetas se dibujan como siempre, sin comparación.
+   */
+  statsPrevios?: WoodEntryStats | null;
+  etiquetaPrevio?: string | null;
   /** Filtro de estado activo (para marcar "Pendientes" como hundida). */
   statusFilter: string;
   citesOn: boolean;
@@ -69,6 +75,8 @@ const nf = (n: number) => n.toLocaleString("es-PE");
 
 export default function CtpIngresosKpis({
   stats,
+  statsPrevios,
+  etiquetaPrevio,
   statusFilter,
   citesOn,
   lateOn,
@@ -82,9 +90,6 @@ export default function CtpIngresosKpis({
   facetas,
   onFacetas,
 }: CtpIngresosKpisProps) {
-  // Una tarjeta activa se ve hundida: si no, el operador no sabe que la tabla
-  // de abajo está recortada por haber hecho click acá arriba.
-  const activa = "ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-canvas)]";
   const vol = stats ? Number(stats.totalVolumeM3) : 0;
 
   /**
@@ -169,43 +174,59 @@ export default function CtpIngresosKpis({
           : "Leyendo el período…"
       }
       tarjetas={[
-        <StatCard
+        <CtpKpi
           key="ingresos"
-          density="compact"
           label="Ingresos del período"
           value={stats ? nf(stats.totalCount) : "—"}
           subValue={stats ? `${nf(stats.totalPieces)} piezas` : undefined}
           icon={Boxes}
-          emphasis="neutral"
+          actual={stats?.totalCount}
+          previo={statsPrevios ? statsPrevios.totalCount : undefined}
+          etiquetaPrevio={etiquetaPrevio}
+          desglose={
+            stats?.providers?.length
+              ? <DesgloseSimple filas={stats.providers.map((f) => ({ value: f.value, count: f.count, volumeM3: f.volumeM3 }))} />
+              : undefined
+          }
+          desgloseLabel="Por proveedor"
         />,
-        <StatCard
+        <CtpKpi
           key="volumen"
-          density="compact"
           label="Volumen del período"
           value={stats ? `${vol.toFixed(2)} m³` : "—"}
           /* El pie tablar al lado del m³, como en el resto del libro: es la
              unidad con la que el aserradero piensa lo que entró. */
           subValue={stats ? `${nf(pieTablarDe(vol))} pt · ${stats.speciesCount} especies · ver desglose` : undefined}
           icon={TreePine}
-          emphasis="success"
+          actual={stats?.totalVolumeM3}
+          previo={statsPrevios ? statsPrevios.totalVolumeM3 : undefined}
+          etiquetaPrevio={etiquetaPrevio}
+          /* Sin `desglose` propio a propósito: el clic ya abre el reparto por
+             especie GRANDE, con su gráfico. Dos desgloses del mismo dato en la
+             misma tarjeta es la duplicación que este módulo ya sufrió. */
           onClick={onVolumen}
-          className={dashboardOn ? activa : undefined}
+          filtrando={dashboardOn}
         />,
         /* Las tarjetas de deuda —pendientes, fuera de plazo, sin código de
            origen— se fueron a la barra de abajo. CITES se queda arriba, y sólo
            cuando hay: es un dato del período, no una falta. */
         ...(stats?.citesCount
           ? [
-              <StatCard
+              <CtpKpi
                 key="cites"
-                density="compact"
                 label="Especies CITES"
                 value={nf(stats.citesCount)}
                 subValue={`${Number(stats.citesVolumeM3).toFixed(2)} m³ protegidos · ${citesOn ? "filtrando" : "ver"}`}
                 icon={AlertCircle}
-                emphasis="neutral"
+                actual={stats.citesCount}
+                previo={statsPrevios ? statsPrevios.citesCount : undefined}
+                etiquetaPrevio={etiquetaPrevio}
+                /* Ni buena ni mala noticia: una especie protegida CON permiso es
+                   legal y no resta en el score (`ctp-compliance.ts`). Pintarla
+                   de rojo al subir enseñaría a esconder madera que está en regla. */
+                tono="neutral"
                 onClick={onCites}
-                className={citesOn ? activa : undefined}
+                filtrando={citesOn}
               />,
             ]
           : []),

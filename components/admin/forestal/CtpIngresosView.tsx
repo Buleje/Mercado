@@ -242,6 +242,8 @@ export default function CtpIngresosView({
     guias,
     lineas,
     stats,
+    statsPrevios,
+    etiquetaPrevio,
     total,
     loading,
     error,
@@ -771,6 +773,10 @@ export default function CtpIngresosView({
       ) : (
       <CtpIngresosKpis
         stats={stats}
+        /* Los mismos agregados una ventana atrás: sin esto «15.17 m³» es un
+           número que nadie puede juzgar. */
+        statsPrevios={statsPrevios}
+        etiquetaPrevio={etiquetaPrevio}
         statusFilter={statusFilter}
         citesOn={facetas.cites === true}
         lateOn={facetas.late === true}
