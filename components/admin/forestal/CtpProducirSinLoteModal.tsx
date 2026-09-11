@@ -190,12 +190,31 @@ export default function CtpProducirSinLoteModal({
   /* El saldo por permiso se pide recién en el paso «declarar»: es la lectura
      más cara del libro y cubicar no la necesita. */
   const saldo = useSaldoPermisos(paso === "declarar");
-  const permisosConocidos = useMemo(
-    () => (saldo.datos?.rolliza ?? []).map((r) => r.permiso).filter((p): p is string => Boolean(p)),
-    [saldo.datos],
-  );
   /** La especie que el asiento va a declarar — la misma que se simula. */
   const especiePrincipal = especies[0] ?? null;
+  /**
+   * Los permisos que se ofrecen: **sólo los que tienen rolliza de la especie
+   * que se está declarando** (Brandon, 2026-09-10). Ofrecer un permiso de
+   * copaiba mientras se cubica tornillo es ofrecer un error: el saldo de esa
+   * especie nace en cero y el sobrante en rojo.
+   *
+   * Si ninguno la tiene, se ofrecen TODOS y la pantalla lo dice: recortar la
+   * lista a cero dejaría sin elegir a quien sí sabe de qué permiso salió —el
+   * campo es libre justamente para eso—.
+   */
+  const permisos = useMemo(() => {
+    const todos = (saldo.datos?.rolliza ?? [])
+      .map((r) => r.permiso)
+      .filter((p): p is string => Boolean(p));
+    const clave = claveEspecie(especiePrincipal ?? "");
+    if (!clave) return { lista: todos, filtrados: false };
+    const conLaEspecie = (saldo.datos?.rolliza ?? [])
+      .filter((r) => r.permiso && r.especies.some((e) => e.clave === clave))
+      .map((r) => r.permiso as string);
+    return conLaEspecie.length > 0
+      ? { lista: conLaEspecie, filtrados: true }
+      : { lista: todos, filtrados: false };
+  }, [saldo.datos, especiePrincipal]);
   /**
    * Cómo queda el permiso si esta producción se registra. No hay aritmética
    * nueva: el borrador entra como una corrida más en la MISMA cuenta que dibuja
@@ -412,11 +431,18 @@ export default function CtpProducirSinLoteModal({
                     className={`mt-1 ${CAMPO} font-mono`}
                   />
                   <datalist id="ctp-permisos-sin-lote">
-                    {permisosConocidos.map((p) => (
+                    {permisos.lista.map((p) => (
                       <option key={p} value={p} />
                     ))}
                   </datalist>
                   <span className="mt-1 block text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
+                    {permisos.filtrados
+                      ? permisos.lista.length === 1
+                        ? `Se ofrece el único permiso con rolliza de ${especiePrincipal} en el patio. `
+                        : `Se ofrecen los ${permisos.lista.length} permisos con rolliza de ${especiePrincipal} en el patio. `
+                      : especiePrincipal && permisos.lista.length > 0
+                        ? `Ningún permiso tiene rolliza de ${especiePrincipal} en el patio: se ofrecen todos. `
+                        : ""}
                     Se guarda en el asiento, no en una guía: esta corrida no consume ninguna. Sin
                     él, la producción queda bajo «{SIN_PERMISO}» en el saldo por permiso.
                   </span>

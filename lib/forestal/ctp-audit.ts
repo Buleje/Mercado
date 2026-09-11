@@ -40,6 +40,8 @@ export type CtpAuditEntity =
   // prueba documental, pero orienta a quien recibe la troza — y quien la pone
   // tiene que quedar registrado.
   | "ForestEspecieFoto"
+  // KV (como ForestEspecieFoto): el catálogo de especies propio del aserradero.
+  | "ForestEspecieCatalogo"
   // No es modelo Prisma (como ForestCtpFicha): un evento de importación LO-CTP es
   // un lote, no una fila. Se audita porque un fiscalizador quiere saber CÓMO
   // entraron los datos al libro (qué archivo, cuántas filas, quién) — ADR-138.
@@ -192,6 +194,10 @@ export type CtpAuditAction =
   | "ctp_ficha_update"
   /** Foto de referencia de una especie: la pone alguien y tiene que saberse quién. */
   | "ctp_especie_foto"
+  /** El catálogo de especies que edita el aserradero: crear, renombrar, ocultar.
+   *  La especie es lo que el libro declara ante SERFOR — quién cambió la lista
+   *  que se ofrece al cargar tiene que quedar registrado. */
+  | "ctp_especie_catalogo"
   // GTF de salida formal (serie autorizada ARFFS + correlativo auto)
   | "ctp_gtf_emitir"
   /** Se completaron los datos de la guía (propietario/destinatario/transportista). */

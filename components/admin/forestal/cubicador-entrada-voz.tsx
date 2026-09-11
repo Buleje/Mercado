@@ -15,7 +15,7 @@
  */
 import {
   Calculator, FileSpreadsheet, Settings, Mic, MicOff, Volume2, VolumeX,
-  AlertTriangle, Lock, Unlock, X, Check, RotateCcw, Plus,
+  AlertTriangle, Lock, Unlock, X, Check, RotateCcw, Plus, Settings2,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -59,6 +59,14 @@ interface PanelEntradaVozProps {
   onAplicarFijas: (next: MedidasFijas) => void;
   especie: string;
   onEspecieChange: (v: string) => void;
+  /**
+   * Las especies que se ofrecen — el catálogo del aserradero (ADR-410). Por
+   * defecto las de fábrica, para que un llamador que todavía no lo pasa siga
+   * viendo la lista de siempre.
+   */
+  especies?: readonly string[];
+  /** Abre el gestor del catálogo: crear, renombrar, quitar. */
+  onAbrirEspecies?: () => void;
   /** De quién es lo que se va a dictar — se aplica a lo que sigue, igual que especie. */
   dueno: string;
   onDuenoChange: (v: string) => void;
@@ -81,7 +89,7 @@ export default function PanelEntradaVoz({
   grillaId, onPresent, onPlegar, onImportar, showAjustes, onToggleAjustes,
   config, onUpdateConfig, voices, onProbarVoz,
   supported, listening, onToggleListen, paused,
-  fijas, onAplicarFijas, especie, onEspecieChange,
+  fijas, onAplicarFijas, especie, onEspecieChange, especies = ESPECIES, onAbrirEspecies,
   dueno, onDuenoChange, duenosConocidos, onAbrirDuenos,
   liveGroups, errMsg, lastAdded, addedFlash, onDeshacer, fmtPt,
   manual, onManualChange, onConfirmarCarga,
@@ -294,14 +302,29 @@ export default function PanelEntradaVoz({
             <div className="flex flex-wrap items-end gap-2">
               <label className="flex min-w-[10rem] flex-1 flex-col gap-1 sm:max-w-[14rem]">
                 <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Especie</span>
-                <select
-                  value={especie}
-                  onChange={(ev) => onEspecieChange(ev.target.value)}
-                  className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-                >
-                  <option value="">Sin especie</option>
-                  {ESPECIES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <span className="flex h-11 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pr-1">
+                  <select
+                    value={especie}
+                    onChange={(ev) => onEspecieChange(ev.target.value)}
+                    className="h-full min-w-0 flex-1 rounded-xl bg-transparent px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  >
+                    <option value="">Sin especie</option>
+                    {especies.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  {/* El catálogo se edita DONDE se usa: mandar a otra pantalla a
+                      dar de alta una especie en medio de una carga es perderla. */}
+                  {onAbrirEspecies && (
+                    <button
+                      type="button"
+                      onClick={onAbrirEspecies}
+                      aria-label="Especies del aserradero: crear, renombrar, quitar"
+                      title="Especies del aserradero: crear, renombrar, quitar"
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                    >
+                      <Settings2 className="h-4 w-4" aria-hidden />
+                    </button>
+                  )}
+                </span>
               </label>
 
               <label className="flex min-w-[11rem] flex-1 flex-col gap-1 sm:max-w-[16rem]">

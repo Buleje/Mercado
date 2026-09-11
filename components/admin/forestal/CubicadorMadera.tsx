@@ -51,6 +51,8 @@ import {
   type ColumnaSeleccionable,
 } from "./seleccion-celdas";
 import PanelEntradaVoz from "./cubicador-entrada-voz";
+import CtpEspeciesCatalogoModal from "./CtpEspeciesCatalogoModal";
+import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import CubicadorKpis from "./cubicador-kpis";
 import ControlLecturaFlotante from "./cubicador-lectura-flotante";
 import { useLecturaEnVoz } from "@/hooks/use-lectura-en-voz";
@@ -146,6 +148,7 @@ const COLS_DEFAULT: Record<ColOpcional, boolean> = {
 };
 
 // Especies de madera comunes en la Selva Central peruana (single-source en cubicacion.ts).
+/** Las de fábrica: el piso cuando el catálogo del tenant todavía no cargó. */
 const ESPECIES = ESPECIES_MADERA;
 // Solo los errores DUROS cortan el dictado; no-speech/network/aborted son
 // transitorios en modo continuo y el reconocedor se reinicia solo.
@@ -274,6 +277,12 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote }: {
     });
   }, []);
   const [showDuenosModal, setShowDuenosModal] = useState(false);
+  /* El catálogo de especies de ESTA planta (ADR-410). Una sola lectura para el
+     selector, la tabla y el dictado: si el dictado usara otra lista, reconocería
+     especies que el selector no ofrece. */
+  const [showEspeciesModal, setShowEspeciesModal] = useState(false);
+  const catalogoEspecies = useEspeciesCatalogo();
+  const especiesOfrecidas = catalogoEspecies.nombres.length > 0 ? catalogoEspecies.nombres : ESPECIES;
   const [config, setConfig] = useState<CubicadorConfig>(CONFIG_DEFAULT);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [showAjustes, setShowAjustes] = useState(false);
@@ -455,6 +464,9 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote }: {
   const especieRef = useRef(especie);
   const duenoRef = useRef(dueno);
   const duenosConocidosRef = useRef(duenosConocidos);
+  /** Espejo del catálogo: el closure del reconocedor lee la lista fresca —si
+   *  leyera la constante, el dictado no reconocería una especie recién creada. */
+  const especiesRef = useRef<readonly string[]>(ESPECIES);
   const configRef = useRef(config);
   const wantListeningRef = useRef(false);
   /** Números sueltos entre frases + CUÁNDO llegaron (caducan a los 25s). */
@@ -481,6 +493,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote }: {
   useEffect(() => { especieRef.current = especie; }, [especie]);
   useEffect(() => { duenoRef.current = dueno; }, [dueno]);
   useEffect(() => { duenosConocidosRef.current = duenosConocidos; }, [duenosConocidos]);
+  useEffect(() => { especiesRef.current = especiesOfrecidas; }, [especiesOfrecidas]);
   // Las fijas sobreviven al refresh: un lote de un mismo largo puede llevar
   // toda la mañana y recargar la página no debería soltar la medida.
   useEffect(() => { fijasRef.current = fijas; }, [fijas]);
@@ -630,7 +643,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote }: {
           }
         }
         else if (cmd.tipo === "especie") {
-          const found = ESPECIES.find((s) => sinAcentos(s).startsWith(cmd.palabra));
+          const found = especiesRef.current.find((s) => sinAcentos(s).startsWith(cmd.palabra));
           if (found) { setEspecie(found); hablar(found); }
           else setErrMsg(`No reconocí la especie "${cmd.palabra}".`);
         }
@@ -1646,6 +1659,8 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote }: {
         onAplicarFijas={aplicarFijas}
         especie={especie}
         onEspecieChange={setEspecie}
+        especies={especiesOfrecidas}
+        onAbrirEspecies={() => setShowEspeciesModal(true)}
         dueno={dueno}
         onDuenoChange={aplicarDueno}
         duenosConocidos={duenosParaDatalist}
@@ -2308,7 +2323,7 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote }: {
                           className="max-w-[110px] rounded-xl border border-[var(--rule-base)] bg-transparent px-1 py-0.5 text-xs font-bold text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
                         >
                           <option value="">—</option>
-                          {ESPECIES.map((s) => <option key={s} value={s}>{s}</option>)}
+                          {especiesOfrecidas.map((s) => <option key={s} value={s}>{s}</option>)}
                         </select>
                         <AsaRelleno onTomar={() => rellenoEspecie.iniciar(pos)} titulo="Arrastrá hacia abajo para poner esta especie en las filas siguientes" />
                       </td>
@@ -2434,6 +2449,14 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote }: {
           filasActuales={rows.length}
           onAgregar={(piezas) => { agregarVarias(piezas); setEnviado(false); }}
           onCerrar={() => setShowImportar(false)}
+        />
+      )}
+
+      {showEspeciesModal && (
+        <CtpEspeciesCatalogoModal
+          open={showEspeciesModal}
+          onClose={() => setShowEspeciesModal(false)}
+          onCambio={() => void catalogoEspecies.recargar()}
         />
       )}
 
