@@ -53,6 +53,9 @@ import { SIN_PERMISO, simularCorrida } from "@/lib/forestal/saldo-por-permiso";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { sugerirCodigoPaquete } from "@/lib/forestal/produccion-paquetes";
 import CubicadorMadera from "./CubicadorMadera";
+import CtpSemanaDeRegistro from "./CtpSemanaDeRegistro";
+import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
+import { esIsoValido, hoyEnLima } from "@/lib/forestal/semana-de-registro";
 import { Btn } from "./ctp-shared";
 
 /** El espacio propio de este cubicador — otra libreta, la misma pantalla. */
@@ -60,7 +63,10 @@ export const ESPACIO_PRODUCCION = "-ctp-produccion";
 
 const PULG_A_CM = 2.54;
 const PIE_A_M = 0.3048;
-const hoyIso = () => new Date().toISOString().slice(0, 10);
+/* El «hoy» del aserradero es el de Pucallpa, no el del meridiano: pasadas las
+   19:00 locales el UTC ya está en el día siguiente, y ésa es justo la hora en
+   que se carga el parte de la jornada — la fecha nacía un día adelantada. */
+const hoyIso = () => hoyEnLima();
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 
 const CAMPO =
@@ -135,6 +141,11 @@ export default function CtpProducirSinLoteModal({
   const [piezas, setPiezas] = useState<PiezaCubicada[]>([]);
   const [paso, setPaso] = useState<"cubicar" | "declarar">("cubicar");
   const [fecha, setFecha] = useState(hoyIso);
+  /* La semana que se está MIRANDO. Arranca en la del día elegido y se mueve
+     sola cuando se tipea una fecha de otra semana en el campo: dos controles
+     sobre el mismo dato tienen que contarse lo que pasó. */
+  const [semana, setSemana] = useState(fecha);
+  const jornadas = useJornadasDeProduccion(semana);
   const [linea, setLinea] = useState("");
   /* El título habilitante al que se va a vincular esta producción (ADR-402).
      Texto libre con sugerencias: un permiso puede no tener todavía ninguna
@@ -381,6 +392,25 @@ export default function CtpProducirSinLoteModal({
           </button>
         </div>
 
+        {/* El día al que va este registro (Brandon, 2026-09-11). Va acá arriba,
+            fuera del cuerpo que scrollea, porque es una decisión del ASIENTO y
+            no de lo cubicado: se ve y se cambia igual mientras se miden las
+            piezas, y cada casillero dice lo que ese día ya tiene anotado. */}
+        <div className="shrink-0 border-b border-[var(--rule-base)] px-3 py-2">
+          <CtpSemanaDeRegistro
+            valor={fecha}
+            onElegir={(iso) => {
+              setFecha(iso);
+              setSemana(iso);
+            }}
+            semana={semana}
+            onSemana={setSemana}
+            porDia={jornadas.porDia}
+            cargando={jornadas.cargando}
+            error={jornadas.error}
+          />
+        </div>
+
         {/* Cuerpo: el cubicador ENTERO, en su propia libreta */}
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
           {paso === "cubicar" ? (
@@ -393,7 +423,14 @@ export default function CtpProducirSinLoteModal({
                   <input
                     type="date"
                     value={fecha}
-                    onChange={(e) => setFecha(e.target.value)}
+                    onChange={(e) => {
+                      setFecha(e.target.value);
+                      /* Tipear una fecha de otra semana mueve la tira de arriba:
+                         si no, el campo dice «02/05» y los siete casilleros
+                         siguen mostrando otra semana sin ninguno marcado. */
+                      if (esIsoValido(e.target.value)) setSemana(e.target.value);
+                    }}
+                    title="El mismo día que la tira de arriba — acá se llega rápido a una fecha lejana"
                     className={`mt-1 ${CAMPO}`}
                   />
                 </label>

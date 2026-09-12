@@ -413,6 +413,21 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
         }),
       });
     }
+    /* La tira de jornadas de una semana: qué día ya tiene producción anotada y
+       cuánto. La usa el selector de día al declarar una corrida —el parte de la
+       sierra llega tarde y hay que poder decir «esto fue el martes 15» viendo
+       cuál día ya está cargado, para no anotar la misma jornada dos veces.
+
+       Rango propio (`semanaDesde`/`semanaHasta`) y no el `from`/`to` del libro:
+       la semana que se mira acá es independiente del período activo de la
+       pantalla, y mezclarlos haría que cambiar de semana moviera el libro. */
+    if (url.searchParams.get("jornadas") === "1") {
+      const desde = url.searchParams.get("semanaDesde") ?? "";
+      const hasta = url.searchParams.get("semanaHasta") ?? "";
+      return NextResponse.json({
+        jornadas: await ForestCtpDB.jornadasDeProduccion(auth.tenantId, { desde, hasta }),
+      });
+    }
     /* Los códigos de paquete ya usados en la planta: con ellos la pantalla
        propone el siguiente LIBRE (el índice es único por tenant, no por
        corrida — proponer el de al lado es un 422 asegurado). */

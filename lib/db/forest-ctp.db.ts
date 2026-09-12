@@ -31,6 +31,7 @@ import { RENDIMIENTO_TOPE_PCT, topeDeclarableM3 } from "@/lib/forestal/produccio
 import { estaDisponible, type TrozaConsumible } from "@/lib/forestal/consumo-trozas";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
 
 export const CTP_SECTIONS = ["produccion", "despacho"] as const;
 export type CtpSection = (typeof CTP_SECTIONS)[number];
@@ -1503,6 +1504,83 @@ export class ForestCtpDB {
       }
     }
     return { permiso, aplicados, rechazados };
+  }
+
+  /**
+   * Qué se produjo cada día de un rango: la tira de jornadas del aserradero.
+   *
+   * El Libro se registra **día por día** y el parte llega tarde —la sierra
+   * cortó el sábado, el papel aparece el lunes—, así que al declarar una
+   * corrida hay que poder elegir el día y VER cuál ya tiene producción anotada:
+   * sin eso la misma jornada se carga dos veces, o se anota el lunes lo que fue
+   * del sábado y el libro queda diciendo otra cosa que el parte de la sierra.
+   *
+   * Devuelve una fila por día CON producción (los días vacíos no viajan: la
+   * pantalla dibuja los siete igual y un cero explícito no agrega nada).
+   *
+   * `entryDate` es date-only —viaja como `"2026-09-14"`— y se agrupa por su día
+   * **UTC**, que es la misma zona con la que lo formatea todo el módulo
+   * forestal. Agruparlo en hora local partiría una jornada en dos casilleros.
+   *
+   * El rango se arma acá y no con el `dateRange` general a propósito: ese usa
+   * `lte`, y un asiento guardado a las 00:00 de Lima (05:00 UTC) del último día
+   * del rango cae FUERA de un `lte` a medianoche. Acá el corte es `lt` del día
+   * siguiente, que incluye el día entero venga con la hora que venga.
+   */
+  static async jornadasDeProduccion(
+    tenantId: string,
+    rango: { desde: string; hasta: string },
+  ): Promise<
+    { dia: string; corridas: number; m3: number; pt: number; piezas: number }[]
+  > {
+    if (!tenantId) throw new Error("tenantId is required");
+    const dia = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dia.test(rango.desde) || !dia.test(rango.hasta)) return [];
+    const gte = new Date(`${rango.desde}T00:00:00.000Z`);
+    const lt = new Date(new Date(`${rango.hasta}T00:00:00.000Z`).getTime() + 86_400_000);
+    if (!Number.isFinite(gte.getTime()) || !Number.isFinite(lt.getTime()) || lt <= gte) return [];
+
+    const filas = await prisma.forestCtpEntry.findMany({
+      where: {
+        tenantId,
+        section: "produccion",
+        status: "registrado",
+        deletedAt: null,
+        entryDate: { gte, lt },
+      },
+      select: { entryDate: true, quantity: true, unit: true, pieces: true },
+      /* Un rango de semanas, no de años: el tope es una red, no una página. */
+      take: 2000,
+    });
+
+    const porDia = new Map<string, { corridas: number; m3: number; piezas: number }>();
+    for (const f of filas) {
+      const clave = f.entryDate.toISOString().slice(0, 10);
+      const acc = porDia.get(clave) ?? { corridas: 0, m3: 0, piezas: 0 };
+      acc.corridas += 1;
+      /* `quantity` es el volumen declarado y su unidad casi siempre es m³
+         (`guardar-produccion-corrida` manda `unit: "m3"`). Si una corrida vieja
+         declaró en otra unidad, su volumen NO se suma —convertir a ojo sería
+         inventar el número que después se lee como producción del día— pero la
+         corrida sí se cuenta: el día tuvo trabajo. */
+      if (!f.unit || f.unit === "m3") acc.m3 += Number(f.quantity ?? 0);
+      acc.piezas += f.pieces ?? 0;
+      porDia.set(clave, acc);
+    }
+
+    return [...porDia.entries()]
+      .map(([clave, v]) => ({
+        dia: clave,
+        corridas: v.corridas,
+        m3: Math.round(v.m3 * 10000) / 10000,
+        /* PT = m³ × `PT_POR_M3`, la equivalencia de la plaza. El aserradero
+           habla en pies tablares; el m³ es la unidad del papel. La constante se
+           importa: cuando vivía escrita en dos archivos, dos pantallas del mismo
+           libro daban dos totales distintos. */
+        pt: Math.round(v.m3 * PT_POR_M3),
+        piezas: v.piezas,
+      }))
+      .sort((a, b) => a.dia.localeCompare(b.dia));
   }
 
   static async produccionSinMateriaPrima(tenantId: string, limite = 1000) {

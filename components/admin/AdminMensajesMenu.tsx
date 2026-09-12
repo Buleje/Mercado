@@ -43,14 +43,22 @@ export default function AdminMensajesMenu({ onDarkHeader = false }: AdminMensaje
     return () => window.removeEventListener("buleje:admin-chat-unread", handler);
   }, []);
 
-  // Plataforma: self-fetch, igual que el botón que reemplaza.
+  /* Plataforma: self-fetch, igual que el botón que reemplaza.
+     El pedido se ABORTA al desmontar. Sin eso, salir del panel mientras está en
+     vuelo lo hace rechazar con «TypeError: Failed to fetch» y la consola abría
+     con dos warnings rojos en cada carga (dos, por el doble montaje de React en
+     desarrollo) — ruido que no es una falla: nadie pidió ese dato ya. Se sigue
+     avisando cuando el pedido falla DE VERDAD. */
   useEffect(() => {
-    let cancelled = false;
-    fetch("/api/admin/platform-chat", { credentials: "include" })
+    const corte = new AbortController();
+    fetch("/api/admin/platform-chat", { credentials: "include", signal: corte.signal })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (!cancelled && d) setPlataformaUnread(d.unread ?? 0); })
-      .catch((err) => console.warn("[AdminMensajesMenu] platform-chat fetch failed:", String(err)));
-    return () => { cancelled = true; };
+      .then((d) => { if (d) setPlataformaUnread(d.unread ?? 0); })
+      .catch((err) => {
+        if (corte.signal.aborted) return;
+        console.warn("[AdminMensajesMenu] platform-chat fetch failed:", String(err));
+      });
+    return () => corte.abort();
   }, []);
 
   const total = chatUnread + plataformaUnread;

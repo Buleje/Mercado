@@ -14,7 +14,7 @@ import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import { documentosVencimientoDeFicha } from "@/lib/forestal/ctp-ficha-types";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import type { WoodEntryStats } from "@/components/admin/forestal/ctp-shared";
-import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import { ctpGet, laPaginaSeEstaYendo } from "@/lib/forestal/ctp-fetch";
 import { registrarSnapshot } from "./use-ctp-compliance-serie";
 import { logger } from "@/lib/logger";
 
@@ -120,11 +120,15 @@ export function useCtpCompliance(period: CtpPeriod, especie?: string): UseCtpCom
           `/api/admin/forestal/ctp?${trazaParams}`,
         ),
         ctpGet<unknown>(`/api/admin/forestal/ctp-ficha`).catch((err) => {
-          logger.warn("[ctp-compliance] ficha no cargó", { error: String(err) });
+          /* Irse de la página corta el pedido: eso no es una falla que avisar. */
+          if (!laPaginaSeEstaYendo())
+            logger.warn("[ctp-compliance] ficha no cargó", { error: String(err) });
           return null;
         }),
         ctpGet<unknown>(`/api/admin/forestal/ctp?${prodParams}`).catch((err) => {
-          logger.warn("[ctp-compliance] producción no cargó", { error: String(err) });
+          /* Irse de la página corta el pedido: eso no es una falla que avisar. */
+          if (!laPaginaSeEstaYendo())
+            logger.warn("[ctp-compliance] producción no cargó", { error: String(err) });
           return null;
         }),
         /* La conciliación (ADR-139) es la que sabe la existencia FINAL: apertura
@@ -135,7 +139,9 @@ export function useCtpCompliance(period: CtpPeriod, especie?: string): UseCtpCom
         ctpGet<{ conciliacion: { materiaPrima: { especie: string; negativa: boolean }[] } }>(
           `/api/admin/forestal/ctp?${concilParams}`,
         ).catch((err) => {
-          logger.warn("[ctp-compliance] conciliación no cargó", { error: String(err) });
+          /* Irse de la página corta el pedido: eso no es una falla que avisar. */
+          if (!laPaginaSeEstaYendo())
+            logger.warn("[ctp-compliance] conciliación no cargó", { error: String(err) });
           return null;
         }),
       ]);

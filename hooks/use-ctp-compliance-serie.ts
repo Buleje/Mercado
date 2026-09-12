@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
+import { ctpGet, invalidarCtp, laPaginaSeEstaYendo } from "@/lib/forestal/ctp-fetch";
 import { logger } from "@/lib/logger";
 import type { CtpComplianceCounts } from "@/lib/forestal/ctp-compliance";
 import type { CtpPeriodKey } from "@/lib/forestal/ctp-period";
@@ -105,7 +105,10 @@ export function registrarSnapshot(
     /* Reintentar en el próximo montaje: sacarlo del set. Un día perdido es un
        hueco en el gráfico, no un dato falso. */
     yaMandado.delete(clave);
-    logger.warn("[ctp-compliance] no se pudo guardar el snapshot del día", { error: String(err) });
+    /* Irse de la página corta el POST: el snapshot se vuelve a intentar en el
+       próximo montaje (ya salió del set), así que no hay nada que avisar. */
+    if (!laPaginaSeEstaYendo())
+      logger.warn("[ctp-compliance] no se pudo guardar el snapshot del día", { error: String(err) });
   });
 }
 
