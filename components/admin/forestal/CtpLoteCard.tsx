@@ -13,7 +13,7 @@
  * grande tiene que ser el verdadero y la diferencia se explica al lado.
  */
 
-import { Archive, Boxes, ChevronRight, Play, Plus, ScanText, Trash2, TreePine } from "@buleje/design-system/icons";
+import { Archive, Boxes, ChevronRight, PackageOpen, Play, Plus, ScanText, Trash2, TreePine } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import type { FotoEspecie } from "@/lib/forestal/especies-fotos";
 import {
@@ -24,6 +24,7 @@ import {
   cuadreSniffs,
   diasDeEspera,
   esLoteDeInventario,
+  ORIGEN_LOTE_INVENTARIO,
   juzgarRendimientoLote,
   loteVencido,
   margenLote,
@@ -40,6 +41,19 @@ import { Btn } from "./ctp-shared";
 import { IconAction } from "@/components/admin/shared/module-primitives";
 import EspecieFoto from "./EspecieFoto";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+
+/**
+ * «MADERA ASERRADA (COMERCIAL)» a «Madera aserrada (comercial)».
+ *
+ * El libro guarda el producto en mayúsculas porque así lo pide el formato
+ * oficial, pero una tarjeta con tres mayúsculas seguidas se lee a los gritos y
+ * tapa lo que importa al lado. El dato no cambia: cambia cómo se muestra.
+ */
+const productoLegible = (p: string) =>
+  p.length > 3 && p === p.toUpperCase() ? p.charAt(0) + p.slice(1).toLowerCase() : p;
+
+/** El libro escribe la unidad «m3»; en pantalla se lee «m³» como en todo el resto. */
+const unidadLegible = (u: string | null | undefined) => (u === "m3" ? "m³" : (u ?? ""));
 
 const fmtFecha = (iso: string | null) => {
   if (!iso) return null;
@@ -58,6 +72,7 @@ export default function CtpLoteCard({
   onProducir,
   onDeshacer,
   onResolverCuadre,
+  onVerProductos,
 }: {
   lote: LoteAserrio;
   fotos: Map<string, FotoEspecie>;
@@ -73,6 +88,13 @@ export default function CtpLoteCard({
    * tiene que ir a buscar dónde se arregla.
    */
   onResolverCuadre?: () => void;
+  /**
+   * Qué salió de este lote y en qué terminó (Brandon, 2026-09-12).
+   *
+   * «Ver piezas» muestra la materia prima que ENTRÓ; esto muestra la madera que
+   * SALIÓ, con su saldo. Son las dos mitades del lote y hacían falta las dos.
+   */
+  onVerProductos?: () => void;
 }) {
   const estado = ESTADO_LOTE[lote.status];
   const libres = piezasLibres(lote);
@@ -161,7 +183,9 @@ export default function CtpLoteCard({
           }
           className="inline-flex w-fit items-center gap-1.5 rounded-lg bg-[var(--data-info-500)]/15 px-2.5 py-1 font-mono text-sm font-bold tabular-nums text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
         >
-          Sobra para Producción: {fmtM3(sobraM3)} m³ {sobraEsRolliza ? "rolliza" : ""}
+          {sobraEsRolliza
+            ? `Sin aserrar: ${fmtM3(sobraM3)} m³`
+            : `Todavía se puede declarar ${fmtM3(sobraM3)} m³`}
         </p>
       )}
 
@@ -180,7 +204,18 @@ export default function CtpLoteCard({
       <dl className="grid grid-cols-3 gap-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-center">
         <div>
           <dt className="text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Piezas</dt>
-          <dd className="font-mono text-base font-bold tabular-nums text-[var(--text-primary)]">{piezas}</dd>
+          <dd
+            title={
+              piezas === 0 && esLoteDeInventario(lote)
+                ? "Se declaró por volumen, sin cargar las trozas pieza por pieza"
+                : undefined
+            }
+            className="font-mono text-base font-bold tabular-nums text-[var(--text-primary)]"
+          >
+            {/* «0 piezas» con 35 m³ al lado se lee como un lote vacío: en un lote
+                declarado por volumen la cuenta de piezas no existe, no es cero. */}
+            {piezas === 0 && esLoteDeInventario(lote) ? "—" : piezas}
+          </dd>
         </div>
         <div>
           <dt className="text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Volumen</dt>
@@ -224,13 +259,21 @@ export default function CtpLoteCard({
             <>
               Aserrado el {fmtFecha(lote.fechaConsumo) ?? "—"} · corrida{" "}
               <b className="font-mono text-[var(--text-primary)]">N° {corrida.lineNo}</b>
-              {corrida.productType && ` · ${corrida.productType}`}
-              {corrida.quantity != null && (
+              {/* Lo que SALIÓ va en su propia línea: pegado a la fecha y a la
+                  corrida, el nombre del producto en mayúsculas y su volumen se
+                  leían como una frase sola que no terminaba nunca. */}
+              {corrida.productType && (
                 <>
-                  {" "}
-                  <span className="font-mono tabular-nums">
-                    {corrida.quantity.toFixed(2)} {corrida.unit ?? ""}
-                  </span>
+                  <br />
+                  <span className="text-[var(--text-primary)]">{productoLegible(corrida.productType)}</span>
+                  {corrida.quantity != null && (
+                    <>
+                      {" · "}
+                      <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                        {corrida.quantity.toFixed(2)} {unidadLegible(corrida.unit)}
+                      </span>
+                    </>
+                  )}
                 </>
               )}
             </>
@@ -354,12 +397,27 @@ export default function CtpLoteCard({
         </p>
       ))}
 
-      {lote.notes && <p className="line-clamp-2 text-sm italic text-[var(--text-tertiary)]">{lote.notes}</p>}
+      {/* La marca de inventario YA la dice el badge del encabezado: repetirla
+          acá abajo, en itálica y con paréntesis, era una línea de ruido en
+          todas las tarjetas de inventario (Brandon, 2026-09-12). */}
+      {lote.notes && lote.notes !== ORIGEN_LOTE_INVENTARIO && (
+        <p className="line-clamp-2 text-sm italic text-[var(--text-tertiary)]">{lote.notes}</p>
+      )}
 
       <footer className="mt-auto flex flex-wrap items-center gap-2 border-t-2 border-[var(--rule-soft)] pt-3">
         <Btn size="sm" variant="ghost" onClick={onVer}>
           <Boxes className="h-4 w-4" /> Ver piezas <ChevronRight className="h-4 w-4" />
         </Btn>
+        {onVerProductos && (
+          <Btn
+            size="sm"
+            variant="secondary"
+            onClick={onVerProductos}
+            title="Qué madera salió de este lote: lo que queda en patio, lo despachado y lo de uso propio"
+          >
+            <PackageOpen className="h-4 w-4" /> Productos
+          </Btn>
+        )}
         {abierto && (
           <>
             {/* Cargar es ir a Consumos con el lote elegido: ahí la tabla del

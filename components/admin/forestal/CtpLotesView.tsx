@@ -27,6 +27,7 @@ import {
   Search,
   TreePine,
   Upload,
+  Truck,
   X,
 } from "@buleje/design-system/icons";
 import CtpKpi from "./CtpKpi";
@@ -45,6 +46,9 @@ import { useEspeciesFotos } from "./hooks/use-especies-fotos";
 import CtpLoteCard from "./CtpLoteCard";
 import CtpLoteArmarModal, { type MaterialDeInventario } from "./CtpLoteArmarModal";
 import CtpLoteDetalleModal from "./CtpLoteDetalleModal";
+import CtpLoteProductosModal from "./CtpLoteProductosModal";
+import CtpDespacharDesdeLotesModal from "./CtpDespacharDesdeLotesModal";
+import CtpDespachoGuiaModal from "./CtpDespachoGuiaModal";
 import CtpImportarProgramacionesModal from "./CtpImportarProgramacionesModal";
 import CtpCuadreSniffsModal, { lotesQueNoCuadran } from "./CtpCuadreSniffsModal";
 import CtpDeclararDesdeSniffs from "./CtpDeclararDesdeSniffs";
@@ -98,6 +102,12 @@ export default function CtpLotesView({
   const [verCuadre, setVerCuadre] = useState(false);
   const [resolviendoId, setResolviendoId] = useState<string | null>(null);
   const [detalleId, setDetalleId] = useState<string | null>(null);
+  /* Qué salió de un lote y en qué terminó (Brandon, 2026-09-12). */
+  const [productosDe, setProductosDe] = useState<{ code: string; especie: string | null } | null>(null);
+  /* Armar una guía eligiendo lotes, en vez de producto por producto. */
+  const [despachando, setDespachando] = useState(false);
+  /* Los `uid`s que van a la guía: `null` = la guía no está abierta. */
+  const [uidsParaGuia, setUidsParaGuia] = useState<string[] | null>(null);
   const [aviso, setAviso] = useState<{ tono: "ok" | "aviso"; texto: string } | null>(null);
 
   /**
@@ -197,6 +207,11 @@ export default function CtpLotesView({
             llevar el libro tiene decenas ya declaradas allá. */}
         <Btn variant="secondary" onClick={() => setImportar(true)}>
           <Upload className="h-4 w-4" /> Traer del SNIFFS
+        </Btn>
+        {/* El despacho entrando por el lote: en el patio se piensa «sacá lo del
+            13 y el 15», no producto por producto. Arma la MISMA guía. */}
+        <Btn variant="secondary" onClick={() => setDespachando(true)}>
+          <Truck className="h-4 w-4" /> Despachar desde lotes
         </Btn>
         <Btn variant="primary" onClick={() => setArmar(true)}>
           <Plus className="h-4 w-4" /> Armar lote
@@ -463,6 +478,7 @@ export default function CtpLotesView({
                 onProducir={() => onProducir({ id: l.id, code: l.code })}
                 onDeshacer={() => setDetalleId(l.id)}
                 onResolverCuadre={() => setResolviendoId(l.id)}
+                onVerProductos={() => setProductosDe({ code: l.code, especie: l.speciesCommon })}
               />
             </li>
           ))}
@@ -624,6 +640,46 @@ export default function CtpLotesView({
           }}
           onRecargar={recargar}
           onClose={() => setDetalleId(null)}
+        />
+      )}
+
+      {/* Qué salió de un lote: lo que queda en patio, lo despachado y lo de uso propio. */}
+      {productosDe && (
+        <CtpLoteProductosModal
+          lote={productosDe}
+          onClose={() => setProductosDe(null)}
+          onDespachar={(uids) => {
+            setProductosDe(null);
+            setUidsParaGuia(uids);
+          }}
+        />
+      )}
+
+      {/* Elegir lotes → elegir su madera → la guía, sin salir de la pantalla. */}
+      {despachando && (
+        <CtpDespacharDesdeLotesModal
+          onClose={() => setDespachando(false)}
+          onDespachar={(uids) => {
+            setDespachando(false);
+            setUidsParaGuia(uids);
+          }}
+        />
+      )}
+
+      {/* La MISMA guía que emite «Productos disponibles»: lo elegido entra por
+          `presetUids`, así que no hay una segunda forma de declarar una salida. */}
+      {uidsParaGuia && (
+        <CtpDespachoGuiaModal
+          presetUids={uidsParaGuia}
+          onClose={() => setUidsParaGuia(null)}
+          onSaved={(r) => {
+            setUidsParaGuia(null);
+            setAviso({
+              tono: "ok",
+              texto: `Guía emitida con ${r.lineas} línea${r.lineas === 1 ? "" : "s"}${r.offline ? " (queda en cola: se envía al volver la señal)" : ""}.`,
+            });
+            void recargar();
+          }}
         />
       )}
     </div>
