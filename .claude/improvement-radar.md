@@ -15,8 +15,10 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 ### [applied] 2026-09-11 — `scripts/barrido-modales-anidados.mjs` (detector transitivo; encontró 4 modales detrás) + regla en `ui-components.md`.
 ### [applied] 2026-09-11 — IA del producto a la familia Claude 5 con precios verificados en platform.claude.com (Opus 5 $5/$25 · Sonnet 5 $2/$10 · Haiku 4.5 $1/$5 · Fable 5.1 $10/$50).
 ### [applied] 2026-09-11 — `agent-memory/` de agentes archivados (data-qa, integrator, observer, optimizer) → `_agents-archive/`.
-### [pending] 2026-09-11 — Tablero de mejoras como Artifact (página privada en claude.ai con el radar y las rondas, para que Brandon lo abra desde el celular). Necesita que él quiera un enlace fuera del panel.
-### [pending] 2026-09-11 — La tira de días en Consumos y Despacho (memoria `tira-de-dias-de-registro`).
+### [applied] 2026-09-12 — Tablero «Radar Buleje» como Artifact privado: https://claude.ai/code/artifact/f4e397ae-cc1a-4aa6-9f65-f3aec4193acf (republicar el mismo archivo del scratchpad o pasar la URL como `url` desde otra sesión).
+### [applied] 2026-09-12 — La tira de días en Consumos y Despacho (`seccion`, `maximo`); «hoy» de Lima en 3 pantallas más; consola sin «Failed to fetch» al navegar (`lib/navegacion.ts`). Commit `85e79bf4`.
+### [applied] 2026-09-12 — Cámaras: aviso por WhatsApp por lectura (noche/siempre, 1 cada 10 min), «Subir a mano», guía Hikvision en pantalla. Commit `21b7c002`.
+### [refuted] 2026-09-12 — «Cerrar un mes en una pantalla» como capstone: YA EXISTÍA entero (`CtpCierreAsistido` + `CtpResumenesSerfor` + `CtpCierrePanel`). Se enlazó desde el resumen por especie y la tira. Lente 2 (construido sin estrenar) antes de proponer.
 
 ## Aplicadas en sesión 2026-08-19 (auditoría de poder agéntico)
 
