@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { Wrench, Calculator, Activity, Ruler, Gauge, BarChart3, Trees } from "@buleje/design-system/icons";
+import { Wrench, Calculator, Activity, Ruler, Gauge, BarChart3, Trees, Camera } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import { TOOL_ONCE_STORAGE_KEY } from "@/lib/forestal/sembrar-reparto";
 
@@ -22,8 +22,9 @@ const CubicadorTrozas = dynamic(() => import("./CubicadorTrozas"), { ssr: false,
 const CalculadoraRendimiento = dynamic(() => import("./CalculadoraRendimiento"), { ssr: false, loading: () => cargando });
 const CubicacionResumenes = dynamic(() => import("./CubicacionResumenes"), { ssr: false, loading: () => cargando });
 const EspeciesFotosBiblioteca = dynamic(() => import("./EspeciesFotosBiblioteca"), { ssr: false, loading: () => cargando });
+const CamarasView = dynamic(() => import("./CamarasView"), { ssr: false, loading: () => cargando });
 
-type Tool = "cubicador" | "trozas" | "rendimiento" | "resumenes" | "especies";
+type Tool = "cubicador" | "trozas" | "rendimiento" | "resumenes" | "especies" | "camaras";
 const HERRAMIENTAS_MODULE_ID = "forestal-herramientas";
 /** Salto de una sola vez desde otro módulo (ej. «Resumen por permiso» en
  *  Consumo o «Llevar al cubicador» en Capacidad de la planta, que siembran
@@ -37,6 +38,7 @@ const TOOLS: { key: Tool; label: string; icon: typeof Calculator; hint: string }
   { key: "resumenes", label: "Resúmenes", icon: BarChart3, hint: "Tablas por especie y tipo del lote cubicado" },
   { key: "rendimiento", label: "Rendimiento", icon: Gauge, hint: "Coeficiente de aserrío (%) con tu histórico del Libro" },
   { key: "especies", label: "Fotos de especies", icon: Trees, hint: "Referencia visual para no confundir dos maderas parecidas" },
+  { key: "camaras", label: "Cámaras", icon: Camera, hint: "Lo que la cámara del patio mandó, con su hora" },
 ];
 // Un solo grupo: la cabina dibuja las herramientas y omite la fila de fases
 // (misma pieza que los libros — el módulo se ve parte de la misma familia).
@@ -84,6 +86,7 @@ export default function ForestalHerramientas() {
         {tool === "resumenes" && <CubicacionResumenes />}
         {tool === "rendimiento" && <CalculadoraRendimiento />}
         {tool === "especies" && <EspeciesFotosBiblioteca />}
+        {tool === "camaras" && <CamarasView />}
       </div>
     </LibroChrome>
   );
