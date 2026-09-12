@@ -20,7 +20,7 @@ import {
   HardDrive, ClipboardList, Monitor, SlidersHorizontal,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, BlockTitle } from "@buleje/design-system";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
 const StorefrontEditor = dynamic(() => import("@/components/admin/StorefrontEditor"), { ssr: false });
@@ -194,7 +194,7 @@ function SectionCard({ title, desc, children }: { title: string; desc?: string; 
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
       <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-        <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{title}</h4>
+        <BlockTitle>{title}</BlockTitle>
         {desc && <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{desc}</p>}
       </div>
       <div className="px-5 py-4 space-y-4">{children}</div>

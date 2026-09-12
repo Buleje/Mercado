@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, BlockTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import {
   X, CreditCard, Banknote, Star, ShoppingBag,
@@ -237,9 +237,9 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
               {/* Fiados table */}
               {data.fiados.length > 0 && (
                 <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                  <BlockTitle className="mb-3 flex items-center gap-2">
                     <Banknote className="h-4 w-4 text-[var(--data-error-500)]" /> Fiados pendientes
-                  </h4>
+                  </BlockTitle>
                   <DataTable className="text-xs">
                     <thead>
                       <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
@@ -276,9 +276,9 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
               {/* Prestamos table */}
               {data.prestamos.length > 0 && (
                 <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                  <BlockTitle className="mb-3 flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-[var(--data-warning-500)]" /> Préstamos activos
-                  </h4>
+                  </BlockTitle>
                   {data.prestamos.map((p) => (
                     <div key={p.id} className="mb-3 last:mb-0">
                       <div className="flex justify-between items-center mb-2">
@@ -308,9 +308,9 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
               {/* Últimas compras */}
               {data.ultimasCompras.length > 0 && (
                 <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                  <BlockTitle className="mb-3 flex items-center gap-2">
                     <ShoppingBag className="h-4 w-4 text-primary" /> Últimas compras
-                  </h4>
+                  </BlockTitle>
                   <div className="space-y-1.5">
                     {data.ultimasCompras.map((c) => (
                       <div key={c.id} className="flex items-center justify-between text-xs py-1.5 border-b border-[var(--rule-base)] last:border-0">

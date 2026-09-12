@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { CardTitle, LoadingState, BlockTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -1283,7 +1283,7 @@ export default function FiadosModule() {
                   <>
                 {/* Mejora 15: Historial de pagos mejorado con timeline */}
                 <div>
-                  <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Historial de pagos</h4>
+                  <BlockTitle className="mb-3">Historial de pagos</BlockTitle>
                   {detailLoading ? (
                     <div className="flex justify-center py-6">
                       <Loader2 className="h-5 w-5 animate-spin text-primary" />

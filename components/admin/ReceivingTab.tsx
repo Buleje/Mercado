@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
@@ -582,7 +582,7 @@ export default function ReceivingTab() {
             {/* Checklist */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">Checklist de productos</h4>
+                <BlockTitle>Checklist de productos</BlockTitle>
                 <button onClick={addChecklistRow} className="text-xs text-primary font-bold flex items-center gap-1 hover:underline">
                   <Plus className="h-3 w-3" /> Agregar fila
                 </button>

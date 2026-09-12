@@ -13,7 +13,7 @@ import {
   Filter, ChevronDown, ChevronUp, Trash2, AlertCircle, Bell,
   RotateCcw, History, Scale, FileDown } from "@buleje/design-system/icons";
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
-import { CardTitle, DataTable, LoadingState, SectionTitle, WarningAlert } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, SectionTitle, WarningAlert, BlockTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { Field } from "@/components/admin/shared/Field";
@@ -1794,7 +1794,7 @@ export default function PrestamosModule() {
                 {/* Cronograma de cuotas — tabs: timeline vs tabla amortización */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-bold text-[var(--text-primary)]">Cronograma de cuotas</h4>
+                    <BlockTitle>Cronograma de cuotas</BlockTitle>
                     <div className="flex bg-[var(--surface-sunken)] rounded-lg p-0.5">
                       <button
                         onClick={() => setDetailView("timeline")}
@@ -2163,10 +2163,10 @@ ${cuotas.map(c => { const row = `<tr>
 
                       {/* Mejora 17: Documentos adjuntos */}
                       <div>
-                        <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
+                        <BlockTitle className="mb-2 flex items-center gap-2">
                           <Paperclip className="h-4 w-4 text-[var(--data-success-500)]" /> Documentos
                           <span className="text-xs text-[var(--text-tertiary)] font-normal">({selected.documentos?.length ?? 0})</span>
-                        </h4>
+                        </BlockTitle>
                         {selected.documentos && selected.documentos.length > 0 ? (
                           <div className="space-y-1.5">
                             {selected.documentos.map(doc => (
@@ -2194,9 +2194,9 @@ ${cuotas.map(c => { const row = `<tr>
                         if (pagadas.length === 0) return null;
                         return (
                           <div>
-                            <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
+                            <BlockTitle className="mb-2 flex items-center gap-2">
                               <History className="h-4 w-4 text-[var(--data-info-500)]" /> Historial de pagos ({pagadas.length})
-                            </h4>
+                            </BlockTitle>
                             <div className="space-y-2 max-h-52 overflow-y-auto">
                               {pagadas.map(c => (
                                 <div key={c.id} className="flex items-center justify-between py-2 px-3 bg-primary/10 rounded-xl">

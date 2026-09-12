@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, DataTable, LoadingState, StatCard } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, StatCard, BlockTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
@@ -1121,7 +1121,7 @@ export default function GuiasRemisionModule() {
 
                 {/* Items */}
                 <div>
-                  <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Items</h4>
+                  <BlockTitle className="mb-3">Items</BlockTitle>
                   <div className="space-y-2">
                     {(selected.items ?? []).map((item, i) => (
                       <div key={i} className="flex items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl">
@@ -1300,7 +1300,7 @@ export default function GuiasRemisionModule() {
 
                 {/* Items */}
                 <div>
-                  <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2">Items</h4>
+                  <BlockTitle className="mb-2">Items</BlockTitle>
                   <div className="space-y-2">
                     {newItems.map((item, idx) => (
                       <div key={idx} className="flex gap-2 items-center">

@@ -12,7 +12,7 @@
 import {
   AlertTriangle, ArrowDown, CheckCircle2, ChevronRight, ShieldAlert, type LucideIcon,
 } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, BlockTitle } from "@buleje/design-system";
 import type {
   FlujoAprovechamiento, NodoTipo, RankingItem, Veredicto, VeredictoNivel,
 } from "@/lib/forestal/loth-analitica";
@@ -254,7 +254,7 @@ function FilaEspecie({ r }: { r: RankingItem }) {
     <article className={`rounded-2xl border p-4 ${r.potencial ? "border-[var(--rule-soft)] bg-[var(--surface-raised)] opacity-80" : "border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]"}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <h4 className="flex flex-wrap items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+          <BlockTitle className="flex flex-wrap items-center gap-2">
             {r.species}
             {r.cites && (
               <span className="rounded-full bg-[var(--data-error-100)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">CITES</span>
@@ -262,7 +262,7 @@ function FilaEspecie({ r }: { r: RankingItem }) {
             {r.potencial && (
               <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">sin movilizar</span>
             )}
-          </h4>
+          </BlockTitle>
           <p className="mt-0.5 font-mono text-xs tabular-nums text-[var(--text-tertiary)]">
             {r.potencial
               ? <>margen potencial <b className={color}>S/ {fm(r.margenM3)}</b> por m³</>

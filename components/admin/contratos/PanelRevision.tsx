@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BlockTitle } from "@buleje/design-system";
 import { Loader2, Scale, AlertTriangle, CheckCircle, Info } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
@@ -64,9 +65,9 @@ export default function PanelRevision({ contratoId, revision, onRevisado }: Prop
   return (
     <div>
       <div className="flex items-center justify-between mb-2 gap-2">
-        <h4 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+        <BlockTitle className="flex items-center gap-2">
           <Scale className="h-4 w-4" /> Qué revisar antes de firmar
-        </h4>
+        </BlockTitle>
         <button
           onClick={revisar}
           disabled={revisando}

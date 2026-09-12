@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { BlockTitle } from "@buleje/design-system";
 import { Loader2, Link2, Check, X, User, Truck } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
@@ -109,9 +110,9 @@ export default function VinculoContraparte({
   return (
     <div>
       <div className="flex items-center justify-between gap-2 mb-2">
-        <h4 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+        <BlockTitle className="flex items-center gap-2">
           <Link2 className="h-4 w-4" /> Con quién es
-        </h4>
+        </BlockTitle>
         <button
           onClick={() => setAbierto((v) => !v)}
           className="text-xs font-bold text-primary hover:underline"

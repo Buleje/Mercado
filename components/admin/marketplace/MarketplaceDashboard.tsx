@@ -20,7 +20,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { StatCard } from "@buleje/design-system";
+import { StatCard, BlockTitle } from "@buleje/design-system";
 import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 import {
   ShoppingCart,
@@ -284,7 +284,7 @@ export default function MarketplaceDashboard({ kpis, loading }: MarketplaceDashb
         </ChartCard>
 
         <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex flex-col">
-          <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Tu tienda en el marketplace</h4>
+          <BlockTitle className="mb-3">Tu tienda en el marketplace</BlockTitle>
           {data.recentOrders.length > 0 ? (
             <div className="space-y-2.5 flex-1">
               {data.recentOrders.slice(0, 5).map((o) => (

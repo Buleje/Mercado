@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { CardTitle, DataTable, BlockTitle } from "@buleje/design-system";
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import {
   Calculator, Download, X, Eye,
@@ -621,9 +621,9 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
               if (chips.length === 0) return null;
               return (
                 <div>
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-2 flex items-center gap-1">
+                  <BlockTitle className="mb-2 flex items-center gap-1">
                     <Coins className="h-4 w-4" /> Cómo se contó
-                  </h4>
+                  </BlockTitle>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                     {chips.map(({ label, valor, Icono }) => (
                       <div key={label} className="flex items-center justify-between bg-[var(--surface-alt)] rounded-lg px-3 py-1.5 text-sm">

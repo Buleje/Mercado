@@ -1,6 +1,6 @@
 'use client';
 
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { CardTitle, DataTable, BlockTitle } from "@buleje/design-system";
 
 import { useState, useEffect, useCallback } from 'react';
 import { Field } from '@/components/admin/shared/Field';
@@ -290,7 +290,7 @@ export default function ConteoFisicoWizard() {
           {/* Existing conteos */}
           {conteos.filter(c => c.status !== 'CERRADO').length > 0 && (
             <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
-              <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Conteos en progreso</h4>
+              <BlockTitle className="mb-3">Conteos en progreso</BlockTitle>
               <div className="space-y-2">
                 {conteos.filter(c => c.status !== 'CERRADO').map(c => (
                   <button

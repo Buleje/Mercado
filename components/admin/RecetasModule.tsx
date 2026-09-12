@@ -1,7 +1,7 @@
 "use client";
 
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
-import { CardTitle, DataTable, LoadingState, StatCard } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, StatCard, BlockTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
@@ -874,7 +874,7 @@ export default function RecetasModule() {
 
                       {/* Ingredientes with cost column */}
                       <div>
-                        <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Ingredientes</h4>
+                        <BlockTitle className="mb-3">Ingredientes</BlockTitle>
                         {selected.ingredientes.length === 0 ? (
                           <p className="text-sm text-[var(--text-tertiary)]">Sin ingredientes</p>
                         ) : (

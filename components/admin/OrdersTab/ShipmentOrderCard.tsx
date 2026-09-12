@@ -10,6 +10,7 @@
  */
 
 import { memo, useState } from "react";
+import { BlockTitle } from "@buleje/design-system";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
   Package, MapPin, Clock, CheckCircle, Truck, Phone,
@@ -173,9 +174,9 @@ function ShipmentOrderCardImpl({ order, onUpdateStatus, updating }: ShipmentOrde
           {/* Info izquierda */}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+              <BlockTitle>
                 #{order.id.slice(-6).toUpperCase()}
-              </h4>
+              </BlockTitle>
               <m.span
                 key={order.status}
                 initial={{ scale: 0.85, opacity: 0 }}

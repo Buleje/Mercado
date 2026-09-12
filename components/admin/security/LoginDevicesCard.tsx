@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Monitor, Smartphone, MapPin, Clock, ShieldCheck, KeyRound, X } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, BlockTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 
@@ -167,7 +167,7 @@ export default function LoginDevicesCard() {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <KeyRound className="h-4 w-4 text-[var(--accent)]" aria-hidden />
-              <h4 className="text-sm font-bold text-[var(--text-primary)]">Dispositivos de confianza</h4>
+              <BlockTitle>Dispositivos de confianza</BlockTitle>
             </div>
             <button
               type="button"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
-import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
@@ -799,7 +799,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <TemplateIcon icon={tpl.icon} className="h-5 w-5" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-sm font-bold text-[var(--text-primary)]">{tpl.name}</h4>
+                          <BlockTitle>{tpl.name}</BlockTitle>
                           <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">{tpl.description}</p>
                           <div className="mt-2 flex items-center gap-2 flex-wrap">
                             <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold">{tpl.category}</span>
@@ -1029,7 +1029,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     {/* Wizard Steps 0-2: Form Fields */}
                     {wizardStep < 3 && (
                       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 space-y-4">
-                        <h4 className="text-sm font-bold text-[var(--text-primary)]">{wizardGroupLabels[wizardStep]}</h4>
+                        <BlockTitle>{wizardGroupLabels[wizardStep]}</BlockTitle>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {wizardGroups[wizardStep]?.fields.map(field => {
                             // Determine if field should be a select with options
@@ -1222,7 +1222,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         <div className="bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-xl p-4">
                           <div className="flex items-center gap-2 mb-2">
                             <Scale className="h-4 w-4 text-primary" />
-                            <h4 className="text-sm font-bold text-primary">Resumen en Lenguaje Simple</h4>
+                            <BlockTitle className="text-primary">Resumen en Lenguaje Simple</BlockTitle>
                           </div>
                           <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{generateSummary()}</p>
                         </div>
@@ -1444,7 +1444,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
                     {/* Preview */}
                     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 max-h-[70vh] overflow-y-auto">
-                      <h4 className="text-sm font-bold text-[var(--text-primary)] mb-4">Vista Previa</h4>
+                      <BlockTitle className="mb-4">Vista Previa</BlockTitle>
                       <div className="font-serif space-y-3">
                         {editorText.split("\n\n").filter(p => p.trim()).map((para, i) => (
                           <p key={i} className="text-sm text-[var(--text-secondary)] text-justify leading-relaxed">
@@ -1558,7 +1558,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* Clausulas */}
                 {selected.clausulas.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Clausulas</h4>
+                    <BlockTitle className="mb-3">Clausulas</BlockTitle>
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       {selected.clausulas.map((c, i) => (
                         <div key={i} className="p-3 bg-[var(--surface-alt)] rounded-xl text-sm text-[var(--text-secondary)] text-justify leading-relaxed">
@@ -1572,10 +1572,10 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* Qué pasó con este contrato — historial real, guardado en el servidor */}
                 {detalle?.eventos && detalle.eventos.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2 flex items-center gap-2">
+                    <BlockTitle className="mb-2 flex items-center gap-2">
                       <Clock className="h-4 w-4" /> Qué pasó con este contrato
                       <span className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] px-2 py-0.5 rounded-full">{detalle.eventos.length}</span>
-                    </h4>
+                    </BlockTitle>
                     <ol className="space-y-1.5 border-l-2 border-[var(--rule-soft)] pl-3">
                       {detalle.eventos.map(ev => (
                         <li key={ev.id} className="text-xs">

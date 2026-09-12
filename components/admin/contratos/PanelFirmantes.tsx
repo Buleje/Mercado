@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { BlockTitle } from "@buleje/design-system";
 import { Loader2, Plus, Trash2, Check, X, Copy, MessageCircle, PenTool } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
@@ -146,9 +147,9 @@ export default function PanelFirmantes({ contrato, onCambio }: Props) {
   return (
     <div>
       <div className="flex items-center justify-between mb-2 gap-2">
-        <h4 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+        <BlockTitle className="flex items-center gap-2">
           <PenTool className="h-4 w-4" /> Quiénes firman
-        </h4>
+        </BlockTitle>
         {!editando && !yaHayFirmas && (
           <button
             onClick={abrirEdicion}

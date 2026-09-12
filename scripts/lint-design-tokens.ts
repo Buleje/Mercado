@@ -297,6 +297,16 @@ const RULES: Rule[] = [
     strictUpgrade: true,
   },
   {
+    id: "ds-no-heading-h4-raw-admin",
+    pattern: /<h4\s+[^>]*className=/g,
+    message:
+      "Sin <h4 className=...> en admin: usá <BlockTitle> del DS (subtítulo de bloque). Si es un rótulo en mayúsculas es <Kicker>, y si titula la tarjeta entera es <CardTitle>.",
+    severity: "warning",
+    adminOnly: true,
+    /* Sin `strictUpgrade`: quedan 43 <h4> que son otro rol (rótulo o título
+       grande) y hay que reclasificarlos de a uno, no convertirlos en errores. */
+  },
+  {
     id: "ds-no-style-inline-any-color",
     // style={{ color|backgroundColor|borderColor|fontSize: cualquier literal }} — incluye var(...) para forzar className.
     // Diferencia con ds-no-style-color-inline: éste incluye var(...) y fontSize.

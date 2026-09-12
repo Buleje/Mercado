@@ -1,6 +1,6 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
+import { SectionTitle, BlockTitle } from "@buleje/design-system";
 import { useState, useEffect } from "react";
 import { Heart, Loader2, Search, Gift, Award, ArrowUpRight, NotebookPen, Save, DollarSign, Clock, Bell, Users2, Link, Copy, MessageSquare, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -330,7 +330,7 @@ export default function LoyaltyTab() {
 
               {/* Redeem */}
               <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                <h4 className="font-bold text-sm flex flex-wrap items-center gap-2"><Gift className="h-4 w-4 text-primary" />Canjear Puntos</h4>
+                <BlockTitle className="flex flex-wrap items-center gap-2"><Gift className="h-4 w-4 text-primary" />Canjear Puntos</BlockTitle>
                 <p className="text-xs text-[var(--text-tertiary)]">1 punto = S/0.10 de descuento</p>
                 <div className="flex flex-wrap gap-2">
                   <input type="number" value={redeemPts} onChange={e => setRedeemPts(e.target.value)} placeholder="Puntos a canjear" className="flex-1 px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
@@ -345,7 +345,7 @@ export default function LoyaltyTab() {
 
               {/* Private Notes */}
               <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                <h4 className="font-bold text-sm flex flex-wrap items-center gap-2"><NotebookPen className="h-4 w-4 text-primary" />Notas Privadas</h4>
+                <BlockTitle className="flex flex-wrap items-center gap-2"><NotebookPen className="h-4 w-4 text-primary" />Notas Privadas</BlockTitle>
                 <textarea
                   value={privateNotes}
                   onChange={e => setPrivateNotes(e.target.value)}
@@ -365,7 +365,7 @@ export default function LoyaltyTab() {
 
               {/* Credit Balance */}
               <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                <h4 className="font-bold text-sm flex flex-wrap items-center gap-2"><DollarSign className="h-4 w-4 text-primary" />Saldo a Favor</h4>
+                <BlockTitle className="flex flex-wrap items-center gap-2"><DollarSign className="h-4 w-4 text-primary" />Saldo a Favor</BlockTitle>
                 <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)]">S/{(selected.creditBalance ?? 0).toFixed(2)}</p>
                 <div className="flex flex-wrap gap-2">
                   <input
@@ -394,10 +394,10 @@ export default function LoyaltyTab() {
                 const { expirationDate, daysRemaining, percentRemaining } = expiration;
                 return (
                   <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                    <h4 className="font-bold text-sm flex flex-wrap items-center gap-2">
+                    <BlockTitle className="flex flex-wrap items-center gap-2">
                       <Clock className="h-4 w-4 text-primary" />
                       Vencimiento de Puntos
-                    </h4>
+                    </BlockTitle>
                     {daysRemaining < 30 && (
                       <div className="flex flex-wrap items-start gap-2 p-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-lg">
                         <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0 mt-0.5" />
@@ -428,10 +428,10 @@ export default function LoyaltyTab() {
               {/* Notification Panel */}
               <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-sm flex flex-wrap items-center gap-2">
+                  <BlockTitle className="flex flex-wrap items-center gap-2">
                     <Bell className="h-4 w-4 text-primary" />
                     Notificaciones de Puntos
-                  </h4>
+                  </BlockTitle>
                   <button
                     onClick={notifyAll}
                     className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 rounded-lg transition"
@@ -470,10 +470,10 @@ export default function LoyaltyTab() {
 
               {/* Referral Program */}
               <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                <h4 className="font-bold text-sm flex flex-wrap items-center gap-2">
+                <BlockTitle className="flex flex-wrap items-center gap-2">
                   <Users2 className="h-4 w-4 text-primary" />
                   Programa de Referidos
-                </h4>
+                </BlockTitle>
                 
                 {referralCode ? (
                   <div className="space-y-3">
@@ -549,7 +549,7 @@ export default function LoyaltyTab() {
               {/* Tiers */}
               {tiers.length > 0 && (
                 <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-2">
-                  <h4 className="font-bold text-sm">Niveles</h4>
+                  <BlockTitle>Niveles</BlockTitle>
                   {tiers.map(t => (
                     <div key={t.name} className={cn("flex items-center justify-between text-xs px-3 py-2 rounded-lg", selected.loyaltyTier === t.name ? "bg-primary/10 border border-primary" : "bg-[var(--surface-alt)] ")}>
                       <span className="font-bold capitalize">{t.name}</span>

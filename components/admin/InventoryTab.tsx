@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, DataTable, StatCard, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, StatCard, SectionTitle, BlockTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useRef, useMemo, type FormEvent } from "react";
 import {
   Package, AlertTriangle, ArrowUp, ArrowDown, RefreshCw,
@@ -2183,7 +2183,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 return (
                   <div key={col.key} className={cn("rounded-xl border-2 p-3 min-h-50", col.color)}>
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{col.label}</h4>
+                      <BlockTitle>{col.label}</BlockTitle>
                       <span className={cn("text-white text-xs font-bold px-2 py-0.5 rounded-full", col.badgeColor)}>{items.length}</span>
                     </div>
                     <div className="space-y-2 max-h-[60vh] overflow-y-auto">

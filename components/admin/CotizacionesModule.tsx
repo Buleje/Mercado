@@ -16,7 +16,7 @@ const CotizacionesChart = dynamic(() => import("./CotizacionesChart"), {
     <div className="h-56 animate-pulse bg-[var(--surface-sunken)] rounded-xl" />
   ),
 });
-import { CardTitle, DataTable, ErrorAlert, LoadingState } from "@buleje/design-system";
+import { CardTitle, DataTable, ErrorAlert, LoadingState, BlockTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { Field } from "@/components/admin/shared/Field";
@@ -1248,7 +1248,7 @@ export default function CotizacionesModule() {
                   <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
                 ) : (
                   <div>
-                    <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Items</h4>
+                    <BlockTitle className="mb-3">Items</BlockTitle>
                     <div className="space-y-2">
                       {(selected.items ?? []).map((item, i) => (
                         <div key={i} className="flex items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl">
@@ -1265,7 +1265,7 @@ export default function CotizacionesModule() {
 
                 {/* Mejora 5: Timeline de seguimiento */}
                 <div>
-                  <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Seguimiento</h4>
+                  <BlockTitle className="mb-3">Seguimiento</BlockTitle>
                   <div className="space-y-0">
                     {([
                       { label: "Creada", status: "BORRADOR" as const, date: selected.createdAt },

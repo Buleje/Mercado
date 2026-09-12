@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, SectionTitle, BlockTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { Activity, CheckCircle, AlertTriangle, XCircle, RefreshCw, Database, Cpu, Zap } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -146,7 +146,7 @@ export default function SystemHealthTab() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <ServiceIcon className="h-4 w-4 text-[var(--text-tertiary)]" />
-                  <h4 className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.name}</h4>
+                  <BlockTitle>{s.name}</BlockTitle>
                 </div>
                 <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", SC.bg, SC.color)}>
                   <SIcon className="h-3 w-3" />{SC.label}

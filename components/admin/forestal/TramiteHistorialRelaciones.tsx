@@ -7,7 +7,7 @@
  * fecha, sin salir del formulario — la actual (si ya se guardó) no aparece,
  * sólo las OTRAS.
  */
-import { DataTable } from "@buleje/design-system";
+import { DataTable, BlockTitle } from "@buleje/design-system";
 import { History } from "@buleje/design-system/icons";
 import { ESTADOS_TRAMITE, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
 
@@ -34,9 +34,9 @@ export default function TramiteHistorialRelaciones({
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-4">
       <div className="mb-3 flex items-center gap-2">
         <History className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-        <h4 className="text-sm font-bold text-[var(--text-primary)]">
+        <BlockTitle>
           Relaciones presentadas antes ({otras.length})
-        </h4>
+        </BlockTitle>
       </div>
       <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
         <DataTable className="w-full min-w-[420px] text-xs">
