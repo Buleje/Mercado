@@ -24,7 +24,10 @@ import {
   cuadreSniffs,
   diasDeEspera,
   esLoteDeInventario,
+  etiquetaDeSobra,
   ORIGEN_LOTE_INVENTARIO,
+  sobraDeLote,
+  type NivelDeSobra,
   juzgarRendimientoLote,
   loteVencido,
   margenLote,
@@ -70,6 +73,24 @@ function ventanaDeProceso(inicio: string, fin: string | null | undefined): strin
   const anioA = a.slice(-4);
   return anioA === b.slice(-4) ? `${a.slice(0, -5)} → ${b}` : `${a} → ${b}`;
 }
+
+/* El color dice el nivel de una pasada, sin leer: gris cuando no queda nada,
+   ámbar cuando es un resto y verde cuando hay de sobra. El punto de adelante
+   es para quien no distingue bien los colores — la palabra también lo dice. */
+const TONO_SOBRA: Record<NivelDeSobra, string> = {
+  sin_sobra: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+  poco: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
+  bastante: "bg-[var(--data-info-500)]/15 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]",
+  casi_entero:
+    "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+};
+
+const PUNTO_SOBRA: Record<NivelDeSobra, string> = {
+  sin_sobra: "bg-[var(--text-tertiary)]",
+  poco: "bg-[var(--data-warning-500)]",
+  bastante: "bg-[var(--data-info-500)]",
+  casi_entero: "bg-[var(--data-success-500)]",
+};
 
 const fmtFecha = (iso: string | null) => {
   if (!iso) return null;
@@ -135,12 +156,12 @@ export default function CtpLoteCard({
   const salida = salidaDelLote(lote);
   /* «Sobra» del lote es lo que TODAVÍA se puede meter a Producción (Brandon,
      2026-09-01: "es volumen sobrante para producción") — NO lo ya producido
-     esperando despacho (eso es `salida.enPatio`, otro badge). Abierto: rolliza
-     sin aserrar (`vLibre`). Ya aserrado: lo que falta para tocar el tope del
-     56% (`margen`, la MISMA cuenta que agrega el KPI "Volumen sobrante" de
-     arriba de la lista — single source, no dos fórmulas al mismo número). */
-  const sobraM3 = abierto ? vLibre : (margen?.margenM3 ?? 0);
+     esperando despacho (eso es `salida.enPatio`, otro badge). La cuenta y su
+     nivel («poco», «mucho») los da `sobraDeLote`, que es también quien elige el
+     denominador según el estado del lote. */
   const sobraEsRolliza = abierto;
+  const sobra = sobraDeLote(lote);
+  const etiqueta = etiquetaDeSobra(sobra);
   const salio = corrida
     ? estadoSalida({
         section: "produccion",
@@ -190,20 +211,26 @@ export default function CtpLoteCard({
         </span>
       </header>
 
-      {sobraM3 > 1e-4 && (
-        <p
-          title={
-            sobraEsRolliza
-              ? "Rolliza que todavía no entró a la sierra — se puede aserrar o distribuir desde Consumos → Ver resumen por permiso"
-              : `Con ${fmtM3(margen?.entradaM3 ?? 0)} m³ que entraron, el tope del 56 % permite ${fmtM3(margen?.topeM3 ?? 0)} m³ y ya se declararon ${fmtM3(margen?.declaradoM3 ?? 0)} m³`
-          }
-          className="inline-flex w-fit items-center gap-1.5 rounded-lg bg-[var(--data-info-500)]/15 px-2.5 py-1 font-mono text-sm font-bold tabular-nums text-[var(--data-info-700)] dark:text-[var(--data-info-500)]"
-        >
-          {sobraEsRolliza
-            ? `Sin aserrar: ${fmtM3(sobraM3)} m³`
-            : `Todavía se puede declarar ${fmtM3(sobraM3)} m³`}
-        </p>
-      )}
+      {/**
+       * Cuánto le queda al lote, con su nivel (Brandon, 2026-09-12: «una
+       * etiqueta si no hay madera para consumir, otra si queda poco, otra si
+       * queda mucho»). El número solo no diferencia: 0.641 m³ es casi nada en
+       * un lote de 35 m³ y es medio lote en uno de 1.2 — el nivel es relativo.
+       */}
+      <p
+        title={
+          sobraEsRolliza
+            ? `${etiqueta.ayuda} Se aserra o se distribuye desde Consumos → Ver resumen por permiso.`
+            : `${etiqueta.ayuda} Con ${fmtM3(margen?.entradaM3 ?? 0)} m³ que entraron, el tope del ${TOPE_RENDIMIENTO_PCT} % permite ${fmtM3(margen?.topeM3 ?? 0)} m³ y ya se declararon ${fmtM3(margen?.declaradoM3 ?? 0)} m³.`
+        }
+        className={`inline-flex w-fit items-center gap-1.5 rounded-lg px-2.5 py-1 text-sm font-bold ${TONO_SOBRA[sobra.nivel]}`}
+      >
+        <span className={`h-2 w-2 shrink-0 rounded-full ${PUNTO_SOBRA[sobra.nivel]}`} aria-hidden />
+        {etiqueta.texto}
+        {sobra.nivel !== "sin_sobra" && (
+          <span className="font-mono tabular-nums opacity-80">· {fmtM3(sobra.m3)} m³</span>
+        )}
+      </p>
 
       <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
         <EspecieFoto especie={lote.speciesCommon} indice={fotos} size={28} />

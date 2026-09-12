@@ -693,3 +693,88 @@ export function agruparPiezasPorLoteAserrio(
     return a.code.localeCompare(b.code);
   });
 }
+
+/**
+ * Cuánta madera le queda a un lote para usar — y si eso es mucho o poco.
+ *
+ * Pedido de Brandon (2026-09-12): «una etiqueta si no hay madera de ese lote
+ * para consumir, otra si hay poco volumen restante, otra si hay mucho».
+ *
+ * El número solo no alcanza: 0.641 m³ es casi nada en un lote de 35 m³ y es
+ * medio lote en uno de 1.2 m³. Por eso la escala es **relativa**, y el
+ * denominador cambia según lo que signifique «restante» en cada estado:
+ *
+ * · **Lote abierto** → rolliza sin aserrar, sobre el volumen del lote. Es la
+ *   madera que todavía puede entrar a la sierra.
+ * · **Lote ya aserrado** → margen contra el tope del 56 % (ADR-358), sobre el
+ *   tope. No es madera física: es cuánto más se puede declarar de esa misma
+ *   materia prima. Medirlo contra el volumen del lote daría siempre «poco»,
+ *   porque el techo son 56 puntos y no 100.
+ */
+export type NivelDeSobra = "sin_sobra" | "poco" | "bastante" | "casi_entero";
+
+export interface SobraDeLote {
+  nivel: NivelDeSobra;
+  /** Los m³ que quedan (rolliza libre, o margen contra el tope). */
+  m3: number;
+  /** Cuánto es eso de lo que podría ser (0-100). */
+  pct: number;
+  /** Rolliza de verdad (abierto) o cupo para declarar (aserrado). */
+  esRolliza: boolean;
+}
+
+/* Los cortes salen de cómo se decide en el patio, no de una escala redonda:
+   por debajo del 2 % no alcanza ni para una tanda —son litros—; hasta el 20 %
+   es un resto; pasado el 60 % el lote está prácticamente sin tocar. */
+const CORTE_NADA_PCT = 2;
+const CORTE_POCO_PCT = 20;
+const CORTE_BASTANTE_PCT = 60;
+
+export function sobraDeLote(lote: LoteAserrio): SobraDeLote {
+  const abierto = lote.status === "abierto";
+  if (abierto) {
+    const m3 = volumenLibre(lote);
+    const base = lote.volumenM3;
+    return { ...nivelPorPct(m3, base), m3, esRolliza: true };
+  }
+  const margen = margenLote(lote);
+  const m3 = margen?.margenM3 ?? 0;
+  return { ...nivelPorPct(m3, margen?.topeM3 ?? 0), m3, esRolliza: false };
+}
+
+function nivelPorPct(m3: number, base: number): { nivel: NivelDeSobra; pct: number } {
+  /* Sin base no hay proporción que calcular: un lote sin volumen declarado no
+     tiene «poco» ni «mucho», tiene nada. */
+  if (!(base > 0) || m3 <= TOLERANCIA_CUADRE_SNIFFS_M3) return { nivel: "sin_sobra", pct: 0 };
+  const pct = Math.round((m3 / base) * 1000) / 10;
+  if (pct < CORTE_NADA_PCT) return { nivel: "sin_sobra", pct };
+  if (pct <= CORTE_POCO_PCT) return { nivel: "poco", pct };
+  if (pct <= CORTE_BASTANTE_PCT) return { nivel: "bastante", pct };
+  return { nivel: "casi_entero", pct };
+}
+
+/** Cómo se lee cada nivel, según lo que el lote tenga para dar. */
+export function etiquetaDeSobra(s: SobraDeLote): { texto: string; ayuda: string } {
+  if (s.esRolliza) {
+    switch (s.nivel) {
+      case "sin_sobra":
+        return { texto: "Sin madera libre", ayuda: "No le quedan piezas para mandar a la sierra." };
+      case "poco":
+        return { texto: `Queda poco · ${s.pct}%`, ayuda: `Le quedan ${s.m3} m³ sin aserrar, el ${s.pct}% del lote.` };
+      case "bastante":
+        return { texto: `Queda bastante · ${s.pct}%`, ayuda: `Le quedan ${s.m3} m³ sin aserrar, el ${s.pct}% del lote.` };
+      default:
+        return { texto: `Casi entero · ${s.pct}%`, ayuda: `Casi no se tocó: ${s.m3} m³ de ${s.pct}% sin aserrar.` };
+    }
+  }
+  switch (s.nivel) {
+    case "sin_sobra":
+      return { texto: "Nada por declarar", ayuda: "Este lote ya llegó al tope de producción que admite su materia prima." };
+    case "poco":
+      return { texto: `Cupo corto · ${s.pct}%`, ayuda: `Todavía admite ${s.m3} m³ más, el ${s.pct}% de su tope.` };
+    case "bastante":
+      return { texto: `Cupo amplio · ${s.pct}%`, ayuda: `Todavía admite ${s.m3} m³ más, el ${s.pct}% de su tope.` };
+    default:
+      return { texto: `Cupo casi entero · ${s.pct}%`, ayuda: `Casi no se declaró: admite ${s.m3} m³ más, el ${s.pct}% de su tope.` };
+  }
+}
