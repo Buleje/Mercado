@@ -28,6 +28,28 @@ import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
  * `buleje-cubicacion-{slug}{sufijo}` — el slug al medio; el de trozas lo lleva
  * al final (`buleje-cubicacion-trozas-{slug}`), que ya costó un botón muerto.
  */
+/**
+ * El slug del tenant activo, para colgar de él una clave de `localStorage`.
+ *
+ * Los dos libros hermanos (ADR-395) viven en el MISMO origen y cambiar de
+ * operación sólo swapea la cookie y recarga: sin el slug en la clave, lo que
+ * quedó a medio cargar en una operación reaparece en la otra. Se lee la cookie
+ * primero —es lo que el servidor acaba de setear al cambiar— y el localStorage
+ * como respaldo.
+ */
+export function tenantDeLaClave(): string {
+  if (typeof document !== "undefined") {
+    const m = document.cookie.match(/(?:^|;\s*)active-tenant-slug=([^;]+)/);
+    if (m) return decodeURIComponent(m[1]!);
+  }
+  try {
+    return localStorage.getItem("active-tenant-slug") ?? "main";
+  } catch {
+    /* modo privado: la clave del tenant por defecto sigue siendo usable */
+    return "main";
+  }
+}
+
 export function slugKey(sufijo = "") {
   let slug = "main";
   try {

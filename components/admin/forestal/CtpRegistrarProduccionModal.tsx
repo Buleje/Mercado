@@ -45,6 +45,7 @@ import {
   type PaqueteBorrador,
 } from "@/lib/forestal/produccion-paquetes";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
+import { tenantDeLaClave } from "@/lib/forestal/sembrar-reparto";
 import { FilaVacia, TablaCtp, TbodyCtp, TheadCtp } from "./ctp-tabla";
 
 /** Lo que se va a consumir: las piezas elegidas del lote. */
@@ -410,7 +411,18 @@ export default function CtpRegistrarProduccionModal({
    * el guardado salió bien y el modal se reabre, el borrador viejo volvería a
    * proponer paquetes que ya están en el libro — declararlos dos veces.
    */
-  const claveBorrador = `buleje-ctp-produccion-borrador:${lote?.id ?? titulo ?? "produccion"}`;
+  /**
+   * ⚠️ La clave lleva el TENANT adelante (auditoría 2026-09-11, crítico).
+   *
+   * Sin lote, la clave salía del título — y el título no es único entre los dos
+   * libros hermanos (ADR-395): «Terminar de declarar la corrida N° 19» existe
+   * en los dos, porque `lineNo` es correlativo POR tenant. Como cambiar de
+   * operación sólo swapea la cookie y recarga la misma URL, el `localStorage`
+   * es el mismo: los paquetes cargados en una operación aparecían precargados
+   * en el acta de la OTRA, y el filtro de recuperación no los ve (descarta por
+   * código ya declarado en ESA corrida, y los del otro libro tienen otros).
+   */
+  const claveBorrador = `buleje-ctp-produccion-borrador:${tenantDeLaClave()}:${lote?.id ?? titulo ?? "produccion"}`;
   const [borradorRecuperado, setBorradorRecuperado] = useState(0);
   const borradorLeido = useRef(false);
   useEffect(() => {
