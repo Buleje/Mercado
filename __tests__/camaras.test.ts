@@ -10,6 +10,7 @@
 import { describe, expect, it } from "vitest";
 import {
   agregarCamara,
+  buscarCapturas,
   agregarCaptura,
   estaCallada,
   horasSinVerse,
@@ -136,5 +137,51 @@ describe("una cámara que dejó de mandar", () => {
 
   it("dice hace cuántas horas se la vio", () => {
     expect(horasSinVerse(camara({ ultimaCapturaEn: "2026-09-10T09:30:00.000Z" }), ahora)).toBe(2.5);
+  });
+});
+
+describe("buscar en lo que se ve", () => {
+  /* El motivo por el que vale la pena que la IA describa cada foto: sin texto,
+     encontrar «el camión rojo del martes» es mirar 200 miniaturas a ojo. */
+  const conLectura = (id: string, descripcion: string, placa: string | null = null): Captura => ({
+    ...captura(id, "2026-09-10T12:00:00.000Z"),
+    lectura: {
+      descripcion,
+      hayPersona: false,
+      hayVehiculo: Boolean(placa),
+      personas: null,
+      placa,
+      confianza: "alta",
+      motivo: null,
+    },
+  });
+
+  const historial = [
+    conLectura("a", "Camión rojo cargado de trozas en el portón", "ABC-123"),
+    conLectura("b", "Patio vacío al atardecer"),
+    conLectura("c", "Dos personas junto a la sierra"),
+  ];
+
+  it("encuentra por lo que dice la descripción", () => {
+    expect(buscarCapturas(historial, "camión").map((c) => c.id)).toEqual(["a"]);
+    expect(buscarCapturas(historial, "personas").map((c) => c.id)).toEqual(["c"]);
+  });
+
+  it("encuentra por placa", () => {
+    expect(buscarCapturas(historial, "abc-123").map((c) => c.id)).toEqual(["a"]);
+  });
+
+  it("no se traba con las tildes ni las mayúsculas", () => {
+    expect(buscarCapturas(historial, "CAMION").map((c) => c.id)).toEqual(["a"]);
+  });
+
+  it("sin texto devuelve todo, no nada", () => {
+    expect(buscarCapturas(historial, "   ")).toHaveLength(3);
+  });
+
+  it("una foto sin lectura todavía no rompe la búsqueda", () => {
+    const sinLeer = [...historial, captura("d", "2026-09-10T13:00:00.000Z")];
+    expect(buscarCapturas(sinLeer, "camión").map((c) => c.id)).toEqual(["a"]);
+    expect(buscarCapturas(sinLeer, "movimiento").map((c) => c.id)).toContain("d");
   });
 });

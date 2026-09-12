@@ -105,7 +105,13 @@ export const CamarasDB = {
   /** Guarda lo que mandó una cámara. La hora la pone el servidor. */
   async registrarCaptura(
     tenantId: string,
-    entrada: { camaraId: string; url: string; evento: EventoCamara; nota?: string | null },
+    entrada: {
+      camaraId: string;
+      url: string;
+      evento: EventoCamara;
+      nota?: string | null;
+      lectura?: Captura["lectura"];
+    },
   ): Promise<{ captura: Captura; descartadas: number }> {
     const captura: Captura = {
       id: `cap_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
@@ -117,6 +123,7 @@ export const CamarasDB = {
          qué pasó. Lo que ella diga de sí misma queda en la nota. */
       at: new Date().toISOString(),
       nota: entrada.nota?.trim() || null,
+      lectura: entrada.lectura ?? null,
     };
     const previas = await PlatformSettingsDB.get<unknown>(CLAVE_CAPTURAS(tenantId));
     const { capturas, descartadas } = agregarCaptura(
@@ -135,6 +142,31 @@ export const CamarasDB = {
       "camara",
     );
     return { captura, descartadas };
+  },
+
+  /**
+   * Guarda lo que la IA leyó de una foto que ya estaba.
+   *
+   * Va aparte del alta porque el análisis ocurre DESPUÉS: la foto se guarda
+   * primero (que entre es lo que no se puede perder) y se lee en segundo plano.
+   * Si el análisis falla o tarda, la foto ya está.
+   */
+  async guardarLectura(
+    tenantId: string,
+    capturaId: string,
+    lectura: Captura["lectura"],
+  ): Promise<boolean> {
+    const previas = await PlatformSettingsDB.get<unknown>(CLAVE_CAPTURAS(tenantId));
+    const todas = Array.isArray(previas) ? (previas as Captura[]) : [];
+    let tocada = false;
+    const next = todas.map((c) => {
+      if (c.id !== capturaId) return c;
+      tocada = true;
+      return { ...c, lectura };
+    });
+    if (!tocada) return false;
+    await PlatformSettingsDB.set(CLAVE_CAPTURAS(tenantId), next, "ia");
+    return true;
   },
 
   /**

@@ -26,7 +26,7 @@ import {
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
-  EVENTO_LABEL, estaCallada, horasSinVerse, type Camara, type Captura,
+  buscarCapturas, EVENTO_LABEL, estaCallada, horasSinVerse, type Camara, type Captura,
 } from "@/lib/camaras/camaras";
 
 const API = "/api/admin/camaras";
@@ -45,6 +45,8 @@ export default function CamarasView() {
   const [guardando, setGuardando] = useState(false);
   const [copiado, setCopiado] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<string>("");
+  /** Buscar por lo que se VE: «camión», una placa, «dos personas». */
+  const [texto, setTexto] = useState("");
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -110,10 +112,10 @@ export default function CamarasView() {
   };
 
   const calladas = useMemo(() => camaras.filter((c) => estaCallada(c)), [camaras]);
-  const visibles = useMemo(
-    () => (filtro ? capturas.filter((c) => c.camaraId === filtro) : capturas),
-    [capturas, filtro],
-  );
+  const visibles = useMemo(() => {
+    const deLaCamara = filtro ? capturas.filter((c) => c.camaraId === filtro) : capturas;
+    return buscarCapturas(deLaCamara, texto);
+  }, [capturas, filtro, texto]);
   const nombreDe = (id: string) => camaras.find((c) => c.id === id)?.nombre ?? "Cámara quitada";
 
   return (
@@ -256,6 +258,13 @@ export default function CamarasView() {
           <CardTitle as="h3" className="mr-auto flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <ImageIcon className="h-4 w-4 text-[var(--accent)]" aria-hidden /> Lo que mandaron ({visibles.length})
           </CardTitle>
+          <input
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder="Buscar: camión, placa, persona…"
+            aria-label="Buscar en lo que se ve en las fotos"
+            className="h-10 w-52 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          />
           {camaras.length > 1 && (
             <select
               value={filtro}
@@ -296,6 +305,21 @@ export default function CamarasView() {
                     <span className="block truncate text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                       {cuando(c.at)} · {EVENTO_LABEL[c.evento]}
                     </span>
+                    {/* Lo que la IA leyó. La placa va con su cartel: es una
+                        LECTURA para confirmar, no un dato declarado. */}
+                    {c.lectura?.descripcion && (
+                      <span className="mt-0.5 block line-clamp-2 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-secondary)]">
+                        {c.lectura.descripcion}
+                      </span>
+                    )}
+                    {c.lectura?.placa && (
+                      <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">
+                        {c.lectura.placa}
+                        <span className="font-sans font-normal text-[var(--text-tertiary)]">
+                          {c.lectura.confianza === "alta" ? "leída" : "a confirmar"}
+                        </span>
+                      </span>
+                    )}
                   </span>
                   <button
                     type="button"

@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { CamarasDB } from "@/lib/db/camaras.db";
 import { normalizarEvento } from "@/lib/camaras/camaras";
+import { leerFotoDeCamara } from "@/lib/ai/camara-vision";
 
 /**
  * POST /api/webhooks/camara?k=<token>[&evento=motion][&nota=...]
@@ -106,7 +107,7 @@ export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) =
     }
 
     const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-    const { descartadas } = await CamarasDB.registrarCaptura(destino.tenantId, {
+    const { captura, descartadas } = await CamarasDB.registrarCaptura(destino.tenantId, {
       camaraId: destino.camara.id,
       url: data.publicUrl,
       evento: normalizarEvento(url.searchParams.get("evento")),
@@ -120,6 +121,24 @@ export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) =
         descartadas,
       });
     }
+
+    /**
+     * La IA lee la foto DESPUÉS de contestar.
+     *
+     * La cámara está en el patio con 4G: dejarla esperando a que un modelo mire
+     * la imagen es tenerla con la radio encendida y la batería corriendo por
+     * algo que a ella no le importa. Responde ya; la descripción y la placa
+     * aparecen cuando estén. Si el análisis falla, la foto ya está guardada —
+     * por eso el `catch` sólo loguea (regla 4 de code-quality: nunca vacío).
+     */
+    void leerFotoDeCamara(destino.tenantId, data.publicUrl)
+      .then((lectura) => CamarasDB.guardarLectura(destino.tenantId, captura.id, lectura))
+      .catch((err) =>
+        logger.error("[camaras.ingesta] no se pudo leer la foto con IA", {
+          error: String(err),
+          capturaId: captura.id,
+        }),
+      );
 
     /* Respuesta mínima: la cámara sólo necesita saber que entró. */
     return NextResponse.json({ ok: true });

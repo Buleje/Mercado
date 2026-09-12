@@ -61,6 +61,20 @@ export interface Captura {
   at: string;
   /** Lo que el aparato haya dicho de sí mismo, tal cual. */
   nota?: string | null;
+  /**
+   * Lo que la IA leyó en la foto. Es una LECTURA, no un hecho declarado: la
+   * placa de acá no entra sola a ningún documento — se ofrece para que una
+   * persona la confirme (ADR-411).
+   */
+  lectura?: {
+    descripcion: string | null;
+    hayPersona: boolean;
+    hayVehiculo: boolean;
+    personas: number | null;
+    placa: string | null;
+    confianza: "alta" | "media" | "baja";
+    motivo: string | null;
+  } | null;
 }
 
 /**
@@ -187,4 +201,23 @@ export function estaCallada(camara: Camara, ahora: Date = new Date()): boolean {
   if (!camara.activa) return false;
   const h = horasSinVerse(camara, ahora);
   return h != null && h >= 24;
+}
+
+/**
+ * Busca en el historial por lo que se VE, no por metadatos.
+ *
+ * Es el único motivo por el que vale la pena que la IA describa cada foto: sin
+ * texto, encontrar «el camión rojo del martes» es mirar doscientas miniaturas
+ * una por una.
+ */
+export function buscarCapturas(capturas: readonly Captura[], texto: string): Captura[] {
+  const q = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  if (!q) return [...capturas];
+  const norm = (v: string | null | undefined) =>
+    (v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return capturas.filter((c) =>
+    [c.lectura?.descripcion, c.lectura?.placa, c.nota, EVENTO_LABEL[c.evento]].some((campo) =>
+      norm(campo).includes(q),
+    ),
+  );
 }
