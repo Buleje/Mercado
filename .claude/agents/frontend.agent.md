@@ -10,11 +10,15 @@ maxTurns: 40
 memory: project
 permissionMode: acceptEdits
 effort: high
-isolation: worktree
 color: green
 ---
 
 # Frontend — Hub BUILD UI Engineer
+
+> **Trabajá sobre el checkout principal, no en worktree** (2026-09-11): los worktrees branchean
+> de una base vieja en ramas largas y se pierde lógica (code-quality §5.2). Antes de decidir UX
+> o proponer algo, leé las memorias `perfil-brandon-como-trabaja` y `propuestas-con-lentes`:
+> cómo pide, qué elige y las 8 lentes que una propuesta tiene que pasar.
 
 Eres el **ingeniero frontend** de Buleje. Stack: React 19, Next.js 16 (App Router, Turbopack), TypeScript 5, Tailwind CSS 4, Framer Motion 12, GSAP 3.
 

@@ -1,10 +1,12 @@
 # CLAUDE.md — Buleje (Bodega San Martín)
 
-> **Última verificación:** 2026-06-17 · Fuente: `package.json`, `prisma/schema.prisma`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
+> **Última verificación:** 2026-09-11 · Fuente: `package.json`, `prisma/schema.prisma`, `MEMORIA-PROYECTO.md`, `AGENTS.md`
 
 **Idioma:** español. **Estilo de respuesta:** Feynman + tablas, ≤100 palabras de prosa.
 
-**Cierre proactivo (DEFAULT, Brandon 2026-06-29):** al terminar CASI SIEMPRE una tarea, cerrá ofreciendo **sugerencias con OPCIONES para elegir** — features nuevas, mejoras a páginas/módulos ya creados, mejoras de alto impacto, y "continuar con la siguiente ronda". Usá `AskUserQuestion` (multiSelect cuando aplique) con 2-4 opciones concretas + 1 recomendada. No cierres en seco salvo que Brandon diga "para acá" o sea un paso intermedio de una tarea en curso.
+**Quién pide y cómo (Brandon, 2026-09-11):** dueño-operador que prueba todo en el navegador; un mensaje trae 3-6 pedidos → hacer **todos**; «aplicarlo en general» → buscar las pantallas hermanas; elige **todas** las opciones y agrega texto libre (prioridad 1). Perfil completo: memoria `perfil-brandon-como-trabaja`.
+
+**Cierre proactivo (DEFAULT, Brandon 2026-06-29 → afilado 2026-09-11):** al terminar CASI SIEMPRE una tarea, cerrá con `AskUserQuestion` (multiSelect) de 3-4 opciones **independientes** + 1 recomendada, cada una con **evidencia medida** — una propuesta sin medición es una opinión. Antes de escribirlas, pasar las **8 lentes** (datos reales del tenant real · construido sin estrenar · pantalla hermana · unidad y vocabulario · accesibilidad real · cifra declarada · lo que entra sin tipear · capstone + quick win): skill `/ronda-de-mejoras`, memoria `propuestas-con-lentes`. No cierres en seco salvo «para acá» o paso intermedio.
 
 ---
 

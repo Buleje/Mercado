@@ -7,6 +7,17 @@ Al arrancar sesión, `session-start-context.mjs` muestra las `pending` en el con
 
 ---
 
+## Aplicadas en sesión 2026-09-11 (reconfiguración: perfil de Brandon + propuestas con lentes)
+
+### [applied] 2026-09-11 — Perfil del usuario (no existía: 291 memorias, 0 de tipo `user`)
+- `perfil-brandon-como-trabaja.md` (cómo escribe, cómo pide, qué elige, cómo reporta bugs) + `propuestas-con-lentes.md` (8 lentes + formato de opción). Referenciadas desde CLAUDE.md (cabecera), `agentic-style.md`, los 8 agent defs y el skill nuevo `ronda-de-mejoras`.
+### [applied] 2026-09-11 — `isolation: worktree` quitado de 4 agent defs (contradecía la lección del 08-03).
+### [applied] 2026-09-11 — `scripts/barrido-modales-anidados.mjs` (detector transitivo; encontró 4 modales detrás) + regla en `ui-components.md`.
+### [applied] 2026-09-11 — IA del producto a la familia Claude 5 con precios verificados en platform.claude.com (Opus 5 $5/$25 · Sonnet 5 $2/$10 · Haiku 4.5 $1/$5 · Fable 5.1 $10/$50).
+### [applied] 2026-09-11 — `agent-memory/` de agentes archivados (data-qa, integrator, observer, optimizer) → `_agents-archive/`.
+### [pending] 2026-09-11 — Tablero de mejoras como Artifact (página privada en claude.ai con el radar y las rondas, para que Brandon lo abra desde el celular). Necesita que él quiera un enlace fuera del panel.
+### [pending] 2026-09-11 — La tira de días en Consumos y Despacho (memoria `tira-de-dias-de-registro`).
+
 ## Aplicadas en sesión 2026-08-19 (auditoría de poder agéntico)
 
 ### [applied] 2026-08-19 — Bug real: auto-learn.mjs y post-edit-dispatcher.mjs truncaban stdin

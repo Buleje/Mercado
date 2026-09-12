@@ -1,6 +1,6 @@
 ---
 name: deploy
-description: Deploy completo de Buleje con verificación pre-deploy integrada. Modos: check (solo gates, sin deployar), quick (lint+tsc), full (gates + commit + push). Usar cuando el usuario quiera deployar, publicar cambios, o pregunte "está listo para deploy", "deploy check", "pre-deploy".
+description: "Deploy completo de Buleje con verificación pre-deploy integrada. Modos: check (solo gates, sin deployar), quick (lint+tsc), full (gates + commit + push). Usar cuando el usuario quiera deployar, publicar cambios, o pregunte 'está listo para deploy', 'deploy check', 'pre-deploy'."
 disable-model-invocation: true
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob

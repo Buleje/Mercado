@@ -9,6 +9,13 @@
 > El diagrama de abajo describe la arquitectura de referencia; el router en la práctica es el
 > hilo principal, y los Workflows (`.claude/workflows/`) siguen siendo la vía para auditorías.
 > Revertir: `git mv .claude/_agents-archive/<x>.agent.md .claude/agents/`.
+>
+> **2026-09-11:** los 4 defs con `isolation: worktree` (frontend/backend/database/tester) lo
+> perdieron — en ramas largas el worktree branchea de una base vieja y se pierde lógica
+> (code-quality §5.2, medido 2026-08-03). Todos los agentes arrancan leyendo las memorias
+> `perfil-brandon-como-trabaja` (cómo pide, qué elige) y `propuestas-con-lentes` (las 8 lentes
+> de una propuesta). El menú de cierre lo arma el skill `ronda-de-mejoras`. Las `agent-memory/`
+> de los agentes archivados se movieron a `_agents-archive/agent-memory/`.
 
 ## Mission
 Build premium software with the quality standards of a senior multi-disciplinary engineering agency.
