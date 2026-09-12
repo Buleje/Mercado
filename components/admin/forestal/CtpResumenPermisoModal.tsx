@@ -423,7 +423,7 @@ export default function CtpResumenPermisoModal({
           : "Elegí un permiso o un lote, o pegá un objetivo para compararlo"
       }
     >
-      <div className="space-y-4 p-5">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         {!grupo ? (
           grupos.length === 0 && lotesConSobra.length === 0 ? (
             <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-4 py-6 text-center text-sm text-[var(--text-tertiary)]">

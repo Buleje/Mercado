@@ -97,7 +97,7 @@ export default function ConfirmarPagoModal({
         </div>
       }
     >
-      <div className="space-y-4 p-5">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
           <label className="block">
             <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">

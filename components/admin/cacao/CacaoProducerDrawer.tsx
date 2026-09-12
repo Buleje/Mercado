@@ -631,7 +631,7 @@ export default function CacaoProducerDrawer({
 
     {payLote && (
       <AdminModal open onClose={() => setPayLote(null)} variant="centered-sm" hideCloseButton>
-        <div className="bg-[var(--surface-raised)] p-5">
+        <div className="bg-[var(--surface-raised)] px-5 py-5 sm:px-6">
           <div className="flex items-start gap-3">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
               <HandCoins className="h-6 w-6" />

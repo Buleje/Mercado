@@ -79,7 +79,7 @@ export default function ImageBankPicker({ open, onOpenChange, onPick }: Props) {
       variant="wide"
     >
           {/* Search + categories filter */}
-          <div className="shrink-0 px-5 py-3 border-b border-[var(--rule-soft)] space-y-2 bg-[var(--surface-raised)] ">
+          <div className="shrink-0 border-b border-[var(--rule-soft)] space-y-2 bg-[var(--surface-raised)] px-5 py-3 sm:px-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
               <input

@@ -218,7 +218,7 @@ export default function TasksTab() {
 
       {/* Modal */}
       <AdminModal open={showForm} onClose={() => setShowForm(false)} title={editId ? "Editar tarea" : "Nueva tarea"} variant="default">
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Título de la tarea" className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
           <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción (opcional)" rows={2} className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

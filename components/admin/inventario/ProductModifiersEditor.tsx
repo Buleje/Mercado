@@ -167,7 +167,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
       variant="wide"
     >
           {/* Body */}
-          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 bg-[var(--surface-canvas)]/50">
+          <div className="flex-1 overflow-y-auto space-y-4 bg-[var(--surface-canvas)]/50 px-5 py-5 sm:px-6">
             {loading && (
               <div className="flex items-center justify-center py-10 gap-2 text-[var(--text-tertiary)]">
                 <Loader2 className="h-5 w-5 animate-spin" />

@@ -20,6 +20,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { ctpGet, invalidarCtp } from "@/lib/forestal/ctp-fetch";
 import { Btn, ModalFooter } from "./ctp-shared";
+import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 
 interface LoteAbierto {
   id: string;
@@ -113,7 +114,7 @@ export default function CtpApartarEnLoteModal({ piezas, onClose, onListo }: CtpA
         </ModalFooter>
       }
     >
-      <div className="space-y-3">
+      <div className={`space-y-3 ${MODAL_BODY}`}>
         {mezcla && (
           <p className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/12 p-3 text-sm font-bold text-[var(--text-primary)]">
             Elegiste {especies.join(", ")}. Un lote lleva una sola especie: separá la selección y hacelo en dos tandas.

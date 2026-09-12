@@ -567,7 +567,7 @@ function CoordenadasModal({ onClose, onCreate, onGoTo }: { onClose: () => void; 
   const I = "h-11 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
     <AdminModal open onClose={onClose} variant="wide" icon={Navigation} title="Mapeo por coordenadas" description="Creá una sección desde tu levantamiento GPS o andá a una coordenada exacta.">
-      <div className="space-y-5 p-5">
+      <div className="space-y-5 px-5 py-5 sm:px-6">
         <div>
           <p className="mb-1 text-sm font-bold text-[var(--text-primary)]">Crear sección por coordenadas</p>
           <p className="mb-2 text-xs text-[var(--text-tertiary)]">Pegá los vértices del terreno, una coordenada por línea: <span className="font-mono">latitud, longitud</span> (ej. de tu GPS). Se cierra el polígono solo.</p>
@@ -621,7 +621,7 @@ function AsignarSeccionModal({ poligono, suggestedCodigo, onClose, onSaved }: { 
   const I = "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
     <AdminModal open onClose={onClose} variant="default" icon={Pencil} title="Nueva sección dibujada" description={`${poligono.length} puntos · ${areaCalc.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ha · ${formatDist(perimCalc)} de perímetro`}>
-      <form onSubmit={submit} className="space-y-4 p-5">
+      <form onSubmit={submit} className="space-y-4 px-5 py-5 sm:px-6">
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm font-bold text-[var(--text-primary)]">Código *<input value={f.codigo} onChange={set("codigo")} placeholder="A-01" className={`mt-1 ${I}`} autoFocus /></label>
           <label className="text-sm font-bold text-[var(--text-primary)]">Nombre<input value={f.nombre} onChange={set("nombre")} placeholder="Lote alto" className={`mt-1 ${I}`} /></label>

@@ -90,7 +90,7 @@ export function GiftCardDetailsModal({ card, onClose, onCancel, onExtend }: Prop
       description="Detalles de la tarjeta regalo"
     >
         {/* Body */}
-        <div className="p-5 space-y-5">
+        <div className="space-y-5 px-5 py-5 sm:px-6">
           <div className="flex items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0">
               <Gift className="h-5 w-5" />

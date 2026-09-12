@@ -180,7 +180,7 @@ export default function GastoEditarModal({
         </div>
       }
     >
-      <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 px-5 py-5 sm:px-6">
         <div className="sm:col-span-2">
           <Campo label="Descripción">
             <input

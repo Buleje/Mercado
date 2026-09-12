@@ -208,7 +208,7 @@ export function ModalShell({
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-5 pt-2">
+        <div className="min-h-0 flex-1 overflow-y-auto pb-5 pt-2 px-5 sm:px-6">
           <div className="space-y-4">{children}</div>
         </div>
         {footer && (

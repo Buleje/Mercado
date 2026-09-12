@@ -315,7 +315,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
       variant="wide"
     >
       {/* Format toggle */}
-      <div className="px-5 pt-4 pb-2 flex gap-2">
+      <div className="pt-4 pb-2 flex gap-2 px-5 py-5 sm:px-6">
         <button
           type="button"
           onClick={() => changeFormat('simple')}

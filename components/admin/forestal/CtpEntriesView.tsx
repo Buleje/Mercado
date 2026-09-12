@@ -308,7 +308,7 @@ function ZonaLibro({
       /* Es una tabla de nueve columnas con totales: a `2xl` se leía en zigzag. */
       className="sm:w-[min(96vw,105rem)] sm:max-w-none"
     >
-      <div className="space-y-3 p-4">{children}</div>
+      <div className="space-y-3 px-5 py-4 sm:px-6">{children}</div>
     </AdminModal>
   );
 }

@@ -366,7 +366,7 @@ export default function LothAnalyticsView({ reloadSignal }: { reloadSignal?: num
         icon={Calculator}
         variant="wide"
       >
-        <div className="space-y-4 p-5">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <CostInput label="Extracción" hint="tala + arrastre + patio" value={costForm.extraccionM3} onChange={(v) => setCostForm((f) => ({ ...f, extraccionM3: v }))} />
             <CostInput label="Transformación" hint="aserrío" value={costForm.transformacionM3} onChange={(v) => setCostForm((f) => ({ ...f, transformacionM3: v }))} />

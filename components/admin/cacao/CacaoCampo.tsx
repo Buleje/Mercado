@@ -178,7 +178,7 @@ function NuevaParcelaModal({ onClose, onSaved }: { onClose: () => void; onSaved:
   const I = "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
     <AdminModal open onClose={onClose} variant="default" icon={Trees} title="Nueva sección" description="Una parte de tu chacra con su propio código (ej. una hectárea).">
-      <form onSubmit={submit} className="space-y-4 p-5">
+      <form onSubmit={submit} className="space-y-4 px-5 py-5 sm:px-6">
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm font-bold text-[var(--text-primary)]">Código *<input value={f.codigo} onChange={set("codigo")} placeholder="A-01" className={`mt-1 ${I}`} autoFocus /></label>
           <label className="text-sm font-bold text-[var(--text-primary)]">Nombre<input value={f.nombre} onChange={set("nombre")} placeholder="Lote alto" className={`mt-1 ${I}`} /></label>

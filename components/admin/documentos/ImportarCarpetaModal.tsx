@@ -300,7 +300,7 @@ export default function ImportarCarpetaModal({
         </div>
       }
     >
-      <div className="space-y-4 p-5">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         {fase === "elegir" && (
           <>
             {/* Soltar la carpeta o elegirla: las dos vías llevan al mismo plan. */}

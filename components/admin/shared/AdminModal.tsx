@@ -102,6 +102,16 @@ interface AdminModalProps {
  */
 export const MODAL_GUTTER = "px-5 sm:px-6";
 
+/**
+ * El cuerpo de un modal: el gutter del modal más su respiro vertical.
+ *
+ * No se aplica solo desde acá —27 modales llevan bandas internas (filtros
+ * pegajosos, sub-headers) cuyo `border-b` tiene que llegar de borde a borde, y
+ * heredarlo se las cortaría—. Va en el cuerpo del llamador, pero sale de la
+ * misma medida que el header y el pie.
+ */
+export const MODAL_BODY = `py-5 ${MODAL_GUTTER}`;
+
 // Brandon 2026-05-27: en CELULAR (<640px) las variantes centradas pasan a
 // "bottom-sheet" (full-width, pegado abajo, esquinas superiores redondeadas) —
 // el patrón móvil estándar, más cómodo que una tarjeta flotante centrada.

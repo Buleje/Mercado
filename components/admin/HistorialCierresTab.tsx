@@ -206,7 +206,7 @@ export default function HistorialCierresTab() {
       {/* Detail modal */}
       <AdminModal open={!!detail} onClose={() => setDetail(null)} title={detail ? `Cierre — ${formatFecha(detail.fecha)}` : ""} variant="default">
         {detail && (
-          <div className="p-5 space-y-4">
+          <div className="space-y-4 px-5 py-5 sm:px-6">
                 {/* Ventas */}
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-primary">Ventas</p>

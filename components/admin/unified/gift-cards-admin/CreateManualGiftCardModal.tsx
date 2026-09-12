@@ -67,7 +67,7 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
 
   return (
     <AdminModal open onClose={onClose} title="Emitir gift card manual">
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 px-5 py-5 sm:px-6">
           <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-xl">
             <div className="h-8 w-8 rounded-lg bg-primary text-white flex items-center justify-center shrink-0">
               <Gift className="h-4 w-4" />

@@ -735,7 +735,7 @@ function BoostModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
       >
-        <header className="flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)]">
+        <header className="flex items-start gap-3 border-b-2 border-[var(--rule-soft)] px-5 py-5 sm:px-6">
           <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-secondary)]/15 text-[var(--brand-secondary)] shrink-0">
             <Sparkles className="h-6 w-6" strokeWidth={2.25} />
           </span>
@@ -796,7 +796,7 @@ function BoostModal({
           </div>
         )}
 
-        <footer className="px-6 py-4 bg-[var(--surface-sunken)] border-t-2 border-[var(--rule-soft)] flex items-center justify-end gap-2">
+        <footer className="bg-[var(--surface-sunken)] border-t-2 border-[var(--rule-soft)] flex items-center justify-end gap-2 px-5 py-4 sm:px-6">
           {existing ? (
             <button
               type="button"

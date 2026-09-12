@@ -113,7 +113,7 @@ export default function UnificarDuplicadosModal({
         </div>
       }
     >
-      <div className="space-y-4 p-5">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         <p className="text-base text-[var(--text-primary)]">
           De cada gasto queda <span className="font-bold">uno solo</span>. Esto no cambia lo que ya
           pagaste: sólo saca las fichas repetidas del catálogo.

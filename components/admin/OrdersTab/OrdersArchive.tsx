@@ -40,7 +40,7 @@ export function OrdersArchive({
   return (
     <AdminModal open={true} onClose={onClose} title="Cancelados y Entregados" variant="wide">
         {/* Filters */}
-        <div className="px-5 py-3 border-b border-[var(--rule-soft)] dark:border-card-border flex flex-col sm:flex-row gap-2">
+        <div className="border-b border-[var(--rule-soft)] dark:border-card-border flex flex-col sm:flex-row gap-2 px-5 py-3 sm:px-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] dark:text-muted pointer-events-none" />
             <input

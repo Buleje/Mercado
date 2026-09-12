@@ -314,7 +314,7 @@ export default function PresupuestoMensualTab() {
         title="Editar Presupuesto"
         variant="default"
       >
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           <div className="space-y-2">
             {draft.map((d, i) => (
               <div key={i} className="flex gap-2 items-end bg-[var(--surface-sunken)] rounded-xl p-3">

@@ -169,7 +169,7 @@ function RegistrarSanidadModal({ parcelas, onClose, onSaved }: { parcelas: Parce
   const I = "h-11 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
     <AdminModal open onClose={onClose} variant="wide" icon={Stethoscope} title="Registrar foco fitosanitario" description="Anotá una plaga o enfermedad detectada en una sección para seguirla.">
-      <form onSubmit={submit} className="space-y-3 p-5">
+      <form onSubmit={submit} className="space-y-3 px-5 py-5 sm:px-6">
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm font-bold text-[var(--text-primary)]">Sección<select value={f.parcelaId} onChange={set("parcelaId")} className={`mt-1 ${I}`}>{parcelas.map((p) => <option key={p.id} value={p.id}>{p.codigo}{p.nombre ? ` · ${p.nombre}` : ""}</option>)}</select></label>
           <label className="text-sm font-bold text-[var(--text-primary)]">Plaga / enfermedad<select value={f.plaga} onChange={set("plaga")} className={`mt-1 ${I}`}>{CACAO_PLAGAS.map((p) => <option key={p.tipo} value={p.tipo}>{p.label}</option>)}</select></label>

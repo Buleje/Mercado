@@ -220,7 +220,7 @@ export function TenantModulesModal({ tenant, onClose, onSaved }: TenantModulesMo
       description={`Plan ${TIER_LABEL[tenantTier]} · forzá módulos ON/OFF solo para esta tienda; el resto hereda la plantilla global.`}
       variant="wide"
     >
-      <div className="flex flex-col gap-4 p-4 sm:p-5 overflow-y-auto">
+      <div className="flex flex-col gap-4 overflow-y-auto px-5 py-4 sm:px-6">
         {/* Barra de estado + acción masiva — Brandon 2026-06-05 */}
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]/60 p-3 space-y-3">
           <div className="flex flex-wrap items-center gap-2">

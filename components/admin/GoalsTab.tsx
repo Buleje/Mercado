@@ -806,7 +806,7 @@ export default function GoalsTab() {
 
       {/* Templates picker modal */}
       <AdminModal open={showTemplates} onClose={() => setShowTemplates(false)} title="¿Qué tipo de meta querés crear?" variant="wide">
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {TEMPLATES.map(t => {
               const auto = pickAutoCurrent(t.category, t.period, autoStats);
@@ -844,7 +844,7 @@ export default function GoalsTab() {
 
       {/* Create/Edit Modal */}
       <AdminModal open={showForm} onClose={() => setShowForm(false)} title={editId ? "Editar meta" : "Nueva meta"} variant="default">
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           <Field label="Nombre de la meta" labelClassName="text-xs font-bold text-[var(--text-secondary)] mb-1 block">
                 <input
                   type="text"

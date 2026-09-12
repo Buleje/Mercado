@@ -19,6 +19,7 @@ import {
   type ReactNode,
 } from "react";
 import { CardTitle } from "@buleje/design-system";
+import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { AlertCircle, AlertTriangle, BarChart3, Check, CheckCircle2, ChevronDown, Clock, Columns3, Copy, ExternalLink, X as XIcon } from "@buleje/design-system/icons";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "@/lib/forestal/ctp-compliance";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
@@ -529,7 +530,9 @@ export function CampoGrid({ children, className = "" }: { children: React.ReactN
  * cuyo cuerpo ya es otro elemento (un `<form>`, un contenedor con su propio
  * layout) y no pueden envolverse en `ModalBody` sin sumar un div.
  */
-export const MODAL_BODY = "px-5 py-5 sm:px-6";
+/* La medida vive en `AdminModal` (misma que el header y el pie); acá sólo se
+   re-exporta para que los modales del Libro la sigan importando de un lugar. */
+export { MODAL_BODY };
 
 /** Cuerpo de un modal del Libro: padding uniforme (el mismo en los 20). */
 export function ModalBody({

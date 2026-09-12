@@ -156,7 +156,7 @@ function BannerModal({
 
   return (
     <AdminModal open onClose={onClose} title={`Banner — ${SECTION_LABELS[section]}`}>
-      <div className="p-5 space-y-4">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         {[
           { key: "title", label: "Título", placeholder: "Ej: Oferta de la semana" },
           { key: "subtitle", label: "Subtítulo", placeholder: "Ej: Hasta 30% de descuento" },

@@ -26,7 +26,7 @@ export function ConfirmDeleteDialog({
 }: ConfirmDeleteDialogProps) {
   return (
     <AdminModal open={open} onClose={onClose} variant="centered-sm" hideCloseButton>
-      <div className="p-5 space-y-4">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         {/* Icon + title + description */}
         <div className="flex items-start gap-4">
           <div className="shrink-0 w-11 h-11 rounded-full bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 flex items-center justify-center">

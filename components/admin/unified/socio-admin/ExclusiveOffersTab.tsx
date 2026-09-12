@@ -120,7 +120,7 @@ function OfferModal({
       onClose={onClose}
       title={offer?.id ? "Editar oferta exclusiva" : "Nueva oferta exclusiva"}
     >
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 px-5 py-5 sm:px-6">
           {error && (
             <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
               <AlertCircle className="h-4 w-4 shrink-0" /> {error}

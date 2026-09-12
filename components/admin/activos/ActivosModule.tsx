@@ -553,7 +553,7 @@ function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: A
     <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex justify-end">
       <button type="button" aria-label="Cerrar" onClick={onClose} className="absolute inset-0 bg-[var(--text-primary)]/50 backdrop-blur-sm" />
       <div className="relative flex h-full w-full max-w-md flex-col bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] motion-safe:animate-[slideInRight_0.25s_ease-out]">
-        <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-4 py-3.5">
+        <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-3.5 sm:px-6">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Receipt className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-extrabold text-[var(--text-primary)]">{asset.name}</p>
@@ -562,12 +562,12 @@ function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: A
           <button type="button" onClick={onContract} aria-label="Contrato" title="Contrato / cotización" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><FileText className="h-4.5 w-4.5" /></button>
           <button type="button" onClick={onClose} aria-label="Cerrar" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-4.5 w-4.5" strokeWidth={2.5} /></button>
         </div>
-        <div className="flex gap-1 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3 pt-2">
+        <div className="flex gap-1 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] pt-2 px-5 sm:px-6">
           {([["movimientos", "Movimientos"], ["mantenimiento", "Mantenimiento"]] as const).map(([v, l]) => (
             <button key={v} type="button" onClick={() => setTab(v)} className={cn("rounded-t-lg px-3 py-2 text-sm font-bold transition-colors", tab === v ? "border-b-2 border-[var(--accent)] text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{l}</button>
           ))}
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto px-5 py-4 sm:px-6">
           {tab === "movimientos" ? (
             !mov ? <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</Center>
             : all.length === 0 ? <p className="py-10 text-center text-sm font-medium text-[var(--text-tertiary)]">Aún no hay movimientos. Registra un alquiler o gasto.</p>

@@ -93,7 +93,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
 
   return (
     <AdminModal open onClose={close} variant="side" icon={m.icon} title={parcela ? `Sección ${parcela.codigo}` : "Sección"} description={parcela?.nombre ?? undefined}>
-      <div className="space-y-4 p-5">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         {parcela && (
           <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
             <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold" style={{ background: m.bg, color: m.fg }}><m.icon className="h-3 w-3" />{m.label}</span>
@@ -284,7 +284,7 @@ function DuplicarParcelaModal({ parcela, onClose, onDone }: { parcela: Parcela; 
   const I = "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
     <AdminModal open onClose={onClose} variant="centered-sm" icon={Copy} title="Duplicar sección" description={`Copia los datos de ${parcela.codigo} en una sección nueva (sin labores ni polígono).`}>
-      <form onSubmit={submit} className="space-y-4 p-5">
+      <form onSubmit={submit} className="space-y-4 px-5 py-5 sm:px-6">
         <label className="block text-sm font-bold text-[var(--text-primary)]">Código de la nueva sección<input value={codigo} onChange={(e) => setCodigo(e.target.value)} className={`mt-1 ${I}`} autoFocus /></label>
         <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">Se copian nombre, área, variedad, año y plantas. Dibujá su polígono y registrá sus labores aparte.</p>
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
@@ -321,7 +321,7 @@ function CosechaAcopioModal({ labor, onClose, onSent }: { labor: Labor; onClose:
   const I = "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
   return (
     <AdminModal open onClose={onClose} variant="centered-sm" icon={Warehouse} title="Enviar cosecha a Acopio" description={`${kg.toLocaleString("es-PE")} kg cosechados el ${fdate(labor.fechaHecho)}.`}>
-      <div className="space-y-4 p-5">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">Se creará un lote en <strong className="text-[var(--text-primary)]">Acopio</strong> con estos {kg} kg y el origen de esta sección (trazabilidad NTP 208.040). Podés ajustarlo luego en Acopio.</p>
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm font-bold text-[var(--text-primary)]">Precio S/ por kg<input type="number" step="0.01" min="0" value={precio} onChange={(e) => setPrecio(e.target.value)} placeholder="opcional" className={`mt-1 ${I}`} autoFocus /></label>

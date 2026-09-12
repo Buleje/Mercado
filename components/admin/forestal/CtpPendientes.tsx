@@ -26,6 +26,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import { resumenPendientes, type Pendiente } from "@/lib/forestal/ctp-pendientes";
 import type { AvisoAnticipado } from "@/lib/forestal/ctp-anticipa";
 import type { CtpPendientesState } from "@/hooks/use-ctp-pendientes";
+import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 
 const TONO: Record<Pendiente["urgencia"], string> = {
   bloquea:
@@ -116,82 +117,84 @@ export default function CtpPendientes({
         description={cargando ? "Revisando…" : falló ? undefined : resumen}
         icon={Bell}
       >
-        {cargando ? (
-          <div className="space-y-2" aria-hidden>
-            {[0, 1, 2].map((i) => <span key={i} className="block h-12 animate-pulse rounded-xl bg-[var(--surface-sunken)]" />)}
-          </div>
-        ) : falló ? (
-          /* Falló la revisión: se dice, no se disfraza de «todo bien». */
-          <p className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-tertiary)]">
-            No se pudo revisar qué falta.
-            <button type="button" onClick={recargar} className="font-bold text-primary hover:underline">
-              Reintentar
-            </button>
-          </p>
-        ) : !hayAlgo ? (
-          <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] px-3 py-3 text-sm font-bold text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]">
-            <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden /> {resumenPendientes(lista)}
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {/* Lo que se viene va ARRIBA: lo de abajo ya pasó y se corrige
-                cuando se pueda; esto tiene fecha de vencimiento. */}
-            {seViene.length > 0 && (
-              <section>
-                <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  <CalendarClock className="h-3.5 w-3.5" aria-hidden /> Se viene
-                </p>
-                <ul className="space-y-2">
-                  {seViene.map((a) => (
-                    <li key={a.clave}>
-                      <button
-                        type="button"
-                        onClick={() => { setAbierto(false); onIr(a.vista); }}
-                        className={`flex w-full items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left transition-colors ${TONO_VIENE[a.gravedad]}`}
-                      >
-                        <CalendarClock className="h-4 w-4 shrink-0" aria-hidden />
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-sm font-bold">{a.titulo}</span>
-                          <span className="block text-sm opacity-80">{a.detalle}</span>
-                        </span>
-                        <ArrowRight className="h-4 w-4 shrink-0 opacity-60" aria-hidden />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {lista.length > 0 && (
-              <section>
-                {seViene.length > 0 && (
+        <div className={MODAL_BODY}>
+          {cargando ? (
+            <div className="space-y-2" aria-hidden>
+              {[0, 1, 2].map((i) => <span key={i} className="block h-12 animate-pulse rounded-xl bg-[var(--surface-sunken)]" />)}
+            </div>
+          ) : falló ? (
+            /* Falló la revisión: se dice, no se disfraza de «todo bien». */
+            <p className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-tertiary)]">
+              No se pudo revisar qué falta.
+              <button type="button" onClick={recargar} className="font-bold text-primary hover:underline">
+                Reintentar
+              </button>
+            </p>
+          ) : !hayAlgo ? (
+            <p className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] px-3 py-3 text-sm font-bold text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]">
+              <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden /> {resumenPendientes(lista)}
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {/* Lo que se viene va ARRIBA: lo de abajo ya pasó y se corrige
+                  cuando se pueda; esto tiene fecha de vencimiento. */}
+              {seViene.length > 0 && (
+                <section>
                   <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                    <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Ahora
+                    <CalendarClock className="h-3.5 w-3.5" aria-hidden /> Se viene
                   </p>
-                )}
-                <ul className="space-y-2">
-                  {lista.map((p) => (
-              <li key={p.clave}>
-                <button
-                  type="button"
-                  onClick={() => { setAbierto(false); onIr(p.vista, p.filtro); }}
-                  className={`flex w-full items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left transition-colors ${TONO[p.urgencia]}`}
-                >
-                  <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-                  <b className="font-mono text-lg tabular-nums">{p.cantidad}</b>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold">{p.titulo}</span>
-                    {p.detalle && <span className="block text-sm opacity-80">{p.detalle}</span>}
-                  </span>
-                  <ArrowRight className="h-4 w-4 shrink-0 opacity-60" aria-hidden />
-                </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
-        )}
+                  <ul className="space-y-2">
+                    {seViene.map((a) => (
+                      <li key={a.clave}>
+                        <button
+                          type="button"
+                          onClick={() => { setAbierto(false); onIr(a.vista); }}
+                          className={`flex w-full items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left transition-colors ${TONO_VIENE[a.gravedad]}`}
+                        >
+                          <CalendarClock className="h-4 w-4 shrink-0" aria-hidden />
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-bold">{a.titulo}</span>
+                            <span className="block text-sm opacity-80">{a.detalle}</span>
+                          </span>
+                          <ArrowRight className="h-4 w-4 shrink-0 opacity-60" aria-hidden />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {lista.length > 0 && (
+                <section>
+                  {seViene.length > 0 && (
+                    <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                      <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Ahora
+                    </p>
+                  )}
+                  <ul className="space-y-2">
+                    {lista.map((p) => (
+                <li key={p.clave}>
+                  <button
+                    type="button"
+                    onClick={() => { setAbierto(false); onIr(p.vista, p.filtro); }}
+                    className={`flex w-full items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left transition-colors ${TONO[p.urgencia]}`}
+                  >
+                    <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+                    <b className="font-mono text-lg tabular-nums">{p.cantidad}</b>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold">{p.titulo}</span>
+                      {p.detalle && <span className="block text-sm opacity-80">{p.detalle}</span>}
+                    </span>
+                    <ArrowRight className="h-4 w-4 shrink-0 opacity-60" aria-hidden />
+                  </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </div>
+          )}
+        </div>
       </AdminModal>
     </>
   );

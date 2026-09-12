@@ -29,7 +29,7 @@ export default function PlantillasModal({
       variant="wide"
       footer={<ModalActions onClose={onClose} onSubmit={() => onGuardar(borrador)} saving={false} label="Guardar" />}
     >
-      <div className="space-y-4 px-6 py-5">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         {TRAMOS.map((t) => (
           <div key={t.id} className="space-y-1.5">
             <div className="flex flex-wrap items-center justify-between gap-2">

@@ -470,7 +470,7 @@ export default function BulkPriceEditorTab() {
       </p>
 
       <AdminModal open={showConfirm} onClose={() => setShowConfirm(false)} title="Confirmar cambios" variant="centered-sm">
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           <p className="text-sm text-[var(--text-secondary)]">
             Se aplicarán <span className="font-semibold text-[var(--accent)]">{changeCount}</span> cambios a productos.
             Esta acción no se puede deshacer.

@@ -182,7 +182,7 @@ export default function VariantCatalogPicker({ productId, onClose, onImported }:
       variant="wide"
     >
           {/* Filtros */}
-          <div className="shrink-0 px-5 py-3 border-b border-[var(--rule-soft)] space-y-2 bg-[var(--surface-raised)] ">
+          <div className="shrink-0 border-b border-[var(--rule-soft)] space-y-2 bg-[var(--surface-raised)] px-5 py-3 sm:px-6">
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}

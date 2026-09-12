@@ -136,7 +136,7 @@ export default function GastoDetalleModal({
         </div>
       }
     >
-      <div className="space-y-4 p-5">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         {/* El monto es lo que se viene a ver: va solo, grande y con su estado
             al lado, en vez de empatado con la categoría en una lista plana. */}
         <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">

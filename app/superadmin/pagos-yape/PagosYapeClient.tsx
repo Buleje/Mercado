@@ -979,7 +979,7 @@ export default function PagosYapeClient(_: Props) {
               className="w-full h-full overflow-y-auto bg-[var(--surface-canvas)]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-[var(--surface-raised)] border-b border-[var(--rule-soft)] px-4 py-3">
+              <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-[var(--surface-raised)] border-b border-[var(--rule-soft)] px-5 py-3 sm:px-6">
                 <p className="font-extrabold text-base text-[var(--text-primary)] truncate">
                   {maskPhone(selected.customerPhone)}
                 </p>

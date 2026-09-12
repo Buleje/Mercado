@@ -145,7 +145,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
               )}
             >
               {/* Header */}
-              <div className="flex items-start justify-between px-6 py-4 border-b border-[var(--rule-soft)]">
+              <div className="flex items-start justify-between border-b border-[var(--rule-soft)] px-5 py-4 sm:px-6">
                 <div className="flex items-start gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                     <Package className="h-5 w-5" />
@@ -239,7 +239,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
               </div>
 
               {/* Notes */}
-              <div className="px-6 py-3 border-t border-[var(--rule-soft)]">
+              <div className="border-t border-[var(--rule-soft)] px-5 py-3 sm:px-6">
                 <Field label="Notas" labelClassName="block text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
                   <input
                     type="text"
@@ -257,7 +257,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
               </div>
 
               {/* Footer */}
-              <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
+              <div className="flex items-center justify-between border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-5 py-4 sm:px-6">
                 <div className="text-sm">
                   <span className="text-[var(--text-tertiary)]">Resumen:</span>{" "}
                   <span className="font-semibold text-[var(--text-primary)]">

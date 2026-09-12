@@ -34,7 +34,7 @@ export default function MetaModal({
       description="Cuánto querés recuperar este mes"
       footer={<ModalActions onClose={onClose} onSubmit={() => onGuardar(Number(valor) || 0)} saving={false} label="Guardar meta" />}
     >
-      <div className="space-y-4 px-6 py-5">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         <Field label="Meta del mes (S/)" hint="Dejalo vacío para no medirte contra nada.">
           <input
             type="number"

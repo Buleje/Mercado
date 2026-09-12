@@ -165,7 +165,7 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 pb-5">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-5 px-5 sm:px-6">
           {!hecho && (
             <div>
               <p className="text-base font-extrabold text-[var(--text-primary)]">Qué vaciar</p>

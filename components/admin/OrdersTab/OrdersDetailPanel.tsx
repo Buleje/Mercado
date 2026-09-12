@@ -408,7 +408,7 @@ export function OrdersDetailPanel({
                     )}
                   </>
                 )}
-                <div className="flex justify-between items-center px-4 py-2.5 border-t border-[var(--rule-soft)]">
+                <div className="flex justify-between items-center border-t border-[var(--rule-soft)] px-5 py-2.5 sm:px-6">
                   <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
                     Total a cobrar
                   </span>
@@ -426,7 +426,7 @@ export function OrdersDetailPanel({
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
               {/* Teléfono */}
               {phone && (
-                <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-[var(--rule-soft)]">
+                <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] px-5 py-2.5 sm:px-6">
                   <Phone className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" strokeWidth={2} />
                   <span className="font-mono text-sm font-semibold text-[var(--text-primary)] flex-1 min-w-0 truncate">
                     {phone}
@@ -473,7 +473,7 @@ export function OrdersDetailPanel({
 
               {/* Notas del cliente — inline si existen */}
               {order.notes && (
-                <div className="px-4 py-2.5 border-t border-[var(--rule-soft)] bg-primary/10">
+                <div className="border-t border-[var(--rule-soft)] bg-primary/10 px-5 py-2.5 sm:px-6">
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                     Nota del cliente
                   </p>

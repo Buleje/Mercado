@@ -642,7 +642,7 @@ function SpeciesPanel({ planId, species, onChange }: { planId: string; species: 
         icon={TreePine}
         variant="wide"
       >
-        <form onSubmit={add} className="space-y-4 p-5">
+        <form onSubmit={add} className="space-y-4 px-5 py-5 sm:px-6">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Especie *"><input value={f.speciesCommon} onChange={(e) => set("speciesCommon", e.target.value)} placeholder="Tornillo" autoFocus className={cls} /></Field>
             <Field label="Volumen autorizado (m³) *"><input type="number" step="0.0001" value={f.volumenAutorizadoM3} onChange={(e) => set("volumenAutorizadoM3", e.target.value)} placeholder="120.5" className={cls} /></Field>
@@ -836,7 +836,7 @@ function CensusPanel({ planId, trees, total, truncado, authorizedSpecies, catego
         icon={TreePine}
         variant="wide"
       >
-        <form onSubmit={add} className="space-y-4 p-5">
+        <form onSubmit={add} className="space-y-4 px-5 py-5 sm:px-6">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Código del árbol *"><input value={f.treeCode} onChange={(e) => set("treeCode", e.target.value)} placeholder="85-TOR" autoFocus className={cls} /></Field>
             <Field label="Especie *"><input value={f.speciesCommon} onChange={(e) => set("speciesCommon", e.target.value)} placeholder="Tornillo" className={cls} /></Field>

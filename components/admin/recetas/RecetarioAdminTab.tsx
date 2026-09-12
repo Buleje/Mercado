@@ -392,7 +392,7 @@ export default function RecetarioAdminTab() {
 
       {/* Delete Confirm */}
       <AdminModal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Eliminar receta" variant="centered-sm">
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
           <p className="text-sm text-[var(--text-secondary)]">Esta accion no se puede deshacer. La receta se eliminara del recetario público.</p>
           <div className="flex gap-2">
             <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-[var(--rule-soft)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)] transition-colors">Cancelar</button>
@@ -409,7 +409,7 @@ export default function RecetarioAdminTab() {
         variant="wide"
       >
           {/* Modal Tabs */}
-          <div className="flex gap-1 px-5 pt-3 border-b border-[var(--rule-soft)]">
+          <div className="flex gap-1 pt-3 border-b border-[var(--rule-soft)] px-5 py-5 sm:px-6">
             {(["info", "ingredientes", "pasos", "preview"] as const).map(t => (
               <button
                 key={t}

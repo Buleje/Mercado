@@ -652,7 +652,7 @@ export default function CacaoBeneficio() {
           const canSubmit = aSecado || (pesoSec != null && pesoSec > 0);
           return (
             <AdminModal open onClose={() => setAdvance(null)} variant="centered-sm" hideCloseButton>
-              <div className="bg-[var(--surface-raised)] p-5">
+              <div className="bg-[var(--surface-raised)] px-5 py-5 sm:px-6">
                 <div className="flex items-start gap-3">
                   <span
                     className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${aSecado ? "bg-[var(--data-info-100)] text-[var(--data-info-700)]" : "bg-[var(--data-success-100)] text-[var(--data-success-700)]"}`}
@@ -800,7 +800,7 @@ export default function CacaoBeneficio() {
 
       {annulId && (
         <AdminModal open onClose={() => setAnnulId(null)} variant="centered-sm" hideCloseButton>
-          <div className="bg-[var(--surface-raised)] p-5">
+          <div className="bg-[var(--surface-raised)] px-5 py-5 sm:px-6">
             <div className="flex items-start gap-3">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--data-error-50)] text-[var(--data-error-600)]">
                 <AlertTriangle className="h-6 w-6" />

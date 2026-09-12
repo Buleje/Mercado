@@ -21,6 +21,7 @@ import AdminModal from "@/components/admin/shared/AdminModal";
 import type { LoteConMadera } from "./ctp-entries-acciones";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
+import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 
 type Orden = "antiguedad" | "volumen";
 
@@ -205,7 +206,7 @@ export default function CtpElegirLoteModal({
           .join(" · ") || "No hay lotes con madera ni corridas por declarar."
       }
     >
-      <div className="space-y-3">
+      <div className={`space-y-3 ${MODAL_BODY}`}>
         {lotes.length > 0 && (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="flex h-11 flex-1 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3">

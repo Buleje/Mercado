@@ -389,7 +389,7 @@ export default function CategoriesEditorTab() {
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
           >
-            <header className="flex items-start gap-3 px-6 py-5 border-b-2 border-[var(--rule-soft)]">
+            <header className="flex items-start gap-3 border-b-2 border-[var(--rule-soft)] px-5 py-5 sm:px-6">
               <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
                 <Tag className="h-6 w-6" strokeWidth={2.25} />
               </span>
@@ -457,7 +457,7 @@ export default function CategoriesEditorTab() {
               )}
             </div>
 
-            <footer className="px-6 py-4 bg-[var(--surface-sunken)] border-t-2 border-[var(--rule-soft)] flex items-center justify-end gap-2">
+            <footer className="bg-[var(--surface-sunken)] border-t-2 border-[var(--rule-soft)] flex items-center justify-end gap-2 px-5 py-4 sm:px-6">
               <button
                 type="button"
                 onClick={() => { setShowNewForm(false); setNewCatName(""); }}

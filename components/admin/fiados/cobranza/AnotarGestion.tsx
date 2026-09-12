@@ -90,7 +90,7 @@ export default function AnotarGestion({
       variant="wide"
       footer={<ModalActions onClose={onClose} onSubmit={guardar} saving={saving} label="Anotar" />}
     >
-      <div className="space-y-4 px-6 py-5">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         <div className="grid grid-cols-2 gap-2">
           {TIPOS_GESTION.map((t) => (
             <button

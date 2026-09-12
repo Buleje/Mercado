@@ -90,7 +90,7 @@ export default function CtpTrozaFichaModal({ trozaId, onClose, onVerOtra }: CtpT
       className="max-w-3xl"
     >
       {!f && !error && (
-        <p className="flex items-center justify-center gap-2 p-10 text-sm text-[var(--text-secondary)]">
+        <p className="flex items-center justify-center gap-2 text-sm text-[var(--text-secondary)] px-5 py-10 sm:px-6">
           <Loader2 className="h-5 w-5 animate-spin" /> Buscando su historia…
         </p>
       )}

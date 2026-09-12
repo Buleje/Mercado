@@ -19,7 +19,7 @@ export function DeleteConfirmModal({ onConfirm, onCancel }: DeleteConfirmModalPr
       title="¿Eliminar pedido?"
       variant="centered-sm"
     >
-      <div className="p-5 space-y-4">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-[var(--data-error-100)] flex items-center justify-center shrink-0">
             <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
@@ -62,7 +62,7 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
       description="Selecciona un motivo o escribe uno personalizado"
       variant="default"
     >
-      <div className="p-5 space-y-3">
+      <div className="space-y-3 px-5 py-5 sm:px-6">
         <div className="grid grid-cols-1 gap-1.5">
           {REJECTION_TEMPLATES.map(t => (
             <button

@@ -80,6 +80,7 @@ import LothRentabilidadPanel from "./LothRentabilidadPanel";
 import type { LothNavTarget } from "@/lib/forestal/loth-compliance";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { LOTH_VISTAS } from "@/lib/admin/subvistas-modulos";
+import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 
 type LothEntry = LothEntryDTO;
 
@@ -1191,7 +1192,7 @@ export default function LothLibroOperaciones() {
         description="No se borran: quedan en el libro con el motivo, como pide SERFOR."
         icon={Ban}
       >
-        <div className="space-y-3">
+        <div className={`space-y-3 ${MODAL_BODY}`}>
           {anularLineas.length > 1 && (
             <p className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3 text-sm text-[var(--text-secondary)]">
               Líneas N° {anularLineas.map((e) => e.lineNo).join(", ")}. El mismo motivo queda asentado en todas.

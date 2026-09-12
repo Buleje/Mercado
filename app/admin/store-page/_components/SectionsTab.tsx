@@ -465,7 +465,7 @@ function TemplatesModal({
         className="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)]">
+        <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] px-5 py-4 sm:px-6">
           <div>
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
               Galería de plantillas
@@ -483,7 +483,7 @@ function TemplatesModal({
             <X className="h-5 w-5" />
           </button>
         </header>
-        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-3 px-5 py-6 sm:px-6">
           {SECTION_TEMPLATES.map((tpl) => (
             <button
               key={tpl.type}

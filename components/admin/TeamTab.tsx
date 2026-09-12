@@ -285,7 +285,7 @@ export default function TeamTab() {
 
       {/* Create / Edit form modal */}
       <AdminModal open={showForm} onClose={() => setShowForm(false)} title={editingId ? "Editar usuario" : "Nuevo usuario"} variant="default">
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 px-5 py-5 sm:px-6">
             {/* Username (only on create) */}
             {!editingId && (
               <Field label="Usuario" labelClassName="text-xs font-semibold text-muted uppercase" className="space-y-1">

@@ -60,7 +60,7 @@ export default function DeclararReprocesoPicker({
       title="¿De qué corrida sale?"
       description={`${desdeTipo} → ${haciaTipo} · ${fmtM3(m3)} m³ · ${especie}`}
     >
-      <div className="space-y-3 px-5 py-4">
+      <div className="space-y-3 px-5 py-4 sm:px-6">
         <p className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
           <span className={`${CHIP} bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]`}>
             {desdeTipo}

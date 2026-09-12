@@ -19,6 +19,7 @@ import { AlertTriangle, Ban, Loader2, Plus, ShieldAlert } from "@buleje/design-s
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 
 export interface LothEspecieFueraModalProps {
   planId: string;
@@ -106,7 +107,7 @@ export default function LothEspecieFueraModal({
       icon={ShieldAlert}
       className="max-w-2xl"
     >
-      <div className="space-y-3">
+      <div className={`space-y-3 ${MODAL_BODY}`}>
         {error && (
           <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
             {error}

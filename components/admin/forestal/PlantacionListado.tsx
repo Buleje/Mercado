@@ -229,7 +229,7 @@ export default function PlantacionListado({
           </div>
         }
       >
-        <div className="space-y-3 p-4">
+        <div className="space-y-3 px-5 py-4 sm:px-6">
           <p className="text-sm text-[var(--text-secondary)]">
             Esta acción borra el registro y todo lo que hayas llenado (titular, predio, bloques, documentos). No se puede deshacer.
           </p>

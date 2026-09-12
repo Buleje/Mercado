@@ -221,7 +221,7 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
   if (done) {
     return (
       <AdminModal open onClose={onPaid} variant="centered-sm" icon={CheckCircle2} title="Pago registrado" description={`Se registró el pago a ${grupo.nombre}.`}>
-        <div className="space-y-4 p-5 text-center">
+        <div className="space-y-4 text-center px-5 py-5 sm:px-6">
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--data-success-50)] text-[var(--data-success-700)]"><CheckCircle2 className="h-7 w-7" /></span>
           <div>
             <p className="text-2xl font-extrabold text-[var(--text-primary)]">S/ {n2(done.aplicado)}</p>
@@ -238,7 +238,7 @@ function PagoLiquidacionModal({ grupo, onClose, onPaid }: { grupo: Grupo; onClos
 
   return (
     <AdminModal open onClose={onClose} variant="centered-sm" icon={HandCoins} title={`Pagar a ${grupo.nombre}`} description={`Saldo pendiente: S/ ${n2(grupo.totalSaldo)} en ${grupo.nLotes} lote${grupo.nLotes === 1 ? "" : "s"}.`}>
-      <div className="space-y-4 p-5">
+      <div className="space-y-4 px-5 py-5 sm:px-6">
         <div>
           <label htmlFor="cacao-liq-monto" className="mb-1 block text-sm font-bold text-[var(--text-primary)]">Monto a pagar (S/)</label>
           <input id="cacao-liq-monto" type="number" inputMode="decimal" step="0.01" min="0" max={grupo.totalSaldo} value={monto} onChange={(e) => setMonto(e.target.value)} className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]" autoFocus />
