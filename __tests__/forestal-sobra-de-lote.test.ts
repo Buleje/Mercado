@@ -8,7 +8,14 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { etiquetaDeSobra, sobraDeLote, type LoteAserrio } from "@/lib/forestal/lotes-aserrio";
+import {
+  etiquetaDeSobra,
+  facetasDeLotes,
+  filtrarLotes,
+  ordenarLotes,
+  sobraDeLote,
+  type LoteAserrio,
+} from "@/lib/forestal/lotes-aserrio";
 
 function loteAbierto(volumenM3: number, libres: number[]): LoteAserrio {
   return {
@@ -111,5 +118,63 @@ describe("sobraDeLote — un lote aserrado mide cupo contra el tope, no madera",
     const s = sobraDeLote(loteAserrado(10, 1));
     expect(s.nivel).toBe("casi_entero");
     expect(etiquetaDeSobra(s).texto).toContain("Cupo casi entero");
+  });
+});
+
+describe("filtros y orden de la pantalla de lotes", () => {
+  const AHORA = new Date("2026-09-12T12:00:00.000Z");
+  /** Un lote abierto con piezas libres y, si se le da, fecha de fin. */
+  const abierto = (code: string, especie: string, libres: number[], finProceso?: string) =>
+    ({
+      ...loteAbierto(libres.reduce((a, b) => a + b, 0) || 10, libres),
+      code,
+      speciesCommon: especie,
+      finProceso: finProceso ?? null,
+    }) as LoteAserrio;
+
+  const LOTES = [
+    abierto("13-2026", "Tornillo", [5], "2026-09-09"), // vencido
+    abierto("9-2026", "Tornillo", [1], "2026-09-14"), // por vencer
+    abierto("15-2026", "Cachimbo", [8], "2026-10-30"), // en fecha
+    abierto("16-2026", "Cachimbo", [], undefined), // sin nada para usar
+  ];
+
+  it("multi-selección: adentro de un eje suma, entre ejes cruza", () => {
+    /* Dos especies elegidas traen las de ambas (OR)… */
+    expect(filtrarLotes(LOTES, { especie: ["Tornillo", "Cachimbo"] }, AHORA)).toHaveLength(4);
+    /* …y el otro eje las acota (AND). */
+    const r = filtrarLotes(LOTES, { especie: ["Tornillo", "Cachimbo"], situacion: ["vencido"] }, AHORA);
+    expect(r.map((l) => l.code)).toEqual(["13-2026"]);
+  });
+
+  it("se puede filtrar por cuánto queda, que es lo que muestra la etiqueta", () => {
+    const r = filtrarLotes(LOTES, { sobra: ["sin_sobra"] }, AHORA);
+    expect(r.map((l) => l.code)).toEqual(["16-2026"]);
+  });
+
+  it("una faceta NO se cuenta a sí misma: si no, no se podría agregar un segundo valor", () => {
+    /* Con «Tornillo» ya elegido, el desplegable de especies tiene que seguir
+       ofreciendo Cachimbo — es el error clásico de las facetas cruzadas. */
+    const f = facetasDeLotes(LOTES, { especie: ["Tornillo"] }, AHORA);
+    expect(f.especie.map((o) => o.value).sort()).toEqual(["Cachimbo", "Tornillo"]);
+    /* Los OTROS ejes sí se cuentan ya filtrados por Tornillo: dos lotes. */
+    expect(f.situacion.reduce((a, o) => a + o.count, 0)).toBe(2);
+  });
+
+  it("el orden por urgencia pone primero lo que se está pasando de fecha", () => {
+    const r = ordenarLotes(LOTES, "urgencia", AHORA);
+    expect(r.map((l) => l.code)).toEqual(["13-2026", "9-2026", "15-2026", "16-2026"]);
+  });
+
+  it("el orden por código lee los números como una persona", () => {
+    /* Alfabéticamente «13-2026» iría antes que «9-2026»; en el patio no. */
+    const r = ordenarLotes(LOTES, "codigo", AHORA);
+    expect(r.map((l) => l.code)).toEqual(["9-2026", "13-2026", "15-2026", "16-2026"]);
+  });
+
+  it("ordenar no muta la lista original", () => {
+    const original = LOTES.map((l) => l.code);
+    ordenarLotes(LOTES, "volumen", AHORA);
+    expect(LOTES.map((l) => l.code)).toEqual(original);
   });
 });

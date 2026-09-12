@@ -535,20 +535,70 @@ export function loteAserrioPorCorrida(
   return mapa;
 }
 
-export interface FiltroLotes {
-  texto?: string;
-  especie?: string;
-  /** `""` o ausente = todos los estados. */
-  estado?: EstadoLoteAserrio | "";
+/**
+ * Cómo está el lote respecto de su fecha de fin de proceso.
+ *
+ * Es lo que el patio pregunta primero cuando hay varios lotes abiertos: «¿cuál
+ * se me está pasando?». Separado del estado porque son ejes distintos — un lote
+ * puede estar abierto y vencido, o abierto y sin fecha.
+ */
+export type SituacionLote = "vencido" | "por_vencer" | "en_fecha" | "sin_fecha";
+
+export function situacionDeLote(lote: LoteAserrio, ahora: Date, ventanaDias = 3): SituacionLote {
+  if (lote.status !== "abierto" || !lote.finProceso) return "sin_fecha";
+  const fin = new Date(lote.finProceso);
+  if (Number.isNaN(fin.getTime())) return "sin_fecha";
+  /* En UTC: `finProceso` es date-only y en Lima la medianoche UTC son las 19:00
+     del día anterior — el mismo off-by-one que ya mordió al aviso de plazos. */
+  const a = new Date(ahora);
+  a.setUTCHours(0, 0, 0, 0);
+  const b = new Date(fin);
+  b.setUTCHours(0, 0, 0, 0);
+  const dias = Math.ceil((b.getTime() - a.getTime()) / 86_400_000);
+  if (dias < 0) return "vencido";
+  return dias <= ventanaDias ? "por_vencer" : "en_fecha";
 }
 
+export const ETIQUETA_SITUACION: Record<SituacionLote, string> = {
+  vencido: "Vencido",
+  por_vencer: "Por vencer",
+  en_fecha: "En fecha",
+  sin_fecha: "Sin fecha de fin",
+};
+
+/**
+ * Los filtros de la pantalla de lotes.
+ *
+ * Multi-selección en todos los ejes, como el resto del libro: adentro de un eje
+ * los valores suman (OR) y entre ejes se cruzan (AND). Se aceptan también los
+ * strings sueltos de antes para no romper a quien todavía los pase.
+ */
+export interface FiltroLotes {
+  texto?: string;
+  especie?: string | readonly string[];
+  /** `""` o ausente = todos los estados. */
+  estado?: EstadoLoteAserrio | "" | readonly string[];
+  /** Cuánto le queda: los mismos niveles que muestra la tarjeta. */
+  sobra?: readonly string[];
+  /** Cómo viene con su fecha de fin. */
+  situacion?: readonly string[];
+}
+
+const comoLista = (v: string | readonly string[] | undefined): string[] =>
+  v == null ? [] : Array.isArray(v) ? [...v].filter(Boolean) : String(v) ? [String(v)] : [];
+
 /** El texto busca por código, especie, nota Y código de pieza: se tipea lo que se tiene delante. */
-export function filtrarLotes(lotes: readonly LoteAserrio[], f: FiltroLotes): LoteAserrio[] {
+export function filtrarLotes(lotes: readonly LoteAserrio[], f: FiltroLotes, ahora = new Date()): LoteAserrio[] {
   const texto = norm(f.texto);
-  const especie = norm(f.especie);
+  const especies = comoLista(f.especie).map((e) => norm(e));
+  const estados = comoLista(f.estado);
+  const sobras = comoLista(f.sobra);
+  const situaciones = comoLista(f.situacion);
   return lotes.filter((l) => {
-    if (f.estado && l.status !== f.estado) return false;
-    if (especie && norm(l.speciesCommon) !== especie) return false;
+    if (estados.length > 0 && !estados.includes(l.status)) return false;
+    if (especies.length > 0 && !especies.includes(norm(l.speciesCommon))) return false;
+    if (sobras.length > 0 && !sobras.includes(sobraDeLote(l).nivel)) return false;
+    if (situaciones.length > 0 && !situaciones.includes(situacionDeLote(l, ahora))) return false;
     if (texto) {
       const campos = [l.code, l.speciesCommon, l.speciesScientific, l.notes];
       const enCampos = campos.some((c) => norm(c).includes(texto));
@@ -778,3 +828,125 @@ export function etiquetaDeSobra(s: SobraDeLote): { texto: string; ayuda: string 
       return { texto: `Cupo casi entero · ${s.pct}%`, ayuda: `Casi no se declaró: admite ${s.m3} m³ más, el ${s.pct}% de su tope.` };
   }
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Orden y facetas de la pantalla de lotes
+ * ────────────────────────────────────────────────────────────────────────── */
+
+export type OrdenLotes = "urgencia" | "codigo" | "volumen" | "sobra" | "espera";
+
+export const ETIQUETA_ORDEN: Record<OrdenLotes, string> = {
+  urgencia: "Lo que corre primero",
+  codigo: "Código de lote",
+  volumen: "Más volumen",
+  sobra: "Más para usar",
+  espera: "Más tiempo esperando",
+};
+
+/** Lo vencido antes que lo que vence pronto, y eso antes que lo demás. */
+const PESO_SITUACION: Record<SituacionLote, number> = {
+  vencido: 0,
+  por_vencer: 1,
+  en_fecha: 2,
+  sin_fecha: 3,
+};
+
+/**
+ * Ordenar los lotes por lo que el patio necesita mirar primero.
+ *
+ * El backend los devuelve por estado y fecha de creación, que es un orden de
+ * base de datos, no de trabajo: con varios lotes abiertos no dice cuál se está
+ * pasando de fecha. `urgencia` es el default por eso.
+ *
+ * Devuelve una copia: ordenar en el lugar mutaría el array del hook y React no
+ * vería el cambio.
+ */
+export function ordenarLotes(
+  lotes: readonly LoteAserrio[],
+  orden: OrdenLotes,
+  ahora = new Date(),
+): LoteAserrio[] {
+  const copia = [...lotes];
+  switch (orden) {
+    case "codigo":
+      /* `localeCompare` con `numeric`: «9-2026» va antes que «13-2026», que es
+         como los lee una persona — alfabéticamente sería al revés. */
+      return copia.sort((a, b) => a.code.localeCompare(b.code, "es", { numeric: true }));
+    case "volumen":
+      return copia.sort((a, b) => b.volumenM3 - a.volumenM3);
+    case "sobra":
+      return copia.sort((a, b) => sobraDeLote(b).m3 - sobraDeLote(a).m3);
+    case "espera": {
+      /* El que hace más que espera: sin fecha de apertura va al final, porque
+         «no sé desde cuándo» no es «desde siempre». */
+      const desde = (l: LoteAserrio) => {
+        const d = new Date(l.fechaApertura);
+        return Number.isNaN(d.getTime()) ? Number.POSITIVE_INFINITY : d.getTime();
+      };
+      return copia.sort((a, b) => desde(a) - desde(b));
+    }
+    default:
+      return copia.sort((a, b) => {
+        const pa = PESO_SITUACION[situacionDeLote(a, ahora)];
+        const pb = PESO_SITUACION[situacionDeLote(b, ahora)];
+        if (pa !== pb) return pa - pb;
+        /* A igual urgencia manda el que tiene más madera parada. */
+        const sa = sobraDeLote(a).m3;
+        const sb = sobraDeLote(b).m3;
+        if (sb !== sa) return sb - sa;
+        return a.code.localeCompare(b.code, "es", { numeric: true });
+      });
+  }
+}
+
+export interface FacetaLotes {
+  value: string;
+  label: string;
+  count: number;
+}
+
+/**
+ * Las opciones de cada filtro, con cuánto pesa cada una.
+ *
+ * **Cada faceta se cuenta sobre el resto de los filtros, no sobre sí misma.**
+ * Si no, al elegir «Tornillo» el desplegable de especies mostraría sólo
+ * Tornillo y no se podría agregar una segunda — el error clásico de las facetas
+ * cruzadas, ya visto en Capacidad.
+ */
+export function facetasDeLotes(
+  lotes: readonly LoteAserrio[],
+  f: FiltroLotes,
+  ahora = new Date(),
+): { especie: FacetaLotes[]; estado: FacetaLotes[]; sobra: FacetaLotes[]; situacion: FacetaLotes[] } {
+  const sin = (eje: keyof FiltroLotes) => filtrarLotes(lotes, { ...f, [eje]: undefined }, ahora);
+
+  const contar = <T extends string>(
+    fuente: readonly LoteAserrio[],
+    clave: (l: LoteAserrio) => T | null,
+    etiqueta: (v: T) => string,
+  ): FacetaLotes[] => {
+    const m = new Map<string, number>();
+    for (const l of fuente) {
+      const k = clave(l);
+      if (k) m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return [...m.entries()]
+      .map(([value, count]) => ({ value, label: etiqueta(value as T), count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "es"));
+  };
+
+  return {
+    especie: contar(sin("especie"), (l) => l.speciesCommon?.trim() || null, (v) => v),
+    estado: contar(sin("estado"), (l) => l.status, (v) => ESTADO_LOTE[v as EstadoLoteAserrio]?.label ?? v),
+    sobra: contar(sin("sobra"), (l) => sobraDeLote(l).nivel, (v) => ETIQUETA_NIVEL_SOBRA[v as NivelDeSobra] ?? v),
+    situacion: contar(sin("situacion"), (l) => situacionDeLote(l, ahora), (v) => ETIQUETA_SITUACION[v as SituacionLote] ?? v),
+  };
+}
+
+/** El nivel, en corto — para el desplegable, donde no cabe la frase entera. */
+export const ETIQUETA_NIVEL_SOBRA: Record<NivelDeSobra, string> = {
+  sin_sobra: "Sin nada para usar",
+  poco: "Queda poco",
+  bastante: "Queda bastante",
+  casi_entero: "Casi entero",
+};

@@ -16,7 +16,7 @@
 
 import { useMemo, useState } from "react";
 import {
-  Boxes,
+  ArrowUpDown,Boxes,
   Gauge,
   Layers,
   Loader2,
@@ -31,11 +31,16 @@ import {
   X,
 } from "@buleje/design-system/icons";
 import CtpKpi from "./CtpKpi";
+import { CampoDeFiltro } from "./ctp-filtros-panel";
 import { libresDelPatio, resumenPatio } from "@/lib/forestal/patio-resumen";
 import type { CtpIngresosFiltroRapido } from "./ctp-shared";
 import {
   ESTADO_LOTE,
   alertasDeLote,
+  ETIQUETA_ORDEN,
+  facetasDeLotes,
+  ordenarLotes,
+  type OrdenLotes,
   filtrarLotes,
   juzgarRendimientoLote,
   pieTablarDe,
@@ -100,8 +105,14 @@ export default function CtpLotesView({
   const { indice: fotos } = useEspeciesFotos();
 
   const [texto, setTexto] = useState("");
-  const [especie, setEspecie] = useState("");
-  const [estado, setEstado] = useState<EstadoLoteAserrio | "">("");
+  const [especie, setEspecie] = useState<string[]>([]);
+  const [estado, setEstado] = useState<string[]>([]);
+  /* Los dos ejes nuevos: cuánto le queda al lote y cómo viene con su fecha. */
+  const [sobra, setSobra] = useState<string[]>([]);
+  const [situacion, setSituacion] = useState<string[]>([]);
+  /* El orden del backend es por estado y creación: un orden de base de datos,
+     no de trabajo. El default es el que dice qué mirar primero. */
+  const [orden, setOrden] = useState<OrdenLotes>("urgencia");
   const [armar, setArmar] = useState(false);
   /** Importar la lista de programaciones del SNIFFS (ADR-398). */
   const [importar, setImportar] = useState(false);
@@ -180,10 +191,17 @@ export default function CtpLotesView({
     () => [...new Set(lotes.map((l) => l.speciesCommon).filter(Boolean))].sort(),
     [lotes],
   );
-  const visibles = useMemo(
-    () => filtrarLotes(lotes, { texto, especie, estado }),
-    [lotes, texto, especie, estado],
+  const filtro = useMemo(
+    () => ({ texto, especie, estado, sobra, situacion }),
+    [texto, especie, estado, sobra, situacion],
   );
+  const visibles = useMemo(
+    () => ordenarLotes(filtrarLotes(lotes, filtro, ahora), orden, ahora),
+    [lotes, filtro, orden, ahora],
+  );
+  /* Cada filtro cuenta sobre los OTROS, no sobre sí mismo: si no, al elegir una
+     especie el desplegable dejaría de ofrecer las demás. */
+  const facetas = useMemo(() => facetasDeLotes(lotes, filtro, ahora), [lotes, filtro, ahora]);
   /** Lo que queda en el patio sin apartar: es la materia prima de un lote nuevo.
    *  Mismo predicado que la pestaña Consumos (`estaLibreEnPatio`): contaba
    *  también las piezas de guías sin recepcionar y prometía madera que el
@@ -200,7 +218,8 @@ export default function CtpLotesView({
   const resolviendo = resolviendoId ? (lotes.find((l) => l.id === resolviendoId) ?? null) : null;
   /** Lo que el libro no dice igual que el SNIFFS (ADR-398). */
   const descuadres = useMemo(() => lotesQueNoCuadran(lotes), [lotes]);
-  const filtrando = Boolean(texto || especie || estado);
+  const filtrando =
+    Boolean(texto) || especie.length > 0 || estado.length > 0 || sobra.length > 0 || situacion.length > 0;
 
   return (
     <div className="space-y-3">
@@ -316,7 +335,7 @@ export default function CtpLotesView({
             label="Lotes abiertos"
             value={String(resumen.abiertos)}
             subValue={
-              estado === "abierto"
+              estado.includes("abierto")
                 ? "Filtrando por estos"
                 : /* Los vacíos se DICEN aparte (ADR-357): un lote sin piezas es un
                    rótulo esperando madera, no una pila en el patio. */
@@ -325,8 +344,12 @@ export default function CtpLotesView({
                   }`
             }
             icon={Boxes}
-            onClick={() => setEstado((e) => (e === "abierto" ? "" : "abierto"))}
-            filtrando={estado === "abierto"}
+            /* La pastilla del KPI alterna ese valor dentro de la lista, no la
+               reemplaza: así se puede tener «abierto» y otro estado a la vez. */
+            onClick={() =>
+              setEstado((e) => (e.includes("abierto") ? e.filter((v) => v !== "abierto") : [...e, "abierto"]))
+            }
+            filtrando={estado.includes("abierto")}
           />,
           <CtpKpi
             key="volumen"
@@ -446,37 +469,81 @@ export default function CtpLotesView({
             className={`${CAMPO} w-full pl-9 pr-3`}
           />
         </label>
-        <select
-          value={especie}
-          onChange={(e) => setEspecie(e.target.value)}
-          aria-label="Filtrar por especie"
-          className={`${CAMPO} px-3`}
-        >
-          <option value="">Todas las especies</option>
-          {opcionesEspecie.map((e) => (
-            <option key={e} value={e}>
-              {e}
-            </option>
-          ))}
-        </select>
-        <select
-          value={estado}
-          onChange={(e) => setEstado(e.target.value as EstadoLoteAserrio | "")}
-          aria-label="Filtrar por estado del lote"
-          className={`${CAMPO} px-3`}
-        >
-          <option value="">Todos los estados</option>
-          <option value="abierto">{ESTADO_LOTE.abierto.label}</option>
-          <option value="consumido">{ESTADO_LOTE.consumido.label}</option>
-          <option value="cerrado">{ESTADO_LOTE.cerrado.label}</option>
-        </select>
+        {/* Multi-selección con el peso de cada opción, como el resto del libro:
+            adentro de un filtro los valores suman y entre filtros se cruzan. Un
+            filtro con una sola opción no se dibuja — ocupaba lugar sin filtrar
+            nada (los 5 lotes del tenant son todos Tornillo). */}
+        {facetas.especie.length > 1 && (
+          <CampoDeFiltro
+            label="especie"
+            placeholder="Todas las especies"
+            value={especie}
+            options={facetas.especie}
+            onChange={setEspecie}
+            className="w-full sm:w-48"
+            textoVacio="Sin especies"
+          />
+        )}
+        {facetas.estado.length > 1 && (
+          <CampoDeFiltro
+            label="estado del lote"
+            placeholder="Todos los estados"
+            value={estado}
+            options={facetas.estado}
+            onChange={setEstado}
+            className="w-full sm:w-44"
+            textoVacio="Sin lotes"
+          />
+        )}
+        {/* Los dos ejes nuevos: cuánto queda —lo que dice la etiqueta de cada
+            tarjeta— y cómo viene con su fecha de fin. */}
+        {facetas.sobra.length > 1 && (
+          <CampoDeFiltro
+            label="cuánto queda"
+            placeholder="Quede lo que quede"
+            value={sobra}
+            options={facetas.sobra}
+            onChange={setSobra}
+            className="w-full sm:w-48"
+            textoVacio="Sin lotes"
+          />
+        )}
+        {facetas.situacion.length > 1 && (
+          <CampoDeFiltro
+            label="fecha de fin"
+            placeholder="Cualquier fecha"
+            value={situacion}
+            options={facetas.situacion}
+            onChange={setSituacion}
+            className="w-full sm:w-48"
+            textoVacio="Sin lotes"
+          />
+        )}
+        <label className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+          <ArrowUpDown className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+          <span className="sr-only sm:not-sr-only">Ordenar</span>
+          <select
+            value={orden}
+            onChange={(e) => setOrden(e.target.value as OrdenLotes)}
+            aria-label="Ordenar los lotes"
+            className={`${CAMPO} px-2`}
+          >
+            {(Object.keys(ETIQUETA_ORDEN) as OrdenLotes[]).map((o) => (
+              <option key={o} value={o}>
+                {ETIQUETA_ORDEN[o]}
+              </option>
+            ))}
+          </select>
+        </label>
         {filtrando && (
           <button
             type="button"
             onClick={() => {
               setTexto("");
-              setEspecie("");
-              setEstado("");
+              setEspecie([]);
+              setEstado([]);
+              setSobra([]);
+              setSituacion([]);
             }}
             className="h-12 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
           >
