@@ -73,6 +73,16 @@ interface AdminModalProps {
   footer?: React.ReactNode;
   className?: string;
   hideCloseButton?: boolean;
+  /**
+   * Este modal se abre DESDE OTRO modal: tiene que quedar por encima.
+   *
+   * Los modales escritos a mano del módulo forestal se pintan en `z-60`,
+   * mientras que un `AdminModal` vive en `z-50`. Abrir uno desde adentro de
+   * otro lo dejaba **detrás**: se montaba, se leía en el DOM y no se veía ni se
+   * podía tocar (el catálogo de especies abierto desde «Producir sin lote» —
+   * Brandon, 2026-09-11: «no funciona y se lagea el modal»).
+   */
+  aboveModals?: boolean;
 }
 
 // Brandon 2026-05-27: en CELULAR (<640px) las variantes centradas pasan a
@@ -123,6 +133,7 @@ export default function AdminModal({
   footer,
   className,
   hideCloseButton,
+  aboveModals = false,
 }: AdminModalProps) {
   const accentVars = useAdminAccent(open);
   return (
@@ -132,6 +143,9 @@ export default function AdminModal({
           className={cn(
             "modal-backdrop",
             "data-[state=open]:animate-modal-overlay-in",
+            /* Un peldaño por encima del modal que lo abrió (z-60), para que el
+               fondo se oscurezca sobre ÉL y no debajo. */
+            aboveModals && "z-[69]",
           )}
         />
         <Dialog.Content
@@ -142,6 +156,7 @@ export default function AdminModal({
             VARIANT_POSITION[variant],
             VARIANT_CLASSES[variant],
             "data-[state=open]:animate-modal-in",
+            aboveModals && "z-[70]",
             className,
           )}
         >

@@ -98,6 +98,11 @@ export default function CtpEspeciesCatalogoModal({
       title="Especies del aserradero"
       description="Las que se ofrecen al cubicar y al cargar el libro. Se guardan para esta planta."
       variant="wide"
+      /* Este gestor se abre casi siempre DESDE otro modal —el cubicador de
+         «Producir sin lote», el de producir con lote, el de cubicar producto—,
+         y esos se pintan en `z-60`. Sin esto quedaba detrás: montado, visible
+         en el DOM y completamente tapado. */
+      aboveModals
       footer={
         <div className="flex w-full items-center gap-2">
           <span className="mr-auto text-xs text-[var(--text-tertiary)]">

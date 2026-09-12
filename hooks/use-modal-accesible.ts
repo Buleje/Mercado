@@ -45,6 +45,26 @@ export function useModalAccesible(
     /* Quién tenía el foco antes: ahí vuelve al cerrar. */
     const previo = document.activeElement as HTMLElement | null;
 
+    /**
+     * ¿Se abrió otro diálogo ENCIMA de éste?
+     *
+     * Un modal que abre otro modal deja de mandar. Sin esto, el de abajo sigue
+     * escuchando el teclado en fase de **captura** —o sea, antes que nadie— y
+     * hace dos cosas visiblemente rotas en el de arriba: Tab devuelve el foco
+     * al de abajo (no se puede tipear en el de arriba) y **Escape cierra el de
+     * abajo**, que es el que tiene el trabajo a medio hacer. Le pasaba al
+     * catálogo de especies abierto desde «Producir sin lote».
+     *
+     * El criterio es el orden del DOM: un diálogo que se abre después se monta
+     * después —un portal de Radix se agrega al final de `body`— así que el
+     * último es el de arriba. Si el último NO es éste, éste se calla.
+     */
+    const hayOtroDialogoEncima = () => {
+      const dialogos = document.querySelectorAll<HTMLElement>('[role="dialog"]');
+      const ultimo = dialogos[dialogos.length - 1];
+      return !!ultimo && ultimo !== caja;
+    };
+
     const enfocables = () =>
       [...caja.querySelectorAll<HTMLElement>(ENFOCABLES)].filter(
         (el) => el.offsetWidth > 0 || el.offsetHeight > 0 || el === document.activeElement,
@@ -58,6 +78,8 @@ export function useModalAccesible(
     });
 
     const onKey = (e: KeyboardEvent) => {
+      /* Hay otro modal arriba: el teclado es suyo. */
+      if (hayOtroDialogoEncima()) return;
       if (e.key === "Escape" && cerrarConEscape && onCerrar) {
         e.stopPropagation();
         onCerrar();
