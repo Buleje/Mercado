@@ -428,6 +428,16 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
         jornadas: await ForestCtpDB.jornadasDeProduccion(auth.tenantId, { desde, hasta }),
       });
     }
+    /* El detalle de las jornadas marcadas: qué salió cada día, por especie y
+       producto. Alimenta el resumen que se abre desde la tira de días — con un
+       día o con varios marcados, que es como se compara una semana. */
+    if (url.searchParams.get("resumenJornadas") === "1") {
+      const dias = (url.searchParams.get("dias") ?? "")
+        .split(",")
+        .map((d) => d.trim())
+        .filter(Boolean);
+      return NextResponse.json(await ForestCtpDB.resumenDeJornadas(auth.tenantId, dias));
+    }
     /* Los códigos de paquete ya usados en la planta: con ellos la pantalla
        propone el siguiente LIBRE (el índice es único por tenant, no por
        corrida — proponer el de al lado es un 422 asegurado). */

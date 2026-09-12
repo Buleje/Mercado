@@ -37,6 +37,10 @@ export default function EnviarLibroModal({
   return (
     // AdminModal: mientras se envía, el cierre queda bloqueado (igual que antes).
     <AdminModal
+      /* El cubicador vive DENTRO de otro modal («Producir sin lote», que se
+         pinta en z-60): sin esto se monta detrás, invisible, y como Radix apaga
+         los clics del resto de la página la pantalla parece colgada. */
+      aboveModals
       open
       onClose={() => { if (!enviando) onCerrar(); }}
       title="Enviar al Libro CTP"

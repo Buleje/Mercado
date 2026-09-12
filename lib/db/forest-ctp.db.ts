@@ -1583,6 +1583,205 @@ export class ForestCtpDB {
       .sort((a, b) => a.dia.localeCompare(b.dia));
   }
 
+  /**
+   * El detalle de una o varias jornadas: qué salió, de qué especie y en qué
+   * producto.
+   *
+   * Pedido de Brandon (2026-09-11): al elegir un día que ya tiene corridas,
+   * poder abrir el **resumen por especie** de ese día — y marcando varios, el
+   * resumen de todos juntos, para comparar semanas o cerrar un mes.
+   *
+   * El corte es por ESPECIE y, dentro, por producto: es como se lee el Cuadro
+   * Resumen del LO-CTP y como pregunta el comprador («¿cuánto tornillo en
+   * tablas sacamos esta semana?»). El PT se deriva del m³ con `PT_POR_M3`, una
+   * sola vez y en el mismo lugar que el resto del libro.
+   *
+   * Los días llegan sueltos, no como rango: marcar el lunes y el jueves de una
+   * semana es un caso normal, y un rango los traería con los tres del medio.
+   */
+  static async resumenDeJornadas(
+    tenantId: string,
+    dias: readonly string[],
+  ): Promise<{
+    dias: string[];
+    corridas: {
+      id: string;
+      lineNo: number;
+      dia: string;
+      especie: string | null;
+      linea: string | null;
+      m3: number;
+      piezas: number;
+      materiaPrimaRef: string | null;
+      paquetes: number;
+    }[];
+    porEspecie: {
+      especie: string;
+      corridas: number;
+      piezas: number;
+      m3: number;
+      pt: number;
+      productos: { producto: string; piezas: number; m3: number; pt: number }[];
+    }[];
+    totales: { corridas: number; piezas: number; m3: number; pt: number };
+  }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const formato = /^\d{4}-\d{2}-\d{2}$/;
+    /* Tope de 31: el caso real es una semana o un mes. Sin tope, una URL armada
+       a mano pediría dos años de golpe. */
+    const limpios = [...new Set(dias.filter((d) => formato.test(d)))].slice(0, 31).sort();
+    const vacio = {
+      dias: limpios,
+      corridas: [],
+      porEspecie: [],
+      totales: { corridas: 0, piezas: 0, m3: 0, pt: 0 },
+    };
+    if (limpios.length === 0) return vacio;
+
+    /* Un OR de días exactos y no un rango: los días marcados pueden no ser
+       consecutivos, y un `gte/lte` traería los del medio que nadie pidió. */
+    const filas = await prisma.forestCtpEntry.findMany({
+      where: {
+        tenantId,
+        section: "produccion",
+        status: "registrado",
+        deletedAt: null,
+        OR: limpios.map((d) => ({
+          entryDate: {
+            gte: new Date(`${d}T00:00:00.000Z`),
+            lt: new Date(new Date(`${d}T00:00:00.000Z`).getTime() + 86_400_000),
+          },
+        })),
+      },
+      select: {
+        id: true,
+        lineNo: true,
+        entryDate: true,
+        speciesCommon: true,
+        lineaProduccion: true,
+        quantity: true,
+        unit: true,
+        pieces: true,
+        materiaPrimaRef: true,
+        paquetes: {
+          where: { deletedAt: null },
+          select: { productType: true, cantidad: true, volumenM3: true },
+        },
+      },
+      orderBy: [{ entryDate: "asc" }, { lineNo: "asc" }],
+      take: 500,
+    });
+    if (filas.length === 0) return vacio;
+
+    const SIN_ESPECIE = "Sin especie declarada";
+    const SIN_PRODUCTO = "Sin producto declarado";
+    const porEspecie = new Map<
+      string,
+      { especie: string; corridas: number; piezas: number; m3: number; productos: Map<string, { piezas: number; m3: number }> }
+    >();
+    const corridas: Awaited<ReturnType<typeof ForestCtpDB.resumenDeJornadas>>["corridas"] = [];
+    let totalPiezas = 0;
+    let totalM3 = 0;
+
+    for (const f of filas) {
+      /* Mismo criterio que `jornadasDeProduccion`: el volumen sólo se suma si
+         está declarado en m³. Convertir otra unidad a ojo inventaría el número
+         que después se lee como producción del día. */
+      const m3 = !f.unit || f.unit === "m3" ? Number(f.quantity ?? 0) : 0;
+      /* Las piezas del asiento pueden venir en cero aunque los paquetes las
+         tengan: la cuenta buena es la de los paquetes, que es el detalle. */
+      const piezasPaquetes = f.paquetes.reduce((a, p) => a + (p.cantidad ?? 0), 0);
+      const piezas = piezasPaquetes > 0 ? piezasPaquetes : (f.pieces ?? 0);
+      const dia = f.entryDate.toISOString().slice(0, 10);
+      const especie = (f.speciesCommon ?? "").trim() || SIN_ESPECIE;
+
+      corridas.push({
+        id: f.id,
+        lineNo: f.lineNo,
+        dia,
+        especie: f.speciesCommon,
+        linea: f.lineaProduccion,
+        m3: Math.round(m3 * 10000) / 10000,
+        piezas,
+        materiaPrimaRef: f.materiaPrimaRef,
+        paquetes: f.paquetes.length,
+      });
+      totalPiezas += piezas;
+      totalM3 += m3;
+
+      const acc =
+        porEspecie.get(especie) ?? { especie, corridas: 0, piezas: 0, m3: 0, productos: new Map() };
+      acc.corridas += 1;
+      acc.piezas += piezas;
+      acc.m3 += m3;
+
+      let detallado = 0;
+      for (const paq of f.paquetes) {
+        const clave = (paq.productType ?? "").trim() || SIN_PRODUCTO;
+        const p = acc.productos.get(clave) ?? { piezas: 0, m3: 0 };
+        p.piezas += paq.cantidad ?? 0;
+        p.m3 += Number(paq.volumenM3 ?? 0);
+        detallado += Number(paq.volumenM3 ?? 0);
+        acc.productos.set(clave, p);
+      }
+      /* Lo declarado que los paquetes NO detallan.
+         El invariante L1 es `Σ paquetes ≤ quantity`: una corrida puede declarar
+         volumen y detallar menos (o nada). Ese resto tiene que tener su renglón
+         —si no, las filas por producto suman menos que el total y la diferencia
+         parece un error de la pantalla en vez de lo que es: volumen declarado
+         sin desglosar. La tolerancia es de un litro, la del aserradero, no la
+         del punto flotante. */
+      const sinDetallar = m3 - detallado;
+      if (sinDetallar > 0.001) {
+        const p = acc.productos.get(SIN_PRODUCTO) ?? { piezas: 0, m3: 0 };
+        /* Las piezas sólo si el asiento las declaró y los paquetes no: contar
+           dos veces las mismas piezas sería peor que no contarlas. */
+        if (f.paquetes.length === 0) p.piezas += piezas;
+        p.m3 += sinDetallar;
+        acc.productos.set(SIN_PRODUCTO, p);
+      }
+      porEspecie.set(especie, acc);
+    }
+
+    const r4 = (n: number) => Math.round(n * 10000) / 10000;
+    /* El PT se redondea UNA vez, en la fila más chica, y para arriba se SUMA.
+       Derivando cada nivel de su propio m³, las cuatro filas de producto daban
+       103 PT bajo un total de 102: cifras contiguas que no cierran enseñan a
+       desconfiar de la tabla entera, aunque la diferencia sea de un pie. */
+    const especies = [...porEspecie.values()]
+      .map((e) => {
+        const productos = [...e.productos.entries()]
+          .map(([producto, v]) => ({
+            producto,
+            piezas: v.piezas,
+            m3: r4(v.m3),
+            pt: Math.round(v.m3 * PT_POR_M3),
+          }))
+          .sort((a, b) => b.m3 - a.m3);
+        return {
+          especie: e.especie,
+          corridas: e.corridas,
+          piezas: e.piezas,
+          m3: r4(e.m3),
+          pt: productos.reduce((a, p) => a + p.pt, 0),
+          productos,
+        };
+      })
+      .sort((a, b) => b.m3 - a.m3);
+
+    return {
+      dias: limpios,
+      corridas,
+      porEspecie: especies,
+      totales: {
+        corridas: filas.length,
+        piezas: totalPiezas,
+        m3: r4(totalM3),
+        pt: especies.reduce((a, e) => a + e.pt, 0),
+      },
+    };
+  }
+
   static async produccionSinMateriaPrima(tenantId: string, limite = 1000) {
     if (!tenantId) throw new Error("tenantId is required");
     const filas = await prisma.forestCtpEntry.findMany({

@@ -298,142 +298,6 @@ export default function PanelEntradaVoz({
             )}
           </section>
 
-          {/* ── 2. CON QUÉ ENTRA ───────────────────────────────────────────
-              Especie, dueño y medidas fijas eran tres controles de formas y
-              alturas distintas apilados en una columna. Son la misma cosa —lo
-              que se le pega a cada pieza que entra— así que van juntos, en
-              línea y del mismo alto. */}
-          <section className="mt-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4">
-            <p className="mb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              Lo que se le pega a cada pieza
-            </p>
-            <div className="flex flex-wrap items-end gap-2">
-              <label className="flex min-w-[10rem] flex-1 flex-col gap-1 sm:max-w-[14rem]">
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Especie</span>
-                <span className="flex h-11 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pr-1">
-                  <select
-                    value={especie}
-                    onChange={(ev) => onEspecieChange(ev.target.value)}
-                    className="h-full min-w-0 flex-1 rounded-xl bg-transparent px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-                  >
-                    <option value="">Sin especie</option>
-                    {especies.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                  {/* El catálogo se edita DONDE se usa: mandar a otra pantalla a
-                      dar de alta una especie en medio de una carga es perderla. */}
-                  {onAbrirEspecies && (
-                    <button
-                      type="button"
-                      onClick={onAbrirEspecies}
-                      aria-label="Especies del aserradero: crear, renombrar, quitar"
-                      title="Especies del aserradero: crear, renombrar, quitar"
-                      className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-                    >
-                      <Settings2 className="h-4 w-4" aria-hidden />
-                    </button>
-                  )}
-                </span>
-              </label>
-
-              <label className="flex min-w-[11rem] flex-1 flex-col gap-1 sm:max-w-[16rem]">
-                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Dueño</span>
-                <span className="flex h-11 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5">
-                  <input
-                    type="text"
-                    list="cub-duenos-datalist"
-                    value={dueno}
-                    onChange={(ev) => onDuenoChange(ev.target.value)}
-                    placeholder="Sin dueño"
-                    aria-label="Dueño de lo que se va a cubicar"
-                    className="min-w-0 flex-1 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[var(--text-tertiary)]"
-                  />
-                  {dueno && (
-                    <button
-                      type="button"
-                      onClick={() => onDuenoChange("")}
-                      aria-label="Quitar el dueño"
-                      className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={onAbrirDuenos}
-                    title="Crear, guardar o borrar dueños de la lista"
-                    aria-label="Gestionar dueños guardados"
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                </span>
-              </label>
-
-              {/* Las medidas fijas SÓLO ocupan lugar cuando hay alguna: un
-                  rótulo «Fijas» vacío enseña a no mirar esa zona. */}
-              {Object.keys(fijas).length > 0 && (
-                <div className="flex min-w-0 flex-col gap-1">
-                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Fijas</span>
-                  <div className="flex h-11 flex-wrap items-center gap-1.5">
-                    {DIMENSIONES.map((d) => {
-                      const valor = fijas[d];
-                      const unidad = d === "largo" ? "pies" : "pulg";
-                      return valor ? (
-                        <span key={d} className="inline-flex h-9 items-center gap-1 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-2 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                          <Lock className="h-3 w-3" aria-hidden />
-                          {d} {valor} {unidad}
-                          <button
-                            type="button"
-                            onClick={() => { const n = { ...fijas }; delete n[d]; onAplicarFijas(n); }}
-                            aria-label={`Soltar el ${d} fijo`}
-                            title={`Soltar el ${d}`}
-                            className="ml-0.5 rounded p-0.5 hover:bg-[var(--surface-raised)]"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </span>
-                      ) : null;
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {duenosConocidos.length > 0 && (
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {duenosConocidos.slice(0, 6).map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => onDuenoChange(d)}
-                    aria-pressed={dueno === d}
-                    className={`rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition ${
-                      dueno === d
-                        ? "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                        : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                    }`}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Última agregada + deshacer (feedback del auto-add) */}
-          {lastAdded && (
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-100)] px-3 py-2">
-              <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-700)]">
-                <Check className="h-4 w-4" />
-                {addedFlash > 1 ? `${addedFlash} piezas · última: ` : "Agregada: "}
-                {lastAdded.espesor}&Prime; × {lastAdded.ancho}&Prime; × {lastAdded.largo} pies{lastAdded.especie ? ` · ${lastAdded.especie}` : ""}
-                <span className="font-mono">= {fmtPt(lastAdded.pieTablar)} PT</span>
-              </span>
-              <button type="button" onClick={onDeshacer} className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95">
-                <RotateCcw className="h-3.5 w-3.5" /> Deshacer
-              </button>
-            </div>
-          )}
         </>
       ) : (
         <p className="rounded-xl bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
@@ -441,11 +305,149 @@ export default function PanelEntradaVoz({
         </p>
       )}
 
+      {/* ── Lo que se le pega + cargala a mano, EN LA MISMA FILA ──────────
+          Brandon 2026-09-11: *«la sección "o cargala a mano" que ponga en la
+          misma fila de "lo que se pega en cada pieza" para que ocupe menos
+          espacio»*. Eran dos tarjetas apiladas con su propio marco y su propio
+          padding: en el modal de producción se comían media pantalla antes de
+          llegar a la tabla, que es donde se mira si lo cargado está bien.
+
+          Se apilan igual por debajo de 1280 px: en una tablet, las dos en
+          línea dejan cada campo en 90 px y se vuelve intipeable.
+
+          La sección «lo que se le pega» salió además de adentro del `supported`
+          de la voz: sin dictado —cualquier navegador que no sea Chrome— no se
+          dibujaba, y entonces la carga a mano no tenía dónde elegir la especie.
+          Se cargaba todo «Sin especie» y nadie veía por qué. */}
+      <div className="mt-3 grid items-start gap-3 xl:grid-cols-[minmax(17rem,24rem)_minmax(0,1fr)]">
+          {/* ── 2. CON QUÉ ENTRA ───────────────────────────────────────────
+            Especie, dueño y medidas fijas eran tres controles de formas y
+            alturas distintas apilados en una columna. Son la misma cosa —lo
+            que se le pega a cada pieza que entra— así que van juntos, en
+            línea y del mismo alto. */}
+        <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4">
+          <p className="mb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            Lo que se le pega a cada pieza
+          </p>
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="flex min-w-[10rem] flex-1 flex-col gap-1 sm:max-w-[14rem]">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Especie</span>
+              <span className="flex h-11 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pr-1">
+                <select
+                  value={especie}
+                  onChange={(ev) => onEspecieChange(ev.target.value)}
+                  className="h-full min-w-0 flex-1 rounded-xl bg-transparent px-2.5 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                >
+                  <option value="">Sin especie</option>
+                  {especies.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+                {/* El catálogo se edita DONDE se usa: mandar a otra pantalla a
+                    dar de alta una especie en medio de una carga es perderla. */}
+                {onAbrirEspecies && (
+                  <button
+                    type="button"
+                    onClick={onAbrirEspecies}
+                    aria-label="Especies del aserradero: crear, renombrar, quitar"
+                    title="Especies del aserradero: crear, renombrar, quitar"
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                  >
+                    <Settings2 className="h-4 w-4" aria-hidden />
+                  </button>
+                )}
+              </span>
+            </label>
+
+            <label className="flex min-w-[11rem] flex-1 flex-col gap-1 sm:max-w-[16rem]">
+              <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Dueño</span>
+              <span className="flex h-11 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5">
+                <input
+                  type="text"
+                  list="cub-duenos-datalist"
+                  value={dueno}
+                  onChange={(ev) => onDuenoChange(ev.target.value)}
+                  placeholder="Sin dueño"
+                  aria-label="Dueño de lo que se va a cubicar"
+                  className="min-w-0 flex-1 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[var(--text-tertiary)]"
+                />
+                {dueno && (
+                  <button
+                    type="button"
+                    onClick={() => onDuenoChange("")}
+                    aria-label="Quitar el dueño"
+                    className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={onAbrirDuenos}
+                  title="Crear, guardar o borrar dueños de la lista"
+                  aria-label="Gestionar dueños guardados"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            </label>
+
+            {/* Las medidas fijas SÓLO ocupan lugar cuando hay alguna: un
+                rótulo «Fijas» vacío enseña a no mirar esa zona. */}
+            {Object.keys(fijas).length > 0 && (
+              <div className="flex min-w-0 flex-col gap-1">
+                <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Fijas</span>
+                <div className="flex h-11 flex-wrap items-center gap-1.5">
+                  {DIMENSIONES.map((d) => {
+                    const valor = fijas[d];
+                    const unidad = d === "largo" ? "pies" : "pulg";
+                    return valor ? (
+                      <span key={d} className="inline-flex h-9 items-center gap-1 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-2 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                        <Lock className="h-3 w-3" aria-hidden />
+                        {d} {valor} {unidad}
+                        <button
+                          type="button"
+                          onClick={() => { const n = { ...fijas }; delete n[d]; onAplicarFijas(n); }}
+                          aria-label={`Soltar el ${d} fijo`}
+                          title={`Soltar el ${d}`}
+                          className="ml-0.5 rounded p-0.5 hover:bg-[var(--surface-raised)]"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {duenosConocidos.length > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              {duenosConocidos.slice(0, 6).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => onDuenoChange(d)}
+                  aria-pressed={dueno === d}
+                  className={`rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold transition ${
+                    dueno === d
+                      ? "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                      : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+
       {/* Carga manual tipo planilla: se tipea, se pasa con → y se cierra con Enter.
           Grid fijo de 2 columnas en celular (predecible, no depende del ancho
           del texto de cada etiqueta como pasaba con flex-wrap) y fila normal
           desde tablet — `sm:` es el mismo corte que usa el resto del DS. */}
-      <div data-grilla={grillaId} className="mt-3 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4">
+      <div data-grilla={grillaId} className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-4">
         <p className="mb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
           O cargala a mano
         </p>
@@ -532,6 +534,24 @@ export default function PanelEntradaVoz({
           />
         </div>
       </div>
+      </div>
+
+      {/* Última agregada + deshacer. Vale igual para el dictado y para la carga
+          a mano: antes vivía dentro del bloque de voz, así que en un navegador
+          sin dictado se cargaba una pieza y no había cómo deshacerla. */}
+      {lastAdded && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-100)] px-3 py-2">
+          <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-700)]">
+            <Check className="h-4 w-4" />
+            {addedFlash > 1 ? `${addedFlash} piezas · última: ` : "Agregada: "}
+            {lastAdded.espesor}&Prime; × {lastAdded.ancho}&Prime; × {lastAdded.largo} pies{lastAdded.especie ? ` · ${lastAdded.especie}` : ""}
+            <span className="font-mono">= {fmtPt(lastAdded.pieTablar)} PT</span>
+          </span>
+          <button type="button" onClick={onDeshacer} className="inline-flex items-center gap-1 rounded-lg border border-[var(--data-success-500)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--data-success-700)] hover:brightness-95">
+            <RotateCcw className="h-3.5 w-3.5" /> Deshacer
+          </button>
+        </div>
+      )}
     </div>
   );
 }

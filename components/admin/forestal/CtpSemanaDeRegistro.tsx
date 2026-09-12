@@ -24,10 +24,11 @@
  * un guard acá le impediría al aserradero anotar su segundo turno.
  */
 
-import { useMemo } from "react";
-import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Loader2 } from "@buleje/design-system/icons";
+import { useMemo, useState } from "react";
+import { AlertTriangle, BarChart3, CalendarDays, ChevronLeft, ChevronRight, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
+import CtpResumenDeJornadasModal from "./CtpResumenDeJornadasModal";
 import {
   correrSemanas,
   diasDeLaSemana,
@@ -39,6 +40,7 @@ import {
   tituloDeLaSemana,
 } from "@/lib/forestal/semana-de-registro";
 import type { JornadaDeProduccion } from "./hooks/use-jornadas-produccion";
+import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 
 interface Props {
   /** El día elegido, `YYYY-MM-DD`. Es la misma fecha que guarda el asiento. */
@@ -51,6 +53,14 @@ interface Props {
   porDia: Map<string, JornadaDeProduccion>;
   cargando?: boolean;
   error?: string | null;
+  /**
+   * Traer las piezas de una corrida ya declarada al lote cubicado.
+   *
+   * Sólo lo pasa quien TIENE un cubicador montado (los modales de producción).
+   * Desde el libro pelado el botón no tendría a dónde mandarlas, así que ahí no
+   * se ofrece.
+   */
+  onCopiarAlCubicado?: (piezas: PiezaCubicada[]) => void;
 }
 
 const BOTON_FLECHA =
@@ -64,6 +74,7 @@ export default function CtpSemanaDeRegistro({
   porDia,
   cargando = false,
   error = null,
+  onCopiarAlCubicado,
 }: Props) {
   const hoy = hoyEnLima();
   const base = esIsoValido(semana) ? semana : hoy;
@@ -78,6 +89,22 @@ export default function CtpSemanaDeRegistro({
      misma jornada dos veces, y vive ACÁ y no en cada modal: la tira es la que
      sabe qué día se eligió y qué tiene ese día. */
   const jornadaElegida = porDia.get(valor);
+
+  /**
+   * Los días MARCADOS para mirar juntos (Brandon, 2026-09-11: *«seleccionar
+   * varias corridas y fechas… tener resumen tipo especie de todos ellos»*).
+   *
+   * Es otra cosa que el día elegido: ese dice a dónde va el registro que se
+   * está cargando, y éstos son los que se quieren leer. Mezclarlos obligaría a
+   * mover el registro para poder comparar dos semanas.
+   *
+   * Sobreviven al cambio de semana a propósito: marcar el lunes, irse a la
+   * semana anterior y marcar otro es justo para lo que sirve.
+   */
+  const [marcados, setMarcados] = useState<string[]>([]);
+  const [resumen, setResumen] = useState<string[] | null>(null);
+  const marcar = (iso: string) =>
+    setMarcados((prev) => (prev.includes(iso) ? prev.filter((d) => d !== iso) : [...prev, iso]));
 
   /** Flechas sobre la tira: mover de a un día es lo que se hace al corregir. */
   const onTeclas = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -160,74 +187,156 @@ export default function CtpSemanaDeRegistro({
           const esHoy = iso === hoy;
           const futuro = iso > hoy;
           return (
-            <button
-              key={iso}
-              type="button"
-              onClick={() => onElegir(iso)}
-              aria-pressed={elegido}
-              title={
-                j
-                  ? `${etiquetaLarga(iso)} — ya tiene ${fmtPt(j.pt)} PT en ${j.corridas} corrida(s)`
-                  : `${etiquetaLarga(iso)} — sin producción anotada`
-              }
-              className={cn(
-                "flex min-h-[4.25rem] flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-1.5 text-center transition-colors",
-                elegido
-                  ? "border-[var(--accent)] bg-primary/10 text-[var(--text-primary)] ring-1 ring-[var(--accent)]"
-                  : j
-                    ? /* Resaltado: el día que YA tiene jornada anotada se ve
-                         distinto de un día vacío antes de leer la cifra. */
-                      "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/12 hover:border-[var(--accent)]"
-                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]",
-                /* El futuro se ofrece igual —se puede programar una jornada—
-                   pero se dibuja apagado: la mayoría de las veces llegar ahí es
-                   haberse pasado de semana. */
-                futuro && !elegido && "opacity-60",
-              )}
-            >
-              <span
+            /* La marca NO va adentro del botón del día: un control dentro de
+               otro control es anidado inválido y el clic se vuelve ambiguo —
+               tocar el casillero elige el día, tocar la marca lo suma al
+               resumen, y son dos decisiones distintas. */
+            <div key={iso} className="relative">
+              <button
+                type="button"
+                onClick={() => onElegir(iso)}
+                aria-pressed={elegido}
+                title={
+                  j
+                    ? `${etiquetaLarga(iso)} — ya tiene ${fmtPt(j.pt)} PT · ${fmtM3(j.m3)} m³ · ${fmtPiezas(j.piezas)} pza en ${j.corridas} corrida(s)`
+                    : `${etiquetaLarga(iso)} — sin producción anotada`
+                }
                 className={cn(
-                  "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide",
-                  esHoy ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-tertiary)]",
+                  "flex min-h-[4.25rem] w-full flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-1.5 text-center transition-colors",
+                  elegido
+                    ? "border-[var(--accent)] bg-primary/10 text-[var(--text-primary)] ring-1 ring-[var(--accent)]"
+                    : j
+                      ? /* Resaltado: el día que YA tiene jornada anotada se ve
+                           distinto de un día vacío antes de leer la cifra. */
+                        "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/12 hover:border-[var(--accent)]"
+                      : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)]",
+                  /* El futuro se ofrece igual —se puede programar una jornada—
+                     pero se dibuja apagado: la mayoría de las veces llegar ahí es
+                     haberse pasado de semana. */
+                  futuro && !elegido && "opacity-60",
                 )}
               >
-                {nombreDelDia(iso)}
-              </span>
-              <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
-                {etiquetaCorta(iso)}
-              </span>
-              {j ? (
-                <span className="font-mono text-[length:var(--ts-2xs)] font-bold tabular-nums leading-tight text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-                  {/* Una corrida chica puede redondear a 0 PT, y «0 PT» se lee
-                      igual que «no hay nada» — que es justo lo contrario de lo
-                      que este casillero tiene que decir. Ahí se cuentan las
-                      corridas, que es el dato que importa: el día ya se cargó. */}
-                  {j.pt >= 1 ? `${fmtPt(j.pt)} PT` : j.corridas === 1 ? "1 corrida" : `${j.corridas} corridas`}
+                <span
+                  className={cn(
+                    "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide",
+                    esHoy ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-tertiary)]",
+                  )}
+                >
+                  {nombreDelDia(iso)}
                 </span>
-              ) : (
-                /* El hueco se reserva igual: sin esto la tira baila de altura
-                   según qué días tengan producción. */
-                <span className="text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">
-                  {esHoy ? "hoy" : "—"}
+                <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
+                  {etiquetaCorta(iso)}
                 </span>
+                {j ? (
+                  <>
+                    <span className="font-mono text-[length:var(--ts-2xs)] font-bold tabular-nums leading-tight text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                      {/* Una corrida chica puede redondear a 0 PT, y «0 PT» se lee
+                          igual que «no hay nada» — que es justo lo contrario de lo
+                          que este casillero tiene que decir. Ahí se cuentan las
+                          corridas, que es el dato que importa: el día ya se cargó. */}
+                      {j.pt >= 1 ? `${fmtPt(j.pt)} PT` : j.corridas === 1 ? "1 corrida" : `${j.corridas} corridas`}
+                    </span>
+                    {/* Las otras dos unidades del mismo hecho: el m³ es el del
+                        papel y las piezas son lo que se cuenta en la pila. Van
+                        chicas — el PT es lo que se mira de lejos. */}
+                    <span className="font-mono text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">
+                      {fmtM3(j.m3)} m³
+                    </span>
+                    {j.piezas > 0 && (
+                      <span className="font-mono text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">
+                        {fmtPiezas(j.piezas)} pza
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  /* El hueco se reserva igual: sin esto la tira baila de altura
+                     según qué días tengan producción. */
+                  <span className="text-[length:var(--ts-2xs)] leading-tight text-[var(--text-tertiary)]">
+                    {esHoy ? "hoy" : "—"}
+                  </span>
+                )}
+              </button>
+              {/* Sólo los días CON producción se pueden marcar: marcar un día
+                  vacío no suma nada a un resumen. */}
+              {j && (
+                <label
+                  className="absolute left-1 top-1 flex cursor-pointer items-center"
+                  title={`Sumar el ${etiquetaLarga(iso)} al resumen`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={marcados.includes(iso)}
+                    onChange={() => marcar(iso)}
+                    aria-label={`Sumar el ${etiquetaLarga(iso)} al resumen por especie`}
+                    className="h-3.5 w-3.5 cursor-pointer accent-[var(--accent)]"
+                  />
+                </label>
               )}
-            </button>
+            </div>
           );
         })}
       </div>
 
       {jornadaElegida && (
-        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-          <span>
+          <span className="min-w-0 flex-1">
             El {etiquetaLarga(valor)} ya tiene{" "}
             <b className="tabular-nums">
               {jornadaElegida.corridas} corrida{jornadaElegida.corridas === 1 ? "" : "s"}
             </b>{" "}
-            declarada{jornadaElegida.corridas === 1 ? "" : "s"} ({fmtM3(jornadaElegida.m3)} m³). Si es
-            otro turno u otra sierra, seguí; si es la misma, la estarías cargando dos veces.
+            declarada{jornadaElegida.corridas === 1 ? "" : "s"} ({fmtM3(jornadaElegida.m3)} m³ ·{" "}
+            {fmtPt(jornadaElegida.pt)} PT). Si es otro turno u otra sierra, seguí; si es la misma, la
+            estarías cargando dos veces.
           </span>
-        </p>
+          {/* Ver QUÉ salió ese día es lo que resuelve la duda: si el resumen
+              dice lo mismo que se está por cargar, es la misma jornada. */}
+          <button
+            type="button"
+            onClick={() => setResumen([valor])}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-current px-2.5 py-1 text-xs font-bold hover:bg-[var(--surface-raised)]"
+          >
+            <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Ver qué salió ese día
+          </button>
+        </div>
+      )}
+
+      {/* Varios días marcados: el resumen de todos juntos. */}
+      {marcados.length > 0 && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 text-sm">
+          <span className="min-w-0 flex-1 text-[var(--text-secondary)]">
+            <b className="tabular-nums">{marcados.length}</b> día
+            {marcados.length === 1 ? "" : "s"} marcado{marcados.length === 1 ? "" : "s"}
+            {/* Se dicen cuáles: marcando en varias semanas, los de las otras no
+                están a la vista y «3 días» no dice cuáles. */}
+            <span className="ml-1 text-[var(--text-tertiary)]">
+              ({[...marcados].sort().map(etiquetaCorta).join(" · ")})
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setMarcados([])}
+            className="shrink-0 rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+          >
+            Limpiar
+          </button>
+          <button
+            type="button"
+            onClick={() => setResumen([...marcados])}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-2.5 py-1 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+          >
+            <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Resumen por especie de{" "}
+            {marcados.length === 1 ? "ese día" : "esos días"}
+          </button>
+        </div>
+      )}
+
+      {resumen && (
+        <CtpResumenDeJornadasModal
+          dias={resumen}
+          onClose={() => setResumen(null)}
+          onCopiarAlCubicado={onCopiarAlCubicado}
+        />
       )}
 
       <p className="mt-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">

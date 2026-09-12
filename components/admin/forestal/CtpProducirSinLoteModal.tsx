@@ -146,6 +146,10 @@ export default function CtpProducirSinLoteModal({
      sobre el mismo dato tienen que contarse lo que pasó. */
   const [semana, setSemana] = useState(fecha);
   const jornadas = useJornadasDeProduccion(semana);
+  /* Piezas que vienen de una corrida ya declarada, camino al cubicador. Se
+     vuelven a `null` apenas entran: si no, cada re-render las agregaría otra
+     vez. */
+  const [aImportar, setAImportar] = useState<PiezaCubicada[] | null>(null);
   const [linea, setLinea] = useState("");
   /* El título habilitante al que se va a vincular esta producción (ADR-402).
      Texto libre con sugerencias: un permiso puede no tener todavía ninguna
@@ -408,13 +412,24 @@ export default function CtpProducirSinLoteModal({
             porDia={jornadas.porDia}
             cargando={jornadas.cargando}
             error={jornadas.error}
+            /* Traer una corrida al cubicado: acá SÍ hay dónde ponerla. Vuelve
+               al paso de cubicar, porque es ahí donde se editan las filas. */
+            onCopiarAlCubicado={(piezas) => {
+              setAImportar(piezas);
+              setPaso("cubicar");
+            }}
           />
         </div>
 
         {/* Cuerpo: el cubicador ENTERO, en su propia libreta */}
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
           {paso === "cubicar" ? (
-            <CubicadorMadera espacio={ESPACIO_PRODUCCION} onLote={setPiezas} />
+            <CubicadorMadera
+              espacio={ESPACIO_PRODUCCION}
+              onLote={setPiezas}
+              piezasAImportar={aImportar}
+              onImportado={() => setAImportar(null)}
+            />
           ) : (
             <div className="mx-auto max-w-3xl space-y-3">
               <div className="grid gap-2 sm:grid-cols-3">

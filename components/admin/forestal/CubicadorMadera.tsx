@@ -220,7 +220,7 @@ function decir(texto: string, rate = 1.5, voiceURI = "", onEco?: (hasta: number,
   }, 0);
 }
 
-export default function CubicadorMadera({ onPresent, espacio = "", onLote }: {
+export default function CubicadorMadera({ onPresent, espacio = "", onLote, piezasAImportar, onImportado }: {
   onPresent?: () => void;
   /**
    * Sufijo de la clave de almacenamiento. `""` = el lote de siempre (la pestaña
@@ -232,6 +232,19 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote }: {
   /** Avisa hacia afuera qué hay cubicado, para los flujos que lo montan adentro
    *  (declarar una producción sin lote, por ejemplo). */
   onLote?: (piezas: PiezaCubicada[]) => void;
+  /**
+   * Piezas que alguien de AFUERA quiere meter en el lote cubicado.
+   *
+   * La puerta que pidió Brandon (2026-09-11) para traer las piezas de una
+   * corrida ya declarada y poder editarlas, agregarles y borrarles acá adentro.
+   * Entran por el mismo camino que el Excel importado —se re-cubican desde las
+   * medidas— así que ninguna fuente ajena impone otra fórmula.
+   *
+   * Se avisa con `onImportado` para que quien las mandó lo ponga en `null`: sin
+   * eso, cualquier re-render volvería a agregarlas.
+   */
+  piezasAImportar?: PiezaCubicada[] | null;
+  onImportado?: (cuantas: number) => void;
 }) {
   const [rows, setRows] = useState<PiezaCubicada[]>([]);
   /* Lo cubicado, hacia afuera: quien monta el cubicador dentro de otro flujo
@@ -567,6 +580,14 @@ export default function CubicadorMadera({ onPresent, espacio = "", onLote }: {
     const piezas = nuevas.reduce((a, p) => a + p.cantidad, 0);
     pushToast({ tono: "success", msg: `${conId.length} ${conId.length === 1 ? "fila importada" : "filas importadas"}`, detail: `${piezas} piezas al lote` });
   }, [pushToast]);
+
+  /* La puerta de afuera: lo que llega por `piezasAImportar` entra una sola vez
+     y se avisa. `agregarVarias` ya re-cubica y avisa por toast. */
+  useEffect(() => {
+    if (!piezasAImportar || piezasAImportar.length === 0) return;
+    agregarVarias(piezasAImportar);
+    onImportado?.(piezasAImportar.length);
+  }, [piezasAImportar, agregarVarias, onImportado]);
 
   // Borra la última fila (comando de voz "elimina el último"). Estable.
   const borrarUltimo = useCallback(() => {

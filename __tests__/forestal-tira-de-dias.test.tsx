@@ -188,3 +188,68 @@ describe("la tira en «Declarar producción» del lote", () => {
     expect(screen.queryByText("Día del registro")).not.toBeInTheDocument();
   });
 });
+
+/* ── Traer una corrida ya declarada al lote cubicado ──────────────────────── */
+
+describe("de los paquetes del libro a filas del cubicador", () => {
+  it("devuelve las medidas a la escala en que se cortan", async () => {
+    const { piezasDesdePaquetes } = await import(
+      "@/components/admin/forestal/CtpResumenDeJornadasModal"
+    );
+    /* Lo que el libro guarda de un 2×8×8: cm y metros con 2 decimales. De
+       vuelta, la cuenta cruda da 8.0052 pies — nadie corta a 8.01. */
+    const piezas = piezasDesdePaquetes(
+      [{ codigo: "P-1", cantidad: 3, espesorCm: 5.08, anchoCm: 20.32, largoM: 2.44 }],
+      "Tornillo",
+    );
+    expect(piezas).toHaveLength(1);
+    expect(piezas[0]).toMatchObject({
+      cantidad: 3,
+      espesor: 2,
+      ancho: 8,
+      largo: 8,
+      uEspesor: "pulg",
+      uLargo: "pies",
+      especie: "Tornillo",
+    });
+  });
+
+  it("una medida que de VERDAD es distinta no se fuerza a la grilla", async () => {
+    const { acercarAEscala } = await import(
+      "@/components/admin/forestal/CtpResumenDeJornadasModal"
+    );
+    expect(acercarAEscala(8.0052, 0.5, 0.05)).toBe(8); // error de redondeo del libro
+    expect(acercarAEscala(1.51, 0.5, 0.05)).toBe(1.5);
+    expect(acercarAEscala(8.25, 0.5, 0.05)).toBe(8.25); // medida real de cuarto de pie
+    /* La tolerancia en pulgadas es la del redondeo del libro (0.002), no un
+       número grande: 2.7 pulgadas es una medida, no un 2¾ mal guardado. */
+    expect(acercarAEscala(2.7, 0.25, 0.02)).toBe(2.7)
+  });
+
+  it("un paquete sin medidas no viaja: una fila 0×0×0 no se edita a nada útil", async () => {
+    const { piezasDesdePaquetes } = await import(
+      "@/components/admin/forestal/CtpResumenDeJornadasModal"
+    );
+    expect(
+      piezasDesdePaquetes(
+        [
+          { codigo: "P-2", cantidad: 5, espesorCm: null, anchoCm: null, largoM: null },
+          { codigo: "P-3", cantidad: 0, espesorCm: 5.08, anchoCm: 20.32, largoM: 2.44 },
+        ],
+        null,
+      ),
+    ).toEqual([]);
+  });
+
+  it("el volumen NO viaja: lo recalcula el cubicador con su propia fórmula", async () => {
+    const { piezasDesdePaquetes } = await import(
+      "@/components/admin/forestal/CtpResumenDeJornadasModal"
+    );
+    const [p] = piezasDesdePaquetes(
+      [{ codigo: "P-4", cantidad: 1, espesorCm: 5.08, anchoCm: 15.24, largoM: 2.44 }],
+      null,
+    );
+    expect(p!.pieTablar).toBe(0);
+    expect(p!.m3).toBe(0);
+  });
+});
