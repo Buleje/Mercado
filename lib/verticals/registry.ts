@@ -85,6 +85,12 @@ const CORE_BASE: ModuleId[] = [
   "support-inbox",
   // Inbox WhatsApp del negocio — universal: toda vertical habla con clientes por WhatsApp
   "whatsapp-inbox",
+  /* Cámaras del local o del patio (ADR-411): universal a propósito. Nació para
+     el aserradero, pero mirar quién entró de noche no es de un rubro — una
+     bodega con una cámara en la puerta usa exactamente la misma pantalla. Si
+     viviera sólo en la vertical maderera, el sidebar la ocultaría en silencio
+     en todas las demás (el filtro vertical no avisa, simplemente no dibuja). */
+  "camaras",
 ];
 
 /** Set extendido — todos los tabs actuales (35). */

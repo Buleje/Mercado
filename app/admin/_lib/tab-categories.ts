@@ -20,6 +20,7 @@
 
 import type { ComponentType } from "react";
 import {
+  Camera,
   Wallet,
   Heart,
   HandCoins,
@@ -198,6 +199,13 @@ export const MODULE_INFO: Partial<
     priority: "medium",
     desc: "Proyección de demanda y apoyo para reposición inteligente.",
     tip: "Anticípate a quiebres y compras urgentes con datos históricos.",
+  },
+  camaras: {
+    icon: Camera,
+    iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    priority: "medium",
+    desc: "Las fotos que manda la cámara del patio o del local, con lectura automática.",
+    tip: "Mirá qué pasó anoche sin abrir la app de la cámara.",
   },
   rendimiento: {
     icon: Gauge,
@@ -583,6 +591,23 @@ export const AGRICULTURA_MODULE: TabCategory = {
   tabs: ["cacao-acopio"],
 };
 
+/**
+ * Cámaras (ADR-411) — su propio renglón en la barra lateral.
+ *
+ * NO va dentro de Forestal aunque hoy mire el patio del aserradero: ese grupo
+ * es de especializaciones, y el sidebar sólo dibuja sus tabs cuando la spec del
+ * tenant está encendida. Cámaras no es una especialización —una bodega también
+ * quiere ver quién entró— así que ahí quedaba renderizada pero invisible.
+ * Un tab suelto se colapsa a enlace directo, que es exactamente lo que se pidió:
+ * entrar de un clic.
+ */
+export const CAMARAS_MODULE: TabCategory = {
+  id: "camaras",
+  label: "Cámaras",
+  icon: Camera,
+  tabs: ["camaras"],
+};
+
 // ── Módulo Config (siempre visible desde dropdown de usuario) ────────────────
 export const CONFIG_MODULE: TabCategory = {
   id: "config",
@@ -668,6 +693,8 @@ export const TAB_CATEGORIES: TabCategory[] = [
   // Canales — por dónde vende
   byId("marketplace-ops"),
   TIENDA_MODULE,
+  // Lo que pasa en el local o el patio
+  CAMARAS_MODULE,
   // Especializaciones por vertical
   FORESTAL_MODULE,
   AGRICULTURA_MODULE,

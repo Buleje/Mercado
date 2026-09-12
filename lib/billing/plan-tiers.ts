@@ -252,6 +252,9 @@ export const PLAN_ENTERPRISE: PlanDefinition = {
     "guias-remision",
     "notas-credito",
     "facturacion",
+    // Cámaras del patio o del local (ADR-411): la foto de lo que pasó, con su
+    // hora. Va en Pro y no en Básico porque cuesta storage y lectura con IA.
+    "camaras",
     // Promociones, scoring, prestamos
     "promociones",
     "prestamos",

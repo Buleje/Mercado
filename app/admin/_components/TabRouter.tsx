@@ -66,6 +66,7 @@ const ForestLotesModule         = dynamic(() => import("@/components/admin/fores
 // ADR-125 — Especialización forestal Títulos Habilitantes (LO-TH)
 const LothLibroOperaciones      = dynamic(() => import("@/components/admin/forestal/LothLibroOperaciones"), { loading: TabSpinner });
 const ForestalHerramientas      = dynamic(() => import("@/components/admin/forestal/ForestalHerramientas"), { loading: TabSpinner });
+const CamarasModule             = dynamic(() => import("@/components/admin/CamarasModule"), { loading: TabSpinner });
 const ForestalTramites          = dynamic(() => import("@/components/admin/forestal/ForestalTramites"), { loading: TabSpinner });
 // ADR-128 — Especialización agrícola: Acopio & Beneficio de Cacao
 const CacaoAcopio               = dynamic(() => import("@/components/admin/cacao/CacaoAcopio"), { loading: TabSpinner });
@@ -231,6 +232,7 @@ export function TabRouter({
   if (tab === "loth-libro-operaciones") return <LothLibroOperaciones />;
   if (tab === "forestal-herramientas") return <ForestalHerramientas />;
   if (tab === "forestal-tramites") return <ForestalTramites />;
+  if (tab === "camaras") return <CamarasModule />;
   if (tab === "cacao-acopio") return <CacaoAcopio />;
   if (tab === "scoring")   return <FinanzasModule key="scoring" initialTab="scoring" />;
   if (tab === "devoluciones-proveedor") return <ComprasModule key="devoluciones-proveedor" initialTab="devoluciones" />;
