@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { toast } from "sonner";
 import { X, Package, Check, Loader2 } from "@buleje/design-system/icons";
@@ -31,6 +32,14 @@ interface Props {
  * Usado por el botón "Generar OC" en InventarioCharts (stockout section).
  */
 export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: open });
   const [selection, setSelection] = useState<Map<string, number>>(new Map());
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -133,7 +142,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
               "fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none",
             )}
           >
-            <div
+            <div ref={cajaRef} tabIndex={-1}
               role="dialog"
               aria-modal="true"
               aria-labelledby="reorder-title"

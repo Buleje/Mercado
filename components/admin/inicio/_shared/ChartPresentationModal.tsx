@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useRef, useState, type ReactNode } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { createPortal } from "react-dom";
 // html-to-image (~35KB gz) lazy-loaded — solo se descarga cuando el usuario
 // exporta o copia. AICommandCenter ya usa el mismo patron.
@@ -67,6 +68,10 @@ export function ChartPresentationModal({
   const hasNext = activeIdx >= 0 && activeIdx < items.length - 1;
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(dialogRef, { onCerrar: onClose, cerrarConEscape: false });
   const chartAreaRef = useRef<HTMLDivElement | null>(null);
   const wheelLockRef = useRef(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -281,6 +286,7 @@ export function ChartPresentationModal({
   return createPortal(
     <div
       ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label={`Presentación: ${activeItem.title}`}

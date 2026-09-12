@@ -1,7 +1,8 @@
 "use client";
 import { CardTitle, StatCard } from "@buleje/design-system";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { Field } from "@/components/admin/shared/Field";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCoupons } from "@/components/admin/marketplace/hooks/use-marketplace-coupons";
 import { TableSkeleton } from "@/components/admin/marketplace/shared";
@@ -220,6 +221,11 @@ function NewCouponModal({
   onClose: () => void;
   onCreate: () => void;
 }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
   const isPercent = form.discountType === "percent";
   const previewValue = form.discountValue
     ? isPercent
@@ -238,7 +244,7 @@ function NewCouponModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div
+      <div ref={cajaRef} tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
         role="dialog"

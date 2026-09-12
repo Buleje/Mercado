@@ -16,7 +16,8 @@
  * Persistencia: PUT /api/store-page/sections — guarda en TenantStorePage.
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Plus,
   Eye,
@@ -453,8 +454,11 @@ function TemplatesModal({
   onClose: () => void;
   onPick: (tpl: SectionTemplate) => void;
 }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label="Elegí una plantilla"

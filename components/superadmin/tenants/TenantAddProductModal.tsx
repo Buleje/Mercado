@@ -10,7 +10,8 @@
  * Diseño minimalista — campos esenciales arriba, modifier groups colapsable.
  */
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { X, Plus, Trash2, Loader2, CheckCircle2, Package } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -39,6 +40,11 @@ export default function TenantAddProductModal({
   tenantName,
   onCreated,
 }: Props) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
+  const cajaRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState<number>(0);
@@ -50,6 +56,7 @@ export default function TenantAddProductModal({
   const [isPrepared, setIsPrepared] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
   const [saving, setSaving] = useState(false);
+  useModalAccesible(cajaRef, { onCerrar: saving ? undefined : onClose, activo: open });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -147,7 +154,7 @@ export default function TenantAddProductModal({
   };
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label={`Agregar producto a ${tenantName}`}

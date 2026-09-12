@@ -9,7 +9,8 @@
  * quedaba así para siempre.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { AlertTriangle, Pencil } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -28,8 +29,13 @@ export default function EditarNotasModal({
   onClose: () => void;
   onGuardado: () => void;
 }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
   const [notas, setNotas] = useState(notasActuales ?? "");
   const [saving, setSaving] = useState(false);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: saving ? undefined : onClose, cerrarConEscape: false });
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -64,7 +70,7 @@ export default function EditarNotasModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div
+      <div ref={cajaRef} tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

@@ -13,7 +13,8 @@
  * Devuelve el File listo para subir vía onApply(file).
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import Cropper, { type Area } from "react-easy-crop";
 import {
   ZoomIn,
@@ -95,6 +96,11 @@ export default function ImageCropEditor({
   onApply,
   onCancel,
 }: ImageCropEditorProps) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onCancel, cerrarConEscape: false });
   const [crop, setCrop] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -129,7 +135,7 @@ export default function ImageCropEditor({
   if (!open || !srcDataUrl) return null;
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
       role="dialog"
       aria-modal="true"

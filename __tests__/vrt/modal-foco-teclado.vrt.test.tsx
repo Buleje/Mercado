@@ -12,9 +12,10 @@
  * Correr con `npm run test:vrt`.
  */
 import "@/app/globals.css";
+import { useCallback, useState } from "react";
 import { expect, test, vi } from "vitest";
 import { render } from "vitest-browser-react";
-import { userEvent } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 import LothCoordsModal from "@/components/admin/forestal/LothCoordsModal";
 
 /** Lo enfocable de verdad, en el orden en que lo tabula el navegador. */
@@ -80,4 +81,35 @@ test("Escape cierra", async () => {
 
   await userEvent.keyboard("{Escape}");
   expect(onClose).toHaveBeenCalled();
+});
+
+function PantallaConBoton() {
+  const [abierto, setAbierto] = useState(false);
+  /* Estable a propósito: con una flecha inline `onCerrar` cambia de identidad
+     en cada render y el efecto del hook se re-ejecuta solo, tapando el bug que
+     este test tiene que ver. */
+  const cerrar = useCallback(() => setAbierto(false), []);
+  return (
+    <>
+      <button type="button" data-testid="abrir" onClick={() => setAbierto(true)}>
+        Cargar coordenadas
+      </button>
+      <LothCoordsModal open={abierto} zonaDefault="18" onClose={cerrar} onApply={() => {}} />
+    </>
+  );
+}
+
+test("si se abre DESPUÉS de montado, el foco entra igual", async () => {
+  /* El caso que rompe de verdad, y el que se parece a la pantalla: el padre
+     deja el modal montado y sólo le cambia `open`. El efecto del hook corre
+     una vez —con el ref todavía vacío— y sin `activo` no vuelve a mirar
+     cuando el diálogo aparece. */
+  render(<PantallaConBoton />);
+  expect(document.querySelector('[role="dialog"]')).toBeNull();
+
+  await page.getByTestId("abrir").click();
+
+  await vi.waitFor(() => {
+    expect(dialogo().contains(document.activeElement)).toBe(true);
+  });
 });

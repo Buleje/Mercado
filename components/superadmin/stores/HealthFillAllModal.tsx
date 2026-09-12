@@ -17,7 +17,8 @@
  * Auto-load del snapshot actual al abrir. Save batch al cerrar.
  */
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X,
@@ -123,8 +124,16 @@ export default function HealthFillAllModal({
   tenantName,
   onSaved,
 }: HealthFillAllModalProps) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
+  const cajaRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: saving ? undefined : onClose, cerrarConEscape: false, activo: open });
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [openSections, setOpenSections] = useState<Set<string>>(
     new Set(["identidad", "pagos", "comercial"]),
@@ -332,7 +341,7 @@ export default function HealthFillAllModal({
   if (!open) return null;
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label={`Rellenar datos de ${tenantName}`}

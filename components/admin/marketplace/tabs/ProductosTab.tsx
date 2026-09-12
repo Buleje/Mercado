@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { DataTable, SectionTitle } from "@buleje/design-system";
 import { AlertCircle, Check, CheckCircle, ExternalLink, Eye, EyeOff, ImageOff, Megaphone, Minus, Package, PackageX, Pencil, RefreshCw, Search, Sparkles, TrendingDown, TrendingUp, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -687,6 +688,11 @@ function BoostModal({
   onCreate: (payload: { bidAmount: number; days: number; maxBudgetPen: number }) => Promise<{ ok: boolean }>;
   onStop: () => Promise<{ ok: boolean }>;
 }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
   const existing = product.boost;
   const [bidAmount, setBidAmount] = useState<string>(existing ? String(existing.bidAmount) : "3");
   const [days, setDays] = useState<string>("7");
@@ -725,7 +731,7 @@ function BoostModal({
   }
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
       onClick={onClose}

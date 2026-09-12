@@ -16,7 +16,8 @@
  * Tokens DS, sin emojis, jerarquía clara.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Loader2, X, AlertTriangle, ShoppingBag, Clock, MapPin,
   Phone, Wallet, Truck, ChevronRight,
@@ -96,6 +97,11 @@ export function PendingOrdersModal({
   tenantName: string;
   onClose: () => void;
 }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -146,7 +152,7 @@ export function PendingOrdersModal({
   }, []);
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="pending-orders-title"

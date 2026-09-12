@@ -19,6 +19,7 @@
  */
 
 import { useState, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   X,
   Tag,
@@ -77,6 +78,14 @@ const FREQUENCIES: ExpenseFrequency[] = ["mensual", "quincenal", "semanal", "anu
 const PAYMENT_METHODS: ExpensePaymentMethod[] = ["efectivo", "yape", "plin", "transferencia", "tarjeta", "credito"];
 
 export default function RecurringExpenseModal({ open, onClose, onCreated, tenantSlug, defaultCategory }: Props) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: open });
   // ── State ─────────────────────────────────────────────────────────
   const [customCats, setCustomCats] = useState<ExpenseCategoryDef[]>([]);
   const allCats = useMemo(
@@ -224,7 +233,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
   const SelectedIcon = getCategoryIcon(selectedCategory.iconKey);
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="recurring-expense-title"

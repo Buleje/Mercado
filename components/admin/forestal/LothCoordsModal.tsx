@@ -39,8 +39,11 @@ interface Props {
 export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }: Props) {
   /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
      de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
   const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: onClose });
+  useModalAccesible(cajaRef, { onCerrar: onClose, activo: open });
   const [text, setText] = useState("");
   const [zona, setZona] = useState(zonaDefault);
   const [fileName, setFileName] = useState<string | null>(null);

@@ -13,6 +13,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   X,
   Building2,
@@ -90,6 +91,9 @@ export function ApplicationDetailsDrawer({
   onReopen,
   onCopy,
 }: Props) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState("");
   const [requestingInfo, setRequestingInfo] = useState(false);
@@ -165,7 +169,7 @@ export function ApplicationDetailsDrawer({
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- backdrop modal (cierra al click; Escape también cierra)
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="fixed inset-0 z-50 flex items-stretch justify-end bg-black/50 backdrop-blur-sm"
       onClick={onClose}
       role="dialog"

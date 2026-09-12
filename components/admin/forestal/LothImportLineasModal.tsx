@@ -46,12 +46,15 @@ export default function LothImportLineasModal({
 }) {
   /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
      de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
   const cajaRef = useRef<HTMLDivElement>(null);
   const [texto, setTexto] = useState("");
   const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
   const [omitidas, setOmitidas] = useState<Set<number>>(new Set());
   const [importando, setImportando] = useState(false);
-  useModalAccesible(cajaRef, { onCerrar: importando ? undefined : onClose });
+  useModalAccesible(cajaRef, { onCerrar: importando ? undefined : onClose, activo: open });
   const [resultado, setResultado] = useState<{ creadas: number; errores: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 

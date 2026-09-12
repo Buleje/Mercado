@@ -57,11 +57,14 @@ export default function LothTrozadoMultipleModal({
 }) {
   /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
      de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
   const cajaRef = useRef<HTMLDivElement>(null);
   const [arbolId, setArbolId] = useState<string>("");
   const [renglones, setRenglones] = useState<Renglon[]>([nuevoRenglon(0), nuevoRenglon(1)]);
   const [guardando, setGuardando] = useState(false);
-  useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onClose });
+  useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onClose, activo: open });
   const [resultado, setResultado] = useState<{ creadas: number; errores: string[] } | null>(null);
 
   const arbol = useMemo(() => talas.find((t) => t.id === arbolId) ?? null, [talas, arbolId]);

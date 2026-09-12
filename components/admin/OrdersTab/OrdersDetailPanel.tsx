@@ -22,6 +22,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import {
   X, Printer, Check, Phone, MapPin as MapPinIcon, FileText, MessageCircle,
@@ -130,6 +131,11 @@ export function OrdersDetailPanel({
   onSaveCustomDriver,
   onPatchOrder,
 }: OrdersDetailPanelProps) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
   const adminNotes = (order as DbOrder & { adminNotes?: string }).adminNotes;
   const initial = order.customer.name.trim().charAt(0).toUpperCase() || "?";
   // FIX 2026-05-07: estado del modal "Entrega manual" — pide método y nota antes
@@ -219,7 +225,7 @@ export function OrdersDetailPanel({
   })();
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/55 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
       onClick={onClose}
       role="dialog"

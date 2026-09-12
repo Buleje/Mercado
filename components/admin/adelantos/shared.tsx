@@ -6,7 +6,8 @@
  * los compartan sin duplicar lógica de moneda ni estados vacíos.
  */
 
-import { useEffect, type ComponentType, type ReactNode } from "react";
+import { useEffect, type ComponentType, type ReactNode, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { CardTitle } from "@buleje/design-system";
 import { X } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/currency";
@@ -175,6 +176,11 @@ export function ModalShell({
    */
   footer?: ReactNode;
 }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
   /**
    * Escape cierra. Es la regla de la casa para todo modal (click-fuera +
    * Escape) y acá faltaba: se salía sólo tocando el fondo.
@@ -188,7 +194,7 @@ export function ModalShell({
   const ancho = ANCHOS[size ?? (wide ? "md" : "sm")];
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div
+      <div ref={cajaRef} tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

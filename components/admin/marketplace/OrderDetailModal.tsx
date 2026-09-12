@@ -11,7 +11,8 @@
  * (--surface-raised, --rule-base, --accent, --text-primary). Hero con
  * número de orden + estado + total grande. Footer con acciones rápidas.
  */
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   X,
   Phone,
@@ -52,6 +53,11 @@ const STATUS_META: Record<
 };
 
 export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChangeStatus }: Props) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -85,7 +91,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
   }
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-md p-0 sm:p-4"
       onClick={onClose}
       role="dialog"

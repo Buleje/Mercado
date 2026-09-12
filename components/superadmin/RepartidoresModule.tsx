@@ -20,9 +20,9 @@ import {
   useState,
   useCallback,
   useMemo,
-  type ReactNode,
-} from "react";
+  type ReactNode, useRef } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Loader2,
   Search,
@@ -1187,10 +1187,13 @@ function Modal({
   children: ReactNode;
   onClose: () => void;
 }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center px-4 py-6" onClick={onClose}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <div
+      <div ref={cajaRef} tabIndex={-1}
         role="dialog"
         aria-modal="true"
         className="relative w-full max-w-md rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"

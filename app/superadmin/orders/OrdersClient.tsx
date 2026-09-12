@@ -16,6 +16,7 @@
  */
 
 import { useVisiblePolling } from "@/components/superadmin/_shared/useVisiblePolling";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ShoppingBag,
@@ -1061,6 +1062,11 @@ function OrderDetailDrawer({
   onClose: () => void;
   onCopy: (text: string, label: string) => void;
 }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
   const meta = STATUS_META[order.status];
   const Icon = meta.icon;
   const [cacheBust] = useState(() => Date.now());
@@ -1075,7 +1081,7 @@ function OrderDetailDrawer({
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true">
+    <div ref={cajaRef} tabIndex={-1} className="fixed inset-0 z-[80]" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <aside className="absolute right-0 top-0 h-full w-full sm:w-[480px] bg-[var(--surface-canvas)] border-l border-[var(--rule-base)] shadow-[var(--shadow-2xl)] flex flex-col animate-in slide-in-from-right duration-[var(--dur-fast)]">
         {/* Header */}

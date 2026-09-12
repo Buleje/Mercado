@@ -17,6 +17,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X,
@@ -63,6 +64,14 @@ export default function HealthCheckActionModal({
   currentValue,
   onSaved,
 }: HealthCheckActionModalProps) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: open });
   const fieldType = fieldTypeFor(checkId);
   const [value, setValue] = useState<string>(currentValue ?? "");
   const [yapeEnabled, setYapeEnabled] = useState(false);
@@ -179,7 +188,7 @@ export default function HealthCheckActionModal({
   if (!open) return null;
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label={`Editar ${checkLabel}`}

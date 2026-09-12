@@ -12,7 +12,8 @@
  * reporte Excel/CSV y calendario (agenda) de alquileres.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { toast } from "sonner";
 import {
   Construction, Plus, X, Loader2, TrendingUp, Fuel,
@@ -541,6 +542,9 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
 
 // ── Drawer de detalle (movimientos + mantenimiento) ─────────────────────────
 function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: AssetStats; onClose: () => void; onContract: () => void; onChanged: () => void }) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   const [tab, setTab] = useState<"movimientos" | "mantenimiento">("movimientos");
   const [mov, setMov] = useState<{ incomes: IncomeMov[]; expenses: ExpenseMov[] } | null>(null);
   useEffect(() => {
@@ -550,7 +554,7 @@ function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: A
   const all = mov ? [...mov.incomes.map(i => ({ ...i, t: "income" as const })), ...mov.expenses.map(e => ({ ...e, t: "expense" as const }))].sort((a, b) => (a.date < b.date ? 1 : -1)) : [];
 
   return (
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex justify-end">
+    <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex justify-end">
       <button type="button" aria-label="Cerrar" onClick={onClose} className="absolute inset-0 bg-[var(--text-primary)]/50 backdrop-blur-sm" />
       <div className="relative flex h-full w-full max-w-md flex-col bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] motion-safe:animate-[slideInRight_0.25s_ease-out]">
         <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-3.5 sm:px-6">

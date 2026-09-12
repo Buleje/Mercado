@@ -10,6 +10,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   X,
   Search,
@@ -66,6 +67,14 @@ export default function StoreLinkerModal({
   onZoneDraftChange,
   onClose,
 }: StoreLinkerModalProps) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: open });
   const [search, setSearch] = useState("");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [products, setProducts] = useState<CatalogProduct[] | null>(null);
@@ -166,7 +175,7 @@ export default function StoreLinkerModal({
   const selectedStore = stores.find((s) => s.slug === selectedSlug);
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="fixed inset-0 z-[90] flex items-stretch justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-6"
       role="dialog"
       aria-modal="true"
