@@ -7,6 +7,7 @@ import { withApiHandler } from "@/lib/api-handler";
 import { CamarasDB } from "@/lib/db/camaras.db";
 import { normalizarEvento } from "@/lib/camaras/camaras";
 import { leerFotoDeCamara } from "@/lib/ai/camara-vision";
+import { avisarSiCorresponde } from "@/lib/camaras/avisar";
 
 /**
  * POST /api/webhooks/camara?k=<token>[&evento=motion][&nota=...]
@@ -132,7 +133,12 @@ export const POST = withApiHandler("camaras-ingesta", async (req: NextRequest) =
      * por eso el `catch` sólo loguea (regla 4 de code-quality: nunca vacío).
      */
     void leerFotoDeCamara(destino.tenantId, data.publicUrl)
-      .then((lectura) => CamarasDB.guardarLectura(destino.tenantId, captura.id, lectura))
+      .then(async (lectura) => {
+        await CamarasDB.guardarLectura(destino.tenantId, captura.id, lectura);
+        /* Y si la foto muestra a alguien, el WhatsApp. Sale de acá y no de la
+           ingesta: la cámara ya tiene su 200 y el aviso depende de la lectura. */
+        await avisarSiCorresponde(destino.tenantId, destino.camara, { id: captura.id, lectura });
+      })
       .catch((err) =>
         logger.error("[camaras.ingesta] no se pudo leer la foto con IA", {
           error: String(err),

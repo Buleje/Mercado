@@ -21,12 +21,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle, Camera, Check, Copy, Image as ImageIcon, Loader2, Plus, RefreshCw, Trash2, Upload,
+  AlertTriangle, Camera, Check, Copy, HelpCircle, Image as ImageIcon, Loader2, MessageCircle, Plus, RefreshCw, Trash2, Upload,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
-  buscarCapturas, EVENTO_LABEL, estaCallada, horasSinVerse, type Camara, type Captura,
+  buscarCapturas, EVENTO_LABEL, estaCallada, horasSinVerse, type AvisosCamara, type Camara, type Captura,
 } from "@/lib/camaras/camaras";
 
 const API = "/api/admin/camaras";
@@ -44,6 +44,16 @@ export default function CamarasView() {
   const [lugar, setLugar] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [copiado, setCopiado] = useState<string | null>(null);
+  /* Lo que se está tipeando en «avisar a» de cada cámara, antes de guardar. */
+  const [avisosEdit, setAvisosEdit] = useState<Record<string, { whatsapp: string; cuando: AvisosCamara["cuando"] }>>({});
+  const avisosDe = (c: Camara) =>
+    avisosEdit[c.id] ?? { whatsapp: c.avisos?.whatsapp ?? "", cuando: c.avisos?.cuando ?? "noche" };
+  const guardarAvisos = async (c: Camara) => {
+    const a = avisosDe(c);
+    if (await escribir({ method: "PATCH", body: JSON.stringify({ id: c.id, accion: "avisos", whatsapp: a.whatsapp, cuando: a.cuando }) })) {
+      setAvisosEdit((prev) => { const n = { ...prev }; delete n[c.id]; return n; });
+    }
+  };
   const [filtro, setFiltro] = useState<string>("");
   /** Buscar por lo que se VE: «camión», una placa, «dos personas». */
   const [texto, setTexto] = useState("");
@@ -100,6 +110,41 @@ export default function CamarasView() {
   /** La dirección que se copia en la cámara. Absoluta: el aparato no sabe de rutas. */
   const direccionDe = (c: Camara) =>
     `${typeof window !== "undefined" ? window.location.origin : ""}/api/webhooks/camara?k=${c.token}`;
+
+  /**
+   * Subir una foto a mano por la MISMA puerta que usa la cámara (2026-09-12).
+   *
+   * Sirve para dos cosas antes de que la cámara esté conectada: ver cómo queda
+   * el historial y probar la lectura de la IA con una foto del celular. Entra
+   * como evento «manual» para que nunca se confunda con lo que mandó el aparato.
+   */
+  const [subiendo, setSubiendo] = useState<string | null>(null);
+  const subirAMano = async (c: Camara, archivo: File) => {
+    setSubiendo(c.id);
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append("file", archivo);
+      const r = await fetch(`${direccionDe(c)}&evento=manual&nota=${encodeURIComponent("subida desde el panel")}`, {
+        method: "POST",
+        body: form,
+      });
+      const j = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!r.ok || !j.ok) {
+        throw new Error(
+          j.error === "muy_grande"
+            ? "La foto pesa más de lo permitido: sacale una captura o bajale la calidad."
+            : `La cámara no la aceptó (${j.error ?? r.status}).`,
+        );
+      }
+      setAviso("Foto guardada. La lectura de la IA aparece en unos segundos: tocá «Actualizar».");
+      await cargar();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSubiendo(null);
+    }
+  };
 
   const copiar = async (c: Camara) => {
     try {
@@ -221,6 +266,26 @@ export default function CamarasView() {
                   {copiado === c.id ? <Check className="h-4 w-4 text-[var(--data-success-600)]" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
                   {copiado === c.id ? "Copiada" : "Copiar dirección"}
                 </button>
+                <label
+                  title="Subir una foto del celular por la misma puerta que usa la cámara (evento «manual»)"
+                  className={`inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)] ${subiendo === c.id ? "opacity-50" : ""}`}
+                >
+                  {subiendo === c.id ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Upload className="h-4 w-4" aria-hidden />}
+                  Subir a mano
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="sr-only"
+                    aria-label={`Subir una foto a mano a ${c.nombre}`}
+                    disabled={subiendo !== null}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      if (f) void subirAMano(c, f);
+                    }}
+                  />
+                </label>
                 <button
                   type="button"
                   onClick={() => void escribir({ method: "PATCH", body: JSON.stringify({ id: c.id, accion: "rotar" }) })}
@@ -241,15 +306,109 @@ export default function CamarasView() {
                   <Trash2 className="h-4 w-4" aria-hidden />
                 </button>
               </div>
+
+              {/* Avisar por WhatsApp cuando la IA ve a alguien (2026-09-12). Es
+                  por lectura, no por movimiento: una rama con viento no avisa.
+                  «De noche» es 19:00–06:00 de Lima, cuando el patio está solo. */}
+              <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[var(--rule-soft)] pt-2">
+                <MessageCircle className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                <label className="flex min-w-[11rem] flex-1 items-center gap-2 text-xs text-[var(--text-secondary)]">
+                  <span className="whitespace-nowrap font-bold">Avisar al WhatsApp</span>
+                  <input
+                    value={avisosDe(c).whatsapp}
+                    onChange={(e) => setAvisosEdit((prev) => ({ ...prev, [c.id]: { ...avisosDe(c), whatsapp: e.target.value } }))}
+                    inputMode="tel"
+                    placeholder="9 dígitos"
+                    aria-label={`WhatsApp al que avisa ${c.nombre}`}
+                    className="h-9 min-w-0 flex-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </label>
+                <select
+                  value={avisosDe(c).cuando}
+                  onChange={(e) => setAvisosEdit((prev) => ({ ...prev, [c.id]: { ...avisosDe(c), cuando: e.target.value as AvisosCamara["cuando"] } }))}
+                  aria-label={`Cuándo avisa ${c.nombre}`}
+                  className="h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                >
+                  <option value="noche">sólo de noche (19–06)</option>
+                  <option value="siempre">siempre</option>
+                  <option value="nunca">nunca</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => void guardarAvisos(c)}
+                  disabled={guardando || !avisosEdit[c.id]}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-2.5 text-xs font-bold text-[var(--accent-ink)] disabled:opacity-40 dark:text-[var(--accent)]"
+                >
+                  <Check className="h-3.5 w-3.5" aria-hidden /> Guardar
+                </button>
+                <span className="basis-full text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                  {c.avisos?.whatsapp
+                    ? `Avisa a ${c.avisos.whatsapp} ${c.avisos.cuando === "noche" ? "de noche" : c.avisos.cuando === "siempre" ? "siempre" : "— apagado"} cuando la foto muestra una persona o un vehículo. Como mucho uno cada 10 minutos.`
+                    : "Sin aviso: la foto queda en el historial y nadie se entera hasta que lo abre."}
+                </span>
+              </div>
             </li>
           ))}
           {camaras.length === 0 && !cargando && (
             <li className="px-1 py-3 text-sm text-[var(--text-tertiary)]">
-              Todavía no hay ninguna. Agregá la primera y copiá su dirección en la cámara (en Hik-Connect:
-              notificación por correo o subida FTP/HTTP al enlace).
+              Todavía no hay ninguna. Agregá la primera, copiá su dirección y seguí la guía de abajo.
             </li>
           )}
         </ul>
+
+        {/* Cómo se conecta, campo por campo. Vive acá y no en un manual aparte:
+            la persona que configura la cámara tiene esta pantalla abierta. Los
+            nombres de menú son los de Hikvision; una versión de firmware puede
+            traducirlos distinto y se dice. */}
+        <details className="mt-3 rounded-xl border border-[var(--rule-base)] px-3 py-2">
+          <summary className="flex cursor-pointer items-center gap-2 text-sm font-bold text-[var(--text-secondary)]">
+            <HelpCircle className="h-4 w-4 shrink-0" aria-hidden /> Cómo conectar la cámara Hikvision (paso a paso)
+          </summary>
+          <div className="mt-2 space-y-3 text-sm text-[var(--text-secondary)]">
+            <p>
+              La cámara tiene que <b>mandar</b> la foto: con SIM 4G no se la puede ir a buscar (está detrás
+              de la red del operador). Hik-Connect en el celular sólo avisa <i>a vos</i>; lo que manda
+              fotos <i>al sistema</i> se configura en la <b>cámara misma</b>: desde una PC en la misma red,
+              abrí la dirección IP de la cámara en el navegador (usuario <code>admin</code> y la clave
+              que le pusiste), o desde la app iVMS-4200. Los nombres de menú pueden variar por firmware —
+              buscá el que se parezca.
+            </p>
+            <ol className="list-decimal space-y-2 pl-5">
+              <li>
+                <b>Que dispare por persona o vehículo, no por cualquier movimiento.</b>{" "}
+                <code>Configuración → Evento → Evento inteligente → Detección de intrusión</code> (o «Cruce de
+                línea»), activá <i>Detección de objetivo: humano / vehículo</i>. Con «Detección de
+                movimiento» a secas la cámara manda ramas y perros; el sistema igual filtra con la IA,
+                pero gasta datos.
+              </li>
+              <li>
+                <b>Que mande la foto a esta dirección.</b>{" "}
+                <code>Configuración → Red → Config. avanzada → Servidor de alarma</code> (en algunos
+                firmwares «HTTP Listening» o «Notificar a centro de vigilancia»). Pegá la dirección que
+                copiaste arriba en <i>URL de destino</i>, protocolo <b>HTTP/HTTPS</b>, método <b>POST</b>. En
+                el evento del paso 1, en <i>Método de enlace</i>, tildá <b>Notificar al servidor de
+                alarma</b> y <b>Capturar imagen</b>. Si el firmware no trae esa opción, la alternativa es{" "}
+                <b>Subir a FTP</b> → todavía no lo recibimos: avisame y lo armo.
+              </li>
+              <li>
+                <b>Probá.</b> Caminá delante de la cámara. En menos de un minuto la foto aparece abajo, en
+                «Lo que mandaron», con su hora. Si no aparece: (a) la dirección copiada a mano suele tener
+                un carácter de menos — volvé a copiarla del botón; (b) revisá que la SIM tenga datos
+                (Hik-Connect en el celular muestra la cámara «en línea»); (c) la hora de la cámara no
+                importa, el sistema pone la suya.
+              </li>
+              <li>
+                <b>Que te avise.</b> Ponele tu WhatsApp en «Avisar al WhatsApp» y elegí «sólo de noche»:
+                cuando la IA vea a alguien te llega un mensaje con la hora, qué vio y el enlace a la foto.
+              </li>
+            </ol>
+            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+              Mientras no esté conectada, «Subir a mano» (al lado de cada cámara) mete una foto del
+              celular por la misma puerta: sirve para ver cómo queda el historial y probar la lectura de la
+              IA hoy mismo.
+            </p>
+          </div>
+        </details>
       </div>
 
       {/* El historial */}

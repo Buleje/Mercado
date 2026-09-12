@@ -49,6 +49,119 @@ export interface Camara {
   creadaEn: string;
   /** Última vez que ESA cámara dejó una imagen: dice si sigue viva. */
   ultimaCapturaEn?: string | null;
+  /**
+   * A quién avisar por WhatsApp cuando la IA ve a alguien (2026-09-12).
+   *
+   * «Alerta cuando entra alguien» era lo que Brandon pidió de la cámara desde
+   * el primer día. El aviso es por lectura, no por evento del aparato: la
+   * cámara dispara por cualquier movimiento (una rama, un perro) y lo que
+   * vale avisar es una persona o un vehículo que la IA confirmó.
+   */
+  avisos?: AvisosCamara | null;
+}
+
+export interface AvisosCamara {
+  /** Número de WhatsApp (9 dígitos de Perú o con +51). Vacío = no avisar. */
+  whatsapp: string | null;
+  /** `siempre` · `noche` (19:00–06:00 de Lima, cuando el patio está solo) · `nunca`. */
+  cuando: "siempre" | "noche" | "nunca";
+  /** Cuándo se mandó el último: para no mandar veinte por el mismo camión. */
+  ultimoAvisoEn?: string | null;
+}
+
+/** Entre dos avisos de la misma cámara pasan al menos estos minutos. */
+export const MINUTOS_ENTRE_AVISOS = 10;
+
+/** Un número de WhatsApp peruano: 9 dígitos, o 11 con el 51 adelante. */
+export function whatsappValido(v: string): boolean {
+  const d = v.replace(/\D/g, "");
+  return d.length === 9 || (d.length === 11 && d.startsWith("51"));
+}
+
+/**
+ * ¿Hay que avisar por esta lectura?
+ *
+ * Tres condiciones, y las tres se leen en la pantalla de la cámara: hay número,
+ * es la franja pedida, y pasó el tiempo mínimo desde el último. Y la lectura
+ * tiene que haber visto a ALGUIEN: una foto de movimiento sin persona ni
+ * vehículo es una rama con viento, y un aviso por rama enseña a silenciar el
+ * teléfono.
+ *
+ * La hora es la de Lima: la cámara y el servidor pueden estar en cualquier zona,
+ * pero «de noche» es de noche en el patio.
+ */
+export function debeAvisar(
+  camara: Pick<Camara, "avisos" | "activa">,
+  lectura: { hayPersona: boolean; hayVehiculo: boolean } | null | undefined,
+  ahora: Date = new Date(),
+): boolean {
+  const a = camara.avisos;
+  if (!camara.activa || !a || !a.whatsapp || a.cuando === "nunca") return false;
+  if (!lectura || (!lectura.hayPersona && !lectura.hayVehiculo)) return false;
+  if (a.cuando === "noche") {
+    const horaLima = Number(
+      new Intl.DateTimeFormat("en-US", { timeZone: "America/Lima", hour: "numeric", hour12: false }).format(ahora),
+    );
+    const esNoche = horaLima >= 19 || horaLima < 6;
+    if (!esNoche) return false;
+  }
+  if (a.ultimoAvisoEn) {
+    const hace = ahora.getTime() - new Date(a.ultimoAvisoEn).getTime();
+    if (Number.isFinite(hace) && hace < MINUTOS_ENTRE_AVISOS * 60_000) return false;
+  }
+  return true;
+}
+
+/** El texto del WhatsApp: corto, con lo que hay que saber a las 3 de la mañana. */
+export function textoDelAviso(
+  camara: Pick<Camara, "nombre" | "lugar">,
+  lectura: { descripcion: string | null; hayPersona: boolean; hayVehiculo: boolean; personas: number | null; placa: string | null },
+  cuando: Date,
+  enlace: string,
+): string {
+  const hora = new Intl.DateTimeFormat("es-PE", {
+    timeZone: "America/Lima",
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+  }).format(cuando);
+  const que = lectura.hayVehiculo && lectura.hayPersona
+    ? `Vehículo y ${lectura.personas && lectura.personas > 1 ? `${lectura.personas} personas` : "una persona"}`
+    : lectura.hayVehiculo
+      ? "Un vehículo"
+      : lectura.personas && lectura.personas > 1
+        ? `${lectura.personas} personas`
+        : "Una persona";
+  const placa = lectura.placa ? ` · placa ${lectura.placa}` : "";
+  const detalle = lectura.descripcion ? `\n${lectura.descripcion.slice(0, 160)}` : "";
+  return `📷 ${camara.nombre}${camara.lugar ? ` (${camara.lugar})` : ""} · ${hora}\n${que}${placa}.${detalle}\nVer la foto: ${enlace}`;
+}
+
+/** Cambia a quién y cuándo avisa una cámara. */
+export function configurarAvisos(
+  camaras: readonly Camara[],
+  id: string,
+  avisos: { whatsapp: string; cuando: AvisosCamara["cuando"] },
+): ResultadoCamaras {
+  const camara = camaras.find((c) => c.id === id);
+  if (!camara) return { ok: false, motivo: "Esa cámara no está en la lista." };
+  const numero = avisos.whatsapp.replace(/\D/g, "");
+  if (numero && !whatsappValido(numero)) {
+    return { ok: false, motivo: "El WhatsApp tiene que ser un número peruano de 9 dígitos (o con 51 adelante)." };
+  }
+  const nuevos: AvisosCamara = {
+    whatsapp: numero || null,
+    cuando: numero ? avisos.cuando : "nunca",
+    ultimoAvisoEn: camara.avisos?.ultimoAvisoEn ?? null,
+  };
+  return {
+    ok: true,
+    camaras: camaras.map((c) => (c.id === id ? { ...c, avisos: nuevos } : c)),
+    mensaje: numero
+      ? `${camara.nombre} avisa a ${numero} ${nuevos.cuando === "noche" ? "de noche (19:00–06:00)" : "siempre"}.`
+      : `${camara.nombre} ya no avisa por WhatsApp.`,
+  };
 }
 
 export interface Captura {

@@ -14,11 +14,18 @@ import { CamarasDB } from "@/lib/db/camaras.db";
  * POST   — alta; devuelve la cámara CON su token, que es lo único que hay que
  *          copiar en el aparato.
  * PATCH  — `{ id, accion: "rotar" }`: dirección nueva, la vieja deja de entrar.
+ *          `{ id, accion: "avisos", whatsapp, cuando }`: a quién avisa por WhatsApp.
  * DELETE — `?id=`: deja de recibir. Las fotos que mandó no se borran.
  *
  * La ingesta (donde la cámara deja la foto) es otro endpoint y a propósito:
  * éste exige sesión de admin, aquél se identifica con el token del aparato.
  */
+
+/** A quién avisa la cámara. El número se valida en el modelo puro (9 dígitos PE). */
+const avisosSchema = z.object({
+  whatsapp: z.string().trim().max(20),
+  cuando: z.enum(["siempre", "noche", "nunca"]),
+});
 
 const altaSchema = z.object({
   nombre: z.string().trim().min(1).max(80),
@@ -84,8 +91,16 @@ export const POST = withApiHandler("camaras-post", (req: NextRequest) =>
 
 export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
   escribir(req, async (tenantId, user, body) => {
-    const d = (body ?? {}) as { id?: string; accion?: string };
-    if (!d.id || d.accion !== "rotar") {
+    const d = (body ?? {}) as { id?: string; accion?: string; whatsapp?: unknown; cuando?: unknown };
+    if (!d.id) return { error: "validation_error", message: "No se entendió qué cambiar de la cámara." };
+    if (d.accion === "avisos") {
+      const p = avisosSchema.safeParse({ whatsapp: d.whatsapp ?? "", cuando: d.cuando ?? "siempre" });
+      if (!p.success) return { error: "validation_error", message: "Revisá el WhatsApp y cuándo avisar." };
+      const r = await CamarasDB.configurarAvisos(tenantId, d.id, p.data, user);
+      if (!r.ok) return { error: "rechazado", message: r.motivo };
+      return { camaras: r.camaras, mensaje: r.mensaje };
+    }
+    if (d.accion !== "rotar") {
       return { error: "validation_error", message: "No se entendió qué cambiar de la cámara." };
     }
     const r = await CamarasDB.rotar(tenantId, d.id, user);

@@ -185,3 +185,82 @@ describe("buscar en lo que se ve", () => {
     expect(buscarCapturas(sinLeer, "movimiento").map((c) => c.id)).toContain("d");
   });
 });
+
+/* ── Avisar por WhatsApp cuando la foto muestra a alguien (2026-09-12) ───── */
+
+import { configurarAvisos, debeAvisar, textoDelAviso, whatsappValido } from "@/lib/camaras/camaras";
+
+const camaraConAviso = (cuando: "siempre" | "noche" | "nunca", ultimoAvisoEn: string | null = null) => ({
+  activa: true,
+  avisos: { whatsapp: "999888777", cuando, ultimoAvisoEn },
+});
+const persona = { hayPersona: true, hayVehiculo: false };
+const nadie = { hayPersona: false, hayVehiculo: false };
+/** 2026-09-12 02:00 en Lima = 07:00Z. 2026-09-12 14:00 en Lima = 19:00Z. */
+const NOCHE = new Date("2026-09-12T07:00:00.000Z");
+const DIA = new Date("2026-09-12T19:00:00.000Z");
+
+describe("debeAvisar", () => {
+  it("una foto sin persona ni vehículo no avisa: una rama con viento no es una visita", () => {
+    expect(debeAvisar(camaraConAviso("siempre"), nadie, DIA)).toBe(false);
+    expect(debeAvisar(camaraConAviso("siempre"), null, DIA)).toBe(false);
+  });
+
+  it("«siempre» avisa de día y de noche; «noche» sólo entre 19 y 06 de Lima", () => {
+    expect(debeAvisar(camaraConAviso("siempre"), persona, DIA)).toBe(true);
+    expect(debeAvisar(camaraConAviso("noche"), persona, DIA)).toBe(false);
+    expect(debeAvisar(camaraConAviso("noche"), persona, NOCHE)).toBe(true);
+  });
+
+  it("sin número, apagada o con «nunca» no avisa", () => {
+    expect(debeAvisar({ activa: true, avisos: { whatsapp: null, cuando: "siempre" } }, persona, DIA)).toBe(false);
+    expect(debeAvisar({ ...camaraConAviso("siempre"), activa: false }, persona, DIA)).toBe(false);
+    expect(debeAvisar(camaraConAviso("nunca"), persona, DIA)).toBe(false);
+  });
+
+  it("no manda veinte mensajes por el mismo camión: 10 minutos entre avisos", () => {
+    const hace5min = new Date(DIA.getTime() - 5 * 60_000).toISOString();
+    const hace11min = new Date(DIA.getTime() - 11 * 60_000).toISOString();
+    expect(debeAvisar(camaraConAviso("siempre", hace5min), persona, DIA)).toBe(false);
+    expect(debeAvisar(camaraConAviso("siempre", hace11min), persona, DIA)).toBe(true);
+  });
+});
+
+describe("el texto del aviso", () => {
+  it("dice qué se vio, la placa si la hay, y a qué hora de Lima", () => {
+    const t = textoDelAviso(
+      { nombre: "Portón", lugar: "Entrada" },
+      { descripcion: "Camión rojo entrando con dos personas.", hayPersona: true, hayVehiculo: true, personas: 2, placa: "ABC-123" },
+      NOCHE,
+      "https://x/admin?tab=camaras",
+    );
+    expect(t).toContain("Portón (Entrada)");
+    expect(t).toContain("02:00"); // 07:00Z = 02:00 en Lima
+    expect(t).toContain("Vehículo y 2 personas");
+    expect(t).toContain("placa ABC-123");
+    expect(t).toContain("https://x/admin?tab=camaras");
+  });
+});
+
+describe("configurarAvisos", () => {
+  const base = [{ id: "c1", nombre: "Portón", lugar: "", token: "t", activa: true, creadaEn: "2026-09-01T00:00:00.000Z" }];
+
+  it("acepta 9 dígitos peruanos y los guarda limpios", () => {
+    const r = configurarAvisos(base, "c1", { whatsapp: "999 888 777", cuando: "noche" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.camaras[0]!.avisos).toMatchObject({ whatsapp: "999888777", cuando: "noche" });
+    expect(whatsappValido("51999888777")).toBe(true);
+  });
+
+  it("rechaza un número que no es peruano y lo dice", () => {
+    const r = configurarAvisos(base, "c1", { whatsapp: "12345", cuando: "siempre" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.motivo).toMatch(/9 dígitos/);
+  });
+
+  it("borrar el número apaga el aviso", () => {
+    const r = configurarAvisos(base, "c1", { whatsapp: "", cuando: "siempre" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.camaras[0]!.avisos).toMatchObject({ whatsapp: null, cuando: "nunca" });
+  });
+});

@@ -11,6 +11,8 @@ import {
   type Captura,
   type EventoCamara,
   type ResultadoCamaras,
+  configurarAvisos,
+  type AvisosCamara,
 } from "@/lib/camaras/camaras";
 
 /**
@@ -86,6 +88,29 @@ export const CamarasDB = {
     await this.guardar(tenantId, r.camaras, user);
     await this.indexar(tenantId, r.camaras, viejo ? [viejo] : []);
     return r;
+  },
+
+  /** A quién y cuándo avisa una cámara por WhatsApp. */
+  async configurarAvisos(
+    tenantId: string,
+    camaraId: string,
+    avisos: { whatsapp: string; cuando: AvisosCamara["cuando"] },
+    user: string,
+  ): Promise<ResultadoCamaras> {
+    const camaras = await this.list(tenantId);
+    const r = configurarAvisos(camaras, camaraId, avisos);
+    if (!r.ok) return r;
+    await this.guardar(tenantId, r.camaras, user);
+    return r;
+  },
+
+  /** Deja anotado que se mandó un aviso: es lo que frena el siguiente. */
+  async marcarAvisada(tenantId: string, camaraId: string, cuando: Date): Promise<void> {
+    const camaras = await this.list(tenantId);
+    const nuevas = camaras.map((c) =>
+      c.id === camaraId && c.avisos ? { ...c, avisos: { ...c.avisos, ultimoAvisoEn: cuando.toISOString() } } : c,
+    );
+    await this.guardar(tenantId, nuevas, "camara");
   },
 
   /** Resuelve el token que trae la URL de una cámara. `null` = no entra. */
