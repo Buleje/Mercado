@@ -15,6 +15,7 @@ import { TIPOS_DOCUMENTO_LOCTP } from "@/lib/forestal/loctp-campos";
 import { LINEAS_PRODUCCION } from "@/lib/forestal/loctp-resumenes";
 import { sincronizarPartesDeGuia } from "@/lib/forestal/ctp-sincronizar-partes";
 import { agregarRolliza } from "@/lib/forestal/saldo-por-permiso";
+import { NotificationLogsDB } from "@/lib/db/notifications.db";
 
 /**
  * /api/admin/forestal/ctp — Libro CTP: producción + despacho + saldos (ADR-127)
@@ -421,6 +422,15 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
        Rango propio (`semanaDesde`/`semanaHasta`) y no el `from`/`to` del libro:
        la semana que se mira acá es independiente del período activo de la
        pantalla, y mezclarlos haría que cambiar de semana moviera el libro. */
+    /* ¿El último aviso del Libro llegó a alguien?
+       El cron manda por WhatsApp y por correo, y hasta ahora un rechazo —el
+       dominio sin verificar, un token vencido— sólo se veía en el log del
+       servidor: desde el panel el aviso parecía haber salido. */
+    if (url.searchParams.get("avisosEstado") === "1") {
+      return NextResponse.json({
+        envios: await NotificationLogsDB.ultimosPorTipo(auth.tenantId, "ctp_plazos_"),
+      });
+    }
     if (url.searchParams.get("jornadas") === "1") {
       const desde = url.searchParams.get("semanaDesde") ?? "";
       const hasta = url.searchParams.get("semanaHasta") ?? "";

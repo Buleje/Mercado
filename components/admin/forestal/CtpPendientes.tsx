@@ -20,13 +20,21 @@
  * del botón dice si algo traba el cierre. Esconder un aviso detrás de un click
  * está bien; esconder que existe, no.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, ArrowRight, Bell, CalendarClock, CheckCircle2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { resumenPendientes, type Pendiente } from "@/lib/forestal/ctp-pendientes";
 import type { AvisoAnticipado } from "@/lib/forestal/ctp-anticipa";
 import type { CtpPendientesState } from "@/hooks/use-ctp-pendientes";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { ctpGet } from "@/lib/forestal/ctp-fetch";
+import { logger } from "@/lib/logger";
+import {
+  estadoDeAvisos,
+  hayQueMostrarEstado,
+  type EnvioDeAviso,
+  type EstadoCanal,
+} from "@/lib/forestal/estado-de-avisos";
 
 const TONO: Record<Pendiente["urgencia"], string> = {
   bloquea:
@@ -118,6 +126,10 @@ export default function CtpPendientes({
         icon={Bell}
       >
         <div className={MODAL_BODY}>
+          {/* Si el último aviso no llegó a nadie, eso va ANTES que los
+              pendientes: de nada sirve la lista si el sistema cree estar
+              avisando y no avisa. */}
+          <EstadoDeEnvios />
           {cargando ? (
             <div className="space-y-2" aria-hidden>
               {[0, 1, 2].map((i) => <span key={i} className="block h-12 animate-pulse rounded-xl bg-[var(--surface-sunken)]" />)}
@@ -197,5 +209,69 @@ export default function CtpPendientes({
         </div>
       </AdminModal>
     </>
+  );
+}
+
+/**
+ * Si el último aviso no salió, decirlo — y decir qué hacer.
+ *
+ * El cron manda por WhatsApp y por correo; un rechazo del proveedor (dominio
+ * sin verificar, token vencido) sólo se veía en el log del servidor y desde el
+ * panel el aviso parecía haber salido.
+ *
+ * Silencioso cuando todo sale bien: un cartel verde permanente se aprende a
+ * ignorar, y entonces tampoco se ve el rojo.
+ */
+function EstadoDeEnvios() {
+  const [estados, setEstados] = useState<EstadoCanal[] | null>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    ctpGet<{ envios?: EnvioDeAviso[] }>("/api/admin/forestal/ctp?avisosEstado=1", { ttlMs: 30_000 })
+      .then((r) => {
+        if (vivo) setEstados(estadoDeAvisos(r.envios ?? []));
+      })
+      .catch((err) => {
+        /* El estado de los avisos es contexto: si no se puede leer, no se
+           bloquea la lista de pendientes que es lo que se vino a ver. */
+        logger.warn("[ctp] no se pudo leer el estado de los avisos", { error: String(err).slice(0, 120) });
+        if (vivo) setEstados([]);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  if (!estados || !hayQueMostrarEstado(estados)) return null;
+  const caidos = estados.filter((e) => !e.sinDatos && !e.llego);
+
+  return (
+    <div className="mb-3 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/12 px-3.5 py-3">
+      <p className="flex items-center gap-2 text-sm font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+        <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+        {caidos.length === 1
+          ? `El último aviso no salió por ${caidos[0]!.nombre}`
+          : "El último aviso no salió por ningún canal"}
+      </p>
+      <ul className="mt-2 space-y-1.5">
+        {caidos.map((e) => (
+          <li key={e.canal} className="text-sm text-[var(--text-secondary)]">
+            <b className="text-[var(--text-primary)]">{e.nombre}</b>
+            {e.cuando && (
+              <span className="text-[var(--text-tertiary)]">
+                {" · "}
+                {new Date(e.cuando).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
+            {e.motivo && <span className="block text-[var(--text-tertiary)]">{e.motivo}</span>}
+            {e.comoArreglar && <span className="block font-medium">{e.comoArreglar}</span>}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+        Los avisos siguen apareciendo acá y en la campana del panel: lo que no salió es el mensaje a
+        tu teléfono o tu correo.
+      </p>
+    </div>
   );
 }

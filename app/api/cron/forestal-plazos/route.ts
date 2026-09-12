@@ -6,6 +6,7 @@ import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { NotificationCenterDB } from "@/lib/db/notification-center.db";
+import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { sendWhatsAppText } from "@/lib/whatsapp";
 import { sendAvisoPlazosCtp } from "@/lib/email/resend";
 import { construirAviso, fraseLote, frasePlazo } from "@/lib/forestal/ctp-aviso-plazos";
@@ -45,6 +46,40 @@ async function tenantsForestales(): Promise<string[]> {
     }),
   ]);
   return [...new Set([...conGuias, ...conLibro].map((r) => r.tenantId))];
+}
+
+/**
+ * Dejar constancia de cada envío, salga o no.
+ *
+ * Sin esto, que el correo vuelva rechazado o el WhatsApp dé 401 sólo se ve en
+ * el log del servidor: desde el panel el aviso parece haber salido. Un aviso
+ * que falla en silencio es un aviso que no existe.
+ *
+ * Es fire-and-forget: si el registro falla, no puede tumbar el aviso que sí se
+ * está mandando — pero se loguea, nunca se traga.
+ */
+async function registrar(
+  tenantId: string,
+  canal: "whatsapp" | "email",
+  destino: string,
+  ok: boolean,
+  detalle: string,
+) {
+  await NotificationLogsDB.add(
+    {
+      type: `ctp_plazos_${canal}`,
+      recipient: destino,
+      status: ok ? "sent" : "failed",
+      message: detalle.slice(0, 500),
+    },
+    tenantId,
+  ).catch((err) =>
+    logger.error("[cron/forestal-plazos] no se pudo registrar el envío", {
+      tenantId,
+      canal,
+      err: String(err).slice(0, 200),
+    }),
+  );
 }
 
 export const GET = withCronAuth("forestal-plazos", async () => {
@@ -176,33 +211,39 @@ export const GET = withCronAuth("forestal-plazos", async () => {
         });
         if (r?.error) {
           correosFallidos += 1;
-          logger.error("[cron/forestal-plazos] correo NO enviado", {
-            tenantId,
-            err: String(r.error.message ?? "").slice(0, 200),
-          });
-        } else correosEnviados += 1;
+          const motivo = String(r.error.message ?? "").slice(0, 200);
+          logger.error("[cron/forestal-plazos] correo NO enviado", { tenantId, err: motivo });
+          await registrar(tenantId, "email", correo, false, motivo || "rechazado sin motivo");
+        } else {
+          correosEnviados += 1;
+          await registrar(tenantId, "email", correo, true, aviso.titulo);
+        }
       } else {
         sinCorreo += 1;
+        await registrar(tenantId, "email", "—", false, "El negocio no tiene correo cargado (Ajustes → Datos del negocio).");
       }
 
       const phone = tenant?.ownerPhone?.replace(/\D/g, "");
       if (!phone || phone.length < 9) {
         sinTelefono += 1;
         logger.warn("[cron/forestal-plazos] tenant sin ownerPhone", { tenantId });
+        await registrar(tenantId, "whatsapp", "—", false, "El negocio no tiene WhatsApp cargado (Ajustes → Datos del negocio).");
         continue;
       }
 
+      let motivoWa = "";
       const ok = await sendWhatsAppText(phone, aviso.whatsapp).catch((err) => {
-        logger.error("[cron/forestal-plazos] whatsapp falló", {
-          tenantId,
-          err: String(err).slice(0, 200),
-        });
+        motivoWa = String(err).slice(0, 200);
+        logger.error("[cron/forestal-plazos] whatsapp falló", { tenantId, err: motivoWa });
         return false;
       });
-      if (ok) whatsappEnviados += 1;
-      else {
+      if (ok) {
+        whatsappEnviados += 1;
+        await registrar(tenantId, "whatsapp", phone, true, aviso.titulo);
+      } else {
         whatsappFallidos += 1;
         logger.error("[cron/forestal-plazos] whatsapp NO enviado", { tenantId });
+        await registrar(tenantId, "whatsapp", phone, false, motivoWa || "la API respondió que no");
       }
     } catch (err) {
       // Un tenant que falla no puede dejar sin aviso a los demás.
