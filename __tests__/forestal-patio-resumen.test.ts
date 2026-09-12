@@ -288,3 +288,35 @@ describe("una especie, una opción — aunque el libro la escriba de dos formas"
     expect(filtrarPatio(pila, { especie: "Tornillo" }).map((t) => t.id)).toEqual(["a", "b", "c"]);
   });
 });
+
+describe("la madera que espera un papel, no una sierra", () => {
+  it("cuenta piezas, volumen y guías sin recepcionar, aparte de los bloqueos", () => {
+    /* Medido en el tenant real (2026-09-12): 153 de 160 piezas del patio y 181
+       de 197 m³ estaban en guías sin recepcionar. La pantalla decía «7 piezas
+       libres» —correcto— y callaba el 92 % restante, que no espera a la sierra
+       sino a que alguien cierre la recepción (ADR-339 lo sacó de la cuenta; que
+       no se vea es otra cosa). */
+    const r = resumenPatio(
+      [
+        troza({ guiaRecepcionada: true, volumenM3: 2 }),
+        troza({ guiaRecepcionada: false, gtfNumber: "G-1", volumenM3: 3 }),
+        troza({ guiaRecepcionada: false, gtfNumber: "G-1", volumenM3: 4 }),
+        troza({ guiaRecepcionada: false, gtfNumber: "G-2", volumenM3: 5 }),
+      ],
+      AHORA,
+    );
+    expect(r.sinRecepcionar).toBe(3);
+    expect(r.volumenSinRecepcionarM3).toBe(12);
+    expect(r.guiasSinRecepcionar).toBe(2);
+    /* Y no se mezcla con lo libre: la única con guía cerrada sigue siendo una. */
+    expect(r.libres).toBe(1);
+  });
+
+  it("una pieza sin el dato de recepción no cuenta como pendiente", () => {
+    /* Los ingresos viejos no traen el campo: tratarlos como pendientes
+       inventaría un trámite que nadie tiene que hacer. */
+    const r = resumenPatio([troza({ guiaRecepcionada: undefined })], AHORA);
+    expect(r.sinRecepcionar).toBe(0);
+    expect(r.guiasSinRecepcionar).toBe(0);
+  });
+});

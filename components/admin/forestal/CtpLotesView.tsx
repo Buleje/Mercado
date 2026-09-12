@@ -31,7 +31,8 @@ import {
   X,
 } from "@buleje/design-system/icons";
 import CtpKpi from "./CtpKpi";
-import { libresDelPatio } from "@/lib/forestal/patio-resumen";
+import { libresDelPatio, resumenPatio } from "@/lib/forestal/patio-resumen";
+import type { CtpIngresosFiltroRapido } from "./ctp-shared";
 import {
   ESTADO_LOTE,
   alertasDeLote,
@@ -71,11 +72,17 @@ export interface LoteAProducir {
 export default function CtpLotesView({
   onProducir,
   onCargar,
+  onIr,
 }: {
   onProducir: (lote: LoteAProducir) => void;
   /** «Cargar»: lleva a Consumos con este lote elegido, que es donde se eligen
    *  las piezas ya filtradas por su especie (ADR-342). */
   onCargar: (lote: LoteAProducir) => void;
+  /**
+   * Saltar a otra vista del libro. Lo usa el aviso de guías sin recepcionar:
+   * decir que hay madera trabada sin llevar a destrabarla es media ayuda.
+   */
+  onIr?: (vista: string, filtro?: CtpIngresosFiltroRapido) => void;
 }) {
   const {
     lotes,
@@ -182,6 +189,8 @@ export default function CtpLotesView({
    *  también las piezas de guías sin recepcionar y prometía madera que el
    *  picker después no ofrecía. */
   const libresEnPatio = useMemo(() => libresDelPatio(trozas).length, [trozas]);
+  /* La madera que está en el patio pero espera un PAPEL, no la sierra. */
+  const patio = useMemo(() => resumenPatio(trozas, ahora), [trozas, ahora]);
   /** Los lotes que piden atención: se anuncian arriba, no hay que abrirlos para enterarse. */
   const conAlerta = useMemo(
     () => lotes.filter((l) => alertasDeLote(l, ahora).some((a) => a.tono === "warning")).length,
@@ -197,7 +206,18 @@ export default function CtpLotesView({
     <div className="space-y-3">
       <VistaHeader
         titulo="Lotes de aserrío"
-        meta={`${resumen.abiertos} con madera${resumen.vacios > 0 ? ` · ${resumen.vacios} vacío${resumen.vacios === 1 ? "" : "s"}` : ""} · ${libresEnPatio} pieza${libresEnPatio === 1 ? "" : "s"} libre${libresEnPatio === 1 ? "" : "s"} en el patio`}
+        /* Habla de los LOTES, no del patio: la barra de indicadores de abajo ya
+           dice «N abiertos» y «N libres en patio», y tenerlo dos veces en dos
+           renglones seguidos hacía dudar de si eran la misma cuenta. */
+        meta={
+          lotes.length === 0
+            ? "todavía ninguno"
+            : `${lotes.length} lote${lotes.length === 1 ? "" : "s"} · ` +
+              (resumen.abiertos > 0
+                ? `${resumen.abiertos} esperando la sierra`
+                : "ninguno esperando la sierra") +
+              (resumen.vacios > 0 ? ` · ${resumen.vacios} sin piezas` : "")
+        }
         hint="Las trozas de una misma especie que van juntas al carro. El lote se arma acá, se consume en Producción y con él salen los despachos."
       >
         <Btn variant="secondary" onClick={() => void recargar()} disabled={cargando}>
@@ -217,6 +237,40 @@ export default function CtpLotesView({
           <Plus className="h-4 w-4" /> Armar lote
         </Btn>
       </VistaHeader>
+
+      {/**
+       * La madera que espera un papel, no la sierra.
+       *
+       * `estaLibreEnPatio` saca de la cuenta las piezas cuya guía no se
+       * recepcionó (ADR-339, que nació de que Lotes dijera 47 y el picker
+       * ofreciera 30). Correcto — pero el operador veía «7 libres» con la pila
+       * llena delante y no tenía de dónde agarrarse. Medido en el tenant real:
+       * 153 de 160 piezas y 181 de 197 m³ estaban así.
+       *
+       * Va arriba de los filtros porque cambia qué se puede hacer en esta
+       * pantalla: sin recepcionar esas guías, no hay lote que armar.
+       */}
+      {patio.sinRecepcionar > 0 && (
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2.5 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          <PackageOpen className="h-4 w-4 shrink-0" aria-hidden />
+          <span className="min-w-0">
+            <b className="font-mono tabular-nums">{patio.sinRecepcionar}</b> pieza
+            {patio.sinRecepcionar === 1 ? "" : "s"} del patio (
+            <b className="font-mono tabular-nums">{fmtM3(patio.volumenSinRecepcionarM3)} m³</b>) todavía
+            no se pueden aserrar: su guía está sin recepcionar.
+          </span>
+          {onIr && (
+            <button
+              type="button"
+              onClick={() => onIr("ingresos", "pendiente")}
+              className="font-bold underline underline-offset-2"
+            >
+              Recepcionar {patio.guiasSinRecepcionar} guía
+              {patio.guiasSinRecepcionar === 1 ? "" : "s"}
+            </button>
+          )}
+        </p>
+      )}
 
       {/**
        * Lo que no cuadra con el SNIFFS, arriba de todo (ADR-398).

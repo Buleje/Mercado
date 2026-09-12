@@ -56,6 +56,18 @@ export interface ResumenPatio {
   esperaMaxDias: number | null;
   /** Cuántas superan el plazo de espera razonable. */
   anejas: number;
+  /**
+   * Están en el patio pero su GUÍA no se recepcionó todavía.
+   *
+   * No es un bloqueo de la troza (`motivoBloqueo`) sino del papel que la ampara:
+   * la madera está ahí y se ve, pero no puede entrar a la sierra hasta cerrar la
+   * recepción. Medido en el tenant real (2026-09-12): 153 de 160 piezas, 181 m³
+   * de 197 — el 92 % del patio esperando un trámite que la pantalla no nombraba.
+   */
+  sinRecepcionar: number;
+  volumenSinRecepcionarM3: number;
+  /** Cuántas guías distintas hay que recepcionar para destrabarlas. */
+  guiasSinRecepcionar: number;
 }
 
 /**
@@ -304,7 +316,10 @@ export function resumenPatio(trozas: readonly TrozaConsumible[], ahora: Date): R
   let mayor: number | null = null;
   let esperaMax: number | null = null;
   let anejas = 0;
+  let sinRecepcionar = 0;
+  let volumenSinRecepcionar = 0;
 
+  const guiasPendientes = new Set<string>();
   const porEspecie = new Map<string, { piezas: number; volumenM3: number }>();
   const guias = new Set<string>();
   const permisos = new Set<string>();
@@ -315,6 +330,15 @@ export function resumenPatio(trozas: readonly TrozaConsumible[], ahora: Date): R
     const vol = Number.isFinite(v) ? v : 0;
     volumen += vol;
     if (vol > 0 && (mayor == null || vol > mayor)) mayor = vol;
+
+    /* La guía sin recepcionar se cuenta aparte de los bloqueos de la troza:
+       una pieza puede estar perfecta y aun así no poder usarse porque su papel
+       no está cerrado. Es lo que hay que ir a resolver, no un defecto. */
+    if (t.guiaRecepcionada === false) {
+      sinRecepcionar += 1;
+      volumenSinRecepcionar += vol;
+      if (clave(t.gtfNumber)) guiasPendientes.add(clave(t.gtfNumber));
+    }
 
     const bloqueo = motivoBloqueo(t);
     if (bloqueo) bloqueadas += 1;
@@ -371,5 +395,8 @@ export function resumenPatio(trozas: readonly TrozaConsumible[], ahora: Date): R
     proveedores: proveedores.size,
     esperaMaxDias: esperaMax,
     anejas,
+    sinRecepcionar,
+    volumenSinRecepcionarM3: r4(volumenSinRecepcionar),
+    guiasSinRecepcionar: guiasPendientes.size,
   };
 }

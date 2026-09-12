@@ -572,6 +572,7 @@ export default function CTPLibroOperaciones() {
         )}
         {view === "lotes" && (
           <CtpLotesView
+            onIr={irA}
             onProducir={(lote) => {
               // «Producir este lote» cruza de pestaña: el lote se guarda acá —el
               // shell es lo único que sobrevive al cambio de vista— y Producción
