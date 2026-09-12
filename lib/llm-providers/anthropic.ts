@@ -28,13 +28,13 @@ const API_VERSION = "2023-06-01";
 export const anthropicProvider: LLMProvider = {
   name: "anthropic",
 
-  // Claude 4.6 family — alineado con el knowledge update de Vercel 2026-02-27.
-  // Haiku 4.5 existe (claude-haiku-4-5-20251001). Sonnet 4.6 y Opus 4.6 son
-  // los defaults actuales del proyecto (ver CLAUDE.md).
+  // Familia Claude 5 (verificado 2026-09-11 en platform.claude.com): Sonnet 5
+  // ($2/$10) y Opus 5 ($5/$25) reemplazan a 4.6 — más capaces y más baratos.
+  // Haiku 4.5 sigue siendo el económico ($1/$5). IDs sin fecha = snapshot fijo.
   models: {
     cheap: "claude-haiku-4-5-20251001",
-    balanced: "claude-sonnet-4-6",
-    premium: "claude-opus-4-6",
+    balanced: "claude-sonnet-5",
+    premium: "claude-opus-5",
   },
 
   isAvailable() {

@@ -109,7 +109,7 @@ function pickChatModel() {
 
 function pickSmartModel() {
   if (process.env.ANTHROPIC_API_KEY) {
-    return anthropicProvider("claude-sonnet-4-6");
+    return anthropicProvider("claude-sonnet-5");
   }
   if (process.env.GROQ_API_KEY) {
     return groqProvider.chat(groqModels.balanced);
@@ -120,7 +120,7 @@ function pickSmartModel() {
   if (process.env.OPENAI_API_KEY) {
     return openaiProvider("gpt-4o");
   }
-  return anthropicProvider("claude-sonnet-4-6");
+  return anthropicProvider("claude-sonnet-5");
 }
 
 export const chatModel = pickChatModel();
