@@ -5,12 +5,18 @@
  *
  * Auditoría 2026-06: "la plata que me deben" estaba repartida en Fiados,
  * Préstamos y Adelantos sin una vista única. Este tablero (solo lectura) suma
- * los saldos pendientes de los tres y deja entrar a cada módulo para el detalle.
+ * los saldos pendientes y deja entrar a cada módulo para el detalle.
  * NO fusiona los módulos — cada uno conserva su pantalla y semántica.
+ *
+ * Cuarta fuente (2026-09-11): la **madera despachada a cuenta**. Desde que la
+ * guía de salida anota la venta en la cuenta corriente del cliente (ADR-322),
+ * este tablero mentía por omisión — el aserradero vendía S/ 5.000 a crédito y
+ * acá decía cero. Su detalle vive en el Libro CTP, no en Mi Plata, así que la
+ * tarjeta lleva a otro módulo: es la única que sale del grupo.
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { Wallet, CreditCard, Landmark, DollarSign, ArrowRight, RefreshCw } from "@buleje/design-system/icons";
+import { Wallet, CreditCard, Landmark, DollarSign, ArrowRight, RefreshCw, Trees } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import { tenantFetch } from "@/lib/tenant-fetch";
@@ -21,6 +27,7 @@ interface Summary {
   fiados: Bucket;
   prestamos: Bucket;
   adelantos: Bucket;
+  madera: Bucket;
   totalGeneral: number;
 }
 
@@ -28,6 +35,7 @@ const EMPTY: Summary = {
   fiados: { total: 0, count: 0 },
   prestamos: { total: 0, count: 0 },
   adelantos: { total: 0, count: 0 },
+  madera: { total: 0, count: 0 },
   totalGeneral: 0,
 };
 
@@ -35,6 +43,9 @@ const CARDS = [
   { key: "fiados" as const, tab: "fiados", label: "Fiados", desc: "Ventas al crédito sin pagar", icon: CreditCard, color: "var(--accent)" },
   { key: "prestamos" as const, tab: "prestamos", label: "Préstamos", desc: "Cuotas pendientes de cobro", icon: Landmark, color: "#3b82f6" },
   { key: "adelantos" as const, tab: "adelantos", label: "Adelantos", desc: "Saldo de adelantos abiertos", icon: DollarSign, color: "#ff6b5b" },
+  /* La madera vive en el Libro CTP: `externo` para que el salto recargue ese
+     módulo en vez de buscar una sección hermana que no existe acá. */
+  { key: "madera" as const, tab: "ctp-libro-operaciones", label: "Madera despachada", desc: "Guías vendidas a cuenta, sin cobrar", icon: Trees, color: "#0f766e", externo: true },
 ];
 
 /**
@@ -86,7 +97,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
       </div>
 
       {/* Desglose por tipo */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {CARDS.map((c) => {
           const b = data[c.key];
           const Icon = c.icon;
@@ -102,9 +113,15 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
                 </div>
               </div>
               <p className="mt-3 text-2xl font-extrabold text-[var(--text-primary)]">{formatCurrency(b.total)}</p>
-              <p className="text-xs text-[var(--text-tertiary)]">{b.count} {c.key === "prestamos" ? "préstamo(s)" : "cuenta(s)"}</p>
+              <p className="text-xs text-[var(--text-tertiary)]">
+                {b.count}{" "}
+                {c.key === "prestamos" ? "préstamo(s)" : c.key === "madera" ? "cliente(s)" : "cuenta(s)"}
+              </p>
               <button
-                onClick={() => (onIr ? onIr(c.tab) : goTab(c.tab))}
+                /* La madera NO es sección hermana de Mi Plata: aunque el padre
+                   sepa navegar entre sus secciones, ese destino es otro módulo
+                   y hay que recargarlo. */
+                onClick={() => (onIr && !("externo" in c && c.externo) ? onIr(c.tab) : goTab(c.tab))}
                 className="mt-3 inline-flex items-center justify-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 py-2 text-xs font-bold text-[var(--text-secondary)] hover:border-primary/50 hover:text-primary transition-colors"
               >
                 Ver {c.label.toLowerCase()} <ArrowRight className="h-3.5 w-3.5" />
@@ -115,7 +132,8 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
       </div>
 
       <p className="text-xs text-[var(--text-tertiary)]">
-        Resumen de solo lectura. Para registrar cobros o nuevos créditos, entrá a cada sección.
+        Resumen de solo lectura. Para registrar cobros o nuevos créditos, entrá a cada sección — la
+        madera se cobra desde la cuenta corriente del Libro CTP.
       </p>
     </div>
   );

@@ -44,6 +44,18 @@ export default defineConfig({
           name: "unit",
           environment: "jsdom",
           setupFiles: ["./vitest.setup.ts"],
+          /**
+           * 15 s en vez de los 5 s por defecto.
+           *
+           * No es un test lento: es la suite entera (673 archivos) corriendo en
+           * paralelo sobre WSL. Un `await import()` de un componente pesado que
+           * tarda 1,6 s aislado se pasa de 5 s cuando hay veinte workers
+           * compitiendo — el 2026-09-11 tiró falsos rojos en TRES archivos
+           * distintos, ninguno por un cambio de código. Un test que de verdad
+           * se cuelga sigue fallando; lo que se saca es el ruido que enseña a
+           * ignorar la corrida en rojo.
+           */
+          testTimeout: 15_000,
           include: ["__tests__/**/*.test.{ts,tsx}"],
           exclude: [vrtPattern, ...defaultExclude],
         },

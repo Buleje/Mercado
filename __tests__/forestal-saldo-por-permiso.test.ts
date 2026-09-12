@@ -189,10 +189,7 @@ describe("paquetesDeLoCubicado — el código del paquete es único en toda la p
       hoy: new Date("2026-09-10T12:00:00Z"),
     });
     expect(r.map((p) => p.codigo)).toEqual(["PQ-2609-005", "PQ-2609-006"]);
-    /* Timeout explícito: importa un componente pesado y con la suite entera
-       en paralelo los 5 s por defecto no alcanzan — falló dos veces el
-       2026-09-11 sin que nada del código cambiara. */
-  }, 20_000);
+  });
 
   it("dos medidas de la misma tanda nunca piden el mismo código", async () => {
     const { paquetesDeLoCubicado } = await import("@/components/admin/forestal/CtpProducirSinLoteModal");
@@ -200,8 +197,5 @@ describe("paquetesDeLoCubicado — el código del paquete es único en toda la p
       hoy: new Date("2026-09-10T12:00:00Z"),
     });
     expect(new Set(r.map((p) => p.codigo)).size).toBe(3);
-    /* Timeout explícito: importa un componente pesado y con la suite entera
-       en paralelo los 5 s por defecto no alcanzan — falló dos veces el
-       2026-09-11 sin que nada del código cambiara. */
-  }, 20_000);
+  });
 });
