@@ -33,6 +33,7 @@ import { PRODUCTOS_CONSUMIBLES_LOTE, disponiblePorEspecie, disponiblePorPermiso 
 import { TIPOS_PRODUCTO_SALIDA } from "@/lib/forestal/loctp-catalogos";
 import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { claveEspecie } from "@/lib/forestal/loth-constants";
 import CtpPegarSniffsLote from "./CtpPegarSniffsLote";
 import { CtpEspecieInput, CtpEspecieSelect, useEspeciesConCatalogo } from "./ctp-especie-campo";
 import type { DetalleProduccionSniffs } from "@/lib/forestal/sniffs-produccion-parse";
@@ -139,6 +140,24 @@ export default function CtpLoteArmarModal({
    */
   const permisos = useMemo(() => disponiblePorPermiso(trozas), [trozas]);
   const especies = useMemo(() => disponiblePorEspecie(trozas, permiso || null), [trozas, permiso]);
+  /**
+   * Lo que hay en el patio y NO se puede elegir porque su guía sigue sin
+   * recepcionar: cuántas especies y cuánto volumen.
+   *
+   * Se cuenta sobre las especies que no están ya ofrecidas, para no contar dos
+   * veces una que tiene parte recepcionada y parte no.
+   */
+  const trabadas = useMemo(() => {
+    const ofrecidas = new Set(especies.map((e) => claveEspecie(e.nombre)));
+    const m = new Map<string, number>();
+    for (const t of trozas) {
+      if (t.guiaRecepcionada !== false) continue;
+      const clave = claveEspecie((t.especieComun ?? "").trim());
+      if (!clave || ofrecidas.has(clave)) continue;
+      m.set(clave, (m.get(clave) ?? 0) + (Number(t.volumenM3) || 0));
+    }
+    return { especies: m.size, m3: Math.round([...m.values()].reduce((a, b) => a + b, 0) * 1000) / 1000 };
+  }, [trozas, especies]);
   /* El catálogo de la planta (ADR-410): el patio dice qué madera HAY; el
      catálogo, qué especies trabaja este aserradero. Un lote se programa para
      la guía que todavía no llegó, así que las dos fuentes tienen que estar. */
@@ -420,9 +439,17 @@ export default function CtpLoteArmarModal({
             label="Especie"
             required
             hint={
-              especies.length > 0
-                ? "Arriba, las que hay en el patio con su stock; abajo, el resto del catálogo de la planta"
-                : "El patio no tiene piezas libres todavía: se ofrece el catálogo de la planta"
+              /* La lista deja afuera la madera de guías sin recepcionar (mismo
+                 criterio que `trozasDelLote`: ofrecerla armaría un lote que
+                 después nace vacío). Correcto — pero sin decirlo, el operador
+                 ve una sola especie con la pila llena delante y no sabe que las
+                 otras están a un trámite de distancia. Medido en el tenant:
+                 12 especies en el patio, 1 ofrecida. */
+              trabadas.especies > 0
+                ? `${trabadas.especies} especie${trabadas.especies === 1 ? "" : "s"} más (${fmtM3(trabadas.m3)} m³) no figuran: su guía está sin recepcionar.`
+                : especies.length > 0
+                  ? "Arriba, las que hay en el patio con su stock; abajo, el resto del catálogo de la planta"
+                  : "El patio no tiene piezas libres todavía: se ofrece el catálogo de la planta"
             }
           >
             <CtpEspecieSelect
