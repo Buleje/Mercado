@@ -23,10 +23,23 @@ type MonthData = {
   netMargin: number;   // %
 };
 
+/** Lo que aporta el Libro CTP al período: ventas y costo REALES, no estimados. */
+type MaderaPL = {
+  ventas: number;
+  cogs: number;
+  margen: number;
+  /** Despachos del período con precio sin cargar: plata que el P&L no ve. */
+  sinVenta: number;
+  /** Despachos con precio pero sin costo atribuido: margen desconocido. */
+  sinCosto: number;
+};
+
 type PLSummary = {
   period: string;
   revenue: number;
   cogs: number;
+  /** El corte forestal del período, para poder explicar el total. */
+  madera: MaderaPL | null;
   grossProfit: number;
   expenses: Record<string, number>;
   totalExpenses: number;
@@ -88,12 +101,36 @@ export default function PLTab() {
     const ordKey = (o: { createdAt?: string }) => (o.createdAt ?? "").slice(0, 7);
     const expKey = (e: { date?: string; createdAt?: string }) => (e.date ?? e.createdAt ?? "").slice(0, 7);
 
+    /* El mes elegido, para el corte forestal: el Libro CTP responde por rango y
+       el resumen de abajo es de UN mes (la serie de seis sigue siendo del
+       mostrador — pedir seis rangos más sería seis consultas para un gráfico). */
+    const mesFrom = new Date(year, month, 1).toISOString().slice(0, 10);
+    const mesTo = new Date(year, month + 1, 0).toISOString().slice(0, 10);
+
     Promise.all([
       fetch(`/api/orders?from=${rangeFrom}&to=${rangeTo}`).then(r => r.ok ? r.json() : []).catch(() => []),
       fetch(`/api/expenses?from=${rangeFrom}&to=${rangeTo}`).then(r => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([orders, expenses]) => {
+      /* La venta de madera vive en el Libro (ADR-141) y se pide al MISMO
+         endpoint que la usa allá: duplicar la cuenta acá sería una segunda
+         verdad sobre la misma plata. Si el tenant no tiene el Libro habilitado
+         responde 403 y el P&L sigue siendo el de siempre. */
+      fetch(`/api/admin/forestal/ctp?pnl=1&from=${mesFrom}&to=${mesTo}`, { credentials: "include" })
+        .then(r => (r.ok ? r.json() : null))
+        .catch(() => null),
+    ]).then(([orders, expenses, forestal]) => {
       if (!active) return;
       const ordersArr: { createdAt?: string; status?: string; total?: number }[] = Array.isArray(orders) ? orders : [];
+      const pnlF = (forestal as { pnl?: { ventasTotal?: number; cogsTotal?: number; margenTotal?: number; sinVenta?: number; sinCosto?: number } } | null)?.pnl;
+      const madera: MaderaPL | null =
+        pnlF && (pnlF.ventasTotal || pnlF.sinVenta)
+          ? {
+              ventas: pnlF.ventasTotal ?? 0,
+              cogs: pnlF.cogsTotal ?? 0,
+              margen: pnlF.margenTotal ?? 0,
+              sinVenta: pnlF.sinVenta ?? 0,
+              sinCosto: pnlF.sinCosto ?? 0,
+            }
+          : null;
       const expArr: { date?: string; createdAt?: string; category?: string; amount?: number }[] = Array.isArray(expenses) ? expenses : [];
 
       // ── Trend REAL: bucket por mes (COGS estimado 55% del ingreso) ──
@@ -118,8 +155,13 @@ export default function PLTab() {
 
       // ── Resumen del mes seleccionado (con desglose de gastos por categoría) ──
       const selKey = monthKey(year, month);
-      const revenue = ordersArr.filter(o => ordKey(o) === selKey && isIncome(o)).reduce((s, o) => s + (o.total ?? 0), 0);
-      const cogs = revenue * 0.55;
+      const mostrador = ordersArr.filter(o => ordKey(o) === selKey && isIncome(o)).reduce((s, o) => s + (o.total ?? 0), 0);
+      /* El COGS del mostrador sigue siendo una ESTIMACIÓN (55 %); el de la
+         madera sale del costo real de sus guías. Se suman porque el total tiene
+         que incluir las dos, y la pantalla dice cuál es cuál — un margen bruto
+         que mezcla medido y estimado sin avisar se lee como medido. */
+      const revenue = mostrador + (madera?.ventas ?? 0);
+      const cogs = mostrador * 0.55 + (madera?.cogs ?? 0);
       const grossProfit = revenue - cogs;
       const selExpenses = expArr.filter(e => expKey(e) === selKey);
       const totalExpenses = selExpenses.reduce((s, e) => s + (e.amount ?? 0), 0);
@@ -132,7 +174,7 @@ export default function PLTab() {
 
       setSummary({
         period: `${MONTHS[month]} ${year}`,
-        revenue, cogs, grossProfit, expenses: expMap, totalExpenses, netProfit,
+        revenue, cogs, madera, grossProfit, expenses: expMap, totalExpenses, netProfit,
         grossMargin: revenue > 0 ? (grossProfit / revenue) * 100 : 0,
         netMargin: revenue > 0 ? (netProfit / revenue) * 100 : 0,
       });
@@ -237,8 +279,45 @@ export default function PLTab() {
             <div className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
               {/* Revenue */}
               <PLRow label="(+) Ingresos por ventas" value={summary.revenue} bold highlight="blue" />
-              <PLRow label="(−) Costo de lo vendido" value={-summary.cogs} sub="~55% de ventas estimado" />
+              {/* El desglose va pegado al total: si el número de arriba incluye
+                  madera y la pantalla no lo dice, no se puede explicar de dónde
+                  salió — y el que lo mira busca el error en el mostrador. */}
+              {summary.madera && summary.madera.ventas > 0 && (
+                <PLRow
+                  label="    de los cuales, madera despachada"
+                  value={summary.madera.ventas}
+                  sub="Libro CTP · guías con precio cargado"
+                />
+              )}
+              <PLRow
+                label="(−) Costo de lo vendido"
+                value={-summary.cogs}
+                sub={
+                  summary.madera && summary.madera.cogs > 0
+                    ? "mostrador ~55% estimado · madera con su costo real"
+                    : "~55% de ventas estimado"
+                }
+              />
               <PLRow label="= Utilidad Bruta" value={summary.grossProfit} bold highlight={summary.grossProfit >= 0 ? "green" : "red"} showPct pctOf={summary.revenue} />
+              {/* Lo que el P&L NO puede ver se dice, en vez de que el total
+                  mienta por omisión: un despacho sin precio es plata que salió
+                  de la planta y no figura en ningún lado. */}
+              {summary.madera && (summary.madera.sinVenta > 0 || summary.madera.sinCosto > 0) && (
+                <p className="px-3 py-2 text-xs leading-snug text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                  {summary.madera.sinVenta > 0 && (
+                    <>
+                      {summary.madera.sinVenta} despacho{summary.madera.sinVenta === 1 ? "" : "s"} del mes
+                      sin precio cargado: esa madera salió y no está sumada acá.{" "}
+                    </>
+                  )}
+                  {summary.madera.sinCosto > 0 && (
+                    <>
+                      {summary.madera.sinCosto} con precio pero sin costo atribuido: su margen no se
+                      puede medir.
+                    </>
+                  )}
+                </p>
+              )}
 
               {/* Expenses breakdown */}
               <div>
