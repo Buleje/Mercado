@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, Package } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { estaAgotado } from "@/lib/pos/stock-vendible";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -14,6 +15,8 @@ interface POSSearchProduct {
   image?: string;
   barcode?: string;
   stock?: number;
+  /** `"product"` | `"service"`. Un servicio no se agota (ver `stock-vendible`). */
+  type?: string | null;
   previousPrice?: number;
   updatedAt?: string;
 }
@@ -39,9 +42,11 @@ function fuzzyMatch(query: string, text: string): boolean {
 
 type Product = POSSearchProduct;
 
-function stockBadge(stock: number | undefined) {
+/** Un servicio no lleva stock: decirle «Sin stock» es contarle al cajero una
+ *  falta que no existe (mismo bug que el cartel «Agotado» de la grilla). */
+function stockBadge(stock: number | undefined, type?: string | null) {
   if (stock == null) return null;
-  if (stock <= 0)
+  if (estaAgotado({ stock, type }))
     return (
       <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-muted">
         Sin stock
@@ -189,7 +194,7 @@ export default function POSSearchBar({
 
   const handleAdd = useCallback(
     (product: Product) => {
-      if (product.stock != null && product.stock <= 0) {
+      if (estaAgotado(product)) {
         // Toast-like warning via a simple alert substitute
         return;
       }
@@ -235,7 +240,7 @@ export default function POSSearchBar({
             </div>
           ) : (
             results.map((p, idx) => {
-              const outOfStock = p.stock != null && p.stock <= 0;
+              const outOfStock = estaAgotado(p);
               const isFirstHighlight = idx === 0 && highlightFirst;
               return (
                 <button
@@ -282,7 +287,7 @@ export default function POSSearchBar({
                       )}
                     </div>
                   </div>
-                  {stockBadge(p.stock)}
+                  {stockBadge(p.stock, p.type)}
                 </button>
               );
             })

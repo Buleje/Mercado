@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { estaAgotado } from "@/lib/pos/stock-vendible";
 
 interface FrequentProduct {
   id: number;
@@ -55,7 +56,7 @@ export default function POSFrequentProducts({
       </div>
       <div className="flex flex-wrap gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
         {products.map((p) => {
-          const outOfStock = p.stock != null && p.stock <= 0;
+          const outOfStock = estaAgotado(p);
           return (
             <button
               key={p.id}

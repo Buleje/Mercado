@@ -67,6 +67,7 @@ import POSReturnModal from "@/components/admin/pos/POSReturnModal";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { fiadoDelCliente } from "@/lib/fiados/fiado-del-cliente";
 import { Field } from "@/components/admin/shared/Field";
+import { estaAgotado } from "@/lib/pos/stock-vendible";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 const YapeQRPayment = dynamic(() => import("@/components/admin/YapeQRPayment"), { ssr: false });
@@ -1209,7 +1210,7 @@ export default function POSView() {
     addToRecents(product.id);
 
     // Mejora 7: Alerta de stock cero — pedir confirmacion
-    if (product.stock != null && product.stock <= 0) {
+    if (estaAgotado(product)) {
       playError();
       setShowZeroStockConfirm(product);
       return;
@@ -1337,7 +1338,7 @@ export default function POSView() {
     const q = searchInput?.value?.trim().toLowerCase();
     if (!q) return;
     const match = products.find(p => {
-      if (p.stock != null && p.stock <= 0) return false;
+      if (estaAgotado(p)) return false;
       return p.name.toLowerCase().includes(q) || p.barcode?.includes(q);
     });
     if (match) addToCart(match);
@@ -1792,7 +1793,7 @@ export default function POSView() {
                                 const skipped: string[] = [];
                                 for (const item of items) {
                                   const found = products.find(p => p.id === item.productId);
-                                  if (!found || (found.stock != null && found.stock <= 0)) { skipped.push(item.name); continue; }
+                                  if (!found || estaAgotado(found)) { skipped.push(item.name); continue; }
                                   newCart.push({ product: found, quantity: item.quantity });
                                 }
                                 if (newCart.length > 0) setCart(newCart);
@@ -1920,7 +1921,7 @@ export default function POSView() {
               )}>
                 {filtered.map(p => {
                   const inCart = cart.find(i => i.product.id === p.id);
-                  const outOfStock = p.stock != null && p.stock <= 0;
+                  const outOfStock = estaAgotado(p);
                   return (
                     <button
                       key={p.id}

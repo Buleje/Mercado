@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Zap, X, HelpCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { estaAgotado } from "@/lib/pos/stock-vendible";
 
 interface Product {
   id: number;
@@ -80,7 +81,7 @@ export default function POSExpressMode({
         return;
       }
 
-      if (product.stock != null && product.stock <= 0) {
+      if (estaAgotado(product)) {
         setFeedback(`Sin stock: ${product.name}`);
         setInput("");
         return;
