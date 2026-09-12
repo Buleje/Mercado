@@ -23,6 +23,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Truck, Wand2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import CtpSemanaDeRegistro from "./CtpSemanaDeRegistro";
+import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
+import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useFichaCtp } from "@/hooks/use-ficha-ctp";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
@@ -51,7 +54,8 @@ import VerificarGtfSerfor, { type SelloSerfor } from "./VerificarGtfSerfor";
 import { logger } from "@/lib/logger";
 import { Btn, ModalFooter, parseCitesPermiso } from "./ctp-shared";
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+/* «Hoy» de Pucallpa: a las 20:00 locales la guía nacía emitida mañana. */
+const hoy = hoyEnLima();
 
 export default function CtpDespachoGuiaModal({
   presetProducto,
@@ -90,6 +94,9 @@ export default function CtpDespachoGuiaModal({
   });
   const [filas, setFilas] = useState<FilaDespacho[]>([]);
   const [emision, setEmision] = useState(hoy);
+  /* La semana a la vista en la tira de días del despacho. */
+  const [semana, setSemana] = useState(hoy);
+  const jornadas = useJornadasDeProduccion(semana, true, "despacho");
   const [gtfNumber, setGtfNumber] = useState("");
   const [docType, setDocType] = useState("GTF");
   const [sello, setSello] = useState<SelloSerfor | null>(null);
@@ -308,6 +315,8 @@ export default function CtpDespachoGuiaModal({
   /** La fecha de emisión es también el arranque del traslado. */
   function cambiarEmision(v: string) {
     setEmision(v);
+    /* La tira de días sigue a la fecha: tipear otra semana la mueve. */
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) setSemana(v);
     setDatos((p) => ({ ...p, traslado: { ...p.traslado, fechaInicio: v } }));
   }
 
@@ -586,6 +595,19 @@ export default function CtpDespachoGuiaModal({
             />
           ) : (
           <>
+          {/* El día del despacho, con lo que cada día YA salió (2026-09-12):
+              es la fecha de emisión de la guía, y un día con dos guías del
+              mismo camión es una guía duplicada ante SERFOR. */}
+          <CtpSemanaDeRegistro
+            seccion="despacho"
+            valor={emision}
+            onElegir={cambiarEmision}
+            semana={semana}
+            onSemana={setSemana}
+            porDia={jornadas.porDia}
+            cargando={jornadas.cargando}
+            error={jornadas.error}
+          />
           <div className="flex gap-1.5">
             <Pestana activa={tab === "guia"} onClick={() => setTab("guia")} label="Datos de la guía de transporte forestal" pendiente={faltanGuia.length} />
             <Pestana activa={tab === "productos"} onClick={() => setTab("productos")} label="Creación de lista de productos" contador={filas.length} />

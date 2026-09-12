@@ -25,7 +25,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, BarChart3, CalendarDays, ChevronLeft, ChevronRight, Loader2 } from "@buleje/design-system/icons";
+import { AlertTriangle, BarChart3, CalendarDays, ChevronLeft, ChevronRight, Loader2, Lock } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import CtpResumenDeJornadasModal from "./CtpResumenDeJornadasModal";
@@ -39,7 +39,7 @@ import {
   nombreDelDia,
   tituloDeLaSemana,
 } from "@/lib/forestal/semana-de-registro";
-import type { JornadaDeProduccion } from "./hooks/use-jornadas-produccion";
+import type { JornadaDeProduccion, SeccionDeJornada } from "./hooks/use-jornadas-produccion";
 import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 
 interface Props {
@@ -61,7 +61,42 @@ interface Props {
    * se ofrece.
    */
   onCopiarAlCubicado?: (piezas: PiezaCubicada[]) => void;
+  /**
+   * Qué hecho cuenta cada casillero (2026-09-12). Cambia el nombre de lo que
+   * «ya tiene» el día y qué acciones se ofrecen: el resumen por especie y el
+   * traer al cubicado son de PRODUCCIÓN; un consumo o un despacho se miran en
+   * su propia pantalla.
+   */
+  seccion?: SeccionDeJornada;
+  /**
+   * El último día que se puede elegir (`YYYY-MM-DD`). Un consumo no se anota
+   * en el futuro: la madera todavía no entró a la sierra. Los días después se
+   * dibujan apagados y no responden.
+   */
+  maximo?: string;
 }
+
+/** Cómo se llama lo que un día «ya tiene», según la sección. */
+const NOMBRE: Record<SeccionDeJornada, { uno: string; varios: string; titulo: string; aviso: string }> = {
+  produccion: {
+    uno: "corrida",
+    varios: "corridas",
+    titulo: "Día del registro",
+    aviso: "Si es otro turno u otra sierra, seguí; si es la misma, la estarías cargando dos veces.",
+  },
+  consumo: {
+    uno: "consumo",
+    varios: "consumos",
+    titulo: "Día del consumo",
+    aviso: "Si entró otra tanda a la sierra ese día, seguí; si es la misma, la madera se contaría dos veces.",
+  },
+  despacho: {
+    uno: "despacho",
+    varios: "despachos",
+    titulo: "Día del despacho",
+    aviso: "Si salió otro camión ese día, seguí; si es la misma guía, estaría duplicada.",
+  },
+};
 
 const BOTON_FLECHA =
   "grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]";
@@ -75,8 +110,12 @@ export default function CtpSemanaDeRegistro({
   cargando = false,
   error = null,
   onCopiarAlCubicado,
+  seccion = "produccion",
+  maximo,
 }: Props) {
   const hoy = hoyEnLima();
+  const nombre = NOMBRE[seccion];
+  const esProduccion = seccion === "produccion";
   const base = esIsoValido(semana) ? semana : hoy;
   const dias = useMemo(() => diasDeLaSemana(base), [base]);
 
@@ -115,7 +154,7 @@ export default function CtpSemanaDeRegistro({
     const siguiente = dias[i + (e.key === "ArrowRight" ? 1 : -1)];
     e.preventDefault();
     if (siguiente) {
-      onElegir(siguiente);
+      if (!bloqueado(siguiente)) onElegir(siguiente);
       return;
     }
     /* Al borde de la tira se salta de semana y se cae en el día equivalente:
@@ -123,8 +162,12 @@ export default function CtpSemanaDeRegistro({
     const otra = correrSemanas(base, e.key === "ArrowRight" ? 1 : -1);
     const diasOtra = diasDeLaSemana(otra);
     onSemana(otra);
-    onElegir(e.key === "ArrowRight" ? diasOtra[0]! : diasOtra[6]!);
+    const destino = e.key === "ArrowRight" ? diasOtra[0]! : diasOtra[6]!;
+    if (!bloqueado(destino)) onElegir(destino);
   };
+
+  /** Un día después de `maximo` no se elige: ese hecho todavía no pasó. */
+  const bloqueado = (iso: string) => !!maximo && iso > maximo;
 
   return (
     <section
@@ -134,7 +177,7 @@ export default function CtpSemanaDeRegistro({
       <div className="flex flex-wrap items-center gap-2">
         <CalendarDays className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
         <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-          Día del registro
+          {nombre.titulo}
         </span>
         {cargando && (
           <Loader2
@@ -166,7 +209,7 @@ export default function CtpSemanaDeRegistro({
             type="button"
             onClick={() => {
               onSemana(hoy);
-              onElegir(hoy);
+              if (!bloqueado(hoy)) onElegir(hoy);
             }}
             className="h-8 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
           >
@@ -195,14 +238,17 @@ export default function CtpSemanaDeRegistro({
               <button
                 type="button"
                 onClick={() => onElegir(iso)}
+                disabled={bloqueado(iso)}
                 aria-pressed={elegido}
                 title={
-                  j
-                    ? `${etiquetaLarga(iso)} — ya tiene ${fmtPt(j.pt)} PT · ${fmtM3(j.m3)} m³ · ${fmtPiezas(j.piezas)} pza en ${j.corridas} corrida(s)`
-                    : `${etiquetaLarga(iso)} — sin producción anotada`
+                  bloqueado(iso)
+                    ? `${etiquetaLarga(iso)} — todavía no llegó: un ${nombre.uno} no se anota antes de que pase`
+                    : j
+                      ? `${etiquetaLarga(iso)} — ya tiene ${fmtPt(j.pt)} PT · ${fmtM3(j.m3)} m³ · ${fmtPiezas(j.piezas)} pza en ${j.corridas} ${j.corridas === 1 ? nombre.uno : nombre.varios}`
+                      : `${etiquetaLarga(iso)} — sin ${nombre.varios} anotados`
                 }
                 className={cn(
-                  "flex min-h-[4.25rem] w-full flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-1.5 text-center transition-colors",
+                  "flex min-h-[4.25rem] w-full flex-col items-center justify-center gap-0.5 rounded-xl border px-1 py-1.5 text-center transition-colors disabled:cursor-not-allowed disabled:opacity-40",
                   elegido
                     ? "border-[var(--accent)] bg-primary/10 text-[var(--text-primary)] ring-1 ring-[var(--accent)]"
                     : j
@@ -234,7 +280,7 @@ export default function CtpSemanaDeRegistro({
                           igual que «no hay nada» — que es justo lo contrario de lo
                           que este casillero tiene que decir. Ahí se cuentan las
                           corridas, que es el dato que importa: el día ya se cargó. */}
-                      {j.pt >= 1 ? `${fmtPt(j.pt)} PT` : j.corridas === 1 ? "1 corrida" : `${j.corridas} corridas`}
+                      {j.pt >= 1 ? `${fmtPt(j.pt)} PT` : `${j.corridas} ${j.corridas === 1 ? nombre.uno : nombre.varios}`}
                     </span>
                     {/* Las otras dos unidades del mismo hecho: el m³ es el del
                         papel y las piezas son lo que se cuenta en la pila. Van
@@ -258,7 +304,7 @@ export default function CtpSemanaDeRegistro({
               </button>
               {/* Sólo los días CON producción se pueden marcar: marcar un día
                   vacío no suma nada a un resumen. */}
-              {j && (
+              {j && esProduccion && (
                 <label
                   className="absolute left-1 top-1 flex cursor-pointer items-center"
                   title={`Sumar el ${etiquetaLarga(iso)} al resumen`}
@@ -283,21 +329,22 @@ export default function CtpSemanaDeRegistro({
           <span className="min-w-0 flex-1">
             El {etiquetaLarga(valor)} ya tiene{" "}
             <b className="tabular-nums">
-              {jornadaElegida.corridas} corrida{jornadaElegida.corridas === 1 ? "" : "s"}
+              {jornadaElegida.corridas} {jornadaElegida.corridas === 1 ? nombre.uno : nombre.varios}
             </b>{" "}
-            declarada{jornadaElegida.corridas === 1 ? "" : "s"} ({fmtM3(jornadaElegida.m3)} m³ ·{" "}
-            {fmtPt(jornadaElegida.pt)} PT). Si es otro turno u otra sierra, seguí; si es la misma, la
-            estarías cargando dos veces.
+            ({fmtM3(jornadaElegida.m3)} m³ · {fmtPt(jornadaElegida.pt)} PT). {nombre.aviso}
           </span>
           {/* Ver QUÉ salió ese día es lo que resuelve la duda: si el resumen
-              dice lo mismo que se está por cargar, es la misma jornada. */}
-          <button
-            type="button"
-            onClick={() => setResumen([valor])}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-current px-2.5 py-1 text-xs font-bold hover:bg-[var(--surface-raised)]"
-          >
-            <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Ver qué salió ese día
-          </button>
+              dice lo mismo que se está por cargar, es la misma jornada. Sólo
+              en producción: el resumen lee corridas. */}
+          {esProduccion && (
+            <button
+              type="button"
+              onClick={() => setResumen([valor])}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-current px-2.5 py-1 text-xs font-bold hover:bg-[var(--surface-raised)]"
+            >
+              <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Ver qué salió ese día
+            </button>
+          )}
         </div>
       )}
 
@@ -328,6 +375,17 @@ export default function CtpSemanaDeRegistro({
             <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Resumen por especie de{" "}
             {marcados.length === 1 ? "ese día" : "esos días"}
           </button>
+          {/* Marcar muchos días es el gesto de «quiero cerrar el mes»: ese
+              camino ya existe entero (revisar pendientes, cerrar, bajar el
+              paquete oficial) y estaba a cinco clics sin cartel. */}
+          {marcados.length >= 5 && (
+            <a
+              href="/admin?tab=ctp-libro-operaciones&vista=cierre"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+            >
+              <Lock className="h-3.5 w-3.5" aria-hidden /> ¿Cerrar el mes? Está en Cierre
+            </a>
+          )}
         </div>
       )}
 
@@ -352,8 +410,8 @@ export default function CtpSemanaDeRegistro({
           </>
         ) : (
           <>
-            El día que elijas es la fecha del asiento. Los que ya tienen producción lo dicen en pie
-            tablar — dos corridas el mismo día es normal (dos turnos), pero repetir la misma no.
+            El día que elijas es la fecha del asiento. Los que ya tienen {nombre.varios} lo dicen en pie
+            tablar — dos {nombre.varios} el mismo día es normal, pero repetir {esProduccion ? "la misma corrida" : `el mismo ${nombre.uno}`} no.
           </>
         )}
       </p>

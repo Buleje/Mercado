@@ -33,6 +33,7 @@ import CtpTrozasDelLote from "./CtpTrozasDelLote";
 import { Btn, I } from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { EstadoLotesAserrio } from "./hooks/use-lotes-aserrio";
+import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
 
 /**
  * El turno a medio cargar, guardado por lote.
@@ -123,7 +124,8 @@ export default function CtpProduccionDeLote({
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
   /** (2) Fecha de consumo del formato: se elige ANTES de registrar y viaja al
    *  modal como el día de la corrida. */
-  const [fechaConsumo, setFechaConsumo] = useState(() => new Date().toISOString().slice(0, 10));
+  /* «Hoy» de Pucallpa, no de UTC: a las 20:00 locales el consumo nacía fechado mañana. */
+  const [fechaConsumo, setFechaConsumo] = useState(() => hoyEnLima());
   const [abierto, setAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);

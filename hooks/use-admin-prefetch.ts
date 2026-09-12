@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { laPaginaSeEstaYendo } from "@/lib/navegacion";
 
 /**
  * Hook que prefetcha en background las APIs admin más usadas y las cachea
@@ -96,6 +97,8 @@ async function prefetchOne(config: CacheConfig): Promise<void> {
       /* quota exceeded — siguente intento */
     }
   } catch (err) {
+    /* Irse de la página corta los prefetch en vuelo: eso no es una falla. */
+    if (laPaginaSeEstaYendo()) return;
     console.warn(`[admin-prefetch] ${config.url} failed`, err instanceof Error ? err.message : String(err));
   }
 }

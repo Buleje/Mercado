@@ -27,9 +27,12 @@ export interface JornadaDeProduccion {
   piezas: number;
 }
 
-function urlDeLaSemana(iso: string): string {
+/** Qué hecho del libro cuenta la tira: lo que salió de la sierra, lo que entró, o lo que se fue con guía. */
+export type SeccionDeJornada = "produccion" | "consumo" | "despacho";
+
+function urlDeLaSemana(iso: string, seccion: SeccionDeJornada): string {
   const { desde, hasta } = rangoDeLaSemana(iso);
-  return `/api/admin/forestal/ctp?jornadas=1&semanaDesde=${desde}&semanaHasta=${hasta}`;
+  return `/api/admin/forestal/ctp?jornadas=1&seccion=${seccion}&semanaDesde=${desde}&semanaHasta=${hasta}`;
 }
 
 /**
@@ -38,7 +41,11 @@ function urlDeLaSemana(iso: string): string {
  * Devuelve un mapa día → jornada: la tira dibuja los siete casilleros igual y
  * pregunta por cada uno, así que un `Map` evita un `find` por casillero.
  */
-export function useJornadasDeProduccion(isoDeLaSemana: string, activo = true) {
+export function useJornadasDeProduccion(
+  isoDeLaSemana: string,
+  activo = true,
+  seccion: SeccionDeJornada = "produccion",
+) {
   const [porDia, setPorDia] = useState<Map<string, JornadaDeProduccion>>(new Map());
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +53,7 @@ export function useJornadasDeProduccion(isoDeLaSemana: string, activo = true) {
   const cargar = useCallback(
     async (iso: string, forzar = false) => {
       if (!esIsoValido(iso)) return;
-      const url = urlDeLaSemana(iso);
+      const url = urlDeLaSemana(iso, seccion);
       if (forzar) invalidarCtp("jornadas=1");
       setCargando(true);
       setError(null);
@@ -62,7 +69,7 @@ export function useJornadasDeProduccion(isoDeLaSemana: string, activo = true) {
         setCargando(false);
       }
     },
-    [],
+    [seccion],
   );
 
   useEffect(() => {

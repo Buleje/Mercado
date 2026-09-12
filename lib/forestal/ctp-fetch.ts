@@ -40,40 +40,10 @@ interface EnCache {
 
 const enVuelo = new Map<string, EnCache>();
 
-/* ── Irse de la página no es que el pedido «falle» ─────────────────────────
- *
- * Al navegar, el navegador corta los pedidos en vuelo y cada uno rechaza con
- * «TypeError: Failed to fetch». Los best-effort del libro lo registraban como
- * falla, así que salir del Libro CTP dejaba seis warnings en la consola —doce
- * en desarrollo, por el doble montaje de React— y el ruido tapaba las fallas
- * de verdad (Brandon, 2026-09-11: «resolvé estos errores»).
- *
- * El orden está MEDIDO en Chrome: `beforeunload` → `pagehide` → el rechazo del
- * fetch. Entonces, con la bandera puesta en `pagehide`, quien atiende el error
- * ya sabe que el pedido no fracasó: nadie está esperando esa respuesta.
- *
- * `pageshow` la baja: con bfcache la misma página puede volver viva, y dejarla
- * encendida silenciaría fallas reales por el resto de la sesión.
- */
-let seVaLaPagina = false;
-if (typeof window !== "undefined") {
-  window.addEventListener("pagehide", () => {
-    seVaLaPagina = true;
-  });
-  window.addEventListener("pageshow", () => {
-    seVaLaPagina = false;
-  });
-}
-
-/**
- * `true` si el pedido se cortó porque la página se está yendo.
- *
- * Para los `catch` best-effort: `if (laPaginaSeEstaYendo()) return;` antes de
- * avisar. Nunca para decidir la lógica — sólo si vale la pena loguear.
- */
-export function laPaginaSeEstaYendo(): boolean {
-  return seVaLaPagina;
-}
+/* «Irse de la página no es que el pedido falle»: la bandera vive en
+   `lib/navegacion.ts` desde que el panel entero la necesita; se re-exporta
+   para que los hooks del libro sigan importándola de acá. */
+export { laPaginaSeEstaYendo } from "@/lib/navegacion";
 
 /**
  * Descarta lo cacheado. Sin argumento, todo; con uno, lo que lo contenga.

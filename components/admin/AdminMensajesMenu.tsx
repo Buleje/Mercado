@@ -22,6 +22,7 @@ import Link from "next/link";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { MessageCircle, ShieldCheck } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { laPaginaSeEstaYendo } from "@/lib/navegacion";
 
 interface AdminMensajesMenuProps {
   /** Mismo caso que NotificationBell: fondo oscuro del header (temas
@@ -55,7 +56,9 @@ export default function AdminMensajesMenu({ onDarkHeader = false }: AdminMensaje
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (d) setPlataformaUnread(d.unread ?? 0); })
       .catch((err) => {
-        if (corte.signal.aborted) return;
+        /* Abortado por desmontar, o cortado por una navegación completa (ahí
+           React no corre el cleanup y nadie aborta): ninguno es una falla. */
+        if (corte.signal.aborted || laPaginaSeEstaYendo()) return;
         console.warn("[AdminMensajesMenu] platform-chat fetch failed:", String(err));
       });
     return () => corte.abort();

@@ -253,3 +253,37 @@ describe("de los paquetes del libro a filas del cubicador", () => {
     expect(p!.m3).toBe(0);
   });
 });
+
+/* ── La misma tira en Consumos y Despacho (2026-09-12) ────────────────────── */
+
+describe("la tira por sección", () => {
+  it("en consumo habla de consumos y no ofrece el resumen de producción", () => {
+    tira({
+      seccion: "consumo",
+      valor: "2026-09-17",
+      porDia: jornadas({ dia: "2026-09-17", corridas: 2, m3: 4.2, pt: 1781, piezas: 30 }),
+    });
+    expect(screen.getByText("Día del consumo")).toBeInTheDocument();
+    expect(screen.getByText(/Si entró otra tanda/)).toBeInTheDocument();
+    expect(screen.queryByText(/Ver qué salió ese día/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Sumar el/)).not.toBeInTheDocument();
+  });
+
+  it("un día después del máximo no se puede elegir: ese hecho todavía no pasó", () => {
+    const { onElegir } = tira({ seccion: "consumo", valor: "2026-09-16", maximo: "2026-09-16" });
+    const manana = screen.getByText("17/09").closest("button")!;
+    expect(manana).toBeDisabled();
+    fireEvent.click(manana);
+    expect(onElegir).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("15/09").closest("button")!);
+    expect(onElegir).toHaveBeenCalledWith("2026-09-15");
+  });
+
+  it("en despacho, un día con guías cuenta despachos", () => {
+    tira({
+      seccion: "despacho",
+      porDia: jornadas({ dia: "2026-09-17", corridas: 1, m3: 0.001, pt: 0, piezas: 4 }),
+    });
+    expect(screen.getByText("1 despacho")).toBeInTheDocument();
+  });
+});

@@ -231,7 +231,16 @@ export default function CtpResumenDeJornadasModal({
       footer={
         <div className="flex w-full items-center gap-2">
           <span className="mr-auto text-xs text-[var(--text-tertiary)]">
-            Sólo lectura — para corregir una corrida, entrá por ella en el libro.
+            Sólo lectura — para corregir una corrida, entrá por ella en el libro.{" "}
+            {/* El cierre del mes (revisar, cerrar, bajar el paquete oficial) ya
+                existe: este resumen es el paso previo natural, y nadie lo sabía. */}
+            <a
+              href="/admin?tab=ctp-libro-operaciones&vista=cierre"
+              className="font-bold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]"
+            >
+              Cerrar el mes
+            </a>{" "}
+            está en la pestaña Cierre.
           </span>
           <Btn variant="primary" onClick={onClose}>
             Listo

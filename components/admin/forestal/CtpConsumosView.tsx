@@ -74,6 +74,7 @@ import type { AgrupacionPatio } from "@/lib/forestal/consumo-trozas";
 import { Celda, Cuadro, SinDatos, Texto, Th } from "./ctp-cuadro-shared";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
 
 /** Sin tildes ni mayúsculas: se busca como se tipea, no como se escribió. */
 const norm = (v: string | null | undefined) =>
@@ -191,7 +192,8 @@ export default function CtpConsumosView({
   }, [cubicarAbierto]);
   /** Cargar la sierra (ADR-340): el lote que se está aserrando y el día. */
   const [loteCarga, setLoteCarga] = useState("");
-  const [fechaConsumo, setFechaConsumo] = useState(() => new Date().toISOString().slice(0, 10));
+  /* «Hoy» de Pucallpa, no de UTC: a las 20:00 locales el consumo nacía fechado mañana. */
+  const [fechaConsumo, setFechaConsumo] = useState(() => hoyEnLima());
   const [aviso, setAviso] = useState<{ tono: "ok" | "aviso"; texto: string } | null>(null);
   /** Lo tildado en la tabla del patio. Vive acá porque el filtro que decide
    *  qué se ve también vive acá (ADR-345). */

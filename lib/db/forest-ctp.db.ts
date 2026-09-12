@@ -1530,6 +1530,14 @@ export class ForestCtpDB {
   static async jornadasDeProduccion(
     tenantId: string,
     rango: { desde: string; hasta: string },
+    /**
+     * Qué hecho del libro cuenta la tira (2026-09-12, la tira llegó a Consumos
+     * y Despacho): `produccion` = lo que salió de la sierra; `consumo` = lo que
+     * entró a la sierra (la corrida con su materia prima); `despacho` = lo que
+     * salió de la planta con guía. La forma de la respuesta es la misma: un día
+     * con cuántos registros, cuánto volumen y cuántas piezas.
+     */
+    seccion: "produccion" | "consumo" | "despacho" = "produccion",
   ): Promise<
     { dia: string; corridas: number; m3: number; pt: number; piezas: number }[]
   > {
@@ -1543,12 +1551,24 @@ export class ForestCtpDB {
     const filas = await prisma.forestCtpEntry.findMany({
       where: {
         tenantId,
-        section: "produccion",
+        section: seccion === "despacho" ? "despacho" : "produccion",
         status: "registrado",
         deletedAt: null,
         entryDate: { gte, lt },
+        /* Un consumo es una corrida que YA tiene materia prima: la que se abrió
+           sin lote (volumen de entrada nulo o cero) no cuenta como consumo. */
+        ...(seccion === "consumo" ? { volumeInputM3: { gt: 0 } } : {}),
       },
-      select: { entryDate: true, quantity: true, unit: true, pieces: true },
+      select: {
+        entryDate: true,
+        quantity: true,
+        unit: true,
+        pieces: true,
+        volumeInputM3: true,
+        /* Las piezas del consumo son las trozas que entraron, no las que
+           salieron: se cuentan del puente, que es donde viven (ADR-326). */
+        _count: { select: { consumos: true } },
+      },
       /* Un rango de semanas, no de años: el tope es una red, no una página. */
       take: 2000,
     });
@@ -1558,13 +1578,18 @@ export class ForestCtpDB {
       const clave = f.entryDate.toISOString().slice(0, 10);
       const acc = porDia.get(clave) ?? { corridas: 0, m3: 0, piezas: 0 };
       acc.corridas += 1;
-      /* `quantity` es el volumen declarado y su unidad casi siempre es m³
-         (`guardar-produccion-corrida` manda `unit: "m3"`). Si una corrida vieja
-         declaró en otra unidad, su volumen NO se suma —convertir a ojo sería
-         inventar el número que después se lee como producción del día— pero la
-         corrida sí se cuenta: el día tuvo trabajo. */
-      if (!f.unit || f.unit === "m3") acc.m3 += Number(f.quantity ?? 0);
-      acc.piezas += f.pieces ?? 0;
+      if (seccion === "consumo") {
+        acc.m3 += Number(f.volumeInputM3 ?? 0);
+        acc.piezas += f._count.consumos;
+      } else {
+        /* `quantity` es el volumen declarado y su unidad casi siempre es m³
+           (`guardar-produccion-corrida` manda `unit: "m3"`). Si una fila vieja
+           declaró en otra unidad, su volumen NO se suma —convertir a ojo sería
+           inventar el número que después se lee como producción del día— pero
+           la fila sí se cuenta: el día tuvo trabajo. */
+        if (!f.unit || f.unit === "m3") acc.m3 += Number(f.quantity ?? 0);
+        acc.piezas += f.pieces ?? 0;
+      }
       porDia.set(clave, acc);
     }
 

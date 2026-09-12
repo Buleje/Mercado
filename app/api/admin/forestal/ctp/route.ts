@@ -424,8 +424,10 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
     if (url.searchParams.get("jornadas") === "1") {
       const desde = url.searchParams.get("semanaDesde") ?? "";
       const hasta = url.searchParams.get("semanaHasta") ?? "";
+      const s = url.searchParams.get("seccion");
+      const seccion = s === "consumo" || s === "despacho" ? s : "produccion";
       return NextResponse.json({
-        jornadas: await ForestCtpDB.jornadasDeProduccion(auth.tenantId, { desde, hasta }),
+        jornadas: await ForestCtpDB.jornadasDeProduccion(auth.tenantId, { desde, hasta }, seccion),
       });
     }
     /* El detalle de las jornadas marcadas: qué salió cada día, por especie y

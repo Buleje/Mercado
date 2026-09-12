@@ -28,6 +28,9 @@ import {
   X,
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import CtpSemanaDeRegistro from "./CtpSemanaDeRegistro";
+import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
+import { esIsoValido, hoyEnLima } from "@/lib/forestal/semana-de-registro";
 import {
   agruparPorGuia,
   avisosSeleccion,
@@ -58,7 +61,9 @@ const fmtDia = (dia: string) => {
     : d.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
 };
 
-const hoyISO = () => new Date().toISOString().slice(0, 10);
+/* El «hoy» es el de Pucallpa: pasadas las 19:00 el UTC ya está en mañana, y un
+   consumo con fecha de mañana es madera que entró a la sierra antes de existir. */
+const hoyISO = () => hoyEnLima();
 
 const norm = (v: string | null | undefined) => (v ?? "").toLowerCase().trim();
 
@@ -115,6 +120,9 @@ export default function CtpConsumirLoteModal({
   onClose: () => void;
 }) {
   const [dia, setDia] = useState(fecha);
+  /* La semana a la vista en la tira de días; sigue al campo de fecha. */
+  const [semana, setSemana] = useState(fecha);
+  const jornadas = useJornadasDeProduccion(semana, true, "consumo");
   const [observaciones, setObservaciones] = useState("");
   const [quitadas, setQuitadas] = useState<Set<string>>(new Set());
   const [busqueda, setBusqueda] = useState("");
@@ -230,6 +238,24 @@ export default function CtpConsumirLoteModal({
           <b>lo producido se declara después</b>, en Producción.
         </p>
 
+        {/* El día del consumo, con lo que cada día YA tiene (2026-09-12, la
+            misma tira que Producción): el parte llega tarde y sin esto la misma
+            tanda de trozas se anotaba dos veces. Los días futuros van apagados. */}
+        <CtpSemanaDeRegistro
+          seccion="consumo"
+          valor={dia}
+          maximo={hoyISO()}
+          onElegir={(iso) => {
+            setDia(iso);
+            setSemana(iso);
+          }}
+          semana={semana}
+          onSemana={setSemana}
+          porDia={jornadas.porDia}
+          cargando={jornadas.cargando}
+          error={jornadas.error}
+        />
+
         {/* Fecha y observación se deciden acá: cerrar el modal para corregir la
             fecha del filtro y volver a elegir todo era el camino largo. */}
         <div className="grid gap-2 sm:grid-cols-[minmax(0,14rem)_1fr]">
@@ -239,7 +265,11 @@ export default function CtpConsumirLoteModal({
               type="date"
               value={dia}
               max={hoyISO()}
-              onChange={(e) => setDia(e.target.value)}
+              onChange={(e) => {
+                setDia(e.target.value);
+                /* Tipear una fecha de otra semana mueve la tira de arriba. */
+                if (esIsoValido(e.target.value)) setSemana(e.target.value);
+              }}
               aria-label="Fecha del consumo"
               className={`${CAMPO} mt-1`}
             />
