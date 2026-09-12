@@ -36,6 +36,7 @@ import {
   type LoteAserrio,
 } from "@/lib/forestal/lotes-aserrio";
 import { labelProductoConsumible } from "@/lib/forestal/lote-programacion";
+import { TOPE_RENDIMIENTO_PCT } from "@/lib/forestal/vincular-produccion";
 import { estadoSalida } from "./ctp-section-shared";
 import { Btn } from "./ctp-shared";
 import { IconAction } from "@/components/admin/shared/module-primitives";
@@ -54,6 +55,21 @@ const productoLegible = (p: string) =>
 
 /** El libro escribe la unidad «m3»; en pantalla se lee «m³» como en todo el resto. */
 const unidadLegible = (u: string | null | undefined) => (u === "m3" ? "m³" : (u ?? ""));
+
+/**
+ * La ventana del proceso, sin repetir el año cuando es el mismo.
+ *
+ * «01 ago. 2026 → 01 oct. 2026» dice dos veces un año que no cambia y empuja el
+ * resto de la línea; con «01 ago. → 01 oct. 2026» se lee de una pasada.
+ */
+function ventanaDeProceso(inicio: string, fin: string | null | undefined): string {
+  const a = fmtFecha(inicio);
+  if (!fin) return `${a ?? "—"} → sin cierre`;
+  const b = fmtFecha(fin);
+  if (!a || !b) return `${a ?? "—"} → ${b ?? "—"}`;
+  const anioA = a.slice(-4);
+  return anioA === b.slice(-4) ? `${a.slice(0, -5)} → ${b}` : `${a} → ${b}`;
+}
 
 const fmtFecha = (iso: string | null) => {
   if (!iso) return null;
@@ -240,9 +256,10 @@ export default function CtpLoteCard({
           )}
           {lote.tipoProductoConsumir && <span>{labelProductoConsumible(lote.tipoProductoConsumir)}</span>}
           {lote.inicioProceso && (
+            /* Sin el rótulo eran dos fechas sueltas en el medio de la tarjeta y
+               nadie sabía de qué: ¿vigencia?, ¿aserrío?, ¿la guía? */
             <span className="text-[var(--text-tertiary)]">
-              {fmtFecha(lote.inicioProceso)}
-              {lote.finProceso ? ` → ${fmtFecha(lote.finProceso)}` : " → sin cierre"}
+              Proceso: {ventanaDeProceso(lote.inicioProceso, lote.finProceso)}
             </span>
           )}
         </p>
@@ -302,7 +319,7 @@ export default function CtpLoteCard({
           )}
           {rend != null && (
             <span
-              title={`Salió ${corrida?.quantity != null ? fmtM3(corrida.quantity) : "—"} m³ de los ${fmtM3(lote.volumenM3)} m³ que entraron`}
+              title={`Salió ${corrida?.quantity != null ? fmtM3(corrida.quantity) : "—"} m³ de los ${fmtM3(lote.volumenM3)} m³ que entraron. La plaza admite hasta ${TOPE_RENDIMIENTO_PCT} %${margen ? `, o sea ${fmtM3(margen.topeM3)} m³` : ""}.`}
               className={`ml-2 inline-block rounded-lg px-1.5 py-0.5 font-mono text-sm font-bold tabular-nums ${
                 veredicto.tono === "ok"
                   ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
@@ -311,7 +328,10 @@ export default function CtpLoteCard({
                     : "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
               }`}
             >
-              {rend}% · {veredicto.texto}
+              {/* El tope al lado del rendimiento: son las dos puntas de la misma
+                  cuenta y separadas no se conectaban. Con «54.2 % de 56 %» se ve
+                  de dónde sale el «todavía se puede declarar» de arriba. */}
+              {rend}% de {TOPE_RENDIMIENTO_PCT}% · {veredicto.texto}
             </span>
           )}
           {/* El "quedan X por declarar" ya se muestra arriba, en el badge
@@ -441,10 +461,15 @@ export default function CtpLoteCard({
           </>
         )}
         <span className="ml-auto flex items-center gap-2">
-          <span className="hidden font-mono text-xs text-[var(--text-tertiary)] sm:inline">
-            <TreePine className="mr-1 inline h-3.5 w-3.5" aria-hidden />
-            {lote.piezas} apartada{lote.piezas === 1 ? "" : "s"}
-          </span>
+          {/* Un lote de inventario NO tiene trozas apartadas: se declaró por
+              volumen. «0 apartadas» ahí no es un dato, es una cuenta de algo
+              que no existe. */}
+          {!(lote.piezas === 0 && esLoteDeInventario(lote)) && (
+            <span className="hidden font-mono text-xs text-[var(--text-tertiary)] sm:inline">
+              <TreePine className="mr-1 inline h-3.5 w-3.5" aria-hidden />
+              {lote.piezas} apartada{lote.piezas === 1 ? "" : "s"}
+            </span>
+          )}
           {
             /* Eliminar CUALQUIER lote, sin excepción (Brandon, 2026-09-01) —
                siempre visible: sólo ABRE la ficha, donde se confirma con
