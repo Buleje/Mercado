@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { AlertTriangle, Check, Upload, X } from "@buleje/design-system/icons";
 import { polygonAreaHa, type LatLng } from "@/lib/forestal/loth-geo";
 import { parseCoordText, parseGeometryFile, type ParseResult } from "@/lib/forestal/loth-coords-io";
@@ -36,6 +37,10 @@ interface Props {
 }
 
 export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }: Props) {
+  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
+     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   const [text, setText] = useState("");
   const [zona, setZona] = useState(zonaDefault);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -74,7 +79,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
   if (!open) return null;
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"

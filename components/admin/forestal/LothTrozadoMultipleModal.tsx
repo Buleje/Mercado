@@ -11,7 +11,8 @@
  * de verdad importa (el trozado no puede superar la tala).
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, Loader2, Plus, Scissors, Trash2, X } from "@buleje/design-system/icons";
 import { smalianVolume, type LothEntryDTO } from "@/lib/forestal/loth-constants";
@@ -54,9 +55,13 @@ export default function LothTrozadoMultipleModal({
     trozas: { trozaCode: string; diamMayorM: number; diamMenorM: number; lengthM: number; volumeM3: number; isRama: boolean }[],
   ) => Promise<{ creadas: number; errores: string[] }>;
 }) {
+  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
+     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  const cajaRef = useRef<HTMLDivElement>(null);
   const [arbolId, setArbolId] = useState<string>("");
   const [renglones, setRenglones] = useState<Renglon[]>([nuevoRenglon(0), nuevoRenglon(1)]);
   const [guardando, setGuardando] = useState(false);
+  useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onClose });
   const [resultado, setResultado] = useState<{ creadas: number; errores: string[] } | null>(null);
 
   const arbol = useMemo(() => talas.find((t) => t.id === arbolId) ?? null, [talas, arbolId]);
@@ -101,7 +106,7 @@ export default function LothTrozadoMultipleModal({
   };
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"

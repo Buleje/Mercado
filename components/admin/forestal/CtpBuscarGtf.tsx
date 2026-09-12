@@ -17,6 +17,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   ArrowRight,
   Boxes,
@@ -72,6 +73,10 @@ export default function CtpBuscarGtf({
   /** Salta a una vista del libro (para ver el despacho en su registro). */
   onIrA: (vista: string) => void;
 }) {
+  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
+     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onCerrar });
   const [q, setQ] = useState("");
   const [buscando, setBuscando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -134,7 +139,7 @@ export default function CtpBuscarGtf({
   const sinResultados = buscado && ingresos.length === 0 && despachos.length === 0 && paquetes.length === 0;
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="modal-backdrop fixed inset-0 z-50 flex items-start justify-center bg-black/45 p-4 backdrop-blur-sm sm:pt-[12vh]"
       role="dialog"
       aria-modal="true"

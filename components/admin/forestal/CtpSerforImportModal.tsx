@@ -19,6 +19,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { AlertTriangle, CheckCircle, Download, FileText, Upload, X } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { logger } from "@/lib/logger";
@@ -101,6 +102,10 @@ function atribuirSiEsSalida(
 }
 
 export default function CtpSerforImportModal({ onClose, onImportado }: { onClose: () => void; onImportado?: () => void }) {
+  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
+     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
   const [secciones, setSecciones] = useState<SeccionDelLibro[]>([]);
   const [faltantes, setFaltantes] = useState<{ formato: FormatoCtp; labels: string[] }[]>([]);
@@ -373,7 +378,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div
+      <div ref={cajaRef} tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

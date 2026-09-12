@@ -12,7 +12,8 @@
  * un dato del libro.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { RotateCcw, Save, X } from "@buleje/design-system/icons";
 import {
   acotarUmbral,
@@ -39,6 +40,10 @@ export default function LothTraceUmbralesModal({
   onClose: () => void;
   onGuardar: (u: UmbralesMerma) => void;
 }) {
+  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
+     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   const [draft, setDraft] = useState<UmbralesMerma>(umbrales);
 
   useEffect(() => {
@@ -80,7 +85,7 @@ export default function LothTraceUmbralesModal({
   };
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"

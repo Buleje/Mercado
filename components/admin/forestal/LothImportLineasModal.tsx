@@ -12,6 +12,7 @@
  */
 
 import { useMemo, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { DataTable } from "@buleje/design-system";
 import { AlertTriangle, CheckCircle2, FileUp, Loader2, Upload, X } from "@buleje/design-system/icons";
 import { parseImportLineas, type FilaImport } from "@/lib/forestal/loth-import-lineas";
@@ -43,10 +44,14 @@ export default function LothImportLineasModal({
   /** Escribe las filas elegidas. Devuelve cuántas entraron y qué falló. */
   onImportar: (filas: FilaImport[]) => Promise<{ creadas: number; errores: string[] }>;
 }) {
+  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
+     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  const cajaRef = useRef<HTMLDivElement>(null);
   const [texto, setTexto] = useState("");
   const [nombreArchivo, setNombreArchivo] = useState<string | null>(null);
   const [omitidas, setOmitidas] = useState<Set<number>>(new Set());
   const [importando, setImportando] = useState(false);
+  useModalAccesible(cajaRef, { onCerrar: importando ? undefined : onClose });
   const [resultado, setResultado] = useState<{ creadas: number; errores: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -72,7 +77,7 @@ export default function LothImportLineasModal({
   };
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"

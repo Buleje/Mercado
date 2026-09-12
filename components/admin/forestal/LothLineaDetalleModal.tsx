@@ -10,6 +10,8 @@
  */
 
 import { Camera, Clock, Link2, MapPin, User, X } from "@buleje/design-system/icons";
+import { useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   diasDeRegistro,
   estaFueraDePlazo,
@@ -44,6 +46,10 @@ export default function LothLineaDetalleModal({
   onClose: () => void;
   onVerCadena?: (code: string) => void;
 }) {
+  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
+     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   if (!linea) return null;
 
   const dias = diasDeRegistro(linea.entryDate, linea.createdAt);
@@ -53,7 +59,7 @@ export default function LothLineaDetalleModal({
   const lng = linea.gpsLng != null ? Number(linea.gpsLng) : null;
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"

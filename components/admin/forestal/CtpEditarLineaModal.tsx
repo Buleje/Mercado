@@ -22,7 +22,8 @@
  *    bloqueado sin explicación se lee como un error de la pantalla.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { AlertTriangle, Check, Loader2, Lock, X } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -93,6 +94,9 @@ export default function CtpEditarLineaModal({
   onCerrar: () => void;
   onListo: (resumen: string) => void;
 }) {
+  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
+     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  const cajaRef = useRef<HTMLDivElement>(null);
   /** Lo que dice hoy el asiento — la referencia contra la que se mide el cambio. */
   const actual = useMemo<ValoresLinea>(
     () => ({
@@ -133,6 +137,7 @@ export default function CtpEditarLineaModal({
   const [permiso, setPermiso] = useState(permisoActual);
 
   const [guardando, setGuardando] = useState(false);
+  useModalAccesible(cajaRef, { onCerrar: guardando ? undefined : onCerrar });
   const [error, setError] = useState<string | null>(null);
   /** Lo que el servidor NO aplicó, con su motivo. Se muestra y no se cierra. */
   const [sinAplicar, setSinAplicar] = useState<string[]>([]);
@@ -314,7 +319,7 @@ export default function CtpEditarLineaModal({
       className="modal-backdrop fixed inset-0 z-[9990] flex items-center justify-center bg-black/50 p-4"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onCerrar(); }}
     >
-      <div
+      <div ref={cajaRef} tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={`Editar la corrida N° ${linea.lineNo ?? ""}`}

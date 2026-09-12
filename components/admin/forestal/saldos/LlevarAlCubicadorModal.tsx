@@ -20,7 +20,8 @@
  * papel de respaldo, no un movimiento del Libro.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { ArrowRight, Loader2, Ruler, TreePine, X } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
@@ -41,6 +42,10 @@ export default function LlevarAlCubicadorModal({
   recorte: string;
   onCerrar: () => void;
 }) {
+  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
+     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onCerrar });
   const [elegidos, setElegidos] = useState<Set<string>>(
     () => new Set(candidatos.map((c) => c.clave)),
   );
@@ -98,7 +103,7 @@ export default function LlevarAlCubicadorModal({
         if (e.target === e.currentTarget) onCerrar();
       }}
     >
-      <div
+      <div ref={cajaRef} tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Llevar la madera filtrada al cubicador"

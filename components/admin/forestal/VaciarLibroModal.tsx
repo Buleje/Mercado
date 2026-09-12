@@ -19,7 +19,8 @@
  * borrar todo para arreglar eso tira historia real por la ventana.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { AlertTriangle, Trash2, X } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { logger } from "@/lib/logger";
@@ -58,6 +59,10 @@ const ALCANCES: { valor: ScopeVaciado; label: string; hint: string }[] = [
 ];
 
 export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () => void; onVaciado?: () => void }) {
+  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
+     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   const [scope, setScope] = useState<ScopeVaciado>("todo");
   const [conteo, setConteo] = useState<Conteo | null>(null);
   const [periodos, setPeriodos] = useState<string[]>([]);
@@ -147,7 +152,7 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div
+      <div ref={cajaRef} tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

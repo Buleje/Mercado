@@ -23,6 +23,7 @@
  * lado para poder copiarlo.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { ArrowRight, Check, ImageIcon, List, MessageSquare, Trash2, UserPlus, X } from "@buleje/design-system/icons";
 import {
   fmtAnexo, siguienteCorrelativo, type Anexo04, type DatosAnexo04, type EmisorGuardado,
@@ -146,6 +147,10 @@ function ObservacionesModal({
   unidadPt: boolean;
   onCerrar: () => void;
 }) {
+  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
+     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onCerrar });
   /* Foco al abrir, con ref: `autoFocus` en un textarea lo marca la regla de
      a11y (y en un modal es exactamente lo que se quiere). */
   const areaRef = useRef<HTMLTextAreaElement>(null);
@@ -162,7 +167,7 @@ function ObservacionesModal({
         if (e.key === "Escape") onCerrar();
       }}
     >
-      <div
+      <div ref={cajaRef} tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Observaciones del anexo"

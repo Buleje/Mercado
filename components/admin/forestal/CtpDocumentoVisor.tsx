@@ -28,6 +28,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Check,
   Code,
@@ -90,6 +91,10 @@ export default function CtpDocumentoVisor({
    */
   onArchivar?: (doc: DocumentoImprimible) => MetaArchivado;
 }) {
+  /* Sin esto el foco se queda atrás del modal: Tab se va a la pantalla
+     de abajo y Escape no cierra (hook medido en el módulo, 2026-09-09). */
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRef, { onCerrar: onClose });
   const marco = useRef<HTMLIFrameElement>(null);
   const mesa = useRef<HTMLDivElement>(null);
   const doc = documentos[activo] ?? documentos[0];
@@ -185,7 +190,7 @@ export default function CtpDocumentoVisor({
     "grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
 
   return (
-    <div
+    <div ref={cajaRef} tabIndex={-1}
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-2 sm:p-6"
       onClick={(e) => e.target === e.currentTarget && onClose()}
       role="dialog"
