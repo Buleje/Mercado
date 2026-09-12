@@ -81,7 +81,7 @@ export default function CacaoConfigModal({ onClose, onSaved }: Props) {
   return (
     <AdminModal open onClose={onClose} variant="centered-sm" hideCloseButton
       footer={
-        <div className="flex items-center justify-end gap-2 px-5 py-3.5">
+        <div className="flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}

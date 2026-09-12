@@ -76,7 +76,7 @@ export default function ConfirmarPagoModal({
       title="Registrar pago"
       description={pago.nombre}
       footer={
-        <div className="flex items-center justify-end gap-2 px-5 py-3">
+        <div className="flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}

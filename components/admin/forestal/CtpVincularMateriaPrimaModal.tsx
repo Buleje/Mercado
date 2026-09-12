@@ -114,7 +114,7 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
         aria-label="Medidas declaradas"
         className="flex max-h-[90vh] w-full max-w-4xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-4 py-3">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <div>
             <h4 className="flex items-center gap-2 font-display text-lg text-[var(--text-primary)]">
               <Ruler className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Medidas declaradas
@@ -134,7 +134,7 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5 sm:px-6">
           {filas.length === 0 ? (
             <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-6 text-center text-sm text-[var(--text-tertiary)]">
               Esta corrida declaró su volumen sin detallar paquetes.
@@ -354,7 +354,7 @@ export default function CtpVincularMateriaPrimaModal({
         aria-label="Vincular materia prima"
         className="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-4 py-3">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <div className="min-w-0">
             <h3 className="flex items-center gap-2 font-display text-lg text-[var(--text-primary)]">
               <Layers className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Vincular materia prima
@@ -387,7 +387,7 @@ export default function CtpVincularMateriaPrimaModal({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-5 sm:px-6">
           <label className="block">
             <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
               Lote de aserrío
@@ -516,7 +516,7 @@ export default function CtpVincularMateriaPrimaModal({
           )}
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--rule-base)] px-4 py-3">
+        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--rule-base)] px-5 py-3.5 sm:px-6">
           <Btn onClick={onCerrar} disabled={guardando}>Cancelar</Btn>
           <button
             type="button"

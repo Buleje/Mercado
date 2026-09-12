@@ -221,7 +221,7 @@ export default function PlantacionListado({
         description={aBorrar ? `${aBorrar.codigoInterno} — ${aBorrar.titular ?? "sin titular"}` : undefined}
         variant="centered-sm"
         footer={
-          <div className="flex justify-end gap-2 px-4 py-3">
+          <div className="flex justify-end gap-2">
             <Btn variant="secondary" onClick={() => setABorrar(null)} disabled={borrando}>Cancelar</Btn>
             <Btn variant="danger" onClick={() => void confirmarBorrar()} disabled={borrando}>
               {borrando ? "Eliminando…" : "Eliminar"}

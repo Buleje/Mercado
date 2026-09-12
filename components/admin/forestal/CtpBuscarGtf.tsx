@@ -146,7 +146,7 @@ export default function CtpBuscarGtf({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Barra de búsqueda: el foco entra acá y Enter busca. */}
-        <div className="flex items-center gap-3 border-b-2 border-[var(--rule-soft)] px-4 py-3">
+        <div className="flex items-center gap-3 border-b-2 border-[var(--rule-soft)] px-5 py-4 sm:px-6">
           <Search className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
           <input
             ref={inputRef}
@@ -171,7 +171,7 @@ export default function CtpBuscarGtf({
           </button>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto p-4">
+        <div className="max-h-[60vh] overflow-y-auto p-5 sm:px-6">
           {error && (
             <p className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
               {error}

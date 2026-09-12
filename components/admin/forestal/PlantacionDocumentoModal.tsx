@@ -135,7 +135,7 @@ export default function PlantacionDocumentoModal({
       icon={FileText}
       variant="fullscreen"
       footer={
-        <div className="flex flex-wrap items-center gap-2 px-5 py-3">
+        <div className="flex flex-wrap items-center gap-2">
           {aviso && <span className="mr-auto text-xs font-bold text-[var(--text-secondary)]">{aviso}</span>}
           <button
             type="button"

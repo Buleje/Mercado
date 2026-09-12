@@ -594,7 +594,7 @@ export function ModalFooter({
   ) : null;
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 px-5 py-3.5 sm:px-6">
+    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
       {mensaje}
       {children}
     </div>

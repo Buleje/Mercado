@@ -63,7 +63,7 @@ export default function LothCensoImportModal({ open, ctx, importing, onClose, on
       description="Pegá la hoja del regente con sus encabezados — se detectan solos, en cualquier orden"
       icon={Table}
       footer={
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
             onClick={onClose}

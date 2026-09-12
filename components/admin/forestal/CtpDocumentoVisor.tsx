@@ -193,7 +193,7 @@ export default function CtpDocumentoVisor({
       aria-label={doc?.nombre ?? "Documento"}
     >
       <div className="flex h-[min(94vh,62rem)] w-full max-w-[72rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]">
-        <header className="flex items-center gap-3 border-b-2 border-[var(--rule-base)] px-4 py-3">
+        <header className="flex items-center gap-3 border-b-2 border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <FileText className="h-5 w-5" aria-hidden />
           </span>
@@ -208,7 +208,7 @@ export default function CtpDocumentoVisor({
           </button>
         </header>
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] px-5 py-3 sm:px-6">
           {/* Con un solo documento no se dibujan pestañas: una pestaña sola es
               un adorno que hace pensar que falta algo. */}
           {documentos.length > 1 &&
@@ -361,7 +361,7 @@ export default function CtpDocumentoVisor({
           </div>
         </div>
 
-        <p className="border-t border-[var(--rule-soft)] px-4 py-2 text-sm text-[var(--text-tertiary)]">
+        <p className="border-t border-[var(--rule-soft)] px-5 py-3 sm:px-6 text-sm text-[var(--text-tertiary)]">
           {drive?.estado === "listo" ? (
             <span className="font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
               Guardado en Documentos › {drive.detalle}

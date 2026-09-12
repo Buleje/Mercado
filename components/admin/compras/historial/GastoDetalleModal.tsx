@@ -103,7 +103,7 @@ export default function GastoDetalleModal({
       title={item.description || "Movimiento sin descripción"}
       description={`${ORIGEN_LABELS[item.source]} · ${formatDate(item.fecha)}`}
       footer={
-        <div className="flex flex-wrap items-center justify-end gap-2 px-5 py-3">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {/* Un gasto operativo se corrige acá porque acá es donde vive. Una
               compra, un flete o un adelanto son un reflejo de otro módulo:
               editarlos por este lado dejaría los dos lados en desacuerdo. */}

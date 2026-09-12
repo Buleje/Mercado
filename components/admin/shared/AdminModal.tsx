@@ -17,6 +17,7 @@
  *
  * API backward-compatible con la implementación anterior:
  *   open, onClose, title, variant, children, className, hideCloseButton
+ *   footer (con el gutter del modal ya puesto; `footerBare` lo saca)
  *
  * Nuevos variants:
  *   · default — centrado, max-w-lg (diálogos normales)
@@ -83,7 +84,23 @@ interface AdminModalProps {
    * Brandon, 2026-09-11: «no funciona y se lagea el modal»).
    */
   aboveModals?: boolean;
+  /**
+   * El pie se pinta SIN el gutter del modal (raro: barras full-bleed, un
+   * visor que ocupa el ancho entero). Por defecto el pie lo recibe del modal
+   * — ver `MODAL_GUTTER`.
+   */
+  footerBare?: boolean;
 }
+
+/**
+ * El gutter del modal — la ÚNICA medida del margen lateral.
+ *
+ * Header, cuerpo y pie tienen que arrancar en la misma vertical: con el
+ * header en `px-5` y el cuerpo canónico del Libro en `px-5 sm:px-6`, en
+ * desktop el título quedaba 4px a la izquierda de su propio contenido. Se lee
+ * como un modal "chueco" aunque nadie sepa decir por qué.
+ */
+export const MODAL_GUTTER = "px-5 sm:px-6";
 
 // Brandon 2026-05-27: en CELULAR (<640px) las variantes centradas pasan a
 // "bottom-sheet" (full-width, pegado abajo, esquinas superiores redondeadas) —
@@ -134,6 +151,7 @@ export default function AdminModal({
   className,
   hideCloseButton,
   aboveModals = false,
+  footerBare = false,
 }: AdminModalProps) {
   const accentVars = useAdminAccent(open);
   return (
@@ -171,7 +189,7 @@ export default function AdminModal({
 
           {/* Header */}
           {(title || Icon || !hideCloseButton) && (
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0 gap-3">
+            <div className={cn("flex items-center justify-between py-4 border-b border-[var(--rule-base)] shrink-0 gap-3", MODAL_GUTTER)}>
               <div className="flex min-w-0 items-center gap-3">
                 {Icon && (
                   // Tinte con alpha real: con `--accent-soft` (token que ya
@@ -217,7 +235,18 @@ export default function AdminModal({
           {/* Footer fijo — vive FUERA del scroll: las acciones de un formulario
               largo no deberían exigir llegar al final para aparecer. */}
           {footer && (
-            <div className="shrink-0 border-t border-[var(--rule-base)] bg-[var(--surface-raised)]">{footer}</div>
+            <div
+              className={cn(
+                "shrink-0 border-t border-[var(--rule-base)] bg-[var(--surface-raised)]",
+                /* El gutter lo pone el modal, no cada pie. Pasarlo a cada
+                   llamador dejaba pies al ras del borde —el botón «Listo» del
+                   resumen por especie salía cortado contra el filo (Brandon,
+                   2026-09-12: «se ven feos, apegados»)—. */
+                !footerBare && `py-3.5 ${MODAL_GUTTER}`,
+              )}
+            >
+              {footer}
+            </div>
           )}
         </Dialog.Content>
       </Dialog.Portal>

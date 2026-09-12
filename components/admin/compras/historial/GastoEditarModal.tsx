@@ -145,7 +145,7 @@ export default function GastoEditarModal({
       title="Corregir gasto"
       description={`Registrado el ${new Date(item.fecha).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })} · ${fmt(item.amount)}`}
       footer={
-        <div className="flex flex-wrap items-center gap-2 px-5 py-3">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Sin «¿estás seguro?»: borra y deja 5 segundos para deshacer, que
               es más rápido de usar y más difícil de perder que un diálogo. */}
           <button

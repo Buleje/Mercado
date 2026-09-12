@@ -216,7 +216,7 @@ export default function CacaoProducerDrawer({
     <AdminModal open onClose={onClose} variant="side" hideCloseButton className="!max-w-[480px]"
       footer={
         producer && !loading ? (
-        <div className="flex items-center justify-between gap-2 px-5 py-3.5">
+        <div className="flex items-center justify-between gap-2">
             <button
               type="button"
               disabled={saving}

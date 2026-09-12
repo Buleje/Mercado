@@ -262,7 +262,7 @@ export default function ImportarCarpetaModal({
       footer={
         // En celular el resumen y los botones no entran en una línea: se
         // apilan. Amontonados, "Cancelar" quedaba encima del botón de subir.
-        <div className="flex flex-col gap-2 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <span className="min-w-0 text-xs text-[var(--text-tertiary)]">{resumen}</span>
           <span className="flex flex-wrap items-center justify-end gap-2 [&>button]:whitespace-nowrap">
             {fase === "revisar" && (

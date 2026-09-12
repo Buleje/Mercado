@@ -359,7 +359,7 @@ export default function CtpProducirSinLoteModal({
         className="flex h-[96vh] w-full max-w-[98vw] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]"
       >
         {/* Cabecera */}
-        <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-[var(--rule-base)] px-4 py-3">
+        <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Calculator className="h-5 w-5" aria-hidden />
           </span>
@@ -373,15 +373,15 @@ export default function CtpProducirSinLoteModal({
             </p>
           </div>
           <span className="ml-auto flex flex-wrap items-center gap-2 font-mono text-sm tabular-nums">
-            <span className="rounded-lg border border-[var(--rule-base)] px-2 py-1">
+            <span className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1.5">
               {fmtPiezas(total.piezas)}{" "}
               <span className="font-sans text-xs text-[var(--text-tertiary)]">pzas</span>
             </span>
-            <span className="rounded-lg border border-[var(--rule-base)] px-2 py-1">
+            <span className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1.5">
               {fmtM3(total.m3)}{" "}
               <span className="font-sans text-xs text-[var(--text-tertiary)]">m³</span>
             </span>
-            <span className="rounded-lg border border-[var(--rule-base)] px-2 py-1">
+            <span className="rounded-lg border border-[var(--rule-base)] px-2.5 py-1.5">
               {fmtPt(total.pt)}{" "}
               <span className="font-sans text-xs text-[var(--text-tertiary)]">PT</span>
             </span>
@@ -400,7 +400,7 @@ export default function CtpProducirSinLoteModal({
             fuera del cuerpo que scrollea, porque es una decisión del ASIENTO y
             no de lo cubicado: se ve y se cambia igual mientras se miden las
             piezas, y cada casillero dice lo que ese día ya tiene anotado. */}
-        <div className="shrink-0 border-b border-[var(--rule-base)] px-3 py-2">
+        <div className="shrink-0 border-b border-[var(--rule-base)] px-5 py-3 sm:px-6">
           <CtpSemanaDeRegistro
             valor={fecha}
             onElegir={(iso) => {
@@ -422,7 +422,7 @@ export default function CtpProducirSinLoteModal({
         </div>
 
         {/* Cuerpo: el cubicador ENTERO, en su propia libreta */}
-        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:px-6">
           {paso === "cubicar" ? (
             <CubicadorMadera
               espacio={ESPACIO_PRODUCCION}
@@ -592,22 +592,22 @@ export default function CtpProducirSinLoteModal({
                   <caption className="sr-only">Paquetes que se van a declarar</caption>
                   <thead className="bg-[var(--surface-sunken)]">
                     <tr>
-                      <th scope="col" className={`${LABEL} px-2 py-1.5 text-left`}>
+                      <th scope="col" className={`${LABEL} px-3 py-2.5 text-left`}>
                         Paquete
                       </th>
-                      <th scope="col" className={`${LABEL} px-2 py-1.5 text-left`}>
+                      <th scope="col" className={`${LABEL} px-3 py-2.5 text-left`}>
                         Producto
                       </th>
-                      <th scope="col" className={`${LABEL} px-2 py-1.5 text-left`}>
+                      <th scope="col" className={`${LABEL} px-3 py-2.5 text-left`}>
                         Medida
                       </th>
-                      <th scope="col" className={`${LABEL} px-2 py-1.5 text-right`}>
+                      <th scope="col" className={`${LABEL} px-3 py-2.5 text-right`}>
                         Piezas
                       </th>
-                      <th scope="col" className={`${LABEL} px-2 py-1.5 text-right`}>
+                      <th scope="col" className={`${LABEL} px-3 py-2.5 text-right`}>
                         m³
                       </th>
-                      <th scope="col" className={`${LABEL} px-2 py-1.5 text-right`}>
+                      <th scope="col" className={`${LABEL} px-3 py-2.5 text-right`}>
                         PT
                       </th>
                     </tr>
@@ -615,25 +615,25 @@ export default function CtpProducirSinLoteModal({
                   <tbody>
                     {paquetes.map((p) => (
                       <tr key={p.codigo} className="border-t border-[var(--rule-soft)]">
-                        <td className="px-2 py-1.5 font-mono font-bold text-[var(--text-primary)]">
+                        <td className="px-3 py-2.5 font-mono font-bold text-[var(--text-primary)]">
                           {p.codigo}
                         </td>
-                        <td className="px-2 py-1.5 text-[var(--text-secondary)]">
+                        <td className="px-3 py-2.5 text-[var(--text-secondary)]">
                           {p.productType ?? "—"}
                         </td>
-                        <td className="px-2 py-1.5 font-mono text-[var(--text-secondary)]">
+                        <td className="px-3 py-2.5 font-mono text-[var(--text-secondary)]">
                           {p.medida}
                           <span className="block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                             {p.espesorCm} × {p.anchoCm} cm · {p.largoM} m
                           </span>
                         </td>
-                        <td className="px-2 py-1.5 text-right font-mono tabular-nums">
+                        <td className="px-3 py-2.5 text-right font-mono tabular-nums">
                           {fmtPiezas(p.cantidad)}
                         </td>
-                        <td className="px-2 py-1.5 text-right font-mono font-bold tabular-nums">
+                        <td className="px-3 py-2.5 text-right font-mono font-bold tabular-nums">
                           {fmtM3(p.volumenM3)}
                         </td>
-                        <td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                           {fmtPt(p.pieTablar)}
                         </td>
                       </tr>
@@ -641,16 +641,16 @@ export default function CtpProducirSinLoteModal({
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-[var(--accent)]/40 bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
-                      <th scope="row" className="px-2 py-1.5 text-left" colSpan={3}>
+                      <th scope="row" className="px-3 py-2.5 text-left" colSpan={3}>
                         {paquetes.length} {paquetes.length === 1 ? "paquete" : "paquetes"}
                       </th>
-                      <td className="px-2 py-1.5 text-right font-mono tabular-nums">
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums">
                         {fmtPiezas(total.piezas)}
                       </td>
-                      <td className="px-2 py-1.5 text-right font-mono tabular-nums">
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums">
                         {fmtM3(total.m3)}
                       </td>
-                      <td className="px-2 py-1.5 text-right font-mono tabular-nums">
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums">
                         {fmtPt(total.pt)}
                       </td>
                     </tr>
@@ -674,7 +674,7 @@ export default function CtpProducirSinLoteModal({
         </div>
 
         {/* Pie */}
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--rule-base)] px-4 py-3">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 border-t border-[var(--rule-base)] px-5 py-3.5 sm:px-6">
           {paso === "declarar" && (
             <Btn onClick={() => setPaso("cubicar")} disabled={guardando}>
               Volver a cubicar

@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, BarChart3, Copy, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { Btn } from "./ctp-shared";
+import { Btn, MODAL_BODY, ModalFooter } from "./ctp-shared";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { fmtM3, fmtPiezas, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { etiquetaLarga } from "@/lib/forestal/semana-de-registro";
@@ -49,7 +49,9 @@ export interface ResumenDeJornadas {
   totales: { corridas: number; piezas: number; m3: number; pt: number };
 }
 
-const CELDA = "px-2 py-1.5 text-sm";
+/* El corte de una celda del Libro. Venía en `px-2 py-1.5`: cuatro columnas de
+   cifras pegadas al filo, que es justo lo que se lee como «apretado». */
+const CELDA = "px-3 py-2.5 text-sm";
 const CIFRA = `${CELDA} text-right font-mono tabular-nums`;
 
 /** Un paquete como lo devuelve el libro: medidas en cm/m, que es como se declaran. */
@@ -224,31 +226,36 @@ export default function CtpResumenDeJornadasModal({
       onClose={onClose}
       title="Resumen por especie"
       description={titulo}
-      variant="wide"
+      /* `info` y no `wide`: con 42rem la tabla de corridas se cortaba y el
+         botón «Traer al cubicado» quedaba fuera del borde derecho. */
+      variant="info"
       /* Se abre desde la tira de días, que vive DENTRO de otro modal. */
       aboveModals
       icon={BarChart3}
       footer={
-        <div className="flex w-full items-center gap-2">
-          <span className="mr-auto text-xs text-[var(--text-tertiary)]">
-            Sólo lectura — para corregir una corrida, entrá por ella en el libro.{" "}
-            {/* El cierre del mes (revisar, cerrar, bajar el paquete oficial) ya
-                existe: este resumen es el paso previo natural, y nadie lo sabía. */}
-            <a
-              href="/admin?tab=ctp-libro-operaciones&vista=cierre"
-              className="font-bold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]"
-            >
-              Cerrar el mes
-            </a>{" "}
-            está en la pestaña Cierre.
-          </span>
+        <ModalFooter
+          nota={
+            <>
+              Sólo lectura — para corregir una corrida, entrá por ella en el libro.{" "}
+              {/* El cierre del mes (revisar, cerrar, bajar el paquete oficial) ya
+                  existe: este resumen es el paso previo natural, y nadie lo sabía. */}
+              <a
+                href="/admin?tab=ctp-libro-operaciones&vista=cierre"
+                className="font-bold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]"
+              >
+                Cerrar el mes
+              </a>{" "}
+              está en la pestaña Cierre.
+            </>
+          }
+        >
           <Btn variant="primary" onClick={onClose}>
             Listo
           </Btn>
-        </div>
+        </ModalFooter>
       }
     >
-      <div className="space-y-3 px-5 py-4 sm:px-6">
+      <div className={`space-y-4 ${MODAL_BODY}`}>
         {error ? (
           <p className="rounded-xl bg-[var(--data-error-500)]/12 px-3 py-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
             No se pudo leer el resumen: {error}
@@ -264,7 +271,7 @@ export default function CtpResumenDeJornadasModal({
         ) : (
           <>
             {/* El total primero: es la cifra que se busca al abrir. */}
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               <Cifra rotulo="Pie tablar" valor={fmtPt(datos.totales.pt)} unidad="PT" destacado />
               <Cifra rotulo="Volumen" valor={fmtM3(datos.totales.m3)} unidad="m³" />
               <Cifra rotulo="Piezas" valor={fmtPiezas(datos.totales.piezas)} unidad="pza" />
@@ -276,10 +283,12 @@ export default function CtpResumenDeJornadasModal({
             </div>
 
             {/* Por especie, y dentro de cada una por producto. */}
-            <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)]">
+            <div className="max-h-[46vh] overflow-auto rounded-xl border border-[var(--rule-base)]">
               <table className="w-full min-w-[34rem] border-collapse">
-                <thead>
-                  <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+                {/* El encabezado se queda a la vista: un mes son decenas de
+                    filas y a la mitad ya no se sabe qué columna es cuál. */}
+                <thead className="sticky top-0 z-[1]">
+                  <tr className="bg-[var(--surface-sunken)] text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)] [&>th]:border-b [&>th]:border-[var(--rule-base)]">
                     <th className={CELDA}>Especie · producto</th>
                     <th className={`${CELDA} text-right`}>Piezas</th>
                     <th className={`${CELDA} text-right`}>m³</th>
@@ -304,21 +313,27 @@ export default function CtpResumenDeJornadasModal({
 
             {/* Abierto de entrada cuando se puede traer al cubicado: ahí está el
                 botón, y un acordeón cerrado lo esconde. */}
-            <details open={!!onCopiarAlCubicado} className="rounded-xl border border-[var(--rule-base)] px-3 py-2">
-              <summary className="cursor-pointer text-sm font-bold text-[var(--text-secondary)]">
+            <details
+              open={!!onCopiarAlCubicado}
+              className="group rounded-xl border border-[var(--rule-base)] [&[open]>summary]:border-b [&[open]>summary]:border-[var(--rule-soft)]"
+            >
+              <summary className="cursor-pointer select-none rounded-xl px-3.5 py-2.5 text-sm font-bold text-[var(--text-secondary)] transition-colors marker:content-[''] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40">
+                <span className="mr-1.5 inline-block text-[var(--text-tertiary)] transition-transform group-open:rotate-90" aria-hidden>
+                  ▸
+                </span>
                 {datos.corridas.length === 1
                   ? "La corrida que lo compone"
                   : `Las ${datos.corridas.length} corridas que lo componen`}
               </summary>
-              <div className="mt-2 overflow-x-auto">
+              <div className="overflow-x-auto px-1.5 pb-1.5">
                 <table className="w-full min-w-[34rem] border-collapse">
                   <thead>
                     <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-                      <th className={CELDA}>Día</th>
+                      <th className={`${CELDA} whitespace-nowrap`}>Día</th>
                       <th className={CELDA}>N°</th>
                       <th className={CELDA}>Especie</th>
                       <th className={CELDA}>Línea</th>
-                      <th className={CELDA}>Materia prima</th>
+                      <th className={`${CELDA} whitespace-nowrap`}>Materia prima</th>
                       <th className={`${CELDA} text-right`}>Piezas</th>
                       <th className={`${CELDA} text-right`}>m³</th>
                       {onCopiarAlCubicado && <th className={CELDA} />}
@@ -331,7 +346,10 @@ export default function CtpResumenDeJornadasModal({
                         <td className={`${CELDA} font-mono tabular-nums`}>{c.lineNo}</td>
                         <td className={CELDA}>{c.especie ?? "—"}</td>
                         <td className={CELDA}>{c.linea ?? "—"}</td>
-                        <td className={`${CELDA} text-[var(--text-tertiary)]`}>
+                        <td
+                          className={`${CELDA} max-w-[14rem] truncate text-[var(--text-tertiary)]`}
+                          title={c.materiaPrimaRef ?? "sin lote"}
+                        >
                           {c.materiaPrimaRef ?? "sin lote"}
                         </td>
                         <td className={CIFRA}>{fmtPiezas(c.piezas)}</td>
@@ -384,17 +402,20 @@ function Cifra({
 }) {
   return (
     <div
-      className={`rounded-xl border px-3 py-2 ${
+      /* `ring` y no `border` en la destacada: un borde de otro grosor le cambia
+         la caja y las cuatro tarjetas dejan de medir lo mismo. */
+      className={`rounded-xl border px-3.5 py-3 ${
         destacado
-          ? "border-[var(--accent)] bg-primary/10"
+          ? "border-transparent bg-primary/10 ring-1 ring-[var(--accent)]"
           : "border-[var(--rule-base)] bg-[var(--surface-sunken)]"
       }`}
     >
       <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
         {rotulo}
       </p>
-      <p className="font-mono text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
-        {valor} <span className="font-sans text-xs font-normal text-[var(--text-tertiary)]">{unidad}</span>
+      <p className="mt-1 flex items-baseline gap-1.5 font-mono text-xl font-extrabold leading-none tabular-nums text-[var(--text-primary)]">
+        {valor}{" "}
+        <span className="font-sans text-xs font-normal leading-none text-[var(--text-tertiary)]">{unidad}</span>
       </p>
     </div>
   );

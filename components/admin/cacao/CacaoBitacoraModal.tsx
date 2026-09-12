@@ -120,7 +120,7 @@ export default function CacaoBitacoraModal({ beneficioId, loteCode, onClose, onC
   return (
     <AdminModal open onClose={onClose} variant="centered-sm" hideCloseButton
       footer={
-        <div className="flex items-center justify-end px-5 py-3.5">
+        <div className="flex items-center justify-end">
           <button
             type="button"
             onClick={onClose}

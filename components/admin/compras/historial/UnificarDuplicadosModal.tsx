@@ -90,7 +90,7 @@ export default function UnificarDuplicadosModal({
       title="Unificar gastos repetidos"
       description={`${grupos.length} ${grupos.length === 1 ? "gasto cargado" : "gastos cargados"} más de una vez`}
       footer={
-        <div className="flex items-center justify-end gap-2 px-5 py-3">
+        <div className="flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}

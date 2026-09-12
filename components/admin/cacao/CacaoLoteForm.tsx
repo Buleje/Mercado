@@ -258,7 +258,7 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
       className="!max-w-[940px]"
       // Fuera del scroll: si no, "Registrar lote" queda debajo del borde.
       footer={
-        <div className="flex items-center justify-end gap-2 px-5 py-3.5">
+        <div className="flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
