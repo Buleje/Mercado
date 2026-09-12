@@ -97,7 +97,7 @@ export function CtpSaldosView({
    * —que no es una excepción de saldo— porque ahí vive «Valorizar ingresos»,
    * la pantalla que tapa el hueco de costos que denuncia Antigüedad.
    */
-  onIr?: (vista: NonNullable<Excepcion["ir"]> | "rentabilidad") => void;
+  onIr?: (vista: NonNullable<Excepcion["ir"]> | "rentabilidad", filtro?: Excepcion["filtro"]) => void;
 }) {
   /**
    * El recorte por especie de las existencias (ADR-400).

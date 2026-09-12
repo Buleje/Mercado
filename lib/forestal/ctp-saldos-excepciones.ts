@@ -41,6 +41,14 @@ export interface Excepcion {
   magnitud: number | null;
   /** A dónde lleva el aviso. `null` = se resuelve en esta misma pantalla. */
   ir: "ingresos" | "produccion" | "despacho" | null;
+  /**
+   * Con qué filtro abrir esa vista.
+   *
+   * Sin esto, «andá a Ingresos» deja al operador con la lista entera y la tarea
+   * de encontrar las guías que importan. Con el saldo negativo son las que
+   * están sin recepcionar, y son las que tienen el volumen que falta.
+   */
+  filtro?: "pendiente";
 }
 
 export interface EntradaExcepciones {
@@ -125,10 +133,13 @@ export function excepcionesDeSaldo(input: EntradaExcepciones): Excepcion[] {
       /* El detalle enumeraba dos hipótesis y mandaba a buscar cuál. Cuando el
          desglose viene, se dice dónde está el volumen sin guía: es el dato que
          convierte el aviso en una tarea. */
-      detalle: detalleNegativo(input.materiaPrima, conApertura),
+      detalle: detalleNegativo(input.materiaPrima, conApertura, total),
       items: negativas.map((e) => `${e.especie} (${m3(e.existencia)})`),
       magnitud: Number(total.toFixed(4)),
       ir: "ingresos",
+      /* Si lo pendiente de recepción alcanza para tapar el faltante, el trabajo
+         NO es cargar un ingreso nuevo: es recepcionar guías que ya existen. */
+      filtro: cubrePendiente(input.materiaPrima, total) ? "pendiente" : undefined,
     });
   }
 
@@ -243,18 +254,39 @@ export function nombresVisibles(items: readonly string[], tope = TOPE_NOMBRES): 
  * cuántos m³ se transformaron sin ninguna guía atribuida, que es donde vive el
  * faltante en la práctica.
  */
+/**
+ * ¿Lo que espera recepción alcanza para explicar el faltante?
+ *
+ * Medido en el tenant real (2026-09-12): el libro estaba en −125.709 m³ con
+ * 142.262 consumidos sin guía atribuida… y 181.093 m³ en guías cargadas pero
+ * sin recepcionar. El ingreso ya estaba; lo que faltaba era cerrar la recepción.
+ */
+function cubrePendiente(mp: EntradaExcepciones["materiaPrima"], faltante: number): boolean {
+  return (mp.pendienteM3 ?? 0) > EPS && (mp.pendienteM3 ?? 0) >= faltante - EPS;
+}
+
 function detalleNegativo(
   mp: EntradaExcepciones["materiaPrima"],
   conApertura: boolean,
+  faltante = 0,
 ): string {
   const base = conApertura
     ? "La existencia final —lo heredado del cierre anterior más el movimiento del período— quedó bajo cero."
     : "Se transformó más volumen del que ingresó validado.";
   const sinOrigen = mp.consumoSinOrigenM3 ?? 0;
   const cuantas = mp.consumoSinOrigenCount ?? 0;
+  /* El desenlace cambia si la madera que falta YA está cargada esperando
+     recepción: mandar a «cargar el ingreso» sería pedir de nuevo algo hecho. */
+  const pendiente = mp.pendienteM3 ?? 0;
+  const alcanza = cubrePendiente(mp, faltante);
   const causa =
     sinOrigen > EPS && cuantas > 0
-      ? ` ${m3(sinOrigen)} salieron de ${cuantas} ${plural(cuantas, "corrida", "corridas")} que declararon consumo sin ninguna guía atribuida: ahí está el faltante. Cargá el ingreso que las respalda, o corregí el volumen que consumieron.`
+      ? ` ${m3(sinOrigen)} salieron de ${cuantas} ${plural(cuantas, "corrida", "corridas")} que declararon consumo sin ninguna guía atribuida: ahí está el faltante.`
       : " O falta validar un ingreso, o una corrida cargó de más.";
-  return `${base}${causa} Hasta corregirlo, el libro no cuadra ante SERFOR.`;
+  const salida = alcanza
+    ? ` Tenés ${m3(pendiente)} cargados en guías que todavía no se recepcionaron: alcanzan para cubrirlo. Recepcionalas y el saldo se acomoda solo.`
+    : pendiente > EPS
+      ? ` Hay ${m3(pendiente)} esperando recepción, pero no alcanzan: recepcionalos y revisá el volumen que consumieron esas corridas.`
+      : " Cargá el ingreso que las respalda, o corregí el volumen que consumieron.";
+  return `${base}${causa}${salida} Hasta corregirlo, el libro no cuadra ante SERFOR.`;
 }

@@ -140,3 +140,48 @@ describe("nombresVisibles · cortar sin mentir", () => {
     expect(resto).toBe(3);
   });
 });
+
+describe("saldo negativo: qué hacer cuando la madera ya está cargada", () => {
+  /* El caso real del tenant (2026-09-12): −142.262 m³ de Tornillo, 142.262
+     consumidos sin guía atribuida… y 181.093 m³ cargados en guías que nadie
+     recepcionó. Mandar a «cargar el ingreso» ahí es pedir de nuevo algo hecho. */
+  const NEGATIVO = {
+    materiaPrima: {
+      pendienteM3: 181.093,
+      consumoSinOrigenM3: 142.262,
+      consumoSinOrigenCount: 5,
+    },
+    porEspecie: [{ especie: "Tornillo", saldoM3: -142.262, ingresoM3: 0, consumidoM3: 142.262 }],
+    productos: [],
+  };
+
+  it("si lo pendiente cubre el faltante, manda a RECEPCIONAR y lo dice con el número", () => {
+    const [e] = excepcionesDeSaldo(NEGATIVO);
+    expect(e.clave).toBe("mp-negativa");
+    expect(e.ir).toBe("ingresos");
+    expect(e.filtro).toBe("pendiente");
+    expect(e.detalle).toContain("181.09");
+    expect(e.detalle).toContain("Recepcionalas");
+    /* Y ya NO manda a cargar un ingreso que existe. */
+    expect(e.detalle).not.toContain("Cargá el ingreso");
+  });
+
+  it("si lo pendiente NO alcanza, lo dice y manda a revisar las corridas", () => {
+    const [e] = excepcionesDeSaldo({
+      ...NEGATIVO,
+      materiaPrima: { ...NEGATIVO.materiaPrima, pendienteM3: 10 },
+    });
+    expect(e.filtro).toBeUndefined();
+    expect(e.detalle).toContain("no alcanzan");
+    expect(e.detalle).toContain("revisá el volumen");
+  });
+
+  it("sin nada esperando recepción, el consejo es el de antes", () => {
+    const [e] = excepcionesDeSaldo({
+      ...NEGATIVO,
+      materiaPrima: { ...NEGATIVO.materiaPrima, pendienteM3: 0 },
+    });
+    expect(e.filtro).toBeUndefined();
+    expect(e.detalle).toContain("Cargá el ingreso");
+  });
+});

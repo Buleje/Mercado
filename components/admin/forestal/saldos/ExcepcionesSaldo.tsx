@@ -68,7 +68,7 @@ export default function ExcepcionesSaldo({
 }: {
   excepciones: readonly Excepcion[];
   /** Navega a la pestaña donde se corrige. Sin handler, el botón no se dibuja. */
-  onIr?: (vista: NonNullable<Excepcion["ir"]>) => void;
+  onIr?: (vista: NonNullable<Excepcion["ir"]>, filtro?: Excepcion["filtro"]) => void;
 }) {
   if (excepciones.length === 0) {
     return (
@@ -131,7 +131,7 @@ export default function ExcepcionesSaldo({
               {e.ir && onIr && (
                 <button
                   type="button"
-                  onClick={() => onIr(e.ir!)}
+                  onClick={() => onIr(e.ir!, e.filtro)}
                   className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-primary hover:bg-primary/10"
                 >
                   {DESTINO[e.ir]} <ArrowRight className="h-4 w-4" aria-hidden />
