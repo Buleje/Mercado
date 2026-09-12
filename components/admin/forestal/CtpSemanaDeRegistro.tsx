@@ -25,9 +25,9 @@
  */
 
 import { useMemo } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Loader2 } from "@buleje/design-system/icons";
+import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { fmtPt } from "@/lib/forestal/cubicacion-formato";
+import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import {
   correrSemanas,
   diasDeLaSemana,
@@ -73,6 +73,11 @@ export default function CtpSemanaDeRegistro({
      para ver jornadas de otra semana sin perder lo que ya se eligió. Decirlo es
      mejor que dibujar siete casilleros donde ninguno está marcado. */
   const elegidoFuera = esIsoValido(valor) && !dias.includes(valor);
+
+  /* Lo que el día elegido YA tiene declarado. Es el aviso que evita cargar la
+     misma jornada dos veces, y vive ACÁ y no en cada modal: la tira es la que
+     sabe qué día se eligió y qué tiene ese día. */
+  const jornadaElegida = porDia.get(valor);
 
   /** Flechas sobre la tira: mover de a un día es lo que se hace al corregir. */
   const onTeclas = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -210,6 +215,20 @@ export default function CtpSemanaDeRegistro({
           );
         })}
       </div>
+
+      {jornadaElegida && (
+        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-[var(--data-warning-500)]/12 px-3 py-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+          <span>
+            El {etiquetaLarga(valor)} ya tiene{" "}
+            <b className="tabular-nums">
+              {jornadaElegida.corridas} corrida{jornadaElegida.corridas === 1 ? "" : "s"}
+            </b>{" "}
+            declarada{jornadaElegida.corridas === 1 ? "" : "s"} ({fmtM3(jornadaElegida.m3)} m³). Si es
+            otro turno u otra sierra, seguí; si es la misma, la estarías cargando dos veces.
+          </span>
+        </p>
+      )}
 
       <p className="mt-1.5 text-[length:var(--ts-2xs)] leading-snug text-[var(--text-tertiary)]">
         {error ? (

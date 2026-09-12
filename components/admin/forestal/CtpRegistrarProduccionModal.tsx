@@ -17,6 +17,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Boxes, ChevronDown, Copy, Gauge, Loader2, Pencil, Plus, Trash2, X } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import CtpSemanaDeRegistro from "./CtpSemanaDeRegistro";
+import { useJornadasDeProduccion } from "./hooks/use-jornadas-produccion";
+import { esIsoValido } from "@/lib/forestal/semana-de-registro";
 import {
   PRESENTACIONES_LOCTP,
   RENDIMIENTO_PLAUSIBLE_MAX,
@@ -257,6 +260,10 @@ export default function CtpRegistrarProduccionModal({
   onClose: () => void;
 }) {
   const [dia, setDia] = useState(fecha);
+  /* La semana que se está MIRANDO en la tira de días: arranca en la del día
+     elegido y se mueve con las flechas sin cambiar el día. */
+  const [semana, setSemana] = useState(fecha);
+  const jornadas = useJornadasDeProduccion(semana);
   const [linea, setLinea] = useState("LP");
   const [observaciones, setObservaciones] = useState("");
   const [paquetes, setPaquetes] = useState<PaqueteBorrador[]>([]);
@@ -439,7 +446,12 @@ export default function CtpRegistrarProduccionModal({
         return;
       }
       setPaquetes(rescatados);
-      if (b.dia) setDia(b.dia);
+      if (b.dia) {
+        setDia(b.dia);
+        /* La tira sigue al borrador: si no, el día recuperado quedaba fuera de
+           la semana a la vista y ningún casillero aparecía marcado. */
+        setSemana(b.dia);
+      }
       if (b.linea) setLinea(b.linea);
       if (b.observaciones) setObservaciones(b.observaciones);
       setBorradorRecuperado(rescatados.length);
@@ -821,6 +833,33 @@ export default function CtpRegistrarProduccionModal({
         </div>
 
         {/**
+         * El día de la jornada, debajo de la franja de estado.
+         *
+         * La misma tira que «Producir sin lote»: el Libro se registra día por
+         * día y el parte de la sierra llega tarde. Cada casillero dice lo que
+         * ese día YA tiene declarado, que es lo que evita cargar dos veces la
+         * misma jornada.
+         *
+         * Sólo al DECLARAR: ampliando, la fecha es la del asiento que ya
+         * existe y el servidor no la toca — ahí abajo se muestra como dato, y
+         * ofrecer una tira que no cambia nada sería mentir.
+         */}
+        {previo === 0 && (
+          <CtpSemanaDeRegistro
+            valor={dia}
+            onElegir={(iso) => {
+              setDia(iso);
+              setSemana(iso);
+            }}
+            semana={semana}
+            onSemana={setSemana}
+            porDia={jornadas.porDia}
+            cargando={jornadas.cargando}
+            error={jornadas.error}
+          />
+        )}
+
+        {/**
          * Dos columnas desde 1280 px (C1, Brandon 2026-09-03).
          *
          * Apilado, el formulario del paquete quedaba TAPADO por el pie del
@@ -974,7 +1013,16 @@ export default function CtpRegistrarProduccionModal({
                   </select>
                 </Campo>
                 <Campo label="Fecha de producción">
-                  <input type="date" value={dia} onChange={(e) => setDia(e.target.value)} className={CAMPO} />
+                  <input
+                    type="date"
+                    value={dia}
+                    onChange={(e) => {
+                      setDia(e.target.value);
+                      /* Tipear una fecha de otra semana mueve la tira de arriba. */
+                      if (esIsoValido(e.target.value)) setSemana(e.target.value);
+                    }}
+                    className={CAMPO}
+                  />
                 </Campo>
               </>
             )}
