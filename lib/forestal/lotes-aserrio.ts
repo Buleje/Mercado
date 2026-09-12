@@ -600,10 +600,21 @@ export function filtrarLotes(lotes: readonly LoteAserrio[], f: FiltroLotes, ahor
     if (sobras.length > 0 && !sobras.includes(sobraDeLote(l).nivel)) return false;
     if (situaciones.length > 0 && !situaciones.includes(situacionDeLote(l, ahora))) return false;
     if (texto) {
-      const campos = [l.code, l.speciesCommon, l.speciesScientific, l.notes];
+      /* Se busca por lo que la persona TIENE delante cuando pregunta: el código
+         del lote, la especie, la nota… y también el permiso y la guía, que es
+         como llega media consulta («lo del permiso 2021-017», «lo que vino en
+         la 0000013»). El permiso vive en el lote (ADR-393) y además en cada
+         pieza, porque un lote puede juntar madera de varios ingresos.
+         El PROVEEDOR todavía no: no viaja en el lote — habría que sumarlo al
+         serializador del endpoint, que es una whitelist. */
+      const campos = [l.code, l.speciesCommon, l.speciesScientific, l.notes, l.permiso];
       const enCampos = campos.some((c) => norm(c).includes(texto));
       const enPiezas = l.trozas.some(
-        (t) => norm(t.codificacion).includes(texto) || norm(t.codigoPlanta).includes(texto),
+        (t) =>
+          norm(t.codificacion).includes(texto) ||
+          norm(t.codigoPlanta).includes(texto) ||
+          norm(t.permiso).includes(texto) ||
+          norm(t.gtfNumber).includes(texto),
       );
       if (!enCampos && !enPiezas) return false;
     }

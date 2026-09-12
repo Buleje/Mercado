@@ -464,7 +464,7 @@ export default function CtpLotesView({
           <input
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
-            placeholder="Código de lote, especie, nota o código de pieza…"
+            placeholder="Código de lote, especie, permiso, guía o código de pieza…"
             aria-label="Buscar un lote"
             className={`${CAMPO} w-full pl-9 pr-3`}
           />

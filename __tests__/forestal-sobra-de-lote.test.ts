@@ -178,3 +178,44 @@ describe("filtros y orden de la pantalla de lotes", () => {
     expect(LOTES.map((l) => l.code)).toEqual(original);
   });
 });
+
+describe("buscar un lote como llega la consulta", () => {
+  const conPieza = (code: string, permisoLote: string | null, permisoPieza: string, gtf: string) =>
+    ({
+      ...loteAbierto(10, [5]),
+      code,
+      permiso: permisoLote,
+      trozas: [
+        {
+          id: "t1",
+          codificacion: "C-1",
+          codigoPlanta: null,
+          especieComun: "Tornillo",
+          volumenM3: 5,
+          permiso: permisoPieza,
+          gtfNumber: gtf,
+        },
+      ],
+    }) as unknown as LoteAserrio;
+
+  const LOTES = [
+    conPieza("13-2026", "19-SEC/REG-PLT-2021-017", "19-SEC/REG-PLT-2021-017", "019-001-0000013"),
+    conPieza("15-2026", null, "10-HUA-PUE/PER-FMP-2026-007", "010-001-0000010"),
+  ];
+
+  it("encuentra por permiso del lote y por el de sus piezas", () => {
+    /* «lo del permiso 2021-017» — antes el texto sólo miraba código, especie,
+       nota y código de pieza, así que esa búsqueda no devolvía nada. */
+    expect(filtrarLotes(LOTES, { texto: "2021-017" }).map((l) => l.code)).toEqual(["13-2026"]);
+    /* Un lote sin permiso propio se encuentra igual por el de su madera. */
+    expect(filtrarLotes(LOTES, { texto: "FMP-2026-007" }).map((l) => l.code)).toEqual(["15-2026"]);
+  });
+
+  it("encuentra por número de guía", () => {
+    expect(filtrarLotes(LOTES, { texto: "0000013" }).map((l) => l.code)).toEqual(["13-2026"]);
+  });
+
+  it("lo que no está sigue sin aparecer", () => {
+    expect(filtrarLotes(LOTES, { texto: "no-existe" })).toHaveLength(0);
+  });
+});
