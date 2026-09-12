@@ -4,9 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
 import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
+import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { NotificationCenterDB } from "@/lib/db/notification-center.db";
 import { sendWhatsAppText } from "@/lib/whatsapp";
-import { construirAviso } from "@/lib/forestal/ctp-aviso-plazos";
+import { sendAvisoPlazosCtp } from "@/lib/email/resend";
+import { construirAviso, fraseLote, frasePlazo } from "@/lib/forestal/ctp-aviso-plazos";
 import { documentosVencimientoDeFicha } from "@/lib/forestal/ctp-ficha-types";
 import { logger } from "@/lib/logger";
 
@@ -51,6 +53,9 @@ export const GET = withCronAuth("forestal-plazos", async () => {
 
   let revisados = 0;
   let conAviso = 0;
+  let correosEnviados = 0;
+  let correosFallidos = 0;
+  let sinCorreo = 0;
   let whatsappEnviados = 0;
   let whatsappFallidos = 0;
   let sinTelefono = 0;
@@ -74,7 +79,7 @@ export const GET = withCronAuth("forestal-plazos", async () => {
       // creaba en la campana y nadie se enteraba.
       const tenant = await prisma.tenant.findFirst({
         where: { OR: [{ id: tenantId }, { slug: tenantId }] },
-        select: { id: true, ownerPhone: true, name: true },
+        select: { id: true, ownerPhone: true, ownerEmail: true, name: true },
       });
 
       // La Ficha CTP (KV) se guarda SIEMPRE con el cuid canónico
@@ -95,6 +100,19 @@ export const GET = withCronAuth("forestal-plazos", async () => {
         });
       }
 
+      /* Lotes abiertos con fecha de fin: los únicos que pueden vencer. Un lote
+         ya aserrado cerró su proceso, y uno sin fecha no prometió ninguna. */
+      const lotesAbiertos = await ForestLoteAserrioDB.list(tenantId, {
+        status: "abierto",
+        limite: 500,
+      }).catch((err) => {
+        logger.error("[cron/forestal-plazos] lotes no leídos", {
+          tenantId,
+          err: String(err).slice(0, 200),
+        });
+        return [] as Awaited<ReturnType<typeof ForestLoteAserrioDB.list>>;
+      });
+
       const aviso = construirAviso(
         {
           guiasSinIngresar: conFecha.map((g) => ({
@@ -107,6 +125,15 @@ export const GET = withCronAuth("forestal-plazos", async () => {
           saldosNegativos: saldos.materiaPrima.especiesEnNegativo,
           fueraDePlazo: 0,
           documentosVencidosLabels,
+          lotes: lotesAbiertos
+            .filter((l) => l.finProceso != null)
+            .map((l) => ({
+              code: l.code,
+              finProceso: new Date(l.finProceso as unknown as string),
+              especie: l.speciesCommon ?? null,
+              volumenM3: l.volumenM3 == null ? null : Number(l.volumenM3),
+              piezas: Array.isArray(l.trozas) ? l.trozas.length : 0,
+            })),
         },
         hoy,
         tenant?.name ?? undefined,
@@ -125,6 +152,38 @@ export const GET = withCronAuth("forestal-plazos", async () => {
         actionLabel: "Abrir el Libro CTP",
         dedupWindowHours: 20,
       });
+
+      /* El correo, además de la campana y el WhatsApp: es el canal que queda
+         escrito y se reenvía al contador o al regente, que es a quién termina
+         llegando un vencimiento del libro. No frena el resto si falla. */
+      const correo = tenant?.ownerEmail?.trim();
+      if (correo) {
+        const lineas = [
+          ...aviso.guias
+            .filter((g) => g.estado !== "en_plazo")
+            .slice(0, 6)
+            .map((g) => `GTF ${g.gtfNumber}${g.titularName ? ` — ${g.titularName}` : ""} — ${frasePlazo(g)}`),
+          ...aviso.lotes
+            .slice(0, 4)
+            .map((l) => `Lote ${l.code}${l.especie ? ` — ${l.especie}` : ""} — ${fraseLote(l)}`),
+        ];
+        const r = await sendAvisoPlazosCtp(correo, {
+          titulo: aviso.titulo,
+          resumen: aviso.resumen,
+          lineas,
+          negocio: tenant?.name,
+          urgente: aviso.severidad === "HIGH",
+        });
+        if (r?.error) {
+          correosFallidos += 1;
+          logger.error("[cron/forestal-plazos] correo NO enviado", {
+            tenantId,
+            err: String(r.error.message ?? "").slice(0, 200),
+          });
+        } else correosEnviados += 1;
+      } else {
+        sinCorreo += 1;
+      }
 
       const phone = tenant?.ownerPhone?.replace(/\D/g, "");
       if (!phone || phone.length < 9) {
@@ -158,5 +217,8 @@ export const GET = withCronAuth("forestal-plazos", async () => {
     whatsappEnviados,
     whatsappFallidos,
     sinTelefono,
+    correosEnviados,
+    correosFallidos,
+    sinCorreo,
   });
 });

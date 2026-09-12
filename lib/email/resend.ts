@@ -1,3 +1,4 @@
+import { escapeHtml } from "./escape-html";
 import { Resend } from "resend";
 
 // Defensive init: si falta RESEND_API_KEY el constructor de Resend tira al
@@ -130,4 +131,52 @@ export async function sendWelcomeTenant(to: string, tenant: { name: string; slug
     }
     return { error: { message: String(err) } };
   });
+}
+
+/**
+ * Aviso de plazos del Libro CTP por correo (Brandon, 2026-09-12: «avisos dentro
+ * del sistema y además correo de aviso de vencimiento del lote»).
+ *
+ * El cron ya avisaba por la campana del panel y por WhatsApp. El correo suma el
+ * canal que queda escrito y se reenvía al contador o al regente, que es a quién
+ * termina llegando un vencimiento del libro.
+ *
+ * El cuerpo lo arma quien llama —el mismo texto del aviso, sin los emojis de
+ * WhatsApp— y acá sólo se maqueta. Todo lo que viene de datos se escapa: los
+ * códigos de lote y los nombres de especie los tipea una persona.
+ */
+export async function sendAvisoPlazosCtp(
+  to: string,
+  aviso: { titulo: string; resumen: string; lineas: readonly string[]; negocio?: string | null; urgente: boolean },
+) {
+  const lista = aviso.lineas.length
+    ? `<ul style="margin:16px 0;padding-left:20px;line-height:1.7">${aviso.lineas
+        .map((l) => `<li>${escapeHtml(l)}</li>`)
+        .join("")}</ul>`
+    : "";
+  return resend.emails
+    .send({
+      from: FROM,
+      to,
+      subject: `${aviso.urgente ? "[Urgente] " : ""}${aviso.titulo}${aviso.negocio ? ` — ${aviso.negocio}` : ""}`,
+      html: `
+      <div style="font-family:system-ui,-apple-system,sans-serif;max-width:560px">
+        <h2 style="margin:0 0 4px">${escapeHtml(aviso.titulo)}</h2>
+        <p style="margin:0 0 12px;color:#555">${escapeHtml(aviso.resumen)}</p>
+        ${lista}
+        <p style="margin:20px 0 0">
+          <a href="https://buleje.pe/admin?tab=ctp-libro-operaciones"
+             style="background:#00A0A0;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">
+            Abrir el Libro CTP
+          </a>
+        </p>
+        <p style="margin:16px 0 0;color:#888;font-size:12px">
+          Este aviso sale del Libro de Operaciones CTP de tu panel.
+        </p>
+      </div>
+    `,
+    })
+    .catch((err: unknown): EmailSendResult => ({
+      error: { message: err instanceof Error ? err.message : String(err) },
+    }));
 }

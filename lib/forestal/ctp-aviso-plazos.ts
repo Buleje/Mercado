@@ -69,6 +69,84 @@ export interface DatosAviso {
    * aviso diario durante 30 días enseñaría a ignorarlo.
    */
   documentosVencidosLabels: string[];
+  /**
+   * Lotes abiertos cuyo proceso ya venció o está por vencer (Brandon,
+   * 2026-09-12: «aviso de vencimiento del lote»).
+   *
+   * Un lote con fecha de fin pasada y todavía abierto es madera apartada que no
+   * entró a la sierra: figura comprometida, no se puede usar en otro lote y el
+   * SNIFFS espera una producción que nunca se declaró.
+   */
+  lotes?: LoteEnRiesgo[];
+}
+
+/** Un lote con fecha de fin de proceso, para mirarle el vencimiento. */
+export interface LoteEnRiesgo {
+  code: string;
+  /** Fin de proceso programado. */
+  finProceso: Date;
+  especie: string | null;
+  volumenM3: number | null;
+  piezas: number;
+}
+
+export interface LotePlazo extends LoteEnRiesgo {
+  estado: "vencido" | "vence_hoy" | "por_vencer";
+  /** Días que faltan; negativo si ya pasó. */
+  quedan: number;
+}
+
+/**
+ * Con cuántos días de anticipación avisar de un lote.
+ *
+ * Tres, no treinta: el lote es una programación propia del aserradero, no un
+ * papel con plazo legal. Avisar un mes antes de que termine un proceso que
+ * dura un mes es avisar el día que empieza, y eso enseña a ignorar el aviso.
+ */
+export const DIAS_AVISO_LOTE = 3;
+
+/**
+ * Días enteros entre dos fechas, en UTC.
+ *
+ * `setHours` usaría la zona de quien corre el proceso: `finProceso` es
+ * date-only (medianoche UTC, como lo guarda Prisma) y en Lima —UTC-5— eso es
+ * las 19:00 del día anterior, así que un lote que vence hoy salía «venció ayer».
+ * Es el mismo off-by-one que ya mordió al resto del libro.
+ */
+function dias(desde: Date, hasta: Date): number {
+  const a = new Date(desde);
+  a.setUTCHours(0, 0, 0, 0);
+  const b = new Date(hasta);
+  b.setUTCHours(0, 0, 0, 0);
+  return Math.ceil((b.getTime() - a.getTime()) / 86_400_000);
+}
+
+/**
+ * Los lotes que hay que mirar hoy, ordenados por urgencia.
+ *
+ * Sólo los que están dentro de la ventana o ya vencieron: un lote que termina
+ * en dos semanas no es noticia.
+ */
+export function lotesEnPlazo(lotes: readonly LoteEnRiesgo[], hoy: Date): LotePlazo[] {
+  return lotes
+    .map((l) => {
+      const quedan = dias(hoy, l.finProceso);
+      const estado: LotePlazo["estado"] = quedan < 0 ? "vencido" : quedan === 0 ? "vence_hoy" : "por_vencer";
+      return { ...l, quedan, estado };
+    })
+    .filter((l) => l.quedan <= DIAS_AVISO_LOTE)
+    .sort((a, b) => a.quedan - b.quedan);
+}
+
+/** Cómo se lee el plazo de un lote en una línea. */
+export function fraseLote(l: LotePlazo): string {
+  if (l.quedan < 0) {
+    const d = Math.abs(l.quedan);
+    return `venció hace ${d} día${d === 1 ? "" : "s"}`;
+  }
+  if (l.quedan === 0) return "vence hoy";
+  if (l.quedan === 1) return "vence mañana";
+  return `vence en ${l.quedan} días`;
 }
 
 export interface Aviso {
@@ -78,13 +156,14 @@ export interface Aviso {
   /** Cuerpo corto para la campana del panel. */ resumen: string;
   /** Mensaje de WhatsApp, ya formateado. */ whatsapp: string;
   guias: PlazoGuia[];
+  /** Lotes dentro de la ventana de aviso, de más urgente a menos. */ lotes: LotePlazo[];
 }
 
 function plural(n: number, singular: string, plural_: string): string {
   return `${n} ${n === 1 ? singular : plural_}`;
 }
 
-function frasePlazo(p: PlazoGuia): string {
+export function frasePlazo(p: PlazoGuia): string {
   if (p.estado === "vencido") {
     const d = Math.abs(p.quedan);
     return `pasada de plazo por ${plural(d, "día hábil", "días hábiles")}`;
@@ -113,9 +192,16 @@ export function construirAviso(d: DatosAviso, hoy: Date, nombreNegocio?: string)
   const hoyMismo = guias.filter((g) => g.estado === "vence_hoy");
   const docsVencidos = d.documentosVencidosLabels;
 
-  const hayQueAvisar = urgentes.length > 0 || d.despachosSinGtf > 0 || d.saldosNegativos > 0 || docsVencidos.length > 0;
+  /* Lotes: el proceso programado que se pasó de fecha con el lote abierto. */
+  const lotes = lotesEnPlazo(d.lotes ?? [], hoy);
+  const lotesVencidos = lotes.filter((l) => l.estado === "vencido");
+
+  const hayQueAvisar =
+    urgentes.length > 0 || d.despachosSinGtf > 0 || d.saldosNegativos > 0 || docsVencidos.length > 0 || lotes.length > 0;
   const severidad: "HIGH" | "MEDIUM" =
-    vencidas.length > 0 || hoyMismo.length > 0 || d.saldosNegativos > 0 || docsVencidos.length > 0 ? "HIGH" : "MEDIUM";
+    vencidas.length > 0 || hoyMismo.length > 0 || d.saldosNegativos > 0 || docsVencidos.length > 0 || lotesVencidos.length > 0
+      ? "HIGH"
+      : "MEDIUM";
 
   // Un documento vencido invalida el origen legal de TODA la madera que
   // ampara — más grave que una guía puntual sin ingresar, así que encabeza
@@ -131,13 +217,24 @@ export function construirAviso(d: DatosAviso, hoy: Date, nombreNegocio?: string)
             ? `${plural(urgentes.length, "guía por vencer", "guías por vencer")} en el Libro CTP`
             : d.saldosNegativos > 0
               ? "Saldos en negativo en el Libro CTP"
-              : "Despachos sin guía de salida";
+              : d.despachosSinGtf > 0
+                ? "Despachos sin guía de salida"
+                : lotesVencidos.length > 0
+                  ? `${plural(lotesVencidos.length, "lote vencido", "lotes vencidos")} sin aserrar`
+                  : `${plural(lotes.length, "lote por vencer", "lotes por vencer")} sin aserrar`;
 
   const partes: string[] = [];
   if (docsVencidos.length > 0) partes.push(`${plural(docsVencidos.length, "documento vencido", "documentos vencidos")} en la Ficha`);
   if (urgentes.length > 0) partes.push(`${plural(urgentes.length, "guía del monte", "guías del monte")} sin ingresar`);
   if (d.despachosSinGtf > 0) partes.push(`${plural(d.despachosSinGtf, "despacho", "despachos")} sin GTF de salida`);
   if (d.saldosNegativos > 0) partes.push(`${plural(d.saldosNegativos, "especie", "especies")} con saldo negativo`);
+  if (lotes.length > 0) {
+    partes.push(
+      lotesVencidos.length > 0
+        ? `${plural(lotesVencidos.length, "lote vencido", "lotes vencidos")} sin aserrar`
+        : `${plural(lotes.length, "lote por vencer", "lotes por vencer")}`,
+    );
+  }
   const resumen = partes.join(" · ") || "Sin pendientes urgentes.";
 
   const lineas = urgentes
@@ -163,6 +260,19 @@ export function construirAviso(d: DatosAviso, hoy: Date, nombreNegocio?: string)
     d.saldosNegativos > 0
       ? `⛔ ${plural(d.saldosNegativos, "especie tiene", "especies tienen")} saldo negativo: el libro no cierra así.`
       : null,
+    /* Los lotes van al final del mensaje: son de la programación propia del
+       aserradero, no de un plazo ante SERFOR. Importantes, pero no urgentes
+       como una guía sin registrar. */
+    lotes.length > 0 ? "" : null,
+    lotes.length > 0
+      ? `🪵 *${plural(lotes.length, "lote de aserrío", "lotes de aserrío")}* con el proceso por cerrar:`
+      : null,
+    ...lotes.slice(0, 4).map((l) => {
+      const vol = l.volumenM3 ? ` · ${l.volumenM3} m³` : "";
+      const esp = l.especie ? ` — ${l.especie}` : "";
+      return `• Lote ${l.code}${esp}${vol} — ${fraseLote(l)}`;
+    }),
+    lotes.length > 4 ? `…y ${lotes.length - 4} más.` : null,
     "",
     `El plazo para registrar en el Libro es de ${PLAZO_REGISTRO_DIAS} días hábiles.`,
     "Entrá al panel → Libro CTP (Forestal).",
@@ -170,5 +280,5 @@ export function construirAviso(d: DatosAviso, hoy: Date, nombreNegocio?: string)
     .filter((l): l is string => l !== null)
     .join("\n");
 
-  return { hayQueAvisar, severidad, titulo, resumen, whatsapp, guias };
+  return { hayQueAvisar, severidad, titulo, resumen, whatsapp, guias, lotes };
 }

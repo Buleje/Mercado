@@ -3,6 +3,7 @@ import {
   plazoDeGuia,
   diasHabilesEntre,
   construirAviso,
+  lotesEnPlazo,
   type GuiaPendiente,
 } from "@/lib/forestal/ctp-aviso-plazos";
 
@@ -145,5 +146,90 @@ describe("construirAviso", () => {
     );
     expect(a.titulo).toBe("2 documentos vencidos en la Ficha CTP");
     expect(a.resumen.startsWith("2 documentos vencidos en la Ficha")).toBe(true);
+  });
+});
+
+describe("vencimiento de lotes de aserrío", () => {
+  const lote = (code: string, finProceso: string) => ({
+    code,
+    finProceso: new Date(finProceso),
+    especie: "Tornillo",
+    volumenM3: 12.5,
+    piezas: 8,
+  });
+  const HOY = new Date("2026-09-12T12:00:00.000Z");
+
+  it("sólo mira los que vencen dentro de la ventana o ya vencieron", () => {
+    /* Un lote que termina en dos semanas no es noticia de hoy: avisar con un
+       mes de anticipación de un proceso que dura un mes es avisar el día que
+       empieza, y eso enseña a ignorar el aviso. */
+    const r = lotesEnPlazo(
+      [
+        lote("13-2026", "2026-09-09"), // venció hace 3
+        lote("15-2026", "2026-09-12"), // vence hoy
+        lote("16-2026", "2026-09-14"), // en 2 días
+        lote("17-2026", "2026-09-30"), // lejos
+      ],
+      HOY,
+    );
+    expect(r.map((l) => l.code)).toEqual(["13-2026", "15-2026", "16-2026"]);
+    /* Ordenados por urgencia: lo vencido primero. */
+    expect(r[0]!.estado).toBe("vencido");
+    expect(r[1]!.estado).toBe("vence_hoy");
+    expect(r[2]!.estado).toBe("por_vencer");
+  });
+
+  it("un lote vencido sube la severidad y entra al mensaje", () => {
+    const aviso = construirAviso(
+      {
+        guiasSinIngresar: [],
+        despachosSinGtf: 0,
+        saldosNegativos: 0,
+        fueraDePlazo: 0,
+        documentosVencidosLabels: [],
+        lotes: [lote("13-2026", "2026-09-09")],
+      },
+      HOY,
+      "Maderera Blas",
+    );
+    expect(aviso.hayQueAvisar).toBe(true);
+    expect(aviso.severidad).toBe("HIGH");
+    expect(aviso.titulo).toContain("lote vencido");
+    expect(aviso.whatsapp).toContain("Lote 13-2026");
+    expect(aviso.whatsapp).toContain("venció hace 3 días");
+  });
+
+  it("sin lotes en riesgo, el aviso no cambia", () => {
+    /* El agregado no puede inventar un aviso donde no lo había: sin nada más
+       pendiente y sin lotes, no se interrumpe a nadie. */
+    const aviso = construirAviso(
+      {
+        guiasSinIngresar: [],
+        despachosSinGtf: 0,
+        saldosNegativos: 0,
+        fueraDePlazo: 0,
+        documentosVencidosLabels: [],
+        lotes: [lote("17-2026", "2026-09-30")],
+      },
+      HOY,
+    );
+    expect(aviso.hayQueAvisar).toBe(false);
+  });
+
+  it("un lote por vencer avisa, pero sin urgencia", () => {
+    const aviso = construirAviso(
+      {
+        guiasSinIngresar: [],
+        despachosSinGtf: 0,
+        saldosNegativos: 0,
+        fueraDePlazo: 0,
+        documentosVencidosLabels: [],
+        lotes: [lote("16-2026", "2026-09-14")],
+      },
+      HOY,
+    );
+    expect(aviso.hayQueAvisar).toBe(true);
+    expect(aviso.severidad).toBe("MEDIUM");
+    expect(aviso.whatsapp).toContain("vence en 2 días");
   });
 });
