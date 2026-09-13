@@ -65,7 +65,7 @@ export default function DeclararReprocesoPicker({
           <span className={`${CHIP} bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]`}>
             {desdeTipo}
           </span>
-          <span aria-label="a">→</span>
+          <span role="img" aria-label="a">→</span>
           <span className={`${CHIP} bg-[var(--data-info-500)]/15 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]`}>
             {haciaTipo}
           </span>

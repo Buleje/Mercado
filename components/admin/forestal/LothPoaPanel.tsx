@@ -205,7 +205,7 @@ export default function LothPoaPanel({ analisis, config, saving, onConfig, onSav
                 <td className={NUM}>{e.censados}</td>
                 <td className={NUM}>{e.sobreDmc}</td>
                 <td className={`${NUM} text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]`}>{e.bajoDmc || "—"}</td>
-                <td className={`${NUM} text-[#0d9488]`}>{e.semilleros || "—"}</td>
+                <td className={`${NUM} text-[var(--accent-ink)] dark:text-[var(--accent)]`}>{e.semilleros || "—"}</td>
                 <td className={`${NUM} font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]`}>{e.aprovechables}</td>
                 <td className={`${NUM} font-bold`}>{fmtM3(e.volumenAprovechableM3)}</td>
                 <td className={NUM}>{e.volumenAutorizadoM3 != null ? e.volumenAutorizadoM3.toFixed(2) : "—"}</td>
@@ -278,7 +278,7 @@ function Kpi({ label, valor, sub, tone }: { label: string; valor: string; sub: s
       : tone === "warning"
         ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
         : tone === "accent"
-          ? "text-[#0d9488]"
+          ? "text-[var(--accent-ink)] dark:text-[var(--accent)]"
           : "text-[var(--text-primary)]";
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">

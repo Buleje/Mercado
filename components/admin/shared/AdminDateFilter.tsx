@@ -93,6 +93,7 @@ export default function AdminDateFilter({
               setCustomFrom(e.target.value);
               onChange("custom");
             }}
+            aria-label="Fecha desde"
             className="px-2 py-1 rounded-xl border border-[var(--rule-base)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <span className="text-xs text-[var(--text-tertiary)]">—</span>
@@ -103,6 +104,7 @@ export default function AdminDateFilter({
               setCustomTo(e.target.value);
               onChange("custom");
             }}
+            aria-label="Fecha hasta"
             className="px-2 py-1 rounded-xl border border-[var(--rule-base)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>

@@ -464,6 +464,7 @@ function SemaMesTab() {
                   min={1}
                   max={MAX_MONTHLY_GOAL}
                   autoFocus
+                  aria-label="Meta mensual en soles"
                   aria-invalid={!!editError}
                   aria-describedby={editError ? "monthly-goal-error" : undefined}
                   className={cn(

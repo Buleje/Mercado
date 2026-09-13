@@ -1,7 +1,8 @@
 'use client';
 
 import { useBarcodeScan } from './useBarcodeScan';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useModalAccesible } from '@/hooks/use-modal-accesible';
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
@@ -10,6 +11,8 @@ interface BarcodeScannerProps {
 
 export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
   const { isScanning, error, videoRef, startScan, stopScan } = useBarcodeScan();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: () => { stopScan(); onClose(); }, activo: true });
 
   useEffect(() => {
     startScan(onScan);
@@ -18,7 +21,7 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
+    <div ref={panelRef} role="dialog" aria-modal="true" aria-label="Escáner de código de barras" tabIndex={-1} className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center">
       {/* Close button */}
       <button
         onClick={() => { stopScan(); onClose(); }}

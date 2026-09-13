@@ -290,6 +290,7 @@ export default function RecetarioAdminTab() {
         <select
           value={filterCat}
           onChange={e => setFilterCat(e.target.value)}
+          aria-label="Filtrar por categoría"
           className="px-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
         >
           <option value="">Todas las categorias</option>
@@ -527,7 +528,7 @@ export default function RecetarioAdminTab() {
                                 </>
                               )}
                             </Field>
-                            <button onClick={() => removeIngrediente(idx)} className="p-1 rounded-xl hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors mt-4 shrink-0">
+                            <button aria-label="Quitar" onClick={() => removeIngrediente(idx)} className="p-1 rounded-xl hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors mt-4 shrink-0">
                               <X className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -575,13 +576,13 @@ export default function RecetarioAdminTab() {
                             className="flex-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
                           />
                           <div className="flex flex-col gap-0.5 shrink-0">
-                            <button onClick={() => movePaso(idx, -1)} disabled={idx === 0} className="p-1 rounded hover:bg-[var(--rule-soft)] disabled:opacity-30 transition-colors">
+                            <button aria-label="Subir" onClick={() => movePaso(idx, -1)} disabled={idx === 0} className="p-1 rounded hover:bg-[var(--rule-soft)] disabled:opacity-30 transition-colors">
                               <ChevronUp className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                             </button>
-                            <button onClick={() => movePaso(idx, 1)} disabled={idx === pasos.length - 1} className="p-1 rounded hover:bg-[var(--rule-soft)] disabled:opacity-30 transition-colors">
+                            <button aria-label="Bajar" onClick={() => movePaso(idx, 1)} disabled={idx === pasos.length - 1} className="p-1 rounded hover:bg-[var(--rule-soft)] disabled:opacity-30 transition-colors">
                               <ChevronDown className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                             </button>
-                            <button onClick={() => removePaso(idx)} className="p-1 rounded hover:bg-[var(--data-error-50)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors">
+                            <button aria-label="Quitar" onClick={() => removePaso(idx)} className="p-1 rounded hover:bg-[var(--data-error-50)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors">
                               <X className="h-3.5 w-3.5" />
                             </button>
                           </div>

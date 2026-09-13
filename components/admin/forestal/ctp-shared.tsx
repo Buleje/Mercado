@@ -19,6 +19,7 @@ import {
   type ReactNode,
 } from "react";
 import { CardTitle } from "@buleje/design-system";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { AlertCircle, AlertTriangle, BarChart3, Check, CheckCircle2, ChevronDown, Clock, Columns3, Copy, ExternalLink, X as XIcon } from "@buleje/design-system/icons";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "@/lib/forestal/ctp-compliance";
@@ -621,10 +622,20 @@ export function ModalFooter({
  * como siempre. (El alta de ingreso NO lo usa: ésa guarda borrador solo.)
  */
 export function useCierreSeguro(hayCambios: boolean, onClose: () => void) {
-  return useCallback(() => {
-    if (hayCambios && !window.confirm("Hay cambios sin guardar. ¿Cerrar y perderlos?")) return;
+  const { confirm } = useConfirm();
+  return useCallback(async () => {
+    if (
+      hayCambios &&
+      !(await confirm({
+        title: "¿Cerrar sin guardar?",
+        description: "Hay cambios sin guardar. Se pierden si cierras ahora.",
+        intent: "warning",
+        confirmLabel: "Sí, cerrar",
+      }))
+    )
+      return;
     onClose();
-  }, [hayCambios, onClose]);
+  }, [hayCambios, onClose, confirm]);
 }
 
 /**

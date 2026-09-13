@@ -30,6 +30,8 @@ import {
 } from "@buleje/design-system/icons";
 import { SectionTitle, CardTitle, DataTable } from "@buleje/design-system";
 import Image from "next/image";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 import { usePOSSound } from "./usePOSSound";
 import PuntoCompraProductCard from "./PuntoCompraProductCard";
@@ -137,6 +139,7 @@ const CART_TAB_ITEMS: AdminTab[] = [
 
 export default function PuntoCompraView() {
   // ── Hooks de contexto y sonido ───────────────────────────────────────────────
+  const { confirm, prompt } = useConfirm();
   const { playDing } = usePOSSound();
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -225,6 +228,11 @@ export default function PuntoCompraView() {
   const [newSupplier, setNewSupplier] = useState<{ name: string; ruc: string; phone: string; email: string; address: string; razonSocial: string }>({ name: "", ruc: "", phone: "", email: "", address: "", razonSocial: "" });
   const [creatingSupplier, setCreatingSupplier] = useState(false);
   const [rucLookup, setRucLookup] = useState<{ status: "idle" | "loading" | "ok" | "notfound" | "error"; msg?: string }>({ status: "idle" });
+  const cerrarNuevoProveedor = useCallback(() => {
+    if (!creatingSupplier) setShowNewSupplier(false);
+  }, [creatingSupplier]);
+  const nuevoProveedorModalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(nuevoProveedorModalRef, { onCerrar: cerrarNuevoProveedor, activo: showNewSupplier });
 
   // ── Fetch inicial + cargar borrador ─────────────────────────────────────────
   useEffect(() => {
@@ -428,7 +436,12 @@ export default function PuntoCompraView() {
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
   const handleDeleteTemplate = useCallback(async (tpl: ExpenseTemplate, humanDesc: string) => {
     if (deletingTemplateId) return;
-    if (!window.confirm(`¿Eliminar "${humanDesc || tpl.category}" del catálogo?\n\nNo se borran los gastos ya pagados, sólo la plantilla.`)) return;
+    if (!(await confirm({
+      title: `¿Eliminar "${humanDesc || tpl.category}" del catálogo?`,
+      description: "No se borran los gastos ya pagados, sólo la plantilla.",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
     setDeletingTemplateId(tpl.id);
     try {
       const { csrfHeaders } = await import("@/lib/csrf-client");
@@ -453,7 +466,7 @@ export default function PuntoCompraView() {
     } finally {
       setDeletingTemplateId(null);
     }
-  }, [deletingTemplateId, playDing]);
+  }, [deletingTemplateId, playDing, confirm]);
 
   // (creación de gastos recurrentes ahora vive en RecurringExpenseModal — onCreated dispara fetchExpenseCatalog)
 
@@ -514,11 +527,16 @@ export default function PuntoCompraView() {
     setCart((prev) => prev.filter((i) => i.product.id !== productId));
   }, []);
 
-  const clearCart = useCallback(() => {
+  const clearCart = useCallback(async () => {
     if (cart.length === 0) return;
-    if (!window.confirm("¿Limpiar toda la canasta? Se perderán los items agregados.")) return;
+    if (!(await confirm({
+      title: "¿Limpiar toda la canasta?",
+      description: "Se perderán los items agregados.",
+      intent: "warning",
+      confirmLabel: "Sí, limpiar",
+    }))) return;
     setCart([]);
-  }, [cart.length]);
+  }, [cart.length, confirm]);
 
   // ── Cálculos derivados ───────────────────────────────────────────────────────
   const categories = useMemo(
@@ -710,16 +728,21 @@ export default function PuntoCompraView() {
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
 
   // ── Plantillas de pedido frecuente ───────────────────────────────────────────
-  const saveAsTemplate = useCallback(() => {
+  const saveAsTemplate = useCallback(async () => {
     if (cart.length === 0) return;
-    const name = window.prompt("Nombre para esta plantilla (ej: Pedido semanal):");
+    const name = await prompt({
+      title: "Guardar como plantilla",
+      label: "Nombre para esta plantilla",
+      placeholder: "Ej: Pedido semanal",
+      inputType: "text",
+    });
     if (!name?.trim()) return;
     const template = { name: name.trim(), items: cart.map(i => ({ productId: i.product.id, name: i.product.name, quantity: i.quantity })) };
     const updated = [...savedTemplates, template];
     setSavedTemplates(updated);
     try { localStorage.setItem("poc-templates", JSON.stringify(updated)); } catch {}
     setToastMsg(`Plantilla "${name}" guardada`);
-  }, [cart, savedTemplates]);
+  }, [cart, savedTemplates, prompt]);
 
   const loadTemplate = useCallback((template: typeof savedTemplates[number]) => {
     template.items.forEach(item => {
@@ -1307,6 +1330,7 @@ export default function PuntoCompraView() {
         <button
           role="switch"
           aria-checked={showInventario}
+          aria-label="Usar artículos de mi inventario"
           onClick={() => setShowInventario(!showInventario)}
           className={cn(
             "relative w-12 h-6 rounded-full transition-colors shrink-0",
@@ -1696,6 +1720,7 @@ export default function PuntoCompraView() {
                 )}
                 {cart.length > 0 && (
                   <span
+                    role="img"
                     aria-label={`${cartTotalQty} unidades en canasta`}
                     className="h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold"
                   >
@@ -2043,7 +2068,7 @@ export default function PuntoCompraView() {
                           <button type="button" onClick={() => loadTemplate(tpl)} className="text-xs font-medium text-[var(--text-primary)] hover:text-primary">
                             {tpl.name}
                           </button>
-                          <button type="button" onClick={() => deleteTemplate(idx)} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] ml-0.5">✕</button>
+                          <button type="button" onClick={() => deleteTemplate(idx)} aria-label={`Eliminar plantilla ${tpl.name}`} className="text-xs text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] ml-0.5">✕</button>
                         </div>
                       ))}
                     </div>
@@ -2221,9 +2246,11 @@ export default function PuntoCompraView() {
       {showNewSupplier && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
-          onClick={() => !creatingSupplier && setShowNewSupplier(false)}
+          onClick={cerrarNuevoProveedor}
           role="dialog"
           aria-modal="true"
+          ref={nuevoProveedorModalRef}
+          tabIndex={-1}
         >
           <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between">
@@ -2235,7 +2262,7 @@ export default function PuntoCompraView() {
               </div>
               <button
                 type="button"
-                onClick={() => !creatingSupplier && setShowNewSupplier(false)}
+                onClick={cerrarNuevoProveedor}
                 aria-label="Cerrar"
                 className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
               >

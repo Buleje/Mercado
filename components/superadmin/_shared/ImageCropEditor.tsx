@@ -100,7 +100,8 @@ export default function ImageCropEditor({
   const cajaRef = useRef<HTMLDivElement>(null);
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
-  useModalAccesible(cajaRef, { onCerrar: onCancel, cerrarConEscape: false });
+  // `activo`: el uploader lo deja montado cerrado (`if (!open …) return null`).
+  useModalAccesible(cajaRef, { onCerrar: onCancel, cerrarConEscape: false, activo: open && !!srcDataUrl });
   const [crop, setCrop] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);

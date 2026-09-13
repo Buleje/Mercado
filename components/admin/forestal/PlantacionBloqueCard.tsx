@@ -5,7 +5,7 @@
  * (Sección 8 del Formato Único RNPF), sus vértices UTM y sus especies.
  */
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { Copy, Plus, Ruler, Trash2 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import type { AdvertenciaPlantacion, BloqueInput, EspecieBloqueInput } from "@/lib/forestal/plantacion-tramite";
@@ -37,6 +37,9 @@ export default function PlantacionBloqueCard({
   onDuplicar: () => void;
 }) {
   const geometria = useMemo(() => geometriaBloque(bloque.vertices), [bloque.vertices]);
+  const idNumero = useId();
+  const idNombre = useId();
+  const idSuperficie = useId();
 
   function set<K extends keyof BloqueInput>(campo: K, valor: BloqueInput[K]) {
     onChange({ ...bloque, [campo]: valor });
@@ -102,8 +105,9 @@ export default function PlantacionBloqueCard({
         {/* Identificación (Sección 8) */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
-            <label className={labelCls}>N° de bloque</label>
+            <label htmlFor={idNumero} className={labelCls}>N° de bloque</label>
             <input
+              id={idNumero}
               type="number"
               value={bloque.numero}
               disabled={soloLectura}
@@ -112,8 +116,9 @@ export default function PlantacionBloqueCard({
             />
           </div>
           <div>
-            <label className={labelCls}>Nombre del bloque (opcional)</label>
+            <label htmlFor={idNombre} className={labelCls}>Nombre del bloque (opcional)</label>
             <input
+              id={idNombre}
               type="text"
               value={bloque.nombre ?? ""}
               disabled={soloLectura}
@@ -123,8 +128,9 @@ export default function PlantacionBloqueCard({
             />
           </div>
           <div>
-            <label className={labelCls}>Superficie (ha)</label>
+            <label htmlFor={idSuperficie} className={labelCls}>Superficie (ha)</label>
             <input
+              id={idSuperficie}
               type="number"
               step="0.01"
               value={bloque.superficieHa ?? ""}

@@ -57,7 +57,9 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
   const cajaRef = useRef<HTMLDivElement>(null);
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
-  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
+  // `activo`: si el detalle vuelve vacío el componente devuelve null con el
+  // modal «abierto»; sin esto la trampa de foco quedaba sobre un nodo ido.
+  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false, activo: !!order || !!loading });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();

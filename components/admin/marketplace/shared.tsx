@@ -70,12 +70,16 @@ export interface StoreData {
 
 // ── Status badge configs ──
 export const ORDER_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pendiente:   { label: "Pendiente",  className: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]" },
+  /* Seis estados, seis colores: «Pendiente» y «En camino» habían quedado
+     iguales al pasar los hex a tokens (revisión 2026-09-12). «En camino» va en
+     info como en el kanban de Pedidos; «Preparando» vuelve a su violeta. El
+     texto usa los tonos -ink (el -500 como texto no llega a AA). */
+  pendiente:   { label: "Pendiente",  className: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-ink)]" },
   confirmado:  { label: "Confirmado", className: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
-  preparando:  { label: "Preparando", className: "bg-[#a78bfa]/15 text-[#7c3aed]" },
-  en_camino:   { label: "En camino",  className: "bg-[#ff8676]/15 text-[#f0503f]" },
-  entregado:   { label: "Entregado",  className: "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]" },
-  cancelado:   { label: "Cancelado",  className: "bg-[var(--data-error-500)]/15 text-[var(--data-error-500)]" },
+  preparando:  { label: "Preparando", className: "bg-[var(--brand-purple)]/15 text-[color-mix(in_oklab,var(--brand-purple)_72%,black)] dark:text-[var(--brand-purple)]" },
+  en_camino:   { label: "En camino",  className: "bg-[var(--data-info-500)]/15 text-[var(--data-info-ink)]" },
+  entregado:   { label: "Entregado",  className: "bg-[var(--data-success-500)]/15 text-[var(--data-success-ink)]" },
+  cancelado:   { label: "Cancelado",  className: "bg-[var(--data-error-500)]/15 text-[var(--data-error-ink)]" },
 };
 
 export const COMMISSION_STATUS_CONFIG: Record<string, { label: string; className: string; icon: React.ElementType }> = {

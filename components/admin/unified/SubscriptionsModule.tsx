@@ -166,6 +166,7 @@ function SubscriptionList({
         <select
           value={freqFilter}
           onChange={(e) => setFreqFilter(e.target.value as SubFrequency | "all")}
+          aria-label="Filtrar por frecuencia"
           className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
         >
           <option value="all">Todas las frecuencias</option>

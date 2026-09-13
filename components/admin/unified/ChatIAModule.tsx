@@ -219,6 +219,7 @@ export default function ChatIAModule() {
           className={cn("h-full rounded-full transition-all duration-300", usageColor)}
           style={{ width: `${usagePct}%` }}
           role="progressbar"
+          aria-label={`Consultas usadas del plan ${usage.plan}`}
           aria-valuenow={usage.used}
           aria-valuemin={0}
           aria-valuemax={usage.limit}
@@ -464,6 +465,7 @@ function SettingsPanel({
           step={100}
           value={settings.maxTokens}
           onChange={(e) => onUpdate("maxTokens", Number(e.target.value))}
+          aria-label="Longitud máxima de la respuesta"
           className="w-full accent-[var(--text-primary)]"
         />
         <div className="flex justify-between text-xs text-[var(--text-tertiary)] mt-1">
@@ -504,6 +506,7 @@ function ToggleRow({
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={() => onChange(!checked)}
         className={cn(
           "relative h-5 w-9 rounded-full transition-colors shrink-0 mt-0.5",

@@ -287,6 +287,7 @@ function FilaEditable({
           className={`${IC} sm:col-span-1`}
           value={fila.fecha}
           onChange={(e) => onEditar({ fecha: e.target.value })}
+          aria-label="Fecha de la guía"
         />
         <input
           className={`${IC} sm:col-span-3`}

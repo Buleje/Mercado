@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { toast } from "sonner";
 import QRCode from "qrcode";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";
@@ -655,6 +656,8 @@ export default function POSPaymentModal({
                         setDiscountMode("percent");
                         setDiscountValue("");
                       }}
+                      aria-label="Descuento en porcentaje"
+                      aria-pressed={discountMode === "percent"}
                       className={cn(
                         "px-3 min-h-10 text-sm font-semibold transition-colors flex items-center gap-1",
                         discountMode === "percent"
@@ -669,6 +672,8 @@ export default function POSPaymentModal({
                         setDiscountMode("fixed");
                         setDiscountValue("");
                       }}
+                      aria-label="Descuento en monto fijo"
+                      aria-pressed={discountMode === "fixed"}
                       className={cn(
                         "px-3 min-h-10 text-sm font-semibold transition-colors flex items-center gap-1",
                         discountMode === "fixed"
@@ -812,7 +817,7 @@ export default function POSPaymentModal({
                     // de sesiones previas (legacy sin sanitize). Si el número no es
                     // 100% dígitos opcional con + inicial → abortar impresión.
                     if (!/^\+?\d{6,15}$/.test(savedNumber)) {
-                      alert("Número inválido para QR. Solo dígitos (opcional + al inicio).");
+                      toast.error("Número inválido para QR. Solo dígitos (opcional + al inicio).");
                       return;
                     }
                     const w = window.open("", "_blank", "width=400,height=500");
@@ -926,6 +931,7 @@ export default function POSPaymentModal({
                               e.target.value as PaymentLineMethod
                             )
                           }
+                          aria-label={`Método de pago, línea ${idx + 1}`}
                           className="flex-1 min-w-24 px-2 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-semibold bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none"
                         >
                           {METHODS.map((m) => (
@@ -949,6 +955,7 @@ export default function POSPaymentModal({
                           }
                           readOnly={isFiado}
                           placeholder={total.toFixed(2)}
+                          aria-label={`Monto, línea ${idx + 1}`}
                           className={cn(
                             "w-full pl-7 pr-2 h-10 rounded-xl border text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary",
                             isFiado
@@ -959,7 +966,7 @@ export default function POSPaymentModal({
                         />
                       </div>
                       {paymentLines.length > 1 && (
-                        <button
+                        <button aria-label="Eliminar"
                           onClick={() => removeLine(idx)}
                           className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
                         >

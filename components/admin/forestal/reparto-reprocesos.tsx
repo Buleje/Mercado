@@ -287,7 +287,7 @@ function TablaSalidas({
                     <span className={`${CHIP} bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]`}>
                       {grupo.desdeTipo}
                     </span>
-                    <span className="text-[var(--text-tertiary)]" aria-label="se convierte en">→</span>
+                    <span role="img" className="text-[var(--text-tertiary)]" aria-label="se convierte en">→</span>
                     <span
                       className={`${CHIP} ${
                         d.mismoTipo
@@ -464,7 +464,7 @@ function RespaldosImposibles({ imposibles }: { imposibles: AmparoImposible[] }) 
               <span className={`${CHIP} bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]`}>
                 {i.desdeTipo}
               </span>
-              <span className="text-[var(--text-tertiary)]" aria-label="ampara">
+              <span role="img" className="text-[var(--text-tertiary)]" aria-label="ampara">
                 →
               </span>
               <span className={`${CHIP} bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]`}>

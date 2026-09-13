@@ -18,6 +18,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Plus, Trash2, Camera, Check, X, Loader2, AlertTriangle, GripVertical, Sparkles, ChevronDown } from "@buleje/design-system/icons";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
 
 // ── Plantillas — sets pre-armados de variantes comunes ──────────────────────
@@ -196,6 +197,7 @@ interface Props {
 }
 
 export default function ProductVariantsInline({ productId, basePrice, parentImage }: Props) {
+  const { confirm } = useConfirm();
   const [rows, setRows] = useState<VariantRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -319,7 +321,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar esta variante?")) return;
+    if (!(await confirm({ title: "¿Eliminar esta variante?", intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
     setSaving(id);
     try {
       const res = await fetch(`/api/marketplace/products/${productId}/variants?variantId=${encodeURIComponent(id)}`, {
@@ -366,7 +368,7 @@ export default function ProductVariantsInline({ productId, basePrice, parentImag
         <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] text-xs">
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
           <span className="flex-1">{error}</span>
-          <button onClick={() => setError(null)} className="opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
+          <button aria-label="Quitar" onClick={() => setError(null)} className="opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
         </div>
       )}
 

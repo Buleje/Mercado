@@ -1,8 +1,9 @@
 "use client";
 
 import { CardTitle, LoadingState } from "@buleje/design-system";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useId, useRef } from "react";
 import { Field } from "@/components/admin/shared/Field";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { X, Search, Loader2, Check, RotateCcw, Package, FileText } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -177,7 +178,7 @@ export default function POSReturnModal({
     setProcessing(false);
   };
 
-  const resetAndClose = () => {
+  const resetAndClose = useCallback(() => {
     setStep(1);
     setSearchQuery("");
     setSales([]);
@@ -188,7 +189,7 @@ export default function POSReturnModal({
     setResult(null);
     setNcResult(null);
     onClose();
-  };
+  }, [onClose]);
 
   // UX Mejora 13: Cerrar modal con Escape
   useEffect(() => {
@@ -200,6 +201,10 @@ export default function POSReturnModal({
     return () => document.removeEventListener("keydown", handleEsc);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: resetAndClose, cerrarConEscape: false, activo: isOpen });
 
   if (!isOpen) return null;
 
@@ -222,15 +227,15 @@ export default function POSReturnModal({
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         onClick={e => e.target === e.currentTarget && resetAndClose()}
       >
-        <div className="w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-h-[90vh] flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)]">
-            <CardTitle className="text-base font-extrabold text-[var(--text-primary)] flex items-center gap-2">
+            <CardTitle id={titleId} className="text-base font-extrabold text-[var(--text-primary)] flex items-center gap-2">
               <RotateCcw className="h-4 w-4 text-secondary" />
               Devolucion
               {step < 3 && <span className="text-xs font-normal text-[var(--text-tertiary)]">Paso {step}/2</span>}
             </CardTitle>
-            <button onClick={resetAndClose} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
+            <button onClick={resetAndClose} aria-label="Cerrar" className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
               <X className="h-4 w-4 text-[var(--text-secondary)]" />
             </button>
           </div>
@@ -332,6 +337,7 @@ export default function POSReturnModal({
                         type="checkbox"
                         checked={item.selected}
                         onChange={() => toggleItem(idx)}
+                        aria-label={`Seleccionar ${item.name}`}
                         className="h-4 w-4 rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                       />
                       <div className="flex-1 min-w-0">

@@ -229,6 +229,7 @@ function MembersTab({
         <select
           value={planFilter}
           onChange={(e) => setPlanFilter(e.target.value as SocioMember["plan"] | "all")}
+          aria-label="Filtrar por plan"
           className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
         >
           <option value="all">Todos los planes</option>
@@ -238,6 +239,7 @@ function MembersTab({
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as SocioMember["status"] | "all")}
+          aria-label="Filtrar por estado"
           className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
         >
           <option value="all">Todos los estados</option>

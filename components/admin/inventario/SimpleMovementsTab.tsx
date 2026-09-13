@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { DataTable, SectionTitle } from "@buleje/design-system";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   ArrowDownCircle, ArrowUpCircle, Download, Loader2, Package,
   Search, RefreshCw, ArrowLeftRight,
@@ -424,6 +425,9 @@ function RegisterMovementModal({ products, onClose, onSaved }: { products: Produ
   const [notes] = useState("");
   const [psearch, setPsearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
 
   const types = dir === "in" ? ENTRADA_TYPES : SALIDA_TYPES;
   const selected = products.find(p => p.id === productId) ?? null;
@@ -453,10 +457,10 @@ function RegisterMovementModal({ products, onClose, onSaved }: { products: Produ
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
           <div>
-            <SectionTitle as="h2" className="text-lg font-bold leading-tight text-[var(--text-primary)]">Registrar movimiento</SectionTitle>
+            <SectionTitle id={titleId} as="h2" className="text-lg font-bold leading-tight text-[var(--text-primary)]">Registrar movimiento</SectionTitle>
             <p className="text-xs text-[var(--text-tertiary)]">Entrada o salida de stock con motivo</p>
           </div>
           <button onClick={onClose} aria-label="Cerrar" className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-5 w-5" /></button>

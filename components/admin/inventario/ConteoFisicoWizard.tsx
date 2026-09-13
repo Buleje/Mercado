@@ -509,6 +509,7 @@ export default function ConteoFisicoWizard() {
                             type="checkbox"
                             checked={item.ajustado}
                             onChange={() => toggleAjustado(item.id)}
+                            aria-label={`Ajustar ${item.product?.name ?? `#${item.productId}`}`}
                             className="w-4 h-4 rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                           />
                         </td>

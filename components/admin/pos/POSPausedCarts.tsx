@@ -148,7 +148,7 @@ export default function POSPausedCarts({
                 >
                   OK
                 </button>
-                <button
+                <button aria-label="Cerrar"
                   onClick={() => setShowNameInput(false)}
                   className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
                 >
@@ -215,7 +215,7 @@ export default function POSPausedCarts({
               >
                 <Play className="h-3 w-3" /> Retomar
               </button>
-              <button
+              <button aria-label="Eliminar"
                 onClick={() => handleDelete(cart.id)}
                 className="p-1 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors shrink-0"
               >

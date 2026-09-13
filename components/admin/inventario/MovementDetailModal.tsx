@@ -13,11 +13,12 @@
  * inventario tiene que poder demostrar.
  */
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { SectionTitle } from "@buleje/design-system";
 import { AlertTriangle, Loader2, Undo2, X, type LucideIcon } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 export type MovementDetail = {
   id: string;
@@ -92,6 +93,9 @@ export default function MovementDetailModal({
   const [revirtiendo, setRevirtiendo] = useState(false);
   const [confirma, setConfirma] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: () => { if (!revirtiendo) onClose(); }, activo: true });
 
   const m = movimiento;
   const bloqueo = motivoNoReversible(m);
@@ -133,10 +137,10 @@ export default function MovementDetailModal({
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4"
       onClick={(e) => e.target === e.currentTarget && !revirtiendo && onClose()}
     >
-      <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
           <div className="min-w-0">
-            <SectionTitle as="h2" className="truncate text-lg font-bold leading-tight text-[var(--text-primary)]">{m.productName}</SectionTitle>
+            <SectionTitle id={titleId} as="h2" className="truncate text-lg font-bold leading-tight text-[var(--text-primary)]">{m.productName}</SectionTitle>
             <p className="text-sm text-[var(--text-secondary)]">
               {fecha.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
               {" · "}

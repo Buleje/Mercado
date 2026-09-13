@@ -109,6 +109,7 @@ export default function PlantacionPasoDocumentos({
                 <select
                   value={doc.clasificacion}
                   onChange={(e) => actualizar(cat.key, { clasificacion: e.target.value as ClasificacionDocumento })}
+                  aria-label={`Clasificación de ${cat.label}`}
                   className="h-9 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs font-bold text-[var(--text-primary)]"
                 >
                   <option value="requerido">Requerido</option>

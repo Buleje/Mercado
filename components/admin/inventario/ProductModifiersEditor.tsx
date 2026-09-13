@@ -227,7 +227,7 @@ export default function ProductModifiersEditor({ productId, productName, onClose
               <div className="rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 p-3 text-sm text-[var(--data-error-500)] flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                 <span className="flex-1">{error}</span>
-                <button onClick={() => setError(null)} className="opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
+                <button aria-label="Quitar" onClick={() => setError(null)} className="opacity-60 hover:opacity-100"><X className="h-3.5 w-3.5" /></button>
               </div>
             )}
           </div>
@@ -473,6 +473,7 @@ function OptionRow({
             value={option.priceDelta}
             onChange={(e) => onChange({ priceDelta: Number(e.target.value) || 0 })}
             className="w-16 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 py-1.5 text-sm font-mono tabular-nums outline-none focus:border-primary"
+            aria-label="Precio adicional de esta opción"
             title="Cuánto suma al precio del producto si se elige"
           />
         </div>

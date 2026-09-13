@@ -93,7 +93,7 @@ export default function ProductImage({
   }
 
   return (
-    <div
+    <div role="img"
       className={cn(
         dim.box,
         radius,

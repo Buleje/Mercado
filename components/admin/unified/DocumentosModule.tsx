@@ -26,7 +26,8 @@
  * en papel necesita un drive serio para pasar a digital.
  */
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useId, useMemo, useCallback, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { DataTable } from "@buleje/design-system";
 import {
   Upload,
@@ -639,16 +640,19 @@ function PreviewModal({
   const isPdf = doc.type === "application/pdf" && doc.dataUrl;
   const isVideo = doc.type.startsWith("video/") && doc.dataUrl;
   const { Icon, tint, bg } = getFileIcon(doc.type);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const tituloId = useId();
+  // Escape lo maneja el hook (cede si hay otro diálogo encima).
+  useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={tituloId}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col"
       >
@@ -659,7 +663,7 @@ function PreviewModal({
               <Icon className={cn("h-5 w-5", tint)} />
             </span>
             <div className="min-w-0">
-              <p className="text-base font-extrabold text-[var(--text-primary)] truncate">{doc.name}</p>
+              <p id={tituloId} className="text-base font-extrabold text-[var(--text-primary)] truncate">{doc.name}</p>
               <p className="text-xs text-[var(--text-tertiary)] tabular-nums">
                 {formatBytes(doc.size)} · {doc.type || "Desconocido"} · {new Date(doc.uploadedAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
               </p>
@@ -782,7 +786,7 @@ function PreviewModal({
                   placeholder="Nueva etiqueta…"
                   className="flex-1 min-w-0 px-3 h-10 bg-transparent text-xs text-[var(--text-primary)] outline-none"
                 />
-                <button
+                <button aria-label="Agregar"
                   onClick={() => { onAddTag(tagInput); setTagInput(""); }}
                   disabled={!tagInput.trim()}
                   className="px-3 bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"

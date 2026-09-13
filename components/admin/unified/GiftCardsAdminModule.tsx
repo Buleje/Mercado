@@ -10,6 +10,8 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import {
   Gift,
   DollarSign,
@@ -22,7 +24,7 @@ import {
   Calendar,
   Trash2,
 } from "@buleje/design-system/icons";
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { DataTable } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import KPICard from "@/components/admin/shared/KPICard";
@@ -217,6 +219,7 @@ const STATUS_STYLES: Record<GiftCardDetails["status"], string> = {
 // ── Main Component ──────────────────────────────────────────────────────────
 
 export default function GiftCardsAdminModule() {
+  const { prompt } = useConfirm();
   const [cards, setCards] = useState<GiftCardDetails[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -284,7 +287,12 @@ export default function GiftCardsAdminModule() {
       .reduce((sum, c) => sum + c.balance, 0);
 
   const handleCancel = async (id: string) => {
-    const reason = window.prompt("Motivo de la cancelacion:", "Solicitud del cliente");
+    const reason = await prompt({
+      title: "Motivo de la cancelación",
+      label: "Motivo",
+      defaultValue: "Solicitud del cliente",
+      inputType: "text",
+    });
     if (!reason || reason.trim().length < 3) return;
 
     try {
@@ -416,22 +424,13 @@ export default function GiftCardsAdminModule() {
       )}
 
       {/* Modal cuando un admin emite gift card manual — muestra el plainCode UNA vez */}
-      {issuedCode && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-          onClick={() => setIssuedCode(null)}
-        >
-          <div
-            className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] w-full max-w-md p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">
-              Codigo generado
-            </CardTitle>
-            <p className="mt-2 text-sm text-[var(--text-secondary)]">
-              Este codigo solo se muestra UNA vez. Copialo y entregalo al destinatario
-              (WhatsApp, email, impreso). No lo podemos recuperar despues.
-            </p>
+      <AdminModal open={!!issuedCode} onClose={() => setIssuedCode(null)} title="Código generado" variant="default" aboveModals>
+        <div className="p-5">
+          <p className="text-sm text-[var(--text-secondary)]">
+            Este codigo solo se muestra UNA vez. Copialo y entregalo al destinatario
+            (WhatsApp, email, impreso). No lo podemos recuperar despues.
+          </p>
+          {issuedCode && (
             <div className="mt-4 flex items-center justify-between gap-2 rounded-xl bg-[var(--rule-soft)] px-3 py-3">
               <code className="font-mono text-base font-bold tracking-wider text-[var(--text-primary)]">
                 {issuedCode}
@@ -447,18 +446,18 @@ export default function GiftCardsAdminModule() {
                 Copiar
               </button>
             </div>
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setIssuedCode(null)}
-                className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-              >
-                Listo
-              </button>
-            </div>
+          )}
+          <div className="mt-5 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setIssuedCode(null)}
+              className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
+            >
+              Listo
+            </button>
           </div>
         </div>
-      )}
+      </AdminModal>
 
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -475,6 +474,7 @@ export default function GiftCardsAdminModule() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as GiftCardDetails["status"] | "all")}
+          aria-label="Filtrar por estado"
           className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
         >
           <option value="all">Todos los estados</option>

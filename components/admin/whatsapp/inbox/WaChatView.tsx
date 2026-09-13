@@ -436,6 +436,7 @@ export default function WaChatView({
               }
             }}
             placeholder={canSend ? "Escribe un mensaje…" : "Conecta tu número para responder"}
+            aria-label="Escribir mensaje"
             disabled={!canSend || sending}
             rows={1}
             className="max-h-32 min-h-12 flex-1 resize-y rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-base text-[var(--text-primary)] outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:opacity-60 "

@@ -101,6 +101,7 @@ export default function POSCrossSell({
       </button>
       <button
         onClick={handleDismiss}
+        aria-label="Descartar sugerencia"
         className="shrink-0 p-0.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
       >
         <X className="h-3 w-3" />

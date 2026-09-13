@@ -1,6 +1,7 @@
 "use client";
 import { CardTitle } from "@buleje/design-system";
- 
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
@@ -213,7 +214,7 @@ export default function InventarioAlmacenesModule() {
                   <button onClick={() => setConteoMode("manual")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "manual" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted")}>Manual</button>
                   <button onClick={() => setConteoMode("scanner")} className={cn("px-3 py-1 rounded-lg text-xs font-medium", conteoMode === "scanner" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted")}>Escáner</button>
                 </div>
-                <button onClick={() => setShowConteoModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+                <button aria-label="Cerrar" onClick={() => setShowConteoModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                   <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </button>
               </div>
@@ -233,7 +234,7 @@ export default function InventarioAlmacenesModule() {
           <div className="bg-[var(--surface-raised)] w-full sm:max-w-5xl sm:rounded-xl rounded-t-2xl overflow-hidden max-h-[90dvh] flex flex-col">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] sticky top-0 bg-[var(--surface-raised)] z-10">
               <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Declaración de Inventario</CardTitle>
-              <button onClick={() => setShowDeclaracionModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
+              <button aria-label="Cerrar" onClick={() => setShowDeclaracionModal(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                 <XIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
               </button>
             </div>
@@ -268,57 +269,51 @@ export default function InventarioAlmacenesModule() {
       )}
 
       {/* ── Mejora 7: Price Labels Modal ── */}
-      {showPriceLabels && (
-        <div className="modal-backdrop p-4" onClick={() => setShowPriceLabels(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="px-5 py-4 border-b border-[var(--rule-soft)] flex items-center justify-between">
-              <CardTitle className="font-bold text-[var(--text-primary)] text-sm">Imprimir Etiquetas de Precio</CardTitle>
-              <button onClick={() => setShowPriceLabels(false)} className="p-1 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
-                <span className="text-[var(--text-tertiary)] text-lg">&times;</span>
-              </button>
+      <AdminModal
+        open={showPriceLabels}
+        onClose={() => setShowPriceLabels(false)}
+        title="Imprimir Etiquetas de Precio"
+        footer={
+          <button onClick={handlePrintLabels} disabled={selectedLabelIds.size === 0} className="w-full min-h-11 rounded-xl text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-primary hover:bg-primary/90">
+            Generar etiquetas ({selectedLabelIds.size})
+          </button>
+        }
+      >
+        <div className={MODAL_BODY}>
+          {labelLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
-            <div className="flex-1 overflow-y-auto px-5 py-3">
-              {labelLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <button
-                      onClick={() => {
-                        if (selectedLabelIds.size === labelProducts.length) setSelectedLabelIds(new Set());
-                        else setSelectedLabelIds(new Set(labelProducts.map(p => p.id)));
-                      }}
-                      className="text-xs font-bold text-primary hover:underline"
-                    >
-                      {selectedLabelIds.size === labelProducts.length ? "Deseleccionar todos" : "Seleccionar todos"}
-                    </button>
-                    <span className="text-xs text-[var(--text-tertiary)]">{selectedLabelIds.size} seleccionados</span>
-                  </div>
-                  {labelProducts.map(p => (
-                    <label key={p.id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--surface-alt)] cursor-pointer transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={selectedLabelIds.has(p.id)}
-                        onChange={() => toggleLabelId(p.id)}
-                        className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
-                      />
-                      <span className="flex-1 text-sm text-[var(--text-primary)] truncate">{p.name}</span>
-                      <span className="text-sm font-bold text-[var(--color-primary)]" style={{ color: "var(--color-primary)" }}>S/{Number(p.price).toFixed(2)}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+          ) : (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between mb-2">
+                <button
+                  onClick={() => {
+                    if (selectedLabelIds.size === labelProducts.length) setSelectedLabelIds(new Set());
+                    else setSelectedLabelIds(new Set(labelProducts.map(p => p.id)));
+                  }}
+                  className="text-xs font-bold text-primary hover:underline"
+                >
+                  {selectedLabelIds.size === labelProducts.length ? "Deseleccionar todos" : "Seleccionar todos"}
+                </button>
+                <span className="text-xs text-[var(--text-tertiary)]">{selectedLabelIds.size} seleccionados</span>
+              </div>
+              {labelProducts.map(p => (
+                <label key={p.id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--surface-alt)] cursor-pointer transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={selectedLabelIds.has(p.id)}
+                    onChange={() => toggleLabelId(p.id)}
+                    className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
+                  />
+                  <span className="flex-1 text-sm text-[var(--text-primary)] truncate">{p.name}</span>
+                  <span className="text-sm font-bold text-primary">S/{Number(p.price).toFixed(2)}</span>
+                </label>
+              ))}
             </div>
-            <div className="px-5 py-4 border-t border-[var(--rule-soft)]">
-              <button onClick={handlePrintLabels} disabled={selectedLabelIds.size === 0} className="w-full min-h-11 rounded-xl text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--color-primary)]" style={{ backgroundColor: "var(--color-primary)" }}>
-                Generar etiquetas ({selectedLabelIds.size})
-              </button>
-            </div>
-          </div>
+          )}
         </div>
-      )}
+      </AdminModal>
     </div>
   );
 }

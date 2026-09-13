@@ -33,7 +33,7 @@ export function ScopeBadge({ tabId, variant = "dot", hideForSystem = true, class
   if (variant === "dot") {
     // Solo un punto de color + tooltip. Mínimo footprint visual.
     return (
-      <span
+      <span role="img"
         className={cn("inline-block h-1.5 w-1.5 rounded-full shrink-0", meta.dotClass, className)}
         title={`Datos: ${meta.label}`}
         aria-label={`Datos: ${meta.label}`}

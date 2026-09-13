@@ -22,6 +22,7 @@ import { createPortal } from "react-dom";
 import { Keyboard, SlidersHorizontal, X, type LucideIcon } from "@buleje/design-system/icons";
 import { Kicker, PageTitle } from "@buleje/design-system";
 import ActionMenu, { type MenuAccion } from "./action-menu";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
 import {
@@ -373,7 +374,13 @@ function BotonAtajos({ onClick, enPanel = false }: { onClick: () => void; enPane
 function HerramientasDelLibro({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const anclaRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  // Escape ya lo maneja el listener de la ventana de abajo; el hook agrega
+  // la trampa de Tab (sin ella se escapa al resto de la página) y devuelve
+  // el foco al botón que lo abrió.
+  const cerrarHerramientas = useCallback(() => setOpen(false), []);
+  useModalAccesible(panelRef, { onCerrar: cerrarHerramientas, cerrarConEscape: false, activo: open });
 
   const ubicar = useCallback(() => {
     const b = anclaRef.current?.getBoundingClientRect();
@@ -402,13 +409,15 @@ function HerramientasDelLibro({ children }: { children: ReactNode }) {
     <>
       <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} aria-hidden="true" />
       <div
+        ref={panelRef}
         role="dialog"
         aria-label="Herramientas del libro"
+        tabIndex={-1}
         /* Sin overflow: los controles de adentro (la campana de avisos, el
            período) abren sus propios desplegables `absolute`, y un overflow
            acá los recortaría al tamaño del panel. */
         style={{ top: pos.top, right: pos.right }}
-        className="fixed z-[61] w-[min(92vw,44rem)] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)]"
+        className="fixed z-[61] w-[min(92vw,44rem)] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 shadow-[var(--shadow-lg)] outline-none"
       >
         <div className="mb-2 flex items-center justify-between gap-3">
           <Kicker className="block leading-none">Herramientas del libro</Kicker>

@@ -1,11 +1,12 @@
 "use client";
 
 import { DataTable, SectionTitle } from "@buleje/design-system";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { X, Search, ArrowUpDown, ArrowUp, ArrowDown, Package, AlertTriangle, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbProduct, DbInventoryMovement } from "@/lib/jsondb";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,9 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
 
   useScrollLock(true);
 
@@ -131,11 +135,11 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
 
   return (
     <div className="modal-backdrop flex items-center justify-center" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-[var(--surface-raised)] w-[95vw] max-w-7xl h-[90vh] rounded-xl flex flex-col overflow-hidden">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] w-[95vw] max-w-7xl h-[90vh] rounded-xl flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Inventario completo</SectionTitle>
+            <SectionTitle id={titleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Inventario completo</SectionTitle>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{filtered.length} productos activos</p>
           </div>
           <div className="flex items-center gap-3">
@@ -149,7 +153,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
                 className="pl-9 pr-3 h-10 w-56 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
-            <button onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
+            <button aria-label="Cerrar" onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
               <X className="h-5 w-5 text-[var(--text-secondary)]" />
             </button>
           </div>

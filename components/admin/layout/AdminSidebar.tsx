@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { m } from "@/components/admin/providers";
-import { SectionTitle } from "@buleje/design-system";
 import {
   ChevronRight,
   Store,
@@ -22,6 +21,7 @@ import { SECTION_BEFORE, type TabCategory } from "@/app/admin/_lib/tab-categorie
 import { MODULE_INFO, TAB_CATEGORIES } from "@/app/admin/_lib/tab-categories";
 import { SPEC_GATED_MODULE_IDS, useEnabledSpecs } from "@/hooks/use-enabled-specs";
 import { SidebarFlyout } from "@/components/admin/shared/SidebarFlyout";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import SidebarConfigurator from "@/components/admin/shared/SidebarConfigurator";
 import type { SidebarTheme, AccentColor, Density, IconStyle } from "@/components/admin/shared/SidebarConfigurator";
 import { BulejeMark } from "@/components/ui-system/illustrations";
@@ -1419,21 +1419,15 @@ export const AdminSidebar = React.memo(function AdminSidebar({
       })()}
 
       {/* ── Modal: Cambiar tipo de negocio ──────────────────────────────────── */}
-      {showIndustryModal && canChangeIndustry && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm"
-          onClick={() => setShowIndustryModal(false)}
+      {canChangeIndustry && (
+        <AdminModal
+          open={showIndustryModal}
+          onClose={() => setShowIndustryModal(false)}
+          title="Tipo de negocio"
+          description="El tipo de negocio determina que modulos aparecen en tu panel."
+          variant="centered-sm"
         >
-          <div
-            className="bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] w-full max-w-sm mx-4 p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <SectionTitle as="h2" className="text-base mb-1">
-              Tipo de negocio
-            </SectionTitle>
-            <p className="text-sm text-[var(--text-secondary)] mb-4">
-              El tipo de negocio determina que modulos aparecen en tu panel.
-            </p>
+          <div className={MODAL_BODY}>
             <div className={cn(
               "flex items-center gap-3 p-3 rounded-xl mb-4",
               isDarkTheme
@@ -1459,7 +1453,7 @@ export const AdminSidebar = React.memo(function AdminSidebar({
               Cancelar
             </button>
           </div>
-        </div>
+        </AdminModal>
       )}
     </>
   );

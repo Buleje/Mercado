@@ -19,6 +19,7 @@
  */
 
 import { useState, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   X,
@@ -78,6 +79,7 @@ const FREQUENCIES: ExpenseFrequency[] = ["mensual", "quincenal", "semanal", "anu
 const PAYMENT_METHODS: ExpensePaymentMethod[] = ["efectivo", "yape", "plin", "transferencia", "tarjeta", "credito"];
 
 export default function RecurringExpenseModal({ open, onClose, onCreated, tenantSlug, defaultCategory }: Props) {
+  const { confirm } = useConfirm();
   /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
   /* `activo: open` no es decorativo: el componente NO se desmonta al
      cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
@@ -220,8 +222,13 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
     setNewCatColor("teal");
   };
 
-  const handleRemoveCategory = (name: string) => {
-    if (!confirm(`¿Eliminar la categoría "${name}"? Los gastos existentes no se borran.`)) return;
+  const handleRemoveCategory = async (name: string) => {
+    if (!(await confirm({
+      title: `¿Eliminar la categoría "${name}"?`,
+      description: "Los gastos existentes no se borran.",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    }))) return;
     const next = removeCustomCategory(tenantSlug, name);
     setCustomCats(next);
     if (selectedCategoryName === name) setSelectedCategoryName("Otros");
@@ -338,6 +345,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                     onChange={(e) => setNewCatName(e.target.value)}
                     placeholder="Ej. Cuotas máquina"
                     ref={(el) => el?.focus()}
+                    aria-label="Nombre de la categoría"
                     className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium focus:outline-none focus:border-primary"
                   />
                 </div>
@@ -375,6 +383,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                           key={key}
                           type="button"
                           onClick={() => setNewCatIcon(key)}
+                          aria-label={`Ícono ${key}`}
                           aria-pressed={active}
                           className={cn(
                             "aspect-square inline-flex items-center justify-center rounded-xl border-2 transition-all",
@@ -412,6 +421,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Ej. Alquiler local, Recarga celular Movistar, Servicio limpieza semanal"
+                aria-label="Descripción del gasto"
                 className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium focus:outline-none focus:border-primary"
               />
             </div>
@@ -427,6 +437,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.00"
+                    aria-label="Monto en soles"
                     className="w-full h-12 pl-12 pr-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-bold tabular-nums focus:outline-none focus:border-primary"
                   />
                 </div>
@@ -438,6 +449,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                   value={supplierName}
                   onChange={(e) => setSupplierName(e.target.value)}
                   placeholder="Ej. Edelnor, Don Juan (casero), Movistar"
+                  aria-label="Proveedor o quién recibe el pago"
                   className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium focus:outline-none focus:border-primary"
                 />
               </div>
@@ -477,6 +489,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                   <select
                     value={paymentDay}
                     onChange={(e) => setPaymentDay(e.target.value)}
+                    aria-label="Día de pago"
                     className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium focus:outline-none focus:border-primary"
                   >
                     {DAYS_OF_WEEK.map((d, i) => (
@@ -491,6 +504,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                     value={paymentDay}
                     onChange={(e) => setPaymentDay(e.target.value)}
                     placeholder="Día del mes (1-31)"
+                    aria-label="Día de pago del mes"
                     className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-bold tabular-nums focus:outline-none focus:border-primary"
                   />
                 )}
@@ -556,6 +570,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Ej. El casero prefiere efectivo, dejar recibo firmado en caja chica..."
                 rows={2}
+                aria-label="Notas internas"
                 className="mt-1 w-full px-3.5 py-2.5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium focus:outline-none focus:border-primary resize-none"
               />
             </div>

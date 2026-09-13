@@ -69,6 +69,7 @@ export default function NotificationToast({ onNavigate }: NotificationToastProps
             onClick={() => {
               setDismissed((prev) => new Set([...prev, order.id]));
             }}
+            aria-label="Descartar aviso de pedido"
             className="p-1 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
           >
             <X className="h-3.5 w-3.5" />

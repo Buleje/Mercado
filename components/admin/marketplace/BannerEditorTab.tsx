@@ -213,7 +213,7 @@ function BannerModal({
           <button
             onClick={() => onSave(form)}
             disabled={saving || !form.title.trim()}
-            className="flex-1 h-10 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 h-10 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             Guardar
@@ -296,13 +296,13 @@ function SortableBannerCard({
             ? <ToggleRight className="h-5 w-5 text-[var(--accent)]" />
             : <ToggleLeft className="h-5 w-5 text-[var(--text-tertiary)]" />}
         </button>
-        <button
+        <button aria-label="Editar"
           onClick={() => onEdit(banner)}
           className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
         >
           <Pencil className="h-3.5 w-3.5" />
         </button>
-        <button
+        <button aria-label="Eliminar"
           onClick={() => onDelete(banner.id)}
           className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error)]/20 text-[var(--text-secondary)] hover:text-[var(--data-error)]"
         >

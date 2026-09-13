@@ -51,7 +51,7 @@ export default memo(function PuntoCompraProductCard({
       {/* Badge AGOTADO / REPONER — bg neutro, color solo en dot + texto.
           AGOTADO solo si el stock está RASTREADO en 0 (no si es null/sin control). */}
       {isOutOfStock ? (
-        <span
+        <span role="img"
           aria-label="Producto agotado"
           className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-error-500)]/30 text-[var(--data-error-500)] z-10"
         >
@@ -59,7 +59,7 @@ export default memo(function PuntoCompraProductCard({
           AGOTADO
         </span>
       ) : needsReorder(product) ? (
-        <span
+        <span role="img"
           aria-label="Necesita reposición"
           className="absolute top-2 left-2 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full bg-[var(--surface-raised)] border border-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] z-10"
         >
@@ -70,7 +70,7 @@ export default memo(function PuntoCompraProductCard({
 
       {/* Badge en carrito */}
       {inCart > 0 && (
-        <span
+        <span role="img"
           aria-label={`${inCart} en canasta`}
           className="absolute top-2 right-2 h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold z-10"
         >

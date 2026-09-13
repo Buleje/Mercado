@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
+import { toast } from "sonner";
 import { DataTable } from "@buleje/design-system";
 import { AlertCircle, ChevronDown, Download, Eye, MessageCircle, MoreHorizontal, RefreshCw, Search, ShoppingCart, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceOrders, type MarketplaceOrderDetail, type OrderTargetStatus } from "@/components/admin/marketplace/hooks/use-marketplace-orders";
 import { OrderDetailModal } from "@/components/admin/marketplace/OrderDetailModal";
 import { ORDER_STATUS_CONFIG, SortIcon, TableSkeleton, CounterChip } from "@/components/admin/marketplace/shared";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 
 // ─────────────────────────────────────────────
 // Sub-tab: Órdenes
@@ -46,6 +48,7 @@ export function MarketplaceOrdenesTab() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [openStatusMenuFor, setOpenStatusMenuFor] = useState<string | null>(null);
   const [openBulkMenu, setOpenBulkMenu] = useState(false);
+  const { confirm, prompt } = useConfirm();
 
   if (loading) return <TableSkeleton />;
 
@@ -210,13 +213,13 @@ export function MarketplaceOrdenesTab() {
   async function handleStatusChange(orderId: string, status: OrderTargetStatus) {
     setOpenStatusMenuFor(null);
     if (status === "cancelado") {
-      const reason = window.prompt("Motivo de cancelación (opcional):") ?? undefined;
+      const reason = (await prompt({ title: "Motivo de cancelación", label: "Motivo (opcional)" })) ?? undefined;
       const res = await updateStatus(orderId, status, reason);
-      if (!res.ok && res.error) window.alert(res.error);
+      if (!res.ok && res.error) toast.error(res.error);
       return;
     }
     const res = await updateStatus(orderId, status);
-    if (!res.ok && res.error) window.alert(res.error);
+    if (!res.ok && res.error) toast.error(res.error);
   }
 
   async function handleBulkStatus(status: OrderTargetStatus) {
@@ -225,18 +228,21 @@ export function MarketplaceOrdenesTab() {
     if (ids.length === 0) return;
     let reason: string | undefined;
     if (status === "cancelado") {
-      const r = window.prompt(`Cancelar ${ids.length} órdenes. Motivo (opcional):`);
+      const r = await prompt({ title: `Cancelar ${ids.length} órdenes`, label: "Motivo (opcional)" });
       if (r === null) return;
       reason = r || undefined;
     } else {
-      const ok = window.confirm(`¿Marcar ${ids.length} órdenes como "${STATUS_ACTION_LABEL[status]}"?`);
+      const ok = await confirm({
+        title: `¿Marcar ${ids.length} órdenes como "${STATUS_ACTION_LABEL[status]}"?`,
+        confirmLabel: "Sí, marcar",
+      });
       if (!ok) return;
     }
     const res = await bulkUpdateStatus(ids, status, reason);
     if (res.ok) {
       setSelectedIds(new Set());
       if (res.skipped && res.skipped.length > 0) {
-        window.alert(`Actualizadas: ${res.updatedCount}. Omitidas: ${res.skipped.length} (transiciones no válidas).`);
+        toast.info(`Actualizadas: ${res.updatedCount}. Omitidas: ${res.skipped.length} (transiciones no válidas).`);
       }
     }
   }
@@ -283,7 +289,7 @@ export function MarketplaceOrdenesTab() {
             // Reusamos handleWhatsApp del listado — el detalle ya tiene phone real.
             const phoneDigits = (o.customerPhone ?? "").replace(/\D/g, "");
             if (phoneDigits.length < 8) {
-              window.alert("Esta orden no tiene teléfono válido.");
+              toast.error("Esta orden no tiene teléfono válido.");
               return;
             }
             const intl = phoneDigits.length === 9 ? `51${phoneDigits}` : phoneDigits;
@@ -547,8 +553,11 @@ export function MarketplaceOrdenesTab() {
                   return (
                     <tr
                       key={o.id}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Ver orden ${o.id.slice(-8).toUpperCase()}`}
                       className={cn(
-                        "transition-colors cursor-pointer",
+                        "transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]",
                         isSelected
                           ? "bg-primary/10"
                           : "hover:bg-[var(--surface-sunken)]/50",
@@ -557,6 +566,13 @@ export function MarketplaceOrdenesTab() {
                         // Solo abre detalle si el click NO fue sobre un botón/input/menu.
                         const target = e.target as HTMLElement;
                         if (target.closest("button, input, a, [data-no-row-click]")) return;
+                        openDetail(o.id);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter" && e.key !== " ") return;
+                        const target = e.target as HTMLElement;
+                        if (target.closest("button, input, a, [data-no-row-click]")) return;
+                        e.preventDefault();
                         openDetail(o.id);
                       }}
                     >

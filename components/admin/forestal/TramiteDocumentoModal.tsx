@@ -205,7 +205,7 @@ export default function TramiteDocumentoModal({
             className={`min-h-0 overflow-auto bg-[var(--surface-sunken)] p-3 sm:p-5 ${vista === "ver" ? "" : "hidden xl:block"}`}
           >
             <div
-              className="mx-auto border border-[#d3d9d5] shadow-[var(--shadow-lg)]"
+              className="mx-auto border border-[var(--rule-base)] shadow-[var(--shadow-lg)]"
               style={{ width: ANCHO_PAPEL * escala, height: altoNatural ? altoNatural * escala : undefined }}
             >
               <div style={{ width: ANCHO_PAPEL, transform: `scale(${escala})`, transformOrigin: "top left" }}>

@@ -261,13 +261,14 @@ export default function BulkPriceEditorTab() {
             className="w-full pl-9 pr-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+            <button aria-label="Quitar" onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
               <X className="h-4 w-4 text-[var(--text-tertiary)]" />
             </button>
           )}
         </div>
 
         <select
+          aria-label="Filtrar por categoría"
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
           className="h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
@@ -309,7 +310,7 @@ export default function BulkPriceEditorTab() {
           <button
             onClick={() => changeCount > 0 && setShowConfirm(true)}
             disabled={changeCount === 0}
-            className="flex items-center gap-1.5 px-4 min-h-11 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-40"
+            className="flex items-center gap-1.5 px-4 min-h-11 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-40"
           >
             Aplicar cambios {changeCount > 0 && `(${changeCount})`}
           </button>
@@ -342,6 +343,7 @@ export default function BulkPriceEditorTab() {
               <th className="px-4 py-3 text-left">
                 <input
                   type="checkbox"
+                  aria-label="Seleccionar todos"
                   checked={filtered.length > 0 && selected.size === filtered.length}
                   onChange={toggleSelectAll}
                   className="rounded border-[var(--rule-base)]"
@@ -380,6 +382,7 @@ export default function BulkPriceEditorTab() {
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
+                        aria-label={`Seleccionar ${p.name}`}
                         checked={selected.has(p.id)}
                         onChange={() => toggleSelect(p.id)}
                         className="rounded border-[var(--rule-base)]"
@@ -486,7 +489,7 @@ export default function BulkPriceEditorTab() {
             <button
               onClick={applyChanges}
               disabled={applying}
-              className="flex-1 min-h-11 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-[#00a090] disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 min-h-11 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {applying && <Loader2 className="h-4 w-4 animate-spin" />}
               Confirmar

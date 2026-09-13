@@ -159,7 +159,7 @@ export default function POSFiadoPanel({
             <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               Cobrar fiado
             </p>
-            <button
+            <button aria-label="Cerrar"
               onClick={() => setShowCobrar(false)}
               className="p-0.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
             >

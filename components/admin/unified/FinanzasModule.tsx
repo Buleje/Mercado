@@ -3,6 +3,7 @@
 import { CardTitle, DataTable, StatCard, type StatCardEmphasis } from "@buleje/design-system";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { toast } from "sonner";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   ReferenceLine, PieChart, Pie, Cell, LabelList,
@@ -233,7 +234,7 @@ function generarReporteBancario() {
       }
     })
     .catch(() => {
-      alert("Error al generar el reporte. Intenta nuevamente.");
+      toast.error("Error al generar el reporte. Intenta nuevamente.");
     });
 }
 
@@ -704,7 +705,7 @@ function FinanzasDashboard() {
             {gastosPieFilter && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold">
                 {gastosPieFilter}
-                <button onClick={() => setGastosPieFilter(null)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
+                <button aria-label="Quitar" onClick={() => setGastosPieFilter(null)} className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
               </span>
             )}
             <button onClick={() => setExpandedChart("gastos-cat")} className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
@@ -1131,11 +1132,11 @@ function FinanzasDashboard() {
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <p className="text-sm font-bold text-[var(--text-primary)]">Comparar Meses</p>
             <div className="flex items-center gap-2">
-              <select value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-xl px-2 py-1 bg-[var(--surface-raised)] text-[var(--text-primary)]">
+              <select aria-label="Primer mes a comparar" value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-xl px-2 py-1 bg-[var(--surface-raised)] text-[var(--text-primary)]">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
               <span className="text-xs text-[var(--text-tertiary)]">vs</span>
-              <select value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-xl px-2 py-1 bg-[var(--surface-raised)] text-[var(--text-primary)]">
+              <select aria-label="Segundo mes a comparar" value={cmpMonth2} onChange={e => setCmpMonth2(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-xl px-2 py-1 bg-[var(--surface-raised)] text-[var(--text-primary)]">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
             </div>

@@ -172,7 +172,7 @@ export default function PlantacionDocumentoModal({
     >
       <div ref={paneRef} className="min-h-full bg-[var(--surface-sunken)] px-5 py-3 sm:px-6">
         <div
-          className="mx-auto border border-[#d3d9d5] shadow-[var(--shadow-lg)]"
+          className="mx-auto border border-[var(--rule-base)] shadow-[var(--shadow-lg)]"
           style={{ width: ANCHO_PAPEL * escala, height: altoNatural ? altoNatural * escala : undefined }}
         >
           <div style={{ width: ANCHO_PAPEL, transform: `scale(${escala})`, transformOrigin: "top left" }}>

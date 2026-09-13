@@ -11,6 +11,7 @@
 import { useMemo } from "react";
 import { AlertTriangle, Plus } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { validarPlantacion, type BloqueInput, type PlantacionInput } from "@/lib/forestal/plantacion-tramite";
 import PlantacionBloqueCard from "./PlantacionBloqueCard";
 
@@ -41,6 +42,7 @@ export default function PlantacionPasoBloques({
   }, [tipoTramite, predioAreaTotalHa, bloques]);
 
   const numEspecies = bloques.reduce((a, b) => a + b.especies.length, 0);
+  const { confirm } = useConfirm();
 
   function siguienteNumero(): number {
     return bloques.reduce((max, b) => Math.max(max, b.numero || 0), 0) + 1;
@@ -55,8 +57,14 @@ export default function PlantacionPasoBloques({
     onChange(bloques.map((b, idx) => (idx === i ? bloque : b)));
   }
 
-  function eliminarBloque(i: number) {
-    if (!window.confirm("¿Eliminar este bloque? Se pierden sus vértices y especies cargadas.")) return;
+  async function eliminarBloque(i: number) {
+    const ok = await confirm({
+      title: "¿Eliminar este bloque?",
+      description: "Se pierden sus vértices y especies cargadas.",
+      intent: "danger",
+      confirmLabel: "Sí, eliminar",
+    });
+    if (!ok) return;
     onChange(bloques.filter((_, idx) => idx !== i));
   }
 

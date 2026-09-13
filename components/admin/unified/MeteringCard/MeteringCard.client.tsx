@@ -133,13 +133,13 @@ function MetricCell({ event, snapshot }: MetricCellProps) {
   return (
     <div
       className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex flex-col gap-2 min-h-[44px]"
-      aria-label={`Métrica: ${label}`}
     >
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-[var(--text-tertiary)] truncate pr-2">
           {label}
         </span>
         <span
+          role="img"
           className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${LIGHT_COLORS[light]}`}
           aria-label={`Estado: ${light === "green" ? "saludable" : light === "yellow" ? "advertencia" : "crítico"}`}
         />
@@ -173,7 +173,6 @@ export function PlanBadge({ plan }: PlanBadgeProps) {
   return (
     <span
       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${PLAN_BADGE_STYLES[plan]}`}
-      aria-label={`Plan actual: ${PLAN_LABELS[plan]}`}
     >
       {PLAN_LABELS[plan]}
     </span>
@@ -254,7 +253,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
           {(snapshot.plan === "free" || snapshot.plan === "starter") && (
             <button
               onClick={onUpgrade}
-              className="min-h-[44px] min-w-[44px] px-4 py-2 rounded-xl bg-primary-dark hover:bg-[#245a42] text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
+              className="min-h-[44px] min-w-[44px] px-4 py-2 rounded-xl bg-primary-dark hover:bg-primary-dark/90 text-white text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark"
               aria-label="Mejorar plan de facturación"
             >
               Mejorar plan

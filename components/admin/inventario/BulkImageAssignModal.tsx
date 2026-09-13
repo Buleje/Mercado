@@ -10,13 +10,14 @@
  * banco era lento; aca asignas N en segundos.
  */
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useId, useMemo, useRef } from "react";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { X, Search, Image as ImageIcon, Check, Loader2, Package, Sparkles } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { DbProduct } from "@/lib/jsondb";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 interface BankItem { id: string; name: string; imageUrl: string }
 interface BankCategory { id: string; name: string; description?: string; items: BankItem[] }
@@ -43,6 +44,9 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
   const [recentlyAssigned, setRecentlyAssigned] = useState<Map<number, string>>(new Map());
   const [dragOverProductId, setDragOverProductId] = useState<number | null>(null);
   const [draggingItem, setDraggingItem] = useState<BankItem | null>(null);
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: () => onOpenChange(false), activo: open });
 
   const reloadBank = useCallback(async () => {
     setLoadingBank(true);
@@ -219,14 +223,14 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
       className="fixed inset-0 z-[8200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4"
       onClick={(e) => e.target === e.currentTarget && onOpenChange(false)}
     >
-      <div className="bg-[var(--surface-canvas)] w-full h-full sm:h-[92vh] sm:max-w-[1400px] sm:rounded-2xl overflow-hidden flex flex-col shadow-[var(--shadow-xl)]">
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-canvas)] w-full h-full sm:h-[92vh] sm:max-w-[1400px] sm:rounded-2xl overflow-hidden flex flex-col shadow-[var(--shadow-xl)]">
         {/* Header */}
         <div className="shrink-0 px-4 sm:px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
           <div className="h-11 w-11 rounded-xl bg-linear-to-br from-primary to-[var(--data-success-500)] text-white flex items-center justify-center shrink-0">
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <SectionTitle as="h2" className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]">Asignar imágenes en bloque</SectionTitle>
+            <SectionTitle id={titleId} as="h2" className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]">Asignar imágenes en bloque</SectionTitle>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
               Arrastra una imagen del banco al producto sin foto. Se guarda automático.
             </p>
@@ -242,6 +246,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
           <button
             onClick={() => onOpenChange(false)}
             className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] shrink-0"
+            aria-label="Cerrar"
             title="Cerrar"
           >
             <X className="h-5 w-5 text-[var(--text-tertiary)]" />

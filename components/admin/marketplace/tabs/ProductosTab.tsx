@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { DataTable, SectionTitle } from "@buleje/design-system";
 import { AlertCircle, Check, CheckCircle, ExternalLink, Eye, EyeOff, ImageOff, Megaphone, Minus, Package, PackageX, Pencil, RefreshCw, Search, Sparkles, TrendingDown, TrendingUp, X } from "@buleje/design-system/icons";
@@ -287,6 +287,7 @@ export function MarketplaceProductosTab() {
             <button
               type="button"
               onClick={() => setSelectedIds(new Set())}
+              aria-label="Cancelar selección"
               className="inline-flex items-center h-9 px-2 rounded-lg text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
             >
               <X className="h-3.5 w-3.5" />
@@ -859,9 +860,10 @@ function NumberField({
   onChange: (v: string) => void;
   hint?: string;
 }) {
+  const id = useId();
   return (
     <div>
-      <label className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5 block">{label}</label>
+      <label htmlFor={id} className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5 block">{label}</label>
       <div className="relative">
         {prefix && (
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--text-tertiary)] pointer-events-none">
@@ -869,6 +871,7 @@ function NumberField({
           </span>
         )}
         <input
+          id={id}
           type="number"
           min={0}
           value={value}
@@ -938,6 +941,7 @@ function OfertaCell({
         <span className="text-xs font-bold text-[var(--text-tertiary)]">S/</span>
         <input
           type="number"
+          aria-label="Precio de oferta"
           autoFocus
           min={0}
           step={0.5}
@@ -949,7 +953,6 @@ function OfertaCell({
           }}
           onBlur={onCommit}
           disabled={busy}
-          aria-label="Precio de oferta"
           className="w-20 h-7 px-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] text-sm font-extrabold text-right tabular-nums outline-none"
         />
         {pct != null && (
@@ -1040,6 +1043,7 @@ function PriceCell({
         <span className="text-xs font-bold text-[var(--text-tertiary)]">S/</span>
         <input
           type="number"
+          aria-label="Precio"
           autoFocus
           min={0}
           step={0.5}

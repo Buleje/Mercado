@@ -2,7 +2,8 @@
 
 import { DataTable, SectionTitle } from "@buleje/design-system";
 import { AlertTriangle } from "@buleje/design-system/icons";
-import { useCallback } from "react";
+import { useCallback, useId, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 
 interface OCPrintPreviewModalProps {
   cart: Array<{
@@ -149,14 +150,18 @@ export default function OCPrintPreviewModal({
     doc.save(`OC-${lastOCId ?? Date.now()}.pdf`);
   }, [cart, subtotal, discount, discountAmount, total, selectedSupplier, deliveryDate, paymentMethod, notes, lastOCId]);
 
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: onClose });
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 space-y-4" id="oc-print-area">
           {/* Header */}
           <div className="flex items-center justify-between border-b dark:border-[var(--rule-base)] pb-4">
             <div>
-              <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">ORDEN DE COMPRA</SectionTitle>
+              <SectionTitle id={titleId} className="text-lg font-bold text-[var(--text-primary)]">ORDEN DE COMPRA</SectionTitle>
               <p className="text-sm text-[var(--text-tertiary)]">Buleje</p>
             </div>
             <div className="text-right text-sm text-[var(--text-tertiary)]">

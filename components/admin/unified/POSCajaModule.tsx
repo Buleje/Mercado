@@ -1,6 +1,6 @@
 "use client";
 import { CardTitle } from "@buleje/design-system";
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback, useId, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   ShoppingCart, Wallet, CreditCard, Scale, HandCoins,
@@ -8,6 +8,8 @@ import {
 } from "@buleje/design-system/icons";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 
 const MODULE_ID = "ventas-caja";
@@ -67,6 +69,11 @@ function ShiftCloseModal({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const tituloId = useId();
+  // Sin Escape: es el corte del día, se decide con Cancelar/Confirmar, no
+  // se descarta sin querer con una tecla.
+  useModalAccesible(panelRef, { onCerrar: onClose, cerrarConEscape: false, activo: true });
 
   const fetchSummary = useCallback(async () => {
     setLoading(true);
@@ -146,10 +153,17 @@ function ShiftCloseModal({
 
   return (
     <div className="modal-backdrop flex items-center justify-center p-4">
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl w-full max-w-md overflow-hidden">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={tituloId}
+        tabIndex={-1}
+        className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl w-full max-w-md overflow-hidden"
+      >
         {/* Header */}
         <div className="bg-primary px-6 py-4">
-          <CardTitle className="text-lg font-extrabold text-white">Cerrar Turno</CardTitle>
+          <CardTitle id={tituloId} className="text-lg font-extrabold text-white">Cerrar Turno</CardTitle>
           <p className="text-sm text-white/80">Resumen del día antes de cerrar</p>
         </div>
 
@@ -262,6 +276,7 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
   // destino del buscador global. `initialTab` gana cuando el módulo se abre
   // desde un tab alias (ej. `?tab=turnos`).
   const { vista: sub, irA: setSub } = useVistaModulo<TabId>(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab);
+  const { notice } = useConfirm();
   const [showShiftClose, setShowShiftClose] = useState(false);
   const { pendingCount, isOnline: _isOnline } = usePOSOffline();
 
@@ -305,7 +320,11 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
 
   const handleOpenCloseModal = () => {
     if (pendingCount > 0) {
-      alert(`Tienes ${pendingCount} ventas pendientes de sincronizar en modo Offline.\nPor favor, conecta a internet y pulsa "Sincronizar ahora" en la barra azul antes de cerrar el turno. De lo contrario esas ventas no se reflejarán en el corte.`);
+      void notice({
+        title: `Tienes ${pendingCount} ventas pendientes de sincronizar`,
+        description: 'En modo Offline. Conectate a internet y pulsá "Sincronizar ahora" en la barra azul antes de cerrar el turno — si no, esas ventas no se reflejarán en el corte.',
+        intent: "warning",
+      });
       return;
     }
     setShowShiftClose(true);

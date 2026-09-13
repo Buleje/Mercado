@@ -9,7 +9,7 @@ import { Field } from "@/components/admin/shared/Field";
  * y permite extender gratis o cancelar membresía.
  */
 
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import {
   X,
   User,
@@ -20,6 +20,7 @@ import {
   Award,
   AlertCircle,
 } from "@buleje/design-system/icons";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 
 export interface SocioMember {
@@ -84,6 +85,9 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
   const [months, setMonths] = useState(1);
   const [cancelling, setCancelling] = useState(false);
   const [reason, setReason] = useState("");
+  const panelRef = useRef<HTMLDivElement>(null);
+  const tituloId = useId();
+  useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
 
   const handleExtend = () => {
     onExtend(member.id, months);
@@ -102,6 +106,11 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
       onClick={onClose}
     >
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={tituloId}
+        tabIndex={-1}
         className="bg-[var(--surface-raised)] w-full max-w-md h-full shadow-[var(--shadow-xl)] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -112,11 +121,11 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
               {member.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <CardTitle className="font-extrabold text-[var(--text-primary)]">{member.name}</CardTitle>
+              <CardTitle id={tituloId} className="font-extrabold text-[var(--text-primary)]">{member.name}</CardTitle>
               <p className="text-xs text-[var(--text-secondary)]">Socio Buleje · {PLAN_LABELS[member.plan]}</p>
             </div>
           </div>
-          <button
+          <button aria-label="Cerrar"
             onClick={onClose}
             className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors"
           >

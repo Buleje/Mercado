@@ -19,6 +19,7 @@
 import { useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, Check, ClipboardList, MapPin, Trash2, Upload } from "@buleje/design-system/icons";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { hasPredio, type LothCartografia, type LothPredio } from "@/lib/forestal/loth-cartografia";
 import type { ChecklistPlano } from "@/lib/forestal/loth-plano-checklist";
 import { polygonAreaHa, type LatLng, type LothParcela } from "@/lib/forestal/loth-geo";
@@ -51,6 +52,7 @@ export default function LothPredioPanel({
   onImportPredio,
   onCopiarDelArea,
 }: Props) {
+  const { confirm } = useConfirm();
   const [guardado, setGuardado] = useState(false);
   const predio = cartografia.predio;
   const conPredio = hasPredio(predio);
@@ -64,8 +66,13 @@ export default function LothPredioPanel({
     window.setTimeout(() => setGuardado(false), 2200);
   };
 
-  const borrarContorno = () => {
-    if (!window.confirm("¿Borrar el contorno del predio? Los datos de identidad se conservan.")) return;
+  const borrarContorno = async () => {
+    if (!(await confirm({
+      title: "¿Borrar el contorno del predio?",
+      description: "Los datos de identidad se conservan.",
+      intent: "danger",
+      confirmLabel: "Sí, borrar",
+    }))) return;
     patch({ vertices: [] as LatLng[] });
   };
 

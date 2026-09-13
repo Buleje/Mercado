@@ -73,7 +73,7 @@ export default function BulkActionsBar({
       {/* Overflow menu */}
       {overflowActions.length > 0 && (
         <div className="relative">
-          <button onClick={() => setShowMore(!showMore)} className="p-1.5 rounded-xl hover:bg-white/50 transition-colors">
+          <button aria-label="Más opciones" onClick={() => setShowMore(!showMore)} className="p-1.5 rounded-xl hover:bg-white/50 transition-colors">
             <MoreHorizontal className="h-4 w-4 text-[var(--text-secondary)]" />
           </button>
           {showMore && (

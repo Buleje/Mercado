@@ -145,7 +145,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                 Click en cada item para agregarlo a este grupo. El modal queda abierto para sumar más.
               </p>
             </div>
-            <button onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)]">
+            <button aria-label="Cerrar" onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)]">
               <X className="h-5 w-5 text-[var(--text-tertiary)]" />
             </button>
           </div>

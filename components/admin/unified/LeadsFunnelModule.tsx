@@ -283,6 +283,7 @@ export default function LeadsFunnelModule() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="Filtrar por status"
               className="h-12 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] px-4"
             >
               <option value="">Todos los status</option>

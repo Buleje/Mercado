@@ -91,6 +91,7 @@ export default function PlantacionVerticesTabla({
                         type="number"
                         value={Number.isFinite(v.este) ? v.este : ""}
                         onChange={(e) => editar(i, { este: e.target.value === "" ? 0 : Number(e.target.value) })}
+                        aria-label={`Este del vértice ${vertexCode(i)}`}
                         className={`${inputCls} text-right font-mono tabular-nums`}
                       />
                     )}
@@ -103,6 +104,7 @@ export default function PlantacionVerticesTabla({
                         type="number"
                         value={Number.isFinite(v.norte) ? v.norte : ""}
                         onChange={(e) => editar(i, { norte: e.target.value === "" ? 0 : Number(e.target.value) })}
+                        aria-label={`Norte del vértice ${vertexCode(i)}`}
                         className={`${inputCls} text-right font-mono tabular-nums`}
                       />
                     )}

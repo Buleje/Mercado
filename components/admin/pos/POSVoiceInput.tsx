@@ -17,6 +17,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Mic, MicOff, X, Check, Loader2, Plus, HelpCircle, Lock, Sparkles,
 } from "@buleje/design-system/icons";
@@ -232,15 +233,19 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
     setIsListening(false);
   }, []);
 
+  const cerrarPanel = useCallback(() => {
+    stopListening();
+    setShowPanel(false);
+    onHighlightProduct?.(null);
+  }, [stopListening, onHighlightProduct]);
+
   const togglePanel = useCallback(() => {
     if (showPanel) {
-      stopListening();
-      setShowPanel(false);
-      onHighlightProduct?.(null);
+      cerrarPanel();
     } else {
       startListening();
     }
-  }, [showPanel, startListening, stopListening, onHighlightProduct]);
+  }, [showPanel, startListening, cerrarPanel]);
 
   // Ctrl+M shortcut
   useEffect(() => {
@@ -250,13 +255,15 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
         togglePanel();
       }
       if (e.key === "Escape" && showPanel) {
-        stopListening();
-        setShowPanel(false);
+        cerrarPanel();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [togglePanel, showPanel, stopListening]);
+  }, [togglePanel, showPanel, cerrarPanel]);
+
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(panelRef, { onCerrar: cerrarPanel, cerrarConEscape: false, activo: showPanel });
 
   // Lock scroll cuando el panel está abierto
   useEffect(() => {
@@ -345,15 +352,14 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
       {showPanel && (
         <div
           className="fixed inset-0 z-[100] bg-black/45 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-4"
-          onClick={() => {
-            stopListening();
-            setShowPanel(false);
-            onHighlightProduct?.(null);
-          }}
+          onClick={cerrarPanel}
         >
           <div
+            ref={panelRef}
             role="dialog"
             aria-label="Dictado por voz"
+            aria-modal="true"
+            tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
             className="w-full sm:max-w-xl bg-[var(--surface-raised)] rounded-3xl shadow-[var(--shadow-xl)] border border-[var(--rule-base)] overflow-hidden flex flex-col max-h-[85vh]"
           >

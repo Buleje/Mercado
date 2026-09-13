@@ -71,7 +71,8 @@ export function ChartPresentationModal({
   /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
-  useModalAccesible(dialogRef, { onCerrar: onClose, cerrarConEscape: false });
+  // `activo`: queda montado con `return null` mientras no hay gráfico elegido.
+  useModalAccesible(dialogRef, { onCerrar: onClose, cerrarConEscape: false, activo: !!activeItem });
   const chartAreaRef = useRef<HTMLDivElement | null>(null);
   const wheelLockRef = useRef(false);
   const [isExporting, setIsExporting] = useState(false);

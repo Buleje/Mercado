@@ -118,9 +118,10 @@ export default function PlantacionEspecieForm({
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="relative sm:col-span-2">
-          <label className={labelCls}>Nombre común</label>
+          <label className={labelCls} htmlFor={`especie-${index}-nombre-comun`}>Nombre común</label>
           <div className="relative">
             <input
+              id={`especie-${index}-nombre-comun`}
               type="text"
               value={especie.nombreComun}
               disabled={soloLectura}
@@ -154,8 +155,9 @@ export default function PlantacionEspecieForm({
         </div>
 
         <div>
-          <label className={labelCls}>Nombre científico</label>
+          <label className={labelCls} htmlFor={`especie-${index}-nombre-cientifico`}>Nombre científico</label>
           <input
+            id={`especie-${index}-nombre-cientifico`}
             type="text"
             value={especie.nombreCientifico ?? ""}
             disabled={soloLectura}
@@ -166,8 +168,9 @@ export default function PlantacionEspecieForm({
         </div>
 
         <div>
-          <label className={labelCls}>Tipo vegetativo / material de propagación</label>
+          <label className={labelCls} htmlFor={`especie-${index}-tipo-vegetativo`}>Tipo vegetativo / material de propagación</label>
           <input
+            id={`especie-${index}-tipo-vegetativo`}
             type="text"
             list={`tipo-vegetativo-${index}`}
             value={especie.tipoVegetativo ?? ""}
@@ -184,8 +187,9 @@ export default function PlantacionEspecieForm({
         </div>
 
         <div>
-          <label className={labelCls}>Cantidad</label>
+          <label className={labelCls} htmlFor={`especie-${index}-cantidad`}>Cantidad</label>
           <input
+            id={`especie-${index}-cantidad`}
             type="number"
             value={especie.cantidad ?? ""}
             disabled={soloLectura}
@@ -195,8 +199,9 @@ export default function PlantacionEspecieForm({
         </div>
 
         <div>
-          <label className={labelCls}>Finalidad</label>
+          <label className={labelCls} htmlFor={`especie-${index}-finalidad`}>Finalidad</label>
           <select
+            id={`especie-${index}-finalidad`}
             value={especie.finalidad ?? ""}
             disabled={soloLectura}
             onChange={(e) => set("finalidad", e.target.value || null)}
@@ -211,8 +216,9 @@ export default function PlantacionEspecieForm({
 
         {especie.finalidad === "sistema_agroforestal" && (
           <div>
-            <label className={labelCls}>Tipo de sistema agroforestal</label>
+            <label className={labelCls} htmlFor={`especie-${index}-tipo-agroforestal`}>Tipo de sistema agroforestal</label>
             <select
+              id={`especie-${index}-tipo-agroforestal`}
               value={tipoAgroforestal}
               disabled={soloLectura}
               onChange={(e) => set("observaciones", combinarObservaciones(e.target.value, observacionesResto) || null)}
@@ -227,8 +233,9 @@ export default function PlantacionEspecieForm({
         )}
 
         <div>
-          <label className={labelCls}>Mes de instalación</label>
+          <label className={labelCls} htmlFor={`especie-${index}-mes-instalacion`}>Mes de instalación</label>
           <select
+            id={`especie-${index}-mes-instalacion`}
             value={especie.mesInstalacion ?? ""}
             disabled={soloLectura}
             onChange={(e) => set("mesInstalacion", e.target.value === "" ? null : Number(e.target.value))}
@@ -242,8 +249,9 @@ export default function PlantacionEspecieForm({
         </div>
 
         <div>
-          <label className={labelCls}>Año de instalación</label>
+          <label className={labelCls} htmlFor={`especie-${index}-anio-instalacion`}>Año de instalación</label>
           <input
+            id={`especie-${index}-anio-instalacion`}
             type="number"
             value={especie.anioInstalacion ?? ""}
             disabled={soloLectura}
@@ -254,8 +262,9 @@ export default function PlantacionEspecieForm({
         </div>
 
         <div className="sm:col-span-2">
-          <label className={labelCls}>Observaciones</label>
+          <label className={labelCls} htmlFor={`especie-${index}-observaciones`}>Observaciones</label>
           <textarea
+            id={`especie-${index}-observaciones`}
             value={observacionesResto}
             disabled={soloLectura}
             onChange={(e) => set("observaciones", combinarObservaciones(tipoAgroforestal, e.target.value) || null)}
@@ -267,8 +276,9 @@ export default function PlantacionEspecieForm({
         {tipoTramite === "actualizacion" && (
           <>
             <div className="sm:col-span-2">
-              <label className={labelCls}>Situación actual de la plantación</label>
+              <label className={labelCls} htmlFor={`especie-${index}-situacion-actual`}>Situación actual de la plantación</label>
               <textarea
+                id={`especie-${index}-situacion-actual`}
                 value={especie.situacionActual ?? ""}
                 disabled={soloLectura}
                 onChange={(e) => set("situacionActual", e.target.value || null)}
@@ -277,8 +287,9 @@ export default function PlantacionEspecieForm({
               />
             </div>
             <div>
-              <label className={labelCls}>Producción — cantidad</label>
+              <label className={labelCls} htmlFor={`especie-${index}-produccion-cantidad`}>Producción — cantidad</label>
               <input
+                id={`especie-${index}-produccion-cantidad`}
                 type="number"
                 value={especie.produccionCantidad ?? ""}
                 disabled={soloLectura}
@@ -287,8 +298,9 @@ export default function PlantacionEspecieForm({
               />
             </div>
             <div>
-              <label className={labelCls}>Producción — unidad</label>
+              <label className={labelCls} htmlFor={`especie-${index}-produccion-unidad`}>Producción — unidad</label>
               <input
+                id={`especie-${index}-produccion-unidad`}
                 type="text"
                 list={`produccion-unidad-${index}`}
                 value={especie.produccionUnidad ?? ""}
@@ -331,10 +343,11 @@ export default function PlantacionEspecieForm({
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             Esta especie puede requerir información adicional.
           </p>
-          <label className="mt-1.5 block text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          <label className="mt-1.5 block text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" htmlFor={`especie-${index}-cites-procedencia`}>
             Información adicional para especies CITES (procedencia de semillas o material de propagación)
           </label>
           <textarea
+            id={`especie-${index}-cites-procedencia`}
             value={especie.citesProcedencia ?? ""}
             disabled={soloLectura}
             onChange={(e) => set("citesProcedencia", e.target.value || null)}

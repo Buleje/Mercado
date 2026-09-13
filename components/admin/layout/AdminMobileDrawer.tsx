@@ -18,6 +18,7 @@ import {
   Search,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import { SECTION_BEFORE, type TabCategory } from "@/app/admin/_lib/tab-categories";
@@ -111,6 +112,8 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
 }: AdminMobileDrawerProps) {
   // Plantilla del superadmin — overlay reactivo (mismo que sidebar desktop).
   useAdminTemplateOverlay();
+  const drawerRef = React.useRef<HTMLElement>(null);
+  useModalAccesible(drawerRef, { onCerrar: onClose, activo: open });
   return (
     <>
       {/* Mobile nav overlay */}
@@ -124,8 +127,13 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
       {/* Mobile drawer — ancho fluido para celulares (85vw deja franja
           minima clicable para cerrar) con cap en sm+ para tabletas chicas. */}
       <aside
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menú de navegación"
+        tabIndex={-1}
         className={cn(
-          "fixed top-0 left-0 bottom-0 w-[85vw] max-w-sm z-50 bg-[var(--surface-raised)] flex flex-col transition-transform duration-[var(--dur-base)] sm:hidden",
+          "fixed top-0 left-0 bottom-0 w-[85vw] max-w-sm z-50 bg-[var(--surface-raised)] flex flex-col transition-transform duration-[var(--dur-base)] sm:hidden outline-none",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -139,7 +147,7 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
               {activeTenantName || "Buleje"}
             </span>
           </div>
-          <button
+          <button aria-label="Cerrar"
             onClick={onClose}
             className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors"
           >
@@ -358,14 +366,14 @@ export const AdminMobileDrawer = React.memo(function AdminMobileDrawer({
               <div key={s.id} className="flex items-center gap-1">
                 {editingShortcuts && (
                   <div className="flex flex-col -mr-1">
-                    <button
+                    <button aria-label="Subir"
                       onClick={() => onMoveShortcut(idx, -1)}
                       disabled={idx === 0}
                       className="text-[var(--text-tertiary)] hover:text-primary disabled:opacity-20 p-0 leading-none"
                     >
                       <ChevronUp className="h-3 w-3" />
                     </button>
-                    <button
+                    <button aria-label="Bajar"
                       onClick={() => onMoveShortcut(idx, 1)}
                       disabled={idx === resolvedShortcuts.length - 1}
                       className="text-[var(--text-tertiary)] hover:text-primary disabled:opacity-20 p-0 leading-none"

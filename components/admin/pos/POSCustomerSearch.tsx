@@ -308,6 +308,7 @@ export default function POSCustomerSearch({
                       step="0.10"
                       value={abonoMonto}
                       onChange={(e) => setAbonoMonto(e.target.value)}
+                      aria-label="Monto a abonar al fiado"
                       className="w-full pl-6 pr-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
                     />
                   </div>
@@ -381,6 +382,7 @@ export default function POSCustomerSearch({
                   step={10}
                   value={redeemAmount}
                   onChange={e => setRedeemAmount(Number(e.target.value))}
+                  aria-label="Puntos a canjear"
                   className="w-full h-1.5 accent-[var(--data-success)]"
                 />
                 <div className="flex gap-1">

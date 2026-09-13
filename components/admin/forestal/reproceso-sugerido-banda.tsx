@@ -61,7 +61,7 @@ export default function ReprocesoSugeridoBanda({
         <span className={`${CHIP} bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]`}>
           {borrador.desdeTipo}
         </span>
-        <span aria-label="a">→</span>
+        <span role="img" aria-label="a">→</span>
         <span className={`${CHIP} bg-[var(--data-info-500)]/15 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]`}>
           {borrador.haciaTipo}
         </span>

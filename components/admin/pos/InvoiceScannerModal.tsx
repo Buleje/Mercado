@@ -1,7 +1,8 @@
 "use client";
 
 import { DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useId } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Camera,
   Upload,
@@ -241,6 +242,10 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
     onClose();
   }, [stopStream, onClose]);
 
+  const titleId = useId();
+  const modalRef = useRef<HTMLDivElement>(null);
+  useModalAccesible(modalRef, { onCerrar: handleClose, activo: open });
+
   if (!open) return null;
 
   const editTotal = editItems.reduce(
@@ -252,12 +257,12 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
 
   return (
     <div className="modal-backdrop flex items-center justify-center p-4">
-      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)]">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)]">
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] rounded-t-2xl">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            <SectionTitle className="text-base font-semibold text-[var(--text-primary)]">
+            <SectionTitle id={titleId} className="text-base font-semibold text-[var(--text-primary)]">
               Escanear Factura
             </SectionTitle>
           </div>
@@ -434,6 +439,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                             onChange={(e) =>
                               updateItem(idx, "nombre", e.target.value)
                             }
+                            aria-label={`Producto, fila ${idx + 1}`}
                             className="w-full bg-transparent text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary rounded px-1 -mx-1"
                           />
                         </td>
@@ -449,6 +455,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                               )
                             }
                             min={0}
+                            aria-label={`Cantidad, fila ${idx + 1}`}
                             className="w-full bg-transparent text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary rounded"
                           />
                         </td>
@@ -465,6 +472,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                             }
                             min={0}
                             step={0.01}
+                            aria-label={`Precio unitario, fila ${idx + 1}`}
                             className="w-full bg-transparent text-sm text-right text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary rounded"
                           />
                         </td>

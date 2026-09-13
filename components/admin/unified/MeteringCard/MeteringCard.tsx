@@ -161,7 +161,7 @@ async function fetchMeteringSnapshot(
 
 function MeteringCardSkeleton() {
   return (
-    <div
+    <div role="status"
       className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 animate-pulse"
       aria-busy="true"
       aria-label="Cargando métricas de facturación"

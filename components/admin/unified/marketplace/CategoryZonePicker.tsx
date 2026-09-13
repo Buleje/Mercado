@@ -22,6 +22,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import {
   Tag,
   MapPin,
@@ -375,6 +376,7 @@ function CustomCategoryEditor({
 // ── Componente principal ──────────────────────────────────────────────────
 
 export default function CategoryZonePicker({ value, onChange }: Props) {
+  const { confirm } = useConfirm();
   const [catalog, setCatalog] = useState<CatalogCategory[]>([]);
   // Empieza en true; el primer fetch (success o fail) lo pone false en finally.
   const [catalogLoading, setCatalogLoading] = useState<boolean>(true);
@@ -541,9 +543,13 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                     </button>
                     <button
                       type="button"
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        if (confirm(`¿Eliminar la categoría "${c.label}"?`)) deleteCustomCategory(c.id);
+                        if (await confirm({
+                          title: `¿Eliminar la categoría "${c.label}"?`,
+                          intent: "danger",
+                          confirmLabel: "Sí, eliminar",
+                        })) deleteCustomCategory(c.id);
                       }}
                       aria-label={`Eliminar ${c.label}`}
                       title="Eliminar"

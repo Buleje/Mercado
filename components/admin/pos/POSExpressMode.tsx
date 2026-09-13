@@ -133,6 +133,7 @@ export default function POSExpressMode({
         </div>
         <button
           onClick={() => setEnabled(false)}
+          aria-label="Salir del modo Express"
           className="p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
         >
           <X className="h-3.5 w-3.5" />
