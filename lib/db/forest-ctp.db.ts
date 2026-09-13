@@ -443,6 +443,33 @@ export function despachoKey(
 
 export class ForestCtpDB {
   /**
+   * Los conteos que ubican a un CTP en su camino de arranque.
+   *
+   * Un solo viaje a la base con cinco `count`: la guía de primeros pasos se
+   * pinta en cada carga del libro y traer las listas enteras para contarlas
+   * sería pagar el patio completo para saber si está vacío.
+   *
+   * La Ficha y el catálogo de especies NO salen de acá: viven en
+   * `ForestCtpFichaDB` y `ForestEspeciesDB` (KV, no tablas), y quien arma el
+   * estado los pide ahí.
+   */
+  static async contarParaArranque(tenantId: string): Promise<{
+    ingresos: number;
+    lotes: number;
+    corridas: number;
+    despachos: number;
+  }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const [ingresos, lotes, corridas, despachos] = await Promise.all([
+      prisma.woodEntry.count({ where: { tenantId, deletedAt: null } }),
+      prisma.forestLoteAserrio.count({ where: { tenantId, deletedAt: null } }),
+      prisma.forestCtpEntry.count({ where: { tenantId, deletedAt: null, section: "produccion" } }),
+      prisma.forestCtpEntry.count({ where: { tenantId, deletedAt: null, section: "despacho" } }),
+    ]);
+    return { ingresos, lotes, corridas, despachos };
+  }
+
+  /**
    * I3 — no se puede despachar producto que no existe.
    *
    * Simétrico a I2 (que impide consumir materia prima inexistente). Sin esto el

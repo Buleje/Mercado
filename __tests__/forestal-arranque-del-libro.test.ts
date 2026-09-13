@@ -134,19 +134,37 @@ describe("avance y cuándo dejar de guiar", () => {
     };
     const pasos = pasosDeArranque(lleno);
     expect(avanceDeArranque(pasos)).toEqual({ hechos: 6, total: 6 });
-    expect(hayQueGuiar(pasos)).toBe(false);
+    expect(hayQueGuiar(pasos, lleno)).toBe(false);
     expect(pasos.some((p) => p.estado === "ahora")).toBe(false);
   });
 
-  it("con un solo paso pendiente sigue guiando", () => {
-    const casi: EstadoDelLibro = {
+  it("a un centro que YA opera no se le muestran primeros pasos", () => {
+    /* El caso real que lo destapó: el aserradero tiene 24 ingresos, 5 lotes y
+       14 corridas… y cero guías de salida emitidas desde el libro. Con la regla
+       ingenua le aparecía un cartel de PRIMEROS PASOS a quien opera hace meses.
+       Lo que le falte a partir de ahí es un pendiente normal, no una lección. */
+    const yaOpera: EstadoDelLibro = {
       ficha: fichaCompleta(),
       especies: 12,
       ingresos: 24,
       lotes: 5,
-      corridas: 9,
+      corridas: 14,
       despachos: 0,
     };
-    expect(hayQueGuiar(pasosDeArranque(casi))).toBe(true);
+    expect(hayQueGuiar(pasosDeArranque(yaOpera), yaOpera)).toBe(false);
+  });
+
+  it("pero a uno a medio camino sí", () => {
+    /* Recibió madera y armó un lote, pero todavía no declaró ninguna corrida:
+       no dio la vuelta, así que la guía sigue sirviendo. */
+    const aMedias: EstadoDelLibro = {
+      ficha: fichaCompleta(),
+      especies: 12,
+      ingresos: 24,
+      lotes: 5,
+      corridas: 0,
+      despachos: 0,
+    };
+    expect(hayQueGuiar(pasosDeArranque(aMedias), aMedias)).toBe(true);
   });
 });

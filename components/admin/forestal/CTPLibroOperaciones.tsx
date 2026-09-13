@@ -88,6 +88,7 @@ import CtpAnalisis from "./CtpAnalisis";
 import CtpTableroControl from "./CtpTableroControl";
 import CtpHealthChip from "./CtpHealthChip";
 import CtpPendientes from "./CtpPendientes";
+import CtpArranque from "./CtpArranque";
 import CtpBuscarGtf from "./CtpBuscarGtf";
 import CtpPaqueteFicha from "./CtpPaqueteFicha";
 import CtpEntryDetailModal from "./CtpEntryDetailModal";
@@ -547,6 +548,11 @@ export default function CTPLibroOperaciones() {
         actions={acciones}
         atajosDeVista={atajosDeVista}
       >
+        {/* Los primeros pasos, arriba de todo y sólo mientras hagan falta: un
+            CTP recién abierto ve doce pestañas vacías y ninguna le dice por
+            dónde empezar. Se apaga solo cuando el libro dio la vuelta entera. */}
+        <CtpArranque onIr={irA} />
+
         {exportError && (
           <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
             <strong>No se pudo exportar:</strong> {exportError}

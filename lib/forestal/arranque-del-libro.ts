@@ -166,11 +166,19 @@ export function avanceDeArranque(pasos: readonly PasoDeArranque[]): { hechos: nu
 /**
  * ¿Conviene mostrar el arranque?
  *
- * Mientras quede un paso obligatorio sin hacer. Cuando están todos, el libro ya
- * dio la vuelta completa —de la guía de ingreso a la de salida— y la guía de
- * primeros pasos sólo estorbaría.
+ * Dos condiciones, y la segunda se ganó verificando en el tenant real: el
+ * aserradero de Brandon tiene 24 ingresos, 5 lotes y 14 corridas… y **cero
+ * guías de salida emitidas desde el libro**. Con la regla ingenua —«mientras
+ * falte un paso»— le aparecía un cartel de PRIMEROS PASOS a quien opera hace
+ * meses. Eso no enseña nada y ocupa el lugar de lo que sí importa.
+ *
+ * Un centro que ya recibió madera, armó lotes y declaró corridas **ya sabe
+ * operar**: lo que le falte a partir de ahí es un pendiente normal, y para eso
+ * está la campana de avisos. La guía es para el que todavía no dio la vuelta.
  */
-export function hayQueGuiar(pasos: readonly PasoDeArranque[]): boolean {
+export function hayQueGuiar(pasos: readonly PasoDeArranque[], e: EstadoDelLibro): boolean {
   const { hechos, total } = avanceDeArranque(pasos);
-  return hechos < total;
+  if (hechos >= total) return false;
+  const yaOpera = e.ingresos > 0 && e.lotes > 0 && e.corridas > 0;
+  return !yaOpera;
 }

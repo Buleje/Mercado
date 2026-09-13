@@ -6,6 +6,8 @@ import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { ForestCtpDB, CTP_SECTIONS } from "@/lib/db/forest-ctp.db";
 import { ForestCtpDespachoDB } from "@/lib/db/forest-ctp-despacho.db";
 import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
+import { ForestEspeciesDB } from "@/lib/db/forest-especies.db";
+import { ForestCtpFichaDB } from "@/lib/db/forest-ctp-ficha.db";
 import { gtfDatosSchema } from "@/lib/forestal/ctp-gtf-datos";
 import { ctpErrorResponse, ctpValidationResponse } from "@/lib/forestal/ctp-api-errors";
 import { isSpecializationEnabled } from "@/lib/specializations";
@@ -426,6 +428,25 @@ export const GET = withApiHandler("forestal-ctp-get", async (req: NextRequest) =
        El cron manda por WhatsApp y por correo, y hasta ahora un rechazo —el
        dominio sin verificar, un token vencido— sólo se veía en el log del
        servidor: desde el panel el aviso parecía haber salido. */
+    /* El primer día de un CTP: en qué tramo del arranque está el libro.
+       La Ficha y el catálogo viven en KV; los movimientos, en tablas. */
+    if (url.searchParams.get("arranque") === "1") {
+      const [ficha, catalogo, conteos] = await Promise.all([
+        ForestCtpFichaDB.get(auth.tenantId),
+        ForestEspeciesDB.get(auth.tenantId),
+        ForestCtpDB.contarParaArranque(auth.tenantId),
+      ]);
+      return NextResponse.json({
+        estado: {
+          ficha: ficha ?? null,
+          /* Las de fábrica no cuentan como «cargó sus especies»: el paso es
+             que el centro diga cuáles trabaja, no que el sistema traiga una
+             lista genérica. */
+          especies: catalogo.agregadas.length,
+          ...conteos,
+        },
+      });
+    }
     if (url.searchParams.get("avisosEstado") === "1") {
       return NextResponse.json({
         envios: await NotificationLogsDB.ultimosPorTipo(auth.tenantId, "ctp_plazos_"),
