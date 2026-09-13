@@ -133,7 +133,7 @@ const BULEJE_DEFAULT: DesignTokens = {
     surfaceSunken: "oklch(0.96 0.005 240)",
     textPrimary:   "oklch(0.20 0.015 250)",
     textSecondary: "oklch(0.42 0.015 250)",
-    textTertiary:  "oklch(0.60 0.012 250)",
+    textTertiary:  "oklch(0.53 0.012 250)",      // AA: 4.7:1 sobre sunken (era 0.60 → 3.5:1)
     ruleBase:      "oklch(0.92 0.005 240)",
     ruleStrong:    "oklch(0.85 0.008 240)",
     success:       "oklch(0.65 0.18 150)",
@@ -192,7 +192,7 @@ const BODEGA_CALIDA: DesignTokens = {
     surfaceSunken: "oklch(0.96 0.012 70)",
     textPrimary:   "oklch(0.25 0.04 30)",       // marrón cálido
     textSecondary: "oklch(0.45 0.03 30)",
-    textTertiary:  "oklch(0.62 0.02 30)",
+    textTertiary:  "oklch(0.535 0.02 30)",       // AA sobre sunken (era 0.62 → 3.3:1)
     ruleBase:      "oklch(0.90 0.02 50)",
     ruleStrong:    "oklch(0.82 0.03 50)",
     success:       "oklch(0.65 0.18 150)",
@@ -251,7 +251,7 @@ const MERCADO_MODERNO: DesignTokens = {
     surfaceSunken: "oklch(0.97 0.005 250)",
     textPrimary:   "oklch(0.18 0.02 260)",      // slate-900
     textSecondary: "oklch(0.40 0.015 260)",
-    textTertiary:  "oklch(0.58 0.01 260)",
+    textTertiary:  "oklch(0.54 0.01 260)",       // AA sobre sunken (era 0.58 → 3.9:1)
     ruleBase:      "oklch(0.93 0.005 260)",
     ruleStrong:    "oklch(0.86 0.008 260)",
     success:       "oklch(0.65 0.18 150)",
@@ -310,7 +310,7 @@ const PASTEL_FRESH: DesignTokens = {
     surfaceSunken: "oklch(0.97 0.012 320)",
     textPrimary:   "oklch(0.28 0.04 320)",
     textSecondary: "oklch(0.48 0.03 320)",
-    textTertiary:  "oklch(0.65 0.02 320)",
+    textTertiary:  "oklch(0.54 0.02 320)",       // AA sobre sunken (era 0.65 → 3.0:1)
     ruleBase:      "oklch(0.93 0.012 320)",
     ruleStrong:    "oklch(0.86 0.018 320)",
     success:       "oklch(0.78 0.14 160)",       // verde menta
@@ -369,7 +369,7 @@ const DARK_PRO: DesignTokens = {
     surfaceSunken: "oklch(0.13 0.008 250)",
     textPrimary:   "oklch(0.96 0.005 250)",
     textSecondary: "oklch(0.78 0.008 250)",
-    textTertiary:  "oklch(0.60 0.01 250)",
+    textTertiary:  "oklch(0.61 0.01 250)",       // AA sobre raised (era 0.60 → 4.50 justo)
     ruleBase:      "oklch(0.30 0.012 250)",
     ruleStrong:    "oklch(0.40 0.015 250)",
     success:       "oklch(0.72 0.18 150)",
